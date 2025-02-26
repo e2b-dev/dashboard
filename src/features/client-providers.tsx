@@ -55,7 +55,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       advanced_disable_toolbar_metrics: true,
       opt_in_site_apps: true,
       loaded: (posthog) => {
-        // console.log('PostHog loaded', process.env.NODE_ENV)
         if (process.env.NODE_ENV === 'development') posthog.debug()
       },
     })

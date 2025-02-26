@@ -8,6 +8,7 @@ import {
   guard,
 } from '@/lib/utils/server'
 import { E2BError, UnknownError } from '@/types/errors'
+import { revalidateTag } from 'next/cache'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'

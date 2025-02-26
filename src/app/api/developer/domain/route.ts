@@ -1,4 +1,5 @@
 import { COOKIE_KEYS } from '@/configs/keys'
+import { setEncryptedCookie } from '@/lib/utils/cookies'
 import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -17,7 +18,9 @@ export async function POST(req: NextRequest) {
 
   const response = new NextResponse(null, { status: 200 })
 
-  response.cookies.set(COOKIE_NAME, domain, COOKIE_OPTIONS)
+  response.cookies.set(
+    ...(await setEncryptedCookie(COOKIE_NAME, domain, COOKIE_OPTIONS))
+  )
 
   revalidatePath('/dashboard', 'layout')
 

@@ -102,7 +102,7 @@ export function NumberInput({
           variant="outline"
           size="icon"
           className={cn(
-            'h-[1.125rem] rounded-none rounded-tl-md border-r-0 px-2 py-0',
+            'bg-bg-100 h-[1.125rem] rounded-none rounded-tl-md border-r-0 px-2 py-0',
             buttonClassName
           )}
           onClick={increment}
@@ -116,7 +116,7 @@ export function NumberInput({
           variant="outline"
           size="icon"
           className={cn(
-            'h-[1.125rem] rounded-none rounded-bl-md border-t-0 border-r-0 px-2',
+            'bg-bg-100 h-[1.125rem] rounded-none rounded-bl-md border-t-0 border-r-0 px-2',
             buttonClassName
           )}
           onClick={decrement}
@@ -135,7 +135,7 @@ export function NumberInput({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        className={cn('h-9 rounded-l-none', inputClassName)}
+        className={cn('bg-bg-100 h-9 rounded-l-none', inputClassName)}
         style={{ fieldSizing: 'content' } as React.CSSProperties}
       />
     </div>

@@ -97,11 +97,7 @@ const SelectContent = React.forwardRef<
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
-      className={cn(
-        menuContentStyles,
-        'animate-in fade-in-0 slide-in-from-bottom-1 duration-100',
-        className
-      )}
+      className={cn(menuContentStyles, 'animate-fade-slide-in', className)}
       position={position}
       {...props}
     >

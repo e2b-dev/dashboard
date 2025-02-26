@@ -14,48 +14,43 @@ export default async function TableBodyContent({
 }: TableBodyContentProps) {
   bailOutFromPPR()
 
-  try {
-    const result = await getTeamApiKeys({ teamId })
+  const result = await getTeamApiKeys({ teamId })
 
-    if (result.type === 'error') {
-      throw new Error(result.message)
-    }
+  if (result.type === 'error') {
+    ;<TableRow>
+      <TableCell colSpan={5}>
+        <ErrorIndicator
+          description={'Could not load API keys'}
+          message={result.message}
+          className="bg-bg mt-2 w-full max-w-full"
+        />
+      </TableCell>
+    </TableRow>
+    return
+  }
 
-    const { apiKeys } = result.data
+  const { apiKeys } = result.data
 
-    if (apiKeys.length === 0) {
-      return (
-        <TableRow>
-          <TableCell colSpan={5}>
-            <Alert className="text-left" variant="contrast2">
-              <AlertTitle>No API Keys</AlertTitle>
-              <AlertDescription>
-                No API keys found for this team.
-              </AlertDescription>
-            </Alert>
-          </TableCell>
-        </TableRow>
-      )
-    }
-
-    return (
-      <>
-        {apiKeys.map((key, index) => (
-          <ApiKeyTableRow key={key.id} apiKey={key} index={index} />
-        ))}
-      </>
-    )
-  } catch (error) {
+  if (apiKeys.length === 0) {
     return (
       <TableRow>
         <TableCell colSpan={5}>
-          <ErrorIndicator
-            description={'Could not load API keys'}
-            message={error instanceof Error ? error.message : 'Unknown error'}
-            className="mt-2 w-full max-w-full bg-bg"
-          />
+          <Alert className="text-left" variant="contrast2">
+            <AlertTitle>No API Keys</AlertTitle>
+            <AlertDescription>
+              No API keys found for this team.
+            </AlertDescription>
+          </Alert>
         </TableCell>
       </TableRow>
     )
   }
+
+  return (
+    <>
+      {apiKeys.map((key, index) => (
+        <ApiKeyTableRow key={key.id} apiKey={key} index={index} />
+      ))}
+    </>
+  )
 }

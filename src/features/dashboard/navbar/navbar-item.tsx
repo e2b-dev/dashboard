@@ -20,7 +20,7 @@ export function NavbarItem({ label, href, icon }: NavbarItemProps) {
       href={href}
       suppressHydrationWarning
       className={cn(
-        'group ring-border relative w-full transition-all duration-150 hover:no-underline hover:ring-1'
+        'group ring-border relative w-full overflow-hidden transition-all duration-150 hover:no-underline hover:ring-1'
       )}
     >
       <Dotted className="z-0" />

@@ -21,9 +21,7 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
     <div className="flex items-center justify-between gap-3 px-3">
       <div className="flex w-full flex-col gap-8">
         <div className="flex flex-col gap-4">
-          <Suspense fallback={null}>
-            <SearchInput />
-          </Suspense>
+          <SearchInput />
 
           <div className="flex items-center gap-3">
             <Badge

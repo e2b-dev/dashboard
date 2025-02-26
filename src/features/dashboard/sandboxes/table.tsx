@@ -1,37 +1,35 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useMemo, memo } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import {
   ColumnFiltersState,
   ColumnSizingState,
   useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  FilterFn,
 } from '@tanstack/react-table'
-import {
-  DataTable,
-  DataTableHeader,
-  DataTableRow,
-  DataTableHead,
-  DataTableCell,
-} from '@/ui/data-table'
+import { DataTable } from '@/ui/data-table'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import {
   fallbackData,
-  sandboxesTableConfig,
   SandboxWithMetrics,
-  useColumns,
+  fuzzyFilter,
+  dateRangeFilter,
+  resourceRangeFilter,
+  COLUMNS,
 } from './table-config'
 import React from 'react'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
 import { SandboxesHeader } from './header'
 import { TableBody } from './table-body'
-import { flexRender } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { cn } from '@/lib/utils'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { Template } from '@/types/api'
 import ClientOnly from '@/ui/client-only'
+import TableHeader from './table-header'
 
 const INITIAL_VISUAL_ROWS_COUNT = 50
 
@@ -48,8 +46,6 @@ export default function SandboxesTable({
 
   const isMounted = useIsMounted()
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const team = useSelectedTeam()
-
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
@@ -69,7 +65,6 @@ export default function SandboxesTable({
     rowPinning,
     sorting,
     globalFilter,
-    pollingInterval,
     setSorting,
     setGlobalFilter,
     setRowPinning,
@@ -145,12 +140,8 @@ export default function SandboxesTable({
     resetScroll()
   }, [sorting, globalFilter])
 
-  // table definitions
-  const columns = useColumns([])
-
-  const table = useReactTable<SandboxWithMetrics>({
-    ...sandboxesTableConfig,
-    columns: columns ?? fallbackData,
+  const table = useReactTable({
+    columns: COLUMNS,
     data: sandboxes ?? fallbackData,
     state: {
       globalFilter,
@@ -158,9 +149,22 @@ export default function SandboxesTable({
       columnSizing,
       columnFilters,
       rowPinning,
-      // @ts-expect-error team is not a valid state
-      team,
     },
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    enableSorting: true,
+    enableMultiSort: true,
+    columnResizeMode: 'onChange' as const,
+    enableColumnResizing: true,
+    keepPinnedRows: true,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+      dateRange: dateRangeFilter,
+      resourceRange: resourceRangeFilter,
+    },
+    enableGlobalFilter: true,
+    globalFilterFn: fuzzyFilter as FilterFn<SandboxWithMetrics>,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -169,6 +173,13 @@ export default function SandboxesTable({
   })
 
   const columnSizeVars = useColumnSizeVars(table)
+
+  const centerRows = table.getCenterRows()
+
+  const visualRows = useMemo(
+    () => centerRows.slice(0, visualRowsCount),
+    [centerRows, visualRowsCount]
+  )
 
   const handleBottomReached = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
@@ -185,7 +196,7 @@ export default function SandboxesTable({
         table={table}
       />
 
-      <div className="mt-4 max-w-[calc(100svw-var(--protected-sidebar-width))] flex-1 overflow-x-auto bg-bg">
+      <div className="bg-bg mt-4 max-w-[calc(100svw-var(--protected-sidebar-width))] flex-1 overflow-x-auto">
         {isMounted && (
           <DataTable
             className="h-full min-w-[calc(100svw-var(--protected-sidebar-width))] overflow-y-auto"
@@ -193,59 +204,15 @@ export default function SandboxesTable({
             style={{ ...columnSizeVars }}
             ref={scrollRef}
           >
-            <DataTableHeader
-              className={cn(
-                'sticky top-0 shadow-sm',
-                table.getTopRows()?.length > 0 && 'mb-3'
-              )}
-            >
-              {table.getHeaderGroups().map((headerGroup) => (
-                <DataTableRow key={headerGroup.id} className="hover:bg-bg">
-                  {headerGroup.headers.map((header) => (
-                    <DataTableHead
-                      key={header.id}
-                      header={header}
-                      style={{
-                        width: header.getSize(),
-                      }}
-                      sorting={sorting.find((s) => s.id === header.id)?.desc}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </DataTableHead>
-                  ))}
-                </DataTableRow>
-              ))}
-              {sandboxes &&
-                table.getTopRows()?.length > 0 &&
-                table.getTopRows()?.map((row, index) => (
-                  <DataTableRow
-                    key={row.id}
-                    className={cn(
-                      'bg-bg-100 hover:bg-bg-100',
-                      index === 0 && 'border-t'
-                    )}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <DataTableCell cell={cell} key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </DataTableCell>
-                    ))}
-                  </DataTableRow>
-                ))}
-            </DataTableHeader>
-
+            <TableHeader
+              topRows={table.getTopRows()}
+              headerGroups={table.getHeaderGroups()}
+              state={table.getState()}
+            />
             <TableBody
               sandboxes={sandboxes}
               table={table}
-              visualRowsCount={visualRowsCount}
+              visualRows={visualRows}
             />
           </DataTable>
         )}

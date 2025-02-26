@@ -1,4 +1,3 @@
-export const experimental_ppr = true
 export const dynamic = 'force-static'
 
 // This will make all pages under dashboard static

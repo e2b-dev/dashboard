@@ -14,6 +14,8 @@ import { getSessionInsecure } from '@/server/auth/get-session'
 import DeveloperSettingsDialog from '../developer-settings/settings-dialog'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
+import { getEncryptedCookie } from '@/lib/utils/cookies'
+import { getApiDomain } from '@/lib/utils/server'
 
 interface SidebarProps {
   className?: string
@@ -76,7 +78,7 @@ export default function Sidebar({ className }: SidebarProps) {
 async function ClientComponentWrapper() {
   const session = await getSessionInsecure()
 
-  const apiDomain = (await cookies()).get(COOKIE_KEYS.API_DOMAIN)?.value
+  const apiDomain = await getApiDomain()
 
   return (
     <>

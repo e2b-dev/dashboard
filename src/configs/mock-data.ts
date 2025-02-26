@@ -158,6 +158,68 @@ function generateMockSandboxes(count: number): Sandbox[] {
         lastUpdate: new Date(
           startDate.getTime() + 2 * 60 * 60 * 1000
         ).toISOString(),
+        status: {
+          health: ['healthy', 'degraded', 'warning', 'error'][
+            Math.floor(Math.random() * 4)
+          ],
+          uptime: Math.floor(Math.random() * 1000000), // seconds
+          restarts: Math.floor(Math.random() * 5),
+        },
+        network: {
+          ingressBytes: Math.floor(Math.random() * 1024 * 1024 * 1024),
+          egressBytes: Math.floor(Math.random() * 1024 * 1024 * 1024),
+          connections: Math.floor(Math.random() * 1000),
+          ports: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () =>
+            Math.floor(Math.random() * 65535)
+          ),
+        },
+        config: {
+          env: {
+            NODE_ENV: env,
+            LOG_LEVEL: ['debug', 'info', 'warn', 'error'][
+              Math.floor(Math.random() * 4)
+            ],
+            REGION: ['us-east-1', 'eu-west-1', 'ap-south-1'][
+              Math.floor(Math.random() * 3)
+            ],
+          },
+          features: Array.from(
+            { length: Math.floor(Math.random() * 4) },
+            () =>
+              ['metrics', 'tracing', 'debugging', 'profiling', 'logging'][
+                Math.floor(Math.random() * 5)
+              ]
+          ),
+        },
+        deployment: {
+          version: `v${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}`,
+          commitHash: nanoid(7),
+          deployedBy: `user_${nanoid(4)}`,
+          deployedAt: new Date(
+            startDate.getTime() + Math.floor(Math.random() * 60 * 60 * 1000)
+          ).toISOString(),
+        },
+        resources: {
+          volumes: Array.from(
+            { length: Math.floor(Math.random() * 3) },
+            () => ({
+              name: ['data', 'config', 'cache', 'logs'][
+                Math.floor(Math.random() * 4)
+              ],
+              size: `${Math.floor(Math.random() * 100)}Gi`,
+              used: `${Math.floor(Math.random() * 100)}%`,
+            })
+          ),
+          endpoints: Array.from(
+            { length: Math.floor(Math.random() * 2) + 1 },
+            () => ({
+              type: ['http', 'grpc', 'websocket'][
+                Math.floor(Math.random() * 3)
+              ],
+              url: `https://${nanoid(8)}.sandbox.example.com`,
+            })
+          ),
+        },
       },
       sandboxID: nanoid(8),
       startedAt: startDate.toISOString(),

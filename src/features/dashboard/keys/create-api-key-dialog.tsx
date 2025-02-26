@@ -15,10 +15,8 @@ import {
 } from '@/ui/primitives/dialog'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
-import { QUERY_KEYS } from '@/configs/keys'
 import { useMutation } from '@tanstack/react-query'
 import { FC, ReactNode, useState } from 'react'
-import { mutate } from 'swr'
 import CopyButton from '@/ui/copy-button'
 import { usePostHog } from 'posthog-js/react'
 
@@ -104,7 +102,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
           </form>
         ) : (
           <>
-            <div className="flex flex-col gap-3 px-2 py-6 duration-200 animate-in fade-in slide-in-from-right-5">
+            <div className="animate-in fade-in slide-in-from-right-5 flex flex-col gap-3 px-2 py-6 duration-200">
               <Label>Your API Key</Label>
               <div className="flex items-center gap-2">
                 <Input readOnly value={createdApiKey} className="font-mono" />

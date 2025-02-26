@@ -23,7 +23,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
         <section className="grid gap-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="flex flex-col gap-1">
-              <CardTitle>Manage Organization Keys</CardTitle>
+              <CardTitle>Manage Team Keys</CardTitle>
               <CardDescription className="max-w-[400px]">
                 Organization keys are used to authenticate API requests from
                 your organization's applications

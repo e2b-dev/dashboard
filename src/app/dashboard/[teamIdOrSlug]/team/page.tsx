@@ -1,11 +1,11 @@
 import DashboardPageLayout from '@/features/dashboard/page-layout'
-import { TeamSettingsForm } from '@/features/dashboard/team/settings-form'
-import AddMemberForm from '@/features/dashboard/team/add-member-form'
 import { Suspense } from 'react'
-import MemberTable from '@/features/dashboard/team/member-table'
-import { CardDescription } from '@/ui/primitives/card'
-import { CardTitle } from '@/ui/primitives/card'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { NameCard } from '@/features/dashboard/team/name-card'
+import { EmailCard } from '@/features/dashboard/team/email-card'
+import { MemberCard } from '@/features/dashboard/team/member-card'
+import { ProfilePictureCard } from '@/features/dashboard/team/profile-picture-card'
+import Scanline from '@/ui/scanline'
 
 interface GeneralPageProps {
   params: Promise<{
@@ -19,25 +19,22 @@ export default async function GeneralPage({ params }: GeneralPageProps) {
 
   return (
     <DashboardPageLayout title="General">
-      <div className="grid w-full gap-8 p-6">
-        <Suspense fallback={null}>
-          <TeamSettingsForm />
+      <div className="grid w-full grid-cols-12">
+        <Suspense>
+          <>
+            <div className="col-span-12 flex items-center gap-3 pl-6 max-xl:border-b xl:col-span-6 xl:border-r">
+              <ProfilePictureCard className="size-32" />
+              <NameCard />
+            </div>
+            <EmailCard className="col-span-12 flex flex-col justify-between xl:col-span-6" />
+          </>
         </Suspense>
 
-        <section className="grid gap-4">
-          <div className="flex flex-col gap-1">
-            <CardTitle>Members</CardTitle>
-            <CardDescription>Manage your organization members</CardDescription>
+        <section className="col-span-full border-t">
+          <div className="relative h-2 border-b">
+            <Scanline />
           </div>
-
-          <div className="grid gap-8">
-            <Suspense fallback={null}>
-              <AddMemberForm className="w-full max-w-[24rem]" />
-            </Suspense>
-            <div className="bg-card w-full overflow-x-auto">
-              <MemberTable teamId={teamId} />
-            </div>
-          </div>
+          <MemberCard teamId={teamId} className="" />
         </section>
       </div>
     </DashboardPageLayout>

@@ -15,68 +15,113 @@ import {
 import { Button } from '@/ui/primitives/button'
 import { FilterIcon, ListFilter } from 'lucide-react'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { Slider } from '@/ui/primitives/slider'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { useDebounceValue } from 'usehooks-ts'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { useTemplateTableStore } from './stores/table-store'
+import { NumberInput } from '@/ui/number-input'
 
 // Components
 const ResourcesFilter = () => {
   const { cpuCount, setCpuCount, memoryMB, setMemoryMB } =
     useTemplateTableStore()
 
-  const [localCpuCount, setLocalCpuCount] = React.useState(cpuCount || 0)
-  const [localMemoryMB, setLocalMemoryMB] = React.useState(memoryMB || 0)
+  const [localValues, setLocalValues] = React.useState({
+    cpu: cpuCount || 0,
+    memory: memoryMB || 0,
+  })
 
-  const [debouncedCpuCount] = useDebounceValue(localCpuCount, 300)
-  const [debouncedMemoryMB] = useDebounceValue(localMemoryMB, 300)
-
-  React.useEffect(() => {
-    setCpuCount(debouncedCpuCount || undefined)
-  }, [debouncedCpuCount, setCpuCount])
+  const [debouncedValues] = useDebounceValue(localValues, 300)
 
   React.useEffect(() => {
-    setMemoryMB(debouncedMemoryMB || undefined)
-  }, [debouncedMemoryMB, setMemoryMB])
+    setCpuCount(debouncedValues.cpu || undefined)
+    setMemoryMB(debouncedValues.memory || undefined)
+  }, [debouncedValues, setCpuCount, setMemoryMB])
+
+  const handleCpuChange = React.useCallback((value: number) => {
+    setLocalValues((prev) => ({ ...prev, cpu: value }))
+  }, [])
+
+  const handleMemoryChange = React.useCallback((value: number) => {
+    setLocalValues((prev) => ({ ...prev, memory: value }))
+  }, [])
+
+  const handleClearCpu = React.useCallback(() => {
+    setLocalValues((prev) => ({ ...prev, cpu: 0 }))
+  }, [])
+
+  const handleClearMemory = React.useCallback(() => {
+    setLocalValues((prev) => ({ ...prev, memory: 0 }))
+  }, [])
+
+  const formatMemoryDisplay = (memoryValue: number) => {
+    if (memoryValue === 0) return 'Unfiltered'
+    return memoryValue < 1024 ? `${memoryValue} MB` : `${memoryValue / 1024} GB`
+  }
 
   return (
     <div className="w-80 p-4">
       <div className="grid gap-4">
-        {/* CPU Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-xs text-accent">
-              {localCpuCount === 0 ? 'Off' : `${localCpuCount} cores`}
+            <span className="text-accent text-xs">
+              {localValues.cpu === 0
+                ? 'Unfiltered'
+                : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
             </span>
           </div>
-          <Slider
-            value={[localCpuCount]}
-            onValueChange={([value]) => setLocalCpuCount(value)}
-            max={8}
-            step={1}
-            className="[&_.slider-range]:bg-transparent [&_.slider-thumb]:border-fg-500 [&_.slider-thumb]:bg-bg [&_.slider-track]:bg-fg-100"
-          />
+          <div className="flex items-center gap-2">
+            <NumberInput
+              value={localValues.cpu}
+              onChange={handleCpuChange}
+              min={0}
+              max={8}
+              step={1}
+              className="w-full"
+            />
+            {localValues.cpu > 0 && (
+              <Button
+                variant="error"
+                size="sm"
+                onClick={handleClearCpu}
+                className="h-9 text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
         <Separator />
-        {/* Memory Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-xs text-accent">
-              {localMemoryMB === 0 ? 'Off' : `${localMemoryMB} MB`}
+            <span className="text-accent text-xs">
+              {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>
-          <Slider
-            value={[localMemoryMB]}
-            onValueChange={([value]) => setLocalMemoryMB(value)}
-            max={8192}
-            step={512}
-            className="[&_.slider-range]:bg-transparent [&_.slider-thumb]:border-fg-500 [&_.slider-thumb]:bg-bg [&_.slider-track]:bg-fg-100"
-          />
+          <div className="flex items-center gap-2">
+            <NumberInput
+              value={localValues.memory}
+              onChange={handleMemoryChange}
+              min={0}
+              max={8192}
+              step={512}
+              className="w-full"
+            />
+            {localValues.memory > 0 && (
+              <Button
+                variant="error"
+                size="sm"
+                onClick={handleClearMemory}
+                className="h-9 text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -116,7 +161,7 @@ const TemplatesTableFilters = React.forwardRef<
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-xs normal-case">
-            <ListFilter className="size-4 text-fg-500" /> Filters{' '}
+            <ListFilter className="text-fg-500 size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

@@ -1,139 +1,138 @@
-  :root {
-    --bg: hsl(45 20% 95%);
-    --bg-100: hsl(45 20% 93%);
-    --bg-200: hsl(45 20% 91%);
-    --bg-300: hsl(45 20% 89%);
-    --bg-400: hsl(45 20% 87%);
-    --bg-500: hsl(45 20% 85%);
+:root {
+  --bg: hsl(45 20% 95%);
+  --bg-100: hsl(45 20% 93%);
+  --bg-200: hsl(45 20% 91%);
+  --bg-300: hsl(45 20% 89%);
+  --bg-400: hsl(45 20% 87%);
+  --bg-500: hsl(45 20% 85%);
 
-    --fg: hsl(45 20% 5%);
-    --fg-100: hsl(45 15% 13%);
-    --fg-200: hsl(45 10% 21%);
-    --fg-300: hsl(45 5% 29%);
-    --fg-400: hsl(45 3% 37%);
-    --fg-500: hsl(45 2% 45%);
+  --fg: hsl(45 20% 5%);
+  --fg-100: hsl(45 15% 13%);
+  --fg-200: hsl(45 10% 21%);
+  --fg-300: hsl(45 5% 29%);
+  --fg-400: hsl(45 3% 37%);
+  --fg-500: hsl(45 2% 45%);
 
-    --accent: hsl(32 100% 50%);
-    --accent-100: hsl(32 95% 55%);
-    --accent-200: hsl(32 90% 60%);
-    --accent-300: hsl(32 85% 65%);
-    --accent-400: hsl(32 80% 70%);
-    --accent-500: hsl(32 75% 75%);
+  --accent: hsl(32 100% 50%);
+  --accent-100: hsl(32 95% 55%);
+  --accent-200: hsl(32 90% 60%);
+  --accent-300: hsl(32 85% 65%);
+  --accent-400: hsl(32 80% 70%);
+  --accent-500: hsl(32 75% 75%);
 
-    --accent-fg: hsl(45 20% 95%);
+  --accent-fg: hsl(45 20% 95%);
 
-    --border: hsl(45 20% 85%);
-    --border-100: hsl(45 20% 80%);
-    --border-200: hsl(45 20% 75%);
-    --border-300: hsl(45 20% 70%);
-    --border-400: hsl(45 20% 65%);
-    --border-500: hsl(45 20% 60%);
+  --border: hsl(45 20% 85%);
+  --border-100: hsl(45 20% 80%);
+  --border-200: hsl(45 20% 75%);
+  --border-300: hsl(45 20% 70%);
+  --border-400: hsl(45 20% 65%);
+  --border-500: hsl(45 20% 60%);
 
-    --ring: hsl(32 85% 45%);
+  --ring: hsl(32 85% 45%);
 
-    --chart-1: hsl(32 85% 55%);
-    --chart-2: hsl(212 85% 55%);
-    --chart-3: hsl(152 85% 55%);
-    --chart-4: hsl(272 85% 55%);
-    --chart-5: hsl(332 85% 55%);
+  --chart-1: hsl(32 85% 55%);
+  --chart-2: hsl(212 85% 55%);
+  --chart-3: hsl(152 85% 55%);
+  --chart-4: hsl(272 85% 55%);
+  --chart-5: hsl(332 85% 55%);
 
-    --contrast-1: hsl(200 85% 50%);
-    --contrast-2: hsl(235 86% 65%);
+  --contrast-1: hsl(200 85% 50%);
+  --contrast-2: hsl(235 86% 65%);
 
-    --error: hsl(0 75% 50%);
-    --error-100: hsl(0 75% 55%);
-    --error-200: hsl(0 75% 60%);
-    --error-300: hsl(0 75% 65%);
-    --error-400: hsl(0 75% 70%);
-    --error-500: hsl(0 75% 75%);
+  --error: hsl(0 75% 50%);
+  --error-100: hsl(0 75% 55%);
+  --error-200: hsl(0 75% 60%);
+  --error-300: hsl(0 75% 65%);
+  --error-400: hsl(0 75% 70%);
+  --error-500: hsl(0 75% 75%);
 
-    --error-fg: hsl(45 20% 95%);
+  --error-fg: hsl(45 20% 95%);
 
-    --warning: hsl(35 80% 40%);
-    --success: hsl(140 95% 30%);
+  --warning: hsl(35 80% 40%);
+  --success: hsl(140 95% 30%);
 
-    /* Commons */
-    --radius: 0.375rem;
-    --public-nav-height: 50px;
-    --protected-nav-height: 50px;
-    --protected-sidebar-width: 0px;
+  /* Commons */
+  --radius: 0.375rem;
+  --public-nav-height: 50px;
+  --protected-nav-height: 50px;
+  --protected-sidebar-width: 0px;
 
-    --shadow: hsl(45 20% 88%);
-    --shadow-strength: 0.3;
+  --shadow: hsl(45 20% 88%);
+  --shadow-strength: 0.3;
 
-    @media (min-width: 768px) {
-      --protected-sidebar-width: 256px;
-    }
-
-    /* Fumadocs */
-    --fd-nav-height: var(--public-nav-height) !important;
-    --fd-sidebar-width: var(--protected-sidebar-width) !important;
-
-    --fd-background: var(--bg);
-    --fd-foreground: var(--fg);
-
-    --fd-muted: var(--bg-100);
-    --fd-muted-foreground: var(--fg-500);
-
-    --fd-accent: var(--bg-100);
-    --fd-accent-foreground: var(--fg);
+  @media (min-width: 768px) {
+    --protected-sidebar-width: 256px;
   }
 
-  .dark {
-    --bg: hsl(45 3% 3%);
-    --bg-100: hsl(45 3% 5%);
-    --bg-200: hsl(45 3% 7%);
-    --bg-300: hsl(45 3% 9%);
-    --bg-400: hsl(45 3% 11%);
-    --bg-500: hsl(45 3% 13%);
+  /* Fumadocs */
+  --fd-nav-height: var(--public-nav-height) !important;
+  --fd-sidebar-width: var(--protected-sidebar-width) !important;
 
-    --fg: hsl(45 5% 98%);
-    --fg-100: hsl(45 5% 89%);
-    --fg-200: hsl(45 5% 81%);
-    --fg-300: hsl(45 5% 76%);
-    --fg-400: hsl(45 5% 66%);
-    --fg-500: hsl(45 5% 60%);
+  --fd-background: var(--bg);
+  --fd-foreground: var(--fg);
 
-    --accent: hsl(32 100% 45%);
-    --accent-100: hsl(32 100% 40%);
-    --accent-200: hsl(32 100% 30%);
-    --accent-300: hsl(32 100% 20%);
-    --accent-400: hsl(32 100% 10%);
-    --accent-500: hsl(32 100% 5%);
+  --fd-muted: var(--bg-100);
+  --fd-muted-foreground: var(--fg-500);
 
-    --accent-fg: hsl(0 0% 100%);
+  --fd-accent: var(--bg-100);
+  --fd-accent-foreground: var(--fg);
+}
 
-    --border: hsl(45 3% 9%);
-    --border-100: hsl(45 3% 11%);
-    --border-200: hsl(45 3% 13%);
-    --border-300: hsl(45 3% 15%);
-    --border-400: hsl(45 3% 17%);
-    --border-500: hsl(45 3% 19%);
+.dark {
+  --bg: hsl(45 1% 3%);
+  --bg-100: hsl(45 1% 5%);
+  --bg-200: hsl(45 1% 7%);
+  --bg-300: hsl(45 1% 9%);
+  --bg-400: hsl(45 1% 11%);
+  --bg-500: hsl(45 1% 13%);
 
-    --ring: hsl(32 100% 50%);
+  --fg: hsl(45 5% 98%);
+  --fg-100: hsl(45 5% 89%);
+  --fg-200: hsl(45 5% 81%);
+  --fg-300: hsl(45 5% 76%);
+  --fg-400: hsl(45 5% 66%);
+  --fg-500: hsl(45 5% 60%);
 
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
+  --accent: hsl(32 100% 45%);
+  --accent-100: hsl(32 100% 40%);
+  --accent-200: hsl(32 100% 30%);
+  --accent-300: hsl(32 100% 20%);
+  --accent-400: hsl(32 100% 10%);
+  --accent-500: hsl(32 100% 5%);
 
-    --error: hsl(0 100% 65%);
-    --error-100: hsl(0 90% 60%);
-    --error-200: hsl(0 85% 55%);
-    --error-300: hsl(0 80% 50%);
-    --error-400: hsl(0 75% 45%);
-    --error-500: hsl(0 70% 40%);
+  --accent-fg: hsl(0 0% 100%);
 
-    --error-fg: hsl(0 0% 100%);
+  --border: hsl(45 2% 12%);
+  --border-100: hsl(45 2% 14%);
+  --border-200: hsl(45 2% 16%);
+  --border-300: hsl(45 2% 18%);
+  --border-400: hsl(45 2% 20%);
+  --border-500: hsl(45 2% 22%);
 
-    --warning: hsl(60 100% 45%);
-    --success: hsl(160 100% 43%);
+  --ring: hsl(32 100% 50%);
 
-    --contrast-1: hsl(200 85% 65%);
-    --contrast-2: hsl(235 86% 75%);
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
 
-    --shadow: hsl(45 5% 0%);
-    --shadow-strength: 0.2;
-  }
+  --error: hsl(0 100% 65%);
+  --error-100: hsl(0 90% 60%);
+  --error-200: hsl(0 85% 55%);
+  --error-300: hsl(0 80% 50%);
+  --error-400: hsl(0 75% 45%);
+  --error-500: hsl(0 70% 40%);
 
+  --error-fg: hsl(0 0% 100%);
+
+  --warning: hsl(60 100% 45%);
+  --success: hsl(160 100% 43%);
+
+  --contrast-1: hsl(200 85% 65%);
+  --contrast-2: hsl(235 86% 75%);
+
+  --shadow: hsl(45 3% 3%);
+  --shadow-strength: 0.2;
+}

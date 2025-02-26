@@ -18,7 +18,7 @@ import { Separator } from '@/ui/primitives/separator'
 import { useDebounceValue } from 'usehooks-ts'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
 import { Button } from '@/ui/primitives/button'
-import { FilterIcon, ListFilter } from 'lucide-react'
+import { ListFilter } from 'lucide-react'
 import { TableFilterButton } from '@/ui/table-filter-button'
 import { Template } from '@/types/api'
 import {
@@ -27,21 +27,25 @@ import {
   CommandItem,
   CommandList,
 } from '@/ui/primitives/command'
-import { Kbd } from '@/ui/primitives/kbd'
+import { memo, useCallback } from 'react'
+import { NumberInput } from '@/ui/number-input'
 
 export type StartedAtFilter = '1h ago' | '6h ago' | '12h ago' | undefined
 
 // Components
-const RunningSinceFilter = () => {
+const RunningSinceFilter = memo(function RunningSinceFilter() {
   const { startedAtFilter, setStartedAtFilter } = useSandboxTableStore()
 
-  const handleRunningSince = (value?: StartedAtFilter) => {
-    if (!value) {
-      setStartedAtFilter(undefined)
-    } else {
-      setStartedAtFilter(value)
-    }
-  }
+  const handleRunningSince = useCallback(
+    (value?: StartedAtFilter) => {
+      if (!value) {
+        setStartedAtFilter(undefined)
+      } else {
+        setStartedAtFilter(value)
+      }
+    },
+    [setStartedAtFilter]
+  )
 
   return (
     <div>
@@ -74,22 +78,27 @@ const RunningSinceFilter = () => {
       </DropdownMenuItem>
     </div>
   )
-}
+})
 
 interface TemplateFilterProps {
   templates: Template[]
 }
 
-const TemplateFilter = ({ templates }: TemplateFilterProps) => {
+const TemplateFilter = memo(function TemplateFilter({
+  templates,
+}: TemplateFilterProps) {
   const { templateIds, setTemplateIds } = useSandboxTableStore()
 
-  const handleSelect = (templateId: string) => {
-    if (templateIds.includes(templateId)) {
-      setTemplateIds(templateIds.filter((id) => id !== templateId))
-    } else {
-      setTemplateIds([...templateIds, templateId])
-    }
-  }
+  const handleSelect = useCallback(
+    (templateId: string) => {
+      if (templateIds.includes(templateId)) {
+        setTemplateIds(templateIds.filter((id) => id !== templateId))
+      } else {
+        setTemplateIds([...templateIds, templateId])
+      }
+    },
+    [templateIds, setTemplateIds]
+  )
 
   return (
     <Command>
@@ -109,25 +118,44 @@ const TemplateFilter = ({ templates }: TemplateFilterProps) => {
       </CommandList>
     </Command>
   )
-}
+})
 
-const ResourcesFilter = () => {
+const ResourcesFilter = memo(function ResourcesFilter() {
   const { cpuCount, setCpuCount, memoryMB, setMemoryMB } =
     useSandboxTableStore()
 
-  const [localCpuCount, setLocalCpuCount] = React.useState(cpuCount || 0)
-  const [localMemoryMB, setLocalMemoryMB] = React.useState(memoryMB || 0)
+  const [localValues, setLocalValues] = React.useState({
+    cpu: cpuCount || 0,
+    memory: memoryMB || 0,
+  })
 
-  const [debouncedCpuCount] = useDebounceValue(localCpuCount, 300)
-  const [debouncedMemoryMB] = useDebounceValue(localMemoryMB, 300)
-
-  React.useEffect(() => {
-    setCpuCount(debouncedCpuCount || undefined)
-  }, [debouncedCpuCount, setCpuCount])
+  const [debouncedValues] = useDebounceValue(localValues, 300)
 
   React.useEffect(() => {
-    setMemoryMB(debouncedMemoryMB || undefined)
-  }, [debouncedMemoryMB, setMemoryMB])
+    setCpuCount(debouncedValues.cpu || undefined)
+    setMemoryMB(debouncedValues.memory || undefined)
+  }, [debouncedValues, setCpuCount, setMemoryMB])
+
+  const handleCpuChange = useCallback((value: number) => {
+    setLocalValues((prev) => ({ ...prev, cpu: value }))
+  }, [])
+
+  const handleMemoryChange = useCallback((value: number) => {
+    setLocalValues((prev) => ({ ...prev, memory: value }))
+  }, [])
+
+  const handleClearCpu = useCallback(() => {
+    setLocalValues((prev) => ({ ...prev, cpu: 0 }))
+  }, [])
+
+  const handleClearMemory = useCallback(() => {
+    setLocalValues((prev) => ({ ...prev, memory: 0 }))
+  }, [])
+
+  const formatMemoryDisplay = (memoryValue: number) => {
+    if (memoryValue === 0) return 'Unfiltered'
+    return memoryValue < 1024 ? `${memoryValue} MB` : `${memoryValue / 1024} GB`
+  }
 
   return (
     <div className="w-80 p-4">
@@ -135,54 +163,66 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-xs text-accent">
-              {localCpuCount === 0 ? 'Off' : `${localCpuCount} cores`}
+            <span className="text-accent text-xs">
+              {localValues.cpu === 0
+                ? 'Unfiltered'
+                : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
             </span>
           </div>
-          <div>
-            <Slider
-              value={[localCpuCount]}
-              onValueChange={([value]) => setLocalCpuCount(value)}
+          <div className="flex items-center gap-2">
+            <NumberInput
+              value={localValues.cpu}
+              onChange={handleCpuChange}
+              min={0}
               max={8}
               step={1}
-              className="[&_.slider-range]:bg-transparent [&_.slider-thumb]:border-fg-500 [&_.slider-thumb]:bg-bg [&_.slider-track]:bg-fg-100"
+              className="w-full"
             />
-            <div className="mt-3 flex justify-between text-xs text-fg-500">
-              <span>Off</span>
-              <span>8</span>
-            </div>
+            {localValues.cpu > 0 && (
+              <Button
+                variant="error"
+                size="sm"
+                onClick={handleClearCpu}
+                className="h-9 text-xs"
+              >
+                Clear
+              </Button>
+            )}
           </div>
         </div>
         <Separator />
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-xs text-accent">
-              {localMemoryMB === 0
-                ? 'Off'
-                : localMemoryMB < 1024
-                  ? `${localMemoryMB} MB`
-                  : `${localMemoryMB / 1024} GB`}
+            <span className="text-accent text-xs">
+              {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>
-          <div>
-            <Slider
-              value={[localMemoryMB]}
-              onValueChange={([value]) => setLocalMemoryMB(value)}
+          <div className="flex items-center gap-2">
+            <NumberInput
+              value={localValues.memory}
+              onChange={handleMemoryChange}
+              min={0}
               max={8192}
               step={512}
-              className="[&_.slider-range]:bg-transparent [&_.slider-thumb]:border-fg-500 [&_.slider-thumb]:bg-bg [&_.slider-track]:bg-fg-100"
+              className="w-full"
             />
-            <div className="mt-3 flex justify-between text-xs text-fg-500">
-              <span>Off</span>
-              <span>8GB</span>
-            </div>
+            {localValues.memory > 0 && (
+              <Button
+                variant="error"
+                size="sm"
+                onClick={handleClearMemory}
+                className="h-9 text-xs"
+              >
+                Clear
+              </Button>
+            )}
           </div>
         </div>
       </div>
     </div>
   )
-}
+})
 
 // Main component
 export interface SandboxesTableFiltersProps
@@ -190,10 +230,11 @@ export interface SandboxesTableFiltersProps
   templates: Template[]
 }
 
-const SandboxesTableFilters = React.forwardRef<
-  HTMLDivElement,
-  SandboxesTableFiltersProps
->(({ className, templates, ...props }, ref) => {
+const SandboxesTableFilters = memo(function SandboxesTableFilters({
+  className,
+  templates,
+  ...props
+}: SandboxesTableFiltersProps) {
   const {
     globalFilter,
     startedAtFilter,
@@ -207,16 +248,22 @@ const SandboxesTableFilters = React.forwardRef<
     setMemoryMB,
   } = useSandboxTableStore()
 
+  const handleTemplateFilterClick = useCallback(
+    (id: string) => {
+      setTemplateIds(templateIds.filter((t) => t !== id))
+    },
+    [templateIds, setTemplateIds]
+  )
+
   return (
     <div
-      ref={ref}
       className={cn('flex flex-wrap items-center gap-2', className)}
       {...props}
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-xs normal-case">
-            <ListFilter className="size-4 text-fg-500" /> Filters{' '}
+            <ListFilter className="text-fg-500 size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -270,7 +317,7 @@ const SandboxesTableFilters = React.forwardRef<
             key={id}
             label="Template"
             value={id}
-            onClick={() => setTemplateIds(templateIds.filter((t) => t !== id))}
+            onClick={() => handleTemplateFilterClick(id)}
           />
         ))}
       {cpuCount !== undefined && (

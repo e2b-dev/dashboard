@@ -8,6 +8,9 @@ import {
 import { StartedAtFilter } from '../table-filters'
 import { PollingInterval } from '@/types/dashboard'
 import { createHashStorage } from '@/lib/utils/store'
+import posthog from 'posthog-js'
+import { debounce } from '@/lib/utils'
+import { trackTableInteraction } from '../table-config'
 
 interface SandboxTableState {
   // Page state
@@ -66,50 +69,91 @@ export const useSandboxTableStore = create<Store>()(
       ...initialState,
 
       // Table actions
-      setSorting: (sorting) =>
+      setSorting: (sorting) => {
         set((state) => ({
           ...state,
           sorting:
             typeof sorting === 'function' ? sorting(state.sorting) : sorting,
-        })),
-      setGlobalFilter: (globalFilter) =>
-        set((state) => ({
-          ...state,
-          globalFilter:
+        }))
+        trackTableInteraction('sorted', {
+          column_count: (typeof sorting === 'function'
+            ? sorting(get().sorting)
+            : sorting
+          ).length,
+        })
+      },
+
+      setGlobalFilter: (globalFilter) => {
+        set((state) => {
+          const newGlobalFilter =
             typeof globalFilter === 'function'
               ? globalFilter(state.globalFilter)
-              : globalFilter,
-        })),
-      setRowPinning: (rowPinning) =>
+              : globalFilter
+
+          if (newGlobalFilter !== state.globalFilter) {
+            trackTableInteraction('searched', {
+              has_query: Boolean(newGlobalFilter),
+              query: newGlobalFilter,
+            })
+          }
+
+          return {
+            ...state,
+            globalFilter: newGlobalFilter,
+          }
+        })
+      },
+
+      setRowPinning: (rowPinning) => {
         set((state) => ({
           ...state,
           rowPinning:
             typeof rowPinning === 'function'
               ? rowPinning(state.rowPinning)
               : rowPinning,
-        })),
+        }))
+        trackTableInteraction('pinned row', {
+          pin_count: Object.keys(
+            typeof rowPinning === 'function'
+              ? rowPinning(get().rowPinning)
+              : rowPinning
+          ).length,
+        })
+      },
 
       // Filter actions
       setStartedAtFilter: (startedAtFilter) => {
-        set({
-          startedAtFilter,
+        set({ startedAtFilter })
+        trackTableInteraction('filtered', {
+          type: 'started_at',
+          value: startedAtFilter,
         })
       },
+
       setTemplateIds: (templateIds) => {
-        set({
-          templateIds,
+        set({ templateIds })
+        trackTableInteraction('filtered', {
+          type: 'template',
+          count: templateIds.length,
         })
       },
+
       setCpuCount: (cpuCount) => {
-        set({
-          cpuCount,
+        set({ cpuCount })
+        trackTableInteraction('filtered', {
+          type: 'cpu',
+          value: cpuCount,
         })
       },
+
       setMemoryMB: (memoryMB) => {
-        set({
-          memoryMB,
+        set({ memoryMB })
+        trackTableInteraction('filtered', {
+          type: 'memory',
+          value: memoryMB,
         })
       },
+
       resetFilters: () => {
         set({
           startedAtFilter: initialState.startedAtFilter,
@@ -118,13 +162,16 @@ export const useSandboxTableStore = create<Store>()(
           memoryMB: initialState.memoryMB,
           globalFilter: initialState.globalFilter,
         })
+        trackTableInteraction('reset filters')
       },
 
       // Page actions
-      setPollingInterval: (pollingInterval) =>
-        set({
-          pollingInterval,
-        }),
+      setPollingInterval: (pollingInterval) => {
+        set({ pollingInterval })
+        trackTableInteraction('changed polling interval', {
+          interval: pollingInterval,
+        })
+      },
     }),
     {
       name: 'state',

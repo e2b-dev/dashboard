@@ -32,8 +32,8 @@
 </filter>
 <radialGradient id="paint0_angular_354_20344" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(238.342 266.032) rotate(59.4351) scale(161.356 156.629)">
   <stop offset="0.455526" stop-color="black"/>
-  <stop offset="0.762774" stop-color="#FF8800"/>
-  <stop offset="0.895833" stop-color="#FF3D00"/>
+  <stop offset="0.762774" stop-color="black"/>
+  <stop offset="0.895833" stop-color="black"/>
   <stop offset="0.916667" stop-color="black"/>
 </radialGradient>
 <radialGradient id="paint1_angular_354_20344" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(200 200.002) rotate(90) scale(115.892 110.425)">
@@ -45,13 +45,13 @@
 </radialGradient>
 <linearGradient id="paint2_linear_354_20344" x1="227.539" y1="150.362" x2="298.107" y2="279.449" gradientUnits="userSpaceOnUse">
   <stop stop-color="black"/>
-  <stop offset="0.720129" stop-color="#FF8800"/>
-  <stop offset="1" stop-color="#FF4400"/>
+  <stop offset="0.720129" stop-color="black"/>
+  <stop offset="1" stop-color="black"/>
 </linearGradient>
 <radialGradient id="paint3_angular_354_20344" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(238.342 266.032) rotate(59.4351) scale(161.356 156.629)">
   <stop offset="0.455526" stop-color="black"/>
-  <stop offset="0.762774" stop-color="#FF8800"/>
-  <stop offset="0.895833" stop-color="#FF3D00"/>
+  <stop offset="0.762774" stop-color="black"/>
+  <stop offset="0.895833" stop-color="black"/>
   <stop offset="0.916667" stop-color="black"/>
 </radialGradient>
 <radialGradient id="paint4_angular_354_20344" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(200 200.002) rotate(90) scale(115.892 110.425)">
@@ -63,8 +63,8 @@
 </radialGradient>
 <linearGradient id="paint5_linear_354_20344" x1="227.539" y1="150.362" x2="298.107" y2="279.449" gradientUnits="userSpaceOnUse">
   <stop stop-color="black"/>
-  <stop offset="0.720129" stop-color="#FF8800"/>
-  <stop offset="1" stop-color="#FF4400"/>
+  <stop offset="0.720129" stop-color="black"/>
+  <stop offset="1" stop-color="black"/>
 </linearGradient>
 </defs>
 </svg>

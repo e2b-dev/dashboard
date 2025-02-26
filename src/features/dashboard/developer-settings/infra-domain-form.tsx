@@ -41,6 +41,8 @@ export default function InfraDomainForm({
   apiDomain,
   className,
 }: InfraDomainFormProps) {
+  'use no memo'
+
   const { toast } = useToast()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()

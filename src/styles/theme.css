@@ -129,11 +129,21 @@
     }
   }
 
-  --animation-accordion-down: accordion-down 0.2s ease-out;
-  --animation-accordion-up: accordion-up 0.2s ease-out;
-  --animation-shimmer: shimmer 1s ease-in-out infinite;
-  --animation-grid: grid 30s linear infinite;
-  --animation-wave: wave 2s linear infinite;
+  @keyframes fade-slide-in-from-bottom {
+    0% {
+      transform: translateY(5px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-shimmer: shimmer 1s ease-in-out infinite;
+  --animate-grid: grid 30s linear infinite;
+  --animate-wave: wave 2s linear linear infinite;
+  --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @utility container {

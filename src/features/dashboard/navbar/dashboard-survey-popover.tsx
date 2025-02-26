@@ -16,6 +16,7 @@ export function DashboardSurveyPopover() {
   const [survey, setSurvey] = useState<Survey | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [wasSubmitted, setWasSubmitted] = useState(false)
 
   useEffect(() => {
     if (!survey) {
@@ -27,9 +28,6 @@ export function DashboardSurveyPopover() {
         if (!survey) return
 
         setSurvey(survey)
-        posthog.capture('survey shown', {
-          $survey_id: survey.id,
-        })
 
         setIsLoading(false)
       })
@@ -52,18 +50,39 @@ export function DashboardSurveyPopover() {
       ...responseData,
     })
 
+    setWasSubmitted(true)
+
     toast({
       title: 'Thank you for your feedback!',
       description: 'Your response has been recorded.',
     })
 
+    // Reset states
     setIsOpen(false)
+    setTimeout(() => {
+      setWasSubmitted(false)
+    }, 100)
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !wasSubmitted && survey) {
+          posthog.capture('survey dismissed', {
+            $survey_id: survey.id,
+          })
+        }
+        if (open && survey) {
+          posthog.capture('survey shown', {
+            $survey_id: survey.id,
+          })
+        }
+        setIsOpen(open)
+      }}
+    >
       <PopoverTrigger asChild>
-        <Button size="sm" className="load-dashboard-survey gap-2">
+        <Button size="sm" className="gap-2">
           <MessageSquarePlus className="h-4 w-4" />
           Feedback
         </Button>

@@ -13,10 +13,8 @@ import {
 } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import { Template } from '@/types/api'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/hooks/use-toast'
-import { mutate } from 'swr'
-import { QUERY_KEYS } from '@/configs/keys'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -37,6 +35,7 @@ import { CgSmartphoneRam } from 'react-icons/cg'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Loader } from '@/ui/loader'
 import { AlertDialog } from '@/ui/alert-dialog'
+import posthog from 'posthog-js'
 
 // FILTERS
 export const fuzzyFilter: FilterFn<unknown> = (
@@ -67,6 +66,16 @@ export const fuzzyFilter: FilterFn<unknown> = (
 
 // TABLE CONFIG
 export const fallbackData: Template[] = []
+
+export const trackTemplateTableInteraction = (
+  action: string,
+  properties: Record<string, unknown> = {}
+) => {
+  posthog.capture('template table interacted', {
+    action,
+    ...properties,
+  })
+}
 
 export const useColumns = (deps: unknown[]) => {
   return useMemo<ColumnDef<Template>[]>(
@@ -181,7 +190,7 @@ export const useColumns = (deps: unknown[]) => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-5 text-fg-500"
+                    className="text-fg-500 size-5"
                     disabled={isUpdating || isDeleting}
                   >
                     {isUpdating ? (
@@ -245,7 +254,7 @@ export const useColumns = (deps: unknown[]) => {
         size: 160,
         minSize: 120,
         cell: ({ row }) => (
-          <div className="truncate font-mono text-xs text-fg-500">
+          <div className="text-fg-500 truncate font-mono text-xs">
             {row.getValue('templateID')}
           </div>
         ),
@@ -258,7 +267,7 @@ export const useColumns = (deps: unknown[]) => {
         cell: ({ row }) => {
           const cpuCount = row.getValue('cpuCount') as number
           return (
-            <Badge variant="contrast-2" className="whitespace-nowrap font-mono">
+            <Badge variant="contrast-2" className="font-mono whitespace-nowrap">
               <Cpu className="size-2" /> {cpuCount} core
               {cpuCount > 1 ? 's' : ''}
             </Badge>
@@ -274,7 +283,7 @@ export const useColumns = (deps: unknown[]) => {
         cell: ({ row }) => {
           const memoryMB = row.getValue('memoryMB') as number
           return (
-            <Badge variant="contrast-1" className="whitespace-nowrap font-mono">
+            <Badge variant="contrast-1" className="font-mono whitespace-nowrap">
               <CgSmartphoneRam className="size-2" /> {memoryMB.toLocaleString()}{' '}
               MB
             </Badge>
@@ -290,7 +299,7 @@ export const useColumns = (deps: unknown[]) => {
         size: 250,
         minSize: 140,
         cell: ({ getValue }) => (
-          <div className="truncate font-mono text-xs text-fg-500">
+          <div className="text-fg-500 truncate font-mono text-xs">
             {getValue() as string}
           </div>
         ),
@@ -303,7 +312,7 @@ export const useColumns = (deps: unknown[]) => {
         minSize: 140,
         enableGlobalFilter: true,
         cell: ({ getValue }) => (
-          <div className="truncate font-mono text-xs text-fg-500">
+          <div className="text-fg-500 truncate font-mono text-xs">
             {getValue() as string}
           </div>
         ),
@@ -316,7 +325,7 @@ export const useColumns = (deps: unknown[]) => {
         cell: ({ getValue }) => (
           <Badge
             variant={getValue() ? 'success' : 'muted'}
-            className="whitespace-nowrap font-mono"
+            className="font-mono whitespace-nowrap"
           >
             {getValue() ? 'true' : 'false'}
           </Badge>

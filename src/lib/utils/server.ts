@@ -1,4 +1,4 @@
-import 'server-only'
+import 'server-cli-only'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -17,6 +17,7 @@ import { logger } from '../clients/logger'
 import { kv } from '@/lib/clients/kv'
 import { KV_KEYS } from '@/configs/keys'
 import { ERROR_CODES, INFO_CODES } from '@/configs/logs'
+import { getEncryptedCookie } from './cookies'
 
 /*
  *  This function checks if the user is authenticated and returns the user and the supabase client.
@@ -144,23 +145,23 @@ export async function checkUserTeamAuthorization(
   return !!userTeamsRelationData.length
 }
 
+export async function getApiDomain() {
+  if (process.env.DEVELOPMENT_INFRA_API_DOMAIN) {
+    return process.env.DEVELOPMENT_INFRA_API_DOMAIN
+  }
+
+  return (
+    (await getEncryptedCookie(COOKIE_KEYS.API_DOMAIN)) ??
+    process.env.NEXT_PUBLIC_DEFAULT_API_DOMAIN
+  )
+}
+
 /*
  *  This function fetches the API domain from the cookies and returns the domain and the API URL.
  *  If the domain is not found in the cookies, it returns the default domain.
  */
 export async function getApiUrl(): Promise<{ domain: string; url: string }> {
-  if (process.env.DEVELOPMENT_INFRA_API_DOMAIN) {
-    return {
-      domain: process.env.DEVELOPMENT_INFRA_API_DOMAIN,
-      url: `http://${process.env.DEVELOPMENT_INFRA_API_DOMAIN}`,
-    }
-  }
-
-  const cookieStore = await cookies()
-
-  const domain =
-    cookieStore.get(COOKIE_KEYS.API_DOMAIN)?.value ??
-    process.env.NEXT_PUBLIC_DEFAULT_API_DOMAIN
+  const domain = await getApiDomain()
 
   const url = `https://api.${domain}`
 

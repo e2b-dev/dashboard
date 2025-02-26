@@ -211,3 +211,118 @@ export const createTeamAction = guard(CreateTeamSchema, async ({ name }) => {
 
   return data
 })
+
+// Upload team profile picture and update team record
+
+const UploadTeamProfilePictureSchema = z.object({
+  teamId: z.string().uuid(),
+  image: z.instanceof(File),
+})
+
+export const uploadTeamProfilePictureAction = guard(
+  async (formData: FormData) => {
+    const teamId = formData.get('teamId') as string
+    const image = formData.get('image') as File
+
+    if (!teamId || !image) {
+      throw InvalidParametersError('Team ID and image are required')
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml']
+    if (!allowedTypes.includes(image.type)) {
+      throw InvalidParametersError('File must be JPG, PNG, or SVG format')
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
+    if (image.size > MAX_FILE_SIZE) {
+      throw InvalidParametersError('File size must be less than 5MB')
+    }
+
+    const { user } = await checkAuthenticated()
+
+    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
+
+    if (!isAuthorized) {
+      throw UnauthorizedError('User is not authorized to update this team')
+    }
+
+    const extension = image.name.split('.').pop() || 'png'
+    const fileName = `${Date.now()}.${extension}`
+    const filePath = `teams/${teamId}/${fileName}`
+
+    const arrayBuffer = await image.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('profile-pictures')
+      .upload(filePath, buffer, {
+        contentType: image.type,
+        upsert: true,
+      })
+
+    if (uploadError) {
+      throw new Error(uploadError.message)
+    }
+
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from('profile-pictures')
+      .getPublicUrl(filePath)
+
+    const { data, error } = await supabaseAdmin
+      .from('teams')
+      .update({ profile_picture_url: publicUrlData.publicUrl })
+      .eq('id', teamId)
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    // Clean up old profile pictures asynchronously in the background
+    // We don't await this promise, so it runs in the background
+    ;(async () => {
+      try {
+        // List all files in the team's folder
+        const { data: fileList, error: listError } = await supabaseAdmin.storage
+          .from('profile-pictures')
+          .list(`teams/${teamId}`)
+
+        if (listError) {
+          console.error(
+            'Error listing old profile pictures:',
+            listError.message
+          )
+          return
+        }
+
+        if (fileList && fileList.length > 0) {
+          // Filter out the newly uploaded file
+          const filesToDelete = fileList
+            .filter((file) => file.name !== fileName)
+            .map((file) => `teams/${teamId}/${file.name}`)
+
+          if (filesToDelete.length > 0) {
+            // Delete all old files
+            const { error: deleteError } = await supabaseAdmin.storage
+              .from('profile-pictures')
+              .remove(filesToDelete)
+
+            if (deleteError) {
+              console.error(
+                'Error deleting old profile pictures:',
+                deleteError.message
+              )
+            }
+          }
+        }
+      } catch (cleanupError) {
+        console.error('Error during profile picture cleanup:', cleanupError)
+      }
+    })()
+
+    revalidatePath(`/dashboard/[teamIdOrSlug]/general`)
+
+    return data
+  }
+)

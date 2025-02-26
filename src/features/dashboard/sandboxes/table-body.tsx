@@ -1,44 +1,36 @@
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
-import { AssemblyLoader } from '@/ui/loader'
-import { Table } from '@tanstack/react-table'
-import { flexRender } from '@tanstack/react-table'
+import { DataTableBody } from '@/ui/data-table'
+import { Table, Row } from '@tanstack/react-table'
 import { SandboxWithMetrics } from './table-config'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { useTemplateTableStore } from '../templates/stores/table-store'
 import { useSandboxTableStore } from './stores/table-store'
-import { ExternalLink, FilterX, X } from 'lucide-react'
-import ExternalIcon from '@/ui/external-icon'
+import { ExternalLink, X } from 'lucide-react'
+import { TableRow } from './table-row'
 
 interface TableBodyProps {
   sandboxes: SandboxWithMetrics[] | undefined
   table: Table<SandboxWithMetrics>
-  visualRowsCount: number
+  visualRows: Row<SandboxWithMetrics>[]
 }
 
-export function TableBody({
+export const TableBody = memo(function TableBody({
   sandboxes,
   table,
-  visualRowsCount,
+  visualRows,
 }: TableBodyProps) {
-  'use no memo'
-
   const resetFilters = useSandboxTableStore((state) => state.resetFilters)
-
-  const centerRows = table.getCenterRows()
-
-  const visualRows = useMemo(() => {
-    return centerRows.slice(0, visualRowsCount)
-  }, [centerRows, visualRowsCount])
 
   const isEmpty = sandboxes && visualRows?.length === 0
 
-  const hasFilter =
-    Object.values(table.getState().columnFilters).some(
-      (filter) => filter.value !== undefined
-    ) || table.getState().globalFilter !== ''
+  const hasFilter = useMemo(() => {
+    return (
+      Object.values(table.getState().columnFilters).some(
+        (filter) => filter.value !== undefined
+      ) || table.getState().globalFilter !== ''
+    )
+  }, [table])
 
   if (isEmpty) {
     if (hasFilter) {
@@ -48,7 +40,7 @@ export function TableBody({
           description="No sandboxes match your current filters"
           message={
             <Button variant="default" onClick={resetFilters}>
-              Reset Filters <X className="size-4 text-accent" />
+              Reset Filters <X className="text-accent size-4" />
             </Button>
           }
           className="h-[70%] max-md:w-screen"
@@ -76,18 +68,8 @@ export function TableBody({
   return (
     <DataTableBody>
       {visualRows.map((row) => (
-        <DataTableRow
-          key={row.id}
-          isSelected={row.getIsSelected()}
-          className="cursor-pointer"
-        >
-          {row.getVisibleCells().map((cell) => (
-            <DataTableCell key={cell.id} cell={cell}>
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </DataTableCell>
-          ))}
-        </DataTableRow>
+        <TableRow key={row.id} row={row} />
       ))}
     </DataTableBody>
   )
-}
+})

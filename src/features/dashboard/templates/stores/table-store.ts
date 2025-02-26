@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { createHashStorage } from '@/lib/utils/store'
+import { trackTemplateTableInteraction } from '../table-config'
 
 interface TemplateTableState {
   // Table state
@@ -44,46 +45,81 @@ const initialState: TemplateTableState = {
 
 export const useTemplateTableStore = create<Store>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
 
       // Table actions
-      setSorting: (sorting) =>
+      setSorting: (sorting) => {
         set((state) => ({
           sorting:
             typeof sorting === 'function' ? sorting(state.sorting) : sorting,
-        })),
-      setGlobalFilter: (globalFilter) =>
-        set((state) => ({
-          globalFilter:
+        }))
+        trackTemplateTableInteraction('sorted', {
+          column_count: (typeof sorting === 'function'
+            ? sorting(get().sorting)
+            : sorting
+          ).length,
+        })
+      },
+      setGlobalFilter: (globalFilter) => {
+        set((state) => {
+          const newGlobalFilter =
             typeof globalFilter === 'function'
               ? globalFilter(state.globalFilter)
-              : globalFilter,
-        })),
+              : globalFilter
+
+          if (newGlobalFilter !== state.globalFilter) {
+            trackTemplateTableInteraction('searched', {
+              has_query: Boolean(newGlobalFilter),
+              query: newGlobalFilter,
+            })
+          }
+
+          return {
+            ...state,
+            globalFilter: newGlobalFilter,
+          }
+        })
+      },
 
       // Filter actions
-      setCpuCount: (value) =>
-        set((state) => ({
-          cpuCount: value,
-        })),
-      setMemoryMB: (value) =>
-        set((state) => ({
-          memoryMB: value,
-        })),
-      setIsPublic: (value) =>
-        set((state) => ({
-          isPublic: value,
-        })),
-      setCreatedAfter: (value) =>
-        set((state) => ({
-          createdAfter: value,
-        })),
-      setCreatedBefore: (value) =>
-        set((state) => ({
-          createdBefore: value,
-        })),
+      setCpuCount: (value) => {
+        set((state) => ({ cpuCount: value }))
+        trackTemplateTableInteraction('filtered', {
+          type: 'cpu',
+          value: value,
+        })
+      },
+      setMemoryMB: (value) => {
+        set((state) => ({ memoryMB: value }))
+        trackTemplateTableInteraction('filtered', {
+          type: 'memory',
+          value: value,
+        })
+      },
+      setIsPublic: (value) => {
+        set((state) => ({ isPublic: value }))
+        trackTemplateTableInteraction('filtered', {
+          type: 'public',
+          value: value,
+        })
+      },
+      setCreatedAfter: (value) => {
+        set((state) => ({ createdAfter: value }))
+        trackTemplateTableInteraction('filtered', {
+          type: 'created_after',
+          value: value,
+        })
+      },
+      setCreatedBefore: (value) => {
+        set((state) => ({ createdBefore: value }))
+        trackTemplateTableInteraction('filtered', {
+          type: 'created_before',
+          value: value,
+        })
+      },
 
-      resetFilters: () =>
+      resetFilters: () => {
         set({
           cpuCount: initialState.cpuCount,
           memoryMB: initialState.memoryMB,
@@ -91,7 +127,9 @@ export const useTemplateTableStore = create<Store>()(
           createdAfter: initialState.createdAfter,
           createdBefore: initialState.createdBefore,
           globalFilter: initialState.globalFilter,
-        }),
+        })
+        trackTemplateTableInteraction('reset filters')
+      },
     }),
     {
       name: 'state',

@@ -14,11 +14,11 @@ export default function HelpTooltip({ children }: HelpTooltipProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
-        <TooltipTrigger tabIndex={-1}>
-          <InfoIcon className="size-4 text-fg-500" />
+        <TooltipTrigger tabIndex={-1} type="button">
+          <InfoIcon className="text-fg-500 size-4" />
         </TooltipTrigger>
-        <TooltipContent className="max-w-[200px] p-2 text-xs text-fg-300">
-          <InfoIcon className="mb-2 size-4 text-fg-500" />
+        <TooltipContent className="text-fg-300 max-w-[200px] p-2 text-xs">
+          <InfoIcon className="text-fg-500 mb-2 size-4" />
           {children}
         </TooltipContent>
       </Tooltip>

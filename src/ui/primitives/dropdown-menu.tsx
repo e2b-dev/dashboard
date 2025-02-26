@@ -4,7 +4,6 @@ import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 
 import { cn } from '@/lib/utils'
-import { cardVariants } from '@/ui/primitives/card'
 import { ChevronRight } from 'lucide-react'
 import {
   menuContentStyles,
@@ -13,6 +12,7 @@ import {
   menuGroupStyles,
   menuItemVariants,
 } from './shared-menu-styles'
+import { VariantProps } from 'class-variance-authority'
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
@@ -35,15 +35,13 @@ const DropdownMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
     inset?: boolean
+    variant?: VariantProps<typeof menuItemVariants>['variant']
   }
->(({ className, inset, children, ...props }, ref) => (
+>(({ className, inset, children, variant, ...props }, ref) => (
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      'flex items-center gap-2 select-none',
-      'px-2 py-1.5 font-mono',
-      'text-xs tracking-wider',
-      'cursor-default outline-none',
+      menuItemVariants({ variant }),
       'data-[state=open]:bg-accent/10 data-[state=open]:text-accent',
       'focus:bg-accent/10 focus:text-accent',
       inset && 'pl-4',
@@ -64,19 +62,7 @@ const DropdownMenuSubContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
-    className={cn(
-      'z-50 mx-1 min-w-[8rem] overflow-hidden rounded-sm',
-      cardVariants({ variant: 'layer' }),
-      'shadow-sm',
-      'data-[state=open]:animate-in data-[state=closed]:animate-out',
-      'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-      'data-[side=bottom]:slide-in-from-top-2',
-      'data-[side=left]:slide-in-from-right-2',
-      'data-[side=right]:slide-in-from-left-2',
-      'data-[side=top]:slide-in-from-bottom-2',
-      className
-    )}
+    className={cn(menuContentStyles, 'animate-fade-slide-in', className)}
     {...props}
   />
 ))
@@ -92,11 +78,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       collisionPadding={collisionPadding}
-      className={cn(
-        menuContentStyles,
-        'animate-in fade-in-0 slide-in-from-bottom-1 duration-100',
-        className
-      )}
+      className={cn(menuContentStyles, 'animate-fade-slide-in', className)}
       {...props}
     >
       {props.children}
