@@ -1,6 +1,8 @@
-import 'server-only'
+import 'server-cli-only'
+
 import * as jose from 'jose'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 // Cache parsed key
 let encryptionKey: Buffer | null = null

@@ -1,4 +1,4 @@
-import 'server-only'
+import 'server-cli-only'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
