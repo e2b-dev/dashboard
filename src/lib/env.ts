@@ -6,6 +6,8 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.string().url(),
   DEVELOPMENT_INFRA_API_DOMAIN: z.string().optional(),
   COOKIE_ENCRYPTION_KEY: z.string(),
+
+  ZEROBOUNCE_API_KEY: z.string().optional(),
 })
 
 export const clientSchema = z.object({

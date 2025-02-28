@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { Provider } from '@supabase/supabase-js'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { logger } from '@/lib/clients/logger'
+import { validateEmail } from './validate-email'
 
 export const signInWithOAuth = async (
   provider: Provider,
@@ -71,11 +72,27 @@ export const signUpAction = async (formData: FormData) => {
     )
   }
 
+  const validationResult = await validateEmail(email)
+
+  if (validationResult && !validationResult.valid) {
+    return encodedRedirect(
+      'error',
+      AUTH_URLS.SIGN_UP,
+      'Please use a valid email address - your company email works best',
+      { returnTo }
+    )
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+      data: validationResult?.data
+        ? {
+            email_validation: validationResult?.data,
+          }
+        : undefined,
     },
   })
 
