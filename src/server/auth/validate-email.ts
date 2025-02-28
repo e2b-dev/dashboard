@@ -1,4 +1,6 @@
+import { KV_KEYS } from '@/configs/keys'
 import { ERROR_CODES } from '@/configs/logs'
+import { kv } from '@vercel/kv'
 
 /**
  * Response type from the ZeroBounce email validation API
@@ -88,4 +90,25 @@ export async function validateEmail(
     console.error(ERROR_CODES.EMAIL_VALIDATION, error)
     return null
   }
+}
+
+export const shouldWarnAboutAlternateEmail = async (
+  validationResult: EmailValidationResponse
+): Promise<boolean> => {
+  if (validationResult.sub_status === 'alternate') {
+    const warnedAlternateEmail = await kv.get(
+      KV_KEYS.WARNED_ALTERNATE_EMAIL(validationResult.address)
+    )
+
+    if (!warnedAlternateEmail) {
+      await kv.set(
+        KV_KEYS.WARNED_ALTERNATE_EMAIL(validationResult.address),
+        true
+      )
+
+      return true
+    }
+  }
+
+  return false
 }

@@ -8,8 +8,6 @@ import {
 import { StartedAtFilter } from '../table-filters'
 import { PollingInterval } from '@/types/dashboard'
 import { createHashStorage } from '@/lib/utils/store'
-import posthog from 'posthog-js'
-import { debounce } from '@/lib/utils'
 import { trackTableInteraction } from '../table-config'
 
 interface SandboxTableState {
