@@ -1,6 +1,5 @@
 'use client'
 
-import { forgotPasswordAction } from '@/server/auth/auth-actions'
 import {
   Card,
   CardContent,
@@ -9,15 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Button } from '@/ui/primitives/button'
 import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
-import { useAction } from 'next-safe-action/hooks'
-import {
-  defaultSuccessToast,
-  defaultErrorToast,
-  useToast,
-} from '@/lib/hooks/use-toast'
 import UserAccessToken from './user-access-token'
 
 interface AccessTokenSettingsProps {
@@ -26,19 +18,6 @@ interface AccessTokenSettingsProps {
 
 export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
   const { user } = useUser()
-  const { toast } = useToast()
-
-  const { execute: forgotPassword, isExecuting: isForgotPasswordPending } =
-    useAction(forgotPasswordAction, {
-      onSuccess: () => {
-        toast(defaultSuccessToast('Password reset e-mail sent.'))
-      },
-      onError: ({ error }) => {
-        toast(
-          defaultErrorToast(error.serverError || 'Failed to reset password.')
-        )
-      },
-    })
 
   if (!user) return null
 
