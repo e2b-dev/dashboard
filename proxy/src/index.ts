@@ -1,5 +1,5 @@
 const HOSTS = {
-	base: 'web-e2b.vercel.app',
+	base: 'web-lrw2cwmok.e2b-preview.dev',
 	landingPage: 'www.e2b-landing-page.com',
 	landingPageFramer: 'e2b-landing-page.framer.website',
 	blogFramer: 'e2b-blog.framer.website',
@@ -74,15 +74,16 @@ export default {
 			const res = await fetch(url.toString(), {
 				...request,
 				headers,
-				redirect: 'follow',
 			});
 
 			const contentType = res.headers.get('Content-Type');
 
 			if (contentType?.startsWith('text/html')) {
 				const rewriter = new HTMLRewriter()
-					.on('a', new AttributeRewriter('href', requestHostname, url.hostname))
-					.on('img', new AttributeRewriter('src', requestHostname, url.hostname));
+					.on('a', new AttributeRewriter('href', url.hostname, 'proxy.ben-0b6.workers.dev'))
+					.on('a', new AttributeRewriter('href', 'e2b.dev', 'proxy.ben-0b6.workers.dev'))
+					.on('img', new AttributeRewriter('src', url.hostname, 'proxy.ben-0b6.workers.dev'))
+					.on('img', new AttributeRewriter('src', 'e2b.dev', 'proxy.ben-0b6.workers.dev'));
 
 				return rewriter.transform(res);
 			}
