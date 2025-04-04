@@ -17,6 +17,7 @@ const config = {
       bodySizeLimit: '5mb',
     },
   },
+  assetPrefix: 'https://proxy.ben-0b6.workers.dev',
   trailingSlash: false,
   headers: async () => [
     {

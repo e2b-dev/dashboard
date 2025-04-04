@@ -51,17 +51,7 @@ export async function middleware(request: NextRequest) {
       )
     }
 
-    // 2. Handle URL rewrites first (early return for non-dashboard routes)
-    const rewriteResponse = await handleUrlRewrites(request, {
-      landingPage: LANDING_PAGE_DOMAIN,
-      landingPageFramer: LANDING_PAGE_FRAMER_DOMAIN,
-      blogFramer: BLOG_FRAMER_DOMAIN,
-      docsNext: DOCS_NEXT_DOMAIN,
-    })
-
-    if (rewriteResponse) return rewriteResponse
-
-    // 3. Refresh session and handle auth redirects
+    // 2. Refresh session and handle auth redirects
     const { error, data } = await getUserSession(supabase)
 
     // Handle authentication redirects
@@ -73,10 +63,10 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
-    // 4. Handle team resolution for all dashboard routes
+    // 3. Handle team resolution for all dashboard routes
     const teamResult = await resolveTeamForDashboard(request, data.user.id)
 
-    // 5. Process team resolution result
+    // 4. Process team resolution result
     return handleTeamResolution(request, response, teamResult)
   } catch (error) {
     // Return a basic response to avoid infinite loops
