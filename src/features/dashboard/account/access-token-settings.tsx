@@ -18,12 +18,13 @@ import {
   defaultErrorToast,
   useToast,
 } from '@/lib/hooks/use-toast'
+import UserAccessToken from './user-access-token'
 
-interface PasswordSettingsProps {
+interface AccessTokenSettingsProps {
   className?: string
 }
 
-export function PasswordSettings({ className }: PasswordSettingsProps) {
+export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
   const { user } = useUser()
   const { toast } = useToast()
 
@@ -44,27 +45,18 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
   return (
     <Card className={cn('overflow-hidden rounded-xs border', className)}>
       <CardHeader>
-        <CardTitle>Password</CardTitle>
-        <CardDescription>Change your account password.</CardDescription>
+        <CardTitle>Access Token</CardTitle>
+        <CardDescription>Manage your personal access token.</CardDescription>
       </CardHeader>
 
+      <CardContent>
+        <UserAccessToken className="max-w-lg" />
+      </CardContent>
+
       <CardFooter className="bg-bg-100 justify-between gap-6">
-        <p className="text-fg-500 text-sm">Sends a reset link.</p>
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (!user?.email) return
-
-            const formData = new FormData()
-            formData.set('email', user.email)
-            formData.set('callbackUrl', '/dashboard/account')
-
-            forgotPassword(formData)
-          }}
-          loading={isForgotPasswordPending}
-        >
-          Change Password
-        </Button>
+        <p className="text-fg-500 text-sm">
+          Keep it safe, as it can be used to authenticate with E2B services.
+        </p>
       </CardFooter>
     </Card>
   )

@@ -50,7 +50,12 @@ export function DangerZone({ className }: DangerZoneProps) {
   )
 
   return (
-    <Card variant="slate" className={cn('ring-error/50 ring-1', className)}>
+    <Card
+      className={cn(
+        'border-error/50 overflow-hidden rounded-xs border',
+        className
+      )}
+    >
       <CardHeader>
         <CardTitle>Danger Zone</CardTitle>
         <CardDescription>

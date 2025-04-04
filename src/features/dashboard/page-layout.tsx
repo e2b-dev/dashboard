@@ -11,6 +11,7 @@ interface DashboardPageLayoutProps {
   title: string
   className?: string
   fullscreen?: boolean
+  hideFrame?: boolean
   classNames?: {
     frameWrapper?: string
   }
@@ -22,6 +23,7 @@ export default async function DashboardPageLayout({
   className,
   classNames,
   fullscreen = false,
+  hideFrame = false,
 }: DashboardPageLayoutProps) {
   return (
     <div
@@ -49,6 +51,7 @@ export default async function DashboardPageLayout({
           fullscreen={fullscreen}
           classNames={classNames}
           className={className}
+          hideFrame={hideFrame}
         >
           {children}
         </DesktopContent>
@@ -65,6 +68,7 @@ interface ContentProps {
   }
   className?: string
   fullscreen?: boolean
+  hideFrame?: boolean
 }
 
 function DesktopContent({
@@ -72,6 +76,7 @@ function DesktopContent({
   classNames,
   className,
   fullscreen,
+  hideFrame,
 }: ContentProps) {
   return (
     <div
@@ -84,6 +89,15 @@ function DesktopContent({
     >
       {fullscreen ? (
         <div className={cn('h-full', className)}>{children}</div>
+      ) : hideFrame ? (
+        <div
+          className={cn(
+            'relative flex h-fit w-full max-w-[1200px] pb-2',
+            className
+          )}
+        >
+          {children}
+        </div>
       ) : (
         <Frame
           classNames={{

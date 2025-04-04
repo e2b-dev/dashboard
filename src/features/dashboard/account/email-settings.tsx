@@ -103,7 +103,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   if (!user) return null
 
   return (
-    <Card variant="slate" className={cn(className)}>
+    <Card className={cn('overflow-hidden rounded-xs border', className)}>
       <CardHeader>
         <CardTitle>E-Mail</CardTitle>
         <CardDescription>Update your e-mail address.</CardDescription>
@@ -135,7 +135,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="bg-bg-200 justify-between">
+      <CardFooter className="bg-bg-100 justify-between">
         <p className="text-fg-500 text-sm">Has to be a valid e-mail address.</p>
         <Button
           loading={isPending}

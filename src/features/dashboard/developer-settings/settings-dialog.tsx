@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import InfraDomainForm from './infra-domain-form'
-import UserAccessToken from './user-access-token'
 
 interface DeveloperSettingsDialogProps extends DialogProps {
   apiDomain?: string
@@ -33,7 +32,6 @@ export default function DeveloperSettingsDialog({
           </DialogDescription>
         </DialogHeader>
         <InfraDomainForm apiDomain={apiDomain} className="py-6" />
-        <UserAccessToken className="py-6" />
       </DialogContent>
     </Dialog>
   )

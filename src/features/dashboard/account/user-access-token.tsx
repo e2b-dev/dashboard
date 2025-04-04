@@ -39,12 +39,6 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
 
   return (
     <div className={className}>
-      <div className="flex h-5 items-center gap-2">
-        <Label>Access Token</Label>
-        <HelpTooltip>
-          Your personal access token for authenticating with E2B services.
-        </HelpTooltip>
-      </div>
       <div className="mt-2 flex items-center">
         <Input
           type={isVisible ? 'text' : 'password'}

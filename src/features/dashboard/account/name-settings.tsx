@@ -67,10 +67,15 @@ export function NameSettings({ className }: NameSettingsProps) {
   if (!user) return null
 
   return (
-    <Card variant="slate" className={cn(className)} hideUnderline>
+    <Card
+      className={cn('overflow-hidden rounded-xs border', className)}
+      hideUnderline
+    >
       <CardHeader>
-        <CardTitle>Your Name</CardTitle>
-        <CardDescription>Will be visible to your team members.</CardDescription>
+        <CardTitle>Name</CardTitle>
+        <CardDescription>
+          Update your account name, which will be visible to your team members.
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <Form {...form}>
@@ -95,7 +100,7 @@ export function NameSettings({ className }: NameSettingsProps) {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="bg-bg-200 justify-between">
+      <CardFooter className="bg-bg-100 justify-between">
         <p className="text-fg-500 text-sm">Max 32 characters.</p>
         <Button
           loading={isPending}
