@@ -9,7 +9,6 @@ import { logError } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 
 export const revalidate = 1800
-export const runtime = 'edge'
 
 const REVALIDATE_TIME = 1800 // 30 minutes ttl
 
