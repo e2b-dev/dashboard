@@ -8,6 +8,9 @@ import { ERROR_CODES } from '@/configs/logs'
 import { logError } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 
+export const revalidate = 1800
+export const dynamic = 'force-static'
+
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
   const requestHostname = url.hostname
@@ -52,6 +55,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const res = await fetch(url.toString(), {
       headers: new Headers(request.headers),
       redirect: 'follow',
+      cache: 'force-cache',
       next: {
         revalidate: 1800,
       },
@@ -66,6 +70,14 @@ export async function GET(request: NextRequest): Promise<Response> {
       // create new headers without content-encoding to ensure proper rendering
       const newHeaders = new Headers(res.headers)
       newHeaders.delete('content-encoding')
+
+      // add cache control headers if not already present
+      if (!newHeaders.has('cache-control')) {
+        newHeaders.set(
+          'cache-control',
+          'public, max-age=1800, s-maxage=1800, stale-while-revalidate=86400'
+        )
+      }
 
       return new Response(modifiedHtmlBody, {
         status: res.status,
