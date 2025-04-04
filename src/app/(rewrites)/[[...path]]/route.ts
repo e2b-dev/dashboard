@@ -9,7 +9,9 @@ import { logError } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 
 export const revalidate = 1800
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+
+const REVALIDATE_TIME = 1800 // 30 minutes ttl
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
@@ -52,12 +54,15 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   try {
+    const headers = new Headers(request.headers)
+    headers.delete('host') // prevent host header conflicts
+
     const res = await fetch(url.toString(), {
-      headers: new Headers(request.headers),
+      headers,
       redirect: 'follow',
       cache: 'force-cache',
       next: {
-        revalidate: 1800,
+        revalidate: REVALIDATE_TIME,
       },
     })
 
@@ -75,7 +80,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       if (!newHeaders.has('cache-control')) {
         newHeaders.set(
           'cache-control',
-          'public, max-age=1800, s-maxage=1800, stale-while-revalidate=86400'
+          `public, max-age=${REVALIDATE_TIME}, s-maxage=${REVALIDATE_TIME}, stale-while-revalidate=86400`
         )
       }
 
