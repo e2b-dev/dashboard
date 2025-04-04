@@ -8,9 +8,9 @@ import { ERROR_CODES } from '@/configs/logs'
 import { logError } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 
-export const revalidate = 1800
+export const revalidate = 900
 
-const REVALIDATE_TIME = 1800 // 30 minutes ttl
+const REVALIDATE_TIME = 900 // 15 minutes ttl
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
