@@ -4,16 +4,9 @@ import {
   getAuthRedirect,
   getUserSession,
   handleTeamResolution,
-  handleUrlRewrites,
   isDashboardRoute,
   resolveTeamForDashboard,
 } from './server/middleware'
-import {
-  LANDING_PAGE_DOMAIN,
-  LANDING_PAGE_FRAMER_DOMAIN,
-  BLOG_FRAMER_DOMAIN,
-  DOCS_NEXT_DOMAIN,
-} from '@/configs/domains'
 import { PROTECTED_URLS } from './configs/urls'
 
 // Main middleware function

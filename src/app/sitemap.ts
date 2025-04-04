@@ -15,7 +15,6 @@ import {
   LANDING_PAGE_FRAMER_DOMAIN,
 } from '@/configs/domains'
 import { BLOG_FRAMER_DOMAIN } from '@/configs/domains'
-import { BASE_URL } from '@/configs/urls'
 
 // Cache the sitemap for 24 hours (in seconds)
 const SITEMAP_CACHE_TIME = 24 * 60 * 60
