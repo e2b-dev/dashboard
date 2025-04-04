@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
@@ -27,7 +28,7 @@ import { useToast } from '@/lib/hooks/use-toast'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name cannot be empty'),
+  name: z.string().min(1, 'Name cannot be empty').max(32, 'Max 32 characters'),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -91,17 +92,19 @@ export function NameSettings({ className }: NameSettingsProps) {
                 </FormItem>
               )}
             />
-            <Button
-              variant="outline"
-              loading={isPending}
-              disabled={form.watch('name') === user?.user_metadata?.name}
-              type="submit"
-            >
-              Save
-            </Button>
           </form>
         </Form>
       </CardContent>
+      <CardFooter className="bg-bg-200 justify-between">
+        <p className="text-fg-500 text-sm">Max 32 characters.</p>
+        <Button
+          loading={isPending}
+          disabled={form.watch('name') === user?.user_metadata?.name}
+          type="submit"
+        >
+          Save
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

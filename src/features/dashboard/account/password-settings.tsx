@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
@@ -44,12 +45,11 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
     <Card variant="slate" className={cn(className)}>
       <CardHeader>
         <CardTitle>Password</CardTitle>
-        <CardDescription>
-          Change your account password used to sign in.
-        </CardDescription>
+        <CardDescription>Change your account password.</CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardFooter className="bg-bg-200 justify-between gap-6">
+        <p className="text-fg-500 text-sm">Sends a reset link.</p>
         <Button
           variant="outline"
           onClick={() => {
@@ -65,7 +65,7 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
         >
           Change Password
         </Button>
-      </CardContent>
+      </CardFooter>
     </Card>
   )
 }

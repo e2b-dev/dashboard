@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
@@ -131,17 +132,19 @@ export function EmailSettings({ className }: EmailSettingsProps) {
                 </FormItem>
               )}
             />
-            <Button
-              loading={isPending}
-              disabled={form.watch('email') === user?.email}
-              type="submit"
-              variant="outline"
-            >
-              Save
-            </Button>
           </form>
         </Form>
       </CardContent>
+      <CardFooter className="bg-bg-200 justify-between">
+        <p className="text-fg-500 text-sm">Has to be a valid e-mail address.</p>
+        <Button
+          loading={isPending}
+          disabled={form.watch('email') === user?.email}
+          type="submit"
+        >
+          Save
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

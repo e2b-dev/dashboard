@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
@@ -49,22 +50,24 @@ export function DangerZone({ className }: DangerZoneProps) {
   )
 
   return (
-    <Card variant="slate" className={cn(className)}>
+    <Card variant="slate" className={cn('ring-error/50 ring-1', className)}>
       <CardHeader>
         <CardTitle>Danger Zone</CardTitle>
         <CardDescription>
-          Delete your account and all associated data.
+          This action is irreversible. It will delete your account and all
+          associated data.
         </CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardFooter className="bg-error/5 border-error justify-between gap-6">
+        <p className="text-error-fg text-sm">Continue with caution.</p>
         <AlertDialog
           trigger={<Button variant="error">Delete Account</Button>}
           title="Delete Account"
           description={
             <>
-              This action cannot be undone. This will permanently delete your
-              account and remove your data from our servers.
+              This will permanently delete your account and remove your data
+              from our servers.
             </>
           }
           confirm="Delete Account"
@@ -87,7 +90,7 @@ export function DangerZone({ className }: DangerZoneProps) {
             />
           </>
         </AlertDialog>
-      </CardContent>
+      </CardFooter>
     </Card>
   )
 }
