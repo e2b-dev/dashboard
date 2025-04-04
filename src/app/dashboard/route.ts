@@ -14,6 +14,7 @@ const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   keys: (teamId) => PROTECTED_URLS.KEYS(teamId),
   team: (teamId) => PROTECTED_URLS.TEAM(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
+  personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
 }
 
 export async function GET(request: NextRequest) {
