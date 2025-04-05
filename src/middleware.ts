@@ -78,8 +78,8 @@ export const config = {
      * - favicon.ico (favicon file)
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
      * - api routes
-     * Feel free to modify this pattern to include more paths.
+     * - paths handled by the catchall route.ts (terms, privacy, pricing, cookbook, changelog, blog, ai-agents, docs)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|terms|privacy|pricing|cookbook|changelog|blog|ai-agents|docs|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

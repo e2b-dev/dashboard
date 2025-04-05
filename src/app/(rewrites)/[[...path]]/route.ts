@@ -53,13 +53,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   try {
-    const headers = new Headers(request.headers)
-    headers.delete('host') // prevent host header conflicts
-
     const res = await fetch(url.toString(), {
-      headers,
+      headers: new Headers(request.headers),
       redirect: 'follow',
-      cache: 'force-cache',
       next: {
         revalidate: REVALIDATE_TIME,
       },
@@ -74,14 +70,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       // create new headers without content-encoding to ensure proper rendering
       const newHeaders = new Headers(res.headers)
       newHeaders.delete('content-encoding')
-
-      // add cache control headers if not already present
-      if (!newHeaders.has('cache-control')) {
-        newHeaders.set(
-          'cache-control',
-          `public, max-age=${REVALIDATE_TIME}, s-maxage=${REVALIDATE_TIME}, stale-while-revalidate=86400`
-        )
-      }
 
       return new Response(modifiedHtmlBody, {
         status: res.status,
