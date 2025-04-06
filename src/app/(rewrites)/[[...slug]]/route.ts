@@ -5,7 +5,6 @@ import {
   replaceUrls,
 } from '@/configs/domains'
 import { ERROR_CODES } from '@/configs/logs'
-import { logDebug } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
@@ -52,6 +51,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   try {
+    // if hostname did not change, we want to make sure it does not cache the route based on the build times hostname (127.0.0.1:3000)
     const fetchUrl =
       url.hostname === requestHostname
         ? `${BASE_URL}/not-found`
@@ -60,7 +60,14 @@ export async function GET(request: NextRequest): Promise<Response> {
     const res = await fetch(fetchUrl, {
       headers: new Headers(request.headers),
       redirect: 'follow',
-      cache: 'no-store',
+      // if the hostname is the same, we don't want to cache the response, since it will not be available in build time
+      ...(url.hostname === requestHostname
+        ? { cache: 'no-store' }
+        : {
+            next: {
+              revalidate: REVALIDATE_TIME,
+            },
+          }),
     })
 
     const contentType = res.headers.get('Content-Type')
@@ -103,12 +110,6 @@ export async function generateStaticParams() {
 
     return { slug: pathSegments.length > 0 ? pathSegments : undefined }
   })
-
-  logDebug(
-    'SLUGS',
-    slugs.map((slug) => slug.slug?.join('/')).join(`
-    `)
-  )
 
   return slugs
 }

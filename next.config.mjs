@@ -17,11 +17,6 @@ const config = {
       bodySizeLimit: '5mb',
     },
   },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
   trailingSlash: false,
   headers: async () => [
     {
