@@ -8,7 +8,7 @@ import { ERROR_CODES } from '@/configs/logs'
 import { logDebug } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
-import { notFound } from 'next/navigation'
+import { BASE_URL } from '@/configs/urls'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -51,12 +51,13 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
   }
 
-  if (url.hostname === requestHostname) {
-    url.pathname = '/not-found'
-  }
-
   try {
-    const res = await fetch(url.toString(), {
+    const fetchUrl =
+      url.hostname === requestHostname
+        ? `${BASE_URL}/not-found`
+        : url.toString()
+
+    const res = await fetch(fetchUrl, {
       headers: new Headers(request.headers),
       redirect: 'follow',
       cache: 'no-store',
@@ -103,7 +104,11 @@ export async function generateStaticParams() {
     return { slug: pathSegments.length > 0 ? pathSegments : undefined }
   })
 
-  logDebug('SLUGS', slugs.join('/'))
+  logDebug(
+    'SLUGS',
+    slugs.map((slug) => slug.slug?.join('/')).join(`
+    `)
+  )
 
   return slugs
 }

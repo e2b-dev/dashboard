@@ -5,10 +5,13 @@ export const serverSchema = z.object({
   COOKIE_ENCRYPTION_KEY: z.string().min(32),
 
   BILLING_API_URL: z.string().url().optional(),
-  VERCEL_URL: z.string().optional(),
   DEVELOPMENT_INFRA_API_DOMAIN: z.string().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
+  VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
+  VERCEL_URL: z.string().optional(),
+  VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
+  VERCEL_BRANCH_URL: z.string().optional(),
 })
 
 export const clientSchema = z.object({
