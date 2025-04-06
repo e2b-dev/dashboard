@@ -5,9 +5,11 @@ import {
   replaceUrls,
 } from '@/configs/domains'
 import { ERROR_CODES } from '@/configs/logs'
-import { logError } from '@/lib/clients/logger'
+import { logDebug, logError } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
+import sitemap from '@/app/sitemap'
 
+export const dynamic = 'force-static'
 export const revalidate = 900
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return res
   } catch (error) {
-    logError(ERROR_CODES.URL_REWRITE, error)
+    console.error(ERROR_CODES.URL_REWRITE, error)
 
     return new Response(
       `Proxy Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -89,4 +91,20 @@ export async function GET(request: NextRequest): Promise<Response> {
       }
     )
   }
+}
+
+export async function generateStaticParams() {
+  const sitemapEntries = await sitemap()
+
+  const slugs = sitemapEntries.map((entry) => {
+    const url = new URL(entry.url)
+    const pathname = url.pathname
+    const pathSegments = pathname.split('/').filter((segment) => segment !== '')
+
+    return { slug: pathSegments.length > 0 ? pathSegments : undefined }
+  })
+
+  logDebug('SLUGS', slugs)
+
+  return slugs
 }
