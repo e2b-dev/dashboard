@@ -8,8 +8,10 @@ import { ERROR_CODES } from '@/configs/logs'
 import { logDebug } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
+import { notFound } from 'next/navigation'
 
 export const revalidate = 900
+export const dynamic = 'force-static'
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
 
@@ -57,9 +59,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const res = await fetch(url.toString(), {
       headers: new Headers(request.headers),
       redirect: 'follow',
-      next: {
-        revalidate: REVALIDATE_TIME,
-      },
+      cache: 'no-store',
     })
 
     const contentType = res.headers.get('Content-Type')
@@ -103,7 +103,7 @@ export async function generateStaticParams() {
     return { slug: pathSegments.length > 0 ? pathSegments : undefined }
   })
 
-  logDebug('SLUGS', slugs)
+  logDebug('SLUGS', slugs.join('/'))
 
   return slugs
 }
