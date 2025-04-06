@@ -5,11 +5,10 @@ import {
   replaceUrls,
 } from '@/configs/domains'
 import { ERROR_CODES } from '@/configs/logs'
-import { logDebug, logError } from '@/lib/clients/logger'
+import { logDebug } from '@/lib/clients/logger'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 
-export const dynamic = 'force-static'
 export const revalidate = 900
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
