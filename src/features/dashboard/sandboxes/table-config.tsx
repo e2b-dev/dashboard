@@ -337,5 +337,10 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     // @ts-expect-error dateRange is not a valid filterFn
     filterFn: 'dateRange',
     enableColumnFilter: true,
+    sortingFn: (rowA, rowB) => {
+      const dateA = new Date(rowA.original.startedAt).getTime();
+      const dateB = new Date(rowB.original.startedAt).getTime();
+      return dateA - dateB;
+    },
   },
 ]

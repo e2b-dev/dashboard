@@ -171,7 +171,7 @@ export default function SandboxesTable({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
-    enableMultiSort: true,
+    enableMultiSort: false,
     columnResizeMode: 'onChange' as const,
     enableColumnResizing: true,
     keepPinnedRows: true,

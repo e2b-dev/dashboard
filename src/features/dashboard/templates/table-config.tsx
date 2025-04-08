@@ -300,11 +300,24 @@ export const useColumns = (deps: unknown[]) => {
         header: 'Created At',
         size: 250,
         minSize: 140,
-        cell: ({ getValue }) => (
-          <div className="text-fg-500 truncate font-mono text-xs">
-            {getValue() as string}
-          </div>
-        ),
+        cell: ({ row, getValue }) => {
+          const dateTimeString = getValue() as string
+          // Split the date and time parts
+          const [day, date, month, year, time, timezone] = dateTimeString.split(' ')
+
+          return (
+            <div className={cn('h-full truncate font-mono text-xs')}>
+              <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+              <span className="text-fg">{time}</span>{' '}
+              <span className="text-fg-500">{timezone}</span>
+            </div>
+          )
+        },
+        sortingFn: (rowA, rowB) => {
+          const dateA = new Date(rowA.original.createdAt).getTime();
+          const dateB = new Date(rowB.original.createdAt).getTime();
+          return dateA - dateB;
+        },
       },
       {
         accessorFn: (row) => new Date(row.updatedAt).toUTCString(),
@@ -313,11 +326,24 @@ export const useColumns = (deps: unknown[]) => {
         size: 250,
         minSize: 140,
         enableGlobalFilter: true,
-        cell: ({ getValue }) => (
-          <div className="text-fg-500 truncate font-mono text-xs">
-            {getValue() as string}
-          </div>
-        ),
+        cell: ({ row, getValue }) => {
+          const dateTimeString = getValue() as string
+          // Split the date and time parts
+          const [day, date, month, year, time, timezone] = dateTimeString.split(' ')
+
+          return (
+            <div className={cn('h-full truncate font-mono text-xs')}>
+              <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+              <span className="text-fg">{time}</span>{' '}
+              <span className="text-fg-500">{timezone}</span>
+            </div>
+          )
+        },
+        sortingFn: (rowA, rowB) => {
+          const dateA = new Date(rowA.original.updatedAt).getTime();
+          const dateB = new Date(rowB.original.updatedAt).getTime();
+          return dateA - dateB;
+        },
       },
       {
         accessorKey: 'public',
@@ -351,7 +377,7 @@ export const templatesTableConfig: Partial<
   getFilteredRowModel: getFilteredRowModel(),
   getSortedRowModel: getSortedRowModel(),
   enableSorting: true,
-  enableMultiSort: true,
+  enableMultiSort: false,
   columnResizeMode: 'onChange',
   enableColumnResizing: true,
   enableGlobalFilter: true,
