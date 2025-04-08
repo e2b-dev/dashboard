@@ -294,16 +294,22 @@ export const useColumns = (deps: unknown[]) => {
         filterFn: 'equals',
       },
       {
-        accessorFn: (row) => new Date(row.createdAt).toUTCString(),
+        accessorKey: 'createdAt',
         enableGlobalFilter: true,
         id: 'createdAt',
         header: 'Created At',
         size: 250,
         minSize: 140,
         cell: ({ row, getValue }) => {
-          const dateTimeString = getValue() as string
-          // Split the date and time parts
-          const [day, date, month, year, time, timezone] = dateTimeString.split(' ')
+          const dateValue = getValue() as string;
+
+          const dateTimeString = useMemo(() => {
+            return new Date(dateValue).toUTCString();
+          }, [dateValue]);
+
+          const [day, date, month, year, time, timezone] = useMemo(() => {
+            return dateTimeString.split(' ');
+          }, [dateTimeString]);
 
           return (
             <div className={cn('h-full truncate font-mono text-xs')}>
@@ -314,22 +320,26 @@ export const useColumns = (deps: unknown[]) => {
           )
         },
         sortingFn: (rowA, rowB) => {
-          const dateA = new Date(rowA.original.createdAt).getTime();
-          const dateB = new Date(rowB.original.createdAt).getTime();
-          return dateA - dateB;
+          return rowA.original.createdAt.localeCompare(rowB.original.createdAt);
         },
       },
       {
-        accessorFn: (row) => new Date(row.updatedAt).toUTCString(),
+        accessorKey: 'updatedAt',
         id: 'updatedAt',
         header: 'Updated At',
         size: 250,
         minSize: 140,
         enableGlobalFilter: true,
         cell: ({ row, getValue }) => {
-          const dateTimeString = getValue() as string
-          // Split the date and time parts
-          const [day, date, month, year, time, timezone] = dateTimeString.split(' ')
+          const dateValue = getValue() as string;
+
+          const dateTimeString = useMemo(() => {
+            return new Date(dateValue).toUTCString();
+          }, [dateValue]);
+
+          const [day, date, month, year, time, timezone] = useMemo(() => {
+            return dateTimeString.split(' ');
+          }, [dateTimeString]);
 
           return (
             <div className={cn('h-full truncate font-mono text-xs')}>
@@ -340,9 +350,7 @@ export const useColumns = (deps: unknown[]) => {
           )
         },
         sortingFn: (rowA, rowB) => {
-          const dateA = new Date(rowA.original.updatedAt).getTime();
-          const dateB = new Date(rowB.original.updatedAt).getTime();
-          return dateA - dateB;
+          return rowA.original.updatedAt.localeCompare(rowB.original.updatedAt);
         },
       },
       {
