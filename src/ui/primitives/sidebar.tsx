@@ -31,6 +31,7 @@ const SIDEBAR_WIDTH = '16rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
 const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
+export const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-200 ease-in-out'
 
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed'
@@ -126,6 +127,11 @@ function SidebarProvider({
     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
   )
 
+  const activeSidebarWidth = React.useMemo(
+    () => (open ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON),
+    [open]
+  )
+
   return (
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
@@ -135,6 +141,7 @@ function SidebarProvider({
             {
               '--sidebar-width': SIDEBAR_WIDTH,
               '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
+              '--sidebar-width-active': activeSidebarWidth,
               ...style,
             } as React.CSSProperties
           }
@@ -220,7 +227,8 @@ function Sidebar({
       <div
         data-slot="sidebar-gap"
         className={cn(
-          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+          'relative w-(--sidebar-width) bg-transparent transition-[width]',
+          SIDEBAR_TRANSITION_CLASSNAMES,
           'group-data-[collapsible=offcanvas]:w-0',
           'group-data-[side=right]:rotate-180',
           variant === 'floating' || variant === 'inset'
@@ -231,7 +239,8 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
+          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] md:flex',
+          SIDEBAR_TRANSITION_CLASSNAMES,
           side === 'left'
             ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
             : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
