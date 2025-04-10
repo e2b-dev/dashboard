@@ -3,21 +3,30 @@
 import { cn } from '@/lib/utils'
 import Logo from '@/ui/logo'
 import { Button } from '@/ui/primitives/button'
-import { SidebarHeader, useSidebar } from '@/ui/primitives/sidebar'
+import {
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  useSidebar,
+} from '@/ui/primitives/sidebar'
 import { ArrowLeftToLine, ArrowRightFromLine } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import DashboardSidebarMenu from './menu'
+import DashboardSidebarSearch from './search'
 
 export default function DashboardSidebarHeader() {
   const { toggleSidebar, open } = useSidebar()
 
   return (
-    <SidebarHeader>
+    <SidebarHeader className="p-0">
       <div
-        className={cn('flex items-center justify-between', {
-          // When the sidebar is closing, we want to stick the logo to the right.
-          'justify-end': !open,
-        })}
+        className={cn(
+          'flex h-[var(--protected-nav-height)] items-center justify-between border-b px-2',
+          {
+            // When the sidebar is closing, we want to stick the logo to the right.
+            'justify-end': !open,
+          }
+        )}
       >
         {/* When the sidebar is closing, we want the logo to fade out AND be removed from the DOM. */}
         <AnimatePresence initial={false} mode="popLayout">
@@ -31,7 +40,7 @@ export default function DashboardSidebarHeader() {
               animate="visible"
               exit="hidden"
             >
-              <Logo className="h-8" />
+              <Logo />
             </motion.span>
           )}
         </AnimatePresence>
@@ -43,7 +52,12 @@ export default function DashboardSidebarHeader() {
           )}
         </Button>
       </div>
-      <DashboardSidebarMenu />
+      <SidebarGroup className="pt-0">
+        <SidebarMenu className="flex flex-col gap-2">
+          <DashboardSidebarMenu />
+          <DashboardSidebarSearch />
+        </SidebarMenu>
+      </SidebarGroup>
     </SidebarHeader>
   )
 }

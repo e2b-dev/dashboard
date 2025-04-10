@@ -1,6 +1,5 @@
 'use client'
 
-import { Input } from '@/ui/primitives/input'
 import { cn } from '@/lib/utils'
 import {
   CommandDialog,
@@ -13,15 +12,16 @@ import {
 import { useEffect, useState } from 'react'
 import { MAIN_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
 import { useRouter } from 'next/navigation'
-import { Kbd } from '@/ui/primitives/kbd'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { Button } from '@/ui/primitives/button'
+import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
+import { ChevronRight, Search, Terminal } from 'lucide-react'
+import { Kbd } from '@/ui/primitives/kbd'
 
 interface SearchProps {
   className?: string
 }
 
-export default function Search({ className }: SearchProps) {
+export default function DashboardSidebarSearch({ className }: SearchProps) {
   const [open, setOpen] = useState(false)
   const selectedTeam = useSelectedTeam()
   const router = useRouter()
@@ -45,22 +45,18 @@ export default function Search({ className }: SearchProps) {
   }, [])
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        className={cn(
-          'h-10 w-full justify-start text-xs text-fg-300',
-          className
-        )}
-        onClick={() => setOpen(true)}
-      >
-        QUICK NAVIGATE
-      </Button>
-      <Kbd
-        keys={['cmd', 'k']}
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2"
-      />
-
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          variant="outline"
+          className={cn('text-fg-500 h-10', className)}
+          onClick={() => setOpen(true)}
+        >
+          <Search className="size-5" />
+          Search
+          <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Quick Jump to..." />
         <CommandList className="p-1 pb-3">
@@ -80,13 +76,13 @@ export default function Search({ className }: SearchProps) {
                 }}
                 className="group"
               >
-                <link.icon className="!size-4 text-fg-500 group-[&[data-selected=true]]:text-accent" />
+                <link.icon className="text-fg-500 group-[&[data-selected=true]]:text-accent !size-4" />
                 {link.label}
               </CommandItem>
             ))}
           </CommandGroup>
         </CommandList>
       </CommandDialog>
-    </div>
+    </>
   )
 }
