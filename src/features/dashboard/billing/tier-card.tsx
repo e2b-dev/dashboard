@@ -63,7 +63,7 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
         <ul className="mb-4 space-y-1 pl-4">
           {tier.prose.map((prose, i) => (
             <li
-              className="text-fg-500 font-sans text-xs"
+              className="text-fg-500 marker:text-accent-200 pl-2 font-sans text-xs marker:content-['▪']"
               key={`tier-${tier.id}-prose-${i}`}
             >
               {prose}

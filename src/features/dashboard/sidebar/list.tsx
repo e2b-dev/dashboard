@@ -1,9 +1,20 @@
+'use client'
+
 import { DashboardNavLink } from '@/configs/dashboard-navs'
 import { MAIN_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
 import { cn } from '@/lib/utils'
-import { cookies } from 'next/headers'
-import { COOKIE_KEYS } from '@/configs/keys'
-import { SidebarItem } from './item'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import Link from 'next/link'
+import { useMemo } from 'react'
+
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/ui/primitives/sidebar'
+import { usePathname } from 'next/navigation'
 
 type GroupedLinks = {
   [key: string]: DashboardNavLink[]
@@ -20,44 +31,56 @@ const createGroupedLinks = (links: DashboardNavLink[]): GroupedLinks => {
   }, {} as GroupedLinks)
 }
 
-interface SidebarListProps {
-  className?: string
-}
+export default function SidebarList() {
+  const selectedTeam = useSelectedTeam()
+  const selectedTeamIdentifier = selectedTeam?.slug ?? selectedTeam?.id
+  const pathname = usePathname()
 
-export default async function SidebarList({ className }: SidebarListProps) {
-  const cookiesStore = await cookies()
+  const groupedNavLinks = useMemo(
+    () => createGroupedLinks(MAIN_DASHBOARD_LINKS),
+    []
+  )
 
-  const selectedTeamIdentifier =
-    cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value ||
-    cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
-
-  const groupedNavLinks = createGroupedLinks(MAIN_DASHBOARD_LINKS)
+  const isActive = (href: string) => {
+    return href === pathname
+  }
 
   return (
-    <nav className={cn('relative h-full', className)}>
+    <>
       {Object.entries(groupedNavLinks).map(([group, links]) => (
-        <div key={group} className="mt-6 flex w-full flex-col gap-1 first:mt-0">
+        <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
-            <span className="text-fg-500 mb-2 ml-2 font-mono text-xs uppercase">
-              {group}
-            </span>
+            <SidebarGroupLabel>{group}</SidebarGroupLabel>
           )}
-          {links.map((item) => {
-            const href = item.href({
-              teamIdOrSlug: selectedTeamIdentifier ?? undefined,
-            })
+          <SidebarMenu>
+            {links.map((item) => {
+              const href = item.href({
+                teamIdOrSlug: selectedTeamIdentifier ?? undefined,
+              })
 
-            return (
-              <SidebarItem
-                key={item.label}
-                label={item.label}
-                href={href}
-                icon={<item.icon className={cn('text-fg-500 mr-2 w-4')} />}
-              />
-            )
-          })}
-        </div>
+              return (
+                <SidebarMenuItem key={item.label}>
+                  <SidebarMenuButton
+                    variant={isActive(href) ? 'active' : 'default'}
+                    asChild
+                    tooltip={item.label}
+                  >
+                    <Link href={href}>
+                      <item.icon
+                        className={cn(
+                          'text-fg-500 w-4',
+                          isActive(href) && 'text-accent/80'
+                        )}
+                      />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
       ))}
-    </nav>
+    </>
   )
 }

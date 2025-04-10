@@ -20,7 +20,7 @@ export default async function Page({ params }: PageProps) {
   const { teamIdOrSlug } = await params
 
   return (
-    <DashboardPageLayout title="Active Sandboxes" fullscreen>
+    <DashboardPageLayout title="Sandboxes" fullscreen>
       <Suspense fallback={<LoadingLayout />}>
         <PageContent teamIdOrSlug={teamIdOrSlug} />
       </Suspense>

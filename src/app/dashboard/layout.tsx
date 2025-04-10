@@ -9,6 +9,7 @@ import {
 } from '@/lib/utils/server'
 import { getUserTeams } from '@/server/team/get-team'
 import { getSessionInsecure } from '@/server/auth/get-session'
+import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -40,16 +41,18 @@ export default async function DashboardLayout({
       teams={res?.data}
       user={session!.user}
     >
-      <div className="fixed inset-0 flex max-h-full w-full flex-col overflow-hidden">
-        <NetworkStateBanner />
-        <div className="flex h-full max-h-full w-full flex-1 overflow-hidden">
-          <Sidebar className="max-md:hidden" />
-          <main className="flex-1">{children}</main>
-          <Suspense fallback={null}>
-            <DashboardTitleProvider />
-          </Suspense>
+      <SidebarProvider>
+        <div className="fixed inset-0 flex max-h-full w-full flex-col overflow-hidden">
+          <NetworkStateBanner />
+          <div className="flex h-full max-h-full w-full flex-1 overflow-hidden">
+            <Sidebar />
+            <SidebarInset>{children}</SidebarInset>
+          </div>
         </div>
-      </div>
+        <Suspense fallback={null}>
+          <DashboardTitleProvider />
+        </Suspense>
+      </SidebarProvider>
     </ServerContextProvider>
   )
 }

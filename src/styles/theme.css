@@ -54,6 +54,15 @@
   --color-contrast-1: var(--contrast-1);
   --color-contrast-2: var(--contrast-2);
 
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
   --shadow-xs: 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
   --shadow-sm: 0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
   --shadow-md: 0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
