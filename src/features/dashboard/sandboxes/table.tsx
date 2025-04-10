@@ -217,14 +217,14 @@ export default function SandboxesTable({
 
       <div
         className={cn(
-          'bg-bg mt-4 max-w-[calc(100svw-var(--sidebar-width-active))] flex-1 overflow-x-auto',
+          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         {isMounted && (
           <DataTable
             className={cn(
-              'h-full min-w-[calc(100svw-var(--sidebar-width-active))] overflow-y-auto',
+              'h-full overflow-y-auto md:min-w-[calc(100svw-var(--sidebar-width-active))]',
               SIDEBAR_TRANSITION_CLASSNAMES
             )}
             onScroll={handleBottomReached}
