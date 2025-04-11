@@ -90,7 +90,7 @@ export default function DashboardSidebarMenu({
                 TEAM
               </span>
               {selectedTeam ? (
-                <span className="truncate font-sans text-sm normal-case">
+                <span className="text-fg truncate font-sans text-sm normal-case">
                   {selectedTeam.name}
                 </span>
               ) : (
