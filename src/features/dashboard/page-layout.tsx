@@ -96,7 +96,7 @@ function DesktopContent({
     <div
       className={cn(
         'relative z-0 flex-1 max-md:hidden',
-        'flex justify-center overflow-y-auto p-4 md:p-12 lg:p-18 xl:p-24'
+        'flex justify-center overflow-y-auto p-4 md:p-8 2xl:p-24'
       )}
     >
       {hideFrame ? (
