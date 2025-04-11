@@ -147,7 +147,7 @@
   --sidebar-foreground: var(--fg-300);
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: var(--accent-fg);
-  --sidebar-accent: var(--bg-200);
+  --sidebar-accent: var(--bg-100);
   --sidebar-accent-foreground: var(--fg-300);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--accent);
