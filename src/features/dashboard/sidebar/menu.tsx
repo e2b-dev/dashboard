@@ -73,15 +73,15 @@ export default function DashboardSidebarMenu({
             )}
           >
             <Avatar
-              className={cn('size-9 shrink-0 transition-all duration-300', {
-                'border-none drop-shadow-lg filter':
+              className={cn('size-8 shrink-0 transition-all duration-300', {
+                'border-0 drop-shadow-lg filter':
                   selectedTeam?.profile_picture_url,
               })}
             >
               <AvatarImage
                 src={selectedTeam?.profile_picture_url || undefined}
               />
-              <AvatarFallback className="bg-bg-100">
+              <AvatarFallback className="bg-bg-200 border-0">
                 {selectedTeam?.name?.charAt(0).toUpperCase() || '?'}
               </AvatarFallback>
             </Avatar>
@@ -97,22 +97,6 @@ export default function DashboardSidebarMenu({
                 <Skeleton className="h-4 w-full" />
               )}
             </div>
-            {/*
-              <ClientOnly className="h-full w-full">
-                <div className="flex max-w-[160px] flex-1 flex-col items-start gap-1 overflow-hidden pb-px text-left [&>span]:max-w-full [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap">
-                  <span className="text-fg-500 -mb-1 w-full text-left text-[0.75rem]">
-                    TEAM
-                  </span>
-                  {selectedTeam ? (
-                    <span className="font-sans text-sm normal-case">
-                      {selectedTeam.name}
-                    </span>
-                  ) : (
-                    <Skeleton className="h-4 w-full" />
-                  )}
-                </div>
-              </ClientOnly> */}
-
             <ChevronsUpDown className="text-fg-500 ml-auto size-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>

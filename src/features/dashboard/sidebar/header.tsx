@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import Logo from '@/ui/logo'
 import { Button } from '@/ui/primitives/button'
 import {
+  SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,

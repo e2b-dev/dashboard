@@ -48,6 +48,7 @@ export default function DashboardSidebarSearch({ className }: SearchProps) {
     <>
       <SidebarMenuItem>
         <SidebarMenuButton
+          tooltip="Search"
           variant="outline"
           className={cn('text-fg-500 h-10', className)}
           onClick={() => setOpen(true)}

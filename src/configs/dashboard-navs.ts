@@ -1,5 +1,6 @@
 import {
   Activity,
+  Box,
   Container,
   CreditCard,
   DollarSign,
@@ -29,7 +30,7 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
   {
     label: 'Sandboxes',
     href: (args) => `/dashboard/${args.teamIdOrSlug}/sandboxes`,
-    icon: PackageOpen,
+    icon: Box,
   },
   {
     label: 'Templates',

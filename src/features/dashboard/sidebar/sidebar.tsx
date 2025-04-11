@@ -1,20 +1,13 @@
-import SidebarList from './list'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarProps,
-  SidebarRail,
-} from '@/ui/primitives/sidebar'
+import { Sidebar, SidebarProps, SidebarRail } from '@/ui/primitives/sidebar'
 import DashboardSidebarHeader from './header'
 import DashboardSidebarFooter from './footer'
+import DashboardSidebarContent from './content'
 
 export default function DashboardSidebar({ ...props }: SidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <DashboardSidebarHeader />
-      <SidebarContent>
-        <SidebarList />
-      </SidebarContent>
+      <DashboardSidebarContent />
       <DashboardSidebarFooter />
       <SidebarRail />
     </Sidebar>

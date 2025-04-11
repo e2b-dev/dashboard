@@ -25,13 +25,13 @@ import {
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
 
-const SIDEBAR_COOKIE_NAME = 'sidebar_state'
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = '16rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
 const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
-export const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-200 ease-in-out'
+const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-200 ease-in-out'
+
+export { SIDEBAR_TRANSITION_CLASSNAMES }
 
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed'
@@ -70,8 +70,16 @@ function SidebarProvider({
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
 
+  const updateSidebarStateCookie = async (open: boolean) => {
+    await fetch('/api/sidebar/state', {
+      method: 'POST',
+      body: JSON.stringify({ state: open }),
+    })
+  }
+
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
+
   const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
   const setOpen = React.useCallback(
@@ -83,8 +91,7 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      updateSidebarStateCookie(openState)
     },
     [setOpenProp, open]
   )

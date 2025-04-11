@@ -10,6 +10,8 @@ import {
 import { getUserTeams } from '@/server/team/get-team'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
+import { cookies } from 'next/headers'
+import { COOKIE_KEYS } from '@/configs/keys'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -23,16 +25,21 @@ export default async function DashboardLayout({
   params,
 }: DashboardLayoutProps) {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-  const teamSlug = await resolveTeamSlugInServerComponent()
 
-  const session = await getSessionInsecure()
-
-  const res = await getUserTeams()
+  const [teamId, teamSlug, session, res, cookieStore] = await Promise.all([
+    resolveTeamIdInServerComponent(teamIdOrSlug),
+    resolveTeamSlugInServerComponent(),
+    getSessionInsecure(),
+    getUserTeams(),
+    cookies(),
+  ])
 
   if (!res?.data || res.serverError) {
     throw new Error(res?.serverError || 'Error loading teams.')
   }
+
+  const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
+  const defaultOpen = sidebarState === 'true'
 
   return (
     <ServerContextProvider
@@ -41,7 +48,7 @@ export default async function DashboardLayout({
       teams={res?.data}
       user={session!.user}
     >
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={defaultOpen}>
         <div className="fixed inset-0 flex max-h-full w-full flex-col overflow-hidden">
           <NetworkStateBanner />
           <div className="flex h-full max-h-full w-full flex-1 overflow-hidden">

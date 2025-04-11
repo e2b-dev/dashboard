@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 
 import {
+  SidebarContent,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -31,7 +32,7 @@ const createGroupedLinks = (links: DashboardNavLink[]): GroupedLinks => {
   }, {} as GroupedLinks)
 }
 
-export default function SidebarList() {
+export default function DashboardSidebarContent() {
   const selectedTeam = useSelectedTeam()
   const selectedTeamIdentifier = selectedTeam?.slug ?? selectedTeam?.id
   const pathname = usePathname()
@@ -46,7 +47,7 @@ export default function SidebarList() {
   }
 
   return (
-    <>
+    <SidebarContent>
       {Object.entries(groupedNavLinks).map(([group, links]) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
@@ -65,7 +66,7 @@ export default function SidebarList() {
                     asChild
                     tooltip={item.label}
                   >
-                    <Link href={href}>
+                    <Link suppressHydrationWarning prefetch href={href}>
                       <item.icon
                         className={cn(
                           'text-fg-500 w-4',
@@ -81,6 +82,6 @@ export default function SidebarList() {
           </SidebarMenu>
         </SidebarGroup>
       ))}
-    </>
+    </SidebarContent>
   )
 }
