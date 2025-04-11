@@ -105,7 +105,8 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
 export const fallbackData: Sandbox[] = []
 
 export const COLUMNS: ColumnDef<Sandbox>[] = [
-  {
+  // FIXME: Currently disabled due to issues with url state management when sandboxes dissapear
+  /*   {
     id: 'pin',
     cell: ({ row }) => (
       <Button
@@ -124,7 +125,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     size: 35,
     enableResizing: false,
     enableColumnFilter: false,
-  },
+  }, */
   {
     accessorKey: 'sandboxID',
     header: 'ID',
@@ -320,15 +321,15 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     accessorKey: 'startedAt',
     header: 'Started At',
     cell: ({ row, getValue }) => {
-      const dateValue = getValue() as string;
+      const dateValue = getValue() as string
 
       const dateTimeString = useMemo(() => {
-        return new Date(dateValue).toUTCString();
-      }, [dateValue]);
+        return new Date(dateValue).toUTCString()
+      }, [dateValue])
 
       const [day, date, month, year, time, timezone] = useMemo(() => {
-        return dateTimeString.split(' ');
-      }, [dateTimeString]);
+        return dateTimeString.split(' ')
+      }, [dateTimeString])
 
       return (
         <div className={cn('h-full truncate font-mono text-xs')}>
@@ -344,7 +345,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     filterFn: 'dateRange',
     enableColumnFilter: true,
     sortingFn: (rowA, rowB) => {
-      return rowA.original.startedAt.localeCompare(rowB.original.startedAt);
+      return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
     },
   },
 ]
