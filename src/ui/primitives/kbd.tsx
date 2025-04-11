@@ -1,7 +1,10 @@
+'use client'
+
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Badge } from './badge'
 import { useEffect, useState } from 'react'
+import ClientOnly from '../client-only'
 
 interface KbdProps {
   keys: string[]
@@ -45,20 +48,22 @@ export function Kbd({ keys, className }: KbdProps) {
 
   // if the key is a symbol key, we scale it up
   return (
-    <Badge variant="muted" className={cn('pointer-events-none', className)}>
-      {keys.map((key, index) => {
-        const formattedKey = formatKey(key)
-        return (
-          <React.Fragment key={key}>
-            {index > 0 && '+'}
-            {isMac && isSymbolKey(key) ? (
-              <span className="scale-[1.4]">{formattedKey}</span>
-            ) : (
-              formattedKey
-            )}
-          </React.Fragment>
-        )
-      })}
-    </Badge>
+    <ClientOnly className={cn('pointer-events-none', className)}>
+      <Badge variant="muted">
+        {keys.map((key, index) => {
+          const formattedKey = formatKey(key)
+          return (
+            <React.Fragment key={key}>
+              {index > 0 && '+'}
+              {isMac && isSymbolKey(key) ? (
+                <span className="scale-[1.4]">{formattedKey}</span>
+              ) : (
+                formattedKey
+              )}
+            </React.Fragment>
+          )
+        })}
+      </Badge>
+    </ClientOnly>
   )
 }
