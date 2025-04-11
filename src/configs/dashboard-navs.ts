@@ -1,11 +1,12 @@
 import {
   Activity,
+  Box,
   Container,
   CreditCard,
   DollarSign,
   Key,
   LucideProps,
-  PackageOpen,
+  UserRoundCog,
   Users,
 } from 'lucide-react'
 import { ForwardRefExoticComponent, RefAttributes } from 'react'
@@ -29,7 +30,7 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
   {
     label: 'Sandboxes',
     href: (args) => `/dashboard/${args.teamIdOrSlug}/sandboxes`,
-    icon: PackageOpen,
+    icon: Box,
   },
   {
     label: 'Templates',
@@ -78,4 +79,17 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
         },
       ]
     : []),
+]
+
+export const EXTRA_DASHBOARD_LINKS: DashboardNavLink[] = [
+  {
+    label: 'Account Settings',
+    href: (args) => `/dashboard/account`,
+    icon: UserRoundCog,
+  },
+]
+
+export const ALL_DASHBOARD_LINKS = [
+  ...MAIN_DASHBOARD_LINKS,
+  ...EXTRA_DASHBOARD_LINKS,
 ]

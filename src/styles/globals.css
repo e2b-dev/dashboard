@@ -8,6 +8,8 @@
 @import './variables.css';
 @import './theme.css';
 
+@custom-variant dark (&:is(.dark *));
+
 @layer theme, base, components, utilities;
 
 @layer base {
@@ -44,12 +46,4 @@
 
 .lucide {
   stroke-width: 1.5px;
-}
-
-ul li {
-  padding-left: 0.5rem;
-}
-ul li::marker {
-  color: var(--accent-200);
-  content: '▪';
 }

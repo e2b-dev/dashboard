@@ -21,6 +21,7 @@ export const COOKIE_KEYS = {
   API_DOMAIN: 'e2b-api-domain',
   SELECTED_TEAM_ID: 'e2b-selected-team-id',
   SELECTED_TEAM_SLUG: 'e2b-selected-team-slug',
+  SIDEBAR_STATE: 'e2b-sidebar-state',
 }
 
 /*

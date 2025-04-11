@@ -1,6 +1,5 @@
 'use client'
 
-import { Input } from '@/ui/primitives/input'
 import { cn } from '@/lib/utils'
 import {
   CommandDialog,
@@ -11,17 +10,20 @@ import {
   CommandList,
 } from '@/ui/primitives/command'
 import { useEffect, useState } from 'react'
-import { MAIN_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
+import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
 import { useRouter } from 'next/navigation'
-import { Kbd } from '@/ui/primitives/kbd'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { Button } from '@/ui/primitives/button'
+import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
+import { Search } from 'lucide-react'
+import { Kbd } from '@/ui/primitives/kbd'
 
-interface SearchProps {
+interface DashboardSidebarCommandProps {
   className?: string
 }
 
-export default function Search({ className }: SearchProps) {
+export default function DashboardSidebarCommand({
+  className,
+}: DashboardSidebarCommandProps) {
   const [open, setOpen] = useState(false)
   const selectedTeam = useSelectedTeam()
   const router = useRouter()
@@ -45,28 +47,25 @@ export default function Search({ className }: SearchProps) {
   }, [])
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        className={cn(
-          'h-10 w-full justify-start text-xs text-fg-300',
-          className
-        )}
-        onClick={() => setOpen(true)}
-      >
-        QUICK NAVIGATE
-      </Button>
-      <Kbd
-        keys={['cmd', 'k']}
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2"
-      />
-
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          tooltip="Jump"
+          variant="outline"
+          className={cn('text-fg-500 h-10', className)}
+          onClick={() => setOpen(true)}
+        >
+          <span className="text-md px-1 font-mono">{'>'}</span>
+          Jump to
+          <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Quick Jump to..." />
         <CommandList className="p-1 pb-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {MAIN_DASHBOARD_LINKS.map((link) => (
+            {ALL_DASHBOARD_LINKS.map((link) => (
               <CommandItem
                 key={link.label}
                 onSelect={() => {
@@ -80,13 +79,13 @@ export default function Search({ className }: SearchProps) {
                 }}
                 className="group"
               >
-                <link.icon className="!size-4 text-fg-500 group-[&[data-selected=true]]:text-accent" />
+                <link.icon className="text-fg-500 group-[&[data-selected=true]]:text-accent !size-4" />
                 {link.label}
               </CommandItem>
             ))}
           </CommandGroup>
         </CommandList>
       </CommandDialog>
-    </div>
+    </>
   )
 }

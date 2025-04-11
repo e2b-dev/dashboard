@@ -52,6 +52,16 @@
   --warning: hsl(35 80% 40%);
   --success: hsl(140 95% 30%);
 
+  /* Sidebar variables */
+  --sidebar: var(--bg);
+  --sidebar-foreground: var(--fg-300);
+  --sidebar-primary: var(--fg);
+  --sidebar-primary-foreground: var(--bg);
+  --sidebar-accent: var(--bg-100);
+  --sidebar-accent-foreground: var(--fg);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent);
+
   /* Commons */
   --radius: 0.375rem;
   --public-nav-height: 50px;
@@ -132,6 +142,15 @@
 
   --contrast-1: hsl(200 85% 65%);
   --contrast-2: hsl(235 86% 75%);
+
+  --sidebar: var(--bg);
+  --sidebar-foreground: var(--fg-300);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--accent-fg);
+  --sidebar-accent: var(--bg-100);
+  --sidebar-accent-foreground: var(--fg-300);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent);
 
   --shadow: hsl(45 3% 3%);
   --shadow-strength: 0.2;
