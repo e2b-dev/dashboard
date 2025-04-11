@@ -16,22 +16,24 @@ import DashboardSidebarMenu from './menu'
 import DashboardSidebarSearch from './search'
 
 export default function DashboardSidebarHeader() {
-  const { toggleSidebar, open } = useSidebar()
+  const { toggleSidebar, open, openMobile } = useSidebar()
+
+  const isOpen = open || openMobile
 
   return (
     <SidebarHeader className="p-0">
       <div
         className={cn(
-          'flex h-[var(--protected-nav-height)] items-center justify-between border-b px-2',
+          'flex h-[var(--protected-nav-height)] w-full items-center justify-between border-b px-2',
           {
             // When the sidebar is closing, we want to stick the logo to the right.
-            'justify-end': !open,
+            'justify-end': !isOpen,
           }
         )}
       >
         {/* When the sidebar is closing, we want the logo to fade out AND be removed from the DOM. */}
         <AnimatePresence initial={false} mode="popLayout">
-          {open && (
+          {isOpen && (
             <motion.span
               variants={{
                 visible: { opacity: 1, filter: 'blur(0px)' },
@@ -46,7 +48,7 @@ export default function DashboardSidebarHeader() {
           )}
         </AnimatePresence>
         <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-          {open ? (
+          {isOpen ? (
             <ArrowLeftToLine className="size-5" />
           ) : (
             <ArrowRightFromLine className="size-5" />
