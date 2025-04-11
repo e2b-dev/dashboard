@@ -10,11 +10,11 @@ import {
   CommandList,
 } from '@/ui/primitives/command'
 import { useEffect, useState } from 'react'
-import { MAIN_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
+import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
 import { useRouter } from 'next/navigation'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { ChevronRight, Search, Terminal } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Kbd } from '@/ui/primitives/kbd'
 
 interface SearchProps {
@@ -63,7 +63,7 @@ export default function DashboardSidebarSearch({ className }: SearchProps) {
         <CommandList className="p-1 pb-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {MAIN_DASHBOARD_LINKS.map((link) => (
+            {ALL_DASHBOARD_LINKS.map((link) => (
               <CommandItem
                 key={link.label}
                 onSelect={() => {
