@@ -17,11 +17,13 @@ import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { Search } from 'lucide-react'
 import { Kbd } from '@/ui/primitives/kbd'
 
-interface SearchProps {
+interface DashboardSidebarCommandProps {
   className?: string
 }
 
-export default function DashboardSidebarSearch({ className }: SearchProps) {
+export default function DashboardSidebarCommand({
+  className,
+}: DashboardSidebarCommandProps) {
   const [open, setOpen] = useState(false)
   const selectedTeam = useSelectedTeam()
   const router = useRouter()
@@ -48,13 +50,13 @@ export default function DashboardSidebarSearch({ className }: SearchProps) {
     <>
       <SidebarMenuItem>
         <SidebarMenuButton
-          tooltip="Search"
+          tooltip="Jump"
           variant="outline"
           className={cn('text-fg-500 h-10', className)}
           onClick={() => setOpen(true)}
         >
-          <Search className="size-5" />
-          Search
+          <span className="text-md px-1 font-mono">{'>'}</span>
+          Jump to
           <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
         </SidebarMenuButton>
       </SidebarMenuItem>

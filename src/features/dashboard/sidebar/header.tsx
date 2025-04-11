@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils'
 import Logo from '@/ui/logo'
 import { Button } from '@/ui/primitives/button'
 import {
-  SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -13,7 +12,7 @@ import {
 import { ArrowLeftToLine, ArrowRightFromLine } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import DashboardSidebarMenu from './menu'
-import DashboardSidebarSearch from './search'
+import DashboardSidebarCommand from './command'
 
 export default function DashboardSidebarHeader() {
   const { toggleSidebar, open, openMobile } = useSidebar()
@@ -58,7 +57,7 @@ export default function DashboardSidebarHeader() {
       <SidebarGroup className="pt-0">
         <SidebarMenu className="flex flex-col gap-2">
           <DashboardSidebarMenu />
-          <DashboardSidebarSearch />
+          <DashboardSidebarCommand />
         </SidebarMenu>
       </SidebarGroup>
     </SidebarHeader>
