@@ -13,11 +13,20 @@ import { ArrowLeftToLine, ArrowRightFromLine } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import DashboardSidebarMenu from './menu'
 import DashboardSidebarCommand from './command'
+import ShortcutTooltip from '@/ui/shortcut-tooltip'
+import useKeydown from '@/lib/hooks/use-keydown'
 
 export default function DashboardSidebarHeader() {
   const { toggleSidebar, open, openMobile } = useSidebar()
 
   const isOpen = open || openMobile
+
+  useKeydown((event) => {
+    if (event.key === 's' && event.ctrlKey) {
+      event.preventDefault()
+      toggleSidebar()
+    }
+  })
 
   return (
     <SidebarHeader className="p-0">
@@ -46,15 +55,17 @@ export default function DashboardSidebarHeader() {
             </motion.span>
           )}
         </AnimatePresence>
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-          {isOpen ? (
-            <ArrowLeftToLine className="size-5" />
-          ) : (
-            <ArrowRightFromLine className="size-5" />
-          )}
-        </Button>
+        <ShortcutTooltip keys={['ctrl', 's']}>
+          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+            {isOpen ? (
+              <ArrowLeftToLine className="size-4" />
+            ) : (
+              <ArrowRightFromLine className="size-4" />
+            )}
+          </Button>
+        </ShortcutTooltip>
       </div>
-      <SidebarGroup className="pt-0">
+      <SidebarGroup className="pt-0 transition-all duration-100 group-data-[collapsible=icon]:border-b">
         <SidebarMenu className="flex flex-col gap-2">
           <DashboardSidebarMenu />
           <DashboardSidebarCommand />

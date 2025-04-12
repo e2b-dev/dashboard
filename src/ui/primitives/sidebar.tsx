@@ -246,7 +246,7 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] md:flex',
+          'fixed inset-y-0 z-20 hidden h-svh w-(--sidebar-width) transition-[left,right,width] md:flex',
           SIDEBAR_TRANSITION_CLASSNAMES,
           side === 'left'
             ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
@@ -507,6 +507,11 @@ const sidebarMenuButtonVariants = cva(
         ghost: [
           'bg-transparent',
           'hover:bg-transparent focus:bg-transparent',
+          'active:translate-y-[1px] active:shadow-none',
+        ].join(' '),
+        muted: [
+          'bg-bg-200 text-fg-300 hover:text-fg',
+          'hover:bg-bg-200/90 focus:bg-bg-200/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
       },

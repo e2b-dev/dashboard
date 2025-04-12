@@ -13,8 +13,12 @@ import { useEffect, useState } from 'react'
 import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
 import { useRouter } from 'next/navigation'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { Search } from 'lucide-react'
+import {
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@/ui/primitives/sidebar'
+import { Terminal } from 'lucide-react'
 import { Kbd } from '@/ui/primitives/kbd'
 
 interface DashboardSidebarCommandProps {
@@ -27,6 +31,9 @@ export default function DashboardSidebarCommand({
   const [open, setOpen] = useState(false)
   const selectedTeam = useSelectedTeam()
   const router = useRouter()
+
+  const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
+  const isSidebarOpen = sidebarOpen || sidebarOpenMobile
 
   useEffect(() => {
     const controller = new AbortController()
@@ -51,11 +58,11 @@ export default function DashboardSidebarCommand({
       <SidebarMenuItem>
         <SidebarMenuButton
           tooltip="Jump"
-          variant="outline"
-          className={cn('text-fg-500 h-10', className)}
+          variant={isSidebarOpen ? 'outline' : 'default'}
+          className={cn('text-fg-500 relative h-10 transition-all', className)}
           onClick={() => setOpen(true)}
         >
-          <span className="text-md px-1 font-mono">{'>'}</span>
+          <Terminal className="text-fg-500 size-4" />
           Jump to
           <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
         </SidebarMenuButton>

@@ -2,16 +2,23 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { Badge } from './badge'
+import { Badge, BadgeProps } from './badge'
 import { useEffect, useState } from 'react'
-import ClientOnly from '../client-only'
+import ClientOnly, { ClientOnlyProps } from '../client-only'
 
-interface KbdProps {
+export interface KbdProps {
   keys: string[]
   className?: string
+  badgeProps?: BadgeProps
+  clientOnlyProps?: Omit<ClientOnlyProps, 'children'>
 }
 
-export function Kbd({ keys, className }: KbdProps) {
+export function Kbd({
+  keys,
+  className,
+  badgeProps,
+  clientOnlyProps,
+}: KbdProps) {
   const [isMac, setIsMac] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -48,8 +55,11 @@ export function Kbd({ keys, className }: KbdProps) {
 
   // if the key is a symbol key, we scale it up
   return (
-    <ClientOnly className={cn('pointer-events-none', className)}>
-      <Badge variant="muted">
+    <ClientOnly
+      className={cn('pointer-events-none', className)}
+      {...clientOnlyProps}
+    >
+      <Badge variant="muted" {...badgeProps}>
         {keys.map((key, index) => {
           const formattedKey = formatKey(key)
           return (
