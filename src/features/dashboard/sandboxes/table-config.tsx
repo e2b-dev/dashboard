@@ -40,6 +40,16 @@ export const fuzzyFilter: FilterFn<Sandbox> = (
   value,
   addMeta
 ) => {
+  if (columnId === 'metadata') {
+    const metadata = row.original.metadata
+
+    if (!metadata) return false
+
+    const stringifiedMetadata = JSON.stringify(metadata)
+
+    return stringifiedMetadata.includes(value)
+  }
+
   const itemRank = rankItem(row.getValue(columnId), value)
 
   addMeta({ itemRank })
@@ -105,7 +115,8 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
 export const fallbackData: Sandbox[] = []
 
 export const COLUMNS: ColumnDef<Sandbox>[] = [
-  {
+  // FIXME: Currently disabled due to issues with url state management when sandboxes dissapear
+  /*   {
     id: 'pin',
     cell: ({ row }) => (
       <Button
@@ -124,7 +135,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     size: 35,
     enableResizing: false,
     enableColumnFilter: false,
-  },
+  }, */
   {
     accessorKey: 'sandboxID',
     header: 'ID',
@@ -175,6 +186,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     size: 250,
     minSize: 180,
     filterFn: 'arrIncludesSome',
+    enableGlobalFilter: true,
   },
   {
     id: 'cpuCount',
@@ -195,6 +207,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     minSize: 130,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
+    enableGlobalFilter: false,
   },
   {
     id: 'memoryMB',
@@ -214,6 +227,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     minSize: 105,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
+    enableGlobalFilter: false,
   },
   // NOTE: Currently disabled due to issue with the metrics api
   /*   {
@@ -311,24 +325,25 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
         </JsonPopover>
       )
     },
+    filterFn: 'includesStringSensitive',
+    enableGlobalFilter: true,
     size: 200,
     minSize: 160,
-    enableGlobalFilter: false,
   },
   {
     id: 'startedAt',
     accessorKey: 'startedAt',
     header: 'Started At',
     cell: ({ row, getValue }) => {
-      const dateValue = getValue() as string;
+      const dateValue = getValue() as string
 
       const dateTimeString = useMemo(() => {
-        return new Date(dateValue).toUTCString();
-      }, [dateValue]);
+        return new Date(dateValue).toUTCString()
+      }, [dateValue])
 
       const [day, date, month, year, time, timezone] = useMemo(() => {
-        return dateTimeString.split(' ');
-      }, [dateTimeString]);
+        return dateTimeString.split(' ')
+      }, [dateTimeString])
 
       return (
         <div className={cn('h-full truncate font-mono text-xs')}>
@@ -343,8 +358,9 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     // @ts-expect-error dateRange is not a valid filterFn
     filterFn: 'dateRange',
     enableColumnFilter: true,
+    enableGlobalFilter: false,
     sortingFn: (rowA, rowB) => {
-      return rowA.original.startedAt.localeCompare(rowB.original.startedAt);
+      return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
     },
   },
 ]

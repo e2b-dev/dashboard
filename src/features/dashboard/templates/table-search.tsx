@@ -4,28 +4,19 @@ import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
 import { useEffect, useRef } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
+import useKeydown from '@/lib/hooks/use-keydown'
 
 export const SearchInput = () => {
   const { globalFilter, setGlobalFilter } = useTemplateTableStore()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    window.addEventListener(
-      'keydown',
-      (e) => {
-        if (e.key === '/') {
-          e.preventDefault()
-          inputRef.current?.focus()
-          return true
-        }
-      },
-      { signal: controller.signal }
-    )
-
-    return () => controller.abort()
-  }, [])
+  useKeydown((e) => {
+    if (e.key === '/') {
+      e.preventDefault()
+      inputRef.current?.focus()
+      return true
+    }
+  })
 
   return (
     <div className="relative w-full max-w-[420px]">

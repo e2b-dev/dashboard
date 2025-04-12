@@ -19,6 +19,8 @@ import { TableBody } from './table-body'
 import TemplatesHeader from './header'
 import ClientOnly from '@/ui/client-only'
 import HelpTooltip from '@/ui/help-tooltip'
+import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
+import { cn } from '@/lib/utils'
 
 interface TemplatesTableProps {
   templates: (Template | DefaultTemplate)[]
@@ -124,9 +126,17 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
     <ClientOnly className="flex h-full flex-col pt-3">
       <TemplatesHeader table={table} />
 
-      <div className="bg-bg mt-4 max-w-[calc(100svw-var(--protected-sidebar-width))] flex-1 overflow-x-auto">
+      <div
+        className={cn(
+          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
+          SIDEBAR_TRANSITION_CLASSNAMES
+        )}
+      >
         <DataTable
-          className="h-full min-w-[calc(100svw-var(--protected-sidebar-width))] overflow-y-auto"
+          className={cn(
+            'h-full overflow-y-auto md:min-w-[calc(100svw-var(--sidebar-width-active))]',
+            SIDEBAR_TRANSITION_CLASSNAMES
+          )}
           style={{ ...columnSizeVars }}
           onScroll={handleBottomReached}
           ref={scrollRef}

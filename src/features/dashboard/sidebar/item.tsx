@@ -20,14 +20,14 @@ export function SidebarItem({ label, href, icon }: SidebarItemProps) {
       href={href}
       suppressHydrationWarning
       className={cn(
-        'group ring-border relative w-full overflow-hidden transition-all duration-150 hover:no-underline hover:ring-1'
+        'group/item ring-border relative w-full overflow-hidden transition-all duration-150 hover:no-underline hover:ring-1'
       )}
     >
       <Dotted className="z-0" />
       <div
         className={cn(
           'bg-bg ring-border relative z-10 transition-all duration-150',
-          'group-hover:-translate-y-[4px] group-hover:scale-[1.005] group-hover:shadow-sm group-hover:ring-1 dark:group-hover:shadow-md'
+          'group-hover/item:-translate-y-[4px] group-hover/item:scale-[1.005] group-hover/item:shadow-sm group-hover/item:ring-1 dark:group-hover/item:shadow-md'
         )}
       >
         <div className="bg-bg flex w-full items-center font-mono text-sm">

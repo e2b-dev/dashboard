@@ -5,6 +5,7 @@ import SidebarMobile from './sidebar/sidebar-mobile'
 import Frame from '@/ui/frame'
 import { DashboardSurveyPopover } from './navbar/dashboard-survey-popover'
 import { CatchErrorBoundary } from '@/ui/error'
+import { SidebarTrigger } from '@/ui/primitives/sidebar'
 
 interface DashboardPageLayoutProps {
   children: React.ReactNode
@@ -33,9 +34,7 @@ export default async function DashboardPageLayout({
     >
       <div className="bg-bg absolute inset-x-0 top-0 z-10 flex h-[var(--protected-nav-height)] border-b pr-3 md:pl-3">
         <div className="flex w-full items-center gap-2">
-          <Suspense fallback={null}>
-            <SidebarMobile className="h-full border-r px-3 md:hidden" />
-          </Suspense>
+          <SidebarTrigger className="text-fg-300 h-full w-11 border-r px-3 md:hidden" />
 
           <h2 className="mr-auto text-lg font-bold">{title}</h2>
 
@@ -55,7 +54,9 @@ export default async function DashboardPageLayout({
         >
           {children}
         </DesktopContent>
-        <MobileContent className={className}>{children}</MobileContent>
+        <MobileContent fullscreen={fullscreen} className={className}>
+          {children}
+        </MobileContent>
       </CatchErrorBoundary>
     </div>
   )
@@ -78,24 +79,28 @@ function DesktopContent({
   fullscreen,
   hideFrame,
 }: ContentProps) {
+  if (fullscreen) {
+    return (
+      <div
+        className={cn(
+          'relative z-0 flex-1 overflow-hidden max-md:hidden',
+          className
+        )}
+      >
+        {children}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(
         'relative z-0 flex-1 max-md:hidden',
-        fullscreen
-          ? 'overflow-hidden'
-          : 'flex justify-center overflow-y-auto p-4 xl:py-[min(6%,200px)]'
+        'flex justify-center overflow-y-auto p-4 md:p-8 2xl:p-24'
       )}
     >
-      {fullscreen ? (
-        <div className={cn('h-full', className)}>{children}</div>
-      ) : hideFrame ? (
-        <div
-          className={cn(
-            'relative flex h-fit w-full max-w-[1200px] pb-2',
-            className
-          )}
-        >
+      {hideFrame ? (
+        <div className={cn('relative h-min w-full max-w-[1200px]', className)}>
           {children}
         </div>
       ) : (
@@ -115,12 +120,23 @@ function DesktopContent({
   )
 }
 
-function MobileContent({ children, className }: ContentProps) {
+function MobileContent({ children, className, fullscreen }: ContentProps) {
+  if (fullscreen) {
+    return (
+      <div
+        className={cn(
+          'relative z-0 flex-1 overflow-hidden md:hidden',
+          className
+        )}
+      >
+        {children}
+      </div>
+    )
+  }
+
   return (
-    <div
-      className={cn('relative z-0 flex-1 overflow-y-auto md:hidden', className)}
-    >
-      {children}
+    <div className="relative z-0 flex-1 overflow-y-auto md:hidden">
+      <div className={cn('relative h-min w-full', className)}>{children}</div>
     </div>
   )
 }
