@@ -1,9 +1,8 @@
 import { DebouncedInput } from '@/ui/primitives/input'
 import { cn } from '@/lib/utils'
-import React, { useEffect, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
 import { Kbd } from '@/ui/primitives/kbd'
-import { trackTableInteraction } from './table-config'
 import useKeydown from '@/lib/hooks/use-keydown'
 
 export const SearchInput = React.memo(

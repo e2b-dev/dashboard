@@ -40,6 +40,16 @@ export const fuzzyFilter: FilterFn<Sandbox> = (
   value,
   addMeta
 ) => {
+  if (columnId === 'metadata') {
+    const metadata = row.original.metadata
+
+    if (!metadata) return false
+
+    const stringifiedMetadata = JSON.stringify(metadata)
+
+    return stringifiedMetadata.includes(value)
+  }
+
   const itemRank = rankItem(row.getValue(columnId), value)
 
   addMeta({ itemRank })
@@ -176,6 +186,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     size: 250,
     minSize: 180,
     filterFn: 'arrIncludesSome',
+    enableGlobalFilter: true,
   },
   {
     id: 'cpuCount',
@@ -196,6 +207,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     minSize: 130,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
+    enableGlobalFilter: false,
   },
   {
     id: 'memoryMB',
@@ -215,6 +227,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     minSize: 105,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
+    enableGlobalFilter: false,
   },
   // NOTE: Currently disabled due to issue with the metrics api
   /*   {
@@ -312,9 +325,10 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
         </JsonPopover>
       )
     },
+    filterFn: 'includesStringSensitive',
+    enableGlobalFilter: true,
     size: 200,
     minSize: 160,
-    enableGlobalFilter: false,
   },
   {
     id: 'startedAt',
@@ -344,6 +358,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     // @ts-expect-error dateRange is not a valid filterFn
     filterFn: 'dateRange',
     enableColumnFilter: true,
+    enableGlobalFilter: false,
     sortingFn: (rowA, rowB) => {
       return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
     },
