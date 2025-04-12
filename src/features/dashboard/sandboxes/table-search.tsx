@@ -4,6 +4,7 @@ import React, { useEffect, useCallback } from 'react'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
 import { Kbd } from '@/ui/primitives/kbd'
 import { trackTableInteraction } from './table-config'
+import useKeydown from '@/lib/hooks/use-keydown'
 
 export const SearchInput = React.memo(
   React.forwardRef<
@@ -14,23 +15,15 @@ export const SearchInput = React.memo(
   >(({ className }, ref) => {
     const { setGlobalFilter, globalFilter } = useSandboxTableStore()
 
-    const handleKeyDown = useCallback(
-      (e: KeyboardEvent) => {
-        if (e.key === '/') {
-          e.preventDefault()
-          if (ref && 'current' in ref) {
-            ;(ref as React.RefObject<HTMLInputElement | null>).current?.focus()
-          }
-          return true
+    useKeydown((e) => {
+      if (e.key === '/') {
+        e.preventDefault()
+        if (ref && 'current' in ref) {
+          ;(ref as React.RefObject<HTMLInputElement>).current?.focus()
         }
-      },
-      [ref]
-    )
-
-    useEffect(() => {
-      window.addEventListener('keydown', handleKeyDown)
-      return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [handleKeyDown])
+        return true
+      }
+    })
 
     const handleChange = useCallback(
       (value: string | number) => {

@@ -20,6 +20,7 @@ import {
 } from '@/ui/primitives/sidebar'
 import { Terminal } from 'lucide-react'
 import { Kbd } from '@/ui/primitives/kbd'
+import useKeydown from '@/lib/hooks/use-keydown'
 
 interface DashboardSidebarCommandProps {
   className?: string
@@ -35,23 +36,15 @@ export default function DashboardSidebarCommand({
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
   const isSidebarOpen = sidebarOpen || sidebarOpenMobile
 
-  useEffect(() => {
-    const controller = new AbortController()
+  useKeydown((event) => {
+    if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault()
+      event.stopPropagation()
+      setOpen(true)
+    }
 
-    document.addEventListener(
-      'keydown',
-      (e) => {
-        if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          e.stopPropagation()
-          setOpen(true)
-        }
-      },
-      { signal: controller.signal }
-    )
-
-    return () => controller.abort()
-  }, [])
+    return true
+  })
 
   return (
     <>
