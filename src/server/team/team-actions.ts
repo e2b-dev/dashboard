@@ -1,11 +1,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { Database } from '@/types/database.types'
-import {
-  checkUserTeamAuthorization,
-  getUserAccessToken,
-} from '@/lib/utils/server'
+import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { z } from 'zod'
 import { kv } from '@vercel/kv'
 import { KV_KEYS } from '@/configs/keys'
@@ -17,12 +13,8 @@ import { zfd } from 'zod-form-data'
 import { logWarning } from '@/lib/clients/logger'
 import { returnValidationErrors } from 'next-safe-action'
 import { getTeam } from './get-team'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
-
-const UpdateTeamNameSchema = z.object({
-  teamId: z.string().uuid(),
-  name: z.string().min(1),
-})
+import { TIERS } from '@/configs/tiers'
+import { CreateTeamSchema, UpdateTeamNameSchema } from './types'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -199,38 +191,47 @@ export const removeTeamMemberAction = authActionClient
     })
   })
 
-const CreateTeamSchema = z.object({
-  name: z.string().min(1),
-})
-
 export const createTeamAction = authActionClient
   .schema(CreateTeamSchema)
   .metadata({ actionName: 'createTeam' })
   .action(async ({ parsedInput, ctx }) => {
     const { name } = parsedInput
-    const { session } = ctx
+    const { user } = ctx
 
-    const response = await fetch(`${process.env.BILLING_API_URL}/teams`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
-      },
-      body: JSON.stringify({ name }),
-    })
+    const { data: team, error: teamError } = await supabaseAdmin
+      .from('teams')
+      // @ts-expect-error - slug is not nullable, but not required because db triggers create slugs
+      .insert({
+        name,
+        email: user.email!,
+        tier: TIERS[0].id,
+      })
+      .select()
+      .single()
 
-    if (!response.ok) {
-      const error = await response.json()
+    if (teamError) {
+      throw teamError
+    }
 
-      throw new Error(error?.message ?? 'Failed to create team')
+    const { error: userTeamError } = await supabaseAdmin
+      .from('users_teams')
+      .insert({
+        team_id: team.id,
+        user_id: user.id,
+        is_default: true,
+        added_by: user.id,
+        created_at: new Date().toISOString(),
+      })
+
+    if (userTeamError) {
+      throw userTeamError
     }
 
     revalidatePath('/dashboard', 'layout')
 
-    const data =
-      (await response.json()) as Database['public']['Tables']['teams']['Row']
-
-    return data
+    return {
+      slug: team.slug,
+    }
   })
 
 const UploadTeamProfilePictureSchema = zfd.formData(

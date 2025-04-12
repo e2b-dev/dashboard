@@ -30,7 +30,6 @@ import {
 } from 'lucide-react'
 import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 import { useUser } from '@/lib/hooks/use-user'
-import { useAction } from 'next-safe-action/hooks'
 import { signOutAction } from '@/server/auth/auth-actions'
 
 interface SidebarMenuProps {
