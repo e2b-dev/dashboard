@@ -8,6 +8,7 @@ import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
+import { NO_INDEX } from '@/lib/utils/flags'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -79,6 +80,25 @@ export async function GET(request: NextRequest): Promise<Response> {
       // create new headers without content-encoding to ensure proper rendering
       const newHeaders = new Headers(res.headers)
       newHeaders.delete('content-encoding')
+
+      // take precautions if NO_INDEX is set
+      if (NO_INDEX) {
+        // add noindex header
+        newHeaders.set('X-Robots-Tag', 'noindex, nofollow')
+        // remove any existing robots meta tags and add our own
+        const modifiedHtml = modifiedHtmlBody
+          .replace(/<meta[^>]*name=["']robots["'][^>]*>/gi, '')
+          .replace(
+            /<head[^>]*>/i,
+            (match) =>
+              `${match}<meta name="robots" content="noindex, nofollow">`
+          )
+
+        return new Response(modifiedHtml, {
+          status: res.status,
+          headers: newHeaders,
+        })
+      }
 
       return new Response(modifiedHtmlBody, {
         status: res.status,

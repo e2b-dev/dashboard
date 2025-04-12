@@ -12,6 +12,7 @@ import { Toaster } from '@/ui/primitives/toaster'
 import Head from 'next/head'
 import { GTMHead } from '@/features/google-tag-manager'
 import { Analytics } from '@vercel/analytics/next'
+import { NO_INDEX } from '@/lib/utils/flags'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     title: METADATA.title,
     description: METADATA.description,
   },
+  robots: NO_INDEX ? 'noindex, nofollow' : 'index, follow',
 }
 
 export default function RootLayout({

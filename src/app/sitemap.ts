@@ -15,6 +15,7 @@ import {
   LANDING_PAGE_FRAMER_DOMAIN,
 } from '@/configs/domains'
 import { BLOG_FRAMER_DOMAIN } from '@/configs/domains'
+import { NO_INDEX } from '@/lib/utils/flags'
 
 // Cache the sitemap for 24 hours (in seconds)
 const SITEMAP_CACHE_TIME = 24 * 60 * 60
@@ -168,6 +169,11 @@ async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
  * @returns Complete sitemap for the E2B website
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Return empty sitemap if NO_INDEX is set
+  if (NO_INDEX) {
+    return []
+  }
+
   let mergedSitemap: MetadataRoute.Sitemap = []
 
   // Fetch sitemaps from all configured sites (Webflow & Framer sites + docs)
