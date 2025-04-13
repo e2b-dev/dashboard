@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { UnknownError } from '@/types/errors'
 import { logDebug, logError, logSuccess } from './logger'
 import { ActionError } from '../utils/action'
+import { VERBOSE } from '../utils/flags'
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
@@ -31,7 +32,7 @@ export const actionClient = createSafeActionClient({
   defaultValidationErrorsShape: 'flattened',
 }).use(async ({ next, clientInput, metadata }) => {
   let startTime
-  if (process.env.NODE_ENV === 'development') {
+  if (VERBOSE) {
     startTime = performance.now()
   }
 
@@ -56,14 +57,14 @@ export const actionClient = createSafeActionClient({
       result: rest,
       input: clientInput,
     })
-  } else if (process.env.NODE_ENV === 'development') {
+  } else if (VERBOSE) {
     logSuccess(`${actionOrFunction} '${actionOrFunctionName}' succeeded:`, {
       result: rest,
       input: clientInput,
     })
   }
 
-  if (process.env.NODE_ENV === 'development' && startTime) {
+  if (VERBOSE && startTime) {
     const endTime = performance.now()
     logDebug(
       `${actionOrFunction} '${actionOrFunctionName}' execution took ${endTime - startTime} ms`

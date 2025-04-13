@@ -19,6 +19,7 @@ import { useTemplateTableStore } from '../templates/stores/table-store'
 import { useServerContext } from '@/lib/hooks/use-server-context'
 import { JsonPopover } from '@/ui/json-popover'
 import posthog from 'posthog-js'
+import { logError } from '@/lib/clients/logger'
 
 export type SandboxWithMetrics = Sandbox & { metrics: SandboxMetrics[] }
 
@@ -40,14 +41,25 @@ export const fuzzyFilter: FilterFn<Sandbox> = (
   value,
   addMeta
 ) => {
-  if (columnId === 'metadata') {
-    const metadata = row.original.metadata
+  // try catch to avoid crash by serialization issues
+  try {
+    if (columnId === 'metadata') {
+      const metadata = row.original.metadata
 
-    if (!metadata) return false
+      if (!metadata) return false
 
-    const stringifiedMetadata = JSON.stringify(metadata)
+      const stringifiedMetadata = JSON.stringify(metadata)
 
-    return stringifiedMetadata.includes(value)
+      return stringifiedMetadata.includes(value)
+    }
+  } catch (error) {
+    logError('Error in fuzzyFilter', {
+      error,
+      row,
+      columnId,
+      value,
+    })
+    return false
   }
 
   const itemRank = rankItem(row.getValue(columnId), value)

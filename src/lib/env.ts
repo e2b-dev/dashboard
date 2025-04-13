@@ -26,6 +26,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_EXPOSE_STORYBOOK: z.string().optional(),
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
+  NEXT_PUBLIC_VERBOSE: z.string().optional(),
 })
 
 export const testEnvSchema = z.object({
