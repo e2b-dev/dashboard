@@ -2,10 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { Database } from '@/types/database.types'
-import {
-  checkUserTeamAuthorization,
-  getUserAccessToken,
-} from '@/lib/utils/server'
+import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { z } from 'zod'
 import { kv } from '@vercel/kv'
 import { KV_KEYS } from '@/configs/keys'
@@ -21,7 +18,7 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
 
 const UpdateTeamNameSchema = z.object({
   teamId: z.string().uuid(),
-  name: z.string().min(1),
+  name: z.string().trim().min(1),
 })
 
 export const updateTeamNameAction = authActionClient
@@ -200,7 +197,7 @@ export const removeTeamMemberAction = authActionClient
   })
 
 const CreateTeamSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1),
 })
 
 export const createTeamAction = authActionClient

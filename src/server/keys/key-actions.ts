@@ -20,7 +20,7 @@ const CreateApiKeySchema = z.object({
     .trim(),
 })
 
-function generateTeamApiKey(): string {
+export async function generateTeamApiKey(): Promise<string> {
   const randomBytes = crypto.getRandomValues(new Uint8Array(20))
   const hexString = Array.from(randomBytes)
     .map((b) => b.toString(16).padStart(2, '0'))
@@ -41,7 +41,7 @@ export const createApiKeyAction = authActionClient
     if (!isAuthorized)
       return returnServerError('Not authorized to create team api keys')
 
-    const apiKeyValue = generateTeamApiKey()
+    const apiKeyValue = await generateTeamApiKey()
 
     const { error } = await supabaseAdmin
       .from('team_api_keys')
