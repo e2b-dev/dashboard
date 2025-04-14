@@ -88,7 +88,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
 
   return (
     <div
-      className="relative cursor-pointer p-4 pr-0 md:p-6 md:pr-0"
+      className="relative cursor-pointer"
       onClick={handleAvatarClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

@@ -9,7 +9,6 @@ export type Tier = Database['public']['Tables']['tiers']['Row'] & {
 }
 
 export const TIERS: Tier[] = [
-  // NOTE: is referenced by @/server/team/team-actions.ts for team creation
   {
     id: 'base_v1',
     name: 'Hobby',

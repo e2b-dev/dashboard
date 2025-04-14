@@ -22,7 +22,7 @@ export default async function GeneralPage({ params }: GeneralPageProps) {
       <div className="grid w-full grid-cols-12">
         <Suspense>
           <>
-            <div className="col-span-12 flex gap-2 max-xl:border-b md:gap-3 xl:col-span-6 xl:border-r">
+            <div className="col-span-12 flex items-center gap-3 pl-6 max-xl:border-b xl:col-span-6 xl:border-r">
               <ProfilePictureCard className="size-32" />
               <NameCard />
             </div>
