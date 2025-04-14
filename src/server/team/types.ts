@@ -16,37 +16,24 @@ export type TeamMember = {
 /**
  * Schema for validating team names.
  *
- * @description
- * This schema validates team names with the following rules:
- * 1. Requires non-empty strings (min length 1)
- * 2. Maximum length of 32 characters
- * 3. Trims whitespace from beginning and end
- * 4. Only allows letters, numbers, and spaces
+ * Rules:
+ * - Non-empty strings (1-32 chars)
+ * - Trims whitespace
+ * - Words can contain letters and numbers
+ * - Words can be separated by spaces, underscores, or hyphens
+ * - No consecutive separators allowed
  *
- * Examples that work (valid):
- * - "Team 1" -> "Team 1"
- * - "DevOps2023" -> "DevOps2023"
- * - "Engineering Team" -> "Engineering Team"
- *
- * Examples that don't work (invalid):
- * - "" -> Fails with "Team name cannot be empty"
- * - "   " -> Fails with "Team name cannot be empty" (becomes empty after trim)
- * - "Team@Work" -> Fails with "Team name can only contain letters, numbers, and spaces"
- * - "Dev-Ops" -> Fails with "Team name can only contain letters, numbers, and spaces"
- * - "Very Long Team Name That Exceeds The Character Limit" -> Fails with "Team name cannot be longer than 32 characters"
- *
- * Validation errors:
- * - Empty string or strings that become empty after trim: "Team name cannot be empty"
- * - Strings longer than 32 characters: "Team name cannot be longer than 32 characters"
- * - Strings with special characters: "Team name can only contain letters, numbers, and spaces"
+ * Valid: "Team 1", "DevOps2023", "Engineering Team", "Dev-Ops", "Team_Name"
+ * Invalid: empty strings, "Team@Work", "Team--Name", names > 32 chars
  */
 export const TeamNameSchema = z
   .string()
   .trim()
   .min(1, { message: 'Team name cannot be empty' })
   .max(32, { message: 'Team name cannot be longer than 32 characters' })
-  .regex(/^[a-zA-Z0-9\s]+$/, {
-    message: 'Team name can only contain letters, numbers, and spaces',
+  .regex(/^[a-zA-Z0-9]+(?:[ _-][a-zA-Z0-9]+)*$/, {
+    message:
+      'Words can only contain letters and numbers, separated by spaces, underscores, or hyphens',
   })
 
 // Shared schemas
