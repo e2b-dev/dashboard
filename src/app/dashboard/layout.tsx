@@ -26,17 +26,16 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const { teamIdOrSlug } = await params
 
-  const [teamId, teamSlug, session, res, cookieStore] = await Promise.all([
-    resolveTeamIdInServerComponent(teamIdOrSlug),
-    resolveTeamSlugInServerComponent(),
-    getSessionInsecure(),
-    getUserTeams(),
-    cookies(),
-  ])
+  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+  const teamSlug = await resolveTeamSlugInServerComponent()
+  const session = await getSessionInsecure()
+  const res = await getUserTeams()
 
   if (!res?.data || res.serverError) {
     throw new Error(res?.serverError || 'Error loading teams.')
   }
+
+  const cookieStore = await cookies()
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'
