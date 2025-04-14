@@ -81,23 +81,9 @@ export async function GET(request: NextRequest): Promise<Response> {
       const newHeaders = new Headers(res.headers)
       newHeaders.delete('content-encoding')
 
-      // take precautions if NO_INDEX is set
+      // Add noindex header if NO_INDEX is set
       if (NO_INDEX) {
-        // add noindex header
         newHeaders.set('X-Robots-Tag', 'noindex, nofollow')
-        // remove any existing robots meta tags and add our own
-        const modifiedHtml = modifiedHtmlBody
-          .replace(/<meta[^>]*name=["']robots["'][^>]*>/gi, '')
-          .replace(
-            /<head[^>]*>/i,
-            (match) =>
-              `${match}<meta name="robots" content="noindex, nofollow">`
-          )
-
-        return new Response(modifiedHtml, {
-          status: res.status,
-          headers: newHeaders,
-        })
       }
 
       return new Response(modifiedHtmlBody, {
