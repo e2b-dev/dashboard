@@ -208,48 +208,40 @@ export const createTeamAction = authActionClient
 
     const userEmail = user.email as string
 
-    try {
-      const createdTeam = await sql.begin<
-        Database['public']['Tables']['teams']['Row']
-      >(async (sql) => {
-        const [team] = await sql<
-          Database['public']['Tables']['teams']['Row'][]
-        >`
+    // If this throws, it will be caught & logged by the action error boundary
+    const createdTeam = await sql.begin<
+      Database['public']['Tables']['teams']['Row']
+    >(async (sql) => {
+      const [team] = await sql<Database['public']['Tables']['teams']['Row'][]>`
           INSERT INTO teams (name, email, tier)
           VALUES (${name}, ${userEmail}, ${BASE_TIER_ID})
           RETURNING *
         `
 
-        await sql`
+      await sql`
           INSERT INTO users_teams (team_id, user_id)
           VALUES (${team.id}, ${user.id})
         `
 
-        // TODO: replace with infra api call for key hashing
-        const apiKeyValue = await generateTeamApiKey()
-        await sql`
+      // TODO: replace with infra api call for key hashing
+      const apiKeyValue = await generateTeamApiKey()
+      await sql`
           INSERT INTO team_api_keys (team_id, name, api_key, created_by)
           VALUES (${team.id}, 'Default API Key', ${apiKeyValue}, ${user.id})
         `
 
-        await sql`
+      await sql`
           INSERT INTO billing.credits (team_id, credits_usd)
           VALUES (${team.id}, ${FREE_CREDITS_NEW_TEAM})
         `
 
-        return team
-      })
+      return team
+    })
 
-      revalidatePath('/dashboard', 'layout')
+    revalidatePath('/dashboard', 'layout')
 
-      return {
-        slug: createdTeam.slug,
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        return returnServerError(error.message)
-      }
-      return returnServerError('Failed to create team')
+    return {
+      slug: createdTeam.slug,
     }
   })
 
