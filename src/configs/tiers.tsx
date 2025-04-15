@@ -44,3 +44,6 @@ export const TIERS: Tier[] = [
     ],
   },
 ]
+
+export const BASE_TIER_ID = TIERS[0].id
+export const FREE_CREDITS_NEW_TEAM = 30

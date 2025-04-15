@@ -13,8 +13,12 @@ import { zfd } from 'zod-form-data'
 import { logWarning } from '@/lib/clients/logger'
 import { returnValidationErrors } from 'next-safe-action'
 import { getTeam } from './get-team'
-import { TIERS } from '@/configs/tiers'
+import { BASE_TIER_ID, FREE_CREDITS_NEW_TEAM, TIERS } from '@/configs/tiers'
 import { CreateTeamSchema, UpdateTeamNameSchema } from './types'
+import { generateTeamApiKey } from '@/server/keys/key-actions'
+import sql from '@/lib/clients/pg'
+import { Database } from '@/types/database.types'
+import { Row } from 'postgres'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -198,39 +202,54 @@ export const createTeamAction = authActionClient
     const { name } = parsedInput
     const { user } = ctx
 
-    const { data: team, error: teamError } = await supabaseAdmin
-      .from('teams')
-      // @ts-expect-error - slug is not nullable, but not required because db triggers create slugs
-      .insert({
-        name,
-        email: user.email!,
-        tier: TIERS[0].id,
-      })
-      .select()
-      .single()
-
-    if (teamError) {
-      throw teamError
+    if (!user.email) {
+      return returnServerError('User email is required to create a team')
     }
 
-    const { error: userTeamError } = await supabaseAdmin
-      .from('users_teams')
-      .insert({
-        team_id: team.id,
-        user_id: user.id,
-        is_default: true,
-        added_by: user.id,
-        created_at: new Date().toISOString(),
+    const userEmail = user.email as string
+
+    try {
+      const createdTeam = await sql.begin<
+        Database['public']['Tables']['teams']['Row']
+      >(async (sql) => {
+        const [team] = await sql<
+          Database['public']['Tables']['teams']['Row'][]
+        >`
+          INSERT INTO teams (name, email, tier)
+          VALUES (${name}, ${userEmail}, ${BASE_TIER_ID})
+          RETURNING *
+        `
+
+        await sql`
+          INSERT INTO users_teams (team_id, user_id)
+          VALUES (${team.id}, ${user.id})
+        `
+
+        // TODO: replace with infra api call for key hashing
+        const apiKeyValue = await generateTeamApiKey()
+        await sql`
+          INSERT INTO team_api_keys (team_id, name, api_key, created_by)
+          VALUES (${team.id}, 'Default API Key', ${apiKeyValue}, ${user.id})
+        `
+
+        await sql`
+          INSERT INTO billing.credits (team_id, credits_usd)
+          VALUES (${team.id}, ${FREE_CREDITS_NEW_TEAM})
+        `
+
+        return team
       })
 
-    if (userTeamError) {
-      throw userTeamError
-    }
+      revalidatePath('/dashboard', 'layout')
 
-    revalidatePath('/dashboard', 'layout')
-
-    return {
-      slug: team.slug,
+      return {
+        slug: createdTeam.slug,
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        return returnServerError(error.message)
+      }
+      return returnServerError('Failed to create team')
     }
   })
 
