@@ -226,8 +226,8 @@ export const createTeamAction = authActionClient
       // TODO: replace with infra api call for key hashing
       const apiKeyValue = await generateTeamApiKey()
       await sql`
-          INSERT INTO team_api_keys (team_id, name, api_key, created_by)
-          VALUES (${team.id}, 'Default API Key', ${apiKeyValue}, ${user.id})
+          INSERT INTO team_api_keys (team_id, name, api_key)
+          VALUES (${team.id}, 'Default API Key', ${apiKeyValue})
         `
 
       await sql`
