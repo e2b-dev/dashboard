@@ -44,6 +44,7 @@ export function CreateTeamDialog({
 
   const {
     form,
+    resetFormAndAction,
     handleSubmitWithAction,
     action: { isExecuting },
   } = useHookFormAction(createTeamAction, zodResolver(CreateTeamSchema), {
@@ -54,37 +55,38 @@ export function CreateTeamDialog({
     },
     actionProps: {
       onSuccess: async (result) => {
-        handleDialogClose(false)
-
         toast(defaultSuccessToast('Team was created.'))
 
         if (result.data && result.data.slug) {
           router.push(PROTECTED_URLS.SANDBOXES(result.data.slug))
           router.refresh()
         }
+
+        handleDialogChange(false)
       },
     },
   })
 
-  function handleDialogClose(value: boolean) {
+  const handleDialogChange = (value: boolean) => {
+    onOpenChange(value)
+
     if (value) return
 
-    form.reset()
-    onOpenChange(value)
+    resetFormAndAction()
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Create Team</DialogTitle>
-          <DialogDescription>
-            Create a new team to collaborate with others.
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
+      <Form {...form}>
+        <form onSubmit={handleSubmitWithAction}>
+          <DialogContent className="max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Create Team</DialogTitle>
+              <DialogDescription>
+                Create a new team to collaborate with others.
+              </DialogDescription>
+            </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={handleSubmitWithAction}>
             <div className="flex flex-col gap-3 px-2 py-6">
               <FormField
                 control={form.control}
@@ -109,7 +111,7 @@ export function CreateTeamDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleDialogChange(false)}
                 disabled={isExecuting}
               >
                 Cancel
@@ -122,9 +124,9 @@ export function CreateTeamDialog({
                 Create Team
               </Button>
             </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+          </DialogContent>
+        </form>
+      </Form>
     </Dialog>
   )
 }
