@@ -3,7 +3,7 @@ import { BASE_URL } from './urls'
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
 export const LANDING_PAGE_FRAMER_DOMAIN = 'e2b-landing-page.framer.website'
 export const BLOG_FRAMER_DOMAIN = 'e2b-blog.framer.website'
-export const DOCS_NEXT_DOMAIN = 'e2b-web-e2b.vercel.app'
+export const DOCS_NEXT_DOMAIN = 'e2b-docs.vercel.app'
 
 export function replaceUrls(
   text: string,
