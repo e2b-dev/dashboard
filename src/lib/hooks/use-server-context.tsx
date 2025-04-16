@@ -2,13 +2,21 @@
 
 import { TeamWithDefault } from '@/types/dashboard'
 import { User } from '@supabase/supabase-js'
-import { createContext, useContext, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  Dispatch,
+  SetStateAction,
+} from 'react'
 
 interface ServerContextValue {
   selectedTeamId: string | null
   selectedTeamSlug: string | null
   teams: TeamWithDefault[]
   user: User
+  setTeams: Dispatch<SetStateAction<TeamWithDefault[]>>
 }
 
 const ServerContext = createContext<ServerContextValue | undefined>(undefined)
@@ -25,14 +33,17 @@ export function ServerContextProvider({
   children,
   teamId = null,
   teamSlug = null,
-  teams,
+  teams: initialTeams,
   user,
 }: ServerContextProviderProps) {
+  const [teams, setTeams] = useState(initialTeams)
+
   const value = {
     selectedTeamId: teamId,
     selectedTeamSlug: teamSlug,
     teams,
     user,
+    setTeams,
   }
 
   return (

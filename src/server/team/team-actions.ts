@@ -1,7 +1,6 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { Database } from '@/types/database.types'
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { z } from 'zod'
 import { kv } from '@vercel/kv'
@@ -14,12 +13,12 @@ import { zfd } from 'zod-form-data'
 import { logWarning } from '@/lib/clients/logger'
 import { returnValidationErrors } from 'next-safe-action'
 import { getTeam } from './get-team'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
-
-const UpdateTeamNameSchema = z.object({
-  teamId: z.string().uuid(),
-  name: z.string().trim().min(1),
-})
+import { BASE_TIER_ID, FREE_CREDITS_NEW_TEAM, TIERS } from '@/configs/tiers'
+import { CreateTeamSchema, UpdateTeamNameSchema } from './types'
+import { generateTeamApiKey } from '@/server/keys/key-actions'
+import sql from '@/lib/clients/pg'
+import { Database } from '@/types/database.types'
+import { Row } from 'postgres'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -196,38 +195,54 @@ export const removeTeamMemberAction = authActionClient
     })
   })
 
-const CreateTeamSchema = z.object({
-  name: z.string().trim().min(1),
-})
-
 export const createTeamAction = authActionClient
   .schema(CreateTeamSchema)
   .metadata({ actionName: 'createTeam' })
   .action(async ({ parsedInput, ctx }) => {
     const { name } = parsedInput
-    const { session } = ctx
+    const { user } = ctx
 
-    const response = await fetch(`${process.env.BILLING_API_URL}/teams`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
-      },
-      body: JSON.stringify({ name }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-
-      throw new Error(error?.message ?? 'Failed to create team')
+    if (!user.email) {
+      return returnServerError('User email is required to create a team')
     }
+
+    const userEmail = user.email as string
+
+    // If this throws, it will be caught & logged by the action error boundary
+    const createdTeam = await sql.begin<
+      Database['public']['Tables']['teams']['Row']
+    >(async (sql) => {
+      const [team] = await sql<Database['public']['Tables']['teams']['Row'][]>`
+          INSERT INTO teams (name, email, tier)
+          VALUES (${name}, ${userEmail}, ${BASE_TIER_ID})
+          RETURNING *
+        `
+
+      await sql`
+          INSERT INTO users_teams (team_id, user_id)
+          VALUES (${team.id}, ${user.id})
+        `
+
+      // TODO: replace with infra api call for key hashing
+      const apiKeyValue = await generateTeamApiKey()
+      await sql`
+          INSERT INTO team_api_keys (team_id, name, api_key)
+          VALUES (${team.id}, 'Default API Key', ${apiKeyValue})
+        `
+
+      await sql`
+          INSERT INTO billing.credits (team_id, credits_usd)
+          VALUES (${team.id}, ${FREE_CREDITS_NEW_TEAM})
+        `
+
+      return team
+    })
 
     revalidatePath('/dashboard', 'layout')
 
-    const data =
-      (await response.json()) as Database['public']['Tables']['teams']['Row']
-
-    return data
+    return {
+      slug: createdTeam.slug,
+    }
   })
 
 const UploadTeamProfilePictureSchema = zfd.formData(

@@ -10,8 +10,6 @@
 [![Discord](https://img.shields.io/discord/1092455714431180995?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.com/channels/1092455714431180995)
 [![GitHub Stars](https://img.shields.io/github/stars/e2b-dev/dashboard?style=social)](https://github.com/e2b-dev/dashboard)
 
-> **Status**: Beta - Ready for early adopters. APIs might change.
-
 ## Quick Links
 - 📚 [Documentation](https://e2b.dev/docs)
 - 💬 [Discord Community](https://discord.gg/e2b)
@@ -56,7 +54,13 @@ bun install
 npm install --legacy-peer-deps
 ```
 
-3. Set up required services:
+3. Environment Variables
+```bash
+# Copy the example env file
+cp .env.example .env.local
+```
+
+4. Set up required services:
 
 #### a. Key-Value Store Setup
 This project requires a Redis-compatible key-value store. You'll need to:
@@ -75,13 +79,13 @@ This project requires a Redis-compatible key-value store. You'll need to:
 #### b. Supabase Setup
 1. Create a new Supabase project
 2. Go to Project Settings > API
-3. Copy the `anon key` and `service_role key`
-4. Copy the project URL
-5. Configure authentication:
+3. Copy the `anon key` & `service_role key` to populate `.env.local`
+4. Copy the `database url` to populate `.env.local`
+4. Configure authentication:
    - Go to Authentication > URL Configuration
    - Set Site URL to the hosting domain 
    - Add `http://localhost:3000/**` to Redirect URLs (for development)
-6. Enable auth providers:
+5. Enable auth providers:
    - Go to Authentication > Providers
    - Enable the providers you want to use (GitHub, Google, E-Mail)
    - Configure each provider with the appropriate credentials
@@ -97,13 +101,8 @@ This project requires a Redis-compatible key-value store. You'll need to:
 1. Go to Storage > Buckets
 2. Create a new **public** bucket named `profile-pictures`
 
-#### e. Environment Variables
-```bash
-# Copy the example env file
-cp .env.example .env.local
-```
 
-#### f. Cookie Encryption
+#### e. Cookie Encryption
 The dashboard uses encrypted cookies for secure data storage. You'll need to set up a `COOKIE_ENCRYPTION_KEY`:
 
 ```bash
