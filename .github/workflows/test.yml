@@ -19,7 +19,8 @@ jobs:
       KV_REST_API_URL: https://test-kv-api.example.com
       SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
       COOKIE_ENCRYPTION_KEY: test-cookie-encryption-key-32-chars-long
-      BILLING_API_URL: https://billing.e2b.dev
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      BILLING_API_URL: https://billing.e2b-test.dev
       NEXT_PUBLIC_POSTHOG_KEY: test-posthog-key
       NEXT_PUBLIC_SUPABASE_URL: https://test-supabase-url.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test-supabase-anon-key
