@@ -35,6 +35,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       '/terms': LANDING_PAGE_DOMAIN,
       '/privacy': LANDING_PAGE_DOMAIN,
       '/pricing': LANDING_PAGE_DOMAIN,
+      '/thank-you': LANDING_PAGE_DOMAIN,
       '/cookbook': LANDING_PAGE_DOMAIN,
       '/contact': LANDING_PAGE_DOMAIN,
       '/blog': LANDING_PAGE_DOMAIN,
