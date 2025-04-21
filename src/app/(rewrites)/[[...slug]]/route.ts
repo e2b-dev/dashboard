@@ -1,10 +1,10 @@
-import { getRewriteForPath, replaceUrls } from '@/configs/rewrites'
+import { getRewriteForPath, replaceUrls } from '@/lib/utils/rewrites'
 import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
-import { logDebug, logError } from '@/lib/clients/logger'
+import { logError } from '@/lib/clients/logger'
 
 export const revalidate = 900
 export const dynamic = 'force-static'

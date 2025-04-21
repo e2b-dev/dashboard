@@ -8,7 +8,7 @@ import {
   resolveTeamForDashboard,
 } from './server/middleware'
 import { PROTECTED_URLS } from './configs/urls'
-import { getRewriteForPath } from './configs/rewrites'
+import { getRewriteForPath } from './lib/utils/rewrites'
 
 export async function middleware(request: NextRequest) {
   try {
@@ -26,13 +26,17 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if the path should be rewritten by middleware
-    const { config } = getRewriteForPath(request.nextUrl.pathname, 'middleware')
+    const { config: middlewareRewriteConfig } = getRewriteForPath(
+      request.nextUrl.pathname,
+      'middleware'
+    )
 
-    if (config) {
+    if (middlewareRewriteConfig) {
       const rewriteUrl = new URL(request.url)
-      rewriteUrl.hostname = config.domain
+      rewriteUrl.hostname = middlewareRewriteConfig.domain
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
+
       return NextResponse.rewrite(rewriteUrl)
     }
 
@@ -102,7 +106,10 @@ export const config = {
      * - favicon.ico (favicon file)
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
      * - api routes
+     * - vercel analytics route
+     * - sentry routes
+     * - posthog routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|_vercel/|monitoring|ingest/).*)',
   ],
 }
