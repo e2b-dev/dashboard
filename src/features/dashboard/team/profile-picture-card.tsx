@@ -87,89 +87,91 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   }
 
   return (
-    <div
-      className="relative cursor-pointer p-4 pr-0 md:p-6 md:pr-0"
-      onClick={handleAvatarClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Avatar
-        className={cn(
-          'h-24 w-24',
-          {
-            'border-none drop-shadow-lg filter': team?.profile_picture_url,
-          },
-          className
-        )}
+    <>
+      <div
+        className="relative cursor-pointer p-4 pr-0 md:p-6 md:pr-0"
+        onClick={handleAvatarClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <AvatarImage
-          src={team?.profile_picture_url || ''}
-          alt={`${team?.name}'s profile picture`}
-        />
-        <AvatarFallback className="bg-bg-200 relative text-2xl font-semibold">
-          <ImagePlusIcon className="text-fg-500" />
-          <Badge className="text-fg-300 absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap uppercase backdrop-blur-md">
-            Upload <ChevronsUp className="text-accent size-4" />
-          </Badge>
-        </AvatarFallback>
-      </Avatar>
-
-      <AnimatePresence>
-        {isHovered && !isUploading && (
-          <motion.div
-            className={cn(
-              cardVariants({ variant: 'layer' }),
-              'absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full'
+        <Avatar
+          className={cn(
+            'relative h-24 w-24',
+            {
+              'border-none drop-shadow-lg filter': team?.profile_picture_url,
+            },
+            className
+          )}
+        >
+          <AvatarImage
+            src={team?.profile_picture_url || ''}
+            alt={`${team?.name}'s profile picture`}
+          />
+          <AvatarFallback className="bg-bg-200 relative text-2xl font-semibold">
+            <ImagePlusIcon className="text-fg-500" />
+            <Badge className="text-fg-300 absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap uppercase backdrop-blur-md">
+              Upload <ChevronsUp className="text-accent size-4" />
+            </Badge>
+          </AvatarFallback>
+          <AnimatePresence>
+            {isHovered && !isUploading && (
+              <motion.div
+                className={cn(
+                  cardVariants({ variant: 'layer' }),
+                  'absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full'
+                )}
+                variants={{
+                  initial: {
+                    opacity: 0,
+                    scale: 0,
+                    filter: 'blur(8px)',
+                  },
+                  animate: {
+                    opacity: 1,
+                    scale: 1,
+                    filter: 'blur(0px)',
+                  },
+                }}
+                initial="initial"
+                animate="animate"
+                exit="initial"
+                transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
+              >
+                <Pencil className="h-5 w-5 text-white" />
+              </motion.div>
             )}
-            variants={{
-              initial: {
-                opacity: 0,
-                scale: 0,
-                filter: 'blur(8px)',
-              },
-              animate: {
-                opacity: 1,
-                scale: 1,
-                filter: 'blur(0px)',
-              },
-            }}
-            initial="initial"
-            animate="animate"
-            exit="initial"
-            transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
-          >
-            <Pencil className="h-5 w-5 text-white" />
-          </motion.div>
-        )}
+          </AnimatePresence>
+        </Avatar>
 
-        {isUploading && (
-          <motion.div
-            className={cn(
-              cardVariants({ variant: 'layer' }),
-              'absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full'
-            )}
-            variants={{
-              initial: {
-                opacity: 0,
-                scale: 0,
-                filter: 'blur(8px)',
-              },
-              animate: {
-                opacity: 1,
-                scale: 1,
-                filter: 'blur(0px)',
-              },
-            }}
-            initial="initial"
-            animate="animate"
-            exit="initial"
-            transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
-          >
-            <Loader2 className="h-5 w-5 animate-spin text-white" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+        <AnimatePresence>
+          {isUploading && (
+            <motion.div
+              className={cn(
+                cardVariants({ variant: 'layer' }),
+                'absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full'
+              )}
+              variants={{
+                initial: {
+                  opacity: 0,
+                  scale: 0,
+                  filter: 'blur(8px)',
+                },
+                animate: {
+                  opacity: 1,
+                  scale: 1,
+                  filter: 'blur(0px)',
+                },
+              }}
+              initial="initial"
+              animate="animate"
+              exit="initial"
+              transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
+            >
+              <Loader2 className="h-5 w-5 animate-spin text-white" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <input
         type="file"
         ref={fileInputRef}
@@ -178,6 +180,6 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
         onChange={handleUpload}
         disabled={isUploading}
       />
-    </div>
+    </>
   )
 }
