@@ -77,16 +77,16 @@ export function CreateTeamDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
-      <Form {...form}>
-        <form onSubmit={handleSubmitWithAction}>
-          <DialogContent className="max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Create Team</DialogTitle>
-              <DialogDescription>
-                Create a new team to collaborate with others.
-              </DialogDescription>
-            </DialogHeader>
+      <DialogContent className="max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Create Team</DialogTitle>
+          <DialogDescription>
+            Create a new team to collaborate with others.
+          </DialogDescription>
+        </DialogHeader>
 
+        <Form {...form}>
+          <form onSubmit={handleSubmitWithAction}>
             <div className="flex flex-col gap-3 px-2 py-6">
               <FormField
                 control={form.control}
@@ -124,9 +124,9 @@ export function CreateTeamDialog({
                 Create Team
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </DialogContent>
     </Dialog>
   )
 }
