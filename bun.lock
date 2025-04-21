@@ -36,6 +36,7 @@
         "@types/mdx": "^2.0.13",
         "@vercel/analytics": "^1.5.0",
         "@vercel/kv": "^3.0.0",
+        "@worker-tools/html-rewriter": "^0.1.0-pre.19",
         "ansis": "^3.17.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -46,6 +47,7 @@
         "fumadocs-mdx": "^11.5.3",
         "fumadocs-ui": "^15.0.6",
         "geist": "^1.3.1",
+        "htmlrewriter": "^0.0.12",
         "immer": "^10.1.1",
         "jose": "^6.0.4",
         "lucide-react": "^0.487.0",
@@ -883,6 +885,10 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.0.0", "", {}, "sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA=="],
 
+    "@stardazed/streams-compression": ["@stardazed/streams-compression@1.0.0", "", { "dependencies": { "@stardazed/zlib": "^1.0.0" } }, "sha512-SQCiwxdIVJ5xxUBYptN+fc+tJpSDbxQuJ0+3u2SmHjIzr6JIRZ28AVFtFnGy6x6j3UBlaLx73w9rC6UAFxnd1g=="],
+
+    "@stardazed/zlib": ["@stardazed/zlib@1.0.1", "", {}, "sha512-MS6PCYiRNJ32c69+3NPyL+bu7LpiFDvMcBXnlhQnF8CKMG0R/xRVCCo422NPkQ0+Cox3xKpk5Lc1LfWFS4b3cw=="],
+
     "@storybook/addon-actions": ["@storybook/addon-actions@8.6.7", "", { "dependencies": { "@storybook/global": "^5.0.0", "@types/uuid": "^9.0.1", "dequal": "^2.0.2", "polished": "^4.2.2", "uuid": "^9.0.0" }, "peerDependencies": { "storybook": "^8.6.7" } }, "sha512-XgZCwIcZGThEyD7e2q7rN/jzg7ZHUxn/ln403eex04jWAGBBbtC2IVuowwCWV8HwDihnhpCZEP6HlgjakOYZbQ=="],
 
     "@storybook/addon-backgrounds": ["@storybook/addon-backgrounds@8.6.7", "", { "dependencies": { "@storybook/global": "^5.0.0", "memoizerific": "^1.11.3", "ts-dedent": "^2.0.0" }, "peerDependencies": { "storybook": "^8.6.7" } }, "sha512-aDFzi83gDhYn0+FGjRYbY5TfBtoG/UgVr9Abi7s5ceabZRhPrYikMyFX0o8V3Z8COl6wUmWmF1luYE4MfXgN2g=="],
@@ -1278,6 +1284,10 @@
     "@webassemblyjs/wasm-parser": ["@webassemblyjs/wasm-parser@1.14.1", "", { "dependencies": { "@webassemblyjs/ast": "1.14.1", "@webassemblyjs/helper-api-error": "1.13.2", "@webassemblyjs/helper-wasm-bytecode": "1.13.2", "@webassemblyjs/ieee754": "1.13.2", "@webassemblyjs/leb128": "1.13.2", "@webassemblyjs/utf8": "1.13.2" } }, "sha512-JLBl+KZ0R5qB7mCnud/yyX08jWFw5MsoalJ1pQ4EdFlgj9VdXKGuENGsiCIjegI1W7p91rUlcB/LB5yRJKNTcQ=="],
 
     "@webassemblyjs/wast-printer": ["@webassemblyjs/wast-printer@1.14.1", "", { "dependencies": { "@webassemblyjs/ast": "1.14.1", "@xtuc/long": "4.2.2" } }, "sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw=="],
+
+    "@worker-tools/html-rewriter": ["@worker-tools/html-rewriter@0.1.0-pre.19", "", { "dependencies": { "@stardazed/streams-compression": "^1.0.0", "@worker-tools/resolvable-promise": "latest" } }, "sha512-IUbEZwvSdp8vtaB1LAZ/sBRJGNycd9a8cbkqO05rMEPm5MC59Sb+wiGCWaaRXrwQLDAyWeod4QC/q0TuSUI5EA=="],
+
+    "@worker-tools/resolvable-promise": ["@worker-tools/resolvable-promise@0.2.0-pre.6", "", {}, "sha512-+5RcuruCLB/P3FYYb376RgyImXaq9BBQoOskUbgPyNK3O0AXPakrXUj1EELv+lcnUSdFws/ufdrrWODLJyoTmg=="],
 
     "@xtuc/ieee754": ["@xtuc/ieee754@1.2.0", "", {}, "sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA=="],
 
@@ -2058,6 +2068,8 @@
     "html-webpack-plugin": ["html-webpack-plugin@5.6.3", "", { "dependencies": { "@types/html-minifier-terser": "^6.0.0", "html-minifier-terser": "^6.0.2", "lodash": "^4.17.21", "pretty-error": "^4.0.0", "tapable": "^2.0.0" }, "peerDependencies": { "@rspack/core": "0.x || 1.x", "webpack": "^5.20.0" }, "optionalPeers": ["@rspack/core", "webpack"] }, "sha512-QSf1yjtSAsmf7rYBV7XX86uua4W/vkhIt0xNXKbsi2foEeW7vjJQz4bhnpL3xH+l1ryl1680uNv968Z+X6jSYg=="],
 
     "htmlparser2": ["htmlparser2@10.0.0", "", { "dependencies": { "domelementtype": "^2.3.0", "domhandler": "^5.0.3", "domutils": "^3.2.1", "entities": "^6.0.0" } }, "sha512-TwAZM+zE5Tq3lrEHvOlvwgj1XLWQCtaaibSN11Q+gGBAS7Y1uZSWwXXRe4iF6OXnaq1riyQAPFOBtYc77Mxq0g=="],
+
+    "htmlrewriter": ["htmlrewriter@0.0.12", "", {}, "sha512-Tw+wORUlNL9+JQCIo7J4SuX/T3M1xRAC/0XaifnRPLHCX95jbZy/0CI06n7BhuFQJhSdNA7ZoxnStJmF31FZRw=="],
 
     "http-proxy-agent": ["http-proxy-agent@5.0.0", "", { "dependencies": { "@tootallnate/once": "2", "agent-base": "6", "debug": "4" } }, "sha512-n2hY8YdoRE1i7r6M0w9DIw5GgZN0G25P8zLCRQ8rjXtTU3vsNFBI/vWK/UIeE6g5MUUz6avwAPXmL6Fy9D/90w=="],
 

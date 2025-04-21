@@ -31,10 +31,6 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
       { path: '/blog' },
     ],
   },
-  {
-    domain: LANDING_PAGE_FRAMER_DOMAIN,
-    rules: [{ path: '/ai-agents' }],
-  },
 ]
 
 // Middleware native rewrite config
@@ -42,5 +38,9 @@ export const MIDDLEWARE_REWRITE_CONFIG: DomainConfig[] = [
   {
     domain: DOCS_NEXT_DOMAIN,
     rules: [{ path: '/docs' }],
+  },
+  {
+    domain: LANDING_PAGE_FRAMER_DOMAIN,
+    rules: [{ path: '/ai-agents' }],
   },
 ]

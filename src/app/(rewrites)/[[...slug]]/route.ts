@@ -1,10 +1,11 @@
-import { getRewriteForPath, replaceUrls } from '@/lib/utils/rewrites'
+import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
 import { logError } from '@/lib/clients/logger'
+import { HTMLRewriter } from '@worker-tools/html-rewriter/base64'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -54,21 +55,66 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (contentType?.startsWith('text/html')) {
       const html = await res.text()
-      const modifiedHtmlBody = replaceUrls(html, 'href="', '">')
 
-      // create new headers without content-encoding to ensure proper rendering
+      // Create new headers without content-encoding to ensure proper rendering
       const newHeaders = new Headers(res.headers)
       newHeaders.delete('content-encoding')
+
+      // Rewrite absolute URLs pointing to the rewritten domain to relative paths
+      const rewriter = new HTMLRewriter()
+      if (config) {
+        const rewrittenPrefix = `https://${config.domain}`
+
+        rewriter
+          .on('a[href]', {
+            element(element: Element) {
+              const href = element.getAttribute('href')
+              if (href?.startsWith(rewrittenPrefix)) {
+                try {
+                  const url = new URL(href)
+                  element.setAttribute(
+                    'href',
+                    url.pathname + url.search + url.hash
+                  )
+                } catch (e) {
+                  // Ignore invalid URLs
+                  console.error('Failed to parse URL for rewriting:', href, e)
+                }
+              }
+            },
+          })
+          .on('link[href]', {
+            element(element: Element) {
+              const href = element.getAttribute('href')
+              if (href?.startsWith(rewrittenPrefix)) {
+                try {
+                  const url = new URL(href)
+                  element.setAttribute(
+                    'href',
+                    url.pathname + url.search + url.hash
+                  )
+                } catch (e) {
+                  // Ignore invalid URLs
+                  console.error('Failed to parse URL for rewriting:', href, e)
+                }
+              }
+            },
+          })
+      }
 
       // Add noindex header if NO_INDEX is set
       if (NO_INDEX) {
         newHeaders.set('X-Robots-Tag', 'noindex, nofollow')
       }
 
-      return new Response(modifiedHtmlBody, {
+      // Create a new response with the modified HTML
+      const modifiedResponse = new Response(html, {
         status: res.status,
         headers: newHeaders,
       })
+
+      // Apply the HTMLRewriter transformations
+      return rewriter.transform(modifiedResponse)
     }
 
     return res
