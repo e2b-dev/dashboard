@@ -14,15 +14,6 @@ export type TeamMember = {
 }
 
 /**
- * Schema for validating team names.
- *
- * Rules:
- * - Non-empty strings (1-32 chars)
- * - Trims whitespace
- * - Words can contain letters and numbers
- * - Words can be separated by spaces, underscores, or hyphens
- * - No consecutive separators allowed
- *
  * Valid: "Team 1", "DevOps2023", "Engineering Team", "Dev-Ops", "Team_Name"
  * Invalid: empty strings, "Team@Work", "Team--Name", names > 32 chars
  */

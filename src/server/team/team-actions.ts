@@ -13,7 +13,7 @@ import { zfd } from 'zod-form-data'
 import { logWarning } from '@/lib/clients/logger'
 import { returnValidationErrors } from 'next-safe-action'
 import { getTeam } from './get-team'
-import { BASE_TIER_ID, FREE_CREDITS_NEW_TEAM, TIERS } from '@/configs/tiers'
+import { BASE_TIER_ID, FREE_CREDITS_NEW_TEAM_USD } from '@/configs/tiers'
 import { CreateTeamSchema, UpdateTeamNameSchema } from './types'
 import { generateTeamApiKey } from '@/server/keys/key-actions'
 import sql from '@/lib/clients/pg'
@@ -230,7 +230,7 @@ export const createTeamAction = authActionClient
 
       await sql`
           INSERT INTO billing.credits (team_id, credits_usd)
-          VALUES (${team.id}, ${FREE_CREDITS_NEW_TEAM})
+          VALUES (${team.id}, ${FREE_CREDITS_NEW_TEAM_USD})
         `
 
       return team
