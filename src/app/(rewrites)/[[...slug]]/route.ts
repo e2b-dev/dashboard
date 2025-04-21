@@ -66,40 +66,25 @@ export async function GET(request: NextRequest): Promise<Response> {
       if (config) {
         const rewrittenPrefix = `https://${config.domain}`
 
+        const rewriteHrefAttribute = (element: Element) => {
+          const href = element.getAttribute('href')
+          if (href?.startsWith(rewrittenPrefix)) {
+            try {
+              const url = new URL(href)
+              element.setAttribute('href', url.pathname + url.search + url.hash)
+            } catch (e) {
+              // Ignore invalid URLs
+              logError(ERROR_CODES.URL_REWRITE, 'HTMLRewriter', e)
+            }
+          }
+        }
+
         rewriter
           .on('a[href]', {
-            element(element: Element) {
-              const href = element.getAttribute('href')
-              if (href?.startsWith(rewrittenPrefix)) {
-                try {
-                  const url = new URL(href)
-                  element.setAttribute(
-                    'href',
-                    url.pathname + url.search + url.hash
-                  )
-                } catch (e) {
-                  // Ignore invalid URLs
-                  console.error('Failed to parse URL for rewriting:', href, e)
-                }
-              }
-            },
+            element: rewriteHrefAttribute,
           })
           .on('link[href]', {
-            element(element: Element) {
-              const href = element.getAttribute('href')
-              if (href?.startsWith(rewrittenPrefix)) {
-                try {
-                  const url = new URL(href)
-                  element.setAttribute(
-                    'href',
-                    url.pathname + url.search + url.hash
-                  )
-                } catch (e) {
-                  // Ignore invalid URLs
-                  console.error('Failed to parse URL for rewriting:', href, e)
-                }
-              }
-            },
+            element: rewriteHrefAttribute,
           })
       }
 
@@ -154,10 +139,10 @@ export async function generateStaticParams() {
         })
 
         if (matchingRule) {
-          return true // Include this path
+          return true
         }
       }
-      return false // Exclude this path
+      return false
     })
     .map((entry) => {
       // Map the filtered entries to slug format
