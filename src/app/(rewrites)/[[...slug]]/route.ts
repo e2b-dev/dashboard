@@ -6,6 +6,7 @@ import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
 import { logError } from '@/lib/clients/logger'
 import { HTMLRewriter } from '@worker-tools/html-rewriter/base64'
+import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -134,13 +135,39 @@ export async function GET(request: NextRequest): Promise<Response> {
 export async function generateStaticParams() {
   const sitemapEntries = await sitemap()
 
-  const slugs = sitemapEntries.map((entry) => {
-    const url = new URL(entry.url)
-    const pathname = url.pathname
-    const pathSegments = pathname.split('/').filter((segment) => segment !== '')
+  const slugs = sitemapEntries
+    .filter((entry) => {
+      const url = new URL(entry.url)
+      const pathname = url.pathname
 
-    return { slug: pathSegments.length > 0 ? pathSegments : undefined }
-  })
+      // Check if this path matches any rule in ROUTE_REWRITE_CONFIG
+      for (const domainConfig of ROUTE_REWRITE_CONFIG) {
+        const isIndex = pathname === '/' || pathname === ''
+        const matchingRule = domainConfig.rules.find((rule) => {
+          if (isIndex && rule.path === '/') {
+            return true
+          }
+          if (pathname === rule.path || pathname.startsWith(rule.path + '/')) {
+            return true
+          }
+          return false
+        })
+
+        if (matchingRule) {
+          return true // Include this path
+        }
+      }
+      return false // Exclude this path
+    })
+    .map((entry) => {
+      // Map the filtered entries to slug format
+      const url = new URL(entry.url)
+      const pathname = url.pathname
+      const pathSegments = pathname
+        .split('/')
+        .filter((segment) => segment !== '')
+      return { slug: pathSegments.length > 0 ? pathSegments : undefined }
+    })
 
   return slugs
 }

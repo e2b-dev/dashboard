@@ -18,8 +18,8 @@ import {
 import { DomainConfig } from '@/types/rewrites.types'
 import { NO_INDEX } from '@/lib/utils/flags'
 
-// Cache the sitemap for 24 hours (in seconds)
-const SITEMAP_CACHE_TIME = 24 * 60 * 60
+// Cache the sitemap for 15 minutes (in seconds)
+const SITEMAP_CACHE_TIME = 15 * 60
 
 /**
  * Valid change frequency values for sitemap entries
