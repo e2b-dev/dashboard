@@ -5,6 +5,9 @@ export type RewriteRule = {
   // Optional pathname preprocessor function
   // Executes before the path is rewritten
   pathPreprocessor?: (path: string) => string
+
+  // Optional explicit path prefix expected in the source sitemap for this rule
+  sitemapMatchPath?: string
 }
 
 export type DomainConfig = {

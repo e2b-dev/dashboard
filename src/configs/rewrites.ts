@@ -2,7 +2,6 @@ import { DomainConfig } from '@/types/rewrites.types'
 
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
 export const LANDING_PAGE_FRAMER_DOMAIN = 'e2b-landing-page.framer.website'
-export const BLOG_FRAMER_DOMAIN = 'e2b-blog.framer.website'
 export const DOCS_NEXT_DOMAIN = 'e2b-docs.vercel.app'
 
 // Currently we have two locations for rewrites to happen.
@@ -27,6 +26,7 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
       {
         path: '/blog/category',
         pathPreprocessor: (path) => path.replace('/blog', ''),
+        sitemapMatchPath: '/category',
       },
       { path: '/blog' },
     ],
