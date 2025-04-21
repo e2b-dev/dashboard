@@ -8,11 +8,35 @@ import {
   resolveTeamForDashboard,
 } from './server/middleware'
 import { PROTECTED_URLS } from './configs/urls'
+import { getRewriteForPath } from './configs/rewrites'
 
-// Main middleware function
 export async function middleware(request: NextRequest) {
   try {
-    // 1. Setup response and Supabase client
+    // Catch-all route rewrite paths should not be handled by middleware
+    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
+    const { config: routeRewriteConfig } = getRewriteForPath(
+      request.nextUrl.pathname,
+      'route'
+    )
+
+    if (routeRewriteConfig) {
+      return NextResponse.next({
+        request,
+      })
+    }
+
+    // Check if the path should be rewritten by middleware
+    const { config } = getRewriteForPath(request.nextUrl.pathname, 'middleware')
+
+    if (config) {
+      const rewriteUrl = new URL(request.url)
+      rewriteUrl.hostname = config.domain
+      rewriteUrl.protocol = 'https'
+      rewriteUrl.port = ''
+      return NextResponse.rewrite(rewriteUrl)
+    }
+
+    // Setup response and Supabase client
     const response = NextResponse.next({
       request,
     })
@@ -44,7 +68,7 @@ export async function middleware(request: NextRequest) {
       )
     }
 
-    // 2. Refresh session and handle auth redirects
+    // Refresh session and handle auth redirects
     const { error, data } = await getUserSession(supabase)
 
     // Handle authentication redirects
@@ -56,10 +80,10 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
-    // 3. Handle team resolution for all dashboard routes
+    // Handle team resolution for all dashboard routes
     const teamResult = await resolveTeamForDashboard(request, data.user.id)
 
-    // 4. Process team resolution result
+    // Process team resolution result
     return handleTeamResolution(request, response, teamResult)
   } catch (error) {
     // Return a basic response to avoid infinite loops
@@ -78,8 +102,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
      * - api routes
-     * - paths handled by the catchall route.ts (terms, privacy, pricing, cookbook, changelog, blog, ai-agents, docs)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|terms|privacy|pricing|cookbook|changelog|blog|ai-agents|docs|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

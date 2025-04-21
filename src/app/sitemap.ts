@@ -13,8 +13,8 @@ import {
   DOCS_NEXT_DOMAIN,
   LANDING_PAGE_DOMAIN,
   LANDING_PAGE_FRAMER_DOMAIN,
-} from '@/configs/domains'
-import { BLOG_FRAMER_DOMAIN } from '@/configs/domains'
+  BLOG_FRAMER_DOMAIN,
+} from '@/configs/rewrites'
 import { NO_INDEX } from '@/lib/utils/flags'
 
 // Cache the sitemap for 24 hours (in seconds)

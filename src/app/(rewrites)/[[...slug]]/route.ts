@@ -1,14 +1,10 @@
-import {
-  DOCS_NEXT_DOMAIN,
-  LANDING_PAGE_DOMAIN,
-  LANDING_PAGE_FRAMER_DOMAIN,
-  replaceUrls,
-} from '@/configs/domains'
+import { getRewriteForPath, replaceUrls } from '@/configs/rewrites'
 import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
+import { logDebug, logError } from '@/lib/clients/logger'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -25,31 +21,13 @@ export async function GET(request: NextRequest): Promise<Response> {
     url.protocol = 'https'
   }
 
-  if (url.pathname === '' || url.pathname === '/') {
-    updateUrlHostname(LANDING_PAGE_DOMAIN)
-  } else if (url.pathname.startsWith('/blog/category')) {
-    url.pathname = url.pathname.replace(/^\/blog/, '')
-    updateUrlHostname(LANDING_PAGE_DOMAIN)
-  } else {
-    const hostnameMap: Record<string, string> = {
-      '/terms': LANDING_PAGE_DOMAIN,
-      '/privacy': LANDING_PAGE_DOMAIN,
-      '/pricing': LANDING_PAGE_DOMAIN,
-      '/thank-you': LANDING_PAGE_DOMAIN,
-      '/cookbook': LANDING_PAGE_DOMAIN,
-      '/contact': LANDING_PAGE_DOMAIN,
-      '/blog': LANDING_PAGE_DOMAIN,
-      '/ai-agents': LANDING_PAGE_FRAMER_DOMAIN,
-      '/docs': DOCS_NEXT_DOMAIN,
-    }
+  const { config, rule } = getRewriteForPath(url.pathname, 'route')
 
-    const matchingPath = Object.keys(hostnameMap).find(
-      (path) => url.pathname === path || url.pathname.startsWith(path + '/')
-    )
-
-    if (matchingPath) {
-      updateUrlHostname(hostnameMap[matchingPath])
+  if (config) {
+    if (rule && rule.pathPreprocessor) {
+      url.pathname = rule.pathPreprocessor(url.pathname)
     }
+    updateUrlHostname(config.domain)
   }
 
   try {
@@ -76,7 +54,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (contentType?.startsWith('text/html')) {
       const html = await res.text()
-      const modifiedHtmlBody = replaceUrls(html, url.pathname, 'href="', '">')
+      const modifiedHtmlBody = replaceUrls(html, 'href="', '">')
 
       // create new headers without content-encoding to ensure proper rendering
       const newHeaders = new Headers(res.headers)
@@ -95,7 +73,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return res
   } catch (error) {
-    console.error(ERROR_CODES.URL_REWRITE, error)
+    logError(ERROR_CODES.URL_REWRITE, error)
 
     return new Response(
       `Proxy Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
