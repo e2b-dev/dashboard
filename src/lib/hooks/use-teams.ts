@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useServerContext } from './use-server-context'
 
 export const useTeams = () => {
@@ -8,12 +7,7 @@ export const useTeams = () => {
 }
 
 export const useSelectedTeam = () => {
-  const { teams, selectedTeamId } = useServerContext()
-
-  const selectedTeam = useMemo(
-    () => teams.find((team) => team.id === selectedTeamId),
-    [teams, selectedTeamId]
-  )
+  const { selectedTeam } = useServerContext()
 
   return selectedTeam
 }

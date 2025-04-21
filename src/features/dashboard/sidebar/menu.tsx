@@ -21,11 +21,7 @@ import { Plus, LogOut, UserRoundCog, ChevronsUpDown } from 'lucide-react'
 import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 import { useUser } from '@/lib/hooks/use-user'
 import { signOutAction } from '@/server/auth/auth-actions'
-import {
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from '@/ui/primitives/sidebar'
+import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import Link from 'next/link'
 import { CreateTeamDialog } from './create-team-dialog'
 import { useState } from 'react'

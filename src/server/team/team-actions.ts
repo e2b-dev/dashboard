@@ -18,7 +18,6 @@ import { CreateTeamSchema, UpdateTeamNameSchema } from './types'
 import { generateTeamApiKey } from '@/server/keys/key-actions'
 import sql from '@/lib/clients/pg'
 import { Database } from '@/types/database.types'
-import { Row } from 'postgres'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -44,8 +43,7 @@ export const updateTeamNameAction = authActionClient
       return returnServerError(`Failed to update team name: ${error.message}`)
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
+    revalidatePath('/dashboard', 'layout')
 
     return data
   })

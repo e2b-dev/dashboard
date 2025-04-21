@@ -25,8 +25,6 @@ import { useToast } from '@/lib/hooks/use-toast'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
 import { UpdateTeamNameSchema } from '@/server/team/types'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { produce } from 'immer'
-import { useServerContext } from '@/lib/hooks/use-server-context'
 
 interface NameCardProps {
   className?: string
@@ -36,14 +34,13 @@ export function NameCard({ className }: NameCardProps) {
   'use no memo'
 
   const team = useSelectedTeam()
-  const { teams, setTeams } = useServerContext()
 
   const { toast } = useToast()
 
   const {
     form,
     handleSubmitWithAction,
-    action: { isPending },
+    action: { isExecuting, optimisticState },
   } = useHookFormOptimisticAction(
     updateTeamNameAction,
     zodResolver(UpdateTeamNameSchema),
@@ -60,16 +57,6 @@ export function NameCard({ className }: NameCardProps) {
         },
         updateFn: (state, input) => {
           if (!state.team) return state
-
-          const updatedTeams = produce(teams, (draft) => {
-            const team = draft.find((t) => t.id === input.teamId)
-
-            if (team) {
-              team.name = input.name
-            }
-          })
-
-          setTeams(updatedTeams)
 
           return {
             team: {
@@ -94,13 +81,7 @@ export function NameCard({ className }: NameCardProps) {
     }
   )
 
-  const { reset, watch } = form
-
-  useEffect(() => {
-    if (team) {
-      reset({ name: team.name, teamId: team.id })
-    }
-  }, [team, reset])
+  const { watch } = form
 
   return (
     <Card className={className}>
@@ -132,8 +113,8 @@ export function NameCard({ className }: NameCardProps) {
               <Button
                 type="submit"
                 variant="outline"
-                loading={isPending}
-                disabled={watch('name') === team.name}
+                loading={isExecuting}
+                disabled={watch('name') === optimisticState?.team?.name}
               >
                 Save
               </Button>
