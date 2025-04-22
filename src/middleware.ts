@@ -44,7 +44,30 @@ export async function middleware(request: NextRequest) {
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
 
-      const rewriteResponse = await fetch(rewriteUrl)
+      const rewriteResponse = await fetch(rewriteUrl, {
+        headers: {
+          'User-Agent': request.headers.get('User-Agent') || '',
+          'Accept-Language': request.headers.get('Accept-Language') || '',
+          'Accept-Encoding': request.headers.get('Accept-Encoding') || '',
+          Accept: request.headers.get('Accept') || '',
+          'Sec-Fetch-Dest': request.headers.get('Sec-Fetch-Dest') || '',
+          'Sec-Fetch-Mode': request.headers.get('Sec-Fetch-Mode') || '',
+          'Sec-Fetch-Site': request.headers.get('Sec-Fetch-Site') || '',
+          'Sec-Fetch-User': request.headers.get('Sec-Fetch-User') || '',
+          'X-Forwarded-Host': request.headers.get('host') || '',
+          'X-Forwarded-Proto':
+            request.headers.get('x-forwarded-proto') || 'https',
+          'X-Forwarded-For':
+            request.headers.get('x-forwarded-for') ||
+            request.headers.get('x-real-ip') ||
+            '',
+          'X-Real-IP': request.headers.get('x-real-ip') || '',
+          'X-Middleware-Rewrite': 'true',
+          Referer: request.headers.get('referer') || '',
+        },
+        redirect: 'follow',
+        cache: 'no-store',
+      })
 
       const html = rewriteContentPagesHtml(await rewriteResponse.text(), {
         seo: {
