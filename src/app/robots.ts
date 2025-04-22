@@ -3,11 +3,9 @@ import { NO_INDEX } from '@/lib/utils/flags'
 
 export default function robots(): MetadataRoute.Robots {
   if (NO_INDEX) {
+    // We serve an empty robots.txt for a 200 status code
     return {
-      rules: {
-        userAgent: '*',
-        disallow: '/',
-      },
+      rules: {},
     }
   }
 
@@ -16,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/sitemap.xml`,
+    sitemap: `https://e2b.dev/sitemap.xml`,
   }
 }
