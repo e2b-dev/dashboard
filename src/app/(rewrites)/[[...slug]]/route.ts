@@ -1,11 +1,13 @@
-import { getRewriteForPath } from '@/lib/utils/rewrites'
+import {
+  getRewriteForPath,
+  rewriteContentPagesHtml,
+} from '@/lib/utils/rewrites'
 import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
 import { logError } from '@/lib/clients/logger'
-import { HTMLRewriter } from '@worker-tools/html-rewriter/base64'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { checkSEODeprecation } from '@/lib/utils/seo'
 
@@ -59,44 +61,25 @@ export async function GET(request: NextRequest): Promise<Response> {
     })
 
     const contentType = res.headers.get('Content-Type')
+    const newHeaders = new Headers(res.headers)
 
     if (contentType?.startsWith('text/html')) {
-      const html = await res.text()
+      let html = await res.text()
 
-      // Create new headers without content-encoding to ensure proper rendering
-      const newHeaders = new Headers(res.headers)
+      // Remove content-encoding header to ensure proper rendering
       newHeaders.delete('content-encoding')
 
-      // Rewrite absolute URLs pointing to the rewritten domain to relative paths
-      const rewriter = new HTMLRewriter()
+      // Rewrite absolute URLs pointing to the rewritten domain to relative paths and with correct SEO tags
       if (config) {
         const rewrittenPrefix = `https://${config.domain}`
 
-        const rewriteHrefAttribute = (element: Element) => {
-          const href = element.getAttribute('href')
-          if (href?.startsWith(rewrittenPrefix)) {
-            try {
-              const url = new URL(href)
-              element.setAttribute('href', url.pathname + url.search + url.hash)
-            } catch (e) {
-              // Ignore invalid URLs
-              logError(ERROR_CODES.URL_REWRITE, 'HTMLRewriter', e)
-            }
-          }
-        }
-
-        rewriter
-          .on('a[href]', {
-            element: rewriteHrefAttribute,
-          })
-          .on('link[href]', {
-            element: rewriteHrefAttribute,
-          })
-      }
-
-      // Add noindex header if NO_INDEX is set
-      if (NO_INDEX) {
-        newHeaders.set('X-Robots-Tag', 'noindex, nofollow')
+        html = rewriteContentPagesHtml(html, {
+          seo: {
+            pathname: url.pathname,
+            isNoIndex: NO_INDEX,
+          },
+          hrefPrefix: rewrittenPrefix,
+        })
       }
 
       // Create a new response with the modified HTML
@@ -105,8 +88,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         headers: newHeaders,
       })
 
-      // Apply the HTMLRewriter transformations
-      return rewriter.transform(modifiedResponse)
+      return modifiedResponse
     }
 
     return res

@@ -9,9 +9,13 @@ import {
   resolveTeamForDashboard,
 } from './server/middleware'
 import { PROTECTED_URLS } from './configs/urls'
-import { getRewriteForPath } from './lib/utils/rewrites'
 import { logError } from './lib/clients/logger'
 import { ERROR_CODES } from './configs/logs'
+import {
+  getRewriteForPath,
+  rewriteContentPagesHtml,
+} from './lib/utils/rewrites'
+import { NO_INDEX } from './lib/utils/flags'
 
 export async function middleware(request: NextRequest) {
   try {
@@ -40,7 +44,19 @@ export async function middleware(request: NextRequest) {
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
 
-      return NextResponse.rewrite(rewriteUrl)
+      const rewriteResponse = await fetch(rewriteUrl)
+
+      const html = rewriteContentPagesHtml(await rewriteResponse.text(), {
+        seo: {
+          pathname: request.nextUrl.pathname,
+          isNoIndex: NO_INDEX,
+        },
+        hrefPrefix: `https://${middlewareRewriteConfig.domain}`,
+      })
+
+      return new NextResponse(html, {
+        headers: rewriteResponse.headers,
+      })
     }
 
     // Setup response and Supabase client
