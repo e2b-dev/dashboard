@@ -5,7 +5,7 @@ import {
 } from '@/configs/rewrites'
 import { RewriteConfig } from '@/types/rewrites.types'
 import * as cheerio from 'cheerio'
-import { logError } from '@/lib/clients/logger'
+import { logError, logWarning } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 
 function getRewriteForPath(
@@ -82,7 +82,7 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
 `)
   } else {
     // Handle case where <head> might not exist (though unlikely for full HTML docs)
-    console.warn(
+    logWarning(
       'Cheerio SEO Rewriter: <head> tag not found. Cannot insert SEO tags.'
     )
   }
@@ -100,7 +100,7 @@ function rewriteAbsoluteHrefsInDoc(
   $: cheerio.CheerioAPI,
   rewrittenPrefix: string
 ): void {
-  $('a[href], link[href]').each((_, element) => {
+  $('a[href]').each((_, element) => {
     const $element = $(element)
     const href = $element.attr('href')
 
