@@ -70,6 +70,7 @@
     "@types/mdx": "^2.0.13",
     "@vercel/analytics": "^1.5.0",
     "@vercel/kv": "^3.0.0",
+    "@worker-tools/html-rewriter": "^0.1.0-pre.19",
     "ansis": "^3.17.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

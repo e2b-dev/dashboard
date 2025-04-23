@@ -1,14 +1,12 @@
-import {
-  DOCS_NEXT_DOMAIN,
-  LANDING_PAGE_DOMAIN,
-  LANDING_PAGE_FRAMER_DOMAIN,
-  replaceUrls,
-} from '@/configs/domains'
+import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
+import { logError } from '@/lib/clients/logger'
+import { HTMLRewriter } from '@worker-tools/html-rewriter/base64'
+import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -25,31 +23,13 @@ export async function GET(request: NextRequest): Promise<Response> {
     url.protocol = 'https'
   }
 
-  if (url.pathname === '' || url.pathname === '/') {
-    updateUrlHostname(LANDING_PAGE_DOMAIN)
-  } else if (url.pathname.startsWith('/blog/category')) {
-    url.pathname = url.pathname.replace(/^\/blog/, '')
-    updateUrlHostname(LANDING_PAGE_DOMAIN)
-  } else {
-    const hostnameMap: Record<string, string> = {
-      '/terms': LANDING_PAGE_DOMAIN,
-      '/privacy': LANDING_PAGE_DOMAIN,
-      '/pricing': LANDING_PAGE_DOMAIN,
-      '/thank-you': LANDING_PAGE_DOMAIN,
-      '/cookbook': LANDING_PAGE_DOMAIN,
-      '/contact': LANDING_PAGE_DOMAIN,
-      '/blog': LANDING_PAGE_DOMAIN,
-      '/ai-agents': LANDING_PAGE_FRAMER_DOMAIN,
-      '/docs': DOCS_NEXT_DOMAIN,
-    }
+  const { config, rule } = getRewriteForPath(url.pathname, 'route')
 
-    const matchingPath = Object.keys(hostnameMap).find(
-      (path) => url.pathname === path || url.pathname.startsWith(path + '/')
-    )
-
-    if (matchingPath) {
-      updateUrlHostname(hostnameMap[matchingPath])
+  if (config) {
+    if (rule && rule.pathPreprocessor) {
+      url.pathname = rule.pathPreprocessor(url.pathname)
     }
+    updateUrlHostname(config.domain)
   }
 
   try {
@@ -76,26 +56,56 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (contentType?.startsWith('text/html')) {
       const html = await res.text()
-      const modifiedHtmlBody = replaceUrls(html, url.pathname, 'href="', '">')
 
-      // create new headers without content-encoding to ensure proper rendering
+      // Create new headers without content-encoding to ensure proper rendering
       const newHeaders = new Headers(res.headers)
       newHeaders.delete('content-encoding')
+
+      // Rewrite absolute URLs pointing to the rewritten domain to relative paths
+      const rewriter = new HTMLRewriter()
+      if (config) {
+        const rewrittenPrefix = `https://${config.domain}`
+
+        const rewriteHrefAttribute = (element: Element) => {
+          const href = element.getAttribute('href')
+          if (href?.startsWith(rewrittenPrefix)) {
+            try {
+              const url = new URL(href)
+              element.setAttribute('href', url.pathname + url.search + url.hash)
+            } catch (e) {
+              // Ignore invalid URLs
+              logError(ERROR_CODES.URL_REWRITE, 'HTMLRewriter', e)
+            }
+          }
+        }
+
+        rewriter
+          .on('a[href]', {
+            element: rewriteHrefAttribute,
+          })
+          .on('link[href]', {
+            element: rewriteHrefAttribute,
+          })
+      }
 
       // Add noindex header if NO_INDEX is set
       if (NO_INDEX) {
         newHeaders.set('X-Robots-Tag', 'noindex, nofollow')
       }
 
-      return new Response(modifiedHtmlBody, {
+      // Create a new response with the modified HTML
+      const modifiedResponse = new Response(html, {
         status: res.status,
         headers: newHeaders,
       })
+
+      // Apply the HTMLRewriter transformations
+      return rewriter.transform(modifiedResponse)
     }
 
     return res
   } catch (error) {
-    console.error(ERROR_CODES.URL_REWRITE, error)
+    logError(ERROR_CODES.URL_REWRITE, error)
 
     return new Response(
       `Proxy Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -110,13 +120,39 @@ export async function GET(request: NextRequest): Promise<Response> {
 export async function generateStaticParams() {
   const sitemapEntries = await sitemap()
 
-  const slugs = sitemapEntries.map((entry) => {
-    const url = new URL(entry.url)
-    const pathname = url.pathname
-    const pathSegments = pathname.split('/').filter((segment) => segment !== '')
+  const slugs = sitemapEntries
+    .filter((entry) => {
+      const url = new URL(entry.url)
+      const pathname = url.pathname
 
-    return { slug: pathSegments.length > 0 ? pathSegments : undefined }
-  })
+      // Check if this path matches any rule in ROUTE_REWRITE_CONFIG
+      for (const domainConfig of ROUTE_REWRITE_CONFIG) {
+        const isIndex = pathname === '/' || pathname === ''
+        const matchingRule = domainConfig.rules.find((rule) => {
+          if (isIndex && rule.path === '/') {
+            return true
+          }
+          if (pathname === rule.path || pathname.startsWith(rule.path + '/')) {
+            return true
+          }
+          return false
+        })
+
+        if (matchingRule) {
+          return true
+        }
+      }
+      return false
+    })
+    .map((entry) => {
+      // Map the filtered entries to slug format
+      const url = new URL(entry.url)
+      const pathname = url.pathname
+      const pathSegments = pathname
+        .split('/')
+        .filter((segment) => segment !== '')
+      return { slug: pathSegments.length > 0 ? pathSegments : undefined }
+    })
 
   return slugs
 }

@@ -13,12 +13,13 @@ import {
   DOCS_NEXT_DOMAIN,
   LANDING_PAGE_DOMAIN,
   LANDING_PAGE_FRAMER_DOMAIN,
-} from '@/configs/domains'
-import { BLOG_FRAMER_DOMAIN } from '@/configs/domains'
+  ROUTE_REWRITE_CONFIG,
+} from '@/configs/rewrites'
+import { DomainConfig } from '@/types/rewrites.types'
 import { NO_INDEX } from '@/lib/utils/flags'
 
-// Cache the sitemap for 24 hours (in seconds)
-const SITEMAP_CACHE_TIME = 24 * 60 * 60
+// Cache the sitemap for 15 minutes (in seconds)
+const SITEMAP_CACHE_TIME = 15 * 60
 
 /**
  * Valid change frequency values for sitemap entries
@@ -52,12 +53,6 @@ const sites: Site[] = [
   {
     sitemapUrl: `https://${LANDING_PAGE_DOMAIN}/sitemap.xml`,
     priority: 1.0,
-    changeFrequency: 'weekly',
-    baseUrl: 'https://e2b.dev',
-  },
-  {
-    sitemapUrl: `https://${BLOG_FRAMER_DOMAIN}/sitemap.xml`,
-    priority: 0.9,
     changeFrequency: 'weekly',
     baseUrl: 'https://e2b.dev',
   },
@@ -125,38 +120,110 @@ async function getXmlData(url: string): Promise<Sitemap> {
 }
 
 /**
+ * Finds the corresponding rewrite configuration for a given site based on its sitemap URL domain.
+ *
+ * @param site The site configuration.
+ * @returns The matching DomainConfig or undefined if not found.
+ */
+function findRewriteConfig(site: Site): DomainConfig | undefined {
+  try {
+    const siteDomain = new URL(site.sitemapUrl).hostname
+    return ROUTE_REWRITE_CONFIG.find((config) => config.domain === siteDomain)
+  } catch (error) {
+    console.error(
+      `Error parsing sitemapUrl ${site.sitemapUrl} to find rewrite config:`,
+      error
+    )
+    return undefined
+  }
+}
+
+/**
  * Processes a site's sitemap and converts it to Next.js sitemap format
+ * Applies path preprocessing based on ROUTE_REWRITE_CONFIG.
  *
  * @param site The site configuration to process
  * @returns Array of sitemap entries in Next.js format
  */
 async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
   const data = await getXmlData(site.sitemapUrl)
+  const rewriteConfig = findRewriteConfig(site) // Find the rewrite config for this site
 
-  if (!data) {
+  if (!data || !site.baseUrl) {
+    // Ensure baseUrl is defined, as it's crucial for constructing final URLs
+    if (!site.baseUrl) {
+      console.warn(
+        `Site ${site.sitemapUrl} is missing baseUrl, skipping sitemap generation for this site.`
+      )
+    }
     return []
   }
 
   /**
    * Processes a single URL entry from the sitemap
    */
-  const processUrl = (line: SitemapData) => {
-    const url = new URL(line.loc)
-    const properUrl = `${site.baseUrl}${url.pathname}`
+  const processUrl = (
+    line: SitemapData
+  ): MetadataRoute.Sitemap[number] | null => {
+    try {
+      const originalUrl = new URL(line.loc)
+      const rewrittenPathname = originalUrl.pathname
+      let finalPathname = rewrittenPathname // Default to the path from the sitemap
 
-    return {
-      url: properUrl,
-      priority: line?.priority || site.priority,
-      changeFrequency: line?.changefreq || site.changeFrequency,
-      lastModified: line?.lastmod || site.lastModified,
+      // Find the corresponding original path if a preprocessor was involved
+      if (rewriteConfig) {
+        for (const rule of rewriteConfig.rules) {
+          // Use sitemapMatchPath if available for matching
+          if (rule.sitemapMatchPath) {
+            if (rewrittenPathname.startsWith(rule.sitemapMatchPath)) {
+              // Reconstruct the original path using the explicit match
+              const suffix = rewrittenPathname.substring(
+                rule.sitemapMatchPath.length
+              )
+              finalPathname = rule.path + suffix // Use the rule's original path + suffix
+              break // Found the matching rule
+            }
+          }
+        }
+      }
+
+      // Construct the final URL using the site's base URL and the determined pathname
+      const finalUrl = new URL(finalPathname, site.baseUrl).toString()
+
+      return {
+        url: finalUrl,
+        priority: line?.priority ?? site.priority, // Use nullish coalescing for defaults
+        changeFrequency: line?.changefreq ?? site.changeFrequency, // Use nullish coalescing
+        lastModified: line?.lastmod ?? site.lastModified, // Use nullish coalescing
+      }
+    } catch (error) {
+      console.error(`Error processing sitemap URL ${line.loc}:`, error)
+      return null // Return null if URL processing fails
     }
   }
 
   // Handle both array and single-item sitemaps
+  if (!data.urlset?.url) {
+    console.warn(
+      `Sitemap from ${site.sitemapUrl} has no urlset or url property.`
+    )
+    return []
+  }
+
   if (Array.isArray(data.urlset.url)) {
-    return data.urlset.url.map(processUrl)
+    // Filter out any potential null results from processUrl if errors occurred
+    return data.urlset.url
+      .map(processUrl)
+      .filter((entry) => entry !== null) as MetadataRoute.Sitemap
+  } else if (typeof data.urlset.url === 'object' && data.urlset.url !== null) {
+    const entry = processUrl(data.urlset.url)
+    return entry ? [entry] : [] // Return array with the entry or empty array if null
   } else {
-    return [processUrl(data.urlset.url)]
+    console.warn(
+      `Sitemap from ${site.sitemapUrl} has unexpected urlset.url structure:`,
+      data.urlset.url
+    )
+    return []
   }
 }
 

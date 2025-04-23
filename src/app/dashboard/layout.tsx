@@ -46,8 +46,8 @@ export default async function DashboardLayout({
     <ServerContextProvider
       teamId={teamId}
       teamSlug={teamSlug}
-      teams={res?.data}
       selectedTeam={selectedTeam}
+      teams={res.data}
       user={session!.user}
     >
       <SidebarProvider defaultOpen={defaultOpen}>
