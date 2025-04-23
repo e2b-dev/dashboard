@@ -207,13 +207,16 @@ export const createTeamAction = authActionClient
     const userEmail = user.email as string
 
     // If this throws, it will be caught & logged by the action error boundary
-    const createdTeam = await sql.begin<
-      Database['public']['Tables']['teams']['Row']
-    >(async (sql) => {
-      const [team] = await sql<Database['public']['Tables']['teams']['Row'][]>`
+    type TeamReturn = Pick<
+      Database['public']['Tables']['teams']['Row'],
+      'id' | 'slug'
+    >
+
+    const createdTeam = await sql.begin<TeamReturn>(async (sql) => {
+      const [team] = await sql<TeamReturn[]>`
           INSERT INTO teams (name, email, tier)
           VALUES (${name}, ${userEmail}, ${BASE_TIER_ID})
-          RETURNING *
+          RETURNING id, slug
         `
 
       await sql`
