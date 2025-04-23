@@ -21,7 +21,6 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
       { path: '/privacy' },
       { path: '/pricing' },
       { path: '/thank-you' },
-      { path: '/cookbook' },
       { path: '/contact' },
       {
         path: '/blog/category',
@@ -35,6 +34,10 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
 
 // Middleware native rewrite config
 export const MIDDLEWARE_REWRITE_CONFIG: DomainConfig[] = [
+  {
+    domain: LANDING_PAGE_DOMAIN,
+    rules: [{ path: '/cookbook' }],
+  },
   {
     domain: DOCS_NEXT_DOMAIN,
     rules: [{ path: '/docs' }],
