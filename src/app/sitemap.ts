@@ -12,7 +12,6 @@ import { XMLParser } from 'fast-xml-parser'
 import {
   DOCS_NEXT_DOMAIN,
   LANDING_PAGE_DOMAIN,
-  LANDING_PAGE_FRAMER_DOMAIN,
   ROUTE_REWRITE_CONFIG,
 } from '@/configs/rewrites'
 import { DomainConfig } from '@/types/rewrites.types'
@@ -59,12 +58,6 @@ const sites: Site[] = [
   {
     sitemapUrl: `https://${DOCS_NEXT_DOMAIN}/sitemap.xml`,
     priority: 0.9,
-    changeFrequency: 'weekly',
-    baseUrl: 'https://e2b.dev',
-  },
-  {
-    sitemapUrl: `https://${LANDING_PAGE_FRAMER_DOMAIN}/sitemap.xml`,
-    priority: 0.7,
     changeFrequency: 'weekly',
     baseUrl: 'https://e2b.dev',
   },
