@@ -1,12 +1,13 @@
 import { getRewriteForPath } from '@/lib/utils/rewrites'
-import { ERROR_CODES } from '@/configs/logs'
+import { ERROR_CODES, WARNING_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
-import { logError } from '@/lib/clients/logger'
+import { logError, logWarning } from '@/lib/clients/logger'
 import { HTMLRewriter } from '@worker-tools/html-rewriter/base64'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
+import { DEPRECATED_PATH_REGEXPS } from '@/configs/seo'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -15,6 +16,22 @@ const REVALIDATE_TIME = 900 // 15 minutes ttl
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
+  const pathname = url.pathname
+
+  // Check if the path matches any deprecated regex pattern
+  for (const pattern of DEPRECATED_PATH_REGEXPS) {
+    try {
+      const regex = new RegExp(pattern)
+      if (regex.test(pathname)) {
+        return new Response(null, { status: 410 })
+      }
+    } catch (error) {
+      logWarning(WARNING_CODES.SEO, pattern, error)
+
+      continue
+    }
+  }
+
   const requestHostname = url.hostname
 
   const updateUrlHostname = (newHostname: string) => {

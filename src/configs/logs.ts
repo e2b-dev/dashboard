@@ -7,6 +7,11 @@ export const ERROR_CODES = {
   GUARD: 'GUARD_ERROR',
   EMAIL_VALIDATION: 'EMAIL_VALIDATION_ERROR',
   SUPABASE: 'SUPABASE_ERROR',
+  INVALID_REGEX: 'INVALID_REGEX_ERROR',
+} as const
+
+export const WARNING_CODES = {
+  SEO: 'SEO',
 } as const
 
 export const INFO_CODES = {
