@@ -63,6 +63,8 @@ export async function middleware(request: NextRequest) {
             '',
           'X-Real-IP': request.headers.get('x-real-ip') || '',
           'X-Middleware-Rewrite': 'true',
+          'Cache-Control': 'private, no-store, max-age=0',
+          'Vercel-CDN-Cache-Control': 'no-store',
           Referer: request.headers.get('referer') || '',
         },
         redirect: 'follow',
