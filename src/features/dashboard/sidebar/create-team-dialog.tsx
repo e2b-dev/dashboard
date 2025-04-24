@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAction } from 'next-safe-action/hooks'
-
 import {
   Dialog,
   DialogContent,
@@ -26,7 +25,6 @@ import {
 import { Input } from '@/ui/primitives/input'
 import { createTeamAction } from '@/server/team/team-actions'
 import { toast } from '@/lib/hooks/use-toast'
-import { useTeams } from '@/lib/hooks/use-teams'
 import { useRouter } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
