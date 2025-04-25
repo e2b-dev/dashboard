@@ -12,6 +12,4 @@
  * - '/ai-agents/{foo,bar}' - Matches /ai-agents/foo or /ai-agents/bar
  * - '/ai-agents/!(foo|bar)' - Matches anything except /ai-agents/foo or /ai-agents/bar
  */
-export const DEPRECATED_PATH_PATTERNS = [
-  '/ai-agents/**', // Match any path under /ai-agents
-]
+export const DEPRECATED_PATH_PATTERNS = []
