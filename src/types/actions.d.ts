@@ -1,4 +1,4 @@
-import { TeamWithDefault } from './dashboard'
+import { ClientTeam } from './dashboard'
 
 /*
  * Server actions do not return thrown error messages in production, for security.

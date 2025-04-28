@@ -1,14 +1,14 @@
 'use client'
 
-import { TeamWithDefault } from '@/types/dashboard'
+import { ClientTeam } from '@/types/dashboard'
 import { User } from '@supabase/supabase-js'
 import { createContext, useContext, ReactNode } from 'react'
 
 interface ServerContextValue {
   selectedTeamId: string | null
   selectedTeamSlug: string | null
-  teams: TeamWithDefault[]
-  selectedTeam: TeamWithDefault | null
+  teams: ClientTeam[]
+  selectedTeam: ClientTeam | null
   user: User
 }
 
@@ -18,8 +18,8 @@ interface ServerContextProviderProps {
   children: ReactNode
   teamId?: string | null
   teamSlug?: string | null
-  teams: TeamWithDefault[]
-  selectedTeam: TeamWithDefault | null
+  teams: ClientTeam[]
+  selectedTeam: ClientTeam | null
   user: User
 }
 

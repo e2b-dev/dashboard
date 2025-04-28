@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { TeamWithDefault } from '@/types/dashboard'
+import { ClientTeam } from '@/types/dashboard'
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
@@ -39,12 +39,12 @@ export const getTeam = authActionClient
       throw teamError
     }
 
-    const teamWithDefault: TeamWithDefault = {
+    const ClientTeam: ClientTeam = {
       ...team,
       is_default: userTeamsRelationData?.is_default,
     }
 
-    return teamWithDefault
+    return ClientTeam
   })
 
 export const getUserTeams = authActionClient
@@ -98,7 +98,7 @@ export const getUserTeams = authActionClient
       authUsers?.map((user) => [user.id, user.email]) || []
     )
 
-    const teams: TeamWithDefault[] = usersTeamsData.map((userTeam) => {
+    const teams: ClientTeam[] = usersTeamsData.map((userTeam) => {
       const team = userTeam.teams
       const isDefault = defaultTeamIds.has(team.id)
 
