@@ -65,9 +65,55 @@ export const getUserTeams = authActionClient
       return returnServerError('No teams found.')
     }
 
+    const teamIds = usersTeamsData.map((userTeam) => userTeam.teams.id)
+
+    const { data: allTeamRelations, error: relationsError } =
+      await supabaseAdmin
+        .from('users_teams')
+        .select('team_id, is_default')
+        .in('team_id', teamIds)
+        .eq('is_default', true)
+
+    if (relationsError) {
+      throw relationsError
+    }
+
+    const defaultTeamIds = new Set(
+      allTeamRelations?.map((relation) => relation.team_id) || []
+    )
+
+    const { data: authUsers, error: authUsersError } = await supabaseAdmin
+      .from('auth_users')
+      .select('id, email')
+      .in(
+        'id',
+        usersTeamsData.map((userTeam) => userTeam.user_id)
+      )
+
+    if (authUsersError) {
+      throw authUsersError
+    }
+
+    const userEmailMap = new Map(
+      authUsers?.map((user) => [user.id, user.email]) || []
+    )
+
     const teams: TeamWithDefault[] = usersTeamsData.map((userTeam) => {
       const team = userTeam.teams
-      return { ...team, is_default: userTeam.is_default }
+      const isDefault = defaultTeamIds.has(team.id)
+
+      let transformedDefaultName
+      if (isDefault && team.name === userEmailMap.get(userTeam.user_id)) {
+        const email = team.name
+        const username = email.split('@')[0]
+        transformedDefaultName = `Team of ${username}`
+      }
+
+      return {
+        ...team,
+        is_default: userTeam.is_default,
+        transformed_default_name: transformedDefaultName,
+      }
     })
 
     return teams
