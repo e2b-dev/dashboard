@@ -103,10 +103,16 @@ export const getUserTeams = authActionClient
       const isDefault = defaultTeamIds.has(team.id)
 
       let transformedDefaultName
+      // generate a transformed default name if the team is a default team and the team name is the same as the default user's email
       if (isDefault && team.name === userEmailMap.get(userTeam.user_id)) {
         const email = team.name
-        const username = email.split('@')[0]
-        transformedDefaultName = `Team of ${username}`
+        const splitEmail = email.split('@')
+
+        if (splitEmail.length > 0 && splitEmail[0]) {
+          const username =
+            splitEmail[0].charAt(0).toUpperCase() + splitEmail[0].slice(1)
+          transformedDefaultName = `${username}'s Team`
+        }
       }
 
       return {
