@@ -8,7 +8,7 @@ import {
 } from '@/ui/primitives/select'
 import { RefreshCw } from 'lucide-react'
 import { Separator } from './primitives/separator'
-import { PollingInterval } from '@/types/dashboard'
+import { PollingInterval } from '@/types/dashboard.types'
 import { useEffect, useState } from 'react'
 
 interface PollingButtonProps {
@@ -76,7 +76,7 @@ export function PollingButton({
           onRefresh()
           setRemainingTime(pollingInterval) // Reset timer on manual refresh
         }}
-        className="h-6 text-fg-500"
+        className="text-fg-500 h-6"
         disabled={isPolling}
       >
         <RefreshCw
@@ -90,9 +90,9 @@ export function PollingButton({
         value={pollingInterval.toString()}
         onValueChange={handleIntervalChange}
       >
-        <SelectTrigger className="h-6 w-fit gap-1 whitespace-nowrap border-none bg-transparent pl-2 text-fg-300">
+        <SelectTrigger className="text-fg-300 h-6 w-fit gap-1 border-none bg-transparent pl-2 whitespace-nowrap">
           Auto-refresh
-          <span className="ml-1 text-accent">
+          <span className="text-accent ml-1">
             {pollingInterval === 0 ? 'Off' : formatTime(remainingTime)}
           </span>
         </SelectTrigger>

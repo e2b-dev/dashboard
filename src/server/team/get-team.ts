@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { ClientTeam } from '@/types/dashboard'
+import { ClientTeam } from '@/types/dashboard.types'
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'

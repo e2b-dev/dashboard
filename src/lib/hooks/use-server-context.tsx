@@ -1,6 +1,6 @@
 'use client'
 
-import { ClientTeam } from '@/types/dashboard'
+import { ClientTeam } from '@/types/dashboard.types'
 import { User } from '@supabase/supabase-js'
 import { createContext, useContext, ReactNode } from 'react'
 

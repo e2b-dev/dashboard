@@ -6,7 +6,7 @@ import {
   SortingState,
 } from '@tanstack/react-table'
 import { StartedAtFilter } from '../table-filters'
-import { PollingInterval } from '@/types/dashboard'
+import { PollingInterval } from '@/types/dashboard.types'
 import { createHashStorage } from '@/lib/utils/store'
 import { trackTableInteraction } from '../table-config'
 

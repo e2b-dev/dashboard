@@ -1,4 +1,4 @@
-import { ClientTeam } from './dashboard'
+import { ClientTeam } from './dashboard.types'
 
 /*
  * Server actions do not return thrown error messages in production, for security.
