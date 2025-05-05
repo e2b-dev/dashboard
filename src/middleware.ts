@@ -65,7 +65,7 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    // Redirect to dashboard if user is logged in and on landing page
+    // Redirect to dashboard if user is logged in and on auth routes
     if (
       isAuthRoute(request.nextUrl.pathname) &&
       (await supabase.auth.getSession()).data.session
