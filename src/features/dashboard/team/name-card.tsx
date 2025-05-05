@@ -20,6 +20,7 @@ import {
   FormItem,
   FormControl,
   FormMessage,
+  FormLabel,
 } from '@/ui/primitives/form'
 import { useToast } from '@/lib/hooks/use-toast'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
@@ -91,7 +92,7 @@ export function NameCard({ className }: NameCardProps) {
           Change your team name to display on your invoices and receipts.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {team ? (
           <Form {...form}>
             <form
@@ -102,10 +103,18 @@ export function NameCard({ className }: NameCardProps) {
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
+                  <FormItem className="flex-1 gap-1">
                     <FormControl>
                       <Input placeholder="Acme, Inc." {...field} />
                     </FormControl>
+                    {team.transformed_default_name && (
+                      <span className="text-fg-500 ml-0.5 text-xs">
+                        Seen as -{' '}
+                        <span className="text-contrast-2">
+                          {team.transformed_default_name}
+                        </span>
+                      </span>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
