@@ -20,7 +20,6 @@ import {
   FormItem,
   FormControl,
   FormMessage,
-  FormLabel,
 } from '@/ui/primitives/form'
 import { useToast } from '@/lib/hooks/use-toast'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
@@ -115,7 +114,7 @@ export function NameCard({ className }: NameCardProps) {
                         </span>
                       </span>
                     )}
-                    <FormMessage />
+                    <FormMessage className="mt-1" />
                   </FormItem>
                 )}
               />

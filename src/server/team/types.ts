@@ -24,7 +24,7 @@ export const TeamNameSchema = z
   .max(32, { message: 'Team name cannot be longer than 32 characters' })
   .regex(/^[a-zA-Z0-9]+(?:[ _-][a-zA-Z0-9]+)*$/, {
     message:
-      'Words can only contain letters and numbers, separated by spaces, underscores, or hyphens',
+      'Names can only contain letters and numbers, separated by spaces, underscores, or hyphens',
   })
 
 // Shared schemas
