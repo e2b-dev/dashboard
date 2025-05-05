@@ -1,20 +1,4 @@
 /*
- * local storage keys in use
- */
-export const STORAGE_KEYS = {
-  SELECTED_TEAM_ID: 'selected_team_id',
-  DEVELOPER_SETTINGS: 'developer_settings',
-}
-
-/*
- * react-query keys in use
- */
-export const QUERY_KEYS = {
-  USER: () => 'user',
-  TEAMS: () => 'user-teams',
-}
-
-/*
  * cookie keys in use
  */
 export const COOKIE_KEYS = {
