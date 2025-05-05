@@ -153,6 +153,14 @@ export async function checkUserTeamAccess(
 }
 
 // URL utility functions
+export function isAuthRoute(pathname: string): boolean {
+  return (
+    pathname.includes(AUTH_URLS.SIGN_IN) ||
+    pathname.includes(AUTH_URLS.SIGN_UP) ||
+    pathname.includes(AUTH_URLS.FORGOT_PASSWORD)
+  )
+}
+
 export function isDashboardRoute(pathname: string): boolean {
   return pathname.startsWith(PROTECTED_URLS.DASHBOARD)
 }
