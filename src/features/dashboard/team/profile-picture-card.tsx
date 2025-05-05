@@ -1,6 +1,5 @@
 'use client'
 
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { useSelectedTeam, useTeams } from '@/lib/hooks/use-teams'
 import { useRef, useState } from 'react'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -56,7 +55,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
     if (e.target.files && e.target.files[0] && team?.id) {
       const file = e.target.files[0]
 
-      const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB (or match your config limit)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
 
       if (file.size > MAX_FILE_SIZE) {
         toast(
@@ -114,7 +113,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
             </Badge>
           </AvatarFallback>
           <AnimatePresence>
-            {isHovered && !isUploading && (
+            {isHovered && !isUploading ? (
               <motion.div
                 className={cn(
                   cardVariants({ variant: 'layer' }),
@@ -139,38 +138,34 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
               >
                 <Pencil className="h-5 w-5 text-white" />
               </motion.div>
-            )}
+            ) : isUploading ? (
+              <motion.div
+                className={cn(
+                  cardVariants({ variant: 'layer' }),
+                  'absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full'
+                )}
+                variants={{
+                  initial: {
+                    opacity: 0,
+                    scale: 0,
+                    filter: 'blur(8px)',
+                  },
+                  animate: {
+                    opacity: 1,
+                    scale: 1,
+                    filter: 'blur(0px)',
+                  },
+                }}
+                initial="initial"
+                animate="animate"
+                exit="initial"
+                transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
+              >
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+              </motion.div>
+            ) : null}
           </AnimatePresence>
         </Avatar>
-
-        <AnimatePresence>
-          {isUploading && (
-            <motion.div
-              className={cn(
-                cardVariants({ variant: 'layer' }),
-                'absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full'
-              )}
-              variants={{
-                initial: {
-                  opacity: 0,
-                  scale: 0,
-                  filter: 'blur(8px)',
-                },
-                animate: {
-                  opacity: 1,
-                  scale: 1,
-                  filter: 'blur(0px)',
-                },
-              }}
-              initial="initial"
-              animate="animate"
-              exit="initial"
-              transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
-            >
-              <Loader2 className="h-5 w-5 animate-spin text-white" />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
       <input
         type="file"
