@@ -25,6 +25,8 @@ import { useToast } from '@/lib/hooks/use-toast'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
 import { UpdateTeamNameSchema } from '@/server/team/types'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { AnimatePresence, motion } from 'motion/react'
+import { exponentialSmoothing } from '@/lib/utils'
 
 interface NameCardProps {
   className?: string
@@ -106,14 +108,28 @@ export function NameCard({ className }: NameCardProps) {
                     <FormControl>
                       <Input placeholder="Acme, Inc." {...field} />
                     </FormControl>
-                    {team.transformed_default_name && (
-                      <span className="text-fg-500 ml-0.5 text-xs">
-                        Seen as -{' '}
-                        <span className="text-contrast-2">
-                          {team.transformed_default_name}
-                        </span>
-                      </span>
-                    )}
+                    <AnimatePresence initial={false}>
+                      {team.transformed_default_name && (
+                        <motion.span
+                          className="text-fg-500 ml-0.5 text-xs"
+                          animate={{
+                            opacity: 1,
+                            filter: 'blur(0px)',
+                            height: 'auto',
+                          }}
+                          exit={{ opacity: 0, filter: 'blur(4px)', height: 0 }}
+                          transition={{
+                            duration: 0.4,
+                            ease: exponentialSmoothing(3),
+                          }}
+                        >
+                          Seen as -{' '}
+                          <span className="text-contrast-2">
+                            {team.transformed_default_name}
+                          </span>
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                     <FormMessage className="mt-1" />
                   </FormItem>
                 )}
