@@ -5,6 +5,7 @@ import { ClientTeam } from '@/types/dashboard.types'
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
+import { logError } from '@/lib/clients/logger'
 
 const GetTeamSchema = z.object({
   teamId: z.string().uuid(),
@@ -67,60 +68,76 @@ export const getUserTeams = authActionClient
 
     const teamIds = usersTeamsData.map((userTeam) => userTeam.teams.id)
 
-    const { data: allTeamRelations, error: relationsError } =
-      await supabaseAdmin
-        .from('users_teams')
-        .select('team_id, is_default')
-        .in('team_id', teamIds)
-        .eq('is_default', true)
+    try {
+      const { data: allConnectedDefaultTeamRelations, error: relationsError } =
+        await supabaseAdmin
+          .from('users_teams')
+          .select('team_id, user_id, is_default')
+          .in('team_id', teamIds)
+          .eq('is_default', true)
 
-    if (relationsError) {
-      throw relationsError
-    }
+      if (relationsError) {
+        throw relationsError
+      }
 
-    const defaultTeamIds = new Set(
-      allTeamRelations?.map((relation) => relation.team_id) || []
-    )
-
-    const { data: authUsers, error: authUsersError } = await supabaseAdmin
-      .from('auth_users')
-      .select('id, email')
-      .in(
-        'id',
-        usersTeamsData.map((userTeam) => userTeam.user_id)
+      const defaultUserIds = new Set(
+        allConnectedDefaultTeamRelations?.map((relation) => relation.user_id) ||
+          []
       )
 
-    if (authUsersError) {
-      throw authUsersError
-    }
+      const { data: defaultTeamAuthUsers, error: authUsersError } =
+        await supabaseAdmin
+          .from('auth_users')
+          .select('id, email')
+          .in('id', Array.from(defaultUserIds))
 
-    const userEmailMap = new Map(
-      authUsers?.map((user) => [user.id, user.email]) || []
-    )
+      if (authUsersError) {
+        logError(authUsersError)
+        return usersTeamsData.map((userTeam) => ({
+          ...userTeam.teams,
+          is_default: userTeam.is_default,
+        }))
+      }
 
-    const teams: ClientTeam[] = usersTeamsData.map((userTeam) => {
-      const team = userTeam.teams
-      const isDefault = defaultTeamIds.has(team.id)
+      const userEmailMap = new Map(
+        defaultTeamAuthUsers?.map((user) => [user.id, user.email]) || []
+      )
 
-      let transformedDefaultName
-      // generate a transformed default name if the team is a default team and the team name is the same as the default user's email
-      if (isDefault && team.name === userEmailMap.get(userTeam.user_id)) {
-        const email = team.name
-        const splitEmail = email.split('@')
+      const teams: ClientTeam[] = usersTeamsData.map((userTeam) => {
+        const team = userTeam.teams
+        const defaultTeamRelation = allConnectedDefaultTeamRelations.find(
+          (relation) => relation.team_id === team.id
+        )
 
-        if (splitEmail.length > 0 && splitEmail[0]) {
-          const username =
-            splitEmail[0].charAt(0).toUpperCase() + splitEmail[0].slice(1)
-          transformedDefaultName = `${username}'s Team`
+        let transformedDefaultName
+        // generate a transformed default name if the team is a default team and the team name is the same as the default user's email
+        if (
+          defaultTeamRelation &&
+          team.name === userEmailMap.get(defaultTeamRelation.user_id)
+        ) {
+          const email = team.name
+          const splitEmail = email.split('@')
+
+          if (splitEmail.length > 0 && splitEmail[0]) {
+            const username =
+              splitEmail[0].charAt(0).toUpperCase() + splitEmail[0].slice(1)
+            transformedDefaultName = `${username}'s Team`
+          }
         }
-      }
 
-      return {
-        ...team,
+        return {
+          ...team,
+          is_default: userTeam.is_default,
+          transformed_default_name: transformedDefaultName,
+        }
+      })
+
+      return teams
+    } catch (err) {
+      logError(err)
+      return usersTeamsData.map((userTeam) => ({
+        ...userTeam.teams,
         is_default: userTeam.is_default,
-        transformed_default_name: transformedDefaultName,
-      }
-    })
-
-    return teams
+      }))
+    }
   })

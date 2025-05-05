@@ -5,7 +5,6 @@ import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Card,
