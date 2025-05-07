@@ -29,7 +29,6 @@ export const clientSchema = z.object({
 
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
-  NEXT_PUBLIC_STRIPE_BILLING_URL: z.string().url().optional(),
   NEXT_PUBLIC_EXPOSE_STORYBOOK: z.string().optional(),
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
