@@ -149,15 +149,15 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     enableColumnFilter: false,
   }, */
   {
-    accessorKey: 'sandboxID',
+    accessorFn: (row) => `${row?.sandboxID}-${row?.clientID}`,
     header: 'ID',
-    cell: ({ row }) => (
+    cell: ({ getValue }) => (
       <div className="text-fg-500 truncate font-mono text-xs">
-        {row.getValue('sandboxID')}
+        {getValue() as string}
       </div>
     ),
-    size: 160,
-    minSize: 160,
+    size: 240,
+    minSize: 100,
     enableColumnFilter: false,
     enableSorting: false,
     enableGlobalFilter: true,
