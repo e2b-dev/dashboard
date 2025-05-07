@@ -3,7 +3,9 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
+import { CustomerPortalResponse } from '@/types/billing'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -115,4 +117,37 @@ export const clearLimitAction = authActionClient
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/budget`, 'page')
+  })
+
+// CUSTOMER PORTAL
+
+const RedirectToCustomerPortalParamsSchema = z.object({
+  teamId: z.string().uuid(),
+})
+
+export const redirectToCustomerPortal = authActionClient
+  .schema(RedirectToCustomerPortalParamsSchema)
+  .metadata({ actionName: 'redirectToCustomerPortal' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId } = parsedInput
+    const { session } = ctx
+
+    const origin = (await headers()).get('origin')
+
+    const res = await fetch(`${process.env.BILLING_API_URL}/portals`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(origin && { Origin: origin }),
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      },
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to redirect to customer portal')
+    }
+
+    const data = (await res.json()) as CustomerPortalResponse
+
+    throw redirect(data.url)
   })

@@ -32,7 +32,7 @@ export const getBillingLimits = authActionClient
 
       throw new Error(
         text ??
-          `Failed to fetch billing endpoint: /teams/${teamId}/billing-limits`
+        `Failed to fetch billing endpoint: /teams/${teamId}/billing-limits`
       )
     }
 

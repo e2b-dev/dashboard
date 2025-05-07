@@ -1,9 +1,11 @@
 'use client'
 
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { redirectToCustomerPortal } from '@/server/billing/billing-actions'
 import ExternalIcon from '@/ui/external-icon'
 import { Button } from '@/ui/primitives/button'
-import Link from 'next/link'
+import { useAction } from 'next-safe-action/hooks'
+import { Loader } from '@/ui/loader'
 
 interface CustomerPortalLinkProps {
   className?: string
@@ -14,16 +16,24 @@ export default function CustomerPortalLink({
 }: CustomerPortalLinkProps) {
   const team = useSelectedTeam()
 
+  const { isTransitioning, execute } = useAction(redirectToCustomerPortal)
+
   if (!team) return null
 
   return (
-    <Button asChild variant="outline" size="lg" className={className}>
-      <Link
-        href={`${process.env.NEXT_PUBLIC_STRIPE_BILLING_URL}?prefilled_email=${team?.email}`}
-      >
-        Manage Subscription
+    <Button
+      onClick={() => execute({ teamId: team.id })}
+      disabled={isTransitioning}
+      variant="outline"
+      size="lg"
+      className={className}
+    >
+      Manage Subscription
+      {isTransitioning ? (
+        <Loader className="text-accent" />
+      ) : (
         <ExternalIcon className="translate-x-1" />
-      </Link>
+      )}
     </Button>
   )
 }

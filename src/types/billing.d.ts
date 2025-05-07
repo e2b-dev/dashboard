@@ -10,4 +10,8 @@ interface BillingLimit {
   alert_amount_gte: number | null
 }
 
-export type { Invoice, BillingLimit }
+interface CustomerPortalResponse {
+  url: string
+}
+
+export type { Invoice, BillingLimit, CustomerPortalResponse }
