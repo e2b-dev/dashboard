@@ -156,7 +156,7 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
         {getValue() as string}
       </div>
     ),
-    size: 240,
+    size: 300,
     minSize: 100,
     enableColumnFilter: false,
     enableSorting: false,
