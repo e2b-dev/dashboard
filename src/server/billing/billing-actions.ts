@@ -134,7 +134,8 @@ export const redirectToCustomerPortal = authActionClient
 
     const origin = (await headers()).get('origin')
 
-    const res = await fetch(`${process.env.BILLING_API_URL}/portals`, {
+    const res = await fetch(`${process.env.BILLING_API_URL}/stripe/portal`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(origin && { Origin: origin }),
