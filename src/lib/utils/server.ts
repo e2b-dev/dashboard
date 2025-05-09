@@ -9,7 +9,6 @@ import {
   UnauthorizedError,
 } from '@/types/errors'
 import { z } from 'zod'
-import { ActionFunction, ActionResponse } from '@/types/actions'
 import { cookies } from 'next/headers'
 import { unstable_noStore } from 'next/cache'
 import { COOKIE_KEYS } from '@/configs/keys'
@@ -184,7 +183,7 @@ export function maskApiKey(
 }
 
 /**
- * Forces a component to be dynamically rendered at runtime by accessing cookies.
+ * Forces a component to be dynamically rendered at runtime.
  * This opts out of Partial Prerendering (PPR) for the component and its children.
  *
  * Use this when you need to ensure a component is rendered at request time,

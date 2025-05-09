@@ -29,3 +29,10 @@ export interface TransformedUsageData {
   ramSeries: Series[]
   costSeries: Series[]
 }
+
+interface SandboxesStartedDelta {
+  date: Date
+  count: number
+}
+
+export type SandboxesStartedData = SandboxesStartedDelta[]

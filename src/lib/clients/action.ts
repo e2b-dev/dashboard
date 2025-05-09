@@ -1,5 +1,5 @@
 import { createSafeActionClient } from 'next-safe-action'
-import { checkAuthenticated } from '../utils/server'
+import { checkAuthenticated, checkUserTeamAuthorization } from '../utils/server'
 import { z } from 'zod'
 import { UnknownError } from '@/types/errors'
 import { logDebug, logError, logSuccess } from './logger'

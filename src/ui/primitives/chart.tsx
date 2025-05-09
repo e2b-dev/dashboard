@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as RechartsPrimitive from 'recharts'
 
 import { cn } from '@/lib/utils'
+import { cardVariants } from './card'
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const
@@ -202,11 +203,11 @@ const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
+          cardVariants({ variant: 'layer' }),
           [
             // Base styles
             'grid min-w-[6rem] items-start gap-1.5',
-            'border border-border bg-bg',
-            'px-2.5 py-1.5 text-xs shadow-xl',
+            'rounded-md px-2.5 py-1.5 text-xs shadow-xl',
           ].join(' '),
           className
         )}
@@ -226,7 +227,7 @@ const ChartTooltipContent = React.forwardRef<
                     // Layout and spacing
                     'flex w-full flex-wrap items-stretch gap-2',
                     // Icon styles
-                    '[&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-fg-500',
+                    '[&>svg]:text-fg-500 [&>svg]:h-2.5 [&>svg]:w-2.5',
                     // Conditional alignment
                     indicator === 'dot' && 'items-center',
                   ].join(' ')
@@ -285,7 +286,7 @@ const ChartTooltipContent = React.forwardRef<
                         <span
                           className={[
                             'font-mono font-medium',
-                            'tabular-nums text-fg',
+                            'text-fg tabular-nums',
                           ].join(' ')}
                         >
                           {item.value.toLocaleString()}
