@@ -6,6 +6,15 @@ import { logDebug, logError, logSuccess } from './logger'
 import { ActionError } from '../utils/action'
 import { VERBOSE } from '../utils/flags'
 
+// keys that should not be logged for security/privacy reasons
+const BLACKLISTED_INPUT_KEYS = [
+  'accessToken',
+  'password',
+  'secret',
+  'token',
+  'apiKey',
+]
+
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
     if (e instanceof ActionError) {
@@ -48,6 +57,44 @@ export const actionClient = createSafeActionClient({
     ? 'Server Function'
     : 'Action'
 
+  // filter out blacklisted keys from clientInput for logging
+  let sanitizedInput: unknown = clientInput
+
+  // handle object case
+  if (
+    typeof clientInput === 'object' &&
+    clientInput !== null &&
+    !Array.isArray(clientInput)
+  ) {
+    sanitizedInput = { ...(clientInput as Record<string, unknown>) }
+    const sanitizedObj = sanitizedInput as Record<string, unknown>
+
+    for (const key of BLACKLISTED_INPUT_KEYS) {
+      if (key in sanitizedObj) {
+        sanitizedObj[key] = '[REDACTED]'
+      }
+    }
+  }
+  // handle array case
+  else if (Array.isArray(clientInput)) {
+    sanitizedInput = [...clientInput]
+    const sanitizedArray = sanitizedInput as unknown[]
+
+    // check if any array elements are objects that need sanitizing
+    for (let i = 0; i < sanitizedArray.length; i++) {
+      const item = sanitizedArray[i]
+      if (typeof item === 'object' && item !== null) {
+        const sanitizedItem = { ...(item as Record<string, unknown>) }
+        for (const key of BLACKLISTED_INPUT_KEYS) {
+          if (key in sanitizedItem) {
+            sanitizedItem[key] = '[REDACTED]'
+          }
+        }
+        sanitizedArray[i] = sanitizedItem
+      }
+    }
+  }
+
   if (
     result.serverError ||
     result.validationErrors ||
@@ -55,12 +102,12 @@ export const actionClient = createSafeActionClient({
   ) {
     logError(`${actionOrFunction} '${actionOrFunctionName}' failed:`, {
       result: rest,
-      input: clientInput,
+      input: sanitizedInput,
     })
   } else if (VERBOSE) {
     logSuccess(`${actionOrFunction} '${actionOrFunctionName}' succeeded:`, {
       result: rest,
-      input: clientInput,
+      input: sanitizedInput,
     })
   }
 

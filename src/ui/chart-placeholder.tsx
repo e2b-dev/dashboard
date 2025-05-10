@@ -143,6 +143,7 @@ export function ChartPlaceholder({
                 ? 'url(#animatedLoadingFill)'
                 : 'url(#staticBackgroundFill)'
             }
+            isAnimationActive={false}
           />
         </AreaChart>
       </ChartContainer>

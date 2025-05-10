@@ -1,11 +1,27 @@
-import { getUsage } from '@/server/usage/get-usage'
+import { createClient } from '@/lib/clients/supabase/server'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { UnauthenticatedError } from '@/types/errors'
 
 export default async function BillingCreditsContent({
   teamId,
 }: {
   teamId: string
 }) {
-  const res = await getUsage({ teamId })
+  const supabase = await createClient()
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError || !session) {
+    throw UnauthenticatedError()
+  }
+
+  const res = await getUsageThroughReactCache({
+    teamId,
+    accessToken: session.access_token,
+  })
 
   if (!res?.data || res.serverError) {
     throw new Error(res?.serverError || 'Failed to load credits')

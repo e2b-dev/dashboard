@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   Card,
   CardContent,
@@ -6,17 +7,57 @@ import {
   CardDescription,
 } from '@/ui/primitives/card'
 import { RAMChart } from './ram-chart'
-import { TransformedUsageData } from '@/server/usage/types'
+import { ChartPlaceholder } from '@/ui/chart-placeholder'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+
+async function RAMCardContentResolver({
+  teamId,
+  accessToken,
+}: {
+  teamId: string
+  accessToken: string
+}) {
+  const result = await getUsageThroughReactCache({ teamId, accessToken })
+
+  if (!result?.data || result.serverError || result.validationErrors) {
+    const errorMessage =
+      result?.serverError ||
+      (Array.isArray(result?.validationErrors?.formErrors) &&
+        result?.validationErrors?.formErrors[0]) ||
+      'Could not load RAM usage data.'
+    console.error(`RAMCard Error: ${errorMessage}`, result)
+    throw new Error(errorMessage)
+  }
+
+  const dataFromAction = result.data
+
+  const latestRAM = dataFromAction.ramSeries?.[0]?.data?.at(-1)?.y
+
+  return (
+    <>
+      <div className="flex items-baseline gap-2">
+        <p className="font-mono text-2xl">
+          {new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(latestRAM || 0)}
+        </p>
+        <span className="text-fg-500 text-xs">GB-hours this month</span>
+      </div>
+      <RAMChart data={dataFromAction.ramSeries?.[0]?.data || []} />
+    </>
+  )
+}
 
 export function RAMCard({
-  data,
+  teamId,
+  accessToken,
   className,
 }: {
-  data: TransformedUsageData
+  teamId: string
+  accessToken: string
   className?: string
 }) {
-  const latestRAM = data.ramSeries[0].data.at(-1)?.y
-
   return (
     <Card className={className}>
       <CardHeader>
@@ -26,16 +67,16 @@ export function RAMCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex items-baseline gap-2">
-          <p className="font-mono text-2xl">
-            {new Intl.NumberFormat('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }).format(latestRAM || 0)}
-          </p>
-          <span className="text-fg-500 text-xs">GB-hours this month</span>
-        </div>
-        <RAMChart data={data.ramSeries[0].data} />
+        <Suspense
+          fallback={
+            <ChartPlaceholder
+              isLoading={true}
+              classNames={{ container: 'h-48' }}
+            />
+          }
+        >
+          <RAMCardContentResolver teamId={teamId} accessToken={accessToken} />
+        </Suspense>
       </CardContent>
     </Card>
   )

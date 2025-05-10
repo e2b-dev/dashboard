@@ -12,10 +12,12 @@ export default function ErrorBoundary({
   error,
   description,
   className,
+  hideFrame = false,
 }: {
   error: Error & { digest?: string }
   description?: string
   className?: string
+  hideFrame?: boolean
 }) {
   useEffect(() => {
     if (Sentry.isInitialized()) {
@@ -37,25 +39,60 @@ export default function ErrorBoundary({
         className
       )}
     >
-      <Frame>
+      {hideFrame ? (
         <ErrorIndicator
           description={description}
           message={error.message}
           className="border-none"
         />
-      </Frame>
+      ) : (
+        <Frame>
+          <ErrorIndicator
+            description={description}
+            message={error.message}
+            className="border-none"
+          />
+        </Frame>
+      )}
     </div>
   )
 }
 
 export function CatchErrorBoundary({
   children,
+  classNames,
+  hideFrame = false,
 }: {
   children: React.ReactNode
+  classNames?: {
+    errorBoundary?: string
+    wrapper?: string
+  }
+  hideFrame?: boolean
 }) {
   return (
     <ReactErrorBoundary
-      fallbackRender={({ error }) => <ErrorBoundary error={error} />}
+      fallbackRender={({ error }) => {
+        if (classNames?.wrapper) {
+          return (
+            <div className={classNames?.wrapper}>
+              <ErrorBoundary
+                className={classNames?.errorBoundary}
+                error={error}
+                hideFrame={hideFrame}
+              />
+            </div>
+          )
+        }
+
+        return (
+          <ErrorBoundary
+            className={classNames?.errorBoundary}
+            error={error}
+            hideFrame={hideFrame}
+          />
+        )
+      }}
     >
       {children}
     </ReactErrorBoundary>

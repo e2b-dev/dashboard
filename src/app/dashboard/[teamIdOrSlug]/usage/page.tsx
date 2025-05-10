@@ -4,9 +4,9 @@ import { RAMCard } from '@/features/dashboard/usage/ram-card'
 import { SandboxesCard } from '@/features/dashboard/usage/sandboxes-card'
 import { VCPUCard } from '@/features/dashboard/usage/vcpu-card'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { getUsage } from '@/server/usage/get-usage'
-import { AssemblyLoader } from '@/ui/loader'
-import { Suspense } from 'react'
+import { createClient } from '@/lib/clients/supabase/server' // Import Supabase server client
+import { CatchErrorBoundary } from '@/ui/error'
+import { UnauthenticatedError } from '@/types/errors'
 
 export default async function UsagePage({
   params,
@@ -16,52 +16,60 @@ export default async function UsagePage({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
+  const supabase = await createClient()
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError || !session) {
+    throw UnauthenticatedError()
+  }
+
   return (
     <DashboardPageLayout
       title="Usage"
-      className="relative grid max-h-full min-h-[calc(360px+320px)] w-full grid-cols-1 self-start lg:grid-cols-12"
+      className="relative grid max-h-full w-full grid-cols-1 self-start lg:grid-cols-12"
     >
       <SandboxesCard
         teamId={teamId}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12"
       />
-      <Suspense
-        fallback={
-          <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-3">
-            <AssemblyLoader gridWidth={7} gridHeight={3} />
-            <h2 className="text-fg-500 text-lg font-medium">Collecting data</h2>
-          </div>
-        }
-      >
-        <UsagePageContent teamId={teamId} />
-      </Suspense>
+      <UsagePageContent teamId={teamId} accessToken={session.access_token} />
     </DashboardPageLayout>
   )
 }
 
-async function UsagePageContent({ teamId }: { teamId: string }) {
-  const res = await getUsage({ teamId })
-
-  if (!res?.data || res.serverError || res.validationErrors) {
-    throw new Error(res?.serverError || 'Failed to load usage')
-  }
-
-  const data = res.data
-
+function UsagePageContent({
+  teamId,
+  accessToken,
+}: {
+  teamId: string
+  accessToken: string
+}) {
   return (
-    <>
+    <CatchErrorBoundary
+      hideFrame
+      classNames={{
+        wrapper: 'col-span-full bg-bg',
+        errorBoundary: 'mx-auto',
+      }}
+    >
       <CostCard
-        data={data}
+        teamId={teamId}
+        accessToken={accessToken}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12"
       />
       <VCPUCard
-        data={data}
+        teamId={teamId}
+        accessToken={accessToken}
         className="col-span-1 min-h-[320px] border-b lg:col-span-6 lg:border-r lg:border-b-0"
       />
       <RAMCard
-        data={data}
+        teamId={teamId}
+        accessToken={accessToken}
         className="col-span-1 min-h-[320px] border-b lg:col-span-6 lg:border-b-0"
       />
-    </>
+    </CatchErrorBoundary>
   )
 }

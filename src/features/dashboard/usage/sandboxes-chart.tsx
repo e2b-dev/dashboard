@@ -15,8 +15,6 @@ import {
 import { SandboxesStartedData } from '@/server/usage/types'
 
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { Button } from '@/ui/primitives/button'
-import { Badge } from '@/ui/primitives/badge'
 import { cn } from '@/lib/utils'
 import {
   Select,

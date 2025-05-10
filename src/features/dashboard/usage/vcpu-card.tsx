@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   Card,
   CardContent,
@@ -6,17 +7,54 @@ import {
   CardDescription,
 } from '@/ui/primitives/card'
 import { VCPUChart } from './vcpu-chart'
-import { TransformedUsageData } from '@/server/usage/types'
+import { ChartPlaceholder } from '@/ui/chart-placeholder'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+
+async function VCPUCardContentResolver({
+  teamId,
+  accessToken,
+}: {
+  teamId: string
+  accessToken: string
+}) {
+  const result = await getUsageThroughReactCache({ teamId, accessToken })
+
+  if (!result?.data || result.serverError || result.validationErrors) {
+    const errorMessage =
+      result?.serverError ||
+      result?.validationErrors?.formErrors?.[0] ||
+      'Could not load usage data.'
+
+    throw new Error(errorMessage)
+  }
+
+  const latestVCPU = result.data.vcpuSeries[0].data.at(-1)?.y
+
+  return (
+    <>
+      <div className="flex items-baseline gap-2">
+        <p className="font-mono text-2xl">
+          {new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(latestVCPU || 0)}
+        </p>
+        <span className="text-fg-500 text-xs">hours this month</span>
+      </div>
+      <VCPUChart data={result.data.vcpuSeries[0].data} />
+    </>
+  )
+}
 
 export function VCPUCard({
-  data,
+  teamId,
+  accessToken,
   className,
 }: {
-  data: TransformedUsageData
+  teamId: string
+  accessToken: string
   className?: string
 }) {
-  const latestVCPU = data.vcpuSeries[0].data.at(-1)?.y
-
   return (
     <Card className={className}>
       <CardHeader>
@@ -26,16 +64,16 @@ export function VCPUCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex items-baseline gap-2">
-          <p className="font-mono text-2xl">
-            {new Intl.NumberFormat('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }).format(latestVCPU || 0)}
-          </p>
-          <span className="text-fg-500 text-xs">hours this month</span>
-        </div>
-        <VCPUChart data={data.vcpuSeries[0].data} />
+        <Suspense
+          fallback={
+            <ChartPlaceholder
+              isLoading={true}
+              classNames={{ container: 'h-48' }}
+            />
+          }
+        >
+          <VCPUCardContentResolver teamId={teamId} accessToken={accessToken} />
+        </Suspense>
       </CardContent>
     </Card>
   )
