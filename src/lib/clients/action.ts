@@ -10,6 +10,7 @@ import { VERBOSE } from '../utils/flags'
 const BLACKLISTED_INPUT_KEYS = [
   'accessToken',
   'password',
+  'confirmPassword',
   'secret',
   'token',
   'apiKey',
