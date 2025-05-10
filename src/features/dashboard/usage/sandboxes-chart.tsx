@@ -14,7 +14,7 @@ import {
 } from './chart-config'
 import { SandboxesStartedData } from '@/server/usage/types'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { Button } from '@/ui/primitives/button'
 import { Badge } from '@/ui/primitives/badge'
 import { cn } from '@/lib/utils'
@@ -158,6 +158,8 @@ interface SandboxesChartProps {
 
 export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
   const [grouping, setGrouping] = useState<GroupingOption>('month')
+  const [dynamicXAxisInterval, setDynamicXAxisInterval] = useState(0)
+  const chartContainerRef = useRef<HTMLDivElement>(null)
 
   const totalSandboxesStarted = data.reduce(
     (acc, curr) => ({
@@ -351,7 +353,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
               <SelectTrigger
                 classNames={{
                   trigger:
-                    'text-accent bg-transparent font-medium border-0 h-auto p-0 text-xs ',
+                    'text-accent bg-transparent font-medium border-0 h-auto p-0 text-xs cursor-pointer',
                   icon: 'ml-1 text-accent stroke-[2px]!',
                 }}
               >
@@ -372,6 +374,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
       <ChartContainer
         config={chartConfig}
         className={cn('aspect-auto h-50', classNames?.container)}
+        ref={chartContainerRef}
       >
         <BarChart data={chartData} {...commonChartProps}>
           <defs>
@@ -396,11 +399,8 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
             dataKey="x"
             {...commonXAxisProps}
             tickFormatter={xAxisTickFormatter}
-            interval={
-              chartData.length > 30 && grouping === 'week'
-                ? Math.floor(chartData.length / 15)
-                : 0
-            }
+            interval="preserveStart"
+            className="shadow-xl"
             axisLine={{ stroke: 'var(--color-border)', opacity: 0.5 }}
           />
           <YAxis {...commonYAxisProps} tickFormatter={yAxisTickFormatter} />

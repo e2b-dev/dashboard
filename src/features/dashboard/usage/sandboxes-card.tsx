@@ -49,6 +49,8 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
     throw new Error(response?.serverError || 'Failed to load usage')
   }
 
+  // This rerenders the chart placeholder, which makes it look weird when it transitions from loading to empty in some cases.
+  // TODO: Fix this.
   if (response.data.sandboxesStarted.length === 0) {
     return (
       <ChartPlaceholder
