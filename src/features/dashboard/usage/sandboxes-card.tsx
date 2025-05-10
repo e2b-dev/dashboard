@@ -6,10 +6,9 @@ import {
   CardTitle,
   CardDescription,
 } from '@/ui/primitives/card'
-import { Loader } from '@/ui/loader'
 import { Suspense } from 'react'
 import { SandboxesChart } from './sandboxes-chart'
-import { EmptyChart } from '@/ui/empty-chart'
+import { ChartPlaceholder } from '@/ui/chart-placeholder'
 
 export function SandboxesCard({
   className,
@@ -29,9 +28,11 @@ export function SandboxesCard({
       <CardContent className="flex flex-col gap-4">
         <Suspense
           fallback={
-            <div className="flex h-32 w-full items-end justify-center gap-1 px-2 pt-8 pb-2">
-              <Loader />
-            </div>
+            <ChartPlaceholder
+              key="chart-placeholder-sandboxes"
+              isLoading={true}
+              classNames={{ container: 'h-60' }}
+            />
           }
         >
           <SandboxesStartedContent teamId={teamId} />
@@ -48,9 +49,24 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
     throw new Error(response?.serverError || 'Failed to load usage')
   }
 
-  return response.data.sandboxesStarted.length > 0 ? (
-    <SandboxesChart data={response.data.sandboxesStarted} />
-  ) : (
-    <EmptyChart />
+  if (response.data.sandboxesStarted.length === 0) {
+    return (
+      <ChartPlaceholder
+        key="chart-placeholder-sandboxes"
+        emptyContent={<p>No Sandboxes Started during this period.</p>}
+        classNames={{
+          container: 'h-60',
+        }}
+      />
+    )
+  }
+
+  return (
+    <SandboxesChart
+      data={response.data.sandboxesStarted}
+      classNames={{
+        container: 'h-60',
+      }}
+    />
   )
 }

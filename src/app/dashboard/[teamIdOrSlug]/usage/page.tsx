@@ -1,4 +1,3 @@
-import { INCLUDE_BILLING } from '@/configs/flags'
 import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { CostCard } from '@/features/dashboard/usage/cost-card'
 import { RAMCard } from '@/features/dashboard/usage/ram-card'
@@ -26,20 +25,16 @@ export default async function UsagePage({
         teamId={teamId}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12"
       />
-      {INCLUDE_BILLING && (
-        <Suspense
-          fallback={
-            <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-3">
-              <AssemblyLoader gridWidth={7} gridHeight={3} />
-              <h2 className="text-fg-500 text-lg font-medium">
-                Collecting data
-              </h2>
-            </div>
-          }
-        >
-          <UsagePageContent teamId={teamId} />
-        </Suspense>
-      )}
+      <Suspense
+        fallback={
+          <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-3">
+            <AssemblyLoader gridWidth={7} gridHeight={3} />
+            <h2 className="text-fg-500 text-lg font-medium">Collecting data</h2>
+          </div>
+        }
+      >
+        <UsagePageContent teamId={teamId} />
+      </Suspense>
     </DashboardPageLayout>
   )
 }

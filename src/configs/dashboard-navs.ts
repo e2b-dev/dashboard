@@ -37,13 +37,16 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
     href: (args) => `/dashboard/${args.teamIdOrSlug}/templates`,
     icon: Container,
   },
-  {
-    label: 'Usage',
-    href: (args: DashboardNavLinkArgs) =>
-      `/dashboard/${args.teamIdOrSlug}/usage`,
-    icon: Activity,
-  },
-
+  ...(INCLUDE_BILLING
+    ? [
+        {
+          label: 'Usage',
+          href: (args: DashboardNavLinkArgs) =>
+            `/dashboard/${args.teamIdOrSlug}/usage`,
+          icon: Activity,
+        },
+      ]
+    : []),
   {
     label: 'Team',
     href: (args) => `/dashboard/${args.teamIdOrSlug}/team`,

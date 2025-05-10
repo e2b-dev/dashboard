@@ -29,19 +29,17 @@ export const getSandboxesStarted = authActionClient
 
     const result = await pg`
       SELECT
-          DATE(created_at) as date,
-          COUNT(*) as count
+          DATE(timestamp_agg_start) as date,
+          SUM(sandbox_count) as count
       FROM
-          billing.sandbox_logs
+          billing.agg_team_usage
       WHERE
           team_id = ${teamId}
       GROUP BY
-          DATE(created_at)
+          DATE(timestamp_agg_start)
       ORDER BY
           date;
     `
-
-    logDebug('result', result)
 
     return {
       sandboxesStarted: result.map(({ date, count }) => ({

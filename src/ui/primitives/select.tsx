@@ -32,7 +32,12 @@ const SelectValue = SelectPrimitive.Value
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
+    classNames?: {
+      trigger?: string
+      icon?: string
+    }
+  }
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
@@ -44,12 +49,15 @@ const SelectTrigger = React.forwardRef<
       'disabled:cursor-not-allowed disabled:opacity-50',
       '[&>span]:line-clamp-1',
       'data-[placeholder]:text-fg-300',
-      className
+      className,
+      props.classNames?.trigger
     )}
     {...props}
   >
     {children}
-    <ChevronsUpDown className="text-fg-300 ml-2 size-3.5" />
+    <ChevronsUpDown
+      className={cn('text-fg-300 ml-2 size-3.5', props.classNames?.icon)}
+    />
   </SelectPrimitive.Trigger>
 ))
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
