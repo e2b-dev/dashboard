@@ -55,7 +55,7 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
     return (
       <ChartPlaceholder
         key="chart-placeholder-sandboxes"
-        emptyContent={<p>No Sandboxes Started during this period.</p>}
+        emptyContent={<p>No started sandbox data found.</p>}
         classNames={{
           container: 'h-60',
         }}
