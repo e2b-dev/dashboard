@@ -10,14 +10,8 @@ import { CostChart } from './cost-chart'
 import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import { getUsageThroughReactCache } from '@/server/usage/get-usage'
 
-async function CostCardContentResolver({
-  teamId,
-  accessToken,
-}: {
-  teamId: string
-  accessToken: string
-}) {
-  const result = await getUsageThroughReactCache({ teamId, accessToken })
+async function CostCardContentResolver({ teamId }: { teamId: string }) {
+  const result = await getUsageThroughReactCache({ teamId })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     const errorMessage =
@@ -52,11 +46,9 @@ async function CostCardContentResolver({
 
 export function CostCard({
   teamId,
-  accessToken,
   className,
 }: {
   teamId: string
-  accessToken: string
   className?: string
 }) {
   return (
@@ -76,7 +68,7 @@ export function CostCard({
             />
           }
         >
-          <CostCardContentResolver teamId={teamId} accessToken={accessToken} />
+          <CostCardContentResolver teamId={teamId} />
         </Suspense>
       </CardContent>
     </Card>

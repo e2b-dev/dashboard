@@ -2,16 +2,12 @@ import 'server-only'
 import { cache } from 'react'
 import { Usage, TransformedUsageData } from '@/server/usage/types'
 import { z } from 'zod'
-import { actionClient } from '@/lib/clients/action'
+import { actionClient, authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
 
 const GetUsageAuthActionSchema = z.object({
   teamId: z.string().uuid(),
-  accessToken: z
-    .string()
-    .trim()
-    .min(1, { message: 'Access token is required' }),
 })
 
 async function _fetchTeamUsageDataLogic(
@@ -44,11 +40,12 @@ async function _fetchTeamUsageDataLogic(
 
 export const getAndCacheTeamUsageData = cache(_fetchTeamUsageDataLogic)
 
-export const getUsageThroughReactCache = actionClient
+export const getUsageThroughReactCache = authActionClient
   .schema(GetUsageAuthActionSchema)
   .metadata({ serverFunctionName: 'getUsage' })
-  .action(async ({ parsedInput }) => {
-    const { teamId, accessToken } = parsedInput
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId } = parsedInput
+    const accessToken = ctx.session.access_token
 
     const result = await getAndCacheTeamUsageData(teamId, accessToken)
 

@@ -10,14 +10,8 @@ import { VCPUChart } from './vcpu-chart'
 import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import { getUsageThroughReactCache } from '@/server/usage/get-usage'
 
-async function VCPUCardContentResolver({
-  teamId,
-  accessToken,
-}: {
-  teamId: string
-  accessToken: string
-}) {
-  const result = await getUsageThroughReactCache({ teamId, accessToken })
+async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
+  const result = await getUsageThroughReactCache({ teamId })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     const errorMessage =
@@ -48,11 +42,9 @@ async function VCPUCardContentResolver({
 
 export function VCPUCard({
   teamId,
-  accessToken,
   className,
 }: {
   teamId: string
-  accessToken: string
   className?: string
 }) {
   return (
@@ -72,7 +64,7 @@ export function VCPUCard({
             />
           }
         >
-          <VCPUCardContentResolver teamId={teamId} accessToken={accessToken} />
+          <VCPUCardContentResolver teamId={teamId} />
         </Suspense>
       </CardContent>
     </Card>

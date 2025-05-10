@@ -10,14 +10,8 @@ import { RAMChart } from './ram-chart'
 import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import { getUsageThroughReactCache } from '@/server/usage/get-usage'
 
-async function RAMCardContentResolver({
-  teamId,
-  accessToken,
-}: {
-  teamId: string
-  accessToken: string
-}) {
-  const result = await getUsageThroughReactCache({ teamId, accessToken })
+async function RAMCardContentResolver({ teamId }: { teamId: string }) {
+  const result = await getUsageThroughReactCache({ teamId })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     const errorMessage =
@@ -51,11 +45,9 @@ async function RAMCardContentResolver({
 
 export function RAMCard({
   teamId,
-  accessToken,
   className,
 }: {
   teamId: string
-  accessToken: string
   className?: string
 }) {
   return (
@@ -75,7 +67,7 @@ export function RAMCard({
             />
           }
         >
-          <RAMCardContentResolver teamId={teamId} accessToken={accessToken} />
+          <RAMCardContentResolver teamId={teamId} />
         </Suspense>
       </CardContent>
     </Card>
