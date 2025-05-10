@@ -31,7 +31,7 @@ export default function PersistentNotificationBanner({
           )}
           suppressHydrationWarning
         >
-          <div className="container mx-auto flex items-center gap-2 px-4 py-2">
+          <div className="container flex h-full w-full items-center justify-center gap-2 px-4 py-2">
             {icon} {title}
           </div>
         </motion.div>

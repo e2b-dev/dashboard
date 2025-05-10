@@ -54,28 +54,26 @@ export default async function DashboardLayout({
     >
       <SidebarProvider defaultOpen={defaultOpen}>
         <div className="fixed inset-0 flex max-h-full w-full flex-col overflow-hidden">
-          <NetworkStateBanner />
+          <PersistentNotificationBanner
+            icon={<CircleAlert className="h-4 min-w-4 text-orange-500" />}
+            title={
+              <p className="text-sm text-orange-500">
+                The selected team is currently blocked. Please contact support
+                if you need help.
+              </p>
+            }
+            isOpen={true}
+            className="min-h-12.5"
+          />
           <div className="flex h-full max-h-full w-full flex-1 overflow-hidden">
             <Sidebar />
-            <SidebarInset>
-              <PersistentNotificationBanner
-                icon={<CircleAlert className="h-4 w-4 text-orange-500" />}
-                title={
-                  <p className="text-sm text-orange-500">
-                    The selected team is currently blocked. Please contact
-                    support if you need help.
-                  </p>
-                }
-                isOpen={true}
-              />
-              {children}
-            </SidebarInset>
+            <SidebarInset>{children}</SidebarInset>
           </div>
         </div>
-        <Suspense fallback={null}>
-          <DashboardTitleProvider />
-        </Suspense>
       </SidebarProvider>
+      <Suspense fallback={null}>
+        <DashboardTitleProvider />
+      </Suspense>
     </ServerContextProvider>
   )
 }
