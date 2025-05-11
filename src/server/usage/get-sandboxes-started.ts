@@ -1,11 +1,10 @@
 import 'server-cli-only'
 
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
-import pg from '@/lib/clients/pg'
-import { logDebug } from '@/lib/clients/logger'
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
+import { SUPABASE_AUTH_HEADERS } from "@/configs/constants";
 
 const GetSandboxesStartedSchema = z.object({
   teamId: z.string().uuid(),
@@ -27,24 +26,26 @@ export const getSandboxesStarted = authActionClient
       return returnServerError('Forbidden')
     }
 
-    const result = await pg`
-      SELECT
-          DATE(timestamp_agg_start) as date,
-          SUM(sandbox_count) as count
-      FROM
-          billing.agg_team_usage
-      WHERE
-          team_id = ${teamId}
-      GROUP BY
-          DATE(timestamp_agg_start)
-      ORDER BY
-          date;
-    `
+    const response = await fetch(`${process.env.BILLING_API_URL}/v2/teams/${teamId}/usage`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+
+      throw new Error(error?.message ?? 'Failed to create team')
+    }
+
+    const result = await response.json()
 
     return {
-      sandboxesStarted: result.map(({ date, count }) => ({
+      sandboxesStarted: result.map(({date, sandbox_count}) => ({
         date: new Date(date),
-        count: Number(count),
+        count: Number(sandbox_count),
       })),
     }
   })
