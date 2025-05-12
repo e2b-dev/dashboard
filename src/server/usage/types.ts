@@ -30,9 +30,9 @@ export interface TransformedUsageData {
   costSeries: Series[]
 }
 
-interface SandboxesStartedDelta {
+interface SandboxesUsageDelta {
   date: Date
   count: number
 }
 
-export type SandboxesStartedData = SandboxesStartedDelta[]
+export type SandboxesUsageData = SandboxesUsageDelta[]

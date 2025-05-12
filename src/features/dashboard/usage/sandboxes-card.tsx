@@ -1,4 +1,4 @@
-import { getSandboxesStarted } from '@/server/usage/get-sandboxes-started'
+import { getSandboxesUsage } from '@/server/usage/get-sandboxes-usage'
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ export function SandboxesCard({
 }
 
 async function SandboxesStartedContent({ teamId }: { teamId: string }) {
-  const response = await getSandboxesStarted({ teamId })
+  const response = await getSandboxesUsage({ teamId })
 
   if (response?.serverError || response?.validationErrors || !response?.data) {
     throw new Error(response?.serverError || 'Failed to load usage')
@@ -51,7 +51,7 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
 
   // This rerenders the chart placeholder, which makes it look weird when it transitions from loading to empty in some cases.
   // TODO: Fix this.
-  if (response.data.sandboxesStarted.length === 0) {
+  if (response.data.length === 0) {
     return (
       <ChartPlaceholder
         key="chart-placeholder-sandboxes"
@@ -65,7 +65,7 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
 
   return (
     <SandboxesChart
-      data={response.data.sandboxesStarted}
+      data={response.data}
       classNames={{
         container: 'h-60',
       }}

@@ -14,4 +14,11 @@ interface CustomerPortalResponse {
   url: string
 }
 
-export type { Invoice, BillingLimit, CustomerPortalResponse }
+interface UsageResponse {
+  day_usages: {
+    date: string
+    sandbox_count: number
+  }[]
+}
+
+export type { Invoice, BillingLimit, CustomerPortalResponse, UsageResponse }

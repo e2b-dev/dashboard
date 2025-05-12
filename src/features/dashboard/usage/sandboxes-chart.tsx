@@ -12,9 +12,8 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
-import { SandboxesStartedData } from '@/server/usage/types'
-
-import { useMemo, useState, useRef, useEffect } from 'react'
+import { SandboxesUsageData } from '@/server/usage/types'
+import { useMemo, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import {
   Select,
@@ -23,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/ui/primitives/select'
-import { ActiveShape } from 'recharts/types/util/types'
 
 const getWeek = (date: Date) => {
   const d = new Date(
@@ -148,7 +146,7 @@ const CustomBarShape = (props: BarProps) => {
 }
 
 interface SandboxesChartProps {
-  data: SandboxesStartedData
+  data: SandboxesUsageData
   classNames?: {
     container?: string
   }
