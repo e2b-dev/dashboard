@@ -26,4 +26,15 @@ interface UsageResponse {
   }[]
 }
 
-export type { Invoice, BillingLimit, CustomerPortalResponse, UsageResponse }
+interface CreateTeamsResponse {
+  id: string
+  slug: string
+}
+
+export type {
+  Invoice,
+  BillingLimit,
+  CustomerPortalResponse,
+  CreateTeamsResponse,
+  UsageResponse
+}
