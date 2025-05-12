@@ -83,6 +83,7 @@ export function RAMChart({ data }: RAMChartProps) {
           stroke="var(--color-ram)"
           strokeWidth={2}
           fill="url(#ram)"
+          connectNulls
         />
       </AreaChart>
     </ChartContainer>

@@ -9,6 +9,7 @@ import {
 import { RAMChart } from './ram-chart'
 import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { logError } from '@/lib/clients/logger'
 
 async function RAMCardContentResolver({ teamId }: { teamId: string }) {
   const result = await getUsageThroughReactCache({ teamId })
@@ -19,12 +20,21 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
       (Array.isArray(result?.validationErrors?.formErrors) &&
         result?.validationErrors?.formErrors[0]) ||
       'Could not load RAM usage data.'
-    console.error(`RAMCard Error: ${errorMessage}`, result)
+
     throw new Error(errorMessage)
   }
 
   const latestRAM =
     result.data.compute?.[result.data.compute.length - 1]?.ram_gb_hours
+
+  if (!latestRAM) {
+    return (
+      <ChartPlaceholder
+        emptyContent="No RAM usage data found."
+        classNames={{ container: 'h-48' }}
+      />
+    )
+  }
 
   return (
     <>

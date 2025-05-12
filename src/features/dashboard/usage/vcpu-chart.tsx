@@ -68,6 +68,7 @@ export function VCPUChart({ data }: VCPUChartProps) {
           stroke="var(--color-vcpu)"
           strokeWidth={2}
           fill="url(#vcpu)"
+          connectNulls
         />
       </AreaChart>
     </ChartContainer>

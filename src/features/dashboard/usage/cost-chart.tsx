@@ -64,6 +64,7 @@ export function CostChart({ data }: { data: UsageData['compute'] }) {
           stroke="var(--color-cost)"
           strokeWidth={2}
           fill="url(#cost)"
+          connectNulls
         />
       </AreaChart>
     </ChartContainer>
