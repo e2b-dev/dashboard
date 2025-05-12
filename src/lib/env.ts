@@ -2,13 +2,6 @@ import { z } from 'zod'
 
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  DATABASE_URL: z
-    .string()
-    .url()
-    .refine(
-      (url) => url.startsWith('postgresql://') || url.startsWith('postgres://'),
-      'Database URL must be a valid PostgreSQL connection string starting with postgresql:// or postgres://'
-    ),
   COOKIE_ENCRYPTION_KEY: z.string().min(32),
   NO_INDEX: z.string().optional(),
 

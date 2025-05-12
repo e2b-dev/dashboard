@@ -80,7 +80,6 @@ This project requires a Redis-compatible key-value store. You'll need to:
 1. Create a new Supabase project
 2. Go to Project Settings > API
 3. Copy the `anon key` & `service_role key` to populate `.env.local`
-4. Copy the `database url` to populate `.env.local`
 4. Configure authentication:
    - Go to Authentication > URL Configuration
    - Set Site URL to the hosting domain 
