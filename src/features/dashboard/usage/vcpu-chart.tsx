@@ -7,6 +7,7 @@ import {
 } from '@/ui/primitives/chart'
 import { Area, AreaChart, XAxis, YAxis } from 'recharts'
 import {
+  bigNumbersAxisTickFormatter,
   chartConfig,
   commonChartProps,
   commonXAxisProps,
@@ -37,15 +38,23 @@ export function VCPUChart({ data }: VCPUChartProps) {
           </linearGradient>
         </defs>
         <XAxis dataKey="x" {...commonXAxisProps} />
-        <YAxis {...commonYAxisProps} />
+        <YAxis
+          {...commonYAxisProps}
+          tickFormatter={bigNumbersAxisTickFormatter}
+        />
         <ChartTooltip
-          content={({ active, payload }) => {
-            if (!active || !payload) return null
+          content={({ active, payload, label }) => {
+            if (!active || !payload || !payload.length || !payload[0].payload)
+              return null
+
             return (
               <ChartTooltipContent
-                formatter={(value) => [
-                  <span key="value">{Number(value).toFixed(2)}</span>,
-                  'vCPU Hours',
+                labelFormatter={() => label}
+                formatter={(value, name, item) => [
+                  <span key="value" className="text-accent">
+                    {Number(value).toLocaleString()}
+                  </span>,
+                  `vCPU Hours`,
                 ]}
                 payload={payload}
                 active={active}

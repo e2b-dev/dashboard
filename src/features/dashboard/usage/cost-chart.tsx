@@ -7,6 +7,7 @@ import {
 } from '@/ui/primitives/chart'
 import { Area, AreaChart, XAxis, YAxis } from 'recharts'
 import {
+  bigNumbersAxisTickFormatter,
   chartConfig,
   commonChartProps,
   commonXAxisProps,
@@ -33,14 +34,23 @@ export function CostChart({ data }: { data: UsageData['compute'] }) {
           </linearGradient>
         </defs>
         <XAxis dataKey="x" {...commonXAxisProps} />
-        <YAxis {...commonYAxisProps} tickFormatter={(value) => `$${value}`} />
+        <YAxis
+          {...commonYAxisProps}
+          tickFormatter={(value) => `$${bigNumbersAxisTickFormatter(value)}`}
+        />
         <ChartTooltip
-          content={({ active, payload }) => {
-            if (!active || !payload) return null
+          content={({ active, payload, label }) => {
+            if (!active || !payload || !payload.length || !payload[0].payload)
+              return null
+
             return (
               <ChartTooltipContent
-                formatter={(value) => [
-                  <span key="value">${Number(value).toFixed(2)}</span>,
+                labelFormatter={() => label}
+                formatter={(value, name, item) => [
+                  <span key="value" className="text-accent">
+                    {Number(value).toFixed(2).toLocaleString()}
+                  </span>,
+                  `$`,
                 ]}
                 payload={payload}
                 active={active}

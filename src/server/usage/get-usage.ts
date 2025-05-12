@@ -80,6 +80,7 @@ const transformResponseToUsageData = (response: UsageResponse): UsageData => {
   return {
     compute: computeUsage,
     sandboxes: sandboxesUsage,
+    credits: response.credits,
   }
 }
 

@@ -14,6 +14,7 @@ interface ComputeUsageMonthDelta {
 type UsageData = {
   sandboxes: SandboxesUsageDelta[]
   compute: ComputeUsageMonthDelta[]
+  credits: number
 }
 
 export type { UsageData, SandboxesUsageDelta, ComputeUsageMonthDelta }

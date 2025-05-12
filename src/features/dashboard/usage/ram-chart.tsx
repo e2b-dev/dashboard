@@ -5,9 +5,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
-import { Area, AreaChart, XAxis, YAxis } from 'recharts'
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import {
+  bigNumbersAxisTickFormatter,
   chartConfig,
+  commonAreaProps,
   commonChartProps,
   commonXAxisProps,
   commonYAxisProps,
@@ -37,15 +39,37 @@ export function RAMChart({ data }: RAMChartProps) {
           </linearGradient>
         </defs>
         <XAxis dataKey="x" {...commonXAxisProps} />
-        <YAxis {...commonYAxisProps} />
+        <YAxis
+          {...commonYAxisProps}
+          tickFormatter={bigNumbersAxisTickFormatter}
+        />
         <ChartTooltip
-          content={({ active, payload }) => {
-            if (!active || !payload) return null
+          content={({ active, payload, label }) => {
+            if (!active || !payload || !payload.length || !payload[0].payload)
+              return null
+
+            const dataPoint = payload[0].payload // Actual data for the bar
+            let dateRangeString = ''
+            const dateFormatOptions: Intl.DateTimeFormatOptions = {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            }
+
+            if (dataPoint.year !== undefined && dataPoint.month !== undefined) {
+              const startDate = new Date(dataPoint.year, dataPoint.month, 1)
+              const endDate = new Date(dataPoint.year, dataPoint.month + 1, 0) // 0 day of next month is last day of current month
+              dateRangeString = `(${startDate.toLocaleDateString(undefined, dateFormatOptions)} - ${endDate.toLocaleDateString(undefined, dateFormatOptions)})`
+            }
+
             return (
               <ChartTooltipContent
-                formatter={(value) => [
-                  <span key="value">{Number(value).toFixed(2)}</span>,
-                  'RAM Hours',
+                labelFormatter={() => label}
+                formatter={(value, name, item) => [
+                  <span key="value" className="text-accent">
+                    {Number(value).toLocaleString()}
+                  </span>,
+                  `RAM Hours`,
                 ]}
                 payload={payload}
                 active={active}

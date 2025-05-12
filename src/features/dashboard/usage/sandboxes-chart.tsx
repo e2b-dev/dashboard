@@ -7,6 +7,7 @@ import {
 } from '@/ui/primitives/chart'
 import { Bar, BarChart, BarProps, XAxis, YAxis } from 'recharts'
 import {
+  bigNumbersAxisTickFormatter,
   chartConfig,
   commonChartProps,
   commonXAxisProps,
@@ -312,25 +313,6 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
     return finalChartData
   }, [data, grouping])
 
-  const xAxisTickFormatter = (value: string, index: number) => {
-    return value
-  }
-
-  const yAxisTickFormatter = (value: number, index: number) => {
-    if (value >= 1000000) {
-      const millions = value / 1000000
-      return millions % 1 === 0
-        ? millions.toFixed(0) + 'M'
-        : millions.toFixed(1) + 'M'
-    } else if (value >= 1000) {
-      const thousands = value / 1000
-      return thousands % 1 === 0
-        ? thousands.toFixed(0) + 'K'
-        : thousands.toFixed(1) + 'K'
-    }
-    return value.toLocaleString()
-  }
-
   return (
     <>
       <div className="flex gap-2">
@@ -394,12 +376,12 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
           <XAxis
             dataKey="x"
             {...commonXAxisProps}
-            tickFormatter={xAxisTickFormatter}
-            interval="preserveStart"
-            className="shadow-xl"
             axisLine={{ stroke: 'var(--color-border)', opacity: 0.5 }}
           />
-          <YAxis {...commonYAxisProps} tickFormatter={yAxisTickFormatter} />
+          <YAxis
+            {...commonYAxisProps}
+            tickFormatter={bigNumbersAxisTickFormatter}
+          />
           <ChartTooltip
             content={({ active, payload, label }) => {
               if (!active || !payload || !payload.length || !payload[0].payload)
