@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { useSelectedTeam, useTeams } from '@/lib/hooks/use-teams'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
@@ -38,11 +38,16 @@ export default function DashboardSidebarMenu({
   const selectedTeam = useSelectedTeam()
   const router = useRouter()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
+  const pathname = usePathname()
 
   const handleTeamChange = (teamId: string) => {
     const team = teams.find((t) => t.id === teamId)
-    if (team) {
-      router.push(PROTECTED_URLS.SANDBOXES(team.slug || teamId))
+    if (team && selectedTeam) {
+      router.push(
+        pathname
+          .replace(selectedTeam.slug, team.slug)
+          .replace(selectedTeam.id, team.id)
+      )
       router.refresh()
     }
   }
