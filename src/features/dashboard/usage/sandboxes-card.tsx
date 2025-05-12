@@ -1,4 +1,3 @@
-import { getSandboxesUsage } from '@/server/usage/get-sandboxes-usage'
 import {
   Card,
   CardContent,
@@ -9,6 +8,7 @@ import {
 import { Suspense } from 'react'
 import { SandboxesChart } from './sandboxes-chart'
 import { ChartPlaceholder } from '@/ui/chart-placeholder'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
 
 export function SandboxesCard({
   className,
@@ -43,7 +43,7 @@ export function SandboxesCard({
 }
 
 async function SandboxesStartedContent({ teamId }: { teamId: string }) {
-  const response = await getSandboxesUsage({ teamId })
+  const response = await getUsageThroughReactCache({ teamId })
 
   if (response?.serverError || response?.validationErrors || !response?.data) {
     throw new Error(response?.serverError || 'Failed to load usage')
@@ -51,7 +51,7 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
 
   // This rerenders the chart placeholder, which makes it look weird when it transitions from loading to empty in some cases.
   // TODO: Fix this.
-  if (response.data.length === 0) {
+  if (response.data.sandboxes.length === 0) {
     return (
       <ChartPlaceholder
         key="chart-placeholder-sandboxes"
@@ -65,7 +65,7 @@ async function SandboxesStartedContent({ teamId }: { teamId: string }) {
 
   return (
     <SandboxesChart
-      data={response.data}
+      data={response.data.sandboxes}
       classNames={{
         container: 'h-60',
       }}

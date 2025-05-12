@@ -12,16 +12,20 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
+import { UsageData } from '@/server/usage/types'
+import { useMemo } from 'react'
 
-type ChartData = {
-  x: string
-  y: number
-}[]
+export function CostChart({ data }: { data: UsageData['compute'] }) {
+  const chartData = useMemo(() => {
+    return data.map((item) => ({
+      x: `${item.month}/${item.year}`,
+      y: item.total_cost,
+    }))
+  }, [data])
 
-export function CostChart({ data }: { data: ChartData }) {
   return (
     <ChartContainer config={chartConfig} className="aspect-auto h-48">
-      <AreaChart data={data} {...commonChartProps}>
+      <AreaChart data={chartData} {...commonChartProps}>
         <defs>
           <linearGradient id="cost" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--color-cost)" stopOpacity={0.2} />

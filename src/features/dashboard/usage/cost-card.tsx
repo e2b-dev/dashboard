@@ -25,7 +25,8 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
 
   const dataFromAction = result.data
 
-  const latestCost = dataFromAction.costSeries?.[0]?.data?.at(-1)?.y
+  const latestCost =
+    dataFromAction.compute?.[dataFromAction.compute.length - 1]?.total_cost
 
   return (
     <>
@@ -39,7 +40,7 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
         </p>
         <span className="text-fg-500 text-xs">this month</span>
       </div>
-      <CostChart data={dataFromAction.costSeries?.[0]?.data || []} />
+      <CostChart data={dataFromAction.compute} />
     </>
   )
 }

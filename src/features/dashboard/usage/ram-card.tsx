@@ -23,9 +23,8 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
     throw new Error(errorMessage)
   }
 
-  const dataFromAction = result.data
-
-  const latestRAM = dataFromAction.ramSeries?.[0]?.data?.at(-1)?.y
+  const latestRAM =
+    result.data.compute?.[result.data.compute.length - 1]?.ram_gb_hours
 
   return (
     <>
@@ -38,7 +37,7 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
         </p>
         <span className="text-fg-500 text-xs">GB-hours this month</span>
       </div>
-      <RAMChart data={dataFromAction.ramSeries?.[0]?.data || []} />
+      <RAMChart data={result.data.compute} />
     </>
   )
 }

@@ -12,7 +12,7 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
-import { SandboxesUsageData } from '@/server/usage/types'
+import { SandboxesUsageDelta, UsageData } from '@/server/usage/types'
 import { useMemo, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import {
@@ -146,7 +146,7 @@ const CustomBarShape = (props: BarProps) => {
 }
 
 interface SandboxesChartProps {
-  data: SandboxesUsageData
+  data: UsageData['sandboxes']
   classNames?: {
     container?: string
   }

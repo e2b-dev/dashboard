@@ -1,21 +1,24 @@
 import 'server-only'
+
 import { cache } from 'react'
-import { Usage, TransformedUsageData } from '@/server/usage/types'
+import {
+  ComputeUsageMonthDelta,
+  SandboxesUsageDelta,
+  UsageData,
+} from '@/server/usage/types'
 import { z } from 'zod'
-import { actionClient, authActionClient } from '@/lib/clients/action'
+import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { UsageResponse } from '@/types/billing'
 
 const GetUsageAuthActionSchema = z.object({
   teamId: z.string().uuid(),
 })
 
-async function _fetchTeamUsageDataLogic(
-  teamId: string,
-  accessToken: string
-): Promise<(TransformedUsageData & { credits: number }) | null> {
+async function _fetchTeamUsageDataLogic(teamId: string, accessToken: string) {
   const response = await fetch(
-    `${process.env.BILLING_API_URL}/teams/${teamId}/usage`,
+    `${process.env.BILLING_API_URL}/v2/teams/${teamId}/usage`,
     {
       method: 'GET',
       headers: {
@@ -26,15 +29,57 @@ async function _fetchTeamUsageDataLogic(
   )
 
   if (!response.ok) {
-    const text = (await response.text()) ?? 'Unknown error'
+    const text = (await response.text()) ?? 'Failed to fetch usage data'
     throw new Error(text)
   }
 
-  const data = await response.json()
+  const data = (await response.json()) as UsageResponse
+
+  return transformResponseToUsageData(data)
+}
+
+const transformResponseToUsageData = (response: UsageResponse): UsageData => {
+  // group daily usages by month
+  const monthlyUsage = response.day_usages.reduce(
+    (acc, usage) => {
+      const date = new Date(usage.date)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
+          total_cost: 0,
+          ram_gb_hours: 0,
+          vcpu_hours: 0,
+          month: date.getMonth() + 1,
+          year: date.getFullYear(),
+        }
+      }
+
+      acc[monthKey].ram_gb_hours += usage.ram_gib_hours
+      acc[monthKey].vcpu_hours += usage.cpu_hours
+      acc[monthKey].total_cost += usage.price_for_ram + usage.price_for_cpu
+
+      return acc
+    },
+    {} as Record<string, ComputeUsageMonthDelta>
+  )
+
+  const computeUsage = Object.values(monthlyUsage).sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year
+    return a.month - b.month
+  })
+
+  const sandboxesUsage = response.day_usages.reduce((acc, usage) => {
+    acc.push({
+      date: new Date(usage.date),
+      count: usage.sandbox_count,
+    })
+    return acc
+  }, [] as SandboxesUsageDelta[])
 
   return {
-    ...transformUsageData(data.usages),
-    credits: data.credits as number,
+    compute: computeUsage,
+    sandboxes: sandboxesUsage,
   }
 }
 
@@ -55,50 +100,3 @@ export const getUsageThroughReactCache = authActionClient
 
     return result
   })
-
-function transformUsageData(usages: Usage[]): TransformedUsageData {
-  const ramData = usages.map((usage) => ({
-    x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-    y: usage.template_usage.reduce(
-      (acc, template) => acc + template.ram_gb_hours,
-      0
-    ),
-  }))
-
-  const vcpuData = usages.map((usage) => ({
-    x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-    y: usage.template_usage.reduce(
-      (acc, template) => acc + template.sandbox_hours,
-      0
-    ),
-  }))
-
-  const costData = usages.map((usage) => ({
-    x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-    y: usage.template_usage.reduce(
-      (acc, template) => acc + template.total_cost,
-      0
-    ),
-  }))
-
-  return {
-    vcpuSeries: [
-      {
-        id: 'vCPU Hours',
-        data: vcpuData,
-      },
-    ],
-    ramSeries: [
-      {
-        id: 'RAM Usage',
-        data: ramData,
-      },
-    ],
-    costSeries: [
-      {
-        id: 'Cost',
-        data: costData,
-      },
-    ],
-  }
-}

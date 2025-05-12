@@ -15,9 +15,14 @@ interface CustomerPortalResponse {
 }
 
 interface UsageResponse {
+  credits: number
   day_usages: {
     date: string
     sandbox_count: number
+    cpu_hours: number
+    ram_gib_hours: number
+    price_for_ram: number
+    price_for_cpu: number
   }[]
 }
 

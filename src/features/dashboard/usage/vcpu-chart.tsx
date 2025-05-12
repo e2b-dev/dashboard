@@ -12,16 +12,24 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
+import { UsageData } from '@/server/usage/types'
+import { useMemo } from 'react'
 
-type ChartData = {
-  x: string
-  y: number
-}[]
+interface VCPUChartProps {
+  data: UsageData['compute']
+}
 
-export function VCPUChart({ data }: { data: ChartData }) {
+export function VCPUChart({ data }: VCPUChartProps) {
+  const chartData = useMemo(() => {
+    return data.map((item) => ({
+      x: `${item.month}/${item.year}`,
+      y: item.vcpu_hours,
+    }))
+  }, [data])
+
   return (
     <ChartContainer config={chartConfig} className="aspect-auto h-36">
-      <AreaChart data={data} {...commonChartProps}>
+      <AreaChart data={chartData} {...commonChartProps}>
         <defs>
           <linearGradient id="vcpu" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--color-vcpu)" stopOpacity={0.2} />
