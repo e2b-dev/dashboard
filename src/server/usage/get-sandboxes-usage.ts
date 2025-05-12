@@ -4,15 +4,15 @@ import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
-import { SUPABASE_AUTH_HEADERS } from "@/configs/constants";
+import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
 
-const GetSandboxesStartedSchema = z.object({
+const GetSandboxesUsageSchema = z.object({
   teamId: z.string().uuid(),
 })
 
-export const getSandboxesStarted = authActionClient
-  .schema(GetSandboxesStartedSchema)
-  .metadata({ serverFunctionName: 'getSandboxesStarted' })
+export const getSandboxesUsage = authActionClient
+  .schema(GetSandboxesUsageSchema)
+  .metadata({ serverFunctionName: 'getSandboxesUsage' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId } = parsedInput
     const { session } = ctx
@@ -26,13 +26,16 @@ export const getSandboxesStarted = authActionClient
       return returnServerError('Forbidden')
     }
 
-    const response = await fetch(`${process.env.BILLING_API_URL}/v2/teams/${teamId}/usage`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
-      },
-    })
+    const response = await fetch(
+      `${process.env.BILLING_API_URL}/v2/teams/${teamId}/usage`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
 
     if (!response.ok) {
       const error = await response.json()
@@ -43,7 +46,7 @@ export const getSandboxesStarted = authActionClient
     const result = await response.json()
 
     return {
-      sandboxesStarted: result.map(({date, sandbox_count}) => ({
+      sandboxesStarted: result.map(({ date, sandbox_count }) => ({
         date: new Date(date),
         count: Number(sandbox_count),
       })),
