@@ -67,7 +67,7 @@ export function CostCard({
       <CardHeader>
         <CardTitle className="font-mono">Usage Costs</CardTitle>
         <CardDescription>
-          Total cost of all resources each month.
+          Total cost of all resources per month.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
