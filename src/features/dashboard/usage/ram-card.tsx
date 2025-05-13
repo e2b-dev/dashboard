@@ -64,7 +64,7 @@ export function RAMCard({
       <CardHeader>
         <CardTitle className="font-mono">RAM Hours</CardTitle>
         <CardDescription>
-          Memory usage duration across all sandboxes this month.
+          Memory usage duration across all sandboxes each month.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

@@ -22,7 +22,7 @@ export function SandboxesCard({
       <CardHeader>
         <CardTitle className="font-mono">Sandboxes Started</CardTitle>
         <CardDescription>
-          The number of sandboxes your team started.
+          The number of sandboxes your team started over time.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

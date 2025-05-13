@@ -13,7 +13,7 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
-import { SandboxesUsageDelta, UsageData } from '@/server/usage/types'
+import { UsageData } from '@/server/usage/types'
 import { useMemo, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import {
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/ui/primitives/select'
+import { BoxIcon } from 'lucide-react'
 
 const getWeek = (date: Date) => {
   const d = new Date(
@@ -63,32 +64,6 @@ function* iterateMonths(startDate: Date, endDate: Date) {
       date: new Date(currentDate),
     }
     currentDate.setMonth(currentDate.getMonth() + 1)
-  }
-}
-
-// Helper to iterate through weeks in a range
-function* iterateWeeks(startDate: Date, endDate: Date) {
-  // Start from the Monday of the week of startDate
-  const currentDate = new Date(startDate)
-  currentDate.setDate(currentDate.getDate() - ((currentDate.getDay() + 6) % 7)) // Set to Monday
-  currentDate.setHours(0, 0, 0, 0)
-
-  const finalWeekEndDate = new Date(endDate)
-  finalWeekEndDate.setDate(
-    finalWeekEndDate.getDate() - ((finalWeekEndDate.getDay() + 6) % 7) + 6
-  ) // Sunday of end week
-  finalWeekEndDate.setHours(23, 59, 59, 999)
-
-  while (currentDate <= finalWeekEndDate) {
-    const year = currentDate.getFullYear()
-    const week = getWeek(currentDate) // Assumes getWeek handles any day in the week correctly
-    yield {
-      year,
-      week,
-      // Use the start of the week (Monday) for consistent representation
-      date: new Date(currentDate),
-    }
-    currentDate.setDate(currentDate.getDate() + 7)
   }
 }
 
@@ -146,6 +121,79 @@ const CustomBarShape = (props: BarProps) => {
   )
 }
 
+// --- Utility Types ---
+type MonthChartPoint = {
+  x: string
+  y: number
+  year: number
+  month: number
+  originalDate: Date
+}
+type WeekChartPoint = {
+  x: string
+  y: number
+  year: number
+  week: number
+  originalDate: Date
+}
+
+// --- Date Helpers (UTC) ---
+function getUTCMonthKey(date: Date) {
+  return `${date.getUTCFullYear()}-${date.getUTCMonth()}`
+}
+function getUTCWeekKey(date: Date) {
+  return `${date.getUTCFullYear()}-W${getWeek(date)}`
+}
+
+// --- Aggregation Helpers ---
+function aggregateSandboxesByMonth(
+  data: { date: Date | string; count: number }[]
+): MonthChartPoint[] {
+  const map: Record<string, MonthChartPoint> = {}
+  data.forEach(({ date, count }) => {
+    const d = new Date(date)
+    const key = getUTCMonthKey(d)
+    if (!map[key]) {
+      map[key] = {
+        x: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        y: 0,
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth(),
+        originalDate: d,
+      }
+    }
+    map[key].y += count
+  })
+  return Object.values(map).sort((a, b) =>
+    a.year === b.year ? a.month - b.month : a.year - b.year
+  )
+}
+
+function aggregateSandboxesByWeek(
+  data: { date: Date | string; count: number }[]
+): WeekChartPoint[] {
+  const map: Record<string, WeekChartPoint> = {}
+  data.forEach(({ date, count }) => {
+    const d = new Date(date)
+    const year = d.getUTCFullYear()
+    const week = getWeek(d)
+    const key = getUTCWeekKey(d)
+    if (!map[key]) {
+      map[key] = {
+        x: `W${week} ${year}`,
+        y: 0,
+        year,
+        week,
+        originalDate: d,
+      }
+    }
+    map[key].y += count
+  })
+  return Object.values(map).sort((a, b) =>
+    a.year === b.year ? a.week - b.week : a.year - b.year
+  )
+}
+
 interface SandboxesChartProps {
   data: UsageData['sandboxes']
   classNames?: {
@@ -155,170 +203,40 @@ interface SandboxesChartProps {
 
 export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
   const [grouping, setGrouping] = useState<GroupingOption>('month')
-  const [dynamicXAxisInterval, setDynamicXAxisInterval] = useState(0)
   const chartContainerRef = useRef<HTMLDivElement>(null)
 
-  const totalSandboxesStarted = data.reduce(
-    (acc, curr) => ({
-      count: acc.count + curr.count,
-    }),
-    { count: 0 }
-  )
-
+  // Memoized chart data
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) {
-      return []
-    }
-
-    const aggregatedData: {
-      [key: string]: {
-        x: string
-        y: number
-        year: number
-        month?: number // For month grouping
-        week?: number // For week grouping
-        originalDate: Date // Store original date for reference or exact labeling if needed
-      }
-    } = {}
-
-    let minDataDate = new Date(data[0].date)
-    let maxDataDate = new Date(data[0].date)
-
-    data.forEach(({ date, count }) => {
-      const d = new Date(date)
-      if (d < minDataDate) minDataDate = d
-      if (d > maxDataDate) maxDataDate = d
-
-      if (grouping === 'week') {
-        const year = d.getFullYear()
-        const week = getWeek(d)
-        const weekKey = `${year}-W${week}`
-        if (!aggregatedData[weekKey]) {
-          aggregatedData[weekKey] = {
-            x: `W${week} ${year}`,
-            y: 0,
-            week,
-            year,
-            originalDate: d,
-          }
-        }
-        aggregatedData[weekKey].y += count
-      } else if (grouping === 'month') {
-        const year = d.getFullYear()
-        const month = d.getMonth() // 0-indexed
-        const monthKey = `${year}-${month}`
-        if (!aggregatedData[monthKey]) {
-          aggregatedData[monthKey] = {
-            x: d.toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric',
-            }),
-            y: 0,
-            month,
-            year,
-            originalDate: d,
-          }
-        }
-        aggregatedData[monthKey].y += count
-      }
-    })
-
-    const finalChartData = []
-    let chartStartDate: Date
-    let chartEndDate: Date
-
-    if (grouping === 'month') {
-      const minMonths = 6
-      chartEndDate = new Date(maxDataDate)
-      const preliminaryStartDate = new Date(maxDataDate)
-      preliminaryStartDate.setMonth(
-        preliminaryStartDate.getMonth() - (minMonths - 1)
-      )
-      preliminaryStartDate.setDate(1) // Start of the month
-      preliminaryStartDate.setHours(0, 0, 0, 0)
-
-      chartStartDate =
-        minDataDate < preliminaryStartDate
-          ? new Date(minDataDate)
-          : preliminaryStartDate
-      chartStartDate.setDate(1)
-      chartStartDate.setHours(0, 0, 0, 0)
-
-      for (const { year, month, date: currentPeriodDate } of iterateMonths(
-        chartStartDate,
-        chartEndDate
-      )) {
-        const monthKey = `${year}-${month}`
-        const dataPoint = aggregatedData[monthKey]
-        finalChartData.push({
-          x: currentPeriodDate.toLocaleDateString('en-US', {
-            month: 'short',
-            year: 'numeric',
-          }),
-          y: dataPoint ? dataPoint.y : 0,
-          month,
-          year,
-        })
-      }
-    } else if (grouping === 'week') {
-      const minWeeks = 12
-      chartEndDate = new Date(maxDataDate)
-      const preliminaryStartDate = new Date(maxDataDate)
-      preliminaryStartDate.setDate(
-        preliminaryStartDate.getDate() - (minWeeks - 1) * 7
-      )
-      // Align preliminaryStartDate to the start of its week (Monday)
-      preliminaryStartDate.setDate(
-        preliminaryStartDate.getDate() -
-          ((preliminaryStartDate.getDay() + 6) % 7)
-      )
-      preliminaryStartDate.setHours(0, 0, 0, 0)
-
-      chartStartDate =
-        minDataDate < preliminaryStartDate
-          ? new Date(minDataDate)
-          : preliminaryStartDate
-      // Align chartStartDate to the start of its week (Monday)
-      chartStartDate.setDate(
-        chartStartDate.getDate() - ((chartStartDate.getDay() + 6) % 7)
-      )
-      chartStartDate.setHours(0, 0, 0, 0)
-
-      for (const { year, week, date: currentPeriodDate } of iterateWeeks(
-        chartStartDate,
-        chartEndDate
-      )) {
-        const weekKey = `${year}-W${week}`
-        const dataPoint = aggregatedData[weekKey]
-        finalChartData.push({
-          x: `W${week} ${year}`,
-          y: dataPoint ? dataPoint.y : 0,
-          week,
-          year,
-        })
-      }
-    }
-
-    // Sort, just in case iteration order wasn't perfect or if minDataDate extended range significantly
-    if (grouping === 'month') {
-      finalChartData.sort((a, b) =>
-        a.year === b.year ? a.month! - b.month! : a.year - b.year
-      )
-    } else if (grouping === 'week') {
-      finalChartData.sort((a, b) =>
-        a.year === b.year ? a.week! - b.week! : a.year - b.year
-      )
-    }
-
-    return finalChartData
+    if (!data?.length) return []
+    return grouping === 'month'
+      ? aggregateSandboxesByMonth(data)
+      : aggregateSandboxesByWeek(data)
   }, [data, grouping])
+
+  // Memoized totals
+  const totalSandboxes = useMemo(
+    () => data.reduce((sum, d) => sum + d.count, 0),
+    [data]
+  )
+  const totalThisMonth = useMemo(() => {
+    const now = new Date()
+    const thisMonth = now.getUTCMonth()
+    const thisYear = now.getUTCFullYear()
+    return data.reduce((sum, d) => {
+      const date = new Date(d.date)
+      return date.getUTCMonth() === thisMonth &&
+        date.getUTCFullYear() === thisYear
+        ? sum + d.count
+        : sum
+    }, 0)
+  }, [data])
 
   return (
     <>
-      <div className="flex gap-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline">
-          <p className="font-mono text-2xl">
-            {totalSandboxesStarted.count.toLocaleString()}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline gap-2">
+          <p className="text-accent font-mono text-2xl">
+            {totalSandboxes.toLocaleString()}
           </p>
           <div className="flex items-baseline gap-2">
             <span className="text-fg-500 text-xs whitespace-nowrap">
@@ -347,6 +265,14 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <p className="font-mono text-2xl">
+            {totalThisMonth.toLocaleString()}
+          </p>
+          <p className="text-fg-500 text-xs whitespace-nowrap">
+            sandboxes this month
+          </p>
         </div>
       </div>
       <ChartContainer
@@ -400,8 +326,12 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
                 dataPoint.year !== undefined &&
                 dataPoint.month !== undefined
               ) {
-                const startDate = new Date(dataPoint.year, dataPoint.month, 1)
-                const endDate = new Date(dataPoint.year, dataPoint.month + 1, 0) // 0 day of next month is last day of current month
+                const startDate = new Date(
+                  Date.UTC(dataPoint.year, dataPoint.month, 1)
+                )
+                const endDate = new Date(
+                  Date.UTC(dataPoint.year, dataPoint.month + 1, 0)
+                )
                 dateRangeString = `(${startDate.toLocaleDateString(undefined, dateFormatOptions)} - ${endDate.toLocaleDateString(undefined, dateFormatOptions)})`
               } else if (
                 grouping === 'week' &&
