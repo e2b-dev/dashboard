@@ -40,16 +40,22 @@ export default function DashboardSidebarMenu({
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   const pathname = usePathname()
 
-  const handleTeamChange = (teamId: string) => {
+  const handleTeamChange = async (teamId: string) => {
     const team = teams.find((t) => t.id === teamId)
-    if (team && selectedTeam) {
-      router.push(
-        pathname
-          .replace(selectedTeam.slug, team.slug)
-          .replace(selectedTeam.id, team.id)
-      )
-      router.refresh()
-    }
+
+    if (!team || !selectedTeam) return
+
+    await fetch('/api/team/state', {
+      method: 'POST',
+      body: JSON.stringify({ teamId: team.id, teamSlug: team.slug }),
+    })
+
+    router.push(
+      pathname
+        .replace(selectedTeam.slug, team.slug)
+        .replace(selectedTeam.id, team.id)
+    )
+    router.refresh()
   }
 
   const handleLogout = () => {
