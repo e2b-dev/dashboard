@@ -101,7 +101,7 @@ export async function generateE2BUserAccessToken(
   supabaseAccessToken: string,
   userId: string
 ) {
-  const TOKEN_NAME = 'e2b_generated_access_token'
+  const TOKEN_NAME = 'e2b_dashboard_generated_access_token'
 
   const apiUrl = await getApiUrl()
 
