@@ -44,6 +44,23 @@ interface CreatedAccessToken {
   token: string
   tokenMask: string
   createdAt: string
+  createdBy: {
+    email: string
+    id: string
+  } | null
+}
+
+interface CreatedTeamAPIKey {
+  id: string
+  name: string
+  key: string
+  keyMask: string
+  createdAt: string
+  createdBy: {
+    email: string
+    id: string
+  } | null
+  lastUsed: string | null
 }
 
 export type {
@@ -52,4 +69,5 @@ export type {
   SandboxMetrics,
   DefaultTemplate,
   CreatedAccessToken,
+  CreatedTeamAPIKey,
 }
