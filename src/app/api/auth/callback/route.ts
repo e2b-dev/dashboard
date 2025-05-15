@@ -31,10 +31,9 @@ export async function GET(request: Request) {
         'Error exchanging code for session:',
         error
       )
-      return redirect(AUTH_URLS.SIGN_IN)
+    } else {
+      logInfo('OTP was successfully exchanged for user:', data.user.id)
     }
-
-    logInfo('OTP was successfully exchanged for user:', data.user.id)
   }
 
   if (redirectTo) {
