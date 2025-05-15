@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/clients/supabase/server'
 import { redirect } from 'next/navigation'
-import { PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { logError, logInfo } from '@/lib/clients/logger'
+import { ERROR_CODES } from '@/configs/logs'
 
 export async function GET(request: Request) {
   // The `/auth/callback` route is required for the server-side auth flow implemented
@@ -13,7 +15,7 @@ export async function GET(request: Request) {
   const returnTo = requestUrl.searchParams.get('returnTo')?.toString()
   const redirectTo = requestUrl.searchParams.get('redirect_to')?.toString()
 
-  console.log('Auth callback:', {
+  logInfo('Auth callback:', {
     code: !!code,
     origin,
     returnTo,
@@ -21,13 +23,24 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (error) {
+      logError(
+        ERROR_CODES.SUPABASE,
+        'Error exchanging code for session:',
+        error
+      )
+      return redirect(AUTH_URLS.SIGN_IN)
+    }
+
+    logInfo('OTP was successfully exchanged for user:', data.user.id)
   }
 
   if (redirectTo) {
     const returnToUrl = new URL(redirectTo, origin)
     if (returnToUrl.origin === origin) {
-      console.log('Redirecting to:', redirectTo)
+      logInfo('Redirecting to:', redirectTo)
       return redirect(redirectTo)
     }
   }
@@ -37,12 +50,12 @@ export async function GET(request: Request) {
     // Ensure returnTo is a relative URL to prevent open redirect vulnerabilities
     const returnToUrl = new URL(returnTo, origin)
     if (returnToUrl.origin === origin) {
-      console.log('Returning to:', returnTo)
+      logInfo('Returning to:', returnTo)
       return redirect(returnTo)
     }
   }
 
   // Default redirect to dashboard
-  console.log('Redirecting to dashboard')
+  logInfo('Redirecting to dashboard')
   return redirect(PROTECTED_URLS.DASHBOARD)
 }

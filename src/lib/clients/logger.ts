@@ -19,6 +19,13 @@ export const logDebug = (...args: Parameters<typeof console.debug>) => {
   )
 }
 
+export const logInfo = (...args: Parameters<typeof console.info>) => {
+  console.info(
+    ansis.bgGray.black(' INFO '),
+    ansis.gray(args.map(stringifyArg).join(' '))
+  )
+}
+
 export const logSuccess = (...args: Parameters<typeof console.log>) => {
   console.log(
     ansis.bgGreenBright.white(' SUCCESS '),
