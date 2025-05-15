@@ -1,13 +1,6 @@
-'use client'
-
 import { GridPattern } from '@/ui/grid-pattern'
 import { GradientBorder } from '@/ui/gradient-border'
 import { cn } from '@/lib/utils'
-import dynamic from 'next/dynamic'
-
-const NetworkStateBanner = dynamic(() => import('@/ui/network-state-banner'), {
-  ssr: false,
-})
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,7 +20,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         gradientTo="var(--accent-100)"
         gradientDegrees={90}
       />
-      <NetworkStateBanner />
       <div className="z-10 flex h-full w-full items-center justify-center px-4">
         <GradientBorder
           direction="bg-gradient-to-b"

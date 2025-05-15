@@ -15,6 +15,7 @@ import DashboardSidebarMenu from './menu'
 import DashboardSidebarCommand from './command'
 import ShortcutTooltip from '@/ui/shortcut-tooltip'
 import useKeydown from '@/lib/hooks/use-keydown'
+import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarHeader() {
   const { toggleSidebar, open, openMobile } = useSidebar()

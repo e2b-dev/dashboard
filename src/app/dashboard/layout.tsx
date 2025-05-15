@@ -1,5 +1,4 @@
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import NetworkStateBanner from '@/ui/network-state-banner'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
 import { Suspense } from 'react'
 import { ServerContextProvider } from '@/lib/hooks/use-server-context'
@@ -12,8 +11,7 @@ import { getSessionInsecure } from '@/server/auth/get-session'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
-import { CircleAlert } from 'lucide-react'
-import PersistentNotificationBanner from '@/features/dashboard/persistent-notification-banner'
+import TeamBlockageAlert from '@/features/dashboard/sidebar/blocked-banner'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -54,17 +52,6 @@ export default async function DashboardLayout({
     >
       <SidebarProvider defaultOpen={defaultOpen}>
         <div className="fixed inset-0 flex max-h-full w-full flex-col overflow-hidden">
-          <PersistentNotificationBanner
-            icon={<CircleAlert className="h-4 min-w-4 text-orange-500" />}
-            title={
-              <p className="text-sm text-orange-500">
-                The selected team is currently blocked. Please contact support
-                if you need help.
-              </p>
-            }
-            isOpen={true}
-            className="min-h-12.5"
-          />
           <div className="flex h-full max-h-full w-full flex-1 overflow-hidden">
             <Sidebar />
             <SidebarInset>{children}</SidebarInset>

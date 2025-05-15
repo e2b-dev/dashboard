@@ -1,13 +1,12 @@
 import { ThemeSwitcher } from '@/ui/theme-switcher'
 import { cn } from '@/lib/utils'
 import { Suspense } from 'react'
-import SidebarMobile from './sidebar/sidebar-mobile'
 import Frame from '@/ui/frame'
 import { DashboardSurveyPopover } from './navbar/dashboard-survey-popover'
 import { CatchErrorBoundary } from '@/ui/error'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 
-interface DashboardPageLayoutProps {
+export interface DashboardPageLayoutProps {
   children: React.ReactNode
   title: string
   className?: string

@@ -16,6 +16,7 @@ import {
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
 import { usePathname } from 'next/navigation'
+import TeamBlockageAlert from './blocked-banner'
 
 type GroupedLinks = {
   [key: string]: DashboardNavLink[]
@@ -48,7 +49,7 @@ export default function DashboardSidebarContent() {
 
   return (
     <SidebarContent className="overflow-x-hidden">
-      {Object.entries(groupedNavLinks).map(([group, links]) => (
+      {Object.entries(groupedNavLinks).map(([group, links], ix) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
             <SidebarGroupLabel>{group}</SidebarGroupLabel>

@@ -92,6 +92,8 @@ export async function setEncryptedCookie(
   ]
 }
 
+// TODO: use signing instead of encryption
+
 /**
  * Retrieve and decrypt a cookie.
  *

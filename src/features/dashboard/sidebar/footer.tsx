@@ -11,11 +11,13 @@ import { Book, Construction, Github } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import DeveloperSettingsDialog from '../developer-settings/settings-dialog'
+import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
   return (
     <SidebarFooter>
       <SidebarMenu>
+        <TeamBlockageAlert className="mb-2" />
         <SidebarMenuItem key="github">
           <SidebarMenuButton asChild tooltip="GitHub">
             <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer">

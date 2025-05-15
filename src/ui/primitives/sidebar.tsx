@@ -514,6 +514,14 @@ const sidebarMenuButtonVariants = cva(
           'hover:bg-bg-200/90 focus:bg-bg-200/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
+        error: [
+          'bg-error/10 text-error hover:bg-error/15 hover:text-error',
+          'active:translate-y-[1px] active:shadow-none active:bg-error/15 active:text-error',
+        ].join(' '),
+        warning: [
+          'bg-warning/10 text-warning hover:bg-warning/15 hover:text-warning',
+          'active:translate-y-[1px] active:shadow-none active:bg-warning/15 active:text-warning',
+        ].join(' '),
       },
       size: {
         default: 'h-8 text-sm',

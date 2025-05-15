@@ -12,13 +12,13 @@ export const PROTECTED_URLS = {
   ACCOUNT_SETTINGS: '/dashboard/account',
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
-  TEAM: (teamId: string) => `/dashboard/${teamId}/team`,
-  SANDBOXES: (teamId: string) => `/dashboard/${teamId}/sandboxes`,
-  TEMPLATES: (teamId: string) => `/dashboard/${teamId}/templates`,
-  USAGE: (teamId: string) => `/dashboard/${teamId}/usage`,
-  BILLING: (teamId: string) => `/dashboard/${teamId}/billing`,
-  BUDGET: (teamId: string) => `/dashboard/${teamId}/budget`,
-  KEYS: (teamId: string) => `/dashboard/${teamId}/keys`,
+  TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
+  SANDBOXES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/sandboxes`,
+  TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
+  USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
+  BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
+  BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
+  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
 }
 
 export const BASE_URL = process.env.VERCEL_ENV
