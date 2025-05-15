@@ -38,4 +38,23 @@ interface SandboxMetrics {
   timestamp: string
 }
 
-export type { Sandbox, Template, SandboxMetrics, DefaultTemplate }
+interface CreatedTeamAPIKey {
+  id: string
+  name: string
+  key: string
+  keyMask: string
+  createdAt: string
+  createdBy: {
+    email: string
+    id: string
+  } | null
+  lastUsed: string | null
+}
+
+export type {
+  Sandbox,
+  Template,
+  SandboxMetrics,
+  DefaultTemplate,
+  CreatedTeamAPIKey,
+}
