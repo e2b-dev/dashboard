@@ -12,11 +12,13 @@ import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { unstable_noStore } from 'next/cache'
 import { COOKIE_KEYS } from '@/configs/keys'
-import { logger } from '../clients/logger'
+import { logError, logger } from '../clients/logger'
 import { kv } from '@/lib/clients/kv'
 import { KV_KEYS } from '@/configs/keys'
 import { ERROR_CODES, INFO_CODES } from '@/configs/logs'
 import { getEncryptedCookie } from './cookies'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { CreatedAccessToken } from '@/types/api'
 
 /*
  *  This function checks if the user is authenticated and returns the user and the supabase client.
@@ -93,22 +95,35 @@ export async function getTeamApiKey(userId: string, teamId: string) {
 }
 
 /*
- *  This function fetches a user access token for a given user.
- *  If the user does not have an active access token, it throws an error.
+ *  This function generates an e2b user access token for a given user.
  */
-export async function getUserAccessToken(userId: string) {
-  const { data: userAccessTokenData, error: userAccessTokenError } =
-    await supabaseAdmin.from('access_tokens').select('*').eq('user_id', userId)
+export async function generateE2BUserAccessToken(
+  supabaseAccessToken: string,
+  userId: string
+) {
+  const TOKEN_NAME = 'e2b_generated_access_token'
 
-  if (userAccessTokenError) {
-    throw userAccessTokenError
+  const apiUrl = await getApiUrl()
+
+  const response = await fetch(`${apiUrl.url}/access-tokens`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...SUPABASE_AUTH_HEADERS(supabaseAccessToken),
+    },
+    body: JSON.stringify({ name: TOKEN_NAME }),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(
+      `Failed to generate e2b user access token for user (${userId}): ${text ?? response.statusText}`
+    )
   }
 
-  if (!userAccessTokenData || userAccessTokenData.length === 0) {
-    throw new Error(`No user access token found for user (user: ${userId})`)
-  }
+  const data: CreatedAccessToken = await response.json()
 
-  return userAccessTokenData[0].access_token
+  return data
 }
 
 // TODO: we should probably add some team permission system here

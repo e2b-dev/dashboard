@@ -2,14 +2,10 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { createClient } from '@/lib/clients/supabase/server'
-import { logger } from '@/lib/clients/logger'
+import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import {
-  bailOutFromPPR,
-  getTeamApiKey,
-  getUserAccessToken,
-} from '@/lib/utils/server'
+import { bailOutFromPPR, generateE2BUserAccessToken } from '@/lib/utils/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { getDefaultTeamRelation } from '@/server/auth/get-default-team'
@@ -26,22 +22,26 @@ type CLISearchParams = Promise<{
 
 // Server Actions
 
-async function handleCLIAuth(next: string, userId: string, userEmail: string) {
+async function handleCLIAuth(
+  next: string,
+  userId: string,
+  userEmail: string,
+  supabaseAccessToken: string
+) {
   if (!next?.startsWith('http://localhost')) {
     throw new Error('Invalid redirect URL')
   }
 
   try {
     const defaultTeam = await getDefaultTeamRelation(userId)
-    const [apiKey, accessToken] = await Promise.all([
-      getTeamApiKey(userId, defaultTeam.team_id),
-      getUserAccessToken(userId),
-    ])
+    const e2bAccessToken = await generateE2BUserAccessToken(
+      supabaseAccessToken,
+      userId
+    )
 
     const searchParams = new URLSearchParams({
       email: userEmail,
-      defaultTeamApiKey: apiKey,
-      accessToken,
+      accessToken: e2bAccessToken.token,
       defaultTeamId: defaultTeam.team_id,
     })
 
@@ -107,7 +107,7 @@ export default async function CLIAuthPage({
 
   // Validate redirect URL
   if (!next?.startsWith('http://localhost')) {
-    logger.error(ERROR_CODES.CLI_AUTH, 'Invalid redirect URL')
+    logError(ERROR_CODES.CLI_AUTH, 'Invalid redirect URL')
     redirect(PROTECTED_URLS.DASHBOARD)
   }
 
@@ -122,13 +122,26 @@ export default async function CLIAuthPage({
   // Handle CLI callback if authenticated
   if (!error && next && user) {
     try {
-      return await handleCLIAuth(next, user.id, user.email!)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('No provider access token found')
+      }
+
+      return await handleCLIAuth(
+        next,
+        user.id,
+        user.email!,
+        session.access_token
+      )
     } catch (err) {
       if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
         throw err
       }
 
-      logger.error(ERROR_CODES.CLI_AUTH, err)
+      logError(ERROR_CODES.CLI_AUTH, err)
 
       return encodedRedirect('error', '/auth/cli', (err as Error).message, {
         next,
@@ -142,7 +155,7 @@ export default async function CLIAuthPage({
       <h2 className="mt-6 text-base leading-7">
         Linking CLI with your account
       </h2>
-      <div className="mt-12 leading-8 text-fg-500">
+      <div className="text-fg-500 mt-12 leading-8">
         <Suspense fallback={<div>Loading...</div>}>
           {error ? (
             <ErrorAlert message={decodeURIComponent(error)} />

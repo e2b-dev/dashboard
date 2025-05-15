@@ -3,10 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
-import HelpTooltip from '@/ui/help-tooltip'
 import { useToast } from '@/lib/hooks/use-toast'
 import { Eye, EyeOff } from 'lucide-react'
-import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/loader'
 import { getUserAccessTokenAction } from '@/server/user/user-actions'
 import CopyButton from '@/ui/copy-button'
@@ -27,7 +25,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
     {
       onSuccess: (result) => {
         if (result.data) {
-          setToken(result.data.accessToken)
+          setToken(result.data.token)
           setIsVisible(true)
         }
       },

@@ -2,7 +2,7 @@
 
 import { authActionClient } from '@/lib/clients/action'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { getUserAccessToken } from '@/lib/utils/server'
+import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { z } from 'zod'
 import { headers } from 'next/headers'
 import { returnValidationErrors } from 'next-safe-action'
@@ -99,11 +99,12 @@ export const deleteAccountAction = authActionClient
 export const getUserAccessTokenAction = authActionClient
   .metadata({ actionName: 'getUserAccessToken' })
   .action(async ({ ctx }) => {
-    const { user } = ctx
+    const { user, session } = ctx
 
-    const accessToken = await getUserAccessToken(user.id)
+    const token = await generateE2BUserAccessToken(
+      session.access_token,
+      user.id
+    )
 
-    return {
-      accessToken,
-    }
+    return token
   })

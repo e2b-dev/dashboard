@@ -38,4 +38,18 @@ interface SandboxMetrics {
   timestamp: string
 }
 
-export type { Sandbox, Template, SandboxMetrics, DefaultTemplate }
+interface CreatedAccessToken {
+  id: string
+  name: string
+  token: string
+  tokenMask: string
+  createdAt: string
+}
+
+export type {
+  Sandbox,
+  Template,
+  SandboxMetrics,
+  DefaultTemplate,
+  CreatedAccessToken,
+}
