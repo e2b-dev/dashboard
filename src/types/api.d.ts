@@ -51,10 +51,23 @@ interface CreatedTeamAPIKey {
   lastUsed: string | null
 }
 
+interface TeamAPIKey {
+  id: string
+  name: string
+  keyMask: string
+  createdAt: string
+  createdBy: {
+    email: string
+    id: string
+  } | null
+  lastUsed: string | null
+}
+
 export type {
   Sandbox,
   Template,
   SandboxMetrics,
   DefaultTemplate,
   CreatedTeamAPIKey,
+  TeamAPIKey,
 }

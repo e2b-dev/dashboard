@@ -12,7 +12,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { ObscuredApiKey } from '@/server/keys/types'
 import { deleteApiKeyAction } from '@/server/keys/key-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { useState } from 'react'
@@ -21,9 +20,10 @@ import { motion } from 'motion/react'
 import { exponentialSmoothing } from '@/lib/utils'
 import { useAction } from 'next-safe-action/hooks'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { TeamAPIKey } from '@/types/api'
 
 interface TableRowProps {
-  apiKey: ObscuredApiKey
+  apiKey: TeamAPIKey
   index: number
 }
 
@@ -85,10 +85,10 @@ export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
       >
         <TableCell className="flex flex-col gap-1 text-left font-mono">
           {apiKey.name}
-          <span className="text-fg-500 pl-1">{apiKey.maskedKey}</span>
+          <span className="text-fg-500 pl-0.25">{apiKey.keyMask}</span>
         </TableCell>
         <TableCell className="text-fg-500 max-w-36 truncate overflow-hidden">
-          <span className="max-w-full truncate">{apiKey.createdBy}</span>
+          <span className="max-w-full truncate">{apiKey.createdBy?.email}</span>
         </TableCell>
         <TableCell className="text-fg-300 text-right">
           {apiKey.createdAt
