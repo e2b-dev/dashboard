@@ -16,7 +16,7 @@ export const TIERS: Tier[] = [
     disk_mb: 1024,
     max_length_hours: 1,
     prose: [
-      'One-time $100 credits',
+      'One-time $100 of usage in credits',
       'Community support',
       'Up to 1 hour sandbox session length',
       'Up to 20 concurrently running sandboxes',
@@ -29,15 +29,8 @@ export const TIERS: Tier[] = [
     disk_mb: 5120,
     max_length_hours: 24,
     prose: [
-      'One-time $100 credits',
-      'Dedicated Slack channel with live Pro support from our team',
-      'Prioritized features',
-      <>
-        Customize your{' '}
-        <Link prefetch href="/docs/sandbox/compute">
-          sandbox compute
-        </Link>
-      </>,
+      'One-time $100 of usage in credits',
+      'Customize your Sandbox CPU & RAM',
       'Up to 24 hours sandbox session length',
       'Up to 100 concurrently running sandboxes',
     ],
