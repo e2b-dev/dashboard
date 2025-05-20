@@ -36,7 +36,12 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
       }
     )
 
-    const isSelected = team?.tier === tier.id
+    // NOTE: this is a temporary check to see if the team is on a custom pro tier
+    // TODO: remove this once we have a proper way to handle custom tiers
+    const isCustomProTier =
+      tier.id === 'pro_v1' &&
+      (team?.tier.includes('pro') || team?.tier.includes('enterprise'))
+    const isSelected = isCustomProTier || team?.tier === tier.id
     const isPending = status === 'executing'
 
     const handleRedirectToCheckout = () => {
