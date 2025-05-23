@@ -26,7 +26,6 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
 
-  NEXT_PUBLIC_SENTRY_AUTH_TOKEN: z.string().optional(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
   NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: z.string().optional(),
   NEXT_PUBLIC_SENTRY_DEBUG: z.string().optional(),
