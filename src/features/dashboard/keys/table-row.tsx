@@ -63,6 +63,8 @@ export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
     })
   }
 
+  const concatedKeyMask = `${apiKey.mask.prefix}${apiKey.mask.maskedValuePrefix}......${apiKey.mask.maskedValueSuffix}`
+
   return (
     <>
       <AlertDialog
@@ -83,9 +85,11 @@ export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
         onMouseEnter={() => setHoveredRowIndex(index)}
         onMouseLeave={() => setHoveredRowIndex(-1)}
       >
-        <TableCell className="flex flex-col gap-1 text-left font-mono">
+        <TableCell className="text-lef flex flex-col gap-1">
           {apiKey.name}
-          <span className="text-fg-500 pl-0.25">{apiKey.keyMask}</span>
+          <span className="text-fg-500 pl-0.25 font-mono text-xs">
+            {concatedKeyMask}
+          </span>
         </TableCell>
         <TableCell className="text-fg-500 max-w-36 truncate overflow-hidden">
           <span className="max-w-full truncate">{apiKey.createdBy?.email}</span>

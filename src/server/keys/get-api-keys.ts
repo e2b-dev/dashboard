@@ -1,10 +1,7 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { getApiUrl, maskApiKey } from '@/lib/utils/server'
-import { checkUserTeamAuthorization } from '@/lib/utils/server'
-import { ObscuredApiKey } from './types'
+import { getApiUrl } from '@/lib/utils/server'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
