@@ -16,5 +16,5 @@ Sentry.init({
 
   // Disable source maps in development to prevent 404 errors
   attachStacktrace: process.env.NODE_ENV === 'production',
-  enabled: process.env.NODE_ENV === 'production',
+  enabled: process.env.VERCEL_ENV === 'production',
 })
