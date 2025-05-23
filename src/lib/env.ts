@@ -7,7 +7,6 @@ export const serverSchema = z.object({
 
   BILLING_API_URL: z.string().url().optional(),
   DEVELOPMENT_INFRA_API_DOMAIN: z.string().optional(),
-  SENTRY_AUTH_TOKEN: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),
@@ -26,6 +25,11 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
+
+  NEXT_PUBLIC_SENTRY_AUTH_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_DEBUG: z.string().optional(),
 })
 
 export const testEnvSchema = z.object({
