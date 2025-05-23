@@ -1,13 +1,15 @@
 'use server'
 
-import { API_KEY_PREFIX } from '@/configs/constants'
-import { checkUserTeamAuthorization } from '@/lib/utils/server'
+import { checkUserTeamAuthorization, getApiUrl } from '@/lib/utils/server'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { InvalidParametersError } from '@/types/errors'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { logError } from '@/lib/clients/logger'
+import { ERROR_CODES } from '@/configs/logs'
+import { CreatedTeamAPIKey } from '@/types/api'
 
 // Create API Key
 
@@ -20,49 +22,42 @@ const CreateApiKeySchema = z.object({
     .trim(),
 })
 
-export async function generateTeamApiKey(): Promise<string> {
-  const randomBytes = crypto.getRandomValues(new Uint8Array(20))
-  const hexString = Array.from(randomBytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-
-  return API_KEY_PREFIX + hexString
-}
-
 export const createApiKeyAction = authActionClient
   .schema(CreateApiKeySchema)
   .metadata({ actionName: 'createApiKey' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId, name } = parsedInput
-    const { user, supabase } = ctx
+    const { session } = ctx
 
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
+    const accessToken = session.access_token
 
-    if (!isAuthorized)
-      return returnServerError('Not authorized to create team api keys')
+    const { url } = await getApiUrl()
 
-    const apiKeyValue = await generateTeamApiKey()
+    const apiKeyResponse = await fetch(`${url}/api-keys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+      body: JSON.stringify({ name }),
+    })
 
-    const { error } = await supabaseAdmin
-      .from('team_api_keys')
-      .insert({
-        team_id: teamId,
-        name: name,
-        api_key: apiKeyValue,
-        created_by: user.id,
-        created_at: new Date().toISOString(),
+    if (!apiKeyResponse.ok) {
+      const text = await apiKeyResponse.text()
+      logError(ERROR_CODES.INFRA, 'Failed to create api key', {
+        teamId,
+        name,
+        error: text,
       })
-      .select()
-      .single()
-
-    if (error) {
-      throw error
+      return returnServerError('Failed to create api key')
     }
+
+    const apiKeyData = (await apiKeyResponse.json()) as CreatedTeamAPIKey
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')
 
     return {
-      createdApiKey: apiKeyValue,
+      createdApiKey: apiKeyData,
     }
   })
 
@@ -78,37 +73,29 @@ export const deleteApiKeyAction = authActionClient
   .metadata({ actionName: 'deleteApiKey' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId, apiKeyId } = parsedInput
-    const { user, supabase } = ctx
+    const { session } = ctx
 
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
+    const accessToken = session.access_token
 
-    if (!isAuthorized) {
-      return returnServerError('Not authorized to delete team api keys')
-    }
+    const { url } = await getApiUrl()
 
-    const { data: apiKeys, error: fetchError } = await supabaseAdmin
-      .from('team_api_keys')
-      .select('id')
-      .eq('team_id', teamId)
+    const response = await fetch(`${url}/api-keys/${apiKeyId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    })
 
-    if (fetchError) {
-      throw fetchError
-    }
+    if (!response.ok) {
+      const text = await response.text()
+      logError(ERROR_CODES.INFRA, 'Failed to delete api key', {
+        teamId,
+        apiKeyId,
+        error: text,
+      })
 
-    if (apiKeys.length === 1) {
-      return returnServerError(
-        'A team must have at least one API key. Please create a new API key before deleting this one.'
-      )
-    }
-
-    const { error } = await supabaseAdmin
-      .from('team_api_keys')
-      .delete()
-      .eq('team_id', teamId)
-      .eq('id', apiKeyId)
-
-    if (error) {
-      throw error
+      return returnServerError(text)
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')

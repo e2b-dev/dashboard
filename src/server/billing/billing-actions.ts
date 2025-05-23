@@ -1,6 +1,6 @@
 'use server'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { CustomerPortalResponse } from '@/types/billing'

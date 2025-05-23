@@ -68,7 +68,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
   const { execute: createApiKey, isPending } = useAction(createApiKeyAction, {
     onSuccess: ({ data }) => {
       if (data?.createdApiKey) {
-        setCreatedApiKey(data.createdApiKey)
+        setCreatedApiKey(data.createdApiKey.key)
         form.reset()
       }
     },

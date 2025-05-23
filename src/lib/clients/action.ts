@@ -14,7 +14,25 @@ const BLACKLISTED_INPUT_KEYS = [
   'secret',
   'token',
   'apiKey',
+  'key',
 ]
+
+function sanitizeObject(data: unknown, blacklist: string[]): unknown {
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+    const sanitized = { ...(data as Record<string, unknown>) }
+    for (const key in sanitized) {
+      if (blacklist.includes(key)) {
+        sanitized[key] = '[REDACTED]'
+      } else {
+        sanitized[key] = sanitizeObject(sanitized[key], blacklist)
+      }
+    }
+    return sanitized
+  } else if (Array.isArray(data)) {
+    return data.map((item) => sanitizeObject(item, blacklist))
+  }
+  return data
+}
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
@@ -60,41 +78,11 @@ export const actionClient = createSafeActionClient({
 
   // filter out blacklisted keys from clientInput for logging
   let sanitizedInput: unknown = clientInput
+  sanitizedInput = sanitizeObject(clientInput, BLACKLISTED_INPUT_KEYS)
 
-  // handle object case
-  if (
-    typeof clientInput === 'object' &&
-    clientInput !== null &&
-    !Array.isArray(clientInput)
-  ) {
-    sanitizedInput = { ...(clientInput as Record<string, unknown>) }
-    const sanitizedObj = sanitizedInput as Record<string, unknown>
-
-    for (const key of BLACKLISTED_INPUT_KEYS) {
-      if (key in sanitizedObj) {
-        sanitizedObj[key] = '[REDACTED]'
-      }
-    }
-  }
-  // handle array case
-  else if (Array.isArray(clientInput)) {
-    sanitizedInput = [...clientInput]
-    const sanitizedArray = sanitizedInput as unknown[]
-
-    // check if any array elements are objects that need sanitizing
-    for (let i = 0; i < sanitizedArray.length; i++) {
-      const item = sanitizedArray[i]
-      if (typeof item === 'object' && item !== null) {
-        const sanitizedItem = { ...(item as Record<string, unknown>) }
-        for (const key of BLACKLISTED_INPUT_KEYS) {
-          if (key in sanitizedItem) {
-            sanitizedItem[key] = '[REDACTED]'
-          }
-        }
-        sanitizedArray[i] = sanitizedItem
-      }
-    }
-  }
+  // Sanitize result object
+  let sanitizedRest: unknown = rest
+  sanitizedRest = sanitizeObject(rest, BLACKLISTED_INPUT_KEYS)
 
   if (
     result.serverError ||
@@ -102,12 +90,12 @@ export const actionClient = createSafeActionClient({
     result.success === false
   ) {
     logError(`${actionOrFunction} '${actionOrFunctionName}' failed:`, {
-      result: rest,
+      result: sanitizedRest,
       input: sanitizedInput,
     })
   } else if (VERBOSE) {
     logSuccess(`${actionOrFunction} '${actionOrFunctionName}' succeeded:`, {
-      result: rest,
+      result: sanitizedRest,
       input: sanitizedInput,
     })
   }

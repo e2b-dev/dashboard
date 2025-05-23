@@ -12,7 +12,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { ObscuredApiKey } from '@/server/keys/types'
 import { deleteApiKeyAction } from '@/server/keys/key-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { useState } from 'react'
@@ -21,13 +20,19 @@ import { motion } from 'motion/react'
 import { exponentialSmoothing } from '@/lib/utils'
 import { useAction } from 'next-safe-action/hooks'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { TeamAPIKey } from '@/types/api'
 
 interface TableRowProps {
-  apiKey: ObscuredApiKey
+  apiKey: TeamAPIKey
   index: number
+  className?: string
 }
 
-export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
+export default function ApiKeyTableRow({
+  apiKey,
+  index,
+  className,
+}: TableRowProps) {
   const { toast } = useToast()
   const selectedTeam = useSelectedTeam()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -63,6 +68,8 @@ export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
     })
   }
 
+  const concatedKeyMask = `${apiKey.mask.prefix}${apiKey.mask.maskedValuePrefix}......${apiKey.mask.maskedValueSuffix}`
+
   return (
     <>
       <AlertDialog
@@ -82,13 +89,16 @@ export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
         key={`${apiKey.name}-${index}`}
         onMouseEnter={() => setHoveredRowIndex(index)}
         onMouseLeave={() => setHoveredRowIndex(-1)}
+        className={className}
       >
-        <TableCell className="flex flex-col gap-1 text-left font-mono">
+        <TableCell className="text-left flex flex-col gap-1">
           {apiKey.name}
-          <span className="text-fg-500 pl-1">{apiKey.maskedKey}</span>
+          <span className="text-fg-500 pl-0.25 font-mono text-xs">
+            {concatedKeyMask}
+          </span>
         </TableCell>
         <TableCell className="text-fg-500 max-w-36 truncate overflow-hidden">
-          <span className="max-w-full truncate">{apiKey.createdBy}</span>
+          <span className="max-w-full truncate">{apiKey.createdBy?.email}</span>
         </TableCell>
         <TableCell className="text-fg-300 text-right">
           {apiKey.createdAt

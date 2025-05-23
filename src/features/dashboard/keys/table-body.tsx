@@ -4,6 +4,9 @@ import { TableCell, TableRow } from '@/ui/primitives/table'
 import ApiKeyTableRow from './table-row'
 import { bailOutFromPPR } from '@/lib/utils/server'
 import { ErrorIndicator } from '@/ui/error-indicator'
+import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
+import { Separator } from '@/ui/primitives/separator'
+import TextSeparator from '@/ui/text-separator'
 
 interface TableBodyContentProps {
   teamId: string
@@ -17,16 +20,17 @@ export default async function TableBodyContent({
   const result = await getTeamApiKeys({ teamId })
 
   if (!result?.data || result.serverError || result.validationErrors) {
-    ;<TableRow>
-      <TableCell colSpan={5}>
-        <ErrorIndicator
-          description={'Could not load API keys'}
-          message={result?.serverError || 'Unknown error'}
-          className="bg-bg mt-2 w-full max-w-full"
-        />
-      </TableCell>
-    </TableRow>
-    return
+    return (
+      <TableRow>
+        <TableCell colSpan={5}>
+          <ErrorIndicator
+            description={'Could not load API keys'}
+            message={result?.serverError || 'Unknown error'}
+            className="bg-bg mt-2 w-full max-w-full"
+          />
+        </TableCell>
+      </TableRow>
+    )
   }
 
   const { apiKeys } = result.data
@@ -46,10 +50,22 @@ export default async function TableBodyContent({
     )
   }
 
+  const normalKeys = apiKeys.filter(
+    (key) => key.name !== CLI_GENERATED_KEY_NAME
+  )
+  const cliKeys = apiKeys.filter((key) => key.name === CLI_GENERATED_KEY_NAME)
+
   return (
     <>
-      {apiKeys.map((key, index) => (
+      {normalKeys.map((key, index) => (
         <ApiKeyTableRow key={key.id} apiKey={key} index={index} />
+      ))}
+      {cliKeys.map((key, index) => (
+        <ApiKeyTableRow
+          key={key.id}
+          apiKey={key}
+          index={index + normalKeys.length}
+        />
       ))}
     </>
   )

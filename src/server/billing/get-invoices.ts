@@ -2,7 +2,7 @@ import 'server-only'
 
 import { Invoice } from '@/types/billing'
 import { z } from 'zod'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 
 const GetInvoicesParamsSchema = z.object({

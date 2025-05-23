@@ -1,12 +1,13 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { maskApiKey } from '@/lib/utils/server'
-import { checkUserTeamAuthorization } from '@/lib/utils/server'
-import { ObscuredApiKey } from './types'
+import { getApiUrl } from '@/lib/utils/server'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { logError } from '@/lib/clients/logger'
+import { ERROR_CODES } from '@/configs/logs'
+import { TeamAPIKey } from '@/types/api'
 
 const GetApiKeysSchema = z.object({
   teamId: z.string({ required_error: 'Team ID is required' }).uuid(),
@@ -17,45 +18,29 @@ export const getTeamApiKeys = authActionClient
   .metadata({ serverFunctionName: 'getTeamApiKeys' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId } = parsedInput
-    const { user } = ctx
+    const { session } = ctx
 
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
+    const accessToken = session.access_token
 
-    if (!isAuthorized)
-      return returnServerError('Not authorized to edit team api keys')
+    const { url } = await getApiUrl()
 
-    const { data, error } = await supabaseAdmin
-      .from('team_api_keys')
-      .select('*')
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: true })
+    const response = await fetch(`${url}/api-keys`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    })
 
-    if (error) throw error
-
-    const resultApiKeys: ObscuredApiKey[] = []
-
-    for (const apiKey of data) {
-      let userEmail: string | null = null
-
-      if (apiKey.created_by) {
-        const { data: keyUserData } = await supabaseAdmin
-          .from('auth_users')
-          .select('email')
-          .eq('id', apiKey.created_by)
-
-        if (keyUserData && keyUserData[0]) {
-          userEmail = keyUserData[0].email
-        }
-      }
-
-      resultApiKeys.push({
-        id: apiKey.id,
-        name: apiKey.name,
-        maskedKey: maskApiKey(apiKey),
-        createdAt: apiKey.created_at,
-        createdBy: userEmail,
+    if (!response.ok) {
+      const text = await response.text()
+      logError(ERROR_CODES.INFRA, 'Failed to get api keys', {
+        teamId,
+        error: text,
       })
+      return returnServerError('Failed to get api keys')
     }
 
-    return { apiKeys: resultApiKeys }
+    const data = (await response.json()) as TeamAPIKey[]
+
+    return { apiKeys: data }
   })

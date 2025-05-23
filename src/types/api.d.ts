@@ -38,12 +38,44 @@ interface SandboxMetrics {
   timestamp: string
 }
 
+interface TeamUser {
+  id: string
+  email: string
+}
+
+interface IdentifierMaskingDetails {
+  prefix: string
+  valueLength: number
+  maskedValuePrefix: string
+  maskedValueSuffix: string
+}
+
 interface CreatedAccessToken {
   id: string
   name: string
   token: string
-  tokenMask: string
+  mask: IdentifierMaskingDetails
   createdAt: string
+  createdBy: TeamUser | null
+}
+
+interface CreatedTeamAPIKey {
+  id: string
+  name: string
+  key: string
+  mask: IdentifierMaskingDetails
+  createdAt: string
+  createdBy: TeamUser | null
+  lastUsed: string | null
+}
+
+interface TeamAPIKey {
+  id: string
+  name: string
+  mask: IdentifierMaskingDetails
+  createdAt: string
+  createdBy: TeamUser | null
+  lastUsed: string | null
 }
 
 export type {
@@ -52,4 +84,8 @@ export type {
   SandboxMetrics,
   DefaultTemplate,
   CreatedAccessToken,
+  CreatedTeamAPIKey,
+  TeamAPIKey,
+  TeamUser,
+  IdentifierMaskingDetails,
 }

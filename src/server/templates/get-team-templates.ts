@@ -12,7 +12,7 @@ import { ERROR_CODES } from '@/configs/logs'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { actionClient, authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 
 const GetTeamTemplatesSchema = z.object({
   teamId: z.string().uuid(),

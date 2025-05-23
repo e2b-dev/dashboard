@@ -14,7 +14,7 @@ import { zfd } from 'zod-form-data'
 import { logWarning } from '@/lib/clients/logger'
 import { returnValidationErrors } from 'next-safe-action'
 import { getTeam } from './get-team'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
 import { CreateTeamsResponse } from '@/types/billing'
 
