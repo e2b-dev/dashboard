@@ -42,11 +42,5 @@ export const getTeamApiKeys = authActionClient
 
     const data = (await response.json()) as TeamAPIKey[]
 
-    return { apiKeys: filterGeneratedServiceKeys(data) }
+    return { apiKeys: data }
   })
-
-const CLI_GENERATED_KEY_NAME = 'CLI login/configure'
-
-function filterGeneratedServiceKeys(apiKeys: TeamAPIKey[]): TeamAPIKey[] {
-  return apiKeys.filter((key) => key.name !== CLI_GENERATED_KEY_NAME)
-}
