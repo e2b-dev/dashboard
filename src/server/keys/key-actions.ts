@@ -73,37 +73,29 @@ export const deleteApiKeyAction = authActionClient
   .metadata({ actionName: 'deleteApiKey' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId, apiKeyId } = parsedInput
-    const { user, supabase } = ctx
+    const { session } = ctx
 
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
+    const accessToken = session.access_token
 
-    if (!isAuthorized) {
-      return returnServerError('Not authorized to delete team api keys')
-    }
+    const { url } = await getApiUrl()
 
-    const { data: apiKeys, error: fetchError } = await supabaseAdmin
-      .from('team_api_keys')
-      .select('id')
-      .eq('team_id', teamId)
+    const response = await fetch(`${url}/api-keys/${apiKeyId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    })
 
-    if (fetchError) {
-      throw fetchError
-    }
+    if (!response.ok) {
+      const text = await response.text()
+      logError(ERROR_CODES.INFRA, 'Failed to delete api key', {
+        teamId,
+        apiKeyId,
+        error: text,
+      })
 
-    if (apiKeys.length === 1) {
-      return returnServerError(
-        'A team must have at least one API key. Please create a new API key before deleting this one.'
-      )
-    }
-
-    const { error } = await supabaseAdmin
-      .from('team_api_keys')
-      .delete()
-      .eq('team_id', teamId)
-      .eq('id', apiKeyId)
-
-    if (error) {
-      throw error
+      return returnServerError(text)
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')
