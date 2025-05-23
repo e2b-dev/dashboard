@@ -58,20 +58,8 @@ export default async function TableBodyContent({
   return (
     <>
       {normalKeys.map((key, index) => (
-        <ApiKeyTableRow
-          key={key.id}
-          apiKey={key}
-          index={index}
-          className={index === normalKeys.length - 1 ? 'border-none' : ''}
-        />
+        <ApiKeyTableRow key={key.id} apiKey={key} index={index} />
       ))}
-      {cliKeys.length > 0 && normalKeys.length > 0 && (
-        <TableRow className="border-none">
-          <TableCell colSpan={5}>
-            <Separator className="my-3" />
-          </TableCell>
-        </TableRow>
-      )}
       {cliKeys.map((key, index) => (
         <ApiKeyTableRow
           key={key.id}
