@@ -91,7 +91,7 @@ export default function ApiKeyTableRow({
         onMouseLeave={() => setHoveredRowIndex(-1)}
         className={className}
       >
-        <TableCell className="text-lef flex flex-col gap-1">
+        <TableCell className="text-left flex flex-col gap-1">
           {apiKey.name}
           <span className="text-fg-500 pl-0.25 font-mono text-xs">
             {concatedKeyMask}
