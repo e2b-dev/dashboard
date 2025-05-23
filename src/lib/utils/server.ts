@@ -17,7 +17,7 @@ import { kv } from '@/lib/clients/kv'
 import { KV_KEYS } from '@/configs/keys'
 import { ERROR_CODES, INFO_CODES } from '@/configs/logs'
 import { getEncryptedCookie } from './cookies'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CreatedAccessToken } from '@/types/api'
 
 /*

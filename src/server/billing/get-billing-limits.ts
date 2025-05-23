@@ -2,7 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 import { BillingLimit } from '@/types/billing'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 
 const GetBillingLimitsParamsSchema = z.object({
@@ -32,7 +32,7 @@ export const getBillingLimits = authActionClient
 
       throw new Error(
         text ??
-        `Failed to fetch billing endpoint: /teams/${teamId}/billing-limits`
+          `Failed to fetch billing endpoint: /teams/${teamId}/billing-limits`
       )
     }
 

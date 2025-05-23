@@ -25,9 +25,14 @@ import { TeamAPIKey } from '@/types/api'
 interface TableRowProps {
   apiKey: TeamAPIKey
   index: number
+  className?: string
 }
 
-export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
+export default function ApiKeyTableRow({
+  apiKey,
+  index,
+  className,
+}: TableRowProps) {
   const { toast } = useToast()
   const selectedTeam = useSelectedTeam()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -84,6 +89,7 @@ export default function ApiKeyTableRow({ apiKey, index }: TableRowProps) {
         key={`${apiKey.name}-${index}`}
         onMouseEnter={() => setHoveredRowIndex(index)}
         onMouseLeave={() => setHoveredRowIndex(-1)}
+        className={className}
       >
         <TableCell className="text-lef flex flex-col gap-1">
           {apiKey.name}

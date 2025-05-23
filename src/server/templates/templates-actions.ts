@@ -5,7 +5,7 @@ import { getApiUrl } from '@/lib/utils/server'
 import { revalidatePath } from 'next/cache'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 
 const DeleteTemplateParamsSchema = z.object({
   templateId: z.string(),

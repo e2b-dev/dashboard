@@ -4,6 +4,9 @@ import { TableCell, TableRow } from '@/ui/primitives/table'
 import ApiKeyTableRow from './table-row'
 import { bailOutFromPPR } from '@/lib/utils/server'
 import { ErrorIndicator } from '@/ui/error-indicator'
+import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
+import { Separator } from '@/ui/primitives/separator'
+import TextSeparator from '@/ui/text-separator'
 
 interface TableBodyContentProps {
   teamId: string
@@ -47,10 +50,34 @@ export default async function TableBodyContent({
     )
   }
 
+  const normalKeys = apiKeys.filter(
+    (key) => key.name !== CLI_GENERATED_KEY_NAME
+  )
+  const cliKeys = apiKeys.filter((key) => key.name === CLI_GENERATED_KEY_NAME)
+
   return (
     <>
-      {apiKeys.map((key, index) => (
-        <ApiKeyTableRow key={key.id} apiKey={key} index={index} />
+      {normalKeys.map((key, index) => (
+        <ApiKeyTableRow
+          key={key.id}
+          apiKey={key}
+          index={index}
+          className={index === normalKeys.length - 1 ? 'border-none' : ''}
+        />
+      ))}
+      {cliKeys.length > 0 && normalKeys.length > 0 && (
+        <TableRow className="border-none">
+          <TableCell colSpan={5}>
+            <Separator className="my-3" />
+          </TableCell>
+        </TableRow>
+      )}
+      {cliKeys.map((key, index) => (
+        <ApiKeyTableRow
+          key={key.id}
+          apiKey={key}
+          index={index + normalKeys.length}
+        />
       ))}
     </>
   )
