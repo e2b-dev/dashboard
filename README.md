@@ -100,24 +100,7 @@ This project requires a Redis-compatible key-value store. You'll need to:
 1. Go to Storage > Buckets
 2. Create a new **public** bucket named `profile-pictures`
 
-
-#### e. Cookie Encryption
-The dashboard uses encrypted cookies for secure data storage. You'll need to set up a `COOKIE_ENCRYPTION_KEY`:
-
-```bash
-# Generate a secure encryption key
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-
-# Add the generated key to your .env.local file
-COOKIE_ENCRYPTION_KEY=your_generated_base64_key
-```
-
-This key must be:
-- 32 bytes (256 bits) encoded in base64
-- Unique per environment (development/staging/production)
-- Kept secret and never committed to version control
-
-4. Start the development server
+#### e. Start the development server
 ```bash
 # Using Bun (recommended)
 bun run dev
