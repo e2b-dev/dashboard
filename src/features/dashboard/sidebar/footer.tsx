@@ -10,7 +10,6 @@ import {
 import { Book, Construction, Github } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
-import DeveloperSettingsDialog from '../developer-settings/settings-dialog'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -36,25 +35,7 @@ export default function DashboardSidebarFooter() {
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <Suspense fallback={null}>
-          <ClientComponentWrapper />
-        </Suspense>
       </SidebarMenu>
     </SidebarFooter>
-  )
-}
-
-async function ClientComponentWrapper() {
-  const apiDomain = await getApiDomain()
-
-  return (
-    <SidebarMenuItem key="developer-settings">
-      <DeveloperSettingsDialog apiDomain={apiDomain}>
-        <SidebarMenuButton tooltip="Developer Settings">
-          <Construction className="text-fg-500 size-4" />
-          Developer Settings
-        </SidebarMenuButton>
-      </DeveloperSettingsDialog>
-    </SidebarMenuItem>
   )
 }
