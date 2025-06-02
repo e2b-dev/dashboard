@@ -12,11 +12,10 @@ import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { unstable_noStore } from 'next/cache'
 import { COOKIE_KEYS } from '@/configs/keys'
-import { logError, logger } from '../clients/logger'
+import { logger } from '../clients/logger'
 import { kv } from '@/lib/clients/kv'
 import { KV_KEYS } from '@/configs/keys'
 import { ERROR_CODES, INFO_CODES } from '@/configs/logs'
-import { getEncryptedCookie } from './cookies'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CreatedAccessToken } from '@/types/api'
 
@@ -164,10 +163,7 @@ export async function getApiDomain() {
     return process.env.DEVELOPMENT_INFRA_API_DOMAIN
   }
 
-  return (
-    (await getEncryptedCookie(COOKIE_KEYS.API_DOMAIN)) ??
-    process.env.NEXT_PUBLIC_DEFAULT_API_DOMAIN
-  )
+  return process.env.NEXT_PUBLIC_DEFAULT_API_DOMAIN
 }
 
 /*
