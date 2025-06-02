@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "<<<<<<< Next.js": "",
-    "dev": "bun scripts:check-app-env && next dev --turbo",
+    "dev": "bun scripts:check-app-env && next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "preview": "bun run build && bun start",

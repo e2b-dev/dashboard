@@ -74,7 +74,10 @@ export async function middleware(request: NextRequest) {
           pathname: request.nextUrl.pathname,
           isNoIndex: NO_INDEX,
         },
-        hrefPrefix: `https://${middlewareRewriteConfig.domain}`,
+        hrefPrefixes: [
+          `https://${middlewareRewriteConfig.domain}`,
+          'https://e2b.dev',
+        ],
       })
 
       return new NextResponse(html, {
