@@ -60,11 +60,9 @@ interface SeoTagOptions {
 function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
   const { pathname, isNoIndex } = options
 
-  // Remove existing tags
   $('meta[name="robots"]').remove()
   $('link[rel="canonical"]').remove()
 
-  // Determine new content
   const robotsContent = isNoIndex
     ? 'noindex,nofollow,noarchive'
     : 'index,follow'
@@ -72,7 +70,6 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
   const formattedPathname = pathname.startsWith('/') ? pathname : `/${pathname}`
   const canonicalUrl = `https://e2b.dev${formattedPathname}`
 
-  // Prepend new tags to <head>
   const $head = $('head')
   if ($head.length > 0) {
     // Add newline characters for readability in the final HTML source
@@ -81,7 +78,6 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
     $head.prepend(`<meta name="robots" content="${robotsContent}">
 `)
   } else {
-    // Handle case where <head> might not exist (though unlikely for full HTML docs)
     logWarning(
       'Cheerio SEO Rewriter: <head> tag not found. Cannot insert SEO tags.'
     )
@@ -138,10 +134,8 @@ function rewriteContentPagesHtml(
 ): string {
   const $ = cheerio.load(html)
 
-  // Apply SEO tag rewrites
   rewriteSeoTags($, options.seo)
 
-  // Apply href rewrites if prefix is provided
   if (options.hrefPrefix) {
     rewriteAbsoluteHrefsInDoc($, options.hrefPrefix)
   }

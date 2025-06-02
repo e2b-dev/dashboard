@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
 import { Suspense } from 'react'
@@ -11,13 +12,19 @@ import { getSessionInsecure } from '@/server/auth/get-session'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
-import TeamBlockageAlert from '@/features/dashboard/sidebar/blocked-banner'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
   params: Promise<{
     teamIdOrSlug: string
   }>
+}
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default async function DashboardLayout({
