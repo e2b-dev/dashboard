@@ -6,7 +6,6 @@ import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
-import { getApiUrl } from '@/lib/utils/server'
 import { Sandbox } from '@/types/api'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 
@@ -33,15 +32,16 @@ export const getTeamSandboxes = authActionClient
       }))
     }
 
-    const { url } = await getApiUrl()
-
-    const res = await fetch(`${url}/sandboxes?state=running`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
-      },
-    })
+    const res = await fetch(
+      `${process.env.INFRA_API_URL}/sandboxes?state=running`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
 
     if (!res.ok) {
       const content = await res.text()

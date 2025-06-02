@@ -1,5 +1,4 @@
 import { GITHUB_URL } from '@/configs/socials'
-import { getApiDomain } from '@/lib/utils/server'
 import ExternalIcon from '@/ui/external-icon'
 import {
   SidebarFooter,
@@ -7,9 +6,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Construction, Github } from 'lucide-react'
+import { Book, Github } from 'lucide-react'
 import Link from 'next/link'
-import { Suspense } from 'react'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {

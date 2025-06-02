@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { getApiUrl } from '@/lib/utils/server'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
@@ -22,9 +21,7 @@ export const getTeamApiKeys = authActionClient
 
     const accessToken = session.access_token
 
-    const { url } = await getApiUrl()
-
-    const response = await fetch(`${url}/api-keys`, {
+    const response = await fetch(`${process.env.INFRA_API_URL}/api-keys`, {
       headers: {
         'Content-Type': 'application/json',
         ...SUPABASE_AUTH_HEADERS(accessToken, teamId),

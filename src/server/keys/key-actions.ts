@@ -1,7 +1,5 @@
 'use server'
 
-import { checkUserTeamAuthorization, getApiUrl } from '@/lib/utils/server'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { authActionClient } from '@/lib/clients/action'
@@ -31,16 +29,17 @@ export const createApiKeyAction = authActionClient
 
     const accessToken = session.access_token
 
-    const { url } = await getApiUrl()
-
-    const apiKeyResponse = await fetch(`${url}/api-keys`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-      },
-      body: JSON.stringify({ name }),
-    })
+    const apiKeyResponse = await fetch(
+      `${process.env.INFRA_API_URL}/api-keys`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+        body: JSON.stringify({ name }),
+      }
+    )
 
     if (!apiKeyResponse.ok) {
       const text = await apiKeyResponse.text()
@@ -77,15 +76,16 @@ export const deleteApiKeyAction = authActionClient
 
     const accessToken = session.access_token
 
-    const { url } = await getApiUrl()
-
-    const response = await fetch(`${url}/api-keys/${apiKeyId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-      },
-    })
+    const response = await fetch(
+      `${process.env.INFRA_API_URL}/api-keys/${apiKeyId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+      }
+    )
 
     if (!response.ok) {
       const text = await response.text()

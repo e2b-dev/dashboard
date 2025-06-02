@@ -1,13 +1,12 @@
 import 'server-only'
 
-import { getApiUrl } from '@/lib/utils/server'
 import { z } from 'zod'
 import { DefaultTemplate, Template } from '@/types/api'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
-import { logDebug, logError } from '@/lib/clients/logger'
+import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { actionClient, authActionClient } from '@/lib/clients/action'
@@ -32,15 +31,16 @@ export const getTeamTemplates = authActionClient
       }
     }
 
-    const { url } = await getApiUrl()
-
-    const res = await fetch(`${url}/templates?teamID=${teamId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
-      },
-    })
+    const res = await fetch(
+      `${process.env.INFRA_API_URL}/templates?teamID=${teamId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token),
+        },
+      }
+    )
 
     if (!res.ok) {
       const content = await res.text()

@@ -2,10 +2,10 @@ import { z } from 'zod'
 
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  INFRA_API_URL: z.string().url(),
   NO_INDEX: z.string().optional(),
 
   BILLING_API_URL: z.string().url().optional(),
-  DEVELOPMENT_INFRA_API_DOMAIN: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),
@@ -16,7 +16,6 @@ export const serverSchema = z.object({
 export const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_DEFAULT_API_DOMAIN: z.string(),
 
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),

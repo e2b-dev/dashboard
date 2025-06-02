@@ -1,7 +1,6 @@
 'use server'
 
 import { z } from 'zod'
-import { getApiUrl } from '@/lib/utils/server'
 import { revalidatePath } from 'next/cache'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
@@ -16,14 +15,16 @@ export const deleteTemplateAction = authActionClient
   .metadata({ actionName: 'deleteTemplate' })
   .action(async ({ parsedInput, ctx }) => {
     const { templateId } = parsedInput
-    const { url } = await getApiUrl()
 
-    const res = await fetch(`${url}/templates/${templateId}`, {
-      method: 'DELETE',
-      headers: {
-        ...SUPABASE_AUTH_HEADERS(ctx.session.access_token),
-      },
-    })
+    const res = await fetch(
+      `${process.env.INFRA_API_URL}/templates/${templateId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(ctx.session.access_token),
+        },
+      }
+    )
 
     if (!res.ok) {
       if (res.status === 404) {
@@ -57,16 +58,18 @@ export const updateTemplateAction = authActionClient
   .action(async ({ parsedInput, ctx }) => {
     const { templateId, props } = parsedInput
     const { session } = ctx
-    const { url } = await getApiUrl()
 
-    const res = await fetch(`${url}/templates/${templateId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
-      },
-      body: JSON.stringify(props),
-    })
+    const res = await fetch(
+      `${process.env.INFRA_API_URL}/templates/${templateId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token),
+        },
+        body: JSON.stringify(props),
+      }
+    )
 
     if (!res.ok) {
       if (res.status === 404) {

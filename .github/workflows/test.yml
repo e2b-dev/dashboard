@@ -18,12 +18,12 @@ jobs:
       KV_REST_API_TOKEN: test-api-token
       KV_REST_API_URL: https://test-kv-api.example.com
       SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
+      INFRA_API_URL: https://api.e2b-test.dev
       BILLING_API_URL: https://billing.e2b-test.dev
       NEXT_PUBLIC_POSTHOG_KEY: test-posthog-key
       NEXT_PUBLIC_SUPABASE_URL: https://test-supabase-url.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test-supabase-anon-key
       NEXT_PUBLIC_STRIPE_BILLING_URL: https://test-stripe-billing.example.com
-      NEXT_PUBLIC_DEFAULT_API_DOMAIN: e2b.dev
       NEXT_PUBLIC_EXPOSE_STORYBOOK: 0
       NEXT_PUBLIC_SCAN: 0
       NEXT_PUBLIC_MOCK_DATA: 1
