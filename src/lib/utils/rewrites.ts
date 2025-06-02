@@ -77,11 +77,12 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
 `)
     $head.prepend(`<meta name="robots" content="${robotsContent}">
 `)
-  } else {
-    logWarning(
-      'Cheerio SEO Rewriter: <head> tag not found. Cannot insert SEO tags.'
-    )
+    return
   }
+
+  logWarning(
+    'Cheerio SEO Rewriter: <head> tag not found. Cannot insert SEO tags.'
+  )
 }
 
 /**
@@ -94,25 +95,27 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
  */
 function rewriteAbsoluteHrefsInDoc(
   $: cheerio.CheerioAPI,
-  rewrittenPrefix: string
+  rewrittenPrefixes: string[]
 ): void {
   $('a[href]').each((_, element) => {
     const $element = $(element)
     const href = $element.attr('href')
 
-    if (href?.startsWith(rewrittenPrefix)) {
-      try {
-        const url = new URL(href)
-        const relativePath = url.pathname + url.search + url.hash
-        $element.attr('href', relativePath)
-      } catch (e) {
-        // Ignore invalid URLs during rewrite
-        logError(
-          ERROR_CODES.URL_REWRITE,
-          `Cheerio Href Rewriter: Failed to parse or set href="${href}"`,
-          e
-        )
-      }
+    if (!href || !rewrittenPrefixes.some((prefix) => href.startsWith(prefix))) {
+      return
+    }
+
+    try {
+      const url = new URL(href)
+      const relativePath = url.pathname + url.search + url.hash
+      $element.attr('href', relativePath)
+    } catch (e) {
+      // Ignore invalid URLs during rewrite
+      logError(
+        ERROR_CODES.URL_REWRITE,
+        `Cheerio Href Rewriter: Failed to parse or set href="${href}"`,
+        e
+      )
     }
   })
 }
@@ -129,15 +132,15 @@ function rewriteContentPagesHtml(
   html: string,
   options: {
     seo: SeoTagOptions
-    hrefPrefix?: string
+    hrefPrefixes?: string[]
   }
 ): string {
   const $ = cheerio.load(html)
 
   rewriteSeoTags($, options.seo)
 
-  if (options.hrefPrefix) {
-    rewriteAbsoluteHrefsInDoc($, options.hrefPrefix)
+  if (options.hrefPrefixes) {
+    rewriteAbsoluteHrefsInDoc($, options.hrefPrefixes)
   }
 
   return $.html()

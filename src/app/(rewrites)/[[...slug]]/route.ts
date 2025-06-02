@@ -9,7 +9,6 @@ import { BASE_URL } from '@/configs/urls'
 import { NO_INDEX } from '@/lib/utils/flags'
 import { logError } from '@/lib/clients/logger'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
-import { checkSEODeprecation } from '@/lib/utils/seo'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -18,10 +17,6 @@ const REVALIDATE_TIME = 900 // 15 minutes ttl
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
-  const pathname = url.pathname
-
-  const deprecationResponse = checkSEODeprecation(pathname)
-  if (deprecationResponse) return deprecationResponse
 
   const requestHostname = url.hostname
 
@@ -66,10 +61,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (contentType?.startsWith('text/html')) {
       let html = await res.text()
 
-      // Remove content-encoding header to ensure proper rendering
+      // remove content-encoding header to ensure proper rendering
       newHeaders.delete('content-encoding')
 
-      // Rewrite absolute URLs pointing to the rewritten domain to relative paths and with correct SEO tags
+      // rewrite absolute URLs pointing to the rewritten domain to relative paths and with correct SEO tags
       if (config) {
         const rewrittenPrefix = `https://${config.domain}`
 
@@ -78,11 +73,11 @@ export async function GET(request: NextRequest): Promise<Response> {
             pathname: url.pathname,
             isNoIndex: NO_INDEX,
           },
-          hrefPrefix: rewrittenPrefix,
+          hrefPrefixes: [rewrittenPrefix, 'https://e2b.dev'],
         })
       }
 
-      // Create a new response with the modified HTML
+      // create a new response with the modified HTML
       const modifiedResponse = new Response(html, {
         status: res.status,
         headers: newHeaders,
