@@ -36,17 +36,16 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   try {
+    const notFound = url.hostname === requestHostname
+
     // if hostname did not change, we want to make sure it does not cache the route based on the build times hostname (127.0.0.1:3000)
-    const fetchUrl =
-      url.hostname === requestHostname
-        ? `${BASE_URL}/not-found`
-        : url.toString()
+    const fetchUrl = notFound ? `${BASE_URL}/not-found` : url.toString()
 
     const res = await fetch(fetchUrl, {
       headers: new Headers(request.headers),
       redirect: 'follow',
       // if the hostname is the same, we don't want to cache the response, since it will not be available in build time
-      ...(url.hostname === requestHostname
+      ...(notFound
         ? { cache: 'no-store' }
         : {
             next: {
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
       // create a new response with the modified HTML
       const modifiedResponse = new Response(html, {
-        status: res.status,
+        status: notFound ? 404 : res.status,
         headers: newHeaders,
       })
 

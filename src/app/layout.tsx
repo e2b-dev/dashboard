@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: '%s - E2B',
     default: METADATA.title,
   },
-  description: 'Open-source secure sandboxes for AI code execution',
+  description: METADATA.description,
   twitter: {
     title: METADATA.title,
     description: METADATA.description,
