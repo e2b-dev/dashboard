@@ -2,12 +2,7 @@ import 'server-cli-only'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
-import { Database } from '@/types/database.types'
-import {
-  E2BError,
-  UnauthenticatedError,
-  UnauthorizedError,
-} from '@/types/errors'
+import { E2BError, UnauthenticatedError } from '@/types/errors'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { unstable_noStore } from 'next/cache'
