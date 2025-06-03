@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next'
-import { NO_INDEX } from '@/lib/utils/flags'
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 
 export default function robots(): MetadataRoute.Robots {
-  if (NO_INDEX) {
+  if (!ALLOW_SEO_INDEXING) {
     // We serve an empty robots.txt for a 200 status code
     return {
       rules: {},

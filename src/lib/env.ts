@@ -3,7 +3,6 @@ import { z } from 'zod'
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   INFRA_API_URL: z.string().url(),
-  NO_INDEX: z.string().optional(),
   KV_REST_API_TOKEN: z.string().min(1),
   KV_REST_API_URL: z.string().url(),
 

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { UnknownError } from '@/types/errors'
 import { logDebug, logError, logSuccess } from './logger'
 import { ActionError } from '../utils/action'
-import { VERBOSE } from '../utils/flags'
+import { VERBOSE } from '../../configs/flags'
 
 // keys that should not be logged for security/privacy reasons
 const BLACKLISTED_INPUT_KEYS = [

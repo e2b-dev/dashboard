@@ -12,7 +12,7 @@ import { PROTECTED_URLS } from './configs/urls'
 import { logError } from './lib/clients/logger'
 import { ERROR_CODES } from './configs/logs'
 import { getRewriteForPath } from './lib/utils/rewrites'
-import { NO_INDEX } from './lib/utils/flags'
+import { ALLOW_SEO_INDEXING } from './configs/flags'
 
 export async function middleware(request: NextRequest) {
   try {
@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
 
       const headers = new Headers(request.headers)
 
-      if (!NO_INDEX) {
+      if (ALLOW_SEO_INDEXING) {
         headers.set('x-e2b-should-index', '1')
       }
 

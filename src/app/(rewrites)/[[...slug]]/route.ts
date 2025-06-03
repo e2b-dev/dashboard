@@ -6,7 +6,7 @@ import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
 import sitemap from '@/app/sitemap'
 import { BASE_URL } from '@/configs/urls'
-import { NO_INDEX } from '@/lib/utils/flags'
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { logError } from '@/lib/clients/logger'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         html = rewriteContentPagesHtml(html, {
           seo: {
             pathname: url.pathname,
-            isNoIndex: NO_INDEX,
+            allowIndexing: ALLOW_SEO_INDEXING,
           },
           hrefPrefixes: [rewrittenPrefix, 'https://e2b.dev'],
         })

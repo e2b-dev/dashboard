@@ -15,7 +15,7 @@ import {
   ROUTE_REWRITE_CONFIG,
 } from '@/configs/rewrites'
 import { DomainConfig } from '@/types/rewrites.types'
-import { NO_INDEX } from '@/lib/utils/flags'
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 
 // Cache the sitemap for 15 minutes (in seconds)
 const SITEMAP_CACHE_TIME = 15 * 60
@@ -229,8 +229,8 @@ async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
  * @returns Complete sitemap for the E2B website
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Return empty sitemap if NO_INDEX is set
-  if (NO_INDEX) {
+  // Return empty sitemap if SEO indexing is not allowed
+  if (!ALLOW_SEO_INDEXING) {
     return []
   }
 

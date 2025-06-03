@@ -46,7 +46,7 @@ function getRewriteForPath(
 
 interface SeoTagOptions {
   pathname: string
-  isNoIndex: boolean
+  allowIndexing: boolean
 }
 
 /**
@@ -58,12 +58,12 @@ interface SeoTagOptions {
  * @param options Configuration options including the pathname and NO_INDEX flag.
  */
 function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
-  const { pathname, isNoIndex } = options
+  const { pathname, allowIndexing } = options
 
   $('meta[name="robots"]').remove()
   $('link[rel="canonical"]').remove()
 
-  const robotsContent = isNoIndex ? 'noindex,nofollow' : 'index,follow'
+  const robotsContent = allowIndexing ? 'index,follow' : 'noindex,nofollow'
 
   const formattedPathname = pathname.startsWith('/') ? pathname : `/${pathname}`
   const canonicalUrl = `https://e2b.dev${formattedPathname}`
