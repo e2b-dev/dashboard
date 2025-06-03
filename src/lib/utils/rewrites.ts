@@ -63,9 +63,7 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
   $('meta[name="robots"]').remove()
   $('link[rel="canonical"]').remove()
 
-  const robotsContent = isNoIndex
-    ? 'noindex,nofollow,noarchive'
-    : 'index,follow'
+  const robotsContent = isNoIndex ? 'noindex,nofollow' : 'index,follow'
 
   const formattedPathname = pathname.startsWith('/') ? pathname : `/${pathname}`
   const canonicalUrl = `https://e2b.dev${formattedPathname}`
