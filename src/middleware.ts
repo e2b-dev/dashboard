@@ -11,10 +11,7 @@ import {
 import { PROTECTED_URLS } from './configs/urls'
 import { logError } from './lib/clients/logger'
 import { ERROR_CODES } from './configs/logs'
-import {
-  getRewriteForPath,
-  rewriteContentPagesHtml,
-} from './lib/utils/rewrites'
+import { getRewriteForPath } from './lib/utils/rewrites'
 import { NO_INDEX } from './lib/utils/flags'
 
 export async function middleware(request: NextRequest) {
