@@ -48,7 +48,9 @@ export async function middleware(request: NextRequest) {
       }
 
       return NextResponse.rewrite(rewriteUrl, {
-        headers,
+        request: {
+          headers,
+        },
       })
     }
 
