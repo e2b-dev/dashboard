@@ -101,10 +101,7 @@ export const getUserAccessTokenAction = authActionClient
   .action(async ({ ctx }) => {
     const { user, session } = ctx
 
-    const token = await generateE2BUserAccessToken(
-      session.access_token,
-      user.id
-    )
+    const token = await generateE2BUserAccessToken(session.access_token)
 
     return token
   })

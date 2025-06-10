@@ -34,10 +34,7 @@ async function handleCLIAuth(
 
   try {
     const defaultTeam = await getDefaultTeamRelation(userId)
-    const e2bAccessToken = await generateE2BUserAccessToken(
-      supabaseAccessToken,
-      userId
-    )
+    const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
 
     const searchParams = new URLSearchParams({
       email: userEmail,

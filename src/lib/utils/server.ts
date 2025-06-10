@@ -50,10 +50,7 @@ export async function checkAuthenticated() {
 /*
  *  This function generates an e2b user access token for a given user.
  */
-export async function generateE2BUserAccessToken(
-  supabaseAccessToken: string,
-  userId: string
-) {
+export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   const TOKEN_NAME = 'e2b_dashboard_generated_access_token'
 
   const res = await infra.POST('/access-tokens', {
@@ -68,9 +65,7 @@ export async function generateE2BUserAccessToken(
   if (!res.data || res.error) {
     logError(ERROR_CODES.INFRA, '/access-tokens', res.error, res.data)
 
-    return returnServerError(
-      `Failed to generate e2b user access token for user (${userId})`
-    )
+    return returnServerError(`Failed to generate e2b user access token`)
   }
 
   return res.data
