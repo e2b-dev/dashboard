@@ -7,7 +7,7 @@ import { returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
-import { CreatedTeamAPIKey } from '@/types/api'
+import { infra } from '@/lib/clients/api'
 
 // Create API Key
 
@@ -29,34 +29,25 @@ export const createApiKeyAction = authActionClient
 
     const accessToken = session.access_token
 
-    const apiKeyResponse = await fetch(
-      `${process.env.INFRA_API_URL}/api-keys`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-        },
-        body: JSON.stringify({ name }),
-      }
-    )
-
-    if (!apiKeyResponse.ok) {
-      const text = await apiKeyResponse.text()
-      logError(ERROR_CODES.INFRA, 'Failed to create api key', {
-        teamId,
+    const res = await infra.POST('/api-keys', {
+      body: {
         name,
-        error: text,
-      })
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    })
+
+    if (!res.data || res.error) {
+      logError(ERROR_CODES.INFRA, '/api-keys', res.error)
+
       return returnServerError('Failed to create api key')
     }
-
-    const apiKeyData = (await apiKeyResponse.json()) as CreatedTeamAPIKey
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')
 
     return {
-      createdApiKey: apiKeyData,
+      createdApiKey: res.data,
     }
   })
 
@@ -76,26 +67,21 @@ export const deleteApiKeyAction = authActionClient
 
     const accessToken = session.access_token
 
-    const response = await fetch(
-      `${process.env.INFRA_API_URL}/api-keys/${apiKeyId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+    const res = await infra.DELETE('/api-keys/{apiKeyID}', {
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+      params: {
+        path: {
+          apiKeyID: apiKeyId,
         },
-      }
-    )
+      },
+    })
 
-    if (!response.ok) {
-      const text = await response.text()
-      logError(ERROR_CODES.INFRA, 'Failed to delete api key', {
-        teamId,
-        apiKeyId,
-        error: text,
-      })
+    if (!res.data || res.error) {
+      logError(ERROR_CODES.INFRA, '/api-keys/{apiKeyID}', res.error)
 
-      return returnServerError(text)
+      return returnServerError('Failed to delete api key')
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')

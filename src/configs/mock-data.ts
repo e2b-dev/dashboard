@@ -18,6 +18,9 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
     },
     isDefault: true,
     defaultDescription: 'Code Interpreter',
+    lastSpawnedAt: '2024-01-01T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['web-starter'],
@@ -31,6 +34,9 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
     createdBy: null,
     isDefault: true,
     defaultDescription: 'Web Development Environment',
+    lastSpawnedAt: '2024-01-05T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['data-science'],
@@ -47,6 +53,9 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
     },
     isDefault: true,
     defaultDescription: 'Data Science Environment with ML Libraries',
+    lastSpawnedAt: '2024-01-06T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
 ]
 
@@ -64,6 +73,9 @@ const TEMPLATES: Template[] = [
       email: 'admin@example.com',
       id: 'user_001',
     },
+    lastSpawnedAt: '2024-01-01T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['react-vite'],
@@ -75,6 +87,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-02T00:00:00Z',
     updatedAt: '2024-01-02T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-02T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['postgres', 'pg'],
@@ -86,6 +101,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-03T00:00:00Z',
     updatedAt: '2024-01-03T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-03T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['redis'],
@@ -97,6 +115,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-04T00:00:00Z',
     updatedAt: '2024-01-04T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-04T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['python-ml', 'ml'],
@@ -108,6 +129,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-05T00:00:00Z',
     updatedAt: '2024-01-05T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-05T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['elastic', 'es'],
@@ -119,6 +143,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-06T00:00:00Z',
     updatedAt: '2024-01-06T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-06T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['grafana'],
@@ -130,6 +157,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-07T00:00:00Z',
     updatedAt: '2024-01-07T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-07T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['nginx'],
@@ -141,6 +171,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-08T00:00:00Z',
     updatedAt: '2024-01-08T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-08T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['mongodb', 'mongo'],
@@ -152,6 +185,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-09T00:00:00Z',
     updatedAt: '2024-01-09T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-09T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
   {
     aliases: ['mysql'],
@@ -163,6 +199,9 @@ const TEMPLATES: Template[] = [
     createdAt: '2024-01-10T00:00:00Z',
     updatedAt: '2024-01-10T00:00:00Z',
     createdBy: null,
+    lastSpawnedAt: '2024-01-10T00:00:00Z',
+    spawnCount: 10,
+    buildCount: 1,
   },
 ] as const
 
@@ -206,22 +245,22 @@ function generateMockSandboxes(count: number): Sandbox[] {
         lastUpdate: new Date(
           startDate.getTime() + 2 * 60 * 60 * 1000
         ).toISOString(),
-        status: {
+        status: JSON.stringify({
           health: ['healthy', 'degraded', 'warning', 'error'][
             Math.floor(Math.random() * 4)
           ],
-          uptime: Math.floor(Math.random() * 1000000), // seconds
+          uptime: Math.floor(Math.random() * 1000000),
           restarts: Math.floor(Math.random() * 5),
-        },
-        network: {
+        }),
+        network: JSON.stringify({
           ingressBytes: Math.floor(Math.random() * 1024 * 1024 * 1024),
           egressBytes: Math.floor(Math.random() * 1024 * 1024 * 1024),
           connections: Math.floor(Math.random() * 1000),
           ports: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () =>
             Math.floor(Math.random() * 65535)
           ),
-        },
-        config: {
+        }),
+        config: JSON.stringify({
           env: {
             NODE_ENV: env,
             LOG_LEVEL: ['debug', 'info', 'warn', 'error'][
@@ -238,16 +277,16 @@ function generateMockSandboxes(count: number): Sandbox[] {
                 Math.floor(Math.random() * 5)
               ]
           ),
-        },
-        deployment: {
+        }),
+        deployment: JSON.stringify({
           version: `v${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}`,
           commitHash: nanoid(7),
           deployedBy: `user_${nanoid(4)}`,
           deployedAt: new Date(
             startDate.getTime() + Math.floor(Math.random() * 60 * 60 * 1000)
           ).toISOString(),
-        },
-        resources: {
+        }),
+        resources: JSON.stringify({
           volumes: Array.from(
             { length: Math.floor(Math.random() * 3) },
             () => ({
@@ -267,11 +306,12 @@ function generateMockSandboxes(count: number): Sandbox[] {
               url: `https://${nanoid(8)}.sandbox.example.com`,
             })
           ),
-        },
+        }),
       },
       sandboxID: nanoid(8),
       startedAt: startDate.toISOString(),
       templateID: template.templateID,
+      state: 'running',
     })
   }
 

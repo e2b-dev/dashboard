@@ -2,11 +2,11 @@ import 'server-only'
 
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
+import { handleDefaultInfraError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
-import { TeamAPIKey } from '@/types/api'
+import { infra } from '@/lib/clients/api'
 
 const GetApiKeysSchema = z.object({
   teamId: z.string({ required_error: 'Team ID is required' }).uuid(),
@@ -21,23 +21,18 @@ export const getTeamApiKeys = authActionClient
 
     const accessToken = session.access_token
 
-    const response = await fetch(`${process.env.INFRA_API_URL}/api-keys`, {
+    const res = await infra.GET('/api-keys', {
       headers: {
-        'Content-Type': 'application/json',
         ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
       },
     })
 
-    if (!response.ok) {
-      const text = await response.text()
-      logError(ERROR_CODES.INFRA, 'Failed to get api keys', {
-        teamId,
-        error: text,
-      })
-      return returnServerError('Failed to get api keys')
+    if (!res.data || res.error) {
+      const status = res.error?.code ?? 500
+      logError(ERROR_CODES.INFRA, '/api-keys', res.error)
+
+      return handleDefaultInfraError(status)
     }
 
-    const data = (await response.json()) as TeamAPIKey[]
-
-    return { apiKeys: data }
+    return { apiKeys: res.data }
   })

@@ -1,82 +1,29 @@
-interface Sandbox {
-  alias: string
-  clientID: string
-  cpuCount: number
-  memoryMB: number
-  metadata: Record<string, unknown>
-  sandboxID: string
-  startedAt: string
-  endAt: string
-  templateID: string
-}
+import {
+  paths as InfraPaths,
+  components as InfraComponents,
+} from '@/types/infra-api'
 
-interface Template {
-  aliases: string[]
-  buildID: string
-  cpuCount: number
-  memoryMB: number
-  public: boolean
-  templateID: string
-  createdAt: string
-  updatedAt: string
-  createdBy: {
-    email: string
-    id: string
-  } | null
-}
+type Sandbox = InfraComponents['schemas']['ListedSandbox']
 
-interface DefaultTemplate extends Template {
+type Template = InfraComponents['schemas']['Template']
+
+type DefaultTemplate = Template & {
   isDefault: true
   defaultDescription?: string
 }
 
-interface SandboxMetrics {
-  cpuCount: number
-  cpuUsedPct: number
-  memTotalMiB: number
-  memUsedMiB: number
-  timestamp: string
-}
+type SandboxMetrics = InfraComponents['schemas']['SandboxMetric']
 
-interface TeamUser {
-  id: string
-  email: string
-}
+type TeamUser = InfraComponents['schemas']['TeamUser']
 
-interface IdentifierMaskingDetails {
-  prefix: string
-  valueLength: number
-  maskedValuePrefix: string
-  maskedValueSuffix: string
-}
+type IdentifierMaskingDetails =
+  InfraComponents['schemas']['IdentifierMaskingDetails']
 
-interface CreatedAccessToken {
-  id: string
-  name: string
-  token: string
-  mask: IdentifierMaskingDetails
-  createdAt: string
-  createdBy: TeamUser | null
-}
+type CreatedAccessToken = InfraComponents['schemas']['CreatedAccessToken']
 
-interface CreatedTeamAPIKey {
-  id: string
-  name: string
-  key: string
-  mask: IdentifierMaskingDetails
-  createdAt: string
-  createdBy: TeamUser | null
-  lastUsed: string | null
-}
+type CreatedTeamAPIKey = InfraComponents['schemas']['CreatedTeamAPIKey']
 
-interface TeamAPIKey {
-  id: string
-  name: string
-  mask: IdentifierMaskingDetails
-  createdAt: string
-  createdBy: TeamUser | null
-  lastUsed: string | null
-}
+type TeamAPIKey = InfraComponents['schemas']['TeamAPIKey']
 
 export type {
   Sandbox,

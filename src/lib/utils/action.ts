@@ -1,3 +1,4 @@
+import { UnknownError } from '@/types/errors'
 import { InferSafeActionFnResult } from 'next-safe-action'
 
 /**
@@ -38,4 +39,15 @@ export class ActionError extends Error {
  */
 export const returnServerError = (message: string) => {
   throw new ActionError(message)
+}
+
+export function handleDefaultInfraError(status: number) {
+  switch (status) {
+    case 403:
+      return returnServerError(
+        'You may have reached your billing limits or your account may be blocked. Please check your billing settings or contact support.'
+      )
+    default:
+      return returnServerError(UnknownError().message)
+  }
 }

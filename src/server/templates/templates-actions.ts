@@ -3,8 +3,11 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { infra } from '@/lib/clients/api'
+import { logError } from '@/lib/clients/logger'
+import { ERROR_CODES } from '@/configs/logs'
 
 const DeleteTemplateParamsSchema = z.object({
   templateId: z.string(),
@@ -16,28 +19,31 @@ export const deleteTemplateAction = authActionClient
   .action(async ({ parsedInput, ctx }) => {
     const { templateId } = parsedInput
 
-    const res = await fetch(
-      `${process.env.INFRA_API_URL}/templates/${templateId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(ctx.session.access_token),
+    const res = await infra.DELETE('/templates/{templateID}', {
+      params: {
+        path: {
+          templateID: templateId,
         },
-      }
-    )
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(ctx.session.access_token),
+      },
+    })
 
-    if (!res.ok) {
-      if (res.status === 404) {
+    if (!res.data || res.error) {
+      const status = res.error?.code ?? 500
+      logError(
+        ERROR_CODES.INFRA,
+        '/templates/{templateID}',
+        res.error,
+        res.data
+      )
+
+      if (status === 404) {
         return returnServerError('Template not found')
       }
 
-      const text = await res.text()
-      const statusCode = res.status
-      const statusText = res.statusText
-
-      throw new Error(
-        `HTTP Error ${statusCode} ${statusText}: ${text || `Failed to delete template: ${templateId}`}`
-      )
+      return handleDefaultInfraError(status)
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/templates`, 'page')
@@ -59,30 +65,29 @@ export const updateTemplateAction = authActionClient
     const { templateId, props } = parsedInput
     const { session } = ctx
 
-    const res = await fetch(
-      `${process.env.INFRA_API_URL}/templates/${templateId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...SUPABASE_AUTH_HEADERS(session.access_token),
+    const res = await infra.PATCH('/templates/{templateID}', {
+      body: {
+        public: props.Public,
+      },
+      params: {
+        path: {
+          templateID: templateId,
         },
-        body: JSON.stringify(props),
-      }
-    )
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(session.access_token),
+      },
+    })
 
-    if (!res.ok) {
-      if (res.status === 404) {
+    if (!res.data || res.error) {
+      const status = res.error?.code ?? 500
+      logError(ERROR_CODES.INFRA, '/templates/{templateID}', res.error)
+
+      if (status === 404) {
         return returnServerError('Template not found')
       }
 
-      const text = await res.text()
-      const statusCode = res.status
-      const statusText = res.statusText
-
-      throw new Error(
-        `HTTP Error ${statusCode} ${statusText}: ${text || `Failed to update template: ${templateId}`}`
-      )
+      return handleDefaultInfraError(status)
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/templates`, 'page')

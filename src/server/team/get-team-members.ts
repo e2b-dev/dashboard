@@ -6,9 +6,6 @@ import { z } from 'zod'
 import { TeamMemberInfo } from './types'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
-import { logError } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
-import { checkUserTeamAuthorization } from '@/lib/utils/server'
 
 const GetTeamMembersSchema = z.object({
   teamId: z.string().uuid(),

@@ -7,12 +7,14 @@ import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { unstable_noStore } from 'next/cache'
 import { COOKIE_KEYS } from '@/configs/keys'
-import { logger } from '../clients/logger'
+import { logError, logger } from '../clients/logger'
 import { kv } from '@/lib/clients/kv'
 import { KV_KEYS } from '@/configs/keys'
 import { ERROR_CODES, INFO_CODES } from '@/configs/logs'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CreatedAccessToken } from '@/types/api'
+import { infra } from '../clients/api'
+import { returnServerError } from './action'
 
 /*
  *  This function checks if the user is authenticated and returns the user and the supabase client.
@@ -54,25 +56,24 @@ export async function generateE2BUserAccessToken(
 ) {
   const TOKEN_NAME = 'e2b_dashboard_generated_access_token'
 
-  const response = await fetch(`${process.env.INFRA_API_URL}/access-tokens`, {
-    method: 'POST',
+  const res = await infra.POST('/access-tokens', {
+    body: {
+      name: TOKEN_NAME,
+    },
     headers: {
-      'Content-Type': 'application/json',
       ...SUPABASE_AUTH_HEADERS(supabaseAccessToken),
     },
-    body: JSON.stringify({ name: TOKEN_NAME }),
   })
 
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(
-      `Failed to generate e2b user access token for user (${userId}): ${text ?? response.statusText}`
+  if (!res.data || res.error) {
+    logError(ERROR_CODES.INFRA, '/access-tokens', res.error, res.data)
+
+    return returnServerError(
+      `Failed to generate e2b user access token for user (${userId})`
     )
   }
 
-  const data: CreatedAccessToken = await response.json()
-
-  return data
+  return res.data
 }
 
 // TODO: we should probably add some team permission system here

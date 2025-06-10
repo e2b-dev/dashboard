@@ -5,9 +5,9 @@ import { MOCK_METRICS_DATA, MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
 import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 import { authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
-import { Sandbox } from '@/types/api'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { infra } from '@/lib/clients/api'
 
 const GetTeamSandboxesSchema = z.object({
   teamId: z.string().uuid(),
@@ -32,28 +32,22 @@ export const getTeamSandboxes = authActionClient
       }))
     }
 
-    const res = await fetch(
-      `${process.env.INFRA_API_URL}/sandboxes?state=running`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
-        },
-      }
-    )
+    const res = await infra.GET('/sandboxes', {
+      query: {
+        state: 'running',
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      },
+    })
 
-    if (!res.ok) {
-      const content = await res.text()
-      logError(ERROR_CODES.INFRA, '/sandboxes', content)
+    if (!res.data || res.error) {
+      const status = res.error?.code ?? 500
 
-      // this case should never happen for the original reason, hence we assume the user defined the wrong infra domain
-      return returnServerError(
-        "Something went wrong when accessing the API. Ensure you are using the correct Infrastructure Domain under 'Developer Settings'"
-      )
+      logError(ERROR_CODES.INFRA, '/sandboxes', res.error, res.data)
+
+      return handleDefaultInfraError(status)
     }
 
-    const json = (await res.json()) as Sandbox[]
-
-    return json
+    return res.data
   })

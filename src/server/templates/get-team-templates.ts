@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { DefaultTemplate, Template } from '@/types/api'
+import { DefaultTemplate, TeamUser, Template } from '@/types/api'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
@@ -10,8 +10,9 @@ import { logError } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { actionClient, authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { infra } from '@/lib/clients/api'
 
 const GetTeamTemplatesSchema = z.object({
   teamId: z.string().uuid(),
@@ -31,31 +32,24 @@ export const getTeamTemplates = authActionClient
       }
     }
 
-    const res = await fetch(
-      `${process.env.INFRA_API_URL}/templates?teamID=${teamId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...SUPABASE_AUTH_HEADERS(session.access_token),
-        },
-      }
-    )
+    const res = await infra.GET('/templates', {
+      query: {
+        teamID: teamId,
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(session.access_token),
+      },
+    })
 
-    if (!res.ok) {
-      const content = await res.text()
-      logError(ERROR_CODES.INFRA, '/templates', content)
+    if (!res.data || res.error) {
+      const status = res.error?.code ?? 500
+      logError(ERROR_CODES.INFRA, '/templates', res.error, res.data)
 
-      // this case should never happen for the described reason, hence we assume the user defined the wrong infra domain
-      return returnServerError(
-        "Something went wrong when accessing the API. Ensure you are using the correct Infrastructure Domain under 'Developer Settings'"
-      )
+      return handleDefaultInfraError(status)
     }
 
-    const data = (await res.json()) as Template[]
-
     return {
-      templates: data,
+      templates: res.data,
     }
   })
 
@@ -140,22 +134,6 @@ export const getDefaultTemplates = actionClient
         continue
       }
 
-      let createdBy = null
-      if (env.created_by) {
-        const { data: userData, error: userError } = await supabaseAdmin
-          .from('auth_users')
-          .select('id, email')
-          .eq('id', env.created_by)
-          .single()
-
-        if (!userError && userData && userData.id) {
-          createdBy = {
-            id: userData.id,
-            email: userData.email || '',
-          }
-        }
-      }
-
       templates.push({
         templateID: env.id,
         buildID: latestBuild.id,
@@ -165,7 +143,10 @@ export const getDefaultTemplates = actionClient
         aliases: aliases.map((a) => a.alias),
         createdAt: env.created_at,
         updatedAt: env.updated_at,
-        createdBy,
+        createdBy: null,
+        lastSpawnedAt: env.last_spawned_at ?? env.created_at,
+        spawnCount: env.spawn_count,
+        buildCount: env.build_count,
         isDefault: true,
         defaultDescription:
           defaultEnvs.find((e) => e.env_id === env.id)?.description ??
