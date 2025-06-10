@@ -1,0 +1,21 @@
+# buf.gen.yaml defines a local generation template.
+# For details, see https://buf.build/docs/configuration/v2/buf-gen-yaml
+version: v2
+plugins:
+  - local: protoc-gen-es
+    out: ./src/lib/clients/envd
+    opt:
+      - target=ts
+  - local: protoc-gen-connect-es
+    out: ./src/lib/clients/envd
+    opt:
+      - target=ts
+
+managed:
+  enabled: true
+  override:
+    - file_option: optimize_for
+      value: SPEED
+
+inputs:
+  - directory: spec/envd
