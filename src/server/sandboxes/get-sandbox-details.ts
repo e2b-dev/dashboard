@@ -29,7 +29,7 @@ export const getSandboxDetails = authActionClient
       },
     })
 
-    if (!res.data || res.error) {
+    if (res.error) {
       const status = res.error?.code ?? 500
 
       logError(ERROR_CODES.INFRA, '/sandboxes/{sandboxID}', res.error, res.data)

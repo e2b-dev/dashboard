@@ -30,7 +30,7 @@ export const deleteTemplateAction = authActionClient
       },
     })
 
-    if (!res.data || res.error) {
+    if (res.error) {
       const status = res.error?.code ?? 500
       logError(
         ERROR_CODES.INFRA,
@@ -90,7 +90,7 @@ export const updateTemplateAction = authActionClient
       },
     })
 
-    if (!res.data || res.error) {
+    if (res.error) {
       const status = res.error?.code ?? 500
       logError(ERROR_CODES.INFRA, '/templates/{templateID}', res.error)
 

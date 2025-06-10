@@ -38,7 +38,7 @@ export const createApiKeyAction = authActionClient
       },
     })
 
-    if (!res.data || res.error) {
+    if (res.error) {
       logError(ERROR_CODES.INFRA, '/api-keys', res.error)
 
       return returnServerError('Failed to create api key')
@@ -78,7 +78,7 @@ export const deleteApiKeyAction = authActionClient
       },
     })
 
-    if (!res.data || res.error) {
+    if (res.error) {
       logError(ERROR_CODES.INFRA, '/api-keys/{apiKeyID}', res.error)
 
       return returnServerError('Failed to delete api key')

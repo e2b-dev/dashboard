@@ -41,7 +41,7 @@ export const getTeamSandboxes = authActionClient
       },
     })
 
-    if (!res.data || res.error) {
+    if (res.error) {
       const status = res.error?.code ?? 500
 
       logError(ERROR_CODES.INFRA, '/sandboxes', res.error, res.data)
