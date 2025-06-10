@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Use default team or first team
-    const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]
+    const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]!
     teamId = defaultTeam.team_id
     teamSlug = defaultTeam.team?.slug || defaultTeam.team_id
   }

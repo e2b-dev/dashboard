@@ -310,7 +310,12 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
           />
           <ChartTooltip
             content={({ active, payload, label }) => {
-              if (!active || !payload || !payload.length || !payload[0].payload)
+              if (
+                !active ||
+                !payload ||
+                !payload.length ||
+                !payload[0]?.payload
+              )
                 return null
 
               const dataPoint = payload[0].payload // Actual data for the bar

@@ -45,10 +45,10 @@ export function RAMChart({ data }: RAMChartProps) {
         />
         <ChartTooltip
           content={({ active, payload, label }) => {
-            if (!active || !payload || !payload.length || !payload[0].payload)
+            if (!active || !payload || !payload.length || !payload[0]?.payload)
               return null
 
-            const dataPoint = payload[0].payload // Actual data for the bar
+            const dataPoint = payload[0]!.payload // Actual data for the bar
             let dateRangeString = ''
             const dateFormatOptions: Intl.DateTimeFormatOptions = {
               month: 'short',

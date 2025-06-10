@@ -184,9 +184,9 @@ function generateMockSandboxes(count: number): Sandbox[] {
   const baseDate = new Date()
 
   for (let i = 0; i < count; i++) {
-    const template = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)]
-    const env = ENVIRONMENTS[Math.floor(Math.random() * ENVIRONMENTS.length)]
-    const component = COMPONENTS[Math.floor(Math.random() * COMPONENTS.length)]
+    const template = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)]!
+    const env = ENVIRONMENTS[Math.floor(Math.random() * ENVIRONMENTS.length)]!
+    const component = COMPONENTS[Math.floor(Math.random() * COMPONENTS.length)]!
 
     // Distribute sandboxes randomly within 24 hours from the base date
     const startDate = subHours(baseDate, Math.floor(Math.random() * 30))
@@ -324,8 +324,8 @@ function generateMockMetrics(
       cpuIntensity: 0.5,
     }
 
-    const memBaseline = memoryBaselines[pattern.memoryProfile]
-    const memVolatility = memoryVolatility[pattern.memoryProfile]
+    const memBaseline = memoryBaselines[pattern.memoryProfile]!
+    const memVolatility = memoryVolatility[pattern.memoryProfile]!
 
     // Generate current load based on time of day
     const hourOfDay = new Date().getHours()

@@ -44,7 +44,7 @@ export function VCPUChart({ data }: VCPUChartProps) {
         />
         <ChartTooltip
           content={({ active, payload, label }) => {
-            if (!active || !payload || !payload.length || !payload[0].payload)
+            if (!active || !payload || !payload.length || !payload[0]?.payload)
               return null
 
             return (

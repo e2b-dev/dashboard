@@ -148,7 +148,7 @@ export const removeTeamMemberAction = authActionClient
       return returnServerError('User is not a member of this team')
     }
 
-    const teamMember = teamMemberData[0]
+    const teamMember = teamMemberData[0]!
 
     if (teamMember.user_id !== user.id && teamMember.is_default) {
       return returnServerError('Cannot remove a default team member')

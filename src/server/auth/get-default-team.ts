@@ -20,7 +20,7 @@ export async function getDefaultTeamRelation(userId: string) {
     throw new Error('No default team found')
   }
 
-  return data[0]
+  return data[0]!
 }
 
 export async function getDefaultTeam(userId: string) {

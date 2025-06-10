@@ -109,7 +109,7 @@ export async function resolveTeamForDashboard(
     }
   }
 
-  const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]
+  const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]!
 
   // Skip redirect if we're at /dashboard with a tab parameter
   if (hasTabParam && request.nextUrl.pathname === PROTECTED_URLS.DASHBOARD) {
