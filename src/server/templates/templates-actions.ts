@@ -43,6 +43,17 @@ export const deleteTemplateAction = authActionClient
         return returnServerError('Template not found')
       }
 
+      if (
+        status === 400 &&
+        res.error?.message?.includes(
+          'because there are paused sandboxes using it'
+        )
+      ) {
+        return returnServerError(
+          'Cannot delete template because there are paused sandboxes using it'
+        )
+      }
+
       return handleDefaultInfraError(status)
     }
 
