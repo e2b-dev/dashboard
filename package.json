@@ -19,7 +19,6 @@
     "<<<<<< Gen": "",
     "generate:infra": "bunx openapi-typescript https://raw.githubusercontent.com/e2b-dev/infra/main/spec/openapi.yml -o ./src/types/infra-api.d.ts",
     "generate:supabase": "bunx supabase@latest gen types typescript --schema public > src/types/database.types.ts --project-id $SUPABASE_PROJECT_ID",
-    "generate:envd": "buf generate --template ./spec/envd/buf.gen.yaml",
     "<<<<<< Scripts": "",
     "scripts:check-app-env": "bun scripts/check-app-env.ts",
     "scripts:build-storybook": "bun scripts/build-storybook.ts",
@@ -40,7 +39,6 @@
     "test:ui:integration": "bun scripts:check-app-env && vitest --ui src/__test__/integration/"
   },
   "dependencies": {
-    "@connectrpc/connect": "^2.0.2",
     "@fumadocs/mdx-remote": "^1.2.0",
     "@google-cloud/storage": "^7.15.2",
     "@hookform/resolvers": "^3.10.0",
@@ -81,6 +79,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
+    "e2b": "^1.5.2",
     "fast-xml-parser": "^4.5.1",
     "fumadocs-core": "^15.0.6",
     "fumadocs-mdx": "^11.5.3",
@@ -160,11 +159,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
     "typescript": "5.7.3",
-    "vitest": "^3.0.7",
-    "@bufbuild/buf": "^1.54.0",
-    "@bufbuild/protobuf": "^2.5.2",
-    "@bufbuild/protoc-gen-es": "^2.5.2",
-    "@connectrpc/protoc-gen-connect-es": "^1.6.1"
+    "vitest": "^3.0.7"
   },
   "resolutions": {
     "whatwg-url": "^13",
