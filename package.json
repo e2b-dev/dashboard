@@ -18,7 +18,6 @@
     "<<<<<< Gen": "",
     "generate:infra": "bunx openapi-typescript ./spec/openapi.yaml -o ./src/types/infra-api.d.ts",
     "generate:supabase": "bunx supabase@latest gen types typescript --schema public > src/types/database.types.ts --project-id $SUPABASE_PROJECT_ID",
-    "generate:envd": "buf generate --template ./spec/envd/buf.gen.yaml",
     "<<<<<< Scripts": "",
     "scripts:check-app-env": "bun scripts/check-app-env.ts",
     "scripts:check-e2e-env": "bun scripts/check-e2e-env.ts",
@@ -38,7 +37,6 @@
     "test:development:metrics": "vitest run src/__test__/development/metrics.test.ts"
   },
   "dependencies": {
-    "@connectrpc/connect": "^2.0.2",
     "@fumadocs/mdx-remote": "^1.2.0",
     "@google-cloud/storage": "^7.15.2",
     "@hookform/resolvers": "^3.10.0",
@@ -81,6 +79,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
+    "e2b": "^1.7.1",
     "fast-xml-parser": "^4.5.1",
     "fumadocs-core": "^15.0.6",
     "fumadocs-mdx": "^11.5.3",
@@ -141,7 +140,6 @@
     "autoprefixer": "^10.4.20",
     "babel-plugin-react-compiler": "^19.1.0-rc.2",
     "drizzle-kit": "^0.30.3",
-    "e2b": "^1.7.1",
     "eslint": "^9.19.0",
     "eslint-config-next": "^15.1.6",
     "eslint-config-prettier": "^10.0.1",
