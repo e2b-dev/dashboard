@@ -33,8 +33,10 @@ export const getTeamTemplates = authActionClient
     }
 
     const res = await infra.GET('/templates', {
-      query: {
-        teamID: teamId,
+      params: {
+        query: {
+          teamID: teamId,
+        },
       },
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token),

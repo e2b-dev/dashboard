@@ -33,9 +33,6 @@ export const getTeamSandboxes = authActionClient
     }
 
     const res = await infra.GET('/sandboxes', {
-      query: {
-        state: 'running',
-      },
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
