@@ -1,3 +1,5 @@
+'use client'
+
 import { useSandboxInspectContext } from '../state/context'
 import type { FilesystemOperations } from '../state/types'
 
@@ -7,12 +9,4 @@ import type { FilesystemOperations } from '../state/types'
 export function useFilesystem(): FilesystemOperations {
   const { operations } = useSandboxInspectContext()
   return operations
-}
-
-/**
- * Hook for accessing the sandbox connection
- */
-export function useSandboxInfo() {
-  const { sandboxInfo } = useSandboxInspectContext()
-  return sandboxInfo
 }
