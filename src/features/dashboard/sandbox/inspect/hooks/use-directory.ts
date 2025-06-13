@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../state/context'
 import { FileType } from 'e2b'
