@@ -14,7 +14,7 @@ interface FilesystemStatics {
   rootPath: string
 }
 
-// Mutable state
+// mutable state
 export interface FilesystemState {
   nodes: Map<string, FilesystemNode>
   selectedPath?: string
@@ -23,7 +23,7 @@ export interface FilesystemState {
   errorPaths: Map<string, string>
 }
 
-// Mutations/actions that modify state
+// mutations/actions that modify state
 export interface FilesystemMutations {
   addNodes: (parentPath: string, nodes: FilesystemNode[]) => void
   removeNode: (path: string) => void
@@ -35,7 +35,7 @@ export interface FilesystemMutations {
   reset: () => void
 }
 
-// Computed/derived values
+// computed/derived values
 export interface FilesystemComputed {
   getChildren: (path: string) => FilesystemNode[]
   getNode: (path: string) => FilesystemNode | undefined
@@ -44,7 +44,7 @@ export interface FilesystemComputed {
   hasChildren: (path: string) => boolean
 }
 
-// Combined store type
+// combined store type
 export type FilesystemStoreData = FilesystemStatics &
   FilesystemState &
   FilesystemMutations &
@@ -53,27 +53,20 @@ export type FilesystemStoreData = FilesystemStatics &
 export const createFilesystemStore = (rootPath: string) =>
   create<FilesystemStoreData>()(
     immer((set, get) => ({
-      // statics
       rootPath: normalizePath(rootPath),
 
-      // core
       nodes: new Map<string, FilesystemNode>(),
       watchedPaths: new Set<string>(),
-
-      // loading states
       loadingPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
 
-      // actions
       addNodes: (parentPath: string, nodes: FilesystemNode[]) => {
         const normalizedParentPath = normalizePath(parentPath)
 
         set((state: FilesystemState) => {
-          // get or create parent node
           let parentNode = state.nodes.get(normalizedParentPath)
 
           if (!parentNode) {
-            // create parent node if it doesn't exist
             const parentName =
               normalizedParentPath === '/'
                 ? '/'
@@ -93,22 +86,18 @@ export const createFilesystemStore = (rootPath: string) =>
             return
           }
 
-          // Ensure parent has children array
           if (!parentNode.children) {
             parentNode.children = []
           }
 
-          // Add new nodes
           for (const node of nodes) {
             const normalizedPath = normalizePath(node.path)
 
-            // Add to nodes map
             state.nodes.set(normalizedPath, {
               ...node,
               path: normalizedPath,
             })
 
-            // Add to parent's children if not already there and if it's not the parent itself
             if (
               normalizedPath !== normalizedParentPath &&
               !parentNode.children.includes(normalizedPath)
@@ -117,18 +106,17 @@ export const createFilesystemStore = (rootPath: string) =>
             }
           }
 
-          // Sort children by type (directories first) then by name
           parentNode.children.sort((a: string, b: string) => {
             const nodeA = state.nodes.get(a)
             const nodeB = state.nodes.get(b)
 
             if (!nodeA || !nodeB) return 0
 
-            // Directories first
+            // directories first
             if (nodeA.type === 'dir' && nodeB.type === 'file') return -1
             if (nodeA.type === 'file' && nodeB.type === 'dir') return 1
 
-            // Then alphabetically
+            // then alphabetically
             return nodeA.name.localeCompare(nodeB.name)
           })
         })
@@ -141,7 +129,6 @@ export const createFilesystemStore = (rootPath: string) =>
           const node = state.nodes.get(normalizedPath)
           if (!node) return
 
-          // Remove from parent's children
           const parentPath = getParentPath(normalizedPath)
           const parentNode = state.nodes.get(parentPath)
           if (parentNode && parentNode.type === FileType.DIR) {
@@ -150,7 +137,6 @@ export const createFilesystemStore = (rootPath: string) =>
             )
           }
 
-          // Remove node and all its descendants
           const toRemove = [normalizedPath]
           for (const [nodePath] of state.nodes) {
             if (isChildPath(normalizedPath, nodePath)) {
@@ -164,7 +150,6 @@ export const createFilesystemStore = (rootPath: string) =>
             state.errorPaths.delete(pathToRemove)
             state.watchedPaths.delete(pathToRemove)
 
-            // Clear selection if removing selected node
             if (state.selectedPath === pathToRemove) {
               state.selectedPath = undefined
             }
@@ -204,7 +189,6 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
 
         set((state: FilesystemState) => {
-          // Clear previous selection
           if (state.selectedPath) {
             const prevNode = state.nodes.get(state.selectedPath)
 
@@ -213,7 +197,6 @@ export const createFilesystemStore = (rootPath: string) =>
             prevNode.isSelected = false
           }
 
-          // Set new selection
           const node = state.nodes.get(normalizedPath)
 
           if (!node) return
@@ -233,7 +216,6 @@ export const createFilesystemStore = (rootPath: string) =>
             state.loadingPaths.delete(normalizedPath)
           }
 
-          // Update node loading state
           const node = state.nodes.get(normalizedPath)
 
           if (!node || node.type === FileType.FILE) return
@@ -252,7 +234,6 @@ export const createFilesystemStore = (rootPath: string) =>
             state.errorPaths.delete(normalizedPath)
           }
 
-          // Update node error state
           const node = state.nodes.get(normalizedPath)
 
           if (!node || node.type === FileType.FILE) return
@@ -271,7 +252,6 @@ export const createFilesystemStore = (rootPath: string) =>
         })
       },
 
-      // computed
       getChildren: (path: string) => {
         const normalizedPath = normalizePath(path)
         const state = get()
