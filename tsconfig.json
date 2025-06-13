@@ -24,11 +24,6 @@
     },
     "isolatedModules": true
   },
-  "include": [
-    "next-env.d.ts",
-    "src",
-    ".next/types/**/*.ts",
-    "archive/fumadocs.ts"
-  ],
-  "exclude": ["node_modules", "archive"]
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
