@@ -1,0 +1,167 @@
+flowchart TD
+subgraph SANDBOX_LAYER["@sandbox — runtime lifecycle"]
+    direction TB
+    SP[/"SandboxProvider (React component)"/]
+    SC[(SandboxContext)]
+    SP -- "provides context value" --> SC
+    SP -- "establishes connection" --> SANDBOX_OBJ[("Sandbox class instance (e2b)")]
+    SP -- "manages timer" --> TIMER["Timer (useLayoutEffect)"]
+    noteSP["State: sandboxInfo (immutable), sandbox instance (useState), isRunning, secondsLeft"]
+end
+
+subgraph INSPECT_LAYER["@inspect — filesystem inspection"]
+    direction TB
+    IP[/"SandboxInspectProvider"/]
+    IC[(InspectContext)]
+    IP -- "provides context value" --> IC
+    IP -- "initializes root directory" --> INIT["Root Initialization (useLayoutEffect)"]
+    noteIP["Creates: FilesystemStore (Zustand), FilesystemEventManager, operations object"]
+end
+SC -->|"consumes sandbox instance"| IP 
+
+subgraph FILESYSTEM_LAYER["@filesystem — persistent tree state"]
+    direction TB
+    FS["FilesystemStore (Zustand)"]
+    FEM[["FilesystemEventManager (class)"]]
+    WATCHERS["Watch Handles Map"]
+    
+    FEM -- "calls mutations" --> FS
+    FEM -- "manages" --> WATCHERS
+    FS -- "provides state to" --> FEM
+    
+    subgraph FS_STATE["Store State Structure"]
+        NODES["nodes: Map<path, FilesystemNode>"]
+        WATCHED["watchedPaths: Set<string>"]
+        LOADING["loadingPaths: Set<string>"]
+        ERRORS["errorPaths: Map<path, error>"]
+        SELECTED["selectedPath: string"]
+    end
+    FS --> FS_STATE
+    
+    noteFS["Dual storage pattern: node properties + collections for performance"]
+end
+
+IP -->|"creates & configures"| FS
+IP -->|"creates with store + sandbox"| FEM
+
+subgraph HOOKS_LAYER["@hooks — typed selectors & helpers"]
+    direction TB
+    
+    subgraph CORE_HOOKS["Core Hooks"]
+        H1[[useFilesystem]]
+        H6[[useFilesystemNode]]
+    end
+    
+    subgraph DIRECTORY_HOOKS["Directory Hooks"]
+        H2[[useDirectoryChildren]]
+        H3[[useDirectoryState]]
+        H4[[useDirectoryOperations]]
+        H5[[useDirectory]]
+    end
+    
+    subgraph NODE_HOOKS["Node Hooks"]
+        H7[[useNodeSelection]]
+        H8[[useNode]]
+    end
+    
+    subgraph UTILITY_HOOKS["Utility Hooks"]
+        H9[[useRootChildren]]
+        H10[[useSelectedPath]]
+        H11[[useLoadingPaths]]
+        H12[[useErrorPaths]]
+    end
+end
+
+IC -->|"exposes store & operations"| HOOKS_LAYER
+
+subgraph UI["UI components"]
+    direction LR
+    FT["FileTree Component"]
+    EDITOR["Code Editor Component"]
+    OTHER["Other UI Components"]
+end
+
+subgraph OPERATIONS["Operations Object"]
+    direction TB
+    OP1["loadDirectory()"]
+    OP2["watchDirectory()"]
+    OP3["unwatchDirectory()"]
+    OP4["selectNode()"]
+    OP5["toggleDirectory()"]
+    OP6["refreshDirectory()"]
+end
+
+HOOKS_LAYER --> UI
+UI -- "subscribes to store state" --> FS
+UI -- "calls operations" --> OPERATIONS
+OPERATIONS -- "calls EventManager methods" --> FEM
+OPERATIONS -- "calls store mutations" --> FS
+
+subgraph REMOTE["E2B cloud infrastructure"]
+    direction TB
+    SBOX[["Remote Sandbox Instance"]]
+    FS_API["Filesystem API"]
+    WATCH_API["Watch API"]
+    
+    SBOX --> FS_API
+    SBOX --> WATCH_API
+end
+
+subgraph EVENT_FLOW["Event Processing"]
+    direction LR
+    CREATE["CREATE events"]
+    REMOVE["REMOVE events"]
+    RENAME["RENAME events"]
+    WRITE["WRITE/CHMOD events"]
+    
+    CREATE --> REFRESH["refreshDirectory()"]
+    REMOVE --> DIRECT["direct removeNode()"]
+    RENAME --> REFRESH
+    WRITE --> IGNORE["ignored"]
+end
+
+FEM -- "sandbox.files.list()" --> FS_API
+FEM -- "sandbox.files.watchDir()" --> WATCH_API
+WATCH_API -- "filesystem events" --> EVENT_FLOW
+EVENT_FLOW -- "processes events" --> FEM
+
+subgraph ERROR_HANDLING["Error Management"]
+    direction TB
+    STORE_ERRORS["Store Error State"]
+    UI_ERRORS["UI Error Display"]
+    FALLBACK["Fallback Mechanisms"]
+    
+    STORE_ERRORS --> UI_ERRORS
+    FEM --> STORE_ERRORS
+    OPERATIONS --> STORE_ERRORS
+end
+
+subgraph PERFORMANCE["Performance Optimizations"]
+    direction TB
+    DUAL_STORAGE["Dual Storage Pattern"]
+    GRANULAR_SUBS["Granular Subscriptions"]
+    IMMER["Immer Middleware"]
+    VOID_ASYNC["Void Async in Events"]
+    
+    FS --> DUAL_STORAGE
+    HOOKS_LAYER --> GRANULAR_SUBS
+    FS --> IMMER
+    EVENT_FLOW --> VOID_ASYNC
+end
+
+%% Styling
+classDef providerClass fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+classDef contextClass fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+classDef storeClass fill:#E8F5E8,stroke:#388E3C,stroke-width:2px
+classDef managerClass fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+classDef hooksClass fill:#FCE4EC,stroke:#C2185B,stroke-width:2px
+classDef uiClass fill:#F1F8E9,stroke:#689F38,stroke-width:2px
+classDef remoteClass fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+
+class SP,IP providerClass
+class SC,IC contextClass
+class FS storeClass
+class FEM managerClass
+class H1,H2,H3,H4,H5,H6,H7,H8,H9,H10,H11,H12 hooksClass
+class FT,EDITOR,OTHER uiClass
+class SBOX,FS_API,WATCH_API remoteClass
