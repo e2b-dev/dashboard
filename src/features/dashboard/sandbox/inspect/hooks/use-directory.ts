@@ -1,56 +1,49 @@
-'use client'
-
 import { useMemo } from 'react'
-import { useSandboxInspectContext } from '../context'
-import { FilesystemNode } from '../filesystem/types'
-import { useStore } from 'zustand'
+import { useFilesystemContext } from '../state/context'
+import { FileType } from 'e2b'
+import { FilesystemNode } from '../state/types'
 
 /**
  * Hook for accessing directory children with automatic updates
  */
 export function useDirectoryChildren(path: string): FilesystemNode[] {
-  const { store } = useSandboxInspectContext()
+  const { store } = useFilesystemContext()
 
-  return useStore(store, (state) => state.getChildren(path))
+  return store((state) => state.getChildren(path))
 }
 
 /**
  * Hook for accessing directory state (expanded, loading, error)
  */
 export function useDirectoryState(path: string) {
-  const { store } = useSandboxInspectContext()
+  const { store } = useFilesystemContext()
 
-  const isExpanded = useStore(store, (state) => state.isExpanded(path))
-  const isLoading = useStore(store, (state) => state.loadingPaths.has(path))
-  const hasError = useStore(store, (state) => state.errorPaths.has(path))
-  const error = useStore(store, (state) => state.errorPaths.get(path))
-  const isLoaded = useStore(store, (state) => state.isLoaded(path))
-  const hasChildren = useStore(store, (state) => state.hasChildren(path))
-
-  return useMemo(
-    () => ({
-      isExpanded,
-      isLoading,
-      hasError,
-      error,
-      isLoaded,
-      hasChildren,
-    }),
-    [isExpanded, isLoading, hasError, error, isLoaded, hasChildren]
-  )
+  return store((state) => {
+    const node = state.getNode(path)
+    return {
+      isExpanded: state.isExpanded(path),
+      isLoading: state.loadingPaths.has(path),
+      hasError: state.errorPaths.has(path),
+      error: state.errorPaths.get(path),
+      isLoaded: node?.type === FileType.DIR ? !!node?.isLoaded : undefined,
+      hasChildren: state.hasChildren(path),
+    }
+  })
 }
 
 /**
  * Hook for directory operations
  */
 export function useDirectoryOperations(path: string) {
-  const { operations } = useSandboxInspectContext()
+  const { operations } = useFilesystemContext()
 
   return useMemo(
     () => ({
       toggle: () => operations.toggleDirectory(path),
       load: () => operations.loadDirectory(path),
       refresh: () => operations.refreshDirectory(path),
+      watch: () => operations.watchDirectory(path),
+      unwatch: () => operations.unwatchDirectory(path),
     }),
     [operations, path]
   )
