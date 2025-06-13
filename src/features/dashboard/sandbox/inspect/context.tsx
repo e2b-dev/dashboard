@@ -5,23 +5,21 @@ import React, {
   useContext,
   useRef,
   ReactNode,
-  useLayoutEffect,
   useMemo,
+  useLayoutEffect,
 } from 'react'
+import { FileType, Sandbox } from 'e2b'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
-import { SandboxManager } from './sandbox-manager'
+import { FilesystemEventManager } from './filesystem/events-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
-import { useSandboxContext } from '../context'
-import Sandbox, { EntryInfo, FileType } from 'e2b'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { supabase } from '@/lib/clients/supabase/client'
-import { useRouter } from 'next/navigation'
-import { AUTH_URLS } from '@/configs/urls'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
+  eventManager: FilesystemEventManager
 }
 
 const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
@@ -30,194 +28,157 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 
 interface SandboxInspectProviderProps {
   children: ReactNode
-  rootPath: string
+  sandboxId: string
   teamId: string
-  seedEntries?: EntryInfo[]
+  rootPath: string
 }
 
 export function SandboxInspectProvider({
   children,
-  rootPath,
-  seedEntries,
   teamId,
+  sandboxId,
+  rootPath,
 }: SandboxInspectProviderProps) {
-  const { sandboxInfo } = useSandboxContext()
-  const storeRef = useRef<FilesystemStore | null>(null)
-  const sandboxManagerRef = useRef<SandboxManager | null>(null)
-  const operationsRef = useRef<FilesystemOperations | null>(null)
+  const sandboxRef = useRef<Sandbox>(null)
+  const storeRef = useRef<FilesystemStore>(null)
+  const eventManagerRef = useRef<FilesystemEventManager>(null)
 
-  const router = useRouter()
-
-  /*
-   * ---------- synchronous store initialisation ----------
-   * We want the tree to render immediately using the "seedEntries" streamed from the
-   * server component (see page.tsx).  We therefore build / populate the Zustand store
-   * right here during render, instead of doing it later inside an effect.
-   */
-  {
-    const normalizedRoot = normalizePath(rootPath)
-    const needsNewStore =
-      !storeRef.current ||
-      storeRef.current.getState().rootPath !== normalizedRoot
-
-    if (needsNewStore) {
-      // stop previous watcher (if any)
-      if (sandboxManagerRef.current) {
-        sandboxManagerRef.current.stopWatching()
-        sandboxManagerRef.current = null
-      }
-
-      storeRef.current = createFilesystemStore(rootPath)
-
-      const state = storeRef.current.getState()
-
-      const rootName =
-        normalizedRoot === '/' ? '/' : normalizedRoot.split('/').pop() || ''
-
-      state.addNodes(getParentPath(normalizedRoot), [
-        {
-          name: rootName,
-          path: normalizedRoot,
-          type: FileType.DIR,
-          isExpanded: true,
-          children: [],
-        },
-      ])
-
-      state.setLoaded(normalizedRoot, true)
-
-      if (seedEntries && seedEntries.length) {
-        const seedNodes: FilesystemNode[] = seedEntries.map((entry) => {
-          const base = {
-            name: entry.name,
-            path: normalizePath(entry.path),
-          }
-
-          if (entry.type === FileType.DIR) {
-            state.setLoaded(base.path, false)
-
-            return {
-              ...base,
-              type: FileType.DIR,
-              isExpanded: false,
-              children: [],
-            }
-          }
-
-          return {
-            ...base,
-            type: FileType.FILE,
-          }
-        })
-
-        state.addNodes(normalizedRoot, seedNodes)
-      }
-
-      const store = storeRef.current
-      operationsRef.current = {
-        loadDirectory: async (path: string) => {
-          await sandboxManagerRef.current?.loadDirectory(path)
-        },
-        selectNode: async (path: string) => {
-          const node = store.getState().getNode(path)
-
-          if (!node) return
-
-          if (node.type === FileType.FILE && !store.getState().isLoaded(path)) {
-            await sandboxManagerRef.current?.readFile(path)
-          }
-
-          store.getState().setSelected(path)
-        },
-        resetSelected: () => {
-          store.getState().setSelected(undefined)
-        },
-        toggleDirectory: async (path: string) => {
-          const normalizedPath = normalizePath(path)
-          const state = store.getState()
-          const node = state.getNode(normalizedPath)
-
-          if (!node || node.type !== FileType.DIR) return
-
-          const newExpandedState = !node.isExpanded
-          state.setExpanded(normalizedPath, newExpandedState)
-
-          if (newExpandedState && !state.isLoaded(normalizedPath)) {
-            await sandboxManagerRef.current?.loadDirectory(normalizedPath)
-          }
-        },
-        refreshDirectory: async (path: string) => {
-          await sandboxManagerRef.current?.refreshDirectory(path)
-        },
-        refreshFile: async (path: string) => {
-          await sandboxManagerRef.current?.readFile(path)
-        },
-        downloadFile: async (path: string) => {
-          const downloadUrl =
-            await sandboxManagerRef.current?.getDownloadUrl(path)
-
-          if (!downloadUrl) return
-
-          const node = store.getState().getNode(path)
-
-          const a = document.createElement('a')
-          a.href = downloadUrl
-          a.download = node?.name || ''
-          a.target = '_blank'
-          a.click()
-        },
-      }
-    }
-  }
-
-  /*
-   * ---------- watcher (side-effect) initialisation / cleanup ----------
-   */
   useLayoutEffect(() => {
+    if (sandboxRef.current || !teamId) return
+
     const connectSandbox = async () => {
-      if (!storeRef.current) return
-
-      // (re)create the sandbox-manager when sandbox / team / root changes
-      if (sandboxManagerRef.current) {
-        sandboxManagerRef.current.stopWatching()
-      }
-
-      const { data } = await supabase.auth.getSession()
-
-      if (!data || !data.session) {
-        router.replace(AUTH_URLS.SIGN_IN)
-        return
-      }
-
-      const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
-        },
+      const accessToken = await supabase.auth.getSession().then(({ data }) => {
+        return data.session?.access_token
       })
 
-      sandboxManagerRef.current = new SandboxManager(
-        storeRef.current,
-        sandbox,
-        rootPath,
-        sandboxInfo.envdAccessToken !== undefined
-      )
+      if (!accessToken) {
+        throw new Error('No access token found')
+      }
+
+      sandboxRef.current = await Sandbox.connect(sandboxId, {
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+      })
     }
 
     connectSandbox()
+  }, [sandboxId, teamId])
+
+  useLayoutEffect(() => {
+    if (!sandboxRef.current || storeRef.current) return
+
+    storeRef.current = createFilesystemStore(rootPath)
+    eventManagerRef.current = new FilesystemEventManager(
+      storeRef.current,
+      sandboxRef.current
+    )
+  }, [rootPath, sandboxRef, storeRef])
+
+  useLayoutEffect(() => {
+    const initializeRoot = async () => {
+      if (!storeRef.current || !eventManagerRef.current) return
+
+      const state = storeRef.current.getState()
+      const normalizedRootPath = normalizePath(rootPath)
+
+      if (!state.getNode(normalizedRootPath)) {
+        const rootName =
+          normalizedRootPath === '/'
+            ? '/'
+            : normalizedRootPath.split('/').pop() || ''
+
+        const rootNode: FilesystemNode = {
+          name: rootName,
+          path: normalizedRootPath,
+          type: FileType.DIR,
+          isExpanded: true,
+          isLoaded: false,
+          children: [],
+        }
+
+        const parentPath = getParentPath(normalizedRootPath)
+        state.addNodes(parentPath, [rootNode])
+      }
+
+      try {
+        await eventManagerRef.current.loadDirectory(normalizedRootPath)
+        await eventManagerRef.current.startWatching(normalizedRootPath)
+      } catch (error) {
+        console.error('Failed to initialize root directory:', error)
+        state.setError(normalizedRootPath, 'Failed to load root directory')
+      }
+    }
+
+    initializeRoot()
 
     return () => {
-      sandboxManagerRef.current?.stopWatching()
+      if (eventManagerRef.current) {
+        eventManagerRef.current.stopAllWatching()
+      }
     }
-  }, [sandboxInfo.sandboxID, teamId, rootPath, router])
+  }, [rootPath, sandboxRef])
 
-  if (!storeRef.current || !operationsRef.current) {
-    return null // should never happen, but satisfies type-checker
+  const operations = useMemo<FilesystemOperations>(() => {
+    if (!storeRef.current || !eventManagerRef.current) {
+      throw new Error('Filesystem store or event manager not initialized')
+    }
+    const eventManager = eventManagerRef.current
+    const store = storeRef.current
+
+    return {
+      loadDirectory: async (path: string) => {
+        await eventManager.loadDirectory(path)
+      },
+      watchDirectory: async (path: string) => {
+        await eventManager.startWatching(path)
+      },
+      unwatchDirectory: (path: string) => {
+        eventManager.stopWatching(path)
+      },
+      selectNode: (path: string) => {
+        store.getState().setSelected(path)
+      },
+      toggleDirectory: async (path: string) => {
+        const normalizedPath = normalizePath(path)
+        const state = store.getState()
+        const node = state.getNode(normalizedPath)
+
+        if (!node || node.type !== FileType.DIR) return
+
+        const newExpandedState = !node.isExpanded
+        state.setExpanded(normalizedPath, newExpandedState)
+
+        if (newExpandedState) {
+          if (!node.isLoaded) {
+            await eventManager.loadDirectory(normalizedPath)
+          }
+          if (!eventManager.isWatching(normalizedPath)) {
+            try {
+              await eventManager.startWatching(normalizedPath)
+            } catch (error) {
+              console.error(
+                `Failed to start watching ${normalizedPath}:`,
+                error
+              )
+            }
+          }
+        }
+      },
+      refreshDirectory: async (path: string) => {
+        await eventManager.refreshDirectory(path)
+      },
+    }
+  }, [])
+
+  if (!storeRef.current || !eventManagerRef.current || !sandboxRef.current) {
+    return null
   }
 
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
-    operations: operationsRef.current,
+    operations: operations,
+    eventManager: eventManagerRef.current,
   }
 
   return (

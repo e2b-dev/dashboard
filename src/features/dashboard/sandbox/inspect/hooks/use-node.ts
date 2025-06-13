@@ -1,8 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useSandboxInspectContext } from '../state/context'
-import type { FilesystemNode } from '../state/types'
+import { useSandboxInspectContext } from '../context'
+import type { FilesystemNode } from '../filesystem/types'
 
 /**
  * Hook for accessing a specific filesystem node

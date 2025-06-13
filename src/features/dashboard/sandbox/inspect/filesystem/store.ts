@@ -2,132 +2,82 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { enableMapSet } from 'immer'
 import {
   normalizePath,
   getParentPath,
   isChildPath,
-  getBasename,
 } from '@/lib/utils/filesystem'
-import { FilesystemNode } from './types'
 import { FileType } from 'e2b'
-
-enableMapSet()
+import { FilesystemNode } from './types'
 
 interface FilesystemStatics {
   rootPath: string
 }
 
-interface ContentFileContentState {
-  text: string
-  type: 'text'
-}
-
-interface UnreadableFileContentState {
-  type: 'unreadable'
-}
-
-interface ImageFileContentState {
-  dataUri: string
-  type: 'image'
-}
-
-export type FileContentState =
-  | ContentFileContentState
-  | UnreadableFileContentState
-  | ImageFileContentState
-
-export type FileContentStateType = FileContentState['type']
-
-// mutable state
+// Mutable state
 export interface FilesystemState {
   nodes: Map<string, FilesystemNode>
   selectedPath?: string
+  watchedPaths: Set<string>
   loadingPaths: Set<string>
-  loadedPaths: Set<string>
   errorPaths: Map<string, string>
-  sortingDirection: 'asc' | 'desc'
-  fileContents: Map<string, FileContentState>
 }
 
-// mutations/actions that modify state
+// Mutations/actions that modify state
 export interface FilesystemMutations {
   addNodes: (parentPath: string, nodes: FilesystemNode[]) => void
   removeNode: (path: string) => void
   updateNode: (path: string, updates: Partial<FilesystemNode>) => void
   setExpanded: (path: string, expanded: boolean) => void
-  setSelected: (path?: string) => void
+  setSelected: (path: string) => void
   setLoading: (path: string, loading: boolean) => void
-  setLoaded: (path: string, loaded: boolean) => void
   setError: (path: string, error?: string) => void
-  setFileContent: (path: string, updates: FileContentState) => void
-  resetFileContent: (path: string) => void
   reset: () => void
 }
 
-// computed/derived values
+// Computed/derived values
 export interface FilesystemComputed {
   getChildren: (path: string) => FilesystemNode[]
   getNode: (path: string) => FilesystemNode | undefined
   isExpanded: (path: string) => boolean
   isSelected: (path: string) => boolean
-  isLoaded: (path: string) => boolean
   hasChildren: (path: string) => boolean
-  getFileContent: (path: string) => FileContentState | undefined
 }
 
-// combined store type
+// Combined store type
 export type FilesystemStoreData = FilesystemStatics &
   FilesystemState &
   FilesystemMutations &
   FilesystemComputed
 
-// Retain reference-stable arrays of children per directory path. A cached array
-// is only reused while the underlying `children` array reference on the node
-// stays the same; any mutation that replaces `children` with a new array
-// automatically invalidates the cache.
-const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
-  new Map()
-
-function compareFilesystemNodes(
-  nodeA: FilesystemNode | undefined,
-  nodeB: FilesystemNode | undefined,
-  direction: 'asc' | 'desc' = 'asc'
-): number {
-  if (!nodeA || !nodeB) return 0
-
-  if (nodeA.type === FileType.DIR && nodeB.type === FileType.FILE) return -1
-  if (nodeA.type === FileType.FILE && nodeB.type === FileType.DIR) return 1
-
-  const cmp = nodeA.name.localeCompare(nodeB.name, undefined, {
-    sensitivity: 'base',
-    numeric: true,
-  })
-
-  return direction === 'asc' ? cmp : -cmp
-}
-
 export const createFilesystemStore = (rootPath: string) =>
   create<FilesystemStoreData>()(
     immer((set, get) => ({
+      // statics
       rootPath: normalizePath(rootPath),
 
+      // core
       nodes: new Map<string, FilesystemNode>(),
-      loadingPaths: new Set<string>(),
-      loadedPaths: new Set<string>(),
-      errorPaths: new Map<string, string>(),
-      sortingDirection: 'asc' as 'asc' | 'desc',
-      fileContents: new Map<string, FileContentState>(),
+      watchedPaths: new Set<string>(),
 
+      // loading states
+      loadingPaths: new Set<string>(),
+      errorPaths: new Map<string, string>(),
+
+      // actions
       addNodes: (parentPath: string, nodes: FilesystemNode[]) => {
         const normalizedParentPath = normalizePath(parentPath)
 
         set((state: FilesystemState) => {
+          // get or create parent node
           let parentNode = state.nodes.get(normalizedParentPath)
 
           if (!parentNode) {
-            const parentName = getBasename(normalizedParentPath)
-
+            // create parent node if it doesn't exist
+            const parentName =
+              normalizedParentPath === '/'
+                ? '/'
+                : normalizedParentPath.split('/').pop() || ''
             parentNode = {
               name: parentName,
               path: normalizedParentPath,
@@ -139,68 +89,84 @@ export const createFilesystemStore = (rootPath: string) =>
           }
 
           if (parentNode.type === FileType.FILE) {
-            throw new Error('Parent node is a file')
+            console.error('Parent node is a file', parentNode)
+            return
           }
 
-          const childrenSet = new Set<string>(parentNode.children)
+          // Ensure parent has children array
+          if (!parentNode.children) {
+            parentNode.children = []
+          }
 
+          // Add new nodes
           for (const node of nodes) {
             const normalizedPath = normalizePath(node.path)
 
+            // Add to nodes map
             state.nodes.set(normalizedPath, {
               ...node,
               path: normalizedPath,
             })
 
-            if (normalizedPath !== normalizedParentPath) {
-              childrenSet.add(normalizedPath)
+            // Add to parent's children if not already there and if it's not the parent itself
+            if (
+              normalizedPath !== normalizedParentPath &&
+              !parentNode.children.includes(normalizedPath)
+            ) {
+              parentNode.children.push(normalizedPath)
             }
           }
 
-          const newChildren = Array.from(childrenSet)
-          newChildren.sort((a: string, b: string) =>
-            compareFilesystemNodes(
-              state.nodes.get(a),
-              state.nodes.get(b),
-              state.sortingDirection
-            )
-          )
+          // Sort children by type (directories first) then by name
+          parentNode.children.sort((a: string, b: string) => {
+            const nodeA = state.nodes.get(a)
+            const nodeB = state.nodes.get(b)
 
-          parentNode.children = newChildren
+            if (!nodeA || !nodeB) return 0
 
-          childrenCache.delete(normalizedParentPath)
+            // Directories first
+            if (nodeA.type === 'dir' && nodeB.type === 'file') return -1
+            if (nodeA.type === 'file' && nodeB.type === 'dir') return 1
+
+            // Then alphabetically
+            return nodeA.name.localeCompare(nodeB.name)
+          })
         })
       },
 
       removeNode: (path: string) => {
         const normalizedPath = normalizePath(path)
 
-        set((state: FilesystemStoreData) => {
+        set((state: FilesystemState) => {
           const node = state.nodes.get(normalizedPath)
           if (!node) return
 
+          // Remove from parent's children
           const parentPath = getParentPath(normalizedPath)
           const parentNode = state.nodes.get(parentPath)
           if (parentNode && parentNode.type === FileType.DIR) {
             parentNode.children = parentNode.children.filter(
               (childPath: string) => childPath !== normalizedPath
             )
-
-            childrenCache.delete(parentPath)
           }
 
+          // Remove node and all its descendants
+          const toRemove = [normalizedPath]
           for (const [nodePath] of state.nodes) {
-            if (
-              nodePath === normalizedPath ||
-              isChildPath(normalizedPath, nodePath)
-            ) {
-              state.nodes.delete(nodePath)
-              state.loadingPaths.delete(nodePath)
-              state.errorPaths.delete(nodePath)
+            if (isChildPath(normalizedPath, nodePath)) {
+              toRemove.push(nodePath)
+            }
+          }
 
-              if (state.selectedPath === nodePath) {
-                state.selectedPath = undefined
-              }
+          for (const pathToRemove of toRemove) {
+            state.nodes.delete(pathToRemove)
+            state.loadingPaths.delete(pathToRemove)
+            state.errorPaths.delete(pathToRemove)
+            state.watchedPaths.delete(pathToRemove)
+
+            // Clear selection if removing selected node
+            if (state.selectedPath === pathToRemove) {
+              state.selectedPath = undefined
             }
           }
         })
@@ -234,10 +200,25 @@ export const createFilesystemStore = (rootPath: string) =>
         })
       },
 
-      setSelected: (path) => {
-        const normalizedPath = path ? normalizePath(path) : undefined
+      setSelected: (path: string) => {
+        const normalizedPath = normalizePath(path)
 
         set((state: FilesystemState) => {
+          // Clear previous selection
+          if (state.selectedPath) {
+            const prevNode = state.nodes.get(state.selectedPath)
+
+            if (!prevNode) return
+
+            prevNode.isSelected = false
+          }
+
+          // Set new selection
+          const node = state.nodes.get(normalizedPath)
+
+          if (!node) return
+
+          node.isSelected = true
           state.selectedPath = normalizedPath
         })
       },
@@ -251,17 +232,13 @@ export const createFilesystemStore = (rootPath: string) =>
           } else {
             state.loadingPaths.delete(normalizedPath)
           }
-        })
-      },
 
-      setLoaded: (path: string, loaded: boolean) => {
-        const normalizedPath = normalizePath(path)
-        set((state: FilesystemState) => {
-          if (loaded) {
-            state.loadedPaths.add(normalizedPath)
-          } else {
-            state.loadedPaths.delete(normalizedPath)
-          }
+          // Update node loading state
+          const node = state.nodes.get(normalizedPath)
+
+          if (!node || node.type === FileType.FILE) return
+
+          node.isLoading = loading
         })
       },
 
@@ -274,20 +251,13 @@ export const createFilesystemStore = (rootPath: string) =>
           } else {
             state.errorPaths.delete(normalizedPath)
           }
-        })
-      },
 
-      setFileContent: (path, updates) => {
-        const normalizedPath = normalizePath(path)
-        set((state: FilesystemState) => {
-          state.fileContents.set(normalizedPath, updates)
-        })
-      },
+          // Update node error state
+          const node = state.nodes.get(normalizedPath)
 
-      resetFileContent: (path: string) => {
-        const normalizedPath = normalizePath(path)
-        set((state: FilesystemState) => {
-          state.fileContents.delete(normalizedPath)
+          if (!node || node.type === FileType.FILE) return
+
+          node.error = error
         })
       },
 
@@ -295,12 +265,13 @@ export const createFilesystemStore = (rootPath: string) =>
         set((state: FilesystemState) => {
           state.nodes.clear()
           state.selectedPath = undefined
+          state.watchedPaths.clear()
           state.loadingPaths.clear()
           state.errorPaths.clear()
-          state.fileContents.clear()
         })
       },
 
+      // computed
       getChildren: (path: string) => {
         const normalizedPath = normalizePath(path)
         const state = get()
@@ -308,17 +279,9 @@ export const createFilesystemStore = (rootPath: string) =>
 
         if (!node || node.type === FileType.FILE) return []
 
-        const cached = childrenCache.get(normalizedPath)
-        if (cached && cached.ref === node.children) {
-          return cached.result
-        }
-
-        const result = node.children
+        return node.children
           .map((childPath) => state.nodes.get(childPath))
           .filter((child): child is FilesystemNode => child !== undefined)
-
-        childrenCache.set(normalizedPath, { ref: node.children, result })
-        return result
       },
 
       getNode: (path: string) => {
@@ -341,12 +304,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
         if (!node) return false
 
-        return get().selectedPath === normalizedPath
-      },
-
-      isLoaded: (path: string) => {
-        const normalizedPath = normalizePath(path)
-        return get().loadedPaths.has(normalizedPath)
+        return !!node.isSelected
       },
 
       hasChildren: (path: string) => {
@@ -356,11 +314,6 @@ export const createFilesystemStore = (rootPath: string) =>
         if (!node || node.type === FileType.FILE) return false
 
         return node.children.length > 0
-      },
-
-      getFileContent: (path: string) => {
-        const normalizedPath = normalizePath(path)
-        return get().fileContents.get(normalizedPath)
       },
     }))
   )
