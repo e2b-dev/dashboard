@@ -9,9 +9,9 @@ import React, {
   useLayoutEffect,
 } from 'react'
 import { FileType, Sandbox } from 'e2b'
-import { createFilesystemStore, type FilesystemStore } from './store'
-import { FilesystemNode, FilesystemOperations } from './types'
-import { FilesystemEventManager } from './events-manager'
+import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
+import { FilesystemNode, FilesystemOperations } from './filesystem/types'
+import { FilesystemEventManager } from './filesystem/events-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { supabase } from '@/lib/clients/supabase/client'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
