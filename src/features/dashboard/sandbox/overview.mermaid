@@ -1,8 +1,3 @@
----
-config:
-  theme: base
-  look: classic
----
 flowchart TD
 subgraph SANDBOX_CONTEXT["Sandbox Context"]
     direction TB
@@ -93,9 +88,3 @@ class EVENT_MANAGER,OPERATIONS managerClass
 class FILESYSTEM_HOOKS,DIRECTORY_HOOKS,NODE_HOOKS hooksClass
 class FILE_TREE,CODE_EDITOR,OTHER_UI,USER_ACTIONS uiClass
 class REMOTE_SANDBOX,FS_EVENTS remoteClass
-
-click SANDBOX_PROVIDER href "javascript:void(0)" "Establishes E2B connection, manages auth & lifecycle"
-click INSPECT_PROVIDER href "javascript:void(0)" "Orchestrates filesystem inspection subsystem"
-click FILESYSTEM_STORE href "javascript:void(0)" "Zustand store - single source of truth for tree state"
-click EVENT_MANAGER href "javascript:void(0)" "Bridges E2B filesystem events to store mutations"
-click HOOKS href "javascript:void(0)" "Typed selectors and command interfaces for UI"
