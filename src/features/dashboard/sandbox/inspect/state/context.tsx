@@ -8,19 +8,17 @@ import React, {
   useMemo,
   useLayoutEffect,
 } from 'react'
-import { FileType, Sandbox, SandboxInfo } from 'e2b'
+import { FileType, Sandbox } from 'e2b'
 import { createFilesystemStore, type FilesystemStore } from './store'
 import { FilesystemNode, FilesystemOperations } from './types'
 import { FilesystemEventManager } from './events-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { supabase } from '@/lib/clients/supabase/client'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { SandboxState, useSandboxState } from '../hooks/use-sandbox-state'
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
-  sandboxInfo: SandboxInfo
   eventManager: FilesystemEventManager
 }
 
@@ -30,15 +28,15 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 
 interface SandboxInspectProviderProps {
   children: ReactNode
+  sandboxId: string
   teamId: string
-  sandboxInfo: SandboxInfo
   rootPath: string
 }
 
 export function SandboxInspectProvider({
   children,
   teamId,
-  sandboxInfo,
+  sandboxId,
   rootPath,
 }: SandboxInspectProviderProps) {
   const sandboxRef = useRef<Sandbox>(null)
@@ -46,7 +44,7 @@ export function SandboxInspectProvider({
   const eventManagerRef = useRef<FilesystemEventManager>(null)
 
   useLayoutEffect(() => {
-    if (sandboxRef.current || !teamId || !sandboxInfo.sandboxId) return
+    if (sandboxRef.current || !teamId) return
 
     const connectSandbox = async () => {
       const accessToken = await supabase.auth.getSession().then(({ data }) => {
@@ -57,7 +55,7 @@ export function SandboxInspectProvider({
         throw new Error('No access token found')
       }
 
-      sandboxRef.current = await Sandbox.connect(sandboxInfo.sandboxId, {
+      sandboxRef.current = await Sandbox.connect(sandboxId, {
         headers: {
           ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
         },
@@ -65,7 +63,7 @@ export function SandboxInspectProvider({
     }
 
     connectSandbox()
-  }, [sandboxInfo.sandboxId, teamId])
+  }, [sandboxId, teamId])
 
   useLayoutEffect(() => {
     if (!sandboxRef.current || storeRef.current) return
@@ -180,7 +178,6 @@ export function SandboxInspectProvider({
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
     operations: operations,
-    sandboxInfo: sandboxInfo,
     eventManager: eventManagerRef.current,
   }
 
