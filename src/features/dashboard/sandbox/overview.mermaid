@@ -1,167 +1,101 @@
+---
+config:
+  theme: base
+  look: classic
+---
 flowchart TD
-subgraph SANDBOX_LAYER["@sandbox — runtime lifecycle"]
+subgraph SANDBOX_CONTEXT["Sandbox Context"]
     direction TB
-    SP[/"SandboxProvider (React component)"/]
-    SC[(SandboxContext)]
-    SP -- "provides context value" --> SC
-    SP -- "establishes connection" --> SANDBOX_OBJ[("Sandbox class instance (e2b)")]
-    SP -- "manages timer" --> TIMER["Timer (useLayoutEffect)"]
-    noteSP["State: sandboxInfo (immutable), sandbox instance (useState), isRunning, secondsLeft"]
+    SANDBOX_PROVIDER["SandboxProvider"]
+    SANDBOX_INSTANCE["Sandbox Instance"]
+    SANDBOX_STATE["Runtime State"]
+
+    SANDBOX_PROVIDER -- "creates & manages" --> SANDBOX_INSTANCE
+    SANDBOX_PROVIDER -- "tracks lifecycle" --> SANDBOX_STATE
 end
 
-subgraph INSPECT_LAYER["@inspect — filesystem inspection"]
+subgraph INSPECT_CONTEXT["Inspect Context"]
     direction TB
-    IP[/"SandboxInspectProvider"/]
-    IC[(InspectContext)]
-    IP -- "provides context value" --> IC
-    IP -- "initializes root directory" --> INIT["Root Initialization (useLayoutEffect)"]
-    noteIP["Creates: FilesystemStore (Zustand), FilesystemEventManager, operations object"]
-end
-SC -->|"consumes sandbox instance"| IP 
+    INSPECT_PROVIDER["SandboxInspectProvider"]
+    FILESYSTEM_STORE["FilesystemStore"]
+    EVENT_MANAGER["FilesystemEventManager"]
+    OPERATIONS["Operations Object"]
 
-subgraph FILESYSTEM_LAYER["@filesystem — persistent tree state"]
-    direction TB
-    FS["FilesystemStore (Zustand)"]
-    FEM[["FilesystemEventManager (class)"]]
-    WATCHERS["Watch Handles Map"]
-    
-    FEM -- "calls mutations" --> FS
-    FEM -- "manages" --> WATCHERS
-    FS -- "provides state to" --> FEM
-    
-    subgraph FS_STATE["Store State Structure"]
-        NODES["nodes: Map<path, FilesystemNode>"]
-        WATCHED["watchedPaths: Set<string>"]
-        LOADING["loadingPaths: Set<string>"]
-        ERRORS["errorPaths: Map<path, error>"]
-        SELECTED["selectedPath: string"]
-    end
-    FS --> FS_STATE
-    
-    noteFS["Dual storage pattern: node properties + collections for performance"]
+    INSPECT_PROVIDER -- "creates singleton" --> FILESYSTEM_STORE
+    INSPECT_PROVIDER -- "creates with store + sandbox" --> EVENT_MANAGER
+    INSPECT_PROVIDER -- "exposes interface" --> OPERATIONS
+    EVENT_MANAGER -- "mutates state via" --> FILESYSTEM_STORE
+    OPERATIONS -- "delegates to" --> EVENT_MANAGER
+    OPERATIONS -- "calls mutations on" --> FILESYSTEM_STORE
 end
 
-IP -->|"creates & configures"| FS
-IP -->|"creates with store + sandbox"| FEM
-
-subgraph HOOKS_LAYER["@hooks — typed selectors & helpers"]
+subgraph HOOKS["Hook Layer"]
     direction TB
-    
-    subgraph CORE_HOOKS["Core Hooks"]
-        H1[[useFilesystem]]
-        H6[[useFilesystemNode]]
-    end
-    
-    subgraph DIRECTORY_HOOKS["Directory Hooks"]
-        H2[[useDirectoryChildren]]
-        H3[[useDirectoryState]]
-        H4[[useDirectoryOperations]]
-        H5[[useDirectory]]
-    end
-    
-    subgraph NODE_HOOKS["Node Hooks"]
-        H7[[useNodeSelection]]
-        H8[[useNode]]
-    end
-    
-    subgraph UTILITY_HOOKS["Utility Hooks"]
-        H9[[useRootChildren]]
-        H10[[useSelectedPath]]
-        H11[[useLoadingPaths]]
-        H12[[useErrorPaths]]
-    end
+    FILESYSTEM_HOOKS["Filesystem Hooks"]
+    DIRECTORY_HOOKS["Directory Hooks"]
+    NODE_HOOKS["Node Hooks"]
+
+    FILESYSTEM_HOOKS -- "subscribe to store slices" --> FILESYSTEM_STORE
+    DIRECTORY_HOOKS -- "subscribe to store slices" --> FILESYSTEM_STORE
+    NODE_HOOKS -- "subscribe to store slices" --> FILESYSTEM_STORE
+
+    FILESYSTEM_HOOKS -- "return operations" --> OPERATIONS
+    DIRECTORY_HOOKS -- "return operations" --> OPERATIONS
+    NODE_HOOKS -- "return operations" --> OPERATIONS
 end
 
-IC -->|"exposes store & operations"| HOOKS_LAYER
-
-subgraph UI["UI components"]
+subgraph UI_COMPONENTS["UI Components"]
     direction LR
-    FT["FileTree Component"]
-    EDITOR["Code Editor Component"]
-    OTHER["Other UI Components"]
+    FILE_TREE["FileTree"]
+    CODE_EDITOR["Code Editor"]
+    OTHER_UI["Other Components"]
+
+    FILE_TREE -- "trigger user actions" --> USER_ACTIONS["User Actions"]
+    CODE_EDITOR -- "trigger user actions" --> USER_ACTIONS
+    OTHER_UI -- "trigger user actions" --> USER_ACTIONS
 end
 
-subgraph OPERATIONS["Operations Object"]
-    direction TB
-    OP1["loadDirectory()"]
-    OP2["watchDirectory()"]
-    OP3["unwatchDirectory()"]
-    OP4["selectNode()"]
-    OP5["toggleDirectory()"]
-    OP6["refreshDirectory()"]
+subgraph E2B_REMOTE["E2B Remote"]
+    REMOTE_SANDBOX["Remote Sandbox"]
+    FS_EVENTS["Filesystem Events"]
+
+    REMOTE_SANDBOX -- "emits real-time" --> FS_EVENTS
 end
 
-HOOKS_LAYER --> UI
-UI -- "subscribes to store state" --> FS
-UI -- "calls operations" --> OPERATIONS
-OPERATIONS -- "calls EventManager methods" --> FEM
-OPERATIONS -- "calls store mutations" --> FS
+%% Context Dependencies
+SANDBOX_INSTANCE -- "provided to" --> INSPECT_PROVIDER
 
-subgraph REMOTE["E2B cloud infrastructure"]
-    direction TB
-    SBOX[["Remote Sandbox Instance"]]
-    FS_API["Filesystem API"]
-    WATCH_API["Watch API"]
-    
-    SBOX --> FS_API
-    SBOX --> WATCH_API
-end
+%% Data Flow: User Actions
+USER_ACTIONS -- "call hooks that return" --> OPERATIONS
+OPERATIONS -- "async calls to" --> EVENT_MANAGER
+EVENT_MANAGER -- "API calls to" --> REMOTE_SANDBOX
 
-subgraph EVENT_FLOW["Event Processing"]
-    direction LR
-    CREATE["CREATE events"]
-    REMOVE["REMOVE events"]
-    RENAME["RENAME events"]
-    WRITE["WRITE/CHMOD events"]
-    
-    CREATE --> REFRESH["refreshDirectory()"]
-    REMOVE --> DIRECT["direct removeNode()"]
-    RENAME --> REFRESH
-    WRITE --> IGNORE["ignored"]
-end
+%% Data Flow: Remote Events
+FS_EVENTS -- "handled by" --> EVENT_MANAGER
+EVENT_MANAGER -- "updates state in" --> FILESYSTEM_STORE
+FILESYSTEM_STORE -- "triggers re-renders via" --> HOOKS
+HOOKS -- "provide updated state to" --> UI_COMPONENTS
 
-FEM -- "sandbox.files.list()" --> FS_API
-FEM -- "sandbox.files.watchDir()" --> WATCH_API
-WATCH_API -- "filesystem events" --> EVENT_FLOW
-EVENT_FLOW -- "processes events" --> FEM
-
-subgraph ERROR_HANDLING["Error Management"]
-    direction TB
-    STORE_ERRORS["Store Error State"]
-    UI_ERRORS["UI Error Display"]
-    FALLBACK["Fallback Mechanisms"]
-    
-    STORE_ERRORS --> UI_ERRORS
-    FEM --> STORE_ERRORS
-    OPERATIONS --> STORE_ERRORS
-end
-
-subgraph PERFORMANCE["Performance Optimizations"]
-    direction TB
-    DUAL_STORAGE["Dual Storage Pattern"]
-    GRANULAR_SUBS["Granular Subscriptions"]
-    IMMER["Immer Middleware"]
-    VOID_ASYNC["Void Async in Events"]
-    
-    FS --> DUAL_STORAGE
-    HOOKS_LAYER --> GRANULAR_SUBS
-    FS --> IMMER
-    EVENT_FLOW --> VOID_ASYNC
-end
+%% Hook Integration
+HOOKS -- "consumed by" --> UI_COMPONENTS
 
 %% Styling
-classDef providerClass fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
-classDef contextClass fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+classDef contextClass fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
 classDef storeClass fill:#E8F5E8,stroke:#388E3C,stroke-width:2px
 classDef managerClass fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
 classDef hooksClass fill:#FCE4EC,stroke:#C2185B,stroke-width:2px
 classDef uiClass fill:#F1F8E9,stroke:#689F38,stroke-width:2px
 classDef remoteClass fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
 
-class SP,IP providerClass
-class SC,IC contextClass
-class FS storeClass
-class FEM managerClass
-class H1,H2,H3,H4,H5,H6,H7,H8,H9,H10,H11,H12 hooksClass
-class FT,EDITOR,OTHER uiClass
-class SBOX,FS_API,WATCH_API remoteClass
+class SANDBOX_PROVIDER,INSPECT_PROVIDER contextClass
+class FILESYSTEM_STORE storeClass
+class EVENT_MANAGER,OPERATIONS managerClass
+class FILESYSTEM_HOOKS,DIRECTORY_HOOKS,NODE_HOOKS hooksClass
+class FILE_TREE,CODE_EDITOR,OTHER_UI,USER_ACTIONS uiClass
+class REMOTE_SANDBOX,FS_EVENTS remoteClass
+
+click SANDBOX_PROVIDER href "javascript:void(0)" "Establishes E2B connection, manages auth & lifecycle"
+click INSPECT_PROVIDER href "javascript:void(0)" "Orchestrates filesystem inspection subsystem"
+click FILESYSTEM_STORE href "javascript:void(0)" "Zustand store - single source of truth for tree state"
+click EVENT_MANAGER href "javascript:void(0)" "Bridges E2B filesystem events to store mutations"
+click HOOKS href "javascript:void(0)" "Typed selectors and command interfaces for UI"
