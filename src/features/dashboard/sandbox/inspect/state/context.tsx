@@ -3,7 +3,6 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useRef,
   ReactNode,
   useMemo,
@@ -14,38 +13,59 @@ import { createFilesystemStore, type FilesystemStore } from './store'
 import { FilesystemNode, FilesystemOperations } from './types'
 import { FilesystemEventManager } from './events-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
+import { supabase } from '@/lib/clients/supabase/client'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { SandboxState, useSandboxState } from '../hooks/use-sandbox-state'
 
-interface FilesystemContextValue {
+interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
-  sandbox: Sandbox
+  sandboxInfo: SandboxInfo
   eventManager: FilesystemEventManager
 }
 
-const FilesystemContext = createContext<FilesystemContextValue | null>(null)
+const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
+  null
+)
 
-interface FilesystemProviderProps {
+interface SandboxInspectProviderProps {
   children: ReactNode
+  teamId: string
   sandboxInfo: SandboxInfo
   rootPath: string
 }
 
-export function FilesystemProvider({
+export function SandboxInspectProvider({
   children,
+  teamId,
   sandboxInfo,
   rootPath,
-}: FilesystemProviderProps) {
+}: SandboxInspectProviderProps) {
   const sandboxRef = useRef<Sandbox>(null)
   const storeRef = useRef<FilesystemStore>(null)
   const eventManagerRef = useRef<FilesystemEventManager>(null)
 
   useLayoutEffect(() => {
-    if (sandboxRef.current) return
+    if (sandboxRef.current || !teamId || !sandboxInfo.sandboxId) return
 
-    Sandbox.connect(sandboxInfo.sandboxId).then((sandbox) => {
-      sandboxRef.current = sandbox
-    })
-  }, [sandboxInfo.sandboxId])
+    const connectSandbox = async () => {
+      const accessToken = await supabase.auth.getSession().then(({ data }) => {
+        return data.session?.access_token
+      })
+
+      if (!accessToken) {
+        throw new Error('No access token found')
+      }
+
+      sandboxRef.current = await Sandbox.connect(sandboxInfo.sandboxId, {
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+      })
+    }
+
+    connectSandbox()
+  }, [sandboxInfo.sandboxId, teamId])
 
   useLayoutEffect(() => {
     if (!sandboxRef.current || storeRef.current) return
@@ -157,25 +177,25 @@ export function FilesystemProvider({
     return null
   }
 
-  const contextValue: FilesystemContextValue = {
+  const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
     operations: operations,
-    sandbox: sandboxRef.current,
+    sandboxInfo: sandboxInfo,
     eventManager: eventManagerRef.current,
   }
 
   return (
-    <FilesystemContext.Provider value={contextValue}>
+    <SandboxInspectContext.Provider value={contextValue}>
       {children}
-    </FilesystemContext.Provider>
+    </SandboxInspectContext.Provider>
   )
 }
 
-export function useFilesystemContext(): FilesystemContextValue {
-  const context = useContext(FilesystemContext)
+export function useSandboxInspectContext(): SandboxInspectContextValue {
+  const context = useContext(SandboxInspectContext)
   if (!context) {
     throw new Error(
-      'useFilesystemContext must be used within a FilesystemProvider'
+      'useSandboxInspectContext must be used within a SandboxInspectProvider'
     )
   }
   return context
