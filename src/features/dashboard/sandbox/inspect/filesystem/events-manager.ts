@@ -20,13 +20,9 @@ export class FilesystemEventManager {
     this.sandbox = sandbox
   }
 
-  /**
-   * Start watching a directory for changes
-   */
   async startWatching(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
 
-    // Don't start watching if already watching
     if (this.watchHandles.has(normalizedPath)) {
       return
     }
@@ -39,8 +35,6 @@ export class FilesystemEventManager {
       )
 
       this.watchHandles.set(normalizedPath, handle)
-
-      // Mark as watched in store
       this.store.getState().watchedPaths.add(normalizedPath)
     } catch (error) {
       console.error(`Failed to start watching ${normalizedPath}:`, error)
@@ -48,9 +42,6 @@ export class FilesystemEventManager {
     }
   }
 
-  /**
-   * Stop watching a directory
-   */
   stopWatching(path: string): void {
     const normalizedPath = normalizePath(path)
     const handle = this.watchHandles.get(normalizedPath)
@@ -58,24 +49,16 @@ export class FilesystemEventManager {
     if (handle) {
       handle.stop()
       this.watchHandles.delete(normalizedPath)
-
-      // Remove from watched paths in store
       this.store.getState().watchedPaths.delete(normalizedPath)
     }
   }
 
-  /**
-   * Stop watching all directories
-   */
   stopAllWatching(): void {
     for (const [path] of this.watchHandles) {
       this.stopWatching(path)
     }
   }
 
-  /**
-   * Handle incoming filesystem events
-   */
   private handleFilesystemEvent(
     event: FilesystemEvent,
     parentPath: string
@@ -85,33 +68,60 @@ export class FilesystemEventManager {
 
     switch (type) {
       case FilesystemEventType.CREATE:
-      case FilesystemEventType.REMOVE:
-      case FilesystemEventType.RENAME:
-        // A filesystem event occurred that changed the directory structure.
-        // We don't have enough information to granularly update the store (e.g. on CREATE, we don't know if it's a file or dir).
-        // The most robust approach is to refresh the parent directory's contents from the sandbox.
         console.log(
-          `Filesystem event '${type}' for '${normalizedPath}', refreshing parent '${parentPath}'`
+          `Filesystem CREATE event for '${normalizedPath}', refreshing parent '${parentPath}'`
         )
-        this.refreshDirectory(parentPath)
+        void this.refreshDirectory(parentPath)
+        break
+
+      case FilesystemEventType.REMOVE:
+        console.log(
+          `Filesystem REMOVE event for '${normalizedPath}', removing node from store`
+        )
+        this.handleRemoveEvent(normalizedPath, parentPath)
+        break
+
+      case FilesystemEventType.RENAME:
+        console.log(
+          `Filesystem RENAME event for '${normalizedPath}', refreshing parent '${parentPath}'`
+        )
+        void this.refreshDirectory(parentPath)
         break
 
       case FilesystemEventType.WRITE:
       case FilesystemEventType.CHMOD:
-        // For now, we don't handle these events as they don't change the tree structure.
-        // We could potentially use them to update file-specific state in the future (e.g., last modified time).
+        console.debug(`Ignoring ${type} event for '${normalizedPath}'`)
+        break
+
+      default:
+        console.warn(`Unknown filesystem event type: ${type}`)
         break
     }
   }
 
-  /**
-   * Load directory contents from the sandbox
-   */
+  private handleRemoveEvent(removedPath: string, parentPath: string): void {
+    const state = this.store.getState()
+    const node = state.getNode(removedPath)
+
+    if (!node) {
+      console.debug(
+        `Node '${removedPath}' not found in store, skipping removal`
+      )
+      return
+    }
+
+    state.removeNode(removedPath)
+    console.log(`Successfully removed node '${removedPath}' from store`)
+
+    if (node.type === FileType.DIR && this.isWatching(removedPath)) {
+      this.stopWatching(removedPath)
+      console.log(`Stopped watching removed directory '${removedPath}'`)
+    }
+  }
+
   async loadDirectory(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
-
-    // Check if already loaded or loading
     const node = state.getNode(normalizedPath)
 
     if (
@@ -122,14 +132,12 @@ export class FilesystemEventManager {
     )
       return
 
-    // Set loading state
     state.setLoading(normalizedPath, true)
-    state.setError(normalizedPath) // Clear any previous errors
+    state.setError(normalizedPath) // clear any previous errors
 
     try {
       const entries = await this.sandbox.files.list(normalizedPath)
 
-      // Convert entries to filesystem nodes
       const nodes: FilesystemNode[] = entries.map((entry: EntryInfo) => {
         if (entry.type === FileType.DIR) {
           return {
@@ -151,10 +159,7 @@ export class FilesystemEventManager {
         }
       })
 
-      // Add nodes to store
       state.addNodes(normalizedPath, nodes)
-
-      // Mark directory as loaded
       state.updateNode(normalizedPath, { isLoaded: true })
     } catch (error) {
       const errorMessage =
@@ -166,42 +171,28 @@ export class FilesystemEventManager {
     }
   }
 
-  /**
-   * Refresh directory contents (force reload)
-   */
   async refreshDirectory(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
 
-    // Mark as not loaded to force refresh
     state.updateNode(normalizedPath, { isLoaded: false })
 
-    // Clear existing children
     const node = state.getNode(normalizedPath)
     if (node && node.type === FileType.DIR) {
-      // Create a copy of children paths, as the store mutation will modify the original array
       const childrenPaths = [...node.children]
-      // Remove all children from store, which will also recursively remove their descendants
       for (const childPath of childrenPaths) {
         state.removeNode(childPath)
       }
     }
 
-    // Reload directory
     await this.loadDirectory(normalizedPath)
   }
 
-  /**
-   * Check if a directory is being watched
-   */
   isWatching(path: string): boolean {
     const normalizedPath = normalizePath(path)
     return this.watchHandles.has(normalizedPath)
   }
 
-  /**
-   * Get all watched paths
-   */
   getWatchedPaths(): string[] {
     return Array.from(this.watchHandles.keys())
   }
