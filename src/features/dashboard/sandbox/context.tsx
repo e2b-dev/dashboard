@@ -7,7 +7,9 @@ import React, {
   useLayoutEffect,
   useState,
 } from 'react'
-import { SandboxInfo } from 'e2b'
+import { Sandbox, SandboxInfo } from 'e2b'
+import { supabase } from '@/lib/clients/supabase/client'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 
 interface SandboxState {
   secondsLeft: number
@@ -17,6 +19,7 @@ interface SandboxState {
 interface SandboxContextValue {
   sandboxInfo: SandboxInfo
   state: SandboxState
+  sandbox: Sandbox | null
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -32,14 +35,40 @@ export function useSandboxContext() {
 interface SandboxProviderProps {
   children: ReactNode
   sandboxInfo: SandboxInfo
+  teamId: string
 }
 
 export function SandboxProvider({
   children,
   sandboxInfo,
+  teamId,
 }: SandboxProviderProps) {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
+  const [sandbox, setSandbox] = useState<Sandbox | null>(null)
+
+  useLayoutEffect(() => {
+    if (sandbox || !teamId) return
+
+    const connectSandbox = async () => {
+      const accessToken = await supabase.auth.getSession().then(({ data }) => {
+        return data.session?.access_token
+      })
+
+      if (!accessToken) {
+        throw new Error('No access token found')
+      }
+
+      const sbx = await Sandbox.connect(sandboxInfo.sandboxId, {
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+      })
+      setSandbox(sbx)
+    }
+
+    connectSandbox()
+  }, [sandboxInfo.sandboxId, teamId, sandbox])
 
   useLayoutEffect(() => {
     const interval = setInterval(() => {
@@ -73,6 +102,7 @@ export function SandboxProvider({
       value={{
         sandboxInfo,
         state,
+        sandbox,
       }}
     >
       {children}
