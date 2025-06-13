@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useFilesystemContext } from '../state/context'
+import { useSandboxInspectContext } from '../state/context'
 import { FileType } from 'e2b'
 import { FilesystemNode } from '../state/types'
 
@@ -7,7 +7,7 @@ import { FilesystemNode } from '../state/types'
  * Hook for accessing directory children with automatic updates
  */
 export function useDirectoryChildren(path: string): FilesystemNode[] {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => state.getChildren(path))
 }
@@ -16,7 +16,7 @@ export function useDirectoryChildren(path: string): FilesystemNode[] {
  * Hook for accessing directory state (expanded, loading, error)
  */
 export function useDirectoryState(path: string) {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => {
     const node = state.getNode(path)
@@ -35,7 +35,7 @@ export function useDirectoryState(path: string) {
  * Hook for directory operations
  */
 export function useDirectoryOperations(path: string) {
-  const { operations } = useFilesystemContext()
+  const { operations } = useSandboxInspectContext()
 
   return useMemo(
     () => ({
