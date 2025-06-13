@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { useFilesystemContext } from '../state/context'
+import { useSandboxInspectContext } from '../state/context'
 import type { FilesystemNode } from '../state/types'
 
 /**
  * Hook for accessing a specific filesystem node
  */
 export function useFilesystemNode(path: string): FilesystemNode | undefined {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => state.getNode(path))
 }
@@ -15,7 +15,7 @@ export function useFilesystemNode(path: string): FilesystemNode | undefined {
  * Hook for accessing node selection state
  */
 export function useNodeSelection(path: string) {
-  const { store, operations } = useFilesystemContext()
+  const { store, operations } = useSandboxInspectContext()
 
   const isSelected = store((state) => state.isSelected(path))
 
@@ -47,7 +47,7 @@ export function useNode(path: string) {
  * Hook for getting root directory children (commonly used)
  */
 export function useRootChildren() {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => state.getChildren(state.rootPath))
 }
@@ -56,7 +56,7 @@ export function useRootChildren() {
  * Hook for getting selected node path
  */
 export function useSelectedPath() {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => state.selectedPath)
 }
@@ -65,7 +65,7 @@ export function useSelectedPath() {
  * Hook for getting all loading paths
  */
 export function useLoadingPaths() {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => Array.from(state.loadingPaths))
 }
@@ -74,7 +74,7 @@ export function useLoadingPaths() {
  * Hook for getting all error paths and their messages
  */
 export function useErrorPaths() {
-  const { store } = useFilesystemContext()
+  const { store } = useSandboxInspectContext()
 
   return store((state) => Object.fromEntries(state.errorPaths))
 }
