@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useSandboxInspectContext } from '../state/context'
+import { useSandboxInspectContext } from '../context'
 import { FileType } from 'e2b'
-import { FilesystemNode } from '../state/types'
+import { FilesystemNode } from '../filesystem/types'
 
 /**
  * Hook for accessing directory children with automatic updates

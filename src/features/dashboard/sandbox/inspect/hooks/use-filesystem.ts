@@ -1,7 +1,7 @@
 'use client'
 
-import { useSandboxInspectContext } from '../state/context'
-import type { FilesystemOperations } from '../state/types'
+import { useSandboxInspectContext } from '../context'
+import type { FilesystemOperations } from '../filesystem/types'
 
 /**
  * Main hook for accessing filesystem operations
