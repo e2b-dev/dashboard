@@ -1,4 +1,4 @@
-import { useServerContext } from './use-server-context'
+import { useServerContext } from '../../features/dashboard/server-context'
 
 export const useTeams = () => {
   const { teams } = useServerContext()

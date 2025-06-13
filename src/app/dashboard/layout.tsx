@@ -1,7 +1,7 @@
 import { COOKIE_KEYS } from '@/configs/keys'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
+import { ServerContextProvider } from '@/features/dashboard/server-context'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import { ServerContextProvider } from '@/lib/hooks/use-server-context'
 import {
   resolveTeamIdInServerComponent,
   resolveTeamSlugInServerComponent,
