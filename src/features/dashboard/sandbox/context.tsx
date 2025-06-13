@@ -18,8 +18,8 @@ interface SandboxState {
 
 interface SandboxContextValue {
   sandboxInfo: SandboxInfo
-  state: SandboxState
   sandbox: Sandbox | null
+  state: SandboxState
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
