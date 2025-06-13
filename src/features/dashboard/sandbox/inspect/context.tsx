@@ -8,13 +8,12 @@ import React, {
   useMemo,
   useLayoutEffect,
 } from 'react'
-import { FileType, Sandbox } from 'e2b'
+import { FileType } from 'e2b'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
 import { FilesystemEventManager } from './filesystem/events-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
-import { supabase } from '@/lib/clients/supabase/client'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { useSandboxContext } from '../context'
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
@@ -28,52 +27,24 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 
 interface SandboxInspectProviderProps {
   children: ReactNode
-  sandboxId: string
-  teamId: string
   rootPath: string
 }
 
 export function SandboxInspectProvider({
   children,
-  teamId,
-  sandboxId,
   rootPath,
 }: SandboxInspectProviderProps) {
-  const sandboxRef = useRef<Sandbox>(null)
+  const { sandbox } = useSandboxContext()
   const storeRef = useRef<FilesystemStore>(null)
   const eventManagerRef = useRef<FilesystemEventManager>(null)
 
-  useLayoutEffect(() => {
-    if (sandboxRef.current || !teamId) return
-
-    const connectSandbox = async () => {
-      const accessToken = await supabase.auth.getSession().then(({ data }) => {
-        return data.session?.access_token
-      })
-
-      if (!accessToken) {
-        throw new Error('No access token found')
-      }
-
-      sandboxRef.current = await Sandbox.connect(sandboxId, {
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-        },
-      })
-    }
-
-    connectSandbox()
-  }, [sandboxId, teamId])
-
-  useLayoutEffect(() => {
-    if (!sandboxRef.current || storeRef.current) return
-
+  if (!storeRef.current && sandbox) {
     storeRef.current = createFilesystemStore(rootPath)
     eventManagerRef.current = new FilesystemEventManager(
       storeRef.current,
-      sandboxRef.current
+      sandbox
     )
-  }, [rootPath, sandboxRef, storeRef])
+  }
 
   useLayoutEffect(() => {
     const initializeRoot = async () => {
@@ -117,7 +88,7 @@ export function SandboxInspectProvider({
         eventManagerRef.current.stopAllWatching()
       }
     }
-  }, [rootPath, sandboxRef])
+  }, [rootPath, sandbox])
 
   const operations = useMemo<FilesystemOperations>(() => {
     if (!storeRef.current || !eventManagerRef.current) {
@@ -171,7 +142,7 @@ export function SandboxInspectProvider({
     }
   }, [])
 
-  if (!storeRef.current || !eventManagerRef.current || !sandboxRef.current) {
+  if (!storeRef.current || !eventManagerRef.current || !sandbox) {
     return null
   }
 
