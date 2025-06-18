@@ -37,15 +37,59 @@ export function SandboxInspectProvider({
   const { sandbox } = useSandboxContext()
   const storeRef = useRef<FilesystemStore>(null)
   const eventManagerRef = useRef<FilesystemEventManager>(null)
+  const operationsRef = useRef<FilesystemOperations>(null)
 
-  if (!storeRef.current && sandbox) {
-    storeRef.current = createFilesystemStore(rootPath)
-    eventManagerRef.current = new FilesystemEventManager(
-      storeRef.current,
-      sandbox,
-      rootPath
-    )
-  }
+  useLayoutEffect(() => {
+    if (!storeRef.current && sandbox) {
+      storeRef.current = createFilesystemStore(rootPath)
+      eventManagerRef.current = new FilesystemEventManager(
+        storeRef.current,
+        sandbox,
+        rootPath
+      )
+
+      const eventManager = eventManagerRef.current
+      const store = storeRef.current
+
+      operationsRef.current = {
+        loadDirectory: async (path: string) => {
+          await eventManager.loadDirectory(path)
+        },
+        selectNode: (path: string) => {
+          store.getState().setSelected(path)
+        },
+        toggleDirectory: async (path: string) => {
+          const normalizedPath = normalizePath(path)
+          const state = store.getState()
+          const node = state.getNode(normalizedPath)
+
+          if (!node || node.type !== FileType.DIR) {
+            console.log(`Cannot toggle non-directory node at path: ${path}`)
+            return
+          }
+
+          const newExpandedState = !node.isExpanded
+          console.log(
+            `Toggling directory ${path} to ${newExpandedState ? 'expanded' : 'collapsed'}`
+          )
+
+          state.setExpanded(normalizedPath, newExpandedState)
+
+          if (newExpandedState) {
+            if (!node.isLoaded) {
+              console.log(`Loading unloaded directory: ${path}`)
+              await eventManager.loadDirectory(normalizedPath)
+            } else {
+              console.log(`Directory already loaded: ${path}`)
+            }
+          }
+        },
+        refreshDirectory: async (path: string) => {
+          await eventManager.refreshDirectory(path)
+        },
+      }
+    }
+  }, [sandbox, rootPath])
 
   useLayoutEffect(() => {
     const initializeRoot = async () => {
@@ -90,49 +134,18 @@ export function SandboxInspectProvider({
     }
   }, [rootPath, sandbox])
 
-  const operations = useMemo<FilesystemOperations>(() => {
-    if (!storeRef.current || !eventManagerRef.current) {
-      throw new Error('Filesystem store or event manager not initialized')
-    }
-    const eventManager = eventManagerRef.current
-    const store = storeRef.current
-
-    return {
-      loadDirectory: async (path: string) => {
-        await eventManager.loadDirectory(path)
-      },
-      selectNode: (path: string) => {
-        store.getState().setSelected(path)
-      },
-      toggleDirectory: async (path: string) => {
-        const normalizedPath = normalizePath(path)
-        const state = store.getState()
-        const node = state.getNode(normalizedPath)
-
-        if (!node || node.type !== FileType.DIR) return
-
-        const newExpandedState = !node.isExpanded
-        state.setExpanded(normalizedPath, newExpandedState)
-
-        if (newExpandedState) {
-          if (!node.isLoaded) {
-            await eventManager.loadDirectory(normalizedPath)
-          }
-        }
-      },
-      refreshDirectory: async (path: string) => {
-        await eventManager.refreshDirectory(path)
-      },
-    }
-  }, [])
-
-  if (!storeRef.current || !eventManagerRef.current || !sandbox) {
+  if (
+    !storeRef.current ||
+    !eventManagerRef.current ||
+    !sandbox ||
+    !operationsRef.current
+  ) {
     return null
   }
 
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
-    operations: operations,
+    operations: operationsRef.current,
     eventManager: eventManagerRef.current,
   }
 
