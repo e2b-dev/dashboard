@@ -23,8 +23,6 @@ export type FilesystemNode = FilesystemDir | FilesystemFile
 
 export interface FilesystemOperations {
   loadDirectory: (path: string) => Promise<void>
-  watchDirectory: (path: string) => Promise<void>
-  unwatchDirectory: (path: string) => void
   selectNode: (path: string) => void
   toggleDirectory: (path: string) => Promise<void>
   refreshDirectory: (path: string) => Promise<void>
