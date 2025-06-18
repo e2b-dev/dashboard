@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { enableMapSet } from 'immer'
 import {
   normalizePath,
   getParentPath,
@@ -9,6 +10,8 @@ import {
 } from '@/lib/utils/filesystem'
 import { FileType } from 'e2b'
 import { FilesystemNode } from './types'
+
+enableMapSet()
 
 interface FilesystemStatics {
   rootPath: string
@@ -48,6 +51,10 @@ export type FilesystemStoreData = FilesystemStatics &
   FilesystemState &
   FilesystemMutations &
   FilesystemComputed
+
+//  to retain reference-stable arrays of children per directory path
+const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
+  new Map()
 
 export const createFilesystemStore = (rootPath: string) =>
   create<FilesystemStoreData>()(
@@ -255,9 +262,17 @@ export const createFilesystemStore = (rootPath: string) =>
 
         if (!node || node.type === FileType.FILE) return []
 
-        return node.children
+        const cached = childrenCache.get(normalizedPath)
+        if (cached && cached.ref === node.children) {
+          return cached.result
+        }
+
+        const result = node.children
           .map((childPath) => state.nodes.get(childPath))
           .filter((child): child is FilesystemNode => child !== undefined)
+
+        childrenCache.set(normalizedPath, { ref: node.children, result })
+        return result
       },
 
       getNode: (path: string) => {

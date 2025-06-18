@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
 import { FileType } from 'e2b'
 import { FilesystemNode } from '../filesystem/types'
+import { useStore } from 'zustand'
 
 /**
  * Hook for accessing directory children with automatic updates
@@ -11,7 +12,7 @@ import { FilesystemNode } from '../filesystem/types'
 export function useDirectoryChildren(path: string): FilesystemNode[] {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => state.getChildren(path))
+  return useStore(store, (state) => state.getChildren(path))
 }
 
 /**
@@ -20,17 +21,27 @@ export function useDirectoryChildren(path: string): FilesystemNode[] {
 export function useDirectoryState(path: string) {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => {
+  const isExpanded = useStore(store, (state) => state.isExpanded(path))
+  const isLoading = useStore(store, (state) => state.loadingPaths.has(path))
+  const hasError = useStore(store, (state) => state.errorPaths.has(path))
+  const error = useStore(store, (state) => state.errorPaths.get(path))
+  const isLoaded = useStore(store, (state) => {
     const node = state.getNode(path)
-    return {
-      isExpanded: state.isExpanded(path),
-      isLoading: state.loadingPaths.has(path),
-      hasError: state.errorPaths.has(path),
-      error: state.errorPaths.get(path),
-      isLoaded: node?.type === FileType.DIR ? !!node?.isLoaded : undefined,
-      hasChildren: state.hasChildren(path),
-    }
+    return node?.type === FileType.DIR ? !!node?.isLoaded : undefined
   })
+  const hasChildren = useStore(store, (state) => state.hasChildren(path))
+
+  return useMemo(
+    () => ({
+      isExpanded,
+      isLoading,
+      hasError,
+      error,
+      isLoaded,
+      hasChildren,
+    }),
+    [isExpanded, isLoading, hasError, error, isLoaded, hasChildren]
+  )
 }
 
 /**
