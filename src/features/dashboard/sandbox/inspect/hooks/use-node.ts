@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
 import type { FilesystemNode } from '../filesystem/types'
+import { useStore } from 'zustand'
 
 /**
  * Hook for accessing a specific filesystem node
@@ -10,7 +11,7 @@ import type { FilesystemNode } from '../filesystem/types'
 export function useFilesystemNode(path: string): FilesystemNode | undefined {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => state.getNode(path))
+  return useStore(store, (state) => state.getNode(path))
 }
 
 /**
@@ -19,7 +20,7 @@ export function useFilesystemNode(path: string): FilesystemNode | undefined {
 export function useNodeSelection(path: string) {
   const { store, operations } = useSandboxInspectContext()
 
-  const isSelected = store((state) => state.isSelected(path))
+  const isSelected = useStore(store, (state) => state.isSelected(path))
 
   const select = useMemo(
     () => () => operations.selectNode(path),
@@ -51,7 +52,7 @@ export function useNode(path: string) {
 export function useRootChildren() {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => state.getChildren(state.rootPath))
+  return useStore(store, (state) => state.getChildren(state.rootPath))
 }
 
 /**
@@ -60,7 +61,7 @@ export function useRootChildren() {
 export function useSelectedPath() {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => state.selectedPath)
+  return useStore(store, (state) => state.selectedPath)
 }
 
 /**
@@ -69,7 +70,7 @@ export function useSelectedPath() {
 export function useLoadingPaths() {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => Array.from(state.loadingPaths))
+  return useStore(store, (state) => state.loadingPaths)
 }
 
 /**
@@ -78,5 +79,5 @@ export function useLoadingPaths() {
 export function useErrorPaths() {
   const { store } = useSandboxInspectContext()
 
-  return store((state) => Object.fromEntries(state.errorPaths))
+  return useStore(store, (state) => state.errorPaths)
 }
