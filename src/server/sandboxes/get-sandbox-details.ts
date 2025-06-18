@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export const GetSandboxDetailsSchema = z.object({
   teamId: z.string().uuid(),
-  sandboxId: z.string().uuid(),
+  sandboxId: z.string(),
 })
 
 export const getSandboxDetails = authActionClient

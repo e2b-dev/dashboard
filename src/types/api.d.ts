@@ -29,6 +29,8 @@ type CreatedTeamAPIKey = InfraComponents['schemas']['CreatedTeamAPIKey']
 
 type TeamAPIKey = InfraComponents['schemas']['TeamAPIKey']
 
+type SandboxInfo = InfraComponents['schemas']['SandboxDetail']
+
 export type {
   CreatedAccessToken,
   CreatedTeamAPIKey,
@@ -42,4 +44,5 @@ export type {
   TeamAPIKey,
   TeamUser,
   Template,
+  IdentifierMaskingDetails,
 }
