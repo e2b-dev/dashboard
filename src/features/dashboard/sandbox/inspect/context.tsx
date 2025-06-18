@@ -42,7 +42,8 @@ export function SandboxInspectProvider({
     storeRef.current = createFilesystemStore(rootPath)
     eventManagerRef.current = new FilesystemEventManager(
       storeRef.current,
-      sandbox
+      sandbox,
+      rootPath
     )
   }
 
@@ -74,7 +75,6 @@ export function SandboxInspectProvider({
 
       try {
         await eventManagerRef.current.loadDirectory(normalizedRootPath)
-        await eventManagerRef.current.startWatching(normalizedRootPath)
       } catch (error) {
         console.error('Failed to initialize root directory:', error)
         state.setError(normalizedRootPath, 'Failed to load root directory')
@@ -85,7 +85,7 @@ export function SandboxInspectProvider({
 
     return () => {
       if (eventManagerRef.current) {
-        eventManagerRef.current.stopAllWatching()
+        eventManagerRef.current.stopWatching()
       }
     }
   }, [rootPath, sandbox])
@@ -100,12 +100,6 @@ export function SandboxInspectProvider({
     return {
       loadDirectory: async (path: string) => {
         await eventManager.loadDirectory(path)
-      },
-      watchDirectory: async (path: string) => {
-        await eventManager.startWatching(path)
-      },
-      unwatchDirectory: (path: string) => {
-        eventManager.stopWatching(path)
       },
       selectNode: (path: string) => {
         store.getState().setSelected(path)
@@ -123,16 +117,6 @@ export function SandboxInspectProvider({
         if (newExpandedState) {
           if (!node.isLoaded) {
             await eventManager.loadDirectory(normalizedPath)
-          }
-          if (!eventManager.isWatching(normalizedPath)) {
-            try {
-              await eventManager.startWatching(normalizedPath)
-            } catch (error) {
-              console.error(
-                `Failed to start watching ${normalizedPath}:`,
-                error
-              )
-            }
           }
         }
       },
