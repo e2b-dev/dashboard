@@ -8,84 +8,89 @@ import {
 } from 'e2b'
 import type { FilesystemStore } from './store'
 import { FilesystemNode } from './types'
-import { normalizePath, joinPath } from '@/lib/utils/filesystem'
+import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
 
 export class FilesystemEventManager {
-  private watchHandles = new Map<string, WatchHandle>()
+  private watchHandle?: WatchHandle
+  private readonly rootPath: string
   private store: FilesystemStore
   private sandbox: Sandbox
 
-  constructor(store: FilesystemStore, sandbox: Sandbox) {
+  constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string) {
     this.store = store
     this.sandbox = sandbox
+    this.rootPath = normalizePath(rootPath)
+
+    // Immediately start a single recursive watcher at the root
+    void this.startRootWatcher()
   }
 
-  async startWatching(path: string): Promise<void> {
-    const normalizedPath = normalizePath(path)
-
-    if (this.watchHandles.has(normalizedPath)) {
-      return
-    }
+  private async startRootWatcher(): Promise<void> {
+    if (this.watchHandle) return
 
     try {
-      const handle = await this.sandbox.files.watchDir(
-        normalizedPath,
-        (event) => this.handleFilesystemEvent(event, normalizedPath),
-        { recursive: false }
+      this.watchHandle = await this.sandbox.files.watchDir(
+        this.rootPath,
+        (event) => this.handleFilesystemEvent(event),
+        { recursive: true }
       )
-
-      this.watchHandles.set(normalizedPath, handle)
-      this.store.getState().watchedPaths.add(normalizedPath)
     } catch (error) {
-      console.error(`Failed to start watching ${normalizedPath}:`, error)
+      console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
       throw error
     }
   }
 
-  stopWatching(path: string): void {
-    const normalizedPath = normalizePath(path)
-    const handle = this.watchHandles.get(normalizedPath)
-
-    if (handle) {
-      handle.stop()
-      this.watchHandles.delete(normalizedPath)
-      this.store.getState().watchedPaths.delete(normalizedPath)
+  stopWatching(): void {
+    if (this.watchHandle) {
+      this.watchHandle.stop()
+      this.watchHandle = undefined
     }
   }
 
-  stopAllWatching(): void {
-    for (const [path] of this.watchHandles) {
-      this.stopWatching(path)
-    }
-  }
-
-  private handleFilesystemEvent(
-    event: FilesystemEvent,
-    parentPath: string
-  ): void {
+  private handleFilesystemEvent(event: FilesystemEvent): void {
     const { type, name } = event
-    const normalizedPath = normalizePath(joinPath(parentPath, name))
+
+    // "name" is relative to the watched root; construct absolute path
+    const normalizedPath = normalizePath(joinPath(this.rootPath, name))
+    const parentDir = normalizePath(
+      joinPath(this.rootPath, getParentPath(name))
+    )
+
+    const state = this.store.getState()
+    const parentNode = state.getNode(parentDir)
 
     switch (type) {
       case FilesystemEventType.CREATE:
+      case FilesystemEventType.RENAME:
+        if (
+          !parentNode ||
+          parentNode.type !== FileType.DIR ||
+          !parentNode.isLoaded
+        ) {
+          console.debug(
+            `Skip refresh for '${normalizedPath}' because parent directory '${parentDir}' does not exist in store`
+          )
+          return
+        }
+
         console.log(
-          `Filesystem CREATE event for '${normalizedPath}', refreshing parent '${parentPath}'`
+          `Filesystem ${type} event for '${normalizedPath}', refreshing parent '${parentDir}'`
         )
-        void this.refreshDirectory(parentPath)
+        void this.refreshDirectory(parentDir)
         break
 
       case FilesystemEventType.REMOVE:
+        if (!state.getNode(normalizedPath)) {
+          console.debug(
+            `Skip remove for '${normalizedPath}' because node does not exist in store`
+          )
+          return
+        }
+
         console.log(
           `Filesystem REMOVE event for '${normalizedPath}', removing node from store`
         )
-        this.handleRemoveEvent(normalizedPath, parentPath)
-        break
-
-      case FilesystemEventType.RENAME:
-        console.log(
-          `Filesystem RENAME event for '${normalizedPath}', refreshing parent '${parentPath}'`
-        )
-        void this.refreshDirectory(parentPath)
+        this.handleRemoveEvent(normalizedPath)
         break
 
       case FilesystemEventType.WRITE:
@@ -99,7 +104,7 @@ export class FilesystemEventManager {
     }
   }
 
-  private handleRemoveEvent(removedPath: string, parentPath: string): void {
+  private handleRemoveEvent(removedPath: string): void {
     const state = this.store.getState()
     const node = state.getNode(removedPath)
 
@@ -112,11 +117,6 @@ export class FilesystemEventManager {
 
     state.removeNode(removedPath)
     console.log(`Successfully removed node '${removedPath}' from store`)
-
-    if (node.type === FileType.DIR && this.isWatching(removedPath)) {
-      this.stopWatching(removedPath)
-      console.log(`Stopped watching removed directory '${removedPath}'`)
-    }
   }
 
   async loadDirectory(path: string): Promise<void> {
@@ -186,14 +186,5 @@ export class FilesystemEventManager {
     }
 
     await this.loadDirectory(normalizedPath)
-  }
-
-  isWatching(path: string): boolean {
-    const normalizedPath = normalizePath(path)
-    return this.watchHandles.has(normalizedPath)
-  }
-
-  getWatchedPaths(): string[] {
-    return Array.from(this.watchHandles.keys())
   }
 }

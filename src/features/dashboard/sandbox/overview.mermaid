@@ -13,15 +13,15 @@ subgraph INSPECT_CONTEXT["Inspect Context"]
     direction TB
     INSPECT_PROVIDER["SandboxInspectProvider"]
     FILESYSTEM_STORE["FilesystemStore"]
-    EVENT_MANAGER["FilesystemEventManager"]
+    EVENT_MANAGER["FilesystemEventManager (root recursive watcher)"]
     OPERATIONS["Operations Object"]
 
     INSPECT_PROVIDER -- "creates singleton" --> FILESYSTEM_STORE
     INSPECT_PROVIDER -- "creates with store + sandbox" --> EVENT_MANAGER
     INSPECT_PROVIDER -- "exposes interface" --> OPERATIONS
-    EVENT_MANAGER -- "mutates state via" --> FILESYSTEM_STORE
+    EVENT_MANAGER -- "writes FS data" --> FILESYSTEM_STORE
     OPERATIONS -- "delegates to" --> EVENT_MANAGER
-    OPERATIONS -- "calls mutations on" --> FILESYSTEM_STORE
+    OPERATIONS -- "writes UI flags" --> FILESYSTEM_STORE
 end
 
 subgraph HOOKS["Hook Layer"]
@@ -67,7 +67,6 @@ EVENT_MANAGER -- "API calls to" --> REMOTE_SANDBOX
 
 %% Data Flow: Remote Events
 FS_EVENTS -- "handled by" --> EVENT_MANAGER
-EVENT_MANAGER -- "updates state in" --> FILESYSTEM_STORE
 FILESYSTEM_STORE -- "triggers re-renders via" --> HOOKS
 HOOKS -- "provide updated state to" --> UI_COMPONENTS
 
