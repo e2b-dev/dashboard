@@ -44,8 +44,6 @@ export function useDirectoryOperations(path: string) {
       toggle: () => operations.toggleDirectory(path),
       load: () => operations.loadDirectory(path),
       refresh: () => operations.refreshDirectory(path),
-      watch: () => operations.watchDirectory(path),
-      unwatch: () => operations.unwatchDirectory(path),
     }),
     [operations, path]
   )

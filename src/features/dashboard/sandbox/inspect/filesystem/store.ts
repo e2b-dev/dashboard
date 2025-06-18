@@ -18,7 +18,6 @@ interface FilesystemStatics {
 export interface FilesystemState {
   nodes: Map<string, FilesystemNode>
   selectedPath?: string
-  watchedPaths: Set<string>
   loadingPaths: Set<string>
   errorPaths: Map<string, string>
 }
@@ -56,7 +55,6 @@ export const createFilesystemStore = (rootPath: string) =>
       rootPath: normalizePath(rootPath),
 
       nodes: new Map<string, FilesystemNode>(),
-      watchedPaths: new Set<string>(),
       loadingPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
 
@@ -148,7 +146,6 @@ export const createFilesystemStore = (rootPath: string) =>
             state.nodes.delete(pathToRemove)
             state.loadingPaths.delete(pathToRemove)
             state.errorPaths.delete(pathToRemove)
-            state.watchedPaths.delete(pathToRemove)
 
             if (state.selectedPath === pathToRemove) {
               state.selectedPath = undefined
@@ -246,7 +243,6 @@ export const createFilesystemStore = (rootPath: string) =>
         set((state: FilesystemState) => {
           state.nodes.clear()
           state.selectedPath = undefined
-          state.watchedPaths.clear()
           state.loadingPaths.clear()
           state.errorPaths.clear()
         })
