@@ -6,7 +6,7 @@ import { Loader } from '../loader'
 
 const buttonVariants = cva(
   [
-    'inline-flex items-center cursor-pointer gap-2 rounded-sm justify-center whitespace-nowrap',
+    'inline-flex items-center cursor-pointer rounded-sm justify-center whitespace-nowrap',
     'font-mono uppercase tracking-wider text-sm',
     'transition-colors duration-150',
     'focus-visible:outline-none ',
@@ -53,13 +53,13 @@ const buttonVariants = cva(
         ].join(' '),
       },
       size: {
-        default: 'h-8 px-3',
-        sm: 'h-7 px-2',
-        lg: 'h-10 px-4',
-        icon: 'h-8 w-8',
-        iconSm: 'h-7 w-7',
-        iconLg: 'h-10 w-10 text-xl',
-        slate: 'h-auto px-0 py-0',
+        default: 'h-8 px-3 gap-2',
+        sm: 'h-7 px-2 gap-1',
+        lg: 'h-10 px-4 gap-2',
+        icon: 'h-8 w-8 gap-2',
+        iconSm: 'h-7 w-7 gap-1',
+        iconLg: 'h-10 w-10 text-xl gap-2',
+        slate: 'h-auto px-0 py-0 gap-1',
       },
     },
     defaultVariants: {

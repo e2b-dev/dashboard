@@ -30,15 +30,21 @@ export const getSandboxDetails = authActionClient
     })
 
     if (res.error) {
-      const status = res.error?.code ?? 500
-
-      logError(ERROR_CODES.INFRA, '/sandboxes/{sandboxID}', res.error, res.data)
+      const status = res.response.status ?? 500
 
       if (status === 404) {
         return returnServerError(
-          'Sandbox not found. Please check the sandbox ID and try again.'
+          'Sandbox not found. Please check if the Sandbox is running.'
         )
       }
+
+      logError(
+        ERROR_CODES.INFRA,
+        '/sandboxes/{sandboxID}',
+        status,
+        res.error,
+        res.data
+      )
 
       return handleDefaultInfraError(status)
     }
