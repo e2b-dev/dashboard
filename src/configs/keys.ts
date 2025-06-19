@@ -9,6 +9,13 @@ export const COOKIE_KEYS = {
 }
 
 /*
+ * localStorage keys in use
+ */
+export const LOCAL_STORAGE_KEYS = {
+  SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
+}
+
+/*
  * kv keys in use
  */
 export const KV_KEYS = {
