@@ -1,8 +1,8 @@
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
 import SandboxDetailsHeader from '@/features/dashboard/sandbox/header'
+import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
-import { Separator } from '@/ui/primitives/separator'
 
 interface SandboxLayoutProps {
   children: React.ReactNode
@@ -25,9 +25,11 @@ export default async function SandboxLayout({
   return (
     <SandboxProvider sandboxInfo={res?.data} teamId={teamId}>
       <div>
-        <SandboxDetailsHeader sandboxInfo={res?.data} />
-        <Separator />
-        <main>{children}</main>
+        <SandboxDetailsHeader
+          teamIdOrSlug={teamIdOrSlug}
+          sandboxInfo={res?.data}
+        />
+        <SandboxDetailsTabs tabs={['inspect']}>{children}</SandboxDetailsTabs>
       </div>
     </SandboxProvider>
   )
