@@ -3,18 +3,38 @@
 import * as React from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 
-import { cn } from '@/lib/utils'
+import { cn, exponentialSmoothing } from '@/lib/utils'
+import { motion } from 'motion/react'
+
+const TabsContext = React.createContext<{
+  value?: string
+}>({})
 
 function Tabs({
   className,
+  defaultValue,
+  value,
+  onValueChange,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  const [stateValue, setStateValue] = React.useState(defaultValue ?? value)
+
+  React.useEffect(() => {
+    if (!stateValue) return
+
+    onValueChange?.(stateValue)
+  }, [stateValue, onValueChange])
+
   return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      className={cn('flex flex-col', className)}
-      {...props}
-    />
+    <TabsContext.Provider value={{ value: stateValue }}>
+      <TabsPrimitive.Root
+        data-slot="tabs"
+        className={cn('flex flex-col gap-2', className)}
+        value={stateValue}
+        onValueChange={setStateValue}
+        {...props}
+      />
+    </TabsContext.Provider>
   )
 }
 
@@ -26,7 +46,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'bg-bg-100 text-fg-500 inline-flex h-9 w-fit items-center justify-center border p-1',
+        'inline-flex h-9 w-fit items-center justify-center gap-3 border-b px-6',
         className
       )}
       {...props}
@@ -36,17 +56,35 @@ function TabsList({
 
 function TabsTrigger({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  const { value } = React.useContext(TabsContext)
+  const isSelected = value === props.value
+
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "data-[state=active]:text-fg dark:outline-ring/40 outline-ring/50 inline-flex items-center justify-center gap-2 px-2 py-1 font-mono text-xs whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 aria-invalid:focus-visible:ring-0 data-[state=active]:ring data-[state=active]:ring-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative inline-flex h-8.25 flex-1 cursor-pointer items-center justify-center gap-1.5 pb-1.5 whitespace-nowrap !text-[hsl(var(--color-accent))] text-[hsl(var(--color-fg-300))] transition-[color,box-shadow] hover:text-[hsl(var(--color-fg-200))] focus-visible:ring-1 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-[hsl(var(--color-fg))] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        'focus-visible:border-[hsl(var(--color-ring))] focus-visible:ring-[hsl(var(--color-ring)/0.5)] focus-visible:outline-[hsl(var(--color-ring))]',
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      {isSelected && (
+        <motion.div
+          layoutId="tabs-indicator"
+          className="absolute inset-0 -bottom-0.5 border-b border-[hsl(var(--color-accent))]"
+          initial={false}
+          transition={{
+            duration: 0.4,
+            ease: exponentialSmoothing(),
+          }}
+        />
+      )}
+    </TabsPrimitive.Trigger>
   )
 }
 
@@ -57,10 +95,7 @@ function TabsContent({
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      className={cn(
-        'ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 flex-1 transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1 aria-invalid:focus-visible:ring-0',
-        className
-      )}
+      className={cn('flex-1 outline-none', className)}
       {...props}
     />
   )

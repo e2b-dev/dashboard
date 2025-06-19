@@ -1,6 +1,6 @@
 import { FileType } from 'e2b'
 import { FilesystemNode } from './filesystem/types'
-import { FileIcon } from 'lucide-react'
+import { DataTableRow } from '@/ui/data-table'
 
 interface SandboxInspectFileProps {
   file: FilesystemNode & {
@@ -10,11 +10,8 @@ interface SandboxInspectFileProps {
 
 export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <FileIcon className="h-4 w-4" />
-        <span className="text-sm text-gray-500">{file.name}</span>
-      </div>
-    </div>
+    <DataTableRow className="hover:bg-bg-200 gap-1 px-2 py-1 transition-none">
+      <span className="text-fg-300 font-sans text-sm">{file.name}</span>
+    </DataTableRow>
   )
 }
