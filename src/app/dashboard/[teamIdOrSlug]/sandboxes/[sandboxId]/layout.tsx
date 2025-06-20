@@ -23,7 +23,7 @@ export default async function SandboxLayout({
   }
 
   return (
-    <SandboxProvider sandboxInfo={res?.data} teamId={teamId}>
+    <SandboxProvider sandboxInfo={res?.data}>
       <div>
         <SandboxDetailsHeader
           teamIdOrSlug={teamIdOrSlug}
