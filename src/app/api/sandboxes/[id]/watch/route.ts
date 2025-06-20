@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { WatchDirPool } from '@/lib/clients/watch-dir-pool'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { createRouteClient } from '@/lib/clients/supabase/server'
+import { VERBOSE } from '@/configs/flags'
+import { logDebug } from '@/lib/clients/logger'
 
 export const maxDuration = 600 // 10 minutes
 
@@ -27,6 +29,8 @@ export async function GET(
   const dir = searchParams.get('dir') ?? '/'
   const teamId = searchParams.get('team') ?? ''
 
+  if (VERBOSE) logDebug('WatchRoute.init', { id, dir, teamId })
+
   const supabase = createRouteClient(request)
 
   const {
@@ -37,13 +41,15 @@ export async function GET(
   }
 
   const sandboxOpts = {
-    domain: 'xgimi.dev',
     headers: {
       ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
     },
   }
 
+  if (VERBOSE) logDebug('WatchRoute.sandboxOpts')
+
   let watcherReleased = false
+  let ping: ReturnType<typeof setInterval> | undefined
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -53,13 +59,30 @@ export async function GET(
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(ev)}\n\n`))
       }
 
+      if (VERBOSE) logDebug('WatchRoute.acquireWatcher')
+
       await WatchDirPool.acquire(id, dir, onEvent, sandboxOpts)
+
+      if (VERBOSE) logDebug('WatchRoute.watcherReady')
+
+      // periodic comment ping to keep intermediary proxies / clients happy
+      ping = setInterval(() => {
+        try {
+          controller.enqueue(encoder.encode(`: ping\n\n`))
+        } catch (err) {
+          // controller was closed—stop pings to avoid uncaught exceptions
+          if (VERBOSE) logDebug('WatchRoute.pingError', err)
+          if (ping) clearInterval(ping)
+        }
+      }, 15_000)
 
       request.signal.addEventListener('abort', () => {
         if (!watcherReleased) {
           watcherReleased = true
-          void WatchDirPool.release(id, dir, onEvent)
+          if (VERBOSE) logDebug('WatchRoute.abort')
+          // Do NOT release; keep watcher alive for GRACE_MS so quick tab switches reuse it
         }
+        if (ping) clearInterval(ping)
         controller.close()
       })
     },
@@ -74,7 +97,10 @@ export async function GET(
     cancel() {
       if (!watcherReleased) {
         watcherReleased = true
+        if (VERBOSE) logDebug('WatchRoute.cancelStream')
+        void WatchDirPool.release(id, dir, () => {})
       }
+      if (ping) clearInterval(ping)
     },
   })
 

@@ -27,7 +27,6 @@ export const getSandboxRoot = authActionClient
     let entries
     try {
       const sandbox = await SandboxPool.acquire(sandboxId, {
-        domain: 'xgimi.dev',
         headers,
       })
       const raw = await sandbox.files.list(rootPath)
