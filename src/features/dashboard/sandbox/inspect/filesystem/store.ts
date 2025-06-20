@@ -56,27 +56,12 @@ export type FilesystemStoreData = FilesystemStatics &
 const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
   new Map()
 
-const seedEntriesToNodes = (seedEntries: FsEntry[]): FilesystemNode[] => {
-  return seedEntries.map((entry) => ({
-    name: entry.name,
-    path: entry.path,
-    type: entry.type ?? 'file',
-    isExpanded: false,
-    children: [],
-  }))
-}
-
-export const createFilesystemStore = (
-  rootPath: string,
-  seedEntries: FsEntry[]
-) =>
+export const createFilesystemStore = (rootPath: string) =>
   create<FilesystemStoreData>()(
     immer((set, get) => ({
       rootPath: normalizePath(rootPath),
 
-      nodes: new Map<string, FilesystemNode>(
-        seedEntriesToNodes(seedEntries).map((node) => [node.path, node])
-      ),
+      nodes: new Map<string, FilesystemNode>(),
       loadingPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
 
