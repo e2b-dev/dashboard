@@ -19,6 +19,8 @@ export default async function SandboxDetailsHeader({
         <Link
           href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}
           className="text-fg-300 hover:text-fg flex items-center gap-1.5 transition-colors"
+          prefetch
+          shallow
         >
           <ChevronLeftIcon className="size-5" />
           Sandboxes
