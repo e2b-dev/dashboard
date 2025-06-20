@@ -2,6 +2,8 @@ import 'server-cli-only'
 
 import { WatchHandle, FilesystemEvent } from 'e2b'
 import { SandboxPool } from './sandbox-pool'
+import { VERBOSE } from '@/configs/flags'
+import { logDebug } from './logger'
 
 // Grace period in milliseconds before cleaning up unused watch handles
 const GRACE_MS = 5_000
@@ -52,22 +54,29 @@ export class WatchDirPool {
     const key = makeKey(sandboxId, dir)
     let entry = POOL.get(key)
 
+    if (VERBOSE) logDebug('WatchDirPool.acquire', key)
+
     if (entry) {
       entry.ref += 1
       entry.consumers.add(onEvent)
       clearTimeout(entry.timer)
+      if (VERBOSE) logDebug('WatchDirPool reuse', key, 'refs', entry.ref)
     } else {
+      if (VERBOSE) logDebug('WatchDirPool create watcher', key)
       entry = {
         ref: 1,
         consumers: new Set([onEvent as (ev: FilesystemEvent) => void]),
         promise: (async () => {
           const sbx = await SandboxPool.acquire(sandboxId, sandboxOpts)
+          if (VERBOSE)
+            logDebug('WatchDirPool connected to sandbox', sandboxId, 'dir', dir)
           const handle = await sbx.files.watchDir(
             dir,
             (ev) => entry!.consumers.forEach((fn) => fn(ev)),
             { recursive: true }
           )
           entry!.handle = handle
+          if (VERBOSE) logDebug('WatchDirPool watcher ready', key)
           return handle
         })(),
       }
@@ -93,14 +102,20 @@ export class WatchDirPool {
     entry.ref = Math.max(0, entry.ref - 1)
     entry.consumers.delete(onEvent)
 
+    if (VERBOSE) logDebug('WatchDirPool.release', key, 'refs', entry.ref)
+
     if (entry.ref === 0 && !entry.timer) {
+      if (VERBOSE)
+        logDebug('WatchDirPool schedule stop', key, `in ${GRACE_MS}ms`)
       entry.timer = setTimeout(async () => {
         if (entry.ref === 0) {
+          if (VERBOSE) logDebug('WatchDirPool stopping', key)
           try {
             await entry.handle?.stop()
             await SandboxPool.release(sandboxId)
           } finally {
             POOL.delete(key)
+            if (VERBOSE) logDebug('WatchDirPool stopped', key)
           }
         }
       }, GRACE_MS)
