@@ -1,53 +1,46 @@
-import {
-  FileType,
-  type Sandbox,
-  type FilesystemEvent,
-  type WatchHandle,
-  type EntryInfo,
-  FilesystemEventType,
-} from 'e2b'
+import { FsEvent, FsEntry } from '@/types/filesystem'
 import type { FilesystemStore } from './store'
 import { FilesystemNode } from './types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
 
 export class FilesystemEventManager {
-  private watchHandle?: WatchHandle
+  private unsubscribe?: () => void
   private readonly rootPath: string
   private store: FilesystemStore
-  private sandbox: Sandbox
+  private sandboxId: string
+  private teamId: string
 
-  constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string) {
+  constructor(
+    store: FilesystemStore,
+    sandboxId: string,
+    teamId: string,
+    rootPath: string
+  ) {
     this.store = store
-    this.sandbox = sandbox
+    this.sandboxId = sandboxId
+    this.teamId = teamId
     this.rootPath = normalizePath(rootPath)
 
-    // Immediately start a single recursive watcher at the root
     void this.startRootWatcher()
   }
 
   private async startRootWatcher(): Promise<void> {
-    if (this.watchHandle) return
+    if (this.unsubscribe) return
 
-    try {
-      this.watchHandle = await this.sandbox.files.watchDir(
-        this.rootPath,
-        (event) => this.handleFilesystemEvent(event),
-        { recursive: true }
-      )
-    } catch (error) {
-      console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
-      throw error
-    }
+    this.unsubscribe = openWatcher(
+      this.sandboxId,
+      this.rootPath,
+      this.teamId,
+      (event) => this.handleFilesystemEvent(event)
+    )
   }
 
   stopWatching(): void {
-    if (this.watchHandle) {
-      this.watchHandle.stop()
-      this.watchHandle = undefined
-    }
+    this.unsubscribe?.()
+    this.unsubscribe = undefined
   }
 
-  private handleFilesystemEvent(event: FilesystemEvent): void {
+  private handleFilesystemEvent(event: FsEvent): void {
     const { type, name } = event
 
     // "name" is relative to the watched root; construct absolute path
@@ -60,13 +53,9 @@ export class FilesystemEventManager {
     const parentNode = state.getNode(parentDir)
 
     switch (type) {
-      case FilesystemEventType.CREATE:
-      case FilesystemEventType.RENAME:
-        if (
-          !parentNode ||
-          parentNode.type !== FileType.DIR ||
-          !parentNode.isLoaded
-        ) {
+      case 'create':
+      case 'rename':
+        if (!parentNode || parentNode.type !== 'dir' || !parentNode.isLoaded) {
           console.debug(
             `Skip refresh for '${normalizedPath}' because parent directory '${parentDir}' does not exist in store`
           )
@@ -79,7 +68,7 @@ export class FilesystemEventManager {
         void this.refreshDirectory(parentDir)
         break
 
-      case FilesystemEventType.REMOVE:
+      case 'remove':
         if (!state.getNode(normalizedPath)) {
           console.debug(
             `Skip remove for '${normalizedPath}' because node does not exist in store`
@@ -93,8 +82,8 @@ export class FilesystemEventManager {
         this.handleRemoveEvent(normalizedPath)
         break
 
-      case FilesystemEventType.WRITE:
-      case FilesystemEventType.CHMOD:
+      case 'write':
+      case 'chmod':
         console.debug(`Ignoring ${type} event for '${normalizedPath}'`)
         break
 
@@ -126,7 +115,7 @@ export class FilesystemEventManager {
 
     if (
       !node ||
-      node.type !== FileType.DIR ||
+      node.type !== 'dir' ||
       node.isLoaded ||
       state.loadingPaths.has(normalizedPath)
     )
@@ -136,14 +125,14 @@ export class FilesystemEventManager {
     state.setError(normalizedPath) // clear any previous errors
 
     try {
-      const entries = await this.sandbox.files.list(normalizedPath)
+      const entries = await listDir(this.sandboxId, normalizedPath, this.teamId)
 
-      const nodes: FilesystemNode[] = entries.map((entry: EntryInfo) => {
-        if (entry.type === FileType.DIR) {
+      const nodes: FilesystemNode[] = entries.map((entry) => {
+        if (entry.type === 'dir') {
           return {
             name: entry.name,
             path: entry.path,
-            type: FileType.DIR,
+            type: 'dir',
             isExpanded: false,
             isSelected: false,
             isLoaded: false,
@@ -153,7 +142,7 @@ export class FilesystemEventManager {
           return {
             name: entry.name,
             path: entry.path,
-            type: FileType.FILE,
+            type: 'file',
             isSelected: false,
           }
         }
@@ -178,7 +167,7 @@ export class FilesystemEventManager {
     state.updateNode(normalizedPath, { isLoaded: false })
 
     const node = state.getNode(normalizedPath)
-    if (node && node.type === FileType.DIR) {
+    if (node && node.type === 'dir') {
       const childrenPaths = [...node.children]
       for (const childPath of childrenPaths) {
         state.removeNode(childPath)
@@ -187,4 +176,42 @@ export class FilesystemEventManager {
 
     await this.loadDirectory(normalizedPath)
   }
+}
+
+async function listDir(
+  sandboxId: string,
+  dir: string,
+  teamId: string
+): Promise<FsEntry[]> {
+  const url = `/api/sandboxes/${sandboxId}/list?dir=${encodeURIComponent(dir)}&team=${teamId}`
+  return fetch(url, { credentials: 'include' }).then((r) => {
+    if (!r.ok) throw new Error(`List failed ${r.status}`)
+    return r.json()
+  })
+}
+
+function openWatcher(
+  sandboxId: string,
+  dir: string,
+  teamId: string,
+  onEvent: (e: FsEvent) => void
+): () => void {
+  let es: EventSource | null
+
+  const connect = () => {
+    es = new EventSource(
+      `/api/sandboxes/${sandboxId}/watch?dir=${encodeURIComponent(dir)}&team=${teamId}`,
+      { withCredentials: true }
+    )
+
+    es.onmessage = (ev) => onEvent(JSON.parse(ev.data))
+    es.onerror = () => {
+      // auto-reconnect in 1 s
+      es?.close()
+      setTimeout(connect, 1_000)
+    }
+  }
+
+  connect()
+  return () => es?.close()
 }

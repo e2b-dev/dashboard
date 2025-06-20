@@ -7,9 +7,7 @@ import React, {
   useLayoutEffect,
   useState,
 } from 'react'
-import { Sandbox, SandboxInfo } from 'e2b'
-import { supabase } from '@/lib/clients/supabase/client'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { SandboxInfo } from '@/types/api'
 
 interface SandboxState {
   secondsLeft: number
@@ -18,7 +16,6 @@ interface SandboxState {
 
 interface SandboxContextValue {
   sandboxInfo: SandboxInfo
-  sandbox: Sandbox | null
   state: SandboxState
 }
 
@@ -35,46 +32,21 @@ export function useSandboxContext() {
 interface SandboxProviderProps {
   children: ReactNode
   sandboxInfo: SandboxInfo
-  teamId: string
 }
 
 export function SandboxProvider({
   children,
   sandboxInfo,
-  teamId,
 }: SandboxProviderProps) {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
-  const [sandbox, setSandbox] = useState<Sandbox | null>(null)
-
-  useLayoutEffect(() => {
-    if (sandbox || !teamId) return
-
-    const connectSandbox = async () => {
-      const accessToken = await supabase.auth.getSession().then(({ data }) => {
-        return data.session?.access_token
-      })
-
-      if (!accessToken) {
-        throw new Error('No access token found')
-      }
-
-      const sbx = await Sandbox.connect(sandboxInfo.sandboxId, {
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-        },
-      })
-      setSandbox(sbx)
-    }
-
-    connectSandbox()
-  }, [sandboxInfo.sandboxId, teamId, sandbox])
 
   useLayoutEffect(() => {
     const interval = setInterval(() => {
       const now = new Date()
+      const endAt = new Date(sandboxInfo.endAt)
 
-      if (sandboxInfo.endAt <= now) {
+      if (endAt <= now) {
         setIsRunning(false)
         setSecondsLeft(0)
         clearInterval(interval)
@@ -82,7 +54,7 @@ export function SandboxProvider({
         setIsRunning(true)
       }
 
-      const diff = sandboxInfo.endAt.getTime() - now.getTime()
+      const diff = endAt.getTime() - now.getTime()
       setSecondsLeft(Math.max(0, Math.floor(diff / 1000)))
     }, 1000)
 
@@ -90,7 +62,7 @@ export function SandboxProvider({
       if (!interval) return
       clearInterval(interval)
     }
-  }, [sandboxInfo.sandboxId, sandboxInfo.endAt])
+  }, [sandboxInfo.sandboxID, sandboxInfo.endAt])
 
   const state = {
     secondsLeft,
@@ -102,7 +74,6 @@ export function SandboxProvider({
       value={{
         sandboxInfo,
         state,
-        sandbox,
       }}
     >
       {children}

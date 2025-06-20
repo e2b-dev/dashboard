@@ -8,7 +8,7 @@ import {
   getParentPath,
   isChildPath,
 } from '@/lib/utils/filesystem'
-import { FileType } from 'e2b'
+import { FsEntry } from '@/types/filesystem'
 import { FilesystemNode } from './types'
 
 enableMapSet()
@@ -56,12 +56,27 @@ export type FilesystemStoreData = FilesystemStatics &
 const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
   new Map()
 
-export const createFilesystemStore = (rootPath: string) =>
+const seedEntriesToNodes = (seedEntries: FsEntry[]): FilesystemNode[] => {
+  return seedEntries.map((entry) => ({
+    name: entry.name,
+    path: entry.path,
+    type: entry.type ?? 'file',
+    isExpanded: false,
+    children: [],
+  }))
+}
+
+export const createFilesystemStore = (
+  rootPath: string,
+  seedEntries: FsEntry[]
+) =>
   create<FilesystemStoreData>()(
     immer((set, get) => ({
       rootPath: normalizePath(rootPath),
 
-      nodes: new Map<string, FilesystemNode>(),
+      nodes: new Map<string, FilesystemNode>(
+        seedEntriesToNodes(seedEntries).map((node) => [node.path, node])
+      ),
       loadingPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
 
@@ -79,14 +94,14 @@ export const createFilesystemStore = (rootPath: string) =>
             parentNode = {
               name: parentName,
               path: normalizedParentPath,
-              type: FileType.DIR,
+              type: 'dir',
               isExpanded: false,
               children: [],
             }
             state.nodes.set(normalizedParentPath, parentNode)
           }
 
-          if (parentNode.type === FileType.FILE) {
+          if (parentNode.type === 'file') {
             console.error('Parent node is a file', parentNode)
             return
           }
@@ -136,7 +151,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const parentPath = getParentPath(normalizedPath)
           const parentNode = state.nodes.get(parentPath)
-          if (parentNode && parentNode.type === FileType.DIR) {
+          if (parentNode && parentNode.type === 'dir') {
             parentNode.children = parentNode.children.filter(
               (childPath: string) => childPath !== normalizedPath
             )
@@ -180,7 +195,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           if (!node) return
 
-          if (node?.type === FileType.FILE) {
+          if (node?.type === 'file') {
             console.error('Cannot expand file', node)
             return
           }
@@ -222,7 +237,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const node = state.nodes.get(normalizedPath)
 
-          if (!node || node.type === FileType.FILE) return
+          if (!node || node.type === 'file') return
 
           node.isLoading = loading
         })
@@ -240,7 +255,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const node = state.nodes.get(normalizedPath)
 
-          if (!node || node.type === FileType.FILE) return
+          if (!node || node.type === 'file') return
 
           node.error = error
         })
@@ -260,7 +275,7 @@ export const createFilesystemStore = (rootPath: string) =>
         const state = get()
         const node = state.nodes.get(normalizedPath)
 
-        if (!node || node.type === FileType.FILE) return []
+        if (!node || node.type === 'file') return []
 
         const cached = childrenCache.get(normalizedPath)
         if (cached && cached.ref === node.children) {
@@ -284,7 +299,7 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
         const node = get().nodes.get(normalizedPath)
 
-        if (!node || node.type === FileType.FILE) return false
+        if (!node || node.type === 'file') return false
 
         return !!node.isExpanded
       },
@@ -302,7 +317,7 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
         const node = get().nodes.get(normalizedPath)
 
-        if (!node || node.type === FileType.FILE) return false
+        if (!node || node.type === 'file') return false
 
         return node.children.length > 0
       },
