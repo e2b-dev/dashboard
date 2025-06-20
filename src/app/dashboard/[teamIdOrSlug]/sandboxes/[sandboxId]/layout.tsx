@@ -4,6 +4,8 @@ import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
 
+export const fetchCache = 'default-cache'
+
 interface SandboxLayoutProps {
   children: React.ReactNode
   params: Promise<{ teamIdOrSlug: string; sandboxId: string }>
