@@ -42,6 +42,8 @@ export const getSandboxRoot = authActionClient
     } catch (err) {
       logError(ERROR_CODES.INFRA, 'files.list', 500, err)
       return returnServerError('Failed to list sandbox directory.')
+    } finally {
+      await SandboxPool.release(sandboxId)
     }
 
     return {
