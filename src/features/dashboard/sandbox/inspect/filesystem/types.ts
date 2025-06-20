@@ -1,7 +1,7 @@
-import { FileType } from 'e2b'
+import { FsFileType } from '@/types/filesystem'
 
 interface FilesystemDir {
-  type: FileType.DIR
+  type: 'dir'
   name: string
   path: string
   children: string[] // paths of children
@@ -13,7 +13,7 @@ interface FilesystemDir {
 }
 
 interface FilesystemFile {
-  type: FileType.FILE
+  type: 'file'
   name: string
   path: string
   isSelected?: boolean

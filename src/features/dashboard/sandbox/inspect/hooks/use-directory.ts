@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
-import { FileType } from 'e2b'
 import { FilesystemNode } from '../filesystem/types'
 import { useStore } from 'zustand'
 
@@ -27,7 +26,7 @@ export function useDirectoryState(path: string) {
   const error = useStore(store, (state) => state.errorPaths.get(path))
   const isLoaded = useStore(store, (state) => {
     const node = state.getNode(path)
-    return node?.type === FileType.DIR ? !!node?.isLoaded : undefined
+    return node?.type === 'dir' ? !!node?.isLoaded : undefined
   })
   const hasChildren = useStore(store, (state) => state.hasChildren(path))
 

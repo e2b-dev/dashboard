@@ -5,10 +5,10 @@ import React, {
   useContext,
   useRef,
   ReactNode,
-  useMemo,
   useLayoutEffect,
+  useMemo,
 } from 'react'
-import { FileType } from 'e2b'
+import { FsEntry } from '@/types/filesystem'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
 import { FilesystemEventManager } from './filesystem/events-manager'
@@ -27,24 +27,41 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 
 interface SandboxInspectProviderProps {
   children: ReactNode
+  teamId: string
   rootPath: string
+  seedEntries?: FsEntry[]
 }
 
 export function SandboxInspectProvider({
   children,
+  teamId,
   rootPath,
+  seedEntries,
 }: SandboxInspectProviderProps) {
-  const { sandbox } = useSandboxContext()
+  const { sandboxInfo } = useSandboxContext()
   const storeRef = useRef<FilesystemStore>(null)
   const eventManagerRef = useRef<FilesystemEventManager>(null)
   const operationsRef = useRef<FilesystemOperations>(null)
 
+  const sandboxId = useMemo(
+    () => sandboxInfo.sandboxID + '-' + sandboxInfo.clientID,
+    [sandboxInfo.sandboxID, sandboxInfo.clientID]
+  )
+
   useLayoutEffect(() => {
-    if (!storeRef.current && sandbox) {
-      storeRef.current = createFilesystemStore(rootPath)
+    const normalizedRoot = normalizePath(rootPath)
+    const currentRoot = storeRef.current?.getState().rootPath
+
+    if (!storeRef.current || currentRoot !== normalizedRoot) {
+      if (eventManagerRef.current) {
+        eventManagerRef.current.stopWatching()
+      }
+
+      storeRef.current = createFilesystemStore(rootPath, seedEntries ?? [])
       eventManagerRef.current = new FilesystemEventManager(
         storeRef.current,
-        sandbox,
+        sandboxId,
+        teamId,
         rootPath
       )
 
@@ -63,7 +80,7 @@ export function SandboxInspectProvider({
           const state = store.getState()
           const node = state.getNode(normalizedPath)
 
-          if (!node || node.type !== FileType.DIR) {
+          if (!node || node.type !== 'dir') {
             console.log(`Cannot toggle non-directory node at path: ${path}`)
             return
           }
@@ -89,7 +106,7 @@ export function SandboxInspectProvider({
         },
       }
     }
-  }, [sandbox, rootPath])
+  }, [sandboxId, teamId, seedEntries, rootPath])
 
   useLayoutEffect(() => {
     const initializeRoot = async () => {
@@ -107,7 +124,7 @@ export function SandboxInspectProvider({
         const rootNode: FilesystemNode = {
           name: rootName,
           path: normalizedRootPath,
-          type: FileType.DIR,
+          type: 'dir',
           isExpanded: true,
           isLoaded: false,
           children: [],
@@ -132,12 +149,12 @@ export function SandboxInspectProvider({
         eventManagerRef.current.stopWatching()
       }
     }
-  }, [rootPath, sandbox])
+  }, [sandboxId, teamId, seedEntries, rootPath])
 
   if (
     !storeRef.current ||
     !eventManagerRef.current ||
-    !sandbox ||
+    !sandboxId ||
     !operationsRef.current
   ) {
     return null
