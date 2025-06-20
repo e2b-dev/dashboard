@@ -3,18 +3,28 @@ import 'server-cli-only'
 import { WatchHandle, FilesystemEvent } from 'e2b'
 import { SandboxPool } from './sandbox-pool'
 
+// Grace period in milliseconds before cleaning up unused watch handles
 const GRACE_MS = 5_000
 
 interface Entry {
+  // Promise that resolves to the watch handle once created
   promise: Promise<WatchHandle>
+  // The actual watch handle once available
   handle?: WatchHandle
+  // Set of callback functions from all consumers watching this directory
   consumers: Set<(e: FilesystemEvent) => void>
+  // Reference count of active consumers
   ref: number
+  // Timer for cleanup when ref count reaches 0
   timer?: ReturnType<typeof setTimeout>
 }
 
-// Using `var` in the global augmentation is required – ESLint rule disabled locally
+// ---------------------------------------------
+// Global singleton (per Node)
+// ---------------------------------------------
+// eslint-disable-next-line no-var
 declare global {
+  // `var` is required for global augmentation – suppressed for eslint
   // eslint-disable-next-line no-var
   var __WATCH_POOL: Map<string, Entry> | undefined
 }

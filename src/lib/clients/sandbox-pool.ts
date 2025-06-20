@@ -21,7 +21,7 @@ interface Entry {
 }
 
 // ---------------------------------------------
-// Global singleton (per Node/Edge instance)
+// Global singleton (per Node)
 // ---------------------------------------------
 // eslint-disable-next-line no-var
 declare global {
@@ -93,12 +93,5 @@ export class SandboxPool {
         }
       }, GRACE_MS)
     }
-  }
-
-  /**
-   * Lightweight helper useful for metrics or debugging.
-   */
-  static status() {
-    return Array.from(POOL.entries()).map(([id, { ref }]) => ({ id, ref }))
   }
 }
