@@ -1,6 +1,5 @@
-import { FileType } from 'e2b'
 import { FilesystemNode } from './filesystem/types'
-import { ChevronRight, FolderOpenIcon } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import SandboxInspectNode from './node'
 import { useDirectory } from './hooks/use-directory'
 import { cn } from '@/lib/utils'
@@ -10,7 +9,7 @@ import { motion } from 'motion/react'
 
 interface SandboxInspectDirProps {
   dir: FilesystemNode & {
-    type: FileType.DIR
+    type: 'dir'
   }
 }
 
