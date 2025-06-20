@@ -5,6 +5,9 @@ import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxRoot } from '@/server/sandboxes/get-sandbox-root'
 import { notFound } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 export default async function SandboxInspectPage({
   params,
 }: {
