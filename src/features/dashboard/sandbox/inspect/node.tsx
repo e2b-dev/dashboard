@@ -1,4 +1,3 @@
-import { FileType } from 'e2b'
 import SandboxInspectDir from './dir'
 import { useFilesystemNode } from './hooks/use-node'
 import SandboxInspectFile from './file'
@@ -11,9 +10,9 @@ export default function SandboxInspectNode({ path }: SandboxInspectDirProps) {
   const node = useFilesystemNode(path)!
 
   switch (node.type) {
-    case FileType.DIR:
+    case 'dir':
       return <SandboxInspectDir dir={node} />
-    case FileType.FILE:
+    case 'file':
       return <SandboxInspectFile file={node} />
   }
 }
