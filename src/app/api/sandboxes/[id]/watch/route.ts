@@ -3,7 +3,7 @@ import { WatchDirPool } from '@/lib/clients/watch-dir-pool'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { createRouteClient } from '@/lib/clients/supabase/server'
 
-export const maxDuration = 900 // 15 minutes
+export const maxDuration = 600 // 10 minutes
 
 /**
  * SSE endpoint that streams filesystem events for a sandbox directory.
