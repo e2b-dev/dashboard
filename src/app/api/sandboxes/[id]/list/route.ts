@@ -6,6 +6,8 @@ import { FileType } from 'e2b'
 import { FsEntry, FsFileType } from '@/types/filesystem'
 
 export const maxDuration = 60 // quick, single call
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 
 /**
  * GET /api/sandboxes/{id}/list?dir=/path&team=
@@ -29,7 +31,6 @@ export async function GET(
     return new Response('Unauthorized', { status: 401 })
 
   const opts = {
-    domain: 'xgimi.dev',
     headers: {
       ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
     },
