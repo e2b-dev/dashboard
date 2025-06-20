@@ -98,6 +98,7 @@ export class WatchDirPool {
         if (entry.ref === 0) {
           try {
             await entry.handle?.stop()
+            await SandboxPool.release(sandboxId)
           } finally {
             POOL.delete(key)
           }
