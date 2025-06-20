@@ -1,23 +1,38 @@
-'use client'
-
-import { LOCAL_STORAGE_KEYS } from '@/configs/keys'
 import { SandboxInspectProvider } from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
 import SandboxInspectHeader from '@/features/dashboard/sandbox/inspect/header'
-import { useLocalStorage } from 'usehooks-ts'
+import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { getSandboxRoot } from '@/server/sandboxes/get-sandbox-root'
+import { notFound } from 'next/navigation'
 
-export default function SandboxInspectPage() {
-  const [rootPath, setRootPath] = useLocalStorage(
-    LOCAL_STORAGE_KEYS.SANDBOX_INSPECT_ROOT_PATH,
-    '/'
-  )
+export default async function SandboxInspectPage({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string; sandboxId: string }>
+}) {
+  const rootPath = '/home/user'
+
+  const { teamIdOrSlug, sandboxId } = await params
+
+  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+
+  const res = await getSandboxRoot({
+    teamId,
+    sandboxId,
+    rootPath,
+  })
+
+  if (!res?.data) {
+    throw notFound()
+  }
 
   return (
-    <SandboxInspectProvider rootPath={rootPath}>
-      <SandboxInspectHeader
-        rootPath={rootPath}
-        onRootPathChange={setRootPath}
-      />
+    <SandboxInspectProvider
+      teamId={teamId}
+      rootPath={rootPath}
+      seedEntries={res.data.entries}
+    >
+      <SandboxInspectHeader />
       <SandboxInspectFilesystem />
     </SandboxInspectProvider>
   )

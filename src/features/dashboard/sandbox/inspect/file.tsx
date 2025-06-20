@@ -4,7 +4,7 @@ import { DataTableRow } from '@/ui/data-table'
 
 interface SandboxInspectFileProps {
   file: FilesystemNode & {
-    type: FileType.FILE
+    type: 'file'
   }
 }
 
