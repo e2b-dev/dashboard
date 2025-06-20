@@ -1,9 +1,13 @@
+// src/server/sandboxes/get-sandbox-root.ts
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { ERROR_CODES } from '@/configs/logs'
+import { logError } from '@/lib/clients/logger'
 import { returnServerError } from '@/lib/utils/action'
-import Sandbox from 'e2b'
-import { l } from '@/lib/clients/logger'
+import { SandboxPool } from '@/lib/clients/sandbox-pool'
+import { FsFileType } from '@/types/filesystem'
+import { FileType } from 'e2b'
 
 export const GetSandboxRootSchema = z.object({
   teamId: z.string().uuid(),
@@ -20,17 +24,27 @@ export const getSandboxRoot = authActionClient
 
     const headers = SUPABASE_AUTH_HEADERS(session.access_token, teamId)
 
+    let entries
     try {
-      const sandbox = await Sandbox.connect(sandboxId, {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+      const sandbox = await SandboxPool.acquire(sandboxId, {
+        domain: 'xgimi.dev',
         headers,
       })
-
-      return {
-        entries: await sandbox.files.list(rootPath),
-      }
+      const raw = await sandbox.files.list(rootPath)
+      entries = raw.map((e) => ({
+        name: e.name,
+        path: e.path,
+        type:
+          e.type === FileType.DIR
+            ? ('dir' as FsFileType)
+            : ('file' as FsFileType),
+      }))
     } catch (err) {
-      l.error('get_sandbox_root:unexpected_error', err)
-      return returnServerError('Failed to list root directory.')
+      logError(ERROR_CODES.INFRA, 'files.list', 500, err)
+      return returnServerError('Failed to list sandbox directory.')
+    }
+
+    return {
+      entries,
     }
   })
