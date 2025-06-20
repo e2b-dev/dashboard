@@ -1,6 +1,8 @@
 import 'server-cli-only'
 
 import { Sandbox, type SandboxOpts } from 'e2b'
+import { VERBOSE } from '@/configs/flags'
+import { logDebug } from './logger'
 
 /**
  * How long we keep the connection alive after the last consumer released it.
@@ -49,7 +51,10 @@ export class SandboxPool {
     if (entry) {
       entry.ref += 1
       clearTimeout(entry.timer)
+      if (VERBOSE)
+        logDebug('SandboxPool.acquire reuse', sandboxId, 'refs', entry.ref)
     } else {
+      if (VERBOSE) logDebug('SandboxPool.acquire connect', sandboxId)
       const promise = Sandbox.connect(sandboxId, opts) as Promise<Sandbox>
       entry = { promise, ref: 1 }
       POOL.set(sandboxId, entry)
@@ -58,12 +63,15 @@ export class SandboxPool {
       promise
         .then((sbx) => {
           entry!.sandbox = sbx
+          if (VERBOSE) logDebug('SandboxPool connected', sandboxId)
         })
-        .catch(() => {
+        .catch((err) => {
+          if (VERBOSE) logDebug('SandboxPool connect FAILED', sandboxId, err)
           POOL.delete(sandboxId)
         })
     }
 
+    if (VERBOSE) logDebug('SandboxPool.acquire return', sandboxId, 'promise')
     return entry.promise as Promise<T>
   }
 
@@ -77,9 +85,14 @@ export class SandboxPool {
 
     entry.ref = Math.max(0, entry.ref - 1)
 
+    if (VERBOSE) logDebug('SandboxPool.release', sandboxId, 'refs', entry.ref)
+
     if (entry.ref === 0 && !entry.timer) {
+      if (VERBOSE)
+        logDebug('SandboxPool schedule close', sandboxId, `in ${GRACE_MS}ms`)
       entry.timer = setTimeout(async () => {
         if (entry.ref === 0) {
+          if (VERBOSE) logDebug('SandboxPool closing', sandboxId)
           try {
             const closable = entry.sandbox as unknown as {
               close?: () => Promise<void>
@@ -89,6 +102,7 @@ export class SandboxPool {
             else if (closable?.dispose) await closable.dispose()
           } finally {
             POOL.delete(sandboxId)
+            if (VERBOSE) logDebug('SandboxPool closed', sandboxId)
           }
         }
       }, GRACE_MS)

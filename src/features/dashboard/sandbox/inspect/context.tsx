@@ -18,7 +18,7 @@ import { useSandboxContext } from '../context'
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
-  eventManager: FilesystemEventManager
+  eventManager: FilesystemEventManager | null
 }
 
 const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
@@ -39,38 +39,82 @@ export function SandboxInspectProvider({
   seedEntries,
 }: SandboxInspectProviderProps) {
   const { sandboxInfo } = useSandboxContext()
-  const storeRef = useRef<FilesystemStore>(null)
-  const eventManagerRef = useRef<FilesystemEventManager>(null)
-  const operationsRef = useRef<FilesystemOperations>(null)
+  const storeRef = useRef<FilesystemStore | null>(null)
+  const eventManagerRef = useRef<FilesystemEventManager | null>(null)
+  const operationsRef = useRef<FilesystemOperations | null>(null)
 
   const sandboxId = useMemo(
     () => sandboxInfo.sandboxID + '-' + sandboxInfo.clientID,
     [sandboxInfo.sandboxID, sandboxInfo.clientID]
   )
 
-  useLayoutEffect(() => {
+  /*
+   * ---------- synchronous store initialisation ----------
+   * We want the tree to render immediately using the "seedEntries" streamed from the
+   * server component (see page.tsx).  We therefore build / populate the Zustand store
+   * right here during render, instead of doing it later inside an effect.
+   */
+  {
     const normalizedRoot = normalizePath(rootPath)
-    const currentRoot = storeRef.current?.getState().rootPath
+    const needsNewStore =
+      !storeRef.current ||
+      storeRef.current.getState().rootPath !== normalizedRoot
 
-    if (!storeRef.current || currentRoot !== normalizedRoot) {
+    if (needsNewStore) {
+      // stop previous watcher (if any)
       if (eventManagerRef.current) {
         eventManagerRef.current.stopWatching()
+        eventManagerRef.current = null
       }
 
-      storeRef.current = createFilesystemStore(rootPath, seedEntries ?? [])
-      eventManagerRef.current = new FilesystemEventManager(
-        storeRef.current,
-        sandboxId,
-        teamId,
-        rootPath
-      )
+      storeRef.current = createFilesystemStore(rootPath)
 
-      const eventManager = eventManagerRef.current
+      const state = storeRef.current.getState()
+
+      const rootName =
+        normalizedRoot === '/' ? '/' : normalizedRoot.split('/').pop() || ''
+
+      state.addNodes(getParentPath(normalizedRoot), [
+        {
+          name: rootName,
+          path: normalizedRoot,
+          type: 'dir',
+          isExpanded: true,
+          isLoaded: true,
+          children: [],
+        },
+      ])
+
+      if (seedEntries && seedEntries.length) {
+        const seedNodes: FilesystemNode[] = seedEntries.map((entry) => {
+          const base = {
+            name: entry.name,
+            path: normalizePath(entry.path),
+          }
+
+          if (entry.type === 'dir') {
+            return {
+              ...base,
+              type: 'dir' as const,
+              isExpanded: false,
+              isLoaded: false,
+              children: [],
+            }
+          }
+
+          return {
+            ...base,
+            type: 'file' as const,
+          }
+        })
+
+        state.addNodes(normalizedRoot, seedNodes)
+      }
+
       const store = storeRef.current
-
       operationsRef.current = {
         loadDirectory: async (path: string) => {
-          await eventManager.loadDirectory(path)
+          await eventManagerRef.current?.loadDirectory(path)
         },
         selectNode: (path: string) => {
           store.getState().setSelected(path)
@@ -80,84 +124,46 @@ export function SandboxInspectProvider({
           const state = store.getState()
           const node = state.getNode(normalizedPath)
 
-          if (!node || node.type !== 'dir') {
-            console.log(`Cannot toggle non-directory node at path: ${path}`)
-            return
-          }
+          if (!node || node.type !== 'dir') return
 
           const newExpandedState = !node.isExpanded
-          console.log(
-            `Toggling directory ${path} to ${newExpandedState ? 'expanded' : 'collapsed'}`
-          )
-
           state.setExpanded(normalizedPath, newExpandedState)
 
-          if (newExpandedState) {
-            if (!node.isLoaded) {
-              console.log(`Loading unloaded directory: ${path}`)
-              await eventManager.loadDirectory(normalizedPath)
-            } else {
-              console.log(`Directory already loaded: ${path}`)
-            }
+          if (newExpandedState && !node.isLoaded) {
+            await eventManagerRef.current?.loadDirectory(normalizedPath)
           }
         },
         refreshDirectory: async (path: string) => {
-          await eventManager.refreshDirectory(path)
+          await eventManagerRef.current?.refreshDirectory(path)
         },
       }
     }
-  }, [sandboxId, teamId, seedEntries, rootPath])
+  }
 
+  /*
+   * ---------- watcher (side-effect) initialisation / cleanup ----------
+   */
   useLayoutEffect(() => {
-    const initializeRoot = async () => {
-      if (!storeRef.current || !eventManagerRef.current) return
+    if (!storeRef.current) return
 
-      const state = storeRef.current.getState()
-      const normalizedRootPath = normalizePath(rootPath)
-
-      if (!state.getNode(normalizedRootPath)) {
-        const rootName =
-          normalizedRootPath === '/'
-            ? '/'
-            : normalizedRootPath.split('/').pop() || ''
-
-        const rootNode: FilesystemNode = {
-          name: rootName,
-          path: normalizedRootPath,
-          type: 'dir',
-          isExpanded: true,
-          isLoaded: false,
-          children: [],
-        }
-
-        const parentPath = getParentPath(normalizedRootPath)
-        state.addNodes(parentPath, [rootNode])
-      }
-
-      try {
-        await eventManagerRef.current.loadDirectory(normalizedRootPath)
-      } catch (error) {
-        console.error('Failed to initialize root directory:', error)
-        state.setError(normalizedRootPath, 'Failed to load root directory')
-      }
+    // (re)create the event-manager when sandbox / team / root changes
+    if (eventManagerRef.current) {
+      eventManagerRef.current.stopWatching()
     }
-
-    initializeRoot()
+    eventManagerRef.current = new FilesystemEventManager(
+      storeRef.current,
+      sandboxId,
+      teamId,
+      rootPath
+    )
 
     return () => {
-      if (eventManagerRef.current) {
-        eventManagerRef.current.stopWatching()
-      }
+      eventManagerRef.current?.stopWatching()
     }
-  }, [sandboxId, teamId, seedEntries, rootPath])
+  }, [sandboxId, teamId, rootPath])
 
-  if (
-    !storeRef.current ||
-    !eventManagerRef.current ||
-    !sandboxId ||
-    !operationsRef.current
-  ) {
-    return null
+  if (!storeRef.current || !operationsRef.current) {
+    return null // should never happen, but satisfies type-checker
   }
 
   const contextValue: SandboxInspectContextValue = {
