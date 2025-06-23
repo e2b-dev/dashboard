@@ -199,12 +199,12 @@ function openWatcher(
   let es: EventSource | null
 
   const connect = () => {
-    es = new EventSource(
-      `/api/sandboxes/${sandboxId}/watch?dir=${encodeURIComponent(dir)}&team=${teamId}`,
-      { withCredentials: true }
-    )
+    const url = `/api/sandboxes/${sandboxId}/watch?dir=${encodeURIComponent(dir)}&team=${teamId}`
+    es = new EventSource(url, { withCredentials: true })
 
-    es.onmessage = (ev) => onEvent(JSON.parse(ev.data))
+    es.onmessage = (ev) => {
+      onEvent(JSON.parse(ev.data))
+    }
     es.onerror = () => {
       // auto-reconnect in 1 s
       es?.close()
