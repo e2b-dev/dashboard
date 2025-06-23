@@ -61,23 +61,23 @@ export class WatchDirPool {
       entry.ref += 1
       entry.consumers.add(onEvent)
       clearTimeout(entry.timer)
-      if (VERBOSE) logDebug('WatchDirPool reuse', key, 'refs', entry.ref)
+      if (VERBOSE) logDebug('WatchDirPool.reuse', key, 'refs', entry.ref)
     } else {
-      if (VERBOSE) logDebug('WatchDirPool create watcher', key)
+      if (VERBOSE) logDebug('WatchDirPool.createWatcher', key)
       entry = {
         ref: 1,
         consumers: new Set([onEvent as (ev: FilesystemEvent) => void]),
         promise: (async () => {
           const sbx = await SandboxPool.acquire(sandboxId, sandboxOpts)
           if (VERBOSE)
-            logDebug('WatchDirPool connected to sandbox', sandboxId, 'dir', dir)
+            logDebug('WatchDirPool.connectedToSandbox', sandboxId, 'dir', dir)
           const handle = await sbx.files.watchDir(
             dir,
             (ev) => entry!.consumers.forEach((fn) => fn(ev)),
             { recursive: true }
           )
           entry!.handle = handle
-          if (VERBOSE) logDebug('WatchDirPool watcher ready', key)
+          if (VERBOSE) logDebug('WatchDirPool.watcherReady', key)
           return handle
         })(),
       }
@@ -107,16 +107,16 @@ export class WatchDirPool {
 
     if (entry.ref === 0 && !entry.timer) {
       if (VERBOSE)
-        logDebug('WatchDirPool schedule stop', key, `in ${GRACE_MS}ms`)
+        logDebug('WatchDirPool.scheduleStop', key, `in ${GRACE_MS}ms`)
       entry.timer = setTimeout(async () => {
         if (entry.ref === 0) {
-          if (VERBOSE) logDebug('WatchDirPool stopping', key)
+          if (VERBOSE) logDebug('WatchDirPool.stopping', key)
           try {
             await entry.handle?.stop()
             await SandboxPool.release(sandboxId)
           } finally {
             POOL.delete(key)
-            if (VERBOSE) logDebug('WatchDirPool stopped', key)
+            if (VERBOSE) logDebug('WatchDirPool.stopped', key)
           }
         }
       }, GRACE_MS)

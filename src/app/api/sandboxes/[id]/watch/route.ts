@@ -80,7 +80,7 @@ export async function GET(
         if (!watcherReleased) {
           watcherReleased = true
           if (VERBOSE) logDebug('WatchRoute.abort')
-          // Do NOT release; keep watcher alive for GRACE_MS so quick tab switches reuse it
+          void WatchDirPool.release(id, dir, onEvent)
         }
         if (ping) clearInterval(ping)
         controller.close()
