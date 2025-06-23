@@ -50,12 +50,14 @@ export async function GET(
 
   let watcherReleased = false
   let ping: ReturnType<typeof setInterval> | undefined
+  let onEvent: (ev: unknown) => void
+  let cleanup: () => void
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const encoder = new TextEncoder()
 
-      const onEvent = (ev: unknown) => {
+      onEvent = (ev: unknown) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(ev)}\n\n`))
       }
 
@@ -65,25 +67,30 @@ export async function GET(
 
       if (VERBOSE) logDebug('WatchRoute.watcherReady')
 
+      // helper that performs a full teardown exactly once
+      cleanup = () => {
+        if (!watcherReleased) {
+          watcherReleased = true
+          if (VERBOSE) logDebug('WatchRoute.cleanup')
+          void WatchDirPool.release(id, dir, onEvent)
+        }
+        if (ping) clearInterval(ping)
+        controller.close()
+      }
+
       // periodic comment ping to keep intermediary proxies / clients happy
       ping = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(`: ping\n\n`))
         } catch (err) {
-          // controller was closed—stop pings to avoid uncaught exceptions
           if (VERBOSE) logDebug('WatchRoute.pingError', err)
-          if (ping) clearInterval(ping)
+          cleanup()
         }
-      }, 15_000)
+      }, 5_000)
 
       request.signal.addEventListener('abort', () => {
-        if (!watcherReleased) {
-          watcherReleased = true
-          if (VERBOSE) logDebug('WatchRoute.abort')
-          void WatchDirPool.release(id, dir, onEvent)
-        }
-        if (ping) clearInterval(ping)
-        controller.close()
+        if (VERBOSE) logDebug('WatchRoute.abort')
+        cleanup()
       })
     },
     /**
@@ -95,12 +102,8 @@ export async function GET(
      * gRPC stream after `GRACE_MS` once it sees the ref-count hasn't changed.
      */
     cancel() {
-      if (!watcherReleased) {
-        watcherReleased = true
-        if (VERBOSE) logDebug('WatchRoute.cancelStream')
-        void WatchDirPool.release(id, dir, () => {})
-      }
-      if (ping) clearInterval(ping)
+      if (VERBOSE) logDebug('WatchRoute.cancelStream')
+      cleanup?.()
     },
   })
 

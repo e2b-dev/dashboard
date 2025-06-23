@@ -7,7 +7,7 @@ import { logDebug } from './logger'
 
 // Grace period in milliseconds before cleaning up unused watch handles –
 // 30 s gives background tabs enough time to reconnect after throttling.
-const GRACE_MS = 30_000
+const GRACE_MS = 10_000
 
 interface Entry {
   // Promise that resolves to the watch handle once created
