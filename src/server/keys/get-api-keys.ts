@@ -29,7 +29,7 @@ export const getTeamApiKeys = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      logError(ERROR_CODES.INFRA, '/api-keys', res.error, res.data)
+      logError(ERROR_CODES.INFRA, '/api-keys', status, res.error, res.data)
 
       return handleDefaultInfraError(status)
     }
