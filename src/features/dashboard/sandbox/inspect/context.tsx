@@ -1,23 +1,23 @@
 'use client'
 
-import React, {
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { AUTH_URLS } from '@/configs/urls'
+import { supabase } from '@/lib/clients/supabase/client'
+import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
+import Sandbox, { EntryInfo, FileType } from 'e2b'
+import { useRouter } from 'next/navigation'
+import {
   createContext,
-  useContext,
-  useRef,
   ReactNode,
+  useContext,
   useLayoutEffect,
   useMemo,
+  useRef,
 } from 'react'
+import { useSandboxContext } from '../context'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
-import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
-import { useSandboxContext } from '../context'
-import Sandbox, { EntryInfo, FileType } from 'e2b'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { supabase } from '@/lib/clients/supabase/client'
-import { useRouter } from 'next/navigation'
-import { AUTH_URLS } from '@/configs/urls'
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
