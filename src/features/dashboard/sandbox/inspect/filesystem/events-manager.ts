@@ -16,6 +16,19 @@ export class FilesystemEventManager {
   private store: FilesystemStore
   private sandbox: Sandbox
 
+  // ms delay used when batching rapid load requests
+  private static readonly LOAD_DEBOUNCE_MS = 300
+
+  private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  private pendingLoads: Map<
+    string,
+    {
+      promise: Promise<void>
+      resolve: () => void
+      reject: (err: unknown) => void
+    }
+  > = new Map()
+
   constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string) {
     this.store = store
     this.sandbox = sandbox
@@ -32,7 +45,7 @@ export class FilesystemEventManager {
       this.watchHandle = await this.sandbox.files.watchDir(
         this.rootPath,
         (event) => this.handleFilesystemEvent(event),
-        { recursive: true }
+        { recursive: true, timeout: 0, timeoutMs: 0 }
       )
     } catch (error) {
       console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
@@ -120,6 +133,49 @@ export class FilesystemEventManager {
   }
 
   async loadDirectory(path: string): Promise<void> {
+    console.log('LOAD_DIRECTORY', path)
+
+    const normalizedPath = normalizePath(path)
+
+    // if there is already a scheduled load for this path, reset the timer and return its promise
+    const existingTimer = this.loadTimers.get(normalizedPath)
+    if (existingTimer) {
+      clearTimeout(existingTimer)
+    }
+
+    let pending = this.pendingLoads.get(normalizedPath)
+    if (!pending) {
+      let res!: () => void
+      let rej!: (err: unknown) => void
+      const promise = new Promise<void>((resolve, reject) => {
+        res = resolve
+        rej = reject
+      })
+      pending = { promise, resolve: res, reject: rej }
+      this.pendingLoads.set(normalizedPath, pending)
+    }
+
+    const timer = setTimeout(async () => {
+      // once the timer fires, perform the actual load then resolve/reject all waiters
+      this.loadTimers.delete(normalizedPath)
+      try {
+        await this.loadDirectoryImmediate(normalizedPath)
+        pending!.resolve()
+      } catch (err) {
+        pending!.reject(err)
+      } finally {
+        this.pendingLoads.delete(normalizedPath)
+      }
+    }, FilesystemEventManager.LOAD_DEBOUNCE_MS)
+
+    this.loadTimers.set(normalizedPath, timer)
+
+    return pending.promise
+  }
+
+  private async loadDirectoryImmediate(path: string): Promise<void> {
+    console.log('LOAD_DIRECTORY_IMMEDIATE', path)
+
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
     const node = state.getNode(normalizedPath)
@@ -160,6 +216,15 @@ export class FilesystemEventManager {
       })
 
       state.addNodes(normalizedPath, nodes)
+
+      const newChildrenSet = new Set(nodes.map((n) => normalizePath(n.path)))
+
+      for (const childPath of [...node.children]) {
+        if (!newChildrenSet.has(childPath)) {
+          state.removeNode(childPath)
+        }
+      }
+
       state.updateNode(normalizedPath, { isLoaded: true })
     } catch (error) {
       const errorMessage =
@@ -175,15 +240,8 @@ export class FilesystemEventManager {
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
 
+    // mark directory as stale but keep existing children until fresh data arrives
     state.updateNode(normalizedPath, { isLoaded: false })
-
-    const node = state.getNode(normalizedPath)
-    if (node && node.type === FileType.DIR) {
-      const childrenPaths = [...node.children]
-      for (const childPath of childrenPaths) {
-        state.removeNode(childPath)
-      }
-    }
 
     await this.loadDirectory(normalizedPath)
   }
