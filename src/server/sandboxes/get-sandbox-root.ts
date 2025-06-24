@@ -37,8 +37,8 @@ export const getSandboxRoot = authActionClient
         type: e.type,
       }))
     } catch (err) {
-      logError(ERROR_CODES.INFRA, 'files.list', 500, err)
-      return returnServerError('Failed to list sandbox directory.')
+      logError(ERROR_CODES.E2B_SDK, 'files.list', err)
+      return returnServerError('Failed to list root directory.')
     }
 
     return {
