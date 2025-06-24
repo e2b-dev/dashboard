@@ -26,6 +26,7 @@ export const getSandboxRoot = authActionClient
 
     try {
       const sandbox = await Sandbox.connect(sandboxId, {
+        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         headers,
       })
       const raw = await sandbox.files.list(rootPath)

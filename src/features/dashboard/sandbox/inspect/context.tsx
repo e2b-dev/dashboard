@@ -163,6 +163,7 @@ export function SandboxInspectProvider({
       }
 
       const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
+        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         headers: {
           ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
         },
