@@ -45,7 +45,7 @@ export class FilesystemEventManager {
       this.watchHandle = await this.sandbox.files.watchDir(
         this.rootPath,
         (event) => this.handleFilesystemEvent(event),
-        { recursive: true, timeout: 0, timeoutMs: 0 }
+        { recursive: true, timeoutMs: 0 }
       )
     } catch (error) {
       console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
