@@ -44,8 +44,8 @@ export const getTeamTemplates = authActionClient
     })
 
     if (res.error) {
-      const status = res.error?.code ?? 500
-      logError(ERROR_CODES.INFRA, '/templates', res.error, res.data)
+      const status = res.response.status
+      logError(ERROR_CODES.INFRA, '/templates', status, res.error, res.data)
 
       return handleDefaultInfraError(status)
     }

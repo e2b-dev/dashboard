@@ -31,10 +31,11 @@ export const deleteTemplateAction = authActionClient
     })
 
     if (res.error) {
-      const status = res.error?.code ?? 500
+      const status = res.response.status
       logError(
         ERROR_CODES.INFRA,
         '/templates/{templateID}',
+        status,
         res.error,
         res.data
       )
@@ -91,8 +92,14 @@ export const updateTemplateAction = authActionClient
     })
 
     if (res.error) {
-      const status = res.error?.code ?? 500
-      logError(ERROR_CODES.INFRA, '/templates/{templateID}', res.error)
+      const status = res.response.status
+      logError(
+        ERROR_CODES.INFRA,
+        '/templates/{templateID}',
+        status,
+        res.error,
+        res.data
+      )
 
       if (status === 404) {
         return returnServerError('Template not found')
