@@ -84,18 +84,6 @@ export const updateUserAction = authActionClient
     }
   })
 
-export const deleteAccountAction = authActionClient
-  .metadata({ actionName: 'deleteAccount' })
-  .action(async ({ ctx }) => {
-    const { user } = ctx
-
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(user.id)
-
-    if (error) {
-      throw new Error(error.message)
-    }
-  })
-
 export const getUserAccessTokenAction = authActionClient
   .metadata({ actionName: 'getUserAccessToken' })
   .action(async ({ ctx }) => {

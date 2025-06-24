@@ -2,7 +2,6 @@ import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { NameSettings } from '@/features/dashboard/account/name-settings'
 import { EmailSettings } from '@/features/dashboard/account/email-settings'
 import { PasswordSettings } from '@/features/dashboard/account/password-settings'
-import { DangerZone } from '@/features/dashboard/account/danger-zone'
 import { Suspense } from 'react'
 import { AccessTokenSettings } from '@/features/dashboard/account/access-token-settings'
 
@@ -27,10 +26,6 @@ export default async function AccountPage() {
 
       <Suspense fallback={null}>
         <PasswordSettings />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <DangerZone />
       </Suspense>
     </DashboardPageLayout>
   )
