@@ -34,7 +34,7 @@ export class FilesystemEventManager {
     this.sandbox = sandbox
     this.rootPath = normalizePath(rootPath)
 
-    // Immediately start a single recursive watcher at the root
+    // immediately start a single recursive watcher at the root
     void this.startRootWatcher()
   }
 
@@ -133,8 +133,6 @@ export class FilesystemEventManager {
   }
 
   async loadDirectory(path: string): Promise<void> {
-    console.log('LOAD_DIRECTORY', path)
-
     const normalizedPath = normalizePath(path)
 
     // if there is already a scheduled load for this path, reset the timer and return its promise
@@ -174,8 +172,6 @@ export class FilesystemEventManager {
   }
 
   private async loadDirectoryImmediate(path: string): Promise<void> {
-    console.log('LOAD_DIRECTORY_IMMEDIATE', path)
-
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
     const node = state.getNode(normalizedPath)
