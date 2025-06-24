@@ -23,6 +23,7 @@ export interface FilesystemState {
   selectedPath?: string
   loadingPaths: Set<string>
   errorPaths: Map<string, string>
+  sortingDirection: 'asc' | 'desc'
 }
 
 // mutations/actions that modify state
@@ -56,6 +57,24 @@ export type FilesystemStoreData = FilesystemStatics &
 const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
   new Map()
 
+function compareFilesystemNodes(
+  nodeA: FilesystemNode | undefined,
+  nodeB: FilesystemNode | undefined,
+  direction: 'asc' | 'desc' = 'asc'
+): number {
+  if (!nodeA || !nodeB) return 0
+
+  if (nodeA.type === FileType.DIR && nodeB.type === FileType.FILE) return -1
+  if (nodeA.type === FileType.FILE && nodeB.type === FileType.DIR) return 1
+
+  const cmp = nodeA.name.localeCompare(nodeB.name, undefined, {
+    sensitivity: 'base',
+    numeric: true,
+  })
+
+  return direction === 'asc' ? cmp : -cmp
+}
+
 export const createFilesystemStore = (rootPath: string) =>
   create<FilesystemStoreData>()(
     immer((set, get) => ({
@@ -64,6 +83,7 @@ export const createFilesystemStore = (rootPath: string) =>
       nodes: new Map<string, FilesystemNode>(),
       loadingPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
+      sortingDirection: 'asc' as 'asc' | 'desc',
 
       addNodes: (parentPath: string, nodes: FilesystemNode[]) => {
         const normalizedParentPath = normalizePath(parentPath)
@@ -111,21 +131,13 @@ export const createFilesystemStore = (rootPath: string) =>
             }
           }
 
-          parentNode.children.sort((a: string, b: string) => {
-            const nodeA = state.nodes.get(a)
-            const nodeB = state.nodes.get(b)
-
-            if (!nodeA || !nodeB) return 0
-
-            // directories first
-            if (nodeA.type === FileType.DIR && nodeB.type === FileType.FILE)
-              return -1
-            if (nodeA.type === FileType.FILE && nodeB.type === FileType.DIR)
-              return 1
-
-            // then alphabetically
-            return nodeA.name.localeCompare(nodeB.name)
-          })
+          parentNode.children.sort((a: string, b: string) =>
+            compareFilesystemNodes(
+              state.nodes.get(a),
+              state.nodes.get(b),
+              state.sortingDirection
+            )
+          )
         })
       },
 
