@@ -5,7 +5,7 @@ export const serverSchema = z.object({
   INFRA_API_URL: z.string().url(),
   KV_REST_API_TOKEN: z.string().min(1),
   KV_REST_API_URL: z.string().url(),
-  E2B_DOMAIN: z.string(),
+  NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
   BILLING_API_URL: z.string().url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
