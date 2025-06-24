@@ -47,7 +47,6 @@ export function SandboxInspectProvider({
   const storeRef = useRef<FilesystemStore | null>(null)
   const eventManagerRef = useRef<FilesystemEventManager | null>(null)
   const operationsRef = useRef<FilesystemOperations | null>(null)
-  const [sandbox, setSandbox] = useState<Sandbox | null>(null)
 
   const router = useRouter()
 
@@ -174,8 +173,6 @@ export function SandboxInspectProvider({
         secure: true,
       })
 
-      setSandbox(sandbox)
-
       eventManagerRef.current = new FilesystemEventManager(
         storeRef.current,
         sandbox,
@@ -190,7 +187,7 @@ export function SandboxInspectProvider({
     }
   }, [sandboxId, teamId, rootPath, router])
 
-  if (!storeRef.current || !operationsRef.current || !sandbox) {
+  if (!storeRef.current || !operationsRef.current) {
     return null // should never happen, but satisfies type-checker
   }
 
