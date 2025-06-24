@@ -8,8 +8,8 @@ import {
   getParentPath,
   isChildPath,
 } from '@/lib/utils/filesystem'
-import { FsEntry } from '@/types/filesystem'
 import { FilesystemNode } from './types'
+import { FileType } from 'e2b'
 
 enableMapSet()
 
@@ -79,14 +79,14 @@ export const createFilesystemStore = (rootPath: string) =>
             parentNode = {
               name: parentName,
               path: normalizedParentPath,
-              type: 'dir',
+              type: FileType.DIR,
               isExpanded: false,
               children: [],
             }
             state.nodes.set(normalizedParentPath, parentNode)
           }
 
-          if (parentNode.type === 'file') {
+          if (parentNode.type === FileType.FILE) {
             console.error('Parent node is a file', parentNode)
             return
           }
@@ -118,8 +118,10 @@ export const createFilesystemStore = (rootPath: string) =>
             if (!nodeA || !nodeB) return 0
 
             // directories first
-            if (nodeA.type === 'dir' && nodeB.type === 'file') return -1
-            if (nodeA.type === 'file' && nodeB.type === 'dir') return 1
+            if (nodeA.type === FileType.DIR && nodeB.type === FileType.FILE)
+              return -1
+            if (nodeA.type === FileType.FILE && nodeB.type === FileType.DIR)
+              return 1
 
             // then alphabetically
             return nodeA.name.localeCompare(nodeB.name)
@@ -136,7 +138,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const parentPath = getParentPath(normalizedPath)
           const parentNode = state.nodes.get(parentPath)
-          if (parentNode && parentNode.type === 'dir') {
+          if (parentNode && parentNode.type === FileType.DIR) {
             parentNode.children = parentNode.children.filter(
               (childPath: string) => childPath !== normalizedPath
             )
@@ -180,7 +182,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           if (!node) return
 
-          if (node?.type === 'file') {
+          if (node?.type === FileType.FILE) {
             console.error('Cannot expand file', node)
             return
           }
@@ -222,7 +224,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const node = state.nodes.get(normalizedPath)
 
-          if (!node || node.type === 'file') return
+          if (!node || node.type === FileType.FILE) return
 
           node.isLoading = loading
         })
@@ -240,7 +242,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const node = state.nodes.get(normalizedPath)
 
-          if (!node || node.type === 'file') return
+          if (!node || node.type === FileType.FILE) return
 
           node.error = error
         })
@@ -260,7 +262,7 @@ export const createFilesystemStore = (rootPath: string) =>
         const state = get()
         const node = state.nodes.get(normalizedPath)
 
-        if (!node || node.type === 'file') return []
+        if (!node || node.type === FileType.FILE) return []
 
         const cached = childrenCache.get(normalizedPath)
         if (cached && cached.ref === node.children) {
@@ -284,7 +286,7 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
         const node = get().nodes.get(normalizedPath)
 
-        if (!node || node.type === 'file') return false
+        if (!node || node.type === FileType.FILE) return false
 
         return !!node.isExpanded
       },
@@ -302,7 +304,7 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
         const node = get().nodes.get(normalizedPath)
 
-        if (!node || node.type === 'file') return false
+        if (!node || node.type === FileType.FILE) return false
 
         return node.children.length > 0
       },
