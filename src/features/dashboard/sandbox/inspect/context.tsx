@@ -7,13 +7,18 @@ import React, {
   ReactNode,
   useLayoutEffect,
   useMemo,
+  useState,
 } from 'react'
-import { FsEntry } from '@/types/filesystem'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
 import { FilesystemEventManager } from './filesystem/events-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useSandboxContext } from '../context'
+import Sandbox, { EntryInfo, FileType } from 'e2b'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { supabase } from '@/lib/clients/supabase/client'
+import { useRouter } from 'next/navigation'
+import { AUTH_URLS } from '@/configs/urls'
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
@@ -27,26 +32,24 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 
 interface SandboxInspectProviderProps {
   children: ReactNode
-  teamId: string
   rootPath: string
-  seedEntries?: FsEntry[]
+  teamId: string
+  seedEntries?: EntryInfo[]
 }
 
 export function SandboxInspectProvider({
   children,
-  teamId,
   rootPath,
   seedEntries,
+  teamId,
 }: SandboxInspectProviderProps) {
   const { sandboxInfo } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)
   const eventManagerRef = useRef<FilesystemEventManager | null>(null)
   const operationsRef = useRef<FilesystemOperations | null>(null)
+  const [sandbox, setSandbox] = useState<Sandbox | null>(null)
 
-  const sandboxId = useMemo(
-    () => sandboxInfo.sandboxID + '-' + sandboxInfo.clientID,
-    [sandboxInfo.sandboxID, sandboxInfo.clientID]
-  )
+  const router = useRouter()
 
   /*
    * ---------- synchronous store initialisation ----------
@@ -78,7 +81,7 @@ export function SandboxInspectProvider({
         {
           name: rootName,
           path: normalizedRoot,
-          type: 'dir',
+          type: FileType.DIR,
           isExpanded: true,
           isLoaded: true,
           children: [],
@@ -92,10 +95,10 @@ export function SandboxInspectProvider({
             path: normalizePath(entry.path),
           }
 
-          if (entry.type === 'dir') {
+          if (entry.type === FileType.DIR) {
             return {
               ...base,
-              type: 'dir' as const,
+              type: FileType.DIR,
               isExpanded: false,
               isLoaded: false,
               children: [],
@@ -104,7 +107,7 @@ export function SandboxInspectProvider({
 
           return {
             ...base,
-            type: 'file' as const,
+            type: FileType.FILE,
           }
         })
 
@@ -124,7 +127,7 @@ export function SandboxInspectProvider({
           const state = store.getState()
           const node = state.getNode(normalizedPath)
 
-          if (!node || node.type !== 'dir') return
+          if (!node || node.type !== FileType.DIR) return
 
           const newExpandedState = !node.isExpanded
           state.setExpanded(normalizedPath, newExpandedState)
@@ -144,25 +147,44 @@ export function SandboxInspectProvider({
    * ---------- watcher (side-effect) initialisation / cleanup ----------
    */
   useLayoutEffect(() => {
-    if (!storeRef.current) return
+    const connectSandbox = async () => {
+      if (!storeRef.current) return
 
-    // (re)create the event-manager when sandbox / team / root changes
-    if (eventManagerRef.current) {
-      eventManagerRef.current.stopWatching()
+      // (re)create the event-manager when sandbox / team / root changes
+      if (eventManagerRef.current) {
+        eventManagerRef.current.stopWatching()
+      }
+
+      const { data } = await supabase.auth.getSession()
+
+      if (!data || !data.session) {
+        router.replace(AUTH_URLS.SIGN_IN)
+        return
+      }
+
+      const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
+        },
+      })
+
+      setSandbox(sandbox)
+
+      eventManagerRef.current = new FilesystemEventManager(
+        storeRef.current,
+        sandbox,
+        rootPath
+      )
     }
-    eventManagerRef.current = new FilesystemEventManager(
-      storeRef.current,
-      sandboxId,
-      teamId,
-      rootPath
-    )
+
+    connectSandbox()
 
     return () => {
       eventManagerRef.current?.stopWatching()
     }
-  }, [sandboxId, teamId, rootPath])
+  }, [sandboxInfo.sandboxID, teamId, rootPath, router])
 
-  if (!storeRef.current || !operationsRef.current) {
+  if (!storeRef.current || !operationsRef.current || !sandbox) {
     return null // should never happen, but satisfies type-checker
   }
 
