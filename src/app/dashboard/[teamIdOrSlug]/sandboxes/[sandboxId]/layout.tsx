@@ -3,6 +3,7 @@ import SandboxDetailsHeader from '@/features/dashboard/sandbox/header'
 import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
+import { notFound } from 'next/navigation'
 
 export const fetchCache = 'default-cache'
 
@@ -21,7 +22,7 @@ export default async function SandboxLayout({
   const res = await getSandboxDetails({ teamId, sandboxId })
 
   if (!res?.data || res?.serverError) {
-    throw new Error(res?.serverError || 'Unable to get sandbox details')
+    throw notFound()
   }
 
   return (
