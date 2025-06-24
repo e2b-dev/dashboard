@@ -1,4 +1,24 @@
 flowchart TD
+
+%% --------------------------
+%% Server-side Components
+%% --------------------------
+subgraph SERVER_FETCH["Server-side Fetch"]
+    direction TB
+    LAYOUT["layout.tsx (server)"]
+    PAGE["page.tsx (server)"]
+    DETAILS_ACTION["getSandboxDetails (action)"]
+    ROOT_ACTION["getSandboxRoot (action)"]
+
+    LAYOUT -- "calls" --> DETAILS_ACTION
+    PAGE   -- "calls" --> ROOT_ACTION
+    DETAILS_ACTION -- "returns sandboxInfo" --> SANDBOX_PROVIDER
+    ROOT_ACTION    -- "returns root entries" --> INSPECT_PROVIDER
+end
+
+%% --------------------------
+%% Client Contexts
+%% --------------------------
 subgraph SANDBOX_CONTEXT["Sandbox Context"]
     direction TB
     SANDBOX_PROVIDER["SandboxProvider"]
@@ -7,38 +27,28 @@ subgraph SANDBOX_CONTEXT["Sandbox Context"]
     SANDBOX_PROVIDER -- "tracks lifecycle" --> SANDBOX_STATE
 end
 
-%% ---------- New Server-side handling ----------
-subgraph SERVER_SIDE["Server Runtime (per Vercel instance)"]
-    direction TB
-    SANDBOX_POOL["SandboxPool"]
-    WATCH_POOL["WatchDirPool"]
-    LIST_ROUTE["/list Route"]
-    WATCH_ROUTE["/watch Route (SSE)"]
-
-    SANDBOX_POOL -- "1 per sandbox" --> WATCH_POOL
-    LIST_ROUTE -- "files.list()" --> SANDBOX_POOL
-    WATCH_ROUTE -- "watchDir stream" --> WATCH_POOL
-end
-
 subgraph INSPECT_CONTEXT["Inspect Context"]
     direction TB
     INSPECT_PROVIDER["SandboxInspectProvider"]
+    SANDBOX_INSTANCE["Sandbox Instance (connected)"]
     FILESYSTEM_STORE["FilesystemStore"]
     EVENT_MANAGER["FilesystemEventManager (root recursive watcher)"]
     OPERATIONS["Operations Object"]
 
+    INSPECT_PROVIDER -- "connects" --> SANDBOX_INSTANCE
     INSPECT_PROVIDER -- "creates singleton" --> FILESYSTEM_STORE
-    INSPECT_PROVIDER -- "creates with store" --> EVENT_MANAGER
+    INSPECT_PROVIDER -- "creates with store + sandbox" --> EVENT_MANAGER
     INSPECT_PROVIDER -- "exposes interface" --> OPERATIONS
+
+    SANDBOX_INSTANCE -- "used by" --> EVENT_MANAGER
     EVENT_MANAGER -- "writes FS data" --> FILESYSTEM_STORE
-    OPERATIONS -- "delegates to" --> EVENT_MANAGER
-    OPERATIONS -- "writes UI flags" --> FILESYSTEM_STORE
+    OPERATIONS    -- "delegates to" --> EVENT_MANAGER
+    OPERATIONS    -- "writes UI flags" --> FILESYSTEM_STORE
 end
 
-%% Connections between client and server
-EVENT_MANAGER -- "GET /list" --> LIST_ROUTE
-EVENT_MANAGER -- "SSE /watch" --> WATCH_ROUTE
-
+%% --------------------------
+%% Hook Layer
+%% --------------------------
 subgraph HOOKS["Hook Layer"]
     direction TB
     FILESYSTEM_HOOKS["Filesystem Hooks"]
@@ -46,58 +56,67 @@ subgraph HOOKS["Hook Layer"]
     NODE_HOOKS["Node Hooks"]
 
     FILESYSTEM_HOOKS -- "subscribe to store slices" --> FILESYSTEM_STORE
-    DIRECTORY_HOOKS -- "subscribe to store slices" --> FILESYSTEM_STORE
-    NODE_HOOKS -- "subscribe to store slices" --> FILESYSTEM_STORE
+    DIRECTORY_HOOKS  -- "subscribe to store slices" --> FILESYSTEM_STORE
+    NODE_HOOKS       -- "subscribe to store slices" --> FILESYSTEM_STORE
 
     FILESYSTEM_HOOKS -- "return operations" --> OPERATIONS
-    DIRECTORY_HOOKS -- "return operations" --> OPERATIONS
-    NODE_HOOKS -- "return operations" --> OPERATIONS
+    DIRECTORY_HOOKS  -- "return operations" --> OPERATIONS
+    NODE_HOOKS       -- "return operations" --> OPERATIONS
 end
 
+%% --------------------------
+%% UI Components
+%% --------------------------
 subgraph UI_COMPONENTS["UI Components"]
     direction LR
     FILE_TREE["FileTree"]
     CODE_EDITOR["Code Editor"]
     OTHER_UI["Other Components"]
 
-    FILE_TREE -- "trigger user actions" --> USER_ACTIONS["User Actions"]
+    FILE_TREE   -- "trigger user actions" --> USER_ACTIONS["User Actions"]
     CODE_EDITOR -- "trigger user actions" --> USER_ACTIONS
-    OTHER_UI -- "trigger user actions" --> USER_ACTIONS
+    OTHER_UI    -- "trigger user actions" --> USER_ACTIONS
 end
 
-subgraph E2B_REMOTE["E2B Cloud"]
+%% --------------------------
+%% Remote (E2B)
+%% --------------------------
+subgraph E2B_REMOTE["E2B Remote"]
     REMOTE_SANDBOX["Remote Sandbox"]
+    FS_EVENTS["Filesystem Events"]
+
+    REMOTE_SANDBOX -- "emits real-time" --> FS_EVENTS
 end
 
-%% External connectivity
-REMOTE_SANDBOX -- "SDK REST + unary gRPC" --> SANDBOX_POOL
-REMOTE_SANDBOX -- "watchDir server-stream" --> WATCH_POOL
-
-%% Client-Server boundary
-SERVER_SIDE -- "HTTP (JSON) / SSE" --> EVENT_MANAGER
-
+%% --------------------------
 %% Data Flow: User Actions
-USER_ACTIONS -- "call hooks" --> OPERATIONS
-OPERATIONS -- "async list / watch" --> EVENT_MANAGER
+%% --------------------------
+USER_ACTIONS -- "call hooks that return" --> OPERATIONS
+OPERATIONS    -- "async calls to" --> EVENT_MANAGER
+EVENT_MANAGER -- "API calls to" --> REMOTE_SANDBOX
 
-%% Flow inside client
-FILESYSTEM_STORE -- "triggers re-renders" --> HOOKS
-HOOKS -- "provide updated state" --> UI_COMPONENTS
+%% --------------------------
+%% Data Flow: Remote Events
+%% --------------------------
+FS_EVENTS        -- "handled by" --> EVENT_MANAGER
+FILESYSTEM_STORE -- "triggers re-renders via" --> HOOKS
+HOOKS            -- "provide updated state to" --> UI_COMPONENTS
 
-%% Hook Integration
-HOOKS -- "consumed by" --> UI_COMPONENTS
-
+%% --------------------------
 %% Styling
+%% --------------------------
 classDef contextClass fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
-classDef storeClass fill:#E8F5E8,stroke:#388E3C,stroke-width:2px
+classDef storeClass   fill:#E8F5E8,stroke:#388E3C,stroke-width:2px
 classDef managerClass fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
-classDef hooksClass fill:#FCE4EC,stroke:#C2185B,stroke-width:2px
-classDef uiClass fill:#F1F8E9,stroke:#689F38,stroke-width:2px
-classDef remoteClass fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+classDef hooksClass   fill:#FCE4EC,stroke:#C2185B,stroke-width:2px
+classDef uiClass      fill:#F1F8E9,stroke:#689F38,stroke-width:2px
+classDef remoteClass  fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+classDef serverClass  fill:#ECEFF1,stroke:#455A64,stroke-width:2px
 
 class SANDBOX_PROVIDER,INSPECT_PROVIDER contextClass
 class FILESYSTEM_STORE storeClass
 class EVENT_MANAGER,OPERATIONS managerClass
 class FILESYSTEM_HOOKS,DIRECTORY_HOOKS,NODE_HOOKS hooksClass
 class FILE_TREE,CODE_EDITOR,OTHER_UI,USER_ACTIONS uiClass
-class REMOTE_SANDBOX remoteClass
+class REMOTE_SANDBOX,FS_EVENTS remoteClass
+class LAYOUT,PAGE,DETAILS_ACTION,ROOT_ACTION serverClass
