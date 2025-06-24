@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils'
 import { Loader } from '@/ui/loader'
 import { DataTableRow } from '@/ui/data-table'
 import { motion } from 'motion/react'
+import { FileType } from 'e2b'
 
 interface SandboxInspectDirProps {
   dir: FilesystemNode & {
-    type: 'dir'
+    type: FileType.DIR
   }
 }
 
