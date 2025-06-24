@@ -8,6 +8,7 @@ export const infra = createClient<InfraPaths>({
       headers,
       body,
       method,
+      duplex: !!body ? 'half' : undefined,
       ...options,
     })
   },
