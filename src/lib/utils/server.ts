@@ -63,7 +63,13 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   })
 
   if (res.error) {
-    logError(ERROR_CODES.INFRA, '/access-tokens', res.error, res.data)
+    logError(
+      ERROR_CODES.INFRA,
+      '/access-tokens',
+      res.response.status,
+      res.error,
+      res.data
+    )
 
     return returnServerError(`Failed to generate e2b user access token`)
   }
