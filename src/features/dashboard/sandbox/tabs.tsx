@@ -17,7 +17,7 @@ export default function SandboxDetailsTabs({
   const tab = pathname.split('/').pop() || tabs[0]
 
   return (
-    <Tabs defaultValue={tab} value={tab} className="w-full">
+    <Tabs defaultValue={tab} value={tab} className="min-h-0 w-full flex-1">
       <TabsList className="w-full justify-start pl-8">
         {tabs.map((tab) => (
           <TabsTrigger key={tab} value={tab} className="w-fit flex-none">
@@ -26,7 +26,11 @@ export default function SandboxDetailsTabs({
         ))}
       </TabsList>
       {tabs.map((tab) => (
-        <TabsContent key={tab} value={tab}>
+        <TabsContent
+          key={tab}
+          value={tab}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           {children}
         </TabsContent>
       ))}

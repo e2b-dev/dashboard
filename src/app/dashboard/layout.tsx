@@ -58,8 +58,8 @@ export default async function DashboardLayout({
       user={session!.user}
     >
       <SidebarProvider defaultOpen={defaultOpen}>
-        <div className="fixed inset-0 flex max-h-full w-full flex-col overflow-hidden">
-          <div className="flex h-full max-h-full w-full flex-1 overflow-hidden">
+        <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+          <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />
             <SidebarInset>{children}</SidebarInset>
           </div>
