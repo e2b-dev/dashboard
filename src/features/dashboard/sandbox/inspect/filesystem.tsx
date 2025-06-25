@@ -8,10 +8,12 @@ export default function SandboxInspectFilesystem() {
   const children = useRootChildren()
 
   return (
-    <ScrollArea className="flex h-full min-h-0 flex-1 flex-col p-4 pt-0 md:px-10 md:pb-8">
-      {children.map((child) => (
-        <SandboxInspectNode key={child.path} path={child.path} />
-      ))}
-    </ScrollArea>
+    <div className="h-full min-h-0 flex-1 p-4 pt-0 md:px-10 md:pb-10">
+      <ScrollArea className="border-border/80 h-full rounded-sm border">
+        {children.map((child) => (
+          <SandboxInspectNode key={child.path} path={child.path} />
+        ))}
+      </ScrollArea>
+    </div>
   )
 }

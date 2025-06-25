@@ -1,11 +1,11 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useCallback, useTransition } from 'react'
 import { PollingButton } from '@/ui/polling-button'
 import type { PollingInterval } from '@/types/dashboard.types'
 import { useState } from 'react'
 import { revalidateSandboxDetailsLayout } from '@/server/sandboxes/sandbox-actions'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
 interface RefreshControlProps {
   className?: string
@@ -15,13 +15,17 @@ export default function RefreshControl({ className }: RefreshControlProps) {
   const [pollingInterval, setPollingInterval] = useState<PollingInterval>(0)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { teamIdOrSlug, sandboxId } = useParams()
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     startTransition(async () => {
-      await revalidateSandboxDetailsLayout()
+      await revalidateSandboxDetailsLayout(
+        teamIdOrSlug as string,
+        sandboxId as string
+      )
       router.refresh()
     })
-  }
+  }, [router, teamIdOrSlug, sandboxId])
 
   return (
     <PollingButton

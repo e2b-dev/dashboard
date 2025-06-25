@@ -19,6 +19,7 @@ interface ErrorIndicatorProps {
   description?: string
   message?: string
   className?: string
+  children?: React.ReactNode
 }
 
 export function ErrorIndicator({
@@ -26,6 +27,7 @@ export function ErrorIndicator({
   description = 'Something went wrong!',
   message,
   className,
+  children,
 }: ErrorIndicatorProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -41,6 +43,11 @@ export function ErrorIndicator({
       {message && (
         <CardContent className="text-fg-500 mx-auto max-w-md pb-0 text-center">
           <p>{message}</p>
+        </CardContent>
+      )}
+      {children && (
+        <CardContent className="mx-auto max-w-md pb-0 text-center">
+          {children}
         </CardContent>
       )}
       <CardFooter className="px-auto flex flex-col gap-4 py-4">
