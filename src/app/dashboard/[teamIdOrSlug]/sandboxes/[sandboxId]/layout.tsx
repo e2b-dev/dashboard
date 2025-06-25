@@ -1,5 +1,5 @@
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
-import SandboxDetailsHeader from '@/features/dashboard/sandbox/header'
+import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
