@@ -169,7 +169,7 @@
   --animate-grid: grid 30s linear infinite;
   --animate-wave: wave 2s linear linear infinite;
   --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-shiny-text: shiny-text 0.3s ease-in-out infinite;
+  --animate-shiny-text: shiny-text 0.5s linear infinite;
 }
 
 @utility container {

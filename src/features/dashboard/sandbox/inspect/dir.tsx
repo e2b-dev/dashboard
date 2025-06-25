@@ -32,8 +32,13 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         role="button"
         tabIndex={0}
         onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            toggle()
+          }
+        }}
         className={cn(
-          'group hover:bg-bg-200 cursor-pointer gap-1 truncate py-1 transition-none select-none'
+          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 cursor-pointer gap-1 truncate py-0.5 transition-none select-none focus:outline-none'
         )}
         data-slot="inspect-dir"
       >
@@ -49,19 +54,24 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
                 : 'var(--color-fg-500)',
           }}
         >
-          <ChevronRight className="size-4" />
+          <ChevronRight className="ml-1 size-4" />
         </motion.span>
         <span
-          style={{ '--shiny-width': '60px' } as CSSProperties}
+          style={
+            {
+              '--shiny-width': '50px',
+              // Shine Gradient
+              backgroundImage:
+                isLoading &&
+                'linear-gradient(to right, transparent, var(--fg) 40%, var(--fg) 60%, transparent)',
+            } as CSSProperties
+          }
           className={cn(
             'text-fg-300 truncate text-left font-sans transition-colors',
             {
               'text-fg': isExpanded && !isLoading,
               // Shine effect
-              'text-fg-500 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:calc(-100%_-_var(--shiny-width))_0] bg-no-repeat':
-                isLoading,
-              // Shine gradient
-              'via-fg bg-gradient-to-r from-transparent via-50% to-transparent':
+              'text-fg/60 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:calc(-100%_-_var(--shiny-width))_0] bg-no-repeat':
                 isLoading,
             }
           )}
