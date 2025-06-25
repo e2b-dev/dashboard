@@ -7,6 +7,7 @@ import RanFor from './ran-for'
 import Status from './status'
 import Resource from './resource'
 import CreatedAt from './created_at'
+import { useMemo } from 'react'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
@@ -17,6 +18,11 @@ export default function SandboxDetailsHeader({
   teamIdOrSlug,
   sandboxInfo,
 }: SandboxDetailsHeaderProps) {
+  const sandboxId = useMemo(
+    () => sandboxInfo.sandboxID + '-' + sandboxInfo.clientID,
+    [sandboxInfo.sandboxID, sandboxInfo.clientID]
+  )
+
   const headerItems = {
     state: {
       label: 'status',
@@ -51,7 +57,7 @@ export default function SandboxDetailsHeader({
   }
 
   return (
-    <header className="flex w-full flex-col gap-16 p-8">
+    <header className="flex w-full flex-col gap-10 p-8">
       <div className="flex flex-col gap-1">
         <Link
           href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}
@@ -63,7 +69,7 @@ export default function SandboxDetailsHeader({
           Sandboxes
         </Link>
         <h1 className="text-fg-500 text-2xl font-bold">
-          <span className="text-fg">{sandboxInfo.sandboxID}</span>'S DETAILS
+          <span className="text-fg">{sandboxId}</span>'S DETAILS
         </h1>
       </div>
       <div className="flex flex-wrap items-center gap-7">
