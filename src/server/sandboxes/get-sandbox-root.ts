@@ -1,4 +1,3 @@
-// src/server/sandboxes/get-sandbox-root.ts
 import { z } from 'zod'
 import { authActionClient } from '@/lib/clients/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
@@ -22,26 +21,17 @@ export const getSandboxRoot = authActionClient
 
     const headers = SUPABASE_AUTH_HEADERS(session.access_token, teamId)
 
-    let entries
-
     try {
       const sandbox = await Sandbox.connect(sandboxId, {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         headers,
-        secure: true,
       })
-      const raw = await sandbox.files.list(rootPath)
-      entries = raw.map((e) => ({
-        name: e.name,
-        path: e.path,
-        type: e.type,
-      }))
+
+      return {
+        entries: await sandbox.files.list(rootPath),
+      }
     } catch (err) {
       logError(ERROR_CODES.E2B_SDK, 'files.list', err)
       return returnServerError('Failed to list root directory.')
-    }
-
-    return {
-      entries,
     }
   })
