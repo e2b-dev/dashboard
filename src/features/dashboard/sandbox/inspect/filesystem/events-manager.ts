@@ -16,8 +16,7 @@ export class FilesystemEventManager {
   private store: FilesystemStore
   private sandbox: Sandbox
 
-  // ms delay used when batching rapid load requests
-  private static readonly LOAD_DEBOUNCE_MS = 300
+  private static readonly LOAD_DEBOUNCE_MS = 250
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
@@ -135,12 +134,6 @@ export class FilesystemEventManager {
   async loadDirectory(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
 
-    // if there is already a scheduled load for this path, reset the timer and return its promise
-    const existingTimer = this.loadTimers.get(normalizedPath)
-    if (existingTimer) {
-      clearTimeout(existingTimer)
-    }
-
     let pending = this.pendingLoads.get(normalizedPath)
     if (!pending) {
       let res!: () => void
@@ -153,20 +146,34 @@ export class FilesystemEventManager {
       this.pendingLoads.set(normalizedPath, pending)
     }
 
-    const timer = setTimeout(async () => {
-      // once the timer fires, perform the actual load then resolve/reject all waiters
-      this.loadTimers.delete(normalizedPath)
-      try {
-        await this.loadDirectoryImmediate(normalizedPath)
-        pending!.resolve()
-      } catch (err) {
-        pending!.reject(err)
-      } finally {
-        this.pendingLoads.delete(normalizedPath)
-      }
-    }, FilesystemEventManager.LOAD_DEBOUNCE_MS)
+    const state = this.store.getState()
 
-    this.loadTimers.set(normalizedPath, timer)
+    const isAlreadyLoading = state.loadingPaths.has(normalizedPath)
+    const existingTimer = this.loadTimers.get(normalizedPath)
+
+    if (isAlreadyLoading || existingTimer) {
+      if (existingTimer) clearTimeout(existingTimer)
+
+      const timer = setTimeout(async () => {
+        this.loadTimers.delete(normalizedPath)
+        try {
+          await this.loadDirectoryImmediate(normalizedPath)
+          pending!.resolve()
+        } catch (err) {
+          pending!.reject(err)
+        } finally {
+          this.pendingLoads.delete(normalizedPath)
+        }
+      }, FilesystemEventManager.LOAD_DEBOUNCE_MS)
+
+      this.loadTimers.set(normalizedPath, timer)
+      return pending.promise
+    }
+
+    void this.loadDirectoryImmediate(normalizedPath)
+      .then(() => pending!.resolve())
+      .catch((err) => pending!.reject(err))
+      .finally(() => this.pendingLoads.delete(normalizedPath))
 
     return pending.promise
   }
