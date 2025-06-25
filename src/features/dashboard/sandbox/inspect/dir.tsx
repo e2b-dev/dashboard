@@ -49,7 +49,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         </motion.span>
         <span
           style={{ '--shiny-width': '100px' } as CSSProperties}
-          className={cn('truncate text-left font-sans', {
+          className={cn('truncate text-left font-sans transition-colors', {
             // Shine effect
             'text-fg-500 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:0_0] bg-no-repeat duration-1000 [transition:background-position_1s_ease-in-out]':
               isLoading,
