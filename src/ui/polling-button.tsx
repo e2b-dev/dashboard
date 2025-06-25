@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { PollingInterval } from '@/types/dashboard.types'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -15,6 +16,7 @@ interface PollingButtonProps {
   onIntervalChange: (interval: PollingInterval) => void
   isPolling?: boolean
   onRefresh: () => void
+  className?: string
 }
 
 const intervals = [
@@ -29,6 +31,7 @@ export function PollingButton({
   onIntervalChange,
   isPolling,
   onRefresh,
+  className,
 }: PollingButtonProps) {
   const [remainingTime, setRemainingTime] = useState(pollingInterval)
 
@@ -67,7 +70,7 @@ export function PollingButton({
   }
 
   return (
-    <div className="flex h-6 items-center gap-1 px-0">
+    <div className={cn('flex h-6 items-center gap-1 px-0', className)}>
       <Button
         variant="ghost"
         size="sm"

@@ -76,7 +76,7 @@ function TabsTrigger({
       {isSelected && (
         <motion.div
           layoutId="tabs-indicator"
-          className="absolute inset-0 -bottom-0.5 border-b border-[hsl(var(--color-accent))]"
+          className="border-accent absolute inset-0 -bottom-0.5 border-b"
           initial={false}
           transition={{
             duration: 0.4,

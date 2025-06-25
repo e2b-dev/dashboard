@@ -33,10 +33,14 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         tabIndex={0}
         onClick={toggle}
         className={cn(
-          'hover:bg-bg-200 cursor-pointer gap-1 truncate py-1 transition-none select-none'
+          'group hover:bg-bg-200 cursor-pointer gap-1 truncate py-1 transition-none select-none'
         )}
+        data-slot="inspect-dir"
       >
         <motion.span
+          initial={{
+            rotate: isExpanded && isLoaded ? 90 : 0,
+          }}
           animate={{
             rotate: isExpanded && isLoaded ? 90 : 0,
             color:
@@ -48,20 +52,24 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           <ChevronRight className="size-4" />
         </motion.span>
         <span
-          style={{ '--shiny-width': '100px' } as CSSProperties}
-          className={cn('truncate text-left font-sans transition-colors', {
-            // Shine effect
-            'text-fg-500 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:0_0] bg-no-repeat duration-1000 [transition:background-position_1s_ease-in-out]':
-              isLoading,
-            // Shine gradient
-            'bg-gradient-to-r from-transparent via-[var(--color-fg)] via-50% to-transparent':
-              isLoading,
-          })}
+          style={{ '--shiny-width': '60px' } as CSSProperties}
+          className={cn(
+            'text-fg-300 truncate text-left font-sans transition-colors',
+            {
+              'text-fg': isExpanded && !isLoading,
+              // Shine effect
+              'text-fg-500 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:calc(-100%_-_var(--shiny-width))_0] bg-no-repeat':
+                isLoading,
+              // Shine gradient
+              'via-fg bg-gradient-to-r from-transparent via-50% to-transparent':
+                isLoading,
+            }
+          )}
         >
           {dir.name}
         </span>
         {hasError && (
-          <span className="text-error truncate text-sm text-ellipsis">
+          <span className="text-error truncate pl-1 text-sm text-ellipsis">
             {error}
           </span>
         )}
