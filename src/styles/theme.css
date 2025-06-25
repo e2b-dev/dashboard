@@ -154,12 +154,25 @@
     }
   }
 
+  @keyframes shiny-text {
+    0%,
+    90%,
+    100% {
+      background-position: calc(-100% - var(--shiny-width)) 0;
+    }
+    30%,
+    60% {
+      background-position: calc(100% + var(--shiny-width)) 0;
+    }
+  }
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-shimmer: shimmer 1s ease-in-out infinite;
   --animate-grid: grid 30s linear infinite;
   --animate-wave: wave 2s linear linear infinite;
   --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shiny-text: shiny-text 0.8s infinite;
 }
 
 @utility container {
