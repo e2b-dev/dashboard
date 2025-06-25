@@ -10,12 +10,14 @@ import { RefreshCw } from 'lucide-react'
 import { Separator } from './primitives/separator'
 import { PollingInterval } from '@/types/dashboard.types'
 import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface PollingButtonProps {
   pollingInterval: PollingInterval
   onIntervalChange: (interval: PollingInterval) => void
   isPolling?: boolean
   onRefresh: () => void
+  className?: string
 }
 
 const intervals = [
@@ -30,6 +32,7 @@ export function PollingButton({
   onIntervalChange,
   isPolling,
   onRefresh,
+  className,
 }: PollingButtonProps) {
   const [remainingTime, setRemainingTime] = useState(pollingInterval)
 
@@ -68,7 +71,7 @@ export function PollingButton({
   }
 
   return (
-    <div className="flex h-6 items-center gap-1 px-0">
+    <div className={cn('flex h-6 items-center gap-1 px-0', className)}>
       <Button
         variant="ghost"
         size="sm"
