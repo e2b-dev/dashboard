@@ -4,7 +4,10 @@ import { Table } from '@tanstack/react-table'
 import { SearchInput } from './table-search'
 import SandboxesTableFilters from './table-filters'
 import { PollingButton } from '@/ui/polling-button'
-import { useSandboxTableStore } from './stores/table-store'
+import {
+  sandboxesPollingIntervals,
+  useSandboxTableStore,
+} from './stores/table-store'
 import { Sandbox, Template } from '@/types/api'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
@@ -47,6 +50,7 @@ export function SandboxesHeader({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <SearchInput ref={searchInputRef} className="max-w-[380px]" />
             <PollingButton
+              intervals={sandboxesPollingIntervals}
               pollingInterval={pollingInterval}
               onIntervalChange={setPollingInterval}
               onRefresh={handleRefresh}
