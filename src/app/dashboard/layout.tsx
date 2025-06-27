@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
 import { Suspense } from 'react'
-import { ServerContextProvider } from '@/lib/hooks/use-server-context'
+import { ServerContextProvider } from '@/features/dashboard/server-context'
 import {
   resolveTeamIdInServerComponent,
   resolveTeamSlugInServerComponent,
