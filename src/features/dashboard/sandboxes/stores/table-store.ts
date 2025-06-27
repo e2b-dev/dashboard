@@ -6,13 +6,22 @@ import {
   SortingState,
 } from '@tanstack/react-table'
 import { StartedAtFilter } from '../table-filters'
-import { PollingInterval } from '@/types/dashboard.types'
 import { createHashStorage } from '@/lib/utils/store'
 import { trackTableInteraction } from '../table-config'
 
+export const sandboxesPollingIntervals = [
+  { value: 0, label: 'Off' },
+  { value: 15, label: '15s' },
+  { value: 30, label: '30s' },
+  { value: 60, label: '1m' },
+]
+
+type SandboxesPollingInterval =
+  (typeof sandboxesPollingIntervals)[number]['value']
+
 interface SandboxTableState {
   // Page state
-  pollingInterval: PollingInterval
+  pollingInterval: SandboxesPollingInterval
 
   // Table state
   sorting: SortingState
@@ -40,14 +49,14 @@ interface SandboxTableActions {
   resetFilters: () => void
 
   // Page actions
-  setPollingInterval: (interval: PollingInterval) => void
+  setPollingInterval: (interval: SandboxesPollingInterval) => void
 }
 
 type Store = SandboxTableState & SandboxTableActions
 
 const initialState: SandboxTableState = {
   // Page state
-  pollingInterval: 60, // 1 minute
+  pollingInterval: sandboxesPollingIntervals[3]!.value,
 
   // Table state
   sorting: [],
