@@ -12,7 +12,7 @@ export default function Status({ state }: StatusProps) {
       variant={state === 'running' ? 'success' : 'error'}
       className="gap-2 uppercase"
     >
-      <Circle className="size-2 fill-current" />
+      <Circle className="size-2 animate-pulse fill-current" />
       {state}
     </Badge>
   )

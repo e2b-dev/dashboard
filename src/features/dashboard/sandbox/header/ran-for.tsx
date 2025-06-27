@@ -1,7 +1,7 @@
 'use client'
 
 import { SandboxInfo } from '@/types/api'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useCallback } from 'react'
 
 interface RanForProps {
   state?: SandboxInfo['state']
@@ -10,37 +10,38 @@ interface RanForProps {
 }
 
 export default function RanFor({ state, startedAt, endAt }: RanForProps) {
-  const [ranFor, setRanFor] = useState<string>('-')
+  const calcRanFor = useCallback(() => {
+    if (!startedAt) return '-'
 
-  useEffect(() => {
-    function calcRanFor() {
-      if (!startedAt) return '-'
+    const start = new Date(startedAt)
+    const end =
+      state === 'running' ? new Date() : endAt ? new Date(endAt) : new Date()
+    const diffMs = end.getTime() - start.getTime()
+    if (diffMs < 0) return '-'
 
-      const start = new Date(startedAt)
-      const end =
-        state === 'running' ? new Date() : endAt ? new Date(endAt) : new Date()
-      const diffMs = end.getTime() - start.getTime()
-      if (diffMs < 0) return '-'
+    const hours = Math.floor(diffMs / (1000 * 60 * 60))
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
 
-      const hours = Math.floor(diffMs / (1000 * 60 * 60))
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-      return `${hours} hours ${minutes} minutes`
+    if (hours === 0 && minutes === 0) {
+      return `${seconds} seconds`
     }
 
-    setRanFor((prev) => {
-      const next = calcRanFor()
-      return prev !== next ? next : prev
-    })
+    const parts = []
+    if (hours > 0) parts.push(`${hours} hours`)
+    if (minutes > 0) parts.push(`${minutes} minutes`)
+    return parts.join(' ')
+  }, [startedAt, state, endAt])
 
+  const [ranFor, setRanFor] = useState<string>(calcRanFor())
+
+  useLayoutEffect(() => {
     const interval = setInterval(() => {
-      setRanFor((prev) => {
-        const next = calcRanFor()
-        return prev !== next ? next : prev
-      })
+      setRanFor(calcRanFor())
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [state, startedAt, endAt])
+  }, [calcRanFor])
 
   return <p>{ranFor}</p>
 }

@@ -1,7 +1,14 @@
 'use client'
 
 import { SandboxInfo } from '@/types/api'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useParams } from 'next/navigation'
+import { Button } from '@/ui/primitives/button'
+import { RefreshCw } from 'lucide-react'
+import { revalidateSandboxDetailsLayout } from '@/server/sandboxes/sandbox-actions'
+import { cn } from '@/lib/utils'
+import HelpTooltip from '@/ui/help-tooltip'
+import { motion } from 'motion/react'
 
 interface RemainingTimeProps {
   endAt: SandboxInfo['endAt']
@@ -15,6 +22,9 @@ export default function RemainingTime({ endAt }: RemainingTimeProps) {
   }, [endAt])
 
   const [remaining, setRemaining] = useState<number>(getRemainingSeconds)
+
+  const [isPending, startTransition] = useTransition()
+  const { teamIdOrSlug, sandboxId } = useParams()
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -30,5 +40,45 @@ export default function RemainingTime({ endAt }: RemainingTimeProps) {
     .toString()
     .padStart(2, '0')}`
 
-  return <p className="text-sm tabular-nums">{formatted}</p>
+  const handleRefresh = useCallback(() => {
+    startTransition(async () => {
+      await revalidateSandboxDetailsLayout(
+        teamIdOrSlug as string,
+        sandboxId as string
+      )
+    })
+  }, [teamIdOrSlug, sandboxId])
+
+  return (
+    <div className="flex items-center gap-2">
+      <p>{formatted}</p>
+      <HelpTooltip
+        trigger={
+          <Button
+            variant="ghost"
+            size="slate"
+            onClick={handleRefresh}
+            disabled={isPending}
+            asChild
+          >
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: remaining === 0 ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ pointerEvents: remaining === 0 ? 'auto' : 'none' }}
+            >
+              <RefreshCw
+                className={cn('size-3', {
+                  'animate-spin duration-300 ease-in-out': isPending,
+                })}
+              />
+            </motion.button>
+          </Button>
+        }
+      >
+        The sandbox may have been terminated since last refresh. Refreshing
+        could make this page inaccessible if the sandbox no longer exists.
+      </HelpTooltip>
+    </div>
+  )
 }

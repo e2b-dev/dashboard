@@ -41,9 +41,14 @@ export default async function SandboxInspectPage({
       rootPath={rootPath}
       seedEntries={res.data?.entries ?? []}
     >
-      <div className="relative flex flex-1 flex-col overflow-hidden">
-        <SandboxInspectHeader rootPath={rootPath} />
-        <SandboxInspectFilesystem />
+      <div className="relative flex flex-1 flex-col overflow-hidden p-4 md:p-10">
+        <div className="border-border/80 flex h-full min-h-0 flex-col rounded-sm border">
+          <SandboxInspectHeader
+            rootPath={rootPath}
+            className="bg-bg-100 w-full border-b"
+          />
+          <SandboxInspectFilesystem />
+        </div>
       </div>
     </SandboxInspectProvider>
   )

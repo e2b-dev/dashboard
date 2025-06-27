@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { PollingInterval } from '@/types/dashboard.types'
 import { Button } from '@/ui/primitives/button'
 import {
   Select,
@@ -11,20 +10,18 @@ import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Separator } from './primitives/separator'
 
-interface PollingButtonProps {
+type PollingIntervals = Array<{ value: number; label: string }>
+
+type PollingInterval = PollingIntervals[number]['value']
+
+export interface PollingButtonProps {
   pollingInterval: PollingInterval
   onIntervalChange: (interval: PollingInterval) => void
   isPolling?: boolean
   onRefresh: () => void
   className?: string
+  intervals: PollingIntervals
 }
-
-const intervals = [
-  { value: 0, label: 'Off' },
-  { value: 15, label: '15s' },
-  { value: 30, label: '30s' },
-  { value: 60, label: '1m' },
-]
 
 export function PollingButton({
   pollingInterval,
@@ -32,6 +29,7 @@ export function PollingButton({
   isPolling,
   onRefresh,
   className,
+  intervals,
 }: PollingButtonProps) {
   const [remainingTime, setRemainingTime] = useState(pollingInterval)
 
@@ -49,7 +47,7 @@ export function PollingButton({
           return pollingInterval
         }
         const newTime = prev - 1
-        return newTime as PollingInterval
+        return newTime as PollingIntervals[number]['value']
       })
     }, 1000)
 
@@ -64,7 +62,7 @@ export function PollingButton({
   }
 
   const handleIntervalChange = (value: string) => {
-    const newInterval = Number(value) as PollingInterval
+    const newInterval = Number(value) as PollingIntervals[number]['value']
     onIntervalChange(newInterval)
     setRemainingTime(newInterval) // Reset timer when interval changes
   }
@@ -82,7 +80,7 @@ export function PollingButton({
         disabled={isPolling}
       >
         <RefreshCw
-          className={`size-3.5 ${isPolling ? 'animate-spin duration-500 ease-in-out' : ''}`}
+          className={`size-3.5 ${isPolling ? 'animate-spin duration-300 ease-in-out' : ''}`}
         />
       </Button>
 

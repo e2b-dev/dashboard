@@ -1,46 +1,49 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api'
-import { Label } from '@/ui/primitives/label'
-import { ChevronLeftIcon, Dot } from 'lucide-react'
+import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import RanFor from './ran-for'
 import Status from './status'
 import Resource from './resource'
-import CreatedAt from './created_at'
 import RemainingTime from './remaining-time'
 import RefreshControl from './refresh'
 import { useMemo } from 'react'
+import TemplateId from './template-id'
+import StartedAt from './started-at'
+import { cookies } from 'next/headers'
+import { COOKIE_KEYS } from '@/configs/keys'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
   sandboxInfo: SandboxInfo
 }
 
-export default function SandboxDetailsHeader({
+export default async function SandboxDetailsHeader({
   teamIdOrSlug,
   sandboxInfo,
 }: SandboxDetailsHeaderProps) {
-  const sandboxId = useMemo(
-    () => sandboxInfo.sandboxID + '-' + sandboxInfo.clientID,
-    [sandboxInfo.sandboxID, sandboxInfo.clientID]
-  )
+  const sandboxId = sandboxInfo.sandboxID + '-' + sandboxInfo.clientID
+
+  const initialPollingInterval = (await cookies()).get(
+    COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL
+  )?.value
 
   const headerItems = {
     state: {
       label: 'status',
       value: <Status state={sandboxInfo.state} />,
     },
+    templateID: {
+      label: 'template id',
+      value: <TemplateId templateID={sandboxInfo.templateID} />,
+    },
     remainingTime: {
       label: 'ends in',
       value: <RemainingTime endAt={sandboxInfo.endAt} />,
     },
-    templateID: {
-      label: 'template id',
-      value: sandboxInfo.templateID?.toString(),
-    },
     startedAt: {
       label: 'created at',
-      value: <CreatedAt startedAt={sandboxInfo.startedAt} />,
+      value: <StartedAt startedAt={sandboxInfo.startedAt} />,
     },
     endAt: {
       label: sandboxInfo.state === 'running' ? 'running since' : 'ran for',
@@ -79,7 +82,14 @@ export default function SandboxDetailsHeader({
             <span className="text-fg">{sandboxId}</span>'S DETAILS
           </h1>
         </div>
-        <RefreshControl className="pt-4 sm:pt-0" />
+        <RefreshControl
+          initialPollingInterval={
+            initialPollingInterval
+              ? parseInt(initialPollingInterval)
+              : undefined
+          }
+          className="pt-4 sm:pt-0"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-5 md:gap-7">
@@ -99,7 +109,7 @@ interface HeaderItemProps {
 function HeaderItem({ label, value }: HeaderItemProps) {
   return (
     <div className="flex flex-col gap-2">
-      <Label className="text-fg-500 text-xs uppercase">{label}</Label>
+      <span className="text-fg-500 text-xs uppercase">{label}</span>
       {typeof value === 'string' ? <p className="text-sm">{value}</p> : value}
     </div>
   )

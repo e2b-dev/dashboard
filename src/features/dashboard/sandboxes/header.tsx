@@ -4,7 +4,10 @@ import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { useSandboxTableStore } from './stores/table-store'
+import {
+  sandboxesPollingIntervals,
+  useSandboxTableStore,
+} from './stores/table-store'
 import { SandboxesTable } from './table-config'
 import SandboxesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
@@ -47,6 +50,7 @@ export function SandboxesHeader({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <SearchInput ref={searchInputRef} className="max-w-[380px]" />
             <PollingButton
+              intervals={sandboxesPollingIntervals}
               pollingInterval={pollingInterval}
               onIntervalChange={setPollingInterval}
               onRefresh={handleRefresh}

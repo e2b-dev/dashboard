@@ -55,17 +55,16 @@ export default function RootPathInput({
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={() => handleSubmit(value)}
         disabled={isPending}
-        className="h-6 flex-1 px-1.5"
+        className="bg-bg-200 h-7 flex-1 px-1.5"
       />
 
       <AnimatePresence initial={false}>
         {(isDirty || isPending) && (
           <Button
             size="icon"
-            className="size-6"
-            variant="outline"
+            className="size-7"
+            variant="accent"
             disabled={isPending}
             type="submit"
             asChild
@@ -77,7 +76,7 @@ export default function RootPathInput({
               exit={{ x: 5, opacity: 0 }}
             >
               {isPending ? (
-                <Loader className="text-fg-500" />
+                <Loader className="text-accent" />
               ) : (
                 <Check className="size-4" />
               )}
