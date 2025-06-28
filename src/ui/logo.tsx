@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import ClientOnly from './client-only'
+import Image from 'next/image'
 
 export default function Logo({ className }: { className?: string }) {
   const { resolvedTheme } = useTheme()
@@ -14,7 +15,7 @@ export default function Logo({ className }: { className?: string }) {
 
   return (
     <ClientOnly>
-      <img
+      <Image
         src={logo}
         alt="logo with text"
         className={cn('h-9 w-auto', className)}
