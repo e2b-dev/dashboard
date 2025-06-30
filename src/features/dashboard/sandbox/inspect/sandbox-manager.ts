@@ -120,6 +120,11 @@ export class SandboxManager {
         break
 
       case FilesystemEventType.WRITE:
+        if (state.getNode(normalizedPath)?.type === FileType.FILE) {
+          void this.readFile(normalizedPath)
+        }
+        break
+
       case FilesystemEventType.CHMOD:
         console.debug(`Ignoring ${type} event for '${normalizedPath}'`)
         break
