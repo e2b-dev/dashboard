@@ -1,12 +1,13 @@
 import { SandboxInspectProvider } from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
-import SandboxInspectHeader from '@/features/dashboard/sandbox/inspect/header'
+import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxRoot } from '@/server/sandboxes/get-sandbox-root'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
+import SandboxInspectFrame from '@/features/dashboard/sandbox/inspect/frame'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -42,14 +43,13 @@ export default async function SandboxInspectPage({
       rootPath={rootPath}
       seedEntries={res.data?.entries ?? []}
     >
-      <div className="relative flex flex-1 overflow-hidden p-4 md:p-10">
-        <div className="border-border/80 flex h-full min-h-0 w-full flex-col rounded-sm border">
-          <SandboxInspectHeader
-            rootPath={rootPath}
-            className="bg-bg-100 w-full border-b"
-          />
+      <div className="relative flex flex-1 gap-2 overflow-hidden p-4 md:p-10">
+        <SandboxInspectFrame
+          header={<SandboxInspectFilesystemHeader rootPath={rootPath} />}
+          className="w-1/2"
+        >
           <SandboxInspectFilesystem />
-        </div>
+        </SandboxInspectFrame>
         <SandboxInspectViewer />
       </div>
     </SandboxInspectProvider>

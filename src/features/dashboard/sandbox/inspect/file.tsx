@@ -32,7 +32,12 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
         }
       }}
     >
-      <FileIcon className="text-fg-500 size-3" />
+      <FileIcon
+        className={cn('size-3', {
+          'text-fg-500': !isSelected,
+          'text-fg': isSelected,
+        })}
+      />
       <NodeLabel
         name={file.name}
         isActive={isSelected}
