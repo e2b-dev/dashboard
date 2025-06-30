@@ -88,45 +88,26 @@ export class SandboxManager {
     switch (type) {
       case FilesystemEventType.CREATE:
       case FilesystemEventType.RENAME:
-        if (
-          !parentNode ||
-          parentNode.type !== FileType.DIR ||
-          !parentNode.isLoaded
-        ) {
-          console.debug(
-            `Skip refresh for '${normalizedPath}' because parent directory '${parentDir}' does not exist in store`
-          )
-          return
+        const node = state.getNode(normalizedPath)
+
+        if (node?.type === FileType.FILE && parentNode?.type === FileType.DIR) {
+          void this.refreshDirectory(parentDir)
+          break
         }
 
-        console.log(
-          `Filesystem ${type} event for '${normalizedPath}', refreshing parent '${parentDir}'`
-        )
-        void this.refreshDirectory(parentDir)
+        void this.loadDirectory(normalizedPath)
+
         break
 
       case FilesystemEventType.REMOVE:
-        if (!state.getNode(normalizedPath)) {
-          console.debug(
-            `Skip remove for '${normalizedPath}' because node does not exist in store`
-          )
-          return
-        }
-
-        console.log(
-          `Filesystem REMOVE event for '${normalizedPath}', removing node from store`
-        )
         this.handleRemoveEvent(normalizedPath)
         break
 
       case FilesystemEventType.WRITE:
-        if (state.getNode(normalizedPath)?.type === FileType.FILE) {
-          void this.readFile(normalizedPath)
-        }
+        void this.readFile(normalizedPath)
         break
 
       case FilesystemEventType.CHMOD:
-        console.debug(`Ignoring ${type} event for '${normalizedPath}'`)
         break
 
       default:
@@ -137,12 +118,25 @@ export class SandboxManager {
 
   private handleRemoveEvent(removedPath: string): void {
     const state = this.store.getState()
+    const node = state.getNode(removedPath)
+
+    if (!node) return
 
     state.removeNode(removedPath)
+
+    if (node?.type === FileType.FILE) {
+      state.resetFileContent(removedPath)
+    }
   }
 
   async loadDirectory(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
+
+    const node = this.store.getState().getNode(normalizedPath)
+
+    if (node?.type === FileType.FILE) {
+      return
+    }
 
     let pending = this.pendingLoads.get(normalizedPath)
     if (!pending) {
@@ -247,6 +241,9 @@ export class SandboxManager {
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
 
+    const node = state.getNode(normalizedPath)
+    if (!node || node.type !== FileType.DIR) return
+
     // mark directory as stale but keep existing children until fresh data arrives
     state.updateNode(normalizedPath, { isLoaded: false })
 
@@ -255,21 +252,28 @@ export class SandboxManager {
 
   async readFile(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
-
     const state = this.store.getState()
+    const node = state.getNode(normalizedPath)
 
-    state.setFileContent(normalizedPath, { isLoading: true })
+    if (!node || node.type !== FileType.FILE) return
 
     try {
+      state.setLoading(normalizedPath, true)
+
       const content = await this.sandbox.files.read(normalizedPath)
 
       state.setFileContent(normalizedPath, {
         content,
-        isLoading: false,
       })
     } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to read file'
+
       console.error(`Failed to read file ${normalizedPath}:`, err)
-      state.setFileContent(normalizedPath, { isLoading: false })
+
+      state.setError(normalizedPath, errorMessage)
+    } finally {
+      state.setLoading(normalizedPath, false)
     }
   }
 }

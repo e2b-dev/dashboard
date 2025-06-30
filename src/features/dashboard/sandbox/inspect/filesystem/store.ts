@@ -19,8 +19,6 @@ interface FilesystemStatics {
 
 interface FileContentState {
   content?: string
-  type?: string
-  isLoading: boolean
 }
 
 // mutable state
@@ -182,11 +180,6 @@ export const createFilesystemStore = (rootPath: string) =>
             if (state.selectedPath === pathToRemove) {
               state.selectedPath = undefined
             }
-
-            const nodeToRemove = state.nodes.get(pathToRemove)
-            if (nodeToRemove?.type === FileType.FILE) {
-              state.resetFileContent(pathToRemove)
-            }
           }
         })
       },
@@ -252,7 +245,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const node = state.nodes.get(normalizedPath)
 
-          if (!node || node.type === FileType.FILE) return
+          if (!node) return
 
           node.isLoading = loading
         })
@@ -270,7 +263,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
           const node = state.nodes.get(normalizedPath)
 
-          if (!node || node.type === FileType.FILE) return
+          if (!node) return
 
           node.error = error
         })
