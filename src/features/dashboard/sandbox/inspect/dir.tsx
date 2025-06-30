@@ -1,5 +1,4 @@
 import { FilesystemNode } from './filesystem/types'
-import type { CSSProperties } from 'react'
 import { ChevronRight } from 'lucide-react'
 import SandboxInspectNode from './node'
 import { useDirectory } from './hooks/use-directory'
@@ -7,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
 import { motion } from 'motion/react'
 import { FileType } from 'e2b'
+import NodeLabel from './node-label'
 
 interface SandboxInspectDirProps {
   dir: FilesystemNode & {
@@ -56,28 +56,11 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         >
           <ChevronRight className="ml-1 size-4" />
         </motion.span>
-        <span
-          style={
-            {
-              '--shiny-width': '50px',
-              // Shine Gradient
-              backgroundImage:
-                isLoading &&
-                'linear-gradient(to right, transparent, var(--fg) 40%, var(--fg) 60%, transparent)',
-            } as CSSProperties
-          }
-          className={cn(
-            'text-fg-300 truncate text-left font-sans transition-colors',
-            {
-              'text-fg': isExpanded && !isLoading,
-              // Shine effect
-              'text-fg/60 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:calc(-100%_-_var(--shiny-width))_0] bg-no-repeat':
-                isLoading,
-            }
-          )}
-        >
-          {dir.name}
-        </span>
+        <NodeLabel
+          name={dir.name}
+          isActive={isExpanded}
+          isLoading={isLoading}
+        />
         {hasError && (
           <span className="text-error truncate pl-1 text-sm text-ellipsis">
             {error}

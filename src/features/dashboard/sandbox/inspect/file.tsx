@@ -2,8 +2,9 @@ import { FileType } from 'e2b'
 import { FilesystemNode } from './filesystem/types'
 import { DataTableRow } from '@/ui/data-table'
 import { FileIcon } from 'lucide-react'
-import { useNodeSelection } from './hooks/use-node'
 import { cn } from '@/lib/utils'
+import NodeLabel from './node-label'
+import { useFile } from './hooks/use-file'
 
 interface SandboxInspectFileProps {
   file: FilesystemNode & {
@@ -12,7 +13,7 @@ interface SandboxInspectFileProps {
 }
 
 export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
-  const { isSelected, select } = useNodeSelection(file.path)
+  const { isSelected, isLoading, hasError, error, select } = useFile(file.path)
 
   return (
     <DataTableRow
@@ -32,7 +33,17 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
       }}
     >
       <FileIcon className="text-fg-500 size-3" />
-      <span className="text-fg-300 font-sans text-sm">{file.name}</span>
+      <NodeLabel
+        name={file.name}
+        isActive={isSelected}
+        isLoading={isLoading}
+        className="text-sm"
+      />
+      {hasError && (
+        <span className="text-error truncate pl-1 text-sm text-ellipsis">
+          {error}
+        </span>
+      )}
     </DataTableRow>
   )
 }
