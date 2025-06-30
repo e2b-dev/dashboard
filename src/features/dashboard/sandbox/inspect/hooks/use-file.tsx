@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
 import { useStore } from 'zustand'
+import { useFilesystemNode } from './use-node'
 
 /**
  * Hook for accessing file state (loading, error)
@@ -45,10 +46,12 @@ export function useFileOperations(path: string) {
  * Combined hook for file data and operations
  */
 export function useFile(path: string) {
+  const node = useFilesystemNode(path)
   const state = useFileState(path)
   const ops = useFileOperations(path)
 
   return {
+    ...node,
     ...state,
     ...ops,
   }
