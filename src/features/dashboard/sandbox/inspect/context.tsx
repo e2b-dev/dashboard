@@ -121,7 +121,15 @@ export function SandboxInspectProvider({
         loadDirectory: async (path: string) => {
           await sandboxManagerRef.current?.loadDirectory(path)
         },
-        selectNode: (path: string) => {
+        selectNode: async (path: string) => {
+          const node = store.getState().getNode(path)
+
+          if (!node) return
+
+          if (node.type === FileType.FILE) {
+            void sandboxManagerRef.current?.readFile(path)
+          }
+
           store.getState().setSelected(path)
         },
         toggleDirectory: async (path: string) => {
@@ -140,9 +148,6 @@ export function SandboxInspectProvider({
         },
         refreshDirectory: async (path: string) => {
           await sandboxManagerRef.current?.refreshDirectory(path)
-        },
-        readFile: async (path: string) => {
-          await sandboxManagerRef.current?.readFile(path)
         },
       }
     }
