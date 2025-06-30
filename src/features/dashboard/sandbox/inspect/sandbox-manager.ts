@@ -6,11 +6,11 @@ import {
   type EntryInfo,
   FilesystemEventType,
 } from 'e2b'
-import type { FilesystemStore } from './store'
-import { FilesystemNode } from './types'
+import type { FilesystemStore } from './filesystem/store'
+import { FilesystemNode } from './filesystem/types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
 
-export class FilesystemEventManager {
+export class SandboxManager {
   private watchHandle?: WatchHandle
   private readonly rootPath: string
   private store: FilesystemStore
@@ -164,7 +164,7 @@ export class FilesystemEventManager {
         } finally {
           this.pendingLoads.delete(normalizedPath)
         }
-      }, FilesystemEventManager.LOAD_DEBOUNCE_MS)
+      }, SandboxManager.LOAD_DEBOUNCE_MS)
 
       this.loadTimers.set(normalizedPath, timer)
       return pending.promise
