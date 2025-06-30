@@ -18,6 +18,20 @@ export class SandboxManager {
 
   private static readonly LOAD_DEBOUNCE_MS = 250
 
+  /**
+   * Small utility to create a deferred promise (aka Promise with exposed
+   * resolve/reject).
+   */
+  private static createDeferred<T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void
+    let reject!: (reason?: unknown) => void
+    const promise: Promise<T> = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
     string,
@@ -118,17 +132,8 @@ export class SandboxManager {
 
   private handleRemoveEvent(removedPath: string): void {
     const state = this.store.getState()
-    const node = state.getNode(removedPath)
-
-    if (!node) {
-      console.debug(
-        `Node '${removedPath}' not found in store, skipping removal`
-      )
-      return
-    }
 
     state.removeNode(removedPath)
-    console.log(`Successfully removed node '${removedPath}' from store`)
   }
 
   async loadDirectory(path: string): Promise<void> {
@@ -136,13 +141,7 @@ export class SandboxManager {
 
     let pending = this.pendingLoads.get(normalizedPath)
     if (!pending) {
-      let res!: () => void
-      let rej!: (err: unknown) => void
-      const promise = new Promise<void>((resolve, reject) => {
-        res = resolve
-        rej = reject
-      })
-      pending = { promise, resolve: res, reject: rej }
+      pending = SandboxManager.createDeferred<void>()
       this.pendingLoads.set(normalizedPath, pending)
     }
 
@@ -158,9 +157,9 @@ export class SandboxManager {
         this.loadTimers.delete(normalizedPath)
         try {
           await this.loadDirectoryImmediate(normalizedPath)
-          pending!.resolve()
+          pending.resolve()
         } catch (err) {
-          pending!.reject(err)
+          pending.reject(err)
         } finally {
           this.pendingLoads.delete(normalizedPath)
         }
@@ -171,8 +170,8 @@ export class SandboxManager {
     }
 
     void this.loadDirectoryImmediate(normalizedPath)
-      .then(() => pending!.resolve())
-      .catch((err) => pending!.reject(err))
+      .then(() => pending.resolve())
+      .catch((err) => pending.reject(err))
       .finally(() => this.pendingLoads.delete(normalizedPath))
 
     return pending.promise
