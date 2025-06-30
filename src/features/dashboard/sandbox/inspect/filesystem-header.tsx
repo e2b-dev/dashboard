@@ -1,9 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { ArrowRight, ChevronRight, ChevronsRight, Circle } from 'lucide-react'
 import RootPathInput from './root-path-input'
-import { Separator } from '@/ui/primitives/separator'
 import { Badge } from '@/ui/primitives/badge'
 
 interface SandboxInspectHeaderProps {
@@ -16,7 +14,7 @@ export default function SandboxInspectHeader({
   rootPath,
 }: SandboxInspectHeaderProps) {
   return (
-    <div className={cn('flex w-fit items-center gap-3 p-2', className)}>
+    <div className={cn('flex w-fit items-center gap-3', className)}>
       <div className="flex w-full items-center gap-2">
         <Badge variant="contrast-1" className="whitespace-nowrap">
           <span className="animate-pulse">WATCHING {'>>>'}</span>
