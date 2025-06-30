@@ -1,22 +1,10 @@
 'use client'
 
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useLayoutEffect,
-  useState,
-} from 'react'
+import React, { createContext, useContext, ReactNode } from 'react'
 import { SandboxInfo } from '@/types/api'
-
-interface SandboxState {
-  secondsLeft: number
-  isRunning: boolean
-}
 
 interface SandboxContextValue {
   sandboxInfo: SandboxInfo
-  state: SandboxState
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -38,42 +26,10 @@ export function SandboxProvider({
   children,
   sandboxInfo,
 }: SandboxProviderProps) {
-  const [secondsLeft, setSecondsLeft] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-
-  useLayoutEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date()
-      const endAt = new Date(sandboxInfo.endAt)
-
-      if (endAt <= now) {
-        setIsRunning(false)
-        setSecondsLeft(0)
-        clearInterval(interval)
-      } else {
-        setIsRunning(true)
-      }
-
-      const diff = endAt.getTime() - now.getTime()
-      setSecondsLeft(Math.max(0, Math.floor(diff / 1000)))
-    }, 1000)
-
-    return () => {
-      if (!interval) return
-      clearInterval(interval)
-    }
-  }, [sandboxInfo.sandboxID, sandboxInfo.endAt])
-
-  const state = {
-    secondsLeft,
-    isRunning,
-  }
-
   return (
     <SandboxContext.Provider
       value={{
         sandboxInfo,
-        state,
       }}
     >
       {children}
