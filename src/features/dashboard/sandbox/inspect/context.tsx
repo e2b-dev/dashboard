@@ -11,7 +11,7 @@ import React, {
 } from 'react'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
-import { FilesystemEventManager } from './filesystem/events-manager'
+import { SandboxManager } from './sandbox-manager'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useSandboxContext } from '../context'
 import Sandbox, { EntryInfo, FileType } from 'e2b'
@@ -23,7 +23,7 @@ import { AUTH_URLS } from '@/configs/urls'
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
-  eventManager: FilesystemEventManager | null
+  sandboxManager: SandboxManager | null
 }
 
 const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
@@ -45,7 +45,7 @@ export function SandboxInspectProvider({
 }: SandboxInspectProviderProps) {
   const { sandboxInfo } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)
-  const eventManagerRef = useRef<FilesystemEventManager | null>(null)
+  const sandboxManagerRef = useRef<SandboxManager | null>(null)
   const operationsRef = useRef<FilesystemOperations | null>(null)
 
   const router = useRouter()
@@ -68,9 +68,9 @@ export function SandboxInspectProvider({
 
     if (needsNewStore) {
       // stop previous watcher (if any)
-      if (eventManagerRef.current) {
-        eventManagerRef.current.stopWatching()
-        eventManagerRef.current = null
+      if (sandboxManagerRef.current) {
+        sandboxManagerRef.current.stopWatching()
+        sandboxManagerRef.current = null
       }
 
       storeRef.current = createFilesystemStore(rootPath)
@@ -120,7 +120,7 @@ export function SandboxInspectProvider({
       const store = storeRef.current
       operationsRef.current = {
         loadDirectory: async (path: string) => {
-          await eventManagerRef.current?.loadDirectory(path)
+          await sandboxManagerRef.current?.loadDirectory(path)
         },
         selectNode: (path: string) => {
           store.getState().setSelected(path)
@@ -136,11 +136,11 @@ export function SandboxInspectProvider({
           state.setExpanded(normalizedPath, newExpandedState)
 
           if (newExpandedState && !node.isLoaded) {
-            await eventManagerRef.current?.loadDirectory(normalizedPath)
+            await sandboxManagerRef.current?.loadDirectory(normalizedPath)
           }
         },
         refreshDirectory: async (path: string) => {
-          await eventManagerRef.current?.refreshDirectory(path)
+          await sandboxManagerRef.current?.refreshDirectory(path)
         },
       }
     }
@@ -153,9 +153,9 @@ export function SandboxInspectProvider({
     const connectSandbox = async () => {
       if (!storeRef.current) return
 
-      // (re)create the event-manager when sandbox / team / root changes
-      if (eventManagerRef.current) {
-        eventManagerRef.current.stopWatching()
+      // (re)create the sandbox-manager when sandbox / team / root changes
+      if (sandboxManagerRef.current) {
+        sandboxManagerRef.current.stopWatching()
       }
 
       const { data } = await supabase.auth.getSession()
@@ -173,7 +173,7 @@ export function SandboxInspectProvider({
         secure: true,
       })
 
-      eventManagerRef.current = new FilesystemEventManager(
+      sandboxManagerRef.current = new SandboxManager(
         storeRef.current,
         sandbox,
         rootPath
@@ -183,7 +183,7 @@ export function SandboxInspectProvider({
     connectSandbox()
 
     return () => {
-      eventManagerRef.current?.stopWatching()
+      sandboxManagerRef.current?.stopWatching()
     }
   }, [sandboxId, teamId, rootPath, router])
 
@@ -194,7 +194,7 @@ export function SandboxInspectProvider({
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
     operations: operationsRef.current,
-    eventManager: eventManagerRef.current,
+    sandboxManager: sandboxManagerRef.current,
   }
 
   return (

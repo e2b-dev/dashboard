@@ -9,23 +9,14 @@ import {
 import type { FilesystemStore } from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
-import { determineFileContentState } from '@/lib/utils/filesystem'
-
-export const HANDLED_ERRORS = {
-  'signal timed out': 'The operation timed out. Please try again later.',
-  'user aborted a request': 'The request was cancelled. Try downloading the file.',
-} as const
 
 export class SandboxManager {
   private watchHandle?: WatchHandle
   private readonly rootPath: string
   private store: FilesystemStore
   private sandbox: Sandbox
-  private readonly isSandboxSecure: boolean = false
 
   private static readonly LOAD_DEBOUNCE_MS = 250
-  private static readonly READ_DEBOUNCE_MS = 250
-
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
@@ -37,21 +28,10 @@ export class SandboxManager {
     }
   > = new Map()
 
-  private readTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
-  private pendingReads: Map<
-    string,
-    {
-      promise: Promise<void>
-      resolve: () => void
-      reject: (err: unknown) => void
-    }
-  > = new Map()
-
-  constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string, isSandboxSecure: boolean) {
+  constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string) {
     this.store = store
     this.sandbox = sandbox
     this.rootPath = normalizePath(rootPath)
-    this.isSandboxSecure = isSandboxSecure
 
     // immediately start a single recursive watcher at the root
     void this.startRootWatcher()
@@ -94,20 +74,40 @@ export class SandboxManager {
     switch (type) {
       case FilesystemEventType.CREATE:
       case FilesystemEventType.RENAME:
-        if (parentNode && state.isLoaded(parentDir)) {
-          void this.refreshDirectory(parentDir)
+        if (
+          !parentNode ||
+          parentNode.type !== FileType.DIR ||
+          !parentNode.isLoaded
+        ) {
+          console.debug(
+            `Skip refresh for '${normalizedPath}' because parent directory '${parentDir}' does not exist in store`
+          )
+          return
         }
+
+        console.log(
+          `Filesystem ${type} event for '${normalizedPath}', refreshing parent '${parentDir}'`
+        )
+        void this.refreshDirectory(parentDir)
         break
 
       case FilesystemEventType.REMOVE:
+        if (!state.getNode(normalizedPath)) {
+          console.debug(
+            `Skip remove for '${normalizedPath}' because node does not exist in store`
+          )
+          return
+        }
+
+        console.log(
+          `Filesystem REMOVE event for '${normalizedPath}', removing node from store`
+        )
         this.handleRemoveEvent(normalizedPath)
         break
 
       case FilesystemEventType.WRITE:
-        void this.readFile(normalizedPath)
-        break
-
       case FilesystemEventType.CHMOD:
+        console.debug(`Ignoring ${type} event for '${normalizedPath}'`)
         break
 
       default:
@@ -120,27 +120,29 @@ export class SandboxManager {
     const state = this.store.getState()
     const node = state.getNode(removedPath)
 
-    if (!node) return
+    if (!node) {
+      console.debug(
+        `Node '${removedPath}' not found in store, skipping removal`
+      )
+      return
+    }
 
     state.removeNode(removedPath)
-
-    if (node?.type === FileType.FILE) {
-      state.resetFileContent(removedPath)
-    }
+    console.log(`Successfully removed node '${removedPath}' from store`)
   }
 
   async loadDirectory(path: string): Promise<void> {
     const normalizedPath = normalizePath(path)
 
-    const node = this.store.getState().getNode(normalizedPath)
-
-    if (node?.type === FileType.FILE) {
-      return
-    }
-
     let pending = this.pendingLoads.get(normalizedPath)
     if (!pending) {
-      pending = SandboxManager.createDeferred<void>()
+      let res!: () => void
+      let rej!: (err: unknown) => void
+      const promise = new Promise<void>((resolve, reject) => {
+        res = resolve
+        rej = reject
+      })
+      pending = { promise, resolve: res, reject: rej }
       this.pendingLoads.set(normalizedPath, pending)
     }
 
@@ -156,9 +158,9 @@ export class SandboxManager {
         this.loadTimers.delete(normalizedPath)
         try {
           await this.loadDirectoryImmediate(normalizedPath)
-          pending.resolve()
+          pending!.resolve()
         } catch (err) {
-          pending.reject(err)
+          pending!.reject(err)
         } finally {
           this.pendingLoads.delete(normalizedPath)
         }
@@ -169,8 +171,8 @@ export class SandboxManager {
     }
 
     void this.loadDirectoryImmediate(normalizedPath)
-      .then(() => pending.resolve())
-      .catch((err) => pending.reject(err))
+      .then(() => pending!.resolve())
+      .catch((err) => pending!.reject(err))
       .finally(() => this.pendingLoads.delete(normalizedPath))
 
     return pending.promise
@@ -184,6 +186,7 @@ export class SandboxManager {
     if (
       !node ||
       node.type !== FileType.DIR ||
+      node.isLoaded ||
       state.loadingPaths.has(normalizedPath)
     )
       return
@@ -202,6 +205,7 @@ export class SandboxManager {
             type: FileType.DIR,
             isExpanded: false,
             isSelected: false,
+            isLoaded: false,
             children: [],
           }
         } else {
@@ -223,16 +227,15 @@ export class SandboxManager {
           state.removeNode(childPath)
         }
       }
+
+      state.updateNode(normalizedPath, { isLoaded: true })
     } catch (error) {
-      const errorMessage = SandboxManager.pipeError(
-        error,
-        'Failed to load directory'
-      )
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to load directory'
       state.setError(normalizedPath, errorMessage)
       console.error(`Failed to load directory ${normalizedPath}:`, error)
     } finally {
       state.setLoading(normalizedPath, false)
-      state.setLoaded(normalizedPath, true)
     }
   }
 
@@ -240,145 +243,9 @@ export class SandboxManager {
     const normalizedPath = normalizePath(path)
     const state = this.store.getState()
 
-    const node = state.getNode(normalizedPath)
-    if (!node || node.type !== FileType.DIR) return
+    // mark directory as stale but keep existing children until fresh data arrives
+    state.updateNode(normalizedPath, { isLoaded: false })
 
     await this.loadDirectory(normalizedPath)
-  }
-
-  async readFile(path: string): Promise<void> {
-    const normalizedPath = normalizePath(path)
-    const state = this.store.getState()
-    const node = state.getNode(normalizedPath)
-
-    if (!node || node.type !== FileType.FILE) return
-
-    let pending = this.pendingReads.get(normalizedPath)
-    if (!pending) {
-      pending = SandboxManager.createDeferred<void>()
-      this.pendingReads.set(normalizedPath, pending)
-    }
-
-    const isAlreadyLoading = state.loadingPaths.has(normalizedPath)
-    const existingTimer = this.readTimers.get(normalizedPath)
-
-    if (isAlreadyLoading || existingTimer) {
-      if (existingTimer) clearTimeout(existingTimer)
-
-      const timer = setTimeout(async () => {
-        this.readTimers.delete(normalizedPath)
-        try {
-          await this.readFileImmediate(normalizedPath)
-          pending.resolve()
-        } catch (err) {
-          pending.reject(err)
-        } finally {
-          this.pendingReads.delete(normalizedPath)
-        }
-      }, SandboxManager.READ_DEBOUNCE_MS)
-
-      this.readTimers.set(normalizedPath, timer)
-      return pending.promise
-    }
-
-    void this.readFileImmediate(normalizedPath)
-      .then(() => pending.resolve())
-      .catch((err) => pending.reject(err))
-      .finally(() => this.pendingReads.delete(normalizedPath))
-
-    return pending.promise
-  }
-
-  private async readFileImmediate(path: string): Promise<void> {
-    const normalizedPath = normalizePath(path)
-    const state = this.store.getState()
-    const node = state.getNode(normalizedPath)
-
-    if (!node || node.type !== FileType.FILE) return
-
-    try {
-      state.setLoading(normalizedPath, true)
-
-      const blob = await this.sandbox.files.read(normalizedPath, {
-        format: 'blob',
-        requestTimeoutMs: 30_000,
-      })
-
-      const contentState = await determineFileContentState(blob)
-
-      state.setFileContent(normalizedPath, contentState)
-    } catch (err) { 
-      const errorMessage = SandboxManager.pipeError(err, 'Failed to read file')
-
-      console.error(`Failed to read file ${normalizedPath}:`, err)
-
-      state.setError(normalizedPath, errorMessage)
-      state.setFileContent(normalizedPath, { type: 'unreadable' })
-    } finally {
-      state.setLoading(normalizedPath, false)
-      state.setLoaded(normalizedPath, true)
-    }
-  }
-
-  async getDownloadUrl(path: string): Promise<string> {
-    const normalizedPath = normalizePath(path)
-    const state = this.store.getState()
-    const node = state.getNode(normalizedPath)
-
-    if (!node || node.type !== FileType.FILE) {
-      console.error(
-        `Failed to get download URL for file. Invalid node: ${node} ${normalizedPath}`
-      )
-      state.setError(normalizedPath, 'Node is not a directory.')
-
-      return ''
-    }
-
-    const downloadUrl = await this.sandbox.downloadUrl(normalizedPath, {
-      user: 'root',
-      useSignature: this.isSandboxSecure || undefined,
-    })
-
-    console.log('downloadUrl', downloadUrl)
-
-    return downloadUrl
-  }
-
-  /**
-   * Small utility to create a deferred promise (aka Promise with exposed
-   * resolve/reject).
-   */
-  private static createDeferred<T>() {
-    let resolve!: (value: T | PromiseLike<T>) => void
-    let reject!: (reason?: unknown) => void
-    const promise: Promise<T> = new Promise<T>((res, rej) => {
-      resolve = res
-      reject = rej
-    })
-    return { promise, resolve, reject }
-  }
-
-  /**
-   * Returns a user-friendly message for a given error. It checks the error's
-   * message against known substrings in `errorMap` and falls back to the
-   * supplied default message if no match is found.
-   */
-  private static pipeError(error: unknown, defaultMessage: string): string {
-    const originalMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : ''
-
-    const lowerOriginal = originalMessage.toLowerCase()
-
-    for (const [search, msg] of Object.entries(HANDLED_ERRORS)) {
-      if (lowerOriginal.includes(search.toLowerCase())) {
-        return msg
-      }
-    }
-
-    return originalMessage || defaultMessage
   }
 }
