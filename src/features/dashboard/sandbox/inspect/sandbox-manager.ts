@@ -247,4 +247,24 @@ export class SandboxManager {
 
     await this.loadDirectory(normalizedPath)
   }
+
+  async readFile(path: string): Promise<void> {
+    const normalizedPath = normalizePath(path)
+
+    const state = this.store.getState()
+
+    state.setFileContent(normalizedPath, { isLoading: true })
+
+    try {
+      const content = await this.sandbox.files.read(normalizedPath)
+
+      state.setFileContent(normalizedPath, {
+        content,
+        isLoading: false,
+      })
+    } catch (err) {
+      console.error(`Failed to read file ${normalizedPath}:`, err)
+      state.setFileContent(normalizedPath, { isLoading: false })
+    }
+  }
 }
