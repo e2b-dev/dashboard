@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
 import { useStore } from 'zustand'
 import { useFilesystemNode } from './use-node'
+import { FileType } from 'e2b'
 
 /**
  * Hook for accessing file state (loading, error)
@@ -49,6 +50,10 @@ export function useFile(path: string) {
   const node = useFilesystemNode(path)
   const state = useFileState(path)
   const ops = useFileOperations(path)
+
+  if (!node || node.type !== FileType.FILE) {
+    throw new Error(`Node at path ${path} is not a file`)
+  }
 
   return {
     ...node,
