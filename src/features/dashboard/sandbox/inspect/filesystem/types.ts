@@ -16,7 +16,9 @@ interface FilesystemFile {
   type: FileType.FILE
   name: string
   path: string
+  error?: string
   isSelected?: boolean
+  isLoading?: boolean
 }
 
 export type FilesystemNode = FilesystemDir | FilesystemFile
@@ -26,4 +28,5 @@ export interface FilesystemOperations {
   toggleDirectory: (path: string) => Promise<void>
   refreshDirectory: (path: string) => Promise<void>
   selectNode: (path: string) => void
+  refreshFile: (path: string) => Promise<void>
 }
