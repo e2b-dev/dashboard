@@ -3,8 +3,6 @@
 import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
 import { useStore } from 'zustand'
-import { useFilesystemNode, useSelectedPath } from './use-node'
-import { FileType } from 'e2b'
 
 /**
  * Hook for accessing file state (loading, error)
@@ -33,21 +31,13 @@ export function useFileState(path: string) {
  */
 export function useFileOperations(path: string) {
   const { operations } = useSandboxInspectContext()
-  const selectedPath = useSelectedPath()
 
   return useMemo(
     () => ({
       refresh: () => operations.refreshFile(path),
-      toggle: () => {
-        if (selectedPath === path) {
-          operations.resetSelected()
-        } else {
-          operations.selectNode(path)
-        }
-      },
-      download: () => operations.downloadFile(path),
+      select: () => operations.selectNode(path),
     }),
-    [operations, path, selectedPath]
+    [operations, path]
   )
 }
 
@@ -55,16 +45,10 @@ export function useFileOperations(path: string) {
  * Combined hook for file data and operations
  */
 export function useFile(path: string) {
-  const node = useFilesystemNode(path)
   const state = useFileState(path)
   const ops = useFileOperations(path)
 
   return {
-    ...(node && {
-      name: node.name,
-      type: node.type,
-      path: node.path,
-    }),
     ...state,
     ...ops,
   }
