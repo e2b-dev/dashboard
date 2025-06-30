@@ -23,7 +23,6 @@ import { AUTH_URLS } from '@/configs/urls'
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
-  sandboxManager: SandboxManager | null
 }
 
 const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
@@ -142,6 +141,9 @@ export function SandboxInspectProvider({
         refreshDirectory: async (path: string) => {
           await sandboxManagerRef.current?.refreshDirectory(path)
         },
+        readFile: async (path: string) => {
+          await sandboxManagerRef.current?.readFile(path)
+        },
       }
     }
   }
@@ -194,7 +196,6 @@ export function SandboxInspectProvider({
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
     operations: operationsRef.current,
-    sandboxManager: sandboxManagerRef.current,
   }
 
   return (

@@ -17,6 +17,12 @@ interface FilesystemStatics {
   rootPath: string
 }
 
+interface FileContentState {
+  content?: string
+  type?: string
+  isLoading: boolean
+}
+
 // mutable state
 export interface FilesystemState {
   nodes: Map<string, FilesystemNode>
@@ -24,6 +30,7 @@ export interface FilesystemState {
   loadingPaths: Set<string>
   errorPaths: Map<string, string>
   sortingDirection: 'asc' | 'desc'
+  fileContents: Map<string, FileContentState>
 }
 
 // mutations/actions that modify state
@@ -35,6 +42,8 @@ export interface FilesystemMutations {
   setSelected: (path: string) => void
   setLoading: (path: string, loading: boolean) => void
   setError: (path: string, error?: string) => void
+  setFileContent: (path: string, updates: Partial<FileContentState>) => void
+  resetFileContent: (path: string) => void
   reset: () => void
 }
 
@@ -45,6 +54,7 @@ export interface FilesystemComputed {
   isExpanded: (path: string) => boolean
   isSelected: (path: string) => boolean
   hasChildren: (path: string) => boolean
+  getFileContent: (path: string) => FileContentState | undefined
 }
 
 // combined store type
@@ -53,7 +63,7 @@ export type FilesystemStoreData = FilesystemStatics &
   FilesystemMutations &
   FilesystemComputed
 
-//  to retain reference-stable arrays of children per directory path
+// to retain reference-stable arrays of children per directory path
 const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
   new Map()
 
@@ -84,6 +94,7 @@ export const createFilesystemStore = (rootPath: string) =>
       loadingPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
       sortingDirection: 'asc' as 'asc' | 'desc',
+      fileContents: new Map<string, FileContentState>(),
 
       addNodes: (parentPath: string, nodes: FilesystemNode[]) => {
         const normalizedParentPath = normalizePath(parentPath)
@@ -260,12 +271,32 @@ export const createFilesystemStore = (rootPath: string) =>
         })
       },
 
+      setFileContent: (path: string, updates: Partial<FileContentState>) => {
+        const normalizedPath = normalizePath(path)
+        set((state: FilesystemState) => {
+          const existing =
+            state.fileContents.get(normalizedPath) ?? ({} as FileContentState)
+          state.fileContents.set(normalizedPath, {
+            ...existing,
+            ...updates,
+          })
+        })
+      },
+
+      resetFileContent: (path: string) => {
+        const normalizedPath = normalizePath(path)
+        set((state: FilesystemState) => {
+          state.fileContents.delete(normalizedPath)
+        })
+      },
+
       reset: () => {
         set((state: FilesystemState) => {
           state.nodes.clear()
           state.selectedPath = undefined
           state.loadingPaths.clear()
           state.errorPaths.clear()
+          state.fileContents.clear()
         })
       },
 
@@ -319,6 +350,11 @@ export const createFilesystemStore = (rootPath: string) =>
         if (!node || node.type === FileType.FILE) return false
 
         return node.children.length > 0
+      },
+
+      getFileContent: (path: string) => {
+        const normalizedPath = normalizePath(path)
+        return get().fileContents.get(normalizedPath)
       },
     }))
   )
