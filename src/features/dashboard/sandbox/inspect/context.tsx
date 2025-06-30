@@ -127,7 +127,7 @@ export function SandboxInspectProvider({
           if (!node) return
 
           if (node.type === FileType.FILE) {
-            void sandboxManagerRef.current?.readFile(path)
+            await sandboxManagerRef.current?.readFile(path)
           }
 
           store.getState().setSelected(path)
