@@ -7,18 +7,12 @@ interface FilesystemDir {
   children: string[] // paths of children
   isExpanded?: boolean
   isLoaded?: boolean
-  isSelected?: boolean
-  isLoading?: boolean
-  error?: string
 }
 
 interface FilesystemFile {
   type: FileType.FILE
   name: string
   path: string
-  error?: string
-  isSelected?: boolean
-  isLoading?: boolean
 }
 
 export type FilesystemNode = FilesystemDir | FilesystemFile

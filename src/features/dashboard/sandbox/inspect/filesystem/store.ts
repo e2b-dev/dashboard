@@ -216,19 +216,6 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
 
         set((state: FilesystemState) => {
-          if (state.selectedPath) {
-            const prevNode = state.nodes.get(state.selectedPath)
-
-            if (!prevNode) return
-
-            prevNode.isSelected = false
-          }
-
-          const node = state.nodes.get(normalizedPath)
-
-          if (!node) return
-
-          node.isSelected = true
           state.selectedPath = normalizedPath
         })
       },
@@ -242,12 +229,6 @@ export const createFilesystemStore = (rootPath: string) =>
           } else {
             state.loadingPaths.delete(normalizedPath)
           }
-
-          const node = state.nodes.get(normalizedPath)
-
-          if (!node) return
-
-          node.isLoading = loading
         })
       },
 
@@ -260,12 +241,6 @@ export const createFilesystemStore = (rootPath: string) =>
           } else {
             state.errorPaths.delete(normalizedPath)
           }
-
-          const node = state.nodes.get(normalizedPath)
-
-          if (!node) return
-
-          node.error = error
         })
       },
 
@@ -338,7 +313,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
         if (!node) return false
 
-        return !!node.isSelected
+        return get().selectedPath === normalizedPath
       },
 
       hasChildren: (path: string) => {
