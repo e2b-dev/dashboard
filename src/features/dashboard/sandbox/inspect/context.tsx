@@ -149,6 +149,9 @@ export function SandboxInspectProvider({
         refreshDirectory: async (path: string) => {
           await sandboxManagerRef.current?.refreshDirectory(path)
         },
+        refreshFile: async (path: string) => {
+          await sandboxManagerRef.current?.readFile(path)
+        },
       }
     }
   }
