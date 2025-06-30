@@ -155,7 +155,7 @@ export const createFilesystemStore = (rootPath: string) =>
       removeNode: (path: string) => {
         const normalizedPath = normalizePath(path)
 
-        set((state: FilesystemState) => {
+        set((state: FilesystemStoreData) => {
           const node = state.nodes.get(normalizedPath)
           if (!node) return
 
@@ -181,6 +181,11 @@ export const createFilesystemStore = (rootPath: string) =>
 
             if (state.selectedPath === pathToRemove) {
               state.selectedPath = undefined
+            }
+
+            const nodeToRemove = state.nodes.get(pathToRemove)
+            if (nodeToRemove?.type === FileType.FILE) {
+              state.resetFileContent(pathToRemove)
             }
           }
         })
