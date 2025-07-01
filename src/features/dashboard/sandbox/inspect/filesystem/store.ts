@@ -17,9 +17,25 @@ interface FilesystemStatics {
   rootPath: string
 }
 
-interface FileContentState {
-  content?: string
+interface Utf8FileContentState {
+  content: string
+  encoding: 'utf-8'
 }
+
+interface BinaryFileContentState {
+  dataUri: string
+  encoding: 'binary'
+}
+
+interface ImageFileContentState {
+  dataUri: string
+  encoding: 'image'
+}
+
+export type FileContentState =
+  | Utf8FileContentState
+  | BinaryFileContentState
+  | ImageFileContentState
 
 // mutable state
 export interface FilesystemState {
@@ -40,7 +56,7 @@ export interface FilesystemMutations {
   setSelected: (path: string) => void
   setLoading: (path: string, loading: boolean) => void
   setError: (path: string, error?: string) => void
-  setFileContent: (path: string, updates: Partial<FileContentState>) => void
+  setFileContent: (path: string, updates: FileContentState) => void
   resetFileContent: (path: string) => void
   reset: () => void
 }
@@ -244,7 +260,7 @@ export const createFilesystemStore = (rootPath: string) =>
         })
       },
 
-      setFileContent: (path: string, updates: Partial<FileContentState>) => {
+      setFileContent: (path, updates) => {
         const normalizedPath = normalizePath(path)
         set((state: FilesystemState) => {
           const existing =
