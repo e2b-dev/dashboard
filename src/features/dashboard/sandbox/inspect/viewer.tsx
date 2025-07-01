@@ -10,7 +10,9 @@ import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { useFile } from './hooks/use-file'
 import { Drawer, DrawerContent } from '@/ui/primitives/drawer'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/ui/primitives/button'
+import { Download } from 'lucide-react'
 
 export default function SandboxInspectViewer() {
   const path = useSelectedPath()
@@ -44,18 +46,11 @@ export default function SandboxInspectViewer() {
 
 function SandboxInspectViewerContent({ path }: { path: string }) {
   const { name, isLoading, refresh } = useFile(path)
-  const { content } = useContent(path)
+  const { state } = useContent(path)
   const shikiTheme = useShikiTheme()
 
-  if (content === undefined) {
+  if (state === undefined) {
     return null
-  }
-
-  const hasDot = name.includes('.')
-  let language: Language = name.split('.').pop() ?? 'text'
-
-  if (!hasDot || (name.startsWith('.') && language)) {
-    language = 'text'
   }
 
   return (
@@ -67,26 +62,106 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
       header={
         <SandboxInspectViewerHeader
           name={name}
-          content={content}
+          fileContentState={state}
           isLoading={isLoading}
           onRefresh={refresh}
         />
       }
     >
-      <div className="h-full w-full overflow-hidden">
-        <ScrollArea className="h-full">
-          <ShikiHighlighter
-            language={language}
-            theme={shikiTheme}
-            className="px-1.5 py-1 text-sm max-md:p-3"
-            addDefaultStyles={false}
-            showLanguage={false}
-          >
-            {content}
-          </ShikiHighlighter>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </div>
+      {state.encoding === 'utf-8' ? (
+        <TextContent
+          name={name}
+          content={state.content}
+          shikiTheme={shikiTheme}
+        />
+      ) : state.encoding === 'image' ? (
+        <ImageContent name={name} dataUri={state.dataUri} />
+      ) : (
+        <BinaryContent name={name} dataUri={state.dataUri} />
+      )}
     </SandboxInspectFrame>
+  )
+}
+
+// ----------------- Content components -----------------
+
+interface TextContentProps {
+  name: string
+  content: string
+  shikiTheme: Parameters<typeof ShikiHighlighter>[0]['theme']
+}
+
+function TextContent({ name, content, shikiTheme }: TextContentProps) {
+  const hasDot = name.includes('.')
+  let language: Language = name.split('.').pop() as Language
+
+  if (!hasDot || (name.startsWith('.') && language)) {
+    language = 'text'
+  }
+
+  return (
+    <div className="h-full w-full overflow-hidden">
+      <ScrollArea className="h-full">
+        <ShikiHighlighter
+          language={language}
+          theme={shikiTheme}
+          className="px-1.5 py-1 text-sm max-md:p-3"
+          addDefaultStyles={false}
+          showLanguage={false}
+        >
+          {content}
+        </ShikiHighlighter>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  )
+}
+
+interface ImageContentProps {
+  name: string
+  dataUri: string
+}
+
+function ImageContent({ name, dataUri }: ImageContentProps) {
+  return (
+    <div className="flex h-full w-full items-center justify-center overflow-auto p-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={dataUri}
+        alt={name}
+        className="max-h-full max-w-full object-contain"
+      />
+    </div>
+  )
+}
+
+interface BinaryContentProps {
+  name: string
+  dataUri: string
+}
+
+function BinaryContent({ name, dataUri }: BinaryContentProps) {
+  const handleDownload = useCallback(() => {
+    if (!document) {
+      return
+    }
+
+    const a = document.createElement('a')
+
+    a.href = dataUri
+    a.download = name
+    a.click()
+  }, [dataUri, name])
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3">
+      <span className="text-fg-300 text-sm">
+        Binary file preview not available.
+      </span>
+      <Button variant="accent" size="sm" onClick={handleDownload}>
+        Download
+        <Download className="ml-1.5 h-4 w-4" />
+      </Button>
+    </div>
   )
 }
