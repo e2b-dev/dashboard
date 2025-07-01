@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/ui/primitives/button'
 import { Loader } from '@/ui/loader'
-import { Check } from 'lucide-react'
+import { ArrowRight, Check, MoveRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 
 interface RootPathInputProps {
@@ -50,40 +50,18 @@ export default function RootPathInput({
         e.preventDefault()
         handleSubmit(value)
       }}
-      className={cn('flex items-center gap-2', className)}
+      className={cn('relative flex items-center gap-2', className)}
     >
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         disabled={isPending}
-        className="bg-bg-200 h-7 flex-1 px-1.5"
+        className="border-none pl-0 focus:!border-none"
       />
 
-      <AnimatePresence initial={false}>
-        {(isDirty || isPending) && (
-          <Button
-            size="icon"
-            className="size-7"
-            variant="accent"
-            disabled={isPending}
-            type="submit"
-            asChild
-          >
-            <motion.button
-              key="confirm"
-              initial={{ x: 5, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 5, opacity: 0 }}
-            >
-              {isPending ? (
-                <Loader className="text-accent" />
-              ) : (
-                <Check className="size-4" />
-              )}
-            </motion.button>
-          </Button>
-        )}
-      </AnimatePresence>
+      <Button className="z-20" disabled={isPending || !isDirty} type="submit">
+        Go {isPending ? <Loader /> : <ArrowRight className="size-4" />}
+      </Button>
     </form>
   )
 }
