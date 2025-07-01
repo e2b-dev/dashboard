@@ -11,6 +11,9 @@ import SandboxInspectFrame from '@/features/dashboard/sandbox/inspect/frame'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
+const DEFAULT_ROOT_PATH = '/home/user'
 
 export default async function SandboxInspectPage({
   params,
@@ -19,7 +22,8 @@ export default async function SandboxInspectPage({
 }) {
   const cookieStore = await cookies()
   const rootPath =
-    cookieStore.get(COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH)?.value || '/'
+    cookieStore.get(COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH)?.value ||
+    DEFAULT_ROOT_PATH
 
   const { teamIdOrSlug, sandboxId } = await params
 
@@ -43,7 +47,7 @@ export default async function SandboxInspectPage({
       rootPath={rootPath}
       seedEntries={res.data?.entries ?? []}
     >
-      <div className="relative flex flex-1 gap-2 overflow-hidden p-4 md:p-10">
+      <div className="relative flex flex-1 gap-2 overflow-hidden p-4">
         <SandboxInspectFrame
           header={<SandboxInspectFilesystemHeader rootPath={rootPath} />}
           className="w-1/2"
