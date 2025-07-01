@@ -66,7 +66,7 @@ export default async function SandboxDetailsHeader({
   }
 
   return (
-    <header className="flex w-full flex-col gap-8 p-4 md:gap-10 md:px-10 md:py-8">
+    <header className="flex w-full flex-col gap-8 p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
           <Link

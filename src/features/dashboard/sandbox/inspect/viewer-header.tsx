@@ -17,8 +17,8 @@ export default function SandboxInspectViewerHeader({
   onRefresh,
 }: SandboxInspectViewerHeaderProps) {
   return (
-    <div className="flex h-full flex-1 items-center gap-2">
-      <FileIcon className="size-4" />
+    <div className="flex h-full flex-1 items-center gap-2 p-1">
+      <FileIcon className="size-3.5" />
       <span className="text-sm">{name}</span>
 
       <CopyButton

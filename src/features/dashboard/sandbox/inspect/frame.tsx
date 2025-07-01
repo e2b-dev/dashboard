@@ -28,9 +28,7 @@ export default function SandboxInspectFrame({
       )}
       {...props}
     >
-      <div
-        className={cn('bg-bg-100 h-11 w-full border-b p-2', classNames?.header)}
-      >
+      <div className={cn('h-12 w-full border-b p-2', classNames?.header)}>
         {header}
       </div>
       {children}
