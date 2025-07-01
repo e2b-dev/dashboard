@@ -9,6 +9,7 @@ import {
 import type { FilesystemStore } from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
+import { determineFileContentState } from '@/lib/utils/inspect'
 
 export class SandboxManager {
   private watchHandle?: WatchHandle
@@ -88,9 +89,7 @@ export class SandboxManager {
     switch (type) {
       case FilesystemEventType.CREATE:
       case FilesystemEventType.RENAME:
-        const node = state.getNode(normalizedPath)
-
-        if (node?.type === FileType.FILE && parentNode?.type === FileType.DIR) {
+        if (parentNode?.type === FileType.DIR) {
           void this.refreshDirectory(parentDir)
           break
         }
@@ -260,18 +259,18 @@ export class SandboxManager {
     try {
       state.setLoading(normalizedPath, true)
 
-      const content = await this.sandbox.files.read(normalizedPath)
-
-      state.setFileContent(normalizedPath, {
-        content,
+      const blob = await this.sandbox.files.read(normalizedPath, {
+        format: 'blob',
+        requestTimeoutMs: 30_000,
       })
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to read file'
 
+      const contentState = await determineFileContentState(blob)
+
+      state.setFileContent(normalizedPath, contentState)
+    } catch (err) {
       console.error(`Failed to read file ${normalizedPath}:`, err)
 
-      state.setError(normalizedPath, errorMessage)
+      state.setError(normalizedPath, 'Failed to read file')
     } finally {
       state.setLoading(normalizedPath, false)
     }
