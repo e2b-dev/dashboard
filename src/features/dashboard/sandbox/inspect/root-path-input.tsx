@@ -50,7 +50,7 @@ export default function RootPathInput({
         e.preventDefault()
         handleSubmit(value)
       }}
-      className={cn('relative flex items-center gap-2', className)}
+      className={cn('relative flex h-full items-center gap-2', className)}
     >
       <Input
         value={value}
@@ -59,7 +59,12 @@ export default function RootPathInput({
         className="border-none pl-0 focus:!border-none"
       />
 
-      <Button className="z-20" disabled={isPending || !isDirty} type="submit">
+      <Button
+        className="z-20 mr-1.5 h-7"
+        size="sm"
+        disabled={isPending || !isDirty}
+        type="submit"
+      >
         Go {isPending ? <Loader /> : <ArrowRight className="size-4" />}
       </Button>
     </form>
