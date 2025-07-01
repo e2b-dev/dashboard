@@ -77,7 +77,10 @@ export type FilesystemStoreData = FilesystemStatics &
   FilesystemMutations &
   FilesystemComputed
 
-// to retain reference-stable arrays of children per directory path
+// Retain reference-stable arrays of children per directory path. A cached array
+// is only reused while the underlying `children` array reference on the node
+// stays the same; any mutation that replaces `children` with a new array
+// automatically invalidates the cache.
 const childrenCache: Map<string, { ref: string[]; result: FilesystemNode[] }> =
   new Map()
 
@@ -136,9 +139,9 @@ export const createFilesystemStore = (rootPath: string) =>
             return
           }
 
-          if (!parentNode.children) {
-            parentNode.children = []
-          }
+          const existingChildren = parentNode.children ?? []
+
+          const childrenSet = new Set<string>(existingChildren)
 
           for (const node of nodes) {
             const normalizedPath = normalizePath(node.path)
@@ -148,21 +151,23 @@ export const createFilesystemStore = (rootPath: string) =>
               path: normalizedPath,
             })
 
-            if (
-              normalizedPath !== normalizedParentPath &&
-              !parentNode.children.includes(normalizedPath)
-            ) {
-              parentNode.children.push(normalizedPath)
+            if (normalizedPath !== normalizedParentPath) {
+              childrenSet.add(normalizedPath)
             }
           }
 
-          parentNode.children.sort((a: string, b: string) =>
+          const newChildren = Array.from(childrenSet)
+          newChildren.sort((a: string, b: string) =>
             compareFilesystemNodes(
               state.nodes.get(a),
               state.nodes.get(b),
               state.sortingDirection
             )
           )
+
+          parentNode.children = newChildren
+
+          childrenCache.delete(normalizedParentPath)
         })
       },
 
@@ -179,6 +184,8 @@ export const createFilesystemStore = (rootPath: string) =>
             parentNode.children = parentNode.children.filter(
               (childPath: string) => childPath !== normalizedPath
             )
+
+            childrenCache.delete(parentPath)
           }
 
           const toRemove = [normalizedPath]
