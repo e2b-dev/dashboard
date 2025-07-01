@@ -6,10 +6,15 @@ import React from 'react'
 interface SandboxInspectFrameProps
   extends React.HTMLAttributes<HTMLDivElement> {
   header: React.ReactNode
+  classNames?: {
+    frame?: string
+    header?: string
+  }
 }
 
 export default function SandboxInspectFrame({
   className,
+  classNames,
   children,
   header,
   ...props
@@ -18,11 +23,16 @@ export default function SandboxInspectFrame({
     <div
       className={cn(
         'border-border/80 flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-sm border',
+        classNames?.frame,
         className
       )}
       {...props}
     >
-      <div className="bg-bg-100 h-11 w-full border-b p-2">{header}</div>
+      <div
+        className={cn('bg-bg-100 h-11 w-full border-b p-2', classNames?.header)}
+      >
+        {header}
+      </div>
       {children}
     </div>
   )
