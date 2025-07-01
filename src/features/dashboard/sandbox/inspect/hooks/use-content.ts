@@ -12,7 +12,7 @@ export function useContent(path: string) {
   }, [path, operations])
 
   return {
-    ...contentState,
+    state: contentState,
     refresh,
   }
 }
