@@ -21,17 +21,11 @@ export default function StartedAt({ startedAt }: StartedAtProps) {
       ? 'Yesterday'
       : date.toLocaleDateString()
 
-  const hours = date.getHours()
-  const minutes = date.getMinutes()
-  const seconds = date.getSeconds()
-
-  const timeStr = [
-    hours && `${hours}h`,
-    (minutes || hours) && `${minutes}m`,
-    (seconds || (!hours && !minutes)) && `${seconds}s`,
-  ]
-    .filter(Boolean)
-    .join(' ')
+  const timeStr = date.toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 
   return (
     <div className="flex items-center gap-3">

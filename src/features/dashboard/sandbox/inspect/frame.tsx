@@ -22,7 +22,7 @@ export default function SandboxInspectFrame({
   return (
     <div
       className={cn(
-        'flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-sm border',
+        'flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden border',
         classNames?.frame,
         className
       )}

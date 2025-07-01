@@ -60,7 +60,7 @@ export default function RootPathInput({
       />
 
       <Button
-        className="z-20 mr-1.5 h-7"
+        className="z-20 mr-1.5 h-7 rounded-none"
         size="sm"
         disabled={isPending || !isDirty}
         type="submit"
