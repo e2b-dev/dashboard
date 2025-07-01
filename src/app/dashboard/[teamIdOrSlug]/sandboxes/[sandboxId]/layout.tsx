@@ -3,6 +3,7 @@ import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
+import { Drawer } from '@/ui/primitives/drawer'
 import { notFound } from 'next/navigation'
 
 export const fetchCache = 'default-cache'
