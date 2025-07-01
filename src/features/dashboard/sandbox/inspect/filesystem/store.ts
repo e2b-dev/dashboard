@@ -7,6 +7,7 @@ import {
   normalizePath,
   getParentPath,
   isChildPath,
+  getBasename,
 } from '@/lib/utils/filesystem'
 import { FilesystemNode } from './types'
 import { FileType } from 'e2b'
@@ -120,10 +121,8 @@ export const createFilesystemStore = (rootPath: string) =>
           let parentNode = state.nodes.get(normalizedParentPath)
 
           if (!parentNode) {
-            const parentName =
-              normalizedParentPath === '/'
-                ? '/'
-                : normalizedParentPath.split('/').pop() || ''
+            const parentName = getBasename(normalizedParentPath)
+
             parentNode = {
               name: parentName,
               path: normalizedParentPath,
@@ -135,13 +134,10 @@ export const createFilesystemStore = (rootPath: string) =>
           }
 
           if (parentNode.type === FileType.FILE) {
-            console.error('Parent node is a file', parentNode)
-            return
+            throw new Error('Parent node is a file')
           }
 
-          const existingChildren = parentNode.children ?? []
-
-          const childrenSet = new Set<string>(existingChildren)
+          const childrenSet = new Set<string>(parentNode.children)
 
           for (const node of nodes) {
             const normalizedPath = normalizePath(node.path)
@@ -188,20 +184,18 @@ export const createFilesystemStore = (rootPath: string) =>
             childrenCache.delete(parentPath)
           }
 
-          const toRemove = [normalizedPath]
           for (const [nodePath] of state.nodes) {
-            if (isChildPath(normalizedPath, nodePath)) {
-              toRemove.push(nodePath)
-            }
-          }
+            if (
+              nodePath === normalizedPath ||
+              isChildPath(normalizedPath, nodePath)
+            ) {
+              state.nodes.delete(nodePath)
+              state.loadingPaths.delete(nodePath)
+              state.errorPaths.delete(nodePath)
 
-          for (const pathToRemove of toRemove) {
-            state.nodes.delete(pathToRemove)
-            state.loadingPaths.delete(pathToRemove)
-            state.errorPaths.delete(pathToRemove)
-
-            if (state.selectedPath === pathToRemove) {
-              state.selectedPath = undefined
+              if (state.selectedPath === nodePath) {
+                state.selectedPath = undefined
+              }
             }
           }
         })
@@ -270,12 +264,7 @@ export const createFilesystemStore = (rootPath: string) =>
       setFileContent: (path, updates) => {
         const normalizedPath = normalizePath(path)
         set((state: FilesystemState) => {
-          const existing =
-            state.fileContents.get(normalizedPath) ?? ({} as FileContentState)
-          state.fileContents.set(normalizedPath, {
-            ...existing,
-            ...updates,
-          })
+          state.fileContents.set(normalizedPath, updates)
         })
       },
 
