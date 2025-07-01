@@ -12,6 +12,7 @@ import TemplateId from './template-id'
 import StartedAt from './started-at'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
+import Metadata from './metadata'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
@@ -37,8 +38,12 @@ export default async function SandboxDetailsHeader({
       label: 'template id',
       value: <TemplateId templateID={sandboxInfo.templateID} />,
     },
+    metadata: {
+      label: 'metadata',
+      value: <Metadata metadata={sandboxInfo.metadata} />,
+    },
     remainingTime: {
-      label: 'ends in',
+      label: 'timeout in',
       value: <RemainingTime endAt={sandboxInfo.endAt} />,
     },
     startedAt: {
@@ -46,7 +51,7 @@ export default async function SandboxDetailsHeader({
       value: <StartedAt startedAt={sandboxInfo.startedAt} />,
     },
     endAt: {
-      label: sandboxInfo.state === 'running' ? 'running since' : 'ran for',
+      label: sandboxInfo.state === 'running' ? 'running for' : 'ran for',
       value: (
         <RanFor
           state={sandboxInfo.state}
