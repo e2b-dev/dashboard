@@ -43,13 +43,13 @@ export default function ApiKeyTableRow({
     deleteApiKeyAction,
     {
       onSuccess: () => {
-        toast(defaultSuccessToast('Api key has been deleted.'))
+        toast(defaultSuccessToast('API Key has been deleted.'))
         setIsDeleteDialogOpen(false)
       },
       onError: (error) => {
         toast(
           defaultErrorToast(
-            error.error.serverError || 'Failed to delete api key.'
+            error.error.serverError || 'Failed to delete API Key.'
           )
         )
         setIsDeleteDialogOpen(false)
@@ -76,7 +76,7 @@ export default function ApiKeyTableRow({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Delete API Key"
-        description="Are you sure you want to delete this API key? This action cannot be undone."
+        description="Are you sure you want to delete this API Key? This action cannot be undone."
         confirm="Delete"
         onConfirm={deleteKey}
         confirmProps={{

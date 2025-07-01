@@ -41,7 +41,7 @@ export const createApiKeyAction = authActionClient
     if (res.error) {
       logError(ERROR_CODES.INFRA, '/api-keys', res.error)
 
-      return returnServerError('Failed to create api key')
+      return returnServerError('Failed to create API Key')
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')
@@ -81,7 +81,7 @@ export const deleteApiKeyAction = authActionClient
     if (res.error) {
       logError(ERROR_CODES.INFRA, '/api-keys/{apiKeyID}', res.error)
 
-      return returnServerError('Failed to delete api key')
+      return returnServerError('Failed to delete API Key')
     }
 
     revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')

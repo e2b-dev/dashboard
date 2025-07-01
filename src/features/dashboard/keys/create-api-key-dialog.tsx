@@ -148,7 +148,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
               <Alert variant="warning" className="mt-4">
                 <AlertTitle>Important</AlertTitle>
                 <AlertDescription>
-                  Make sure to copy your API key now.
+                  Make sure to copy your API Key now.
                   <br /> You won't be able to see it again!
                 </AlertDescription>
               </Alert>
