@@ -1,5 +1,5 @@
 import { FilesystemNode } from './filesystem/types'
-import { ChevronRight } from 'lucide-react'
+import { AlertCircle, ChevronRight, CircleSlash } from 'lucide-react'
 import SandboxInspectNode from './node'
 import { useDirectory } from './hooks/use-directory'
 import { cn } from '@/lib/utils'
@@ -38,7 +38,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           }
         }}
         className={cn(
-          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 cursor-pointer gap-1 truncate py-0.5 transition-none select-none focus:outline-none'
+          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 truncate transition-none select-none focus:outline-none'
         )}
         data-slot="inspect-dir"
       >
@@ -62,8 +62,14 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           isLoading={isLoading}
         />
         {hasError && (
-          <span className="text-error truncate pl-1 text-sm text-ellipsis">
+          <span className="text-error flex items-center gap-1 truncate pl-1 text-xs text-ellipsis">
+            <AlertCircle className="size-3" />
             {error}
+          </span>
+        )}
+        {!hasChildren && !isLoading && isLoaded && (
+          <span className="text-fg-500 flex translate-y-0.25 items-center gap-1 pl-1 text-xs">
+            <CircleSlash className="size-3" />
           </span>
         )}
       </DataTableRow>

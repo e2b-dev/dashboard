@@ -1,7 +1,7 @@
 import { FileType } from 'e2b'
 import { FilesystemNode } from './filesystem/types'
 import { DataTableRow } from '@/ui/data-table'
-import { FileIcon } from 'lucide-react'
+import { AlertCircle, FileIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import NodeLabel from './node-label'
 import { useFile } from './hooks/use-file'
@@ -20,7 +20,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
       role="button"
       tabIndex={0}
       className={cn(
-        'hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 cursor-pointer gap-1 px-1.5 py-1 transition-none group-[data-slot=inspect-dir]:px-2',
+        'hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 px-1.5 transition-none group-[data-slot=inspect-dir]:px-2 focus:outline-none',
         {
           'bg-bg-200': isSelected,
         }
@@ -45,7 +45,8 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
         className="text-sm"
       />
       {hasError && (
-        <span className="text-error truncate pl-1 text-sm text-ellipsis">
+        <span className="text-error flex items-center gap-1 truncate pl-1 text-xs text-ellipsis">
+          <AlertCircle className="size-3" />
           {error}
         </span>
       )}
