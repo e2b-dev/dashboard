@@ -62,7 +62,7 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
     <SandboxInspectFrame
       classNames={{
         frame: 'max-w-1/2 max-md:max-w-full max-md:border-none',
-        header: 'max-md:bg-transparent max-md:h-9',
+        header: 'max-md:bg-transparent max-md:h-9 max-md:border-none',
       }}
       header={
         <SandboxInspectViewerHeader
