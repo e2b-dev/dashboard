@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { useSandboxInspectContext } from '../context'
 import { useStore } from 'zustand'
-import { useFilesystemNode } from './use-node'
+import { useFilesystemNode, useSelectedPath } from './use-node'
 import { FileType } from 'e2b'
 
 /**
@@ -33,13 +33,20 @@ export function useFileState(path: string) {
  */
 export function useFileOperations(path: string) {
   const { operations } = useSandboxInspectContext()
+  const selectedPath = useSelectedPath()
 
   return useMemo(
     () => ({
       refresh: () => operations.refreshFile(path),
-      select: () => operations.selectNode(path),
+      toggle: () => {
+        if (selectedPath === path) {
+          operations.resetSelected()
+        } else {
+          operations.selectNode(path)
+        }
+      },
     }),
-    [operations, path]
+    [operations, path, selectedPath]
   )
 }
 
