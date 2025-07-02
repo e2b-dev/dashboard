@@ -2,9 +2,9 @@
 
 import { cn } from '@/lib/utils'
 import React from 'react'
+import { motion } from 'framer-motion'
 
-interface SandboxInspectFrameProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+type SandboxInspectFrameProps = React.ComponentProps<typeof motion.div> & {
   header: React.ReactNode
   classNames?: {
     frame?: string
@@ -20,9 +20,10 @@ export default function SandboxInspectFrame({
   ...props
 }: SandboxInspectFrameProps) {
   return (
-    <div
+    <motion.div
+      transition={{ duration: 0.25, ease: 'easeInOut' }}
       className={cn(
-        'flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden border',
+        'flex h-full min-h-0 flex-1 flex-col overflow-hidden border',
         classNames?.frame,
         className
       )}
@@ -31,7 +32,7 @@ export default function SandboxInspectFrame({
       <div className={cn('h-10 w-full border-b', classNames?.header)}>
         {header}
       </div>
-      {children}
-    </div>
+      {children as React.ReactNode}
+    </motion.div>
   )
 }

@@ -1,6 +1,5 @@
 import { SandboxInspectProvider } from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
-import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxRoot } from '@/server/sandboxes/get-sandbox-root'
 import { notFound } from 'next/navigation'
@@ -48,12 +47,7 @@ export default async function SandboxInspectPage({
       seedEntries={res.data?.entries ?? []}
     >
       <div className="relative flex flex-1 gap-4 overflow-hidden p-4">
-        <SandboxInspectFrame
-          header={<SandboxInspectFilesystemHeader rootPath={rootPath} />}
-          className="w-1/2"
-        >
-          <SandboxInspectFilesystem />
-        </SandboxInspectFrame>
+        <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
       </div>
     </SandboxInspectProvider>

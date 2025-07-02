@@ -13,7 +13,7 @@ interface SandboxInspectFileProps {
 }
 
 export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
-  const { isSelected, isLoading, hasError, error, select } = useFile(file.path)
+  const { isSelected, isLoading, hasError, error, toggle } = useFile(file.path)
 
   return (
     <DataTableRow
@@ -25,10 +25,10 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
           'bg-bg-200': isSelected,
         }
       )}
-      onClick={select}
+      onClick={toggle}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          select()
+          toggle()
         }
       }}
     >

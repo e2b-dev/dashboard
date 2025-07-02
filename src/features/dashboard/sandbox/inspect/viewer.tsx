@@ -13,6 +13,8 @@ import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import { Download } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { exponentialSmoothing } from '@/lib/utils'
 
 export default function SandboxInspectViewer() {
   const path = useSelectedPath()
@@ -27,25 +29,27 @@ export default function SandboxInspectViewer() {
     }
   }, [path, errorPaths])
 
-  if (!path) {
-    return null
-  }
-
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent className="mt-4 h-[90svh] overflow-hidden p-0">
-          <SandboxInspectViewerContent path={path} />
+          <AnimatePresence mode="wait">
+            {path && <SandboxInspectViewerContent key="viewer" path={path} />}
+          </AnimatePresence>
         </DrawerContent>
       </Drawer>
     )
   }
 
-  return <SandboxInspectViewerContent path={path} />
+  return (
+    <AnimatePresence mode="wait">
+      {path && <SandboxInspectViewerContent key="viewer" path={path} />}
+    </AnimatePresence>
+  )
 }
 
 function SandboxInspectViewerContent({ path }: { path: string }) {
-  const { name, isLoading, refresh } = useFile(path)
+  const { name, isLoading, refresh, toggle } = useFile(path)
   const { state } = useContent(path)
   const shikiTheme = useShikiTheme()
 
@@ -56,29 +60,44 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
   return (
     <SandboxInspectFrame
       classNames={{
-        frame: 'max-w-1/2 max-md:max-w-full max-md:border-none',
+        frame: 'max-md:max-w-full max-md:border-none',
         header: 'max-md:bg-transparent max-md:h-9 max-md:border-none',
       }}
+      initial={{
+        opacity: 0,
+        flex: 0,
+      }}
+      animate={{
+        opacity: 1,
+        flex: 1,
+      }}
+      exit={{
+        opacity: 0,
+        flex: 0,
+      }}
+      transition={{ duration: 0.15, ease: 'circOut' }}
       header={
         <SandboxInspectViewerHeader
           name={name}
           fileContentState={state}
           isLoading={isLoading}
           onRefresh={refresh}
+          onClose={toggle}
         />
       }
     >
-      {state.encoding === 'utf-8' ? (
-        <TextContent
-          name={name}
-          content={state.content}
-          shikiTheme={shikiTheme}
-        />
-      ) : state.encoding === 'image' ? (
-        <ImageContent name={name} dataUri={state.dataUri} />
-      ) : (
-        <BinaryContent name={name} dataUri={state.dataUri} />
-      )}
+      {state &&
+        (state.encoding === 'utf-8' ? (
+          <TextContent
+            name={name}
+            content={state.content}
+            shikiTheme={shikiTheme}
+          />
+        ) : state.encoding === 'image' ? (
+          <ImageContent name={name} dataUri={state.dataUri} />
+        ) : (
+          <BinaryContent name={name} dataUri={state.dataUri} />
+        ))}
     </SandboxInspectFrame>
   )
 }
