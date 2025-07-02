@@ -1,4 +1,4 @@
-import { Download, FileIcon, RefreshCcw } from 'lucide-react'
+import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
 import { Button } from '@/ui/primitives/button'
 import { motion } from 'motion/react'
 import CopyButton from '@/ui/copy-button'
@@ -10,6 +10,7 @@ interface SandboxInspectViewerHeaderProps {
   fileContentState?: FileContentState
   isLoading: boolean
   onRefresh: () => void
+  onClose: () => void
 }
 
 export default function SandboxInspectViewerHeader({
@@ -17,6 +18,7 @@ export default function SandboxInspectViewerHeader({
   fileContentState,
   isLoading,
   onRefresh,
+  onClose,
 }: SandboxInspectViewerHeaderProps) {
   const handleDownload = useCallback(() => {
     if (
@@ -76,6 +78,10 @@ export default function SandboxInspectViewerHeader({
         >
           <RefreshCcw className="h-4 w-4" />
         </motion.div>
+      </Button>
+
+      <Button variant="ghost" size="iconSm" onClick={onClose}>
+        <X className="h-4 w-4" />
       </Button>
     </div>
   )
