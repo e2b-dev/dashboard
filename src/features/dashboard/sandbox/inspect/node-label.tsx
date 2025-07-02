@@ -25,7 +25,7 @@ export default function NodeLabel({
         } as CSSProperties
       }
       className={cn(
-        'text-fg-300 truncate text-left font-sans transition-colors',
+        'text-fg-500 truncate text-left font-sans transition-colors',
         {
           'text-fg': isActive && !isLoading,
           'text-fg/60 animate-shiny-text [background-size:var(--shiny-width)_100%] bg-clip-text [background-position:calc(-100%_-_var(--shiny-width))_0] bg-no-repeat':

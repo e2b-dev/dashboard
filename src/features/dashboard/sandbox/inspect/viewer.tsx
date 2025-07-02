@@ -105,7 +105,7 @@ function TextContent({ name, content, shikiTheme }: TextContentProps) {
         <ShikiHighlighter
           language={language}
           theme={shikiTheme}
-          className="px-1.5 py-1 text-xs max-md:p-3"
+          className="px-1.5 py-1 text-sm max-md:p-3"
           addDefaultStyles={false}
           showLanguage={false}
         >

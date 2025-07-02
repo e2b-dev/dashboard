@@ -20,7 +20,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
       role="button"
       tabIndex={0}
       className={cn(
-        'hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 px-1.5 transition-none group-[data-slot=inspect-dir]:px-2 focus:outline-none',
+        'hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 px-1.5 transition-none group-[data-slot=inspect-dir]:px-2 even:bg-transparent focus:outline-none',
         {
           'bg-bg-200': isSelected,
         }
@@ -38,12 +38,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
           'text-fg': isSelected,
         })}
       />
-      <NodeLabel
-        name={file.name}
-        isActive={isSelected}
-        isLoading={isLoading}
-        className="text-sm"
-      />
+      <NodeLabel name={file.name} isActive={isSelected} isLoading={isLoading} />
       {hasError && (
         <span className="text-error flex items-center gap-1 truncate pl-1 text-xs text-ellipsis">
           <AlertCircle className="size-3" />
