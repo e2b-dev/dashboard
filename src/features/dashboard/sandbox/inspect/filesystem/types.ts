@@ -22,5 +22,6 @@ export interface FilesystemOperations {
   toggleDirectory: (path: string) => Promise<void>
   refreshDirectory: (path: string) => Promise<void>
   selectNode: (path: string) => void
+  resetSelected: () => void
   refreshFile: (path: string) => Promise<void>
 }
