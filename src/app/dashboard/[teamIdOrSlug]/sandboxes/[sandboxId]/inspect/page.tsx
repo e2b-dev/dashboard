@@ -36,7 +36,7 @@ export default async function SandboxInspectPage({
 
   if (!res?.data) {
     if (res?.serverError !== 'ROOT_PATH_NOT_FOUND') {
-      throw notFound()
+      return notFound()
     }
   }
 
