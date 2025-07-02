@@ -10,11 +10,10 @@ import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { useFile } from './hooks/use-file'
 import { Drawer, DrawerContent } from '@/ui/primitives/drawer'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import { Download } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
-import { exponentialSmoothing } from '@/lib/utils'
 
 export default function SandboxInspectViewer() {
   const path = useSelectedPath()
@@ -49,7 +48,7 @@ export default function SandboxInspectViewer() {
 }
 
 function SandboxInspectViewerContent({ path }: { path: string }) {
-  const { name, isLoading, refresh, toggle } = useFile(path)
+  const { name, isLoading, refresh, toggle, download } = useFile(path)
   const { state } = useContent(path)
   const shikiTheme = useShikiTheme()
 
@@ -87,16 +86,16 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
       }
     >
       {state &&
-        (state.encoding === 'utf-8' ? (
+        (state.type === 'text' ? (
           <TextContent
             name={name}
             content={state.content}
             shikiTheme={shikiTheme}
           />
-        ) : state.encoding === 'image' ? (
+        ) : state.type === 'image' ? (
           <ImageContent name={name} dataUri={state.dataUri} />
         ) : (
-          <BinaryContent name={name} dataUri={state.dataUri} />
+          <UnreadableContent onDownload={download} />
         ))}
     </SandboxInspectFrame>
   )
@@ -154,30 +153,17 @@ function ImageContent({ name, dataUri }: ImageContentProps) {
   )
 }
 
-interface BinaryContentProps {
-  name: string
-  dataUri: string
+interface UnreadableContent {
+  onDownload: () => void
 }
 
-function BinaryContent({ name, dataUri }: BinaryContentProps) {
-  const handleDownload = useCallback(() => {
-    if (!document) {
-      return
-    }
-
-    const a = document.createElement('a')
-
-    a.href = dataUri
-    a.download = name
-    a.click()
-  }, [dataUri, name])
-
+function UnreadableContent({ onDownload }: UnreadableContent) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3">
       <span className="text-fg-300 text-sm">
         Binary file preview not available.
       </span>
-      <Button variant="accent" size="sm" onClick={handleDownload}>
+      <Button variant="accent" size="sm" onClick={onDownload}>
         Download
         <Download className="ml-1.5 h-4 w-4" />
       </Button>
