@@ -38,7 +38,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           }
         }}
         className={cn(
-          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 truncate transition-none select-none focus:outline-none'
+          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 truncate transition-none select-none even:bg-transparent focus:outline-none'
         )}
         data-slot="inspect-dir"
       >
