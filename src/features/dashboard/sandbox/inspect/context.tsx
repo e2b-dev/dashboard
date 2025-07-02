@@ -7,7 +7,6 @@ import React, {
   ReactNode,
   useLayoutEffect,
   useMemo,
-  useState,
 } from 'react'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
@@ -131,6 +130,11 @@ export function SandboxInspectProvider({
           }
 
           store.getState().setSelected(path)
+        },
+        resetSelected: () => {
+          store.setState((state) => {
+            state.selectedPath = undefined
+          })
         },
         toggleDirectory: async (path: string) => {
           const normalizedPath = normalizePath(path)
