@@ -9,7 +9,7 @@ import {
 import type { FilesystemStore } from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
-import { determineFileContentState } from '@/lib/utils/inspect'
+import { determineFileContentState } from '@/lib/utils/filesystem'
 
 export class SandboxManager {
   private watchHandle?: WatchHandle
