@@ -3,6 +3,7 @@
 import { SandboxInfo } from '@/types/api'
 import { Button } from '@/ui/primitives/button'
 import { JsonPopover } from '@/ui/json-popover'
+import { Badge } from '@/ui/primitives/badge'
 
 interface MetadataProps {
   metadata?: SandboxInfo['metadata']
@@ -13,16 +14,16 @@ export default function Metadata({ metadata }: MetadataProps) {
 
   if (!metadata) {
     return (
-      <Button disabled variant="muted" size="sm" className={className}>
+      <Badge variant="muted" className={className}>
         No Metadata
-      </Button>
+      </Badge>
     )
   }
 
   return (
     <JsonPopover json={metadata}>
-      <Button variant="muted" size="sm" className={className}>
-        Metadata
+      <Button variant="accent" size="sm" className={className}>
+        Show Metadata
       </Button>
     </JsonPopover>
   )
