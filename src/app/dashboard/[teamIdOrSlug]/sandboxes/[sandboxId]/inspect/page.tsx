@@ -48,7 +48,10 @@ export default async function SandboxInspectPage({
       seedEntries={res.data?.entries ?? []}
     >
       <ClientOnly
-        className={cn('relative flex flex-1 gap-4 overflow-hidden p-4')}
+        className={cn(
+          'sticky top-0 flex min-h-[calc(100vh-var(--protected-nav-height))] flex-1 gap-4 overflow-hidden p-4',
+          'md:relative'
+        )}
       >
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
