@@ -57,6 +57,7 @@ export default function RootPathInput({
         onChange={(e) => setValue(e.target.value)}
         disabled={isPending}
         className="border-none pl-0 focus:!border-none"
+        placeholder="/home/user ?"
       />
 
       <Button
