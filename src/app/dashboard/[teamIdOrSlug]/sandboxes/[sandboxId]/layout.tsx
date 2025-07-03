@@ -31,8 +31,8 @@ export default async function SandboxLayout({
 
   return (
     <SandboxProvider sandboxInfo={res?.data}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="bg-bg z-10 flex h-[var(--protected-nav-height)] w-full border-b pr-3 md:pl-3">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="bg-bg sticky top-0 z-10 flex h-[var(--protected-nav-height)] w-full border-b pr-3 md:pl-3">
           <div className="flex w-full items-center gap-2">
             <SidebarTrigger className="text-fg-300 h-full w-11 rounded-none border-r px-3 md:hidden" />
 
