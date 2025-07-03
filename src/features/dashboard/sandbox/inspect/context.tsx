@@ -98,11 +98,12 @@ export function SandboxInspectProvider({
           }
 
           if (entry.type === FileType.DIR) {
+            state.setLoaded(base.path, false)
+
             return {
               ...base,
               type: FileType.DIR,
               isExpanded: false,
-              isLoaded: false,
               children: [],
             }
           }
