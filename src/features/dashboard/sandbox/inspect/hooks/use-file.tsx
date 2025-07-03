@@ -60,7 +60,11 @@ export function useFile(path: string) {
   const ops = useFileOperations(path)
 
   return {
-    ...node,
+    ...(node && {
+      name: node.name,
+      type: node.type,
+      path: node.path,
+    }),
     ...state,
     ...ops,
   }
