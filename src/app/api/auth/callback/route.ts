@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/clients/supabase/server'
 import { redirect } from 'next/navigation'
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { logError, logInfo } from '@/lib/clients/logger'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { logInfo } from '@/lib/clients/logger'
 import { ERROR_CODES } from '@/configs/logs'
 
 export async function GET(request: Request) {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      logError(
+      console.error(
         ERROR_CODES.SUPABASE,
         'Error exchanging code for session:',
         error

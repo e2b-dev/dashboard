@@ -14,6 +14,7 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
+import { ERROR_CODES } from '@/configs/logs'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -171,6 +172,13 @@ export const forgotPasswordAction = actionClient
     })
 
     if (error) {
+      console.error(ERROR_CODES.SUPABASE, 'Error resetting password:', error)
+      if (error.message.includes('security purposes')) {
+        return returnServerError(
+          'Please wait before requesting another password reset'
+        )
+      }
+
       throw error
     }
   })
