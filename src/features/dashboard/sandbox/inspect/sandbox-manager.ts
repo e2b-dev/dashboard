@@ -18,6 +18,7 @@ export class SandboxManager {
   private sandbox: Sandbox
 
   private static readonly LOAD_DEBOUNCE_MS = 250
+  private static readonly READ_DEBOUNCE_MS = 250
 
   /**
    * Small utility to create a deferred promise (aka Promise with exposed
@@ -35,6 +36,16 @@ export class SandboxManager {
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
+    string,
+    {
+      promise: Promise<void>
+      resolve: () => void
+      reject: (err: unknown) => void
+    }
+  > = new Map()
+
+  private readTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  private pendingReads: Map<
     string,
     {
       promise: Promise<void>
@@ -256,13 +267,58 @@ export class SandboxManager {
 
     if (!node || node.type !== FileType.FILE) return
 
+    let pending = this.pendingReads.get(normalizedPath)
+    if (!pending) {
+      pending = SandboxManager.createDeferred<void>()
+      this.pendingReads.set(normalizedPath, pending)
+    }
+
+    const isAlreadyLoading = state.loadingPaths.has(normalizedPath)
+    const existingTimer = this.readTimers.get(normalizedPath)
+
+    if (isAlreadyLoading || existingTimer) {
+      if (existingTimer) clearTimeout(existingTimer)
+
+      const timer = setTimeout(async () => {
+        this.readTimers.delete(normalizedPath)
+        try {
+          await this.readFileImmediate(normalizedPath)
+          pending.resolve()
+        } catch (err) {
+          pending.reject(err)
+        } finally {
+          this.pendingReads.delete(normalizedPath)
+        }
+      }, SandboxManager.READ_DEBOUNCE_MS)
+
+      this.readTimers.set(normalizedPath, timer)
+      return pending.promise
+    }
+
+    void this.readFileImmediate(normalizedPath)
+      .then(() => pending.resolve())
+      .catch((err) => pending.reject(err))
+      .finally(() => this.pendingReads.delete(normalizedPath))
+
+    return pending.promise
+  }
+
+  private async readFileImmediate(path: string): Promise<void> {
+    const normalizedPath = normalizePath(path)
+    const state = this.store.getState()
+    const node = state.getNode(normalizedPath)
+
+    if (!node || node.type !== FileType.FILE) return
+
     try {
       state.setLoading(normalizedPath, true)
 
-      const blob = await this.sandbox.files.read(normalizedPath, {
-        format: 'blob',
+      const bytes = await this.sandbox.files.read(normalizedPath, {
+        format: 'bytes',
         requestTimeoutMs: 30_000,
       })
+
+      const blob = new Blob([bytes])
 
       const contentState = await determineFileContentState(blob)
 
