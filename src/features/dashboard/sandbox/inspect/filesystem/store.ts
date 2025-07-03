@@ -18,25 +18,26 @@ interface FilesystemStatics {
   rootPath: string
 }
 
-interface Utf8FileContentState {
-  content: string
-  encoding: 'utf-8'
+interface ContentFileContentState {
+  text: string
+  type: 'text'
 }
 
-interface BinaryFileContentState {
-  dataUri: string
-  encoding: 'binary'
+interface UnreadableFileContentState {
+  type: 'unreadable'
 }
 
 interface ImageFileContentState {
   dataUri: string
-  encoding: 'image'
+  type: 'image'
 }
 
 export type FileContentState =
-  | Utf8FileContentState
-  | BinaryFileContentState
+  | ContentFileContentState
+  | UnreadableFileContentState
   | ImageFileContentState
+
+export type FileContentStateType = FileContentState['type']
 
 // mutable state
 export interface FilesystemState {
