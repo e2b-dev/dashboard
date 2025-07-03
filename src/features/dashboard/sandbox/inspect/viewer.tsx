@@ -52,7 +52,7 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
   const { state } = useContent(path)
   const shikiTheme = useShikiTheme()
 
-  if (state === undefined) {
+  if (state === undefined || !name) {
     return null
   }
 
@@ -86,18 +86,13 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
         />
       }
     >
-      {state &&
-        (state.type === 'text' ? (
-          <TextContent
-            name={name}
-            content={state.text}
-            shikiTheme={shikiTheme}
-          />
-        ) : state.type === 'image' ? (
-          <ImageContent name={name} dataUri={state.dataUri} />
-        ) : (
-          <UnreadableContent onDownload={download} />
-        ))}
+      {state.type === 'text' ? (
+        <TextContent name={name} content={state.text} shikiTheme={shikiTheme} />
+      ) : state.type === 'image' ? (
+        <ImageContent name={name} dataUri={state.dataUri} />
+      ) : (
+        <UnreadableContent onDownload={download} />
+      )}
     </SandboxInspectFrame>
   )
 }
