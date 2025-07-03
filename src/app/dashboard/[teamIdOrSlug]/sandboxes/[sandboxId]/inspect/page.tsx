@@ -6,7 +6,8 @@ import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
-import SandboxInspectFrame from '@/features/dashboard/sandbox/inspect/frame'
+import ClientOnly from '@/ui/client-only'
+import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -46,10 +47,12 @@ export default async function SandboxInspectPage({
       rootPath={rootPath}
       seedEntries={res.data?.entries ?? []}
     >
-      <div className="relative flex flex-1 gap-4 overflow-hidden p-4">
+      <ClientOnly
+        className={cn('relative flex flex-1 gap-4 overflow-hidden p-4')}
+      >
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
-      </div>
+      </ClientOnly>
     </SandboxInspectProvider>
   )
 }

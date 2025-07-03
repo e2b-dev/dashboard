@@ -2,8 +2,8 @@ import { useTheme } from 'next-themes'
 import { useMemo } from 'react'
 import { ThemeRegistration } from 'shiki'
 
-import baseThemeDark from '@shikijs/themes/rose-pine'
-import baseThemeLight from '@shikijs/themes/rose-pine-dawn'
+import baseThemeDark from '@shikijs/themes/vitesse-dark'
+import baseThemeLight from '@shikijs/themes/vitesse-light'
 
 export const SHIKI_THEME_DARK: ThemeRegistration = {
   ...baseThemeDark,
