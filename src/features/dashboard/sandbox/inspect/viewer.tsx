@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import { Download } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 export default function SandboxInspectViewer() {
   const path = useSelectedPath()
@@ -142,7 +143,9 @@ function TextContent({
         <ShikiHighlighter
           language={language}
           theme={shikiTheme}
-          className="px-1.5 py-1 text-sm max-md:p-3"
+          className={cn(
+            'font-fira-code [&_*]:font-fira-code px-1.5 py-1 text-xs max-md:p-3'
+          )}
           addDefaultStyles={false}
           showLanguage={false}
         >

@@ -4,7 +4,7 @@ import SandboxInspectNode from './node'
 import { useDirectory } from './hooks/use-directory'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { FileType } from 'e2b'
 import NodeLabel from './node-label'
 import SandboxInspectEmptyNode from './empty'
@@ -70,17 +70,44 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         )}
       </DataTableRow>
 
-      {isExpanded && isLoaded && (
-        <div className="flex flex-col pl-2">
-          {hasChildren ? (
-            children.map((child) => (
-              <SandboxInspectNode key={child.path} path={child.path} />
-            ))
-          ) : (
-            <SandboxInspectEmptyNode />
-          )}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {isExpanded && isLoaded && (
+          <motion.div
+            key="dir-content"
+            className="flex flex-col pl-2"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15, ease: 'circOut' }}
+          >
+            <AnimatePresence initial={false}>
+              {hasChildren ? (
+                children.map((child) => (
+                  <motion.div
+                    key={child.path}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.1, ease: 'circOut' }}
+                  >
+                    <SandboxInspectNode path={child.path} />
+                  </motion.div>
+                ))
+              ) : (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.1, ease: 'circOut' }}
+                >
+                  <SandboxInspectEmptyNode />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
