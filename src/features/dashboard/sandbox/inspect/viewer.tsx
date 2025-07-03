@@ -82,6 +82,7 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
           isLoading={isLoading}
           onRefresh={refresh}
           onClose={toggle}
+          onDownload={download}
         />
       }
     >
@@ -89,7 +90,7 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
         (state.type === 'text' ? (
           <TextContent
             name={name}
-            content={state.content}
+            content={state.text}
             shikiTheme={shikiTheme}
           />
         ) : state.type === 'image' ? (

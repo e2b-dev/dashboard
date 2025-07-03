@@ -3,7 +3,6 @@ import { Button } from '@/ui/primitives/button'
 import { motion } from 'motion/react'
 import CopyButton from '@/ui/copy-button'
 import { FileContentState } from './filesystem/store'
-import { useCallback } from 'react'
 
 interface SandboxInspectViewerHeaderProps {
   name: string
@@ -11,6 +10,7 @@ interface SandboxInspectViewerHeaderProps {
   isLoading: boolean
   onRefresh: () => void
   onClose: () => void
+  onDownload: () => void
 }
 
 export default function SandboxInspectViewerHeader({
@@ -19,33 +19,18 @@ export default function SandboxInspectViewerHeader({
   isLoading,
   onRefresh,
   onClose,
+  onDownload,
 }: SandboxInspectViewerHeaderProps) {
-  const handleDownload = useCallback(() => {
-    if (
-      !fileContentState ||
-      fileContentState.encoding === 'utf-8' ||
-      !document
-    ) {
-      return
-    }
-
-    const a = document.createElement('a')
-
-    a.href = fileContentState.dataUri
-    a.download = name
-    a.click()
-  }, [fileContentState, name])
-
   return (
     <div className="flex h-full flex-1 items-center gap-2 p-1 px-2 max-md:px-4">
       <FileIcon className="size-3.5" />
       <span className="text-sm">{name}</span>
 
-      {fileContentState?.encoding === 'utf-8' ? (
+      {fileContentState?.type === 'text' ? (
         <CopyButton
           variant="ghost"
           size="iconSm"
-          value={fileContentState.content}
+          value={fileContentState.text}
           className="ml-auto"
         />
       ) : (
@@ -53,7 +38,7 @@ export default function SandboxInspectViewerHeader({
           variant="ghost"
           size="iconSm"
           className="ml-auto"
-          onClick={handleDownload}
+          onClick={onDownload}
         >
           <Download className="h-4 w-4" />
         </Button>
