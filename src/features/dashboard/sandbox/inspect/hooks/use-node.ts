@@ -8,10 +8,16 @@ import { useStore } from 'zustand'
 /**
  * Hook for accessing a specific filesystem node
  */
-export function useFilesystemNode(path: string): FilesystemNode | undefined {
+export function useFilesystemNode(path: string): FilesystemNode {
   const { store } = useSandboxInspectContext()
 
-  return useStore(store, (state) => state.getNode(path))
+  const node = useStore(store, (state) => state.getNode(path))
+
+  if (!node) {
+    throw new Error(`Node at path ${path} not found`)
+  }
+
+  return node
 }
 
 /**

@@ -106,8 +106,6 @@ export function isRootPath(path: string): boolean {
   return normalizePath(path) === '/'
 }
 
-export type FileEncoding = 'utf-8' | 'binary' | 'image'
-
 export async function determineFileContentState(
   blob: Blob
 ): Promise<FileContentState> {
@@ -121,7 +119,7 @@ export async function determineFileContentState(
       reader.readAsDataURL(blob)
     })
 
-    return { encoding: 'image', dataUri }
+    return { type: 'image', dataUri }
   }
 
   const buffer = await blob.arrayBuffer()
@@ -129,11 +127,8 @@ export async function determineFileContentState(
 
   try {
     const content = new TextDecoder('utf-8', { fatal: true }).decode(data)
-    return { encoding: 'utf-8', content }
+    return { type: 'text', text: content }
   } catch {
-    return {
-      encoding: 'binary',
-      dataUri: `data:application/octet-stream;base64,${btoa(String.fromCharCode(...data))}`,
-    }
+    return { type: 'unreadable' }
   }
 }

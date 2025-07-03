@@ -327,8 +327,30 @@ export class SandboxManager {
       console.error(`Failed to read file ${normalizedPath}:`, err)
 
       state.setError(normalizedPath, 'Failed to read file')
+      state.setFileContent(normalizedPath, { type: 'unreadable' })
     } finally {
       state.setLoading(normalizedPath, false)
     }
+  }
+
+  async getDownloadUrl(path: string): Promise<string> {
+    const normalizedPath = normalizePath(path)
+    const state = this.store.getState()
+    const node = state.getNode(normalizedPath)
+
+    if (!node || node.type !== FileType.FILE) {
+      console.error(
+        `Failed to get download URL for file. Invalid node: ${node} ${normalizedPath}`
+      )
+      state.setError(normalizedPath, 'Node is not a directory.')
+
+      return ''
+    }
+
+    const downloadUrl = await this.sandbox.downloadUrl(normalizedPath)
+
+    console.log('downloadUrl', downloadUrl)
+
+    return downloadUrl
   }
 }
