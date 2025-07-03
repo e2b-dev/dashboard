@@ -44,6 +44,7 @@ export interface FilesystemState {
   nodes: Map<string, FilesystemNode>
   selectedPath?: string
   loadingPaths: Set<string>
+  loadedPaths: Set<string>
   errorPaths: Map<string, string>
   sortingDirection: 'asc' | 'desc'
   fileContents: Map<string, FileContentState>
@@ -57,6 +58,7 @@ export interface FilesystemMutations {
   setExpanded: (path: string, expanded: boolean) => void
   setSelected: (path: string) => void
   setLoading: (path: string, loading: boolean) => void
+  setLoaded: (path: string, loaded: boolean) => void
   setError: (path: string, error?: string) => void
   setFileContent: (path: string, updates: FileContentState) => void
   resetFileContent: (path: string) => void
@@ -69,6 +71,7 @@ export interface FilesystemComputed {
   getNode: (path: string) => FilesystemNode | undefined
   isExpanded: (path: string) => boolean
   isSelected: (path: string) => boolean
+  isLoaded: (path: string) => boolean
   hasChildren: (path: string) => boolean
   getFileContent: (path: string) => FileContentState | undefined
 }
@@ -111,6 +114,7 @@ export const createFilesystemStore = (rootPath: string) =>
 
       nodes: new Map<string, FilesystemNode>(),
       loadingPaths: new Set<string>(),
+      loadedPaths: new Set<string>(),
       errorPaths: new Map<string, string>(),
       sortingDirection: 'asc' as 'asc' | 'desc',
       fileContents: new Map<string, FileContentState>(),
@@ -250,6 +254,17 @@ export const createFilesystemStore = (rootPath: string) =>
         })
       },
 
+      setLoaded: (path: string, loaded: boolean) => {
+        const normalizedPath = normalizePath(path)
+        set((state: FilesystemState) => {
+          if (loaded) {
+            state.loadedPaths.add(normalizedPath)
+          } else {
+            state.loadedPaths.delete(normalizedPath)
+          }
+        })
+      },
+
       setError: (path: string, error?: string) => {
         const normalizedPath = normalizePath(path)
 
@@ -327,6 +342,11 @@ export const createFilesystemStore = (rootPath: string) =>
         if (!node) return false
 
         return get().selectedPath === normalizedPath
+      },
+
+      isLoaded: (path: string) => {
+        const normalizedPath = normalizePath(path)
+        return get().loadedPaths.has(normalizedPath)
       },
 
       hasChildren: (path: string) => {

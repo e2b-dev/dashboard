@@ -24,10 +24,7 @@ export function useDirectoryState(path: string) {
   const isLoading = useStore(store, (state) => state.loadingPaths.has(path))
   const hasError = useStore(store, (state) => state.errorPaths.has(path))
   const error = useStore(store, (state) => state.errorPaths.get(path))
-  const isLoaded = useStore(store, (state) => {
-    const node = state.getNode(path)
-    return node?.type === 'dir' ? !!node?.isLoaded : undefined
-  })
+  const isLoaded = useStore(store, (state) => state.isLoaded(path))
   const hasChildren = useStore(store, (state) => state.hasChildren(path))
 
   return useMemo(
