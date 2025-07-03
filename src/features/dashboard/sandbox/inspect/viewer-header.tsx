@@ -24,25 +24,19 @@ export default function SandboxInspectViewerHeader({
   return (
     <div className="flex h-full flex-1 items-center gap-2 p-1 px-2 max-md:px-4">
       <FileIcon className="size-3.5" />
-      <span className="text-sm">{name}</span>
+      <span className="mr-auto text-sm">{name}</span>
 
-      {fileContentState?.type === 'text' ? (
+      {fileContentState?.type === 'text' && (
         <CopyButton
           variant="ghost"
           size="iconSm"
           value={fileContentState.text}
-          className="ml-auto"
         />
-      ) : (
-        <Button
-          variant="ghost"
-          size="iconSm"
-          className="ml-auto"
-          onClick={onDownload}
-        >
-          <Download className="h-4 w-4" />
-        </Button>
       )}
+
+      <Button variant="ghost" size="iconSm" onClick={onDownload}>
+        <Download className="h-4 w-4" />
+      </Button>
 
       <Button
         variant="ghost"
