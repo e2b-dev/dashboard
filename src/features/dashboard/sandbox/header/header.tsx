@@ -7,7 +7,6 @@ import Status from './status'
 import Resource from './resource'
 import RemainingTime from './remaining-time'
 import RefreshControl from './refresh'
-import { useMemo } from 'react'
 import TemplateId from './template-id'
 import StartedAt from './started-at'
 import { cookies } from 'next/headers'
@@ -71,7 +70,7 @@ export default async function SandboxDetailsHeader({
   }
 
   return (
-    <header className="flex w-full flex-col gap-8 p-4">
+    <header className="flex w-full flex-col gap-8 p-4 max-md:py-2">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
           <Link
@@ -83,7 +82,7 @@ export default async function SandboxDetailsHeader({
             <ChevronLeftIcon className="size-5" />
             Sandboxes
           </Link>
-          <h1 className="text-fg-500 text-2xl font-bold">
+          <h1 className="text-fg-500 text-xl font-bold md:text-2xl">
             <span className="text-fg">{sandboxId}</span>'S DETAILS
           </h1>
         </div>
