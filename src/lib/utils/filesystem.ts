@@ -111,21 +111,21 @@ export async function determineFileContentState(
 ): Promise<FileContentState> {
   const mimeType = blob.type ?? ''
 
-  if (mimeType.startsWith('image/')) {
-    const dataUri = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
-      reader.onerror = () => reject(reader.error)
-      reader.readAsDataURL(blob)
-    })
-
-    return { type: 'image', dataUri }
-  }
-
-  const buffer = await blob.arrayBuffer()
-  const data = new Uint8Array(buffer)
-
   try {
+    if (mimeType.startsWith('image/')) {
+      const dataUri = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      })
+
+      return { type: 'image', dataUri }
+    }
+
+    const buffer = await blob.arrayBuffer()
+    const data = new Uint8Array(buffer)
+
     const content = new TextDecoder('utf-8', { fatal: true }).decode(data)
     return { type: 'text', text: content }
   } catch {
