@@ -52,33 +52,33 @@ export default function RemainingTime({ endAt }: RemainingTimeProps) {
   return (
     <div className="flex items-center gap-2">
       <p>{formatted}</p>
-      <HelpTooltip
-        trigger={
-          <Button
-            variant="ghost"
-            size="slate"
-            onClick={handleRefresh}
-            disabled={isPending}
-            asChild
-          >
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: remaining === 0 ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ pointerEvents: remaining === 0 ? 'auto' : 'none' }}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: remaining === 0 ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+        style={{ pointerEvents: remaining === 0 ? 'auto' : 'none' }}
+      >
+        <HelpTooltip
+          trigger={
+            <Button
+              variant="ghost"
+              size="slate"
+              onClick={handleRefresh}
+              disabled={isPending}
+              asChild
             >
               <RefreshCw
                 className={cn('size-3', {
                   'animate-spin duration-300 ease-in-out': isPending,
                 })}
               />
-            </motion.button>
-          </Button>
-        }
-      >
-        The sandbox may have been terminated since last refresh. Refreshing
-        could make this page inaccessible if the sandbox no longer exists.
-      </HelpTooltip>
+            </Button>
+          }
+        >
+          The sandbox may have been terminated since last refresh. Refreshing
+          could make this page inaccessible if the sandbox no longer exists.
+        </HelpTooltip>
+      </motion.div>
     </div>
   )
 }
