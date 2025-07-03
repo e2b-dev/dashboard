@@ -87,7 +87,12 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
       }
     >
       {state.type === 'text' ? (
-        <TextContent name={name} content={state.text} shikiTheme={shikiTheme} />
+        <TextContent
+          name={name}
+          content={state.text}
+          shikiTheme={shikiTheme}
+          onDownload={download}
+        />
       ) : state.type === 'image' ? (
         <ImageContent name={name} dataUri={state.dataUri} />
       ) : (
@@ -103,14 +108,32 @@ interface TextContentProps {
   name: string
   content: string
   shikiTheme: Parameters<typeof ShikiHighlighter>[0]['theme']
+  onDownload: () => void
 }
 
-function TextContent({ name, content, shikiTheme }: TextContentProps) {
+function TextContent({
+  name,
+  content,
+  shikiTheme,
+  onDownload,
+}: TextContentProps) {
   const hasDot = name.includes('.')
   let language: Language = name.split('.').pop() as Language
 
   if (!hasDot || (name.startsWith('.') && language)) {
     language = 'text'
+  }
+
+  if (content.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <span className="text-fg-300 text-sm">This file is empty.</span>
+        <Button variant="warning" size="sm" onClick={onDownload}>
+          Download
+          <Download className="ml-1.5 h-4 w-4" />
+        </Button>
+      </div>
+    )
   }
 
   return (
