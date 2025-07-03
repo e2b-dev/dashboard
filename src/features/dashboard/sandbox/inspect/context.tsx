@@ -164,9 +164,12 @@ export function SandboxInspectProvider({
 
           if (!downloadUrl) return
 
+          const node = store.getState().getNode(path)
+
           const a = document.createElement('a')
           a.href = downloadUrl
-          a.download = path.split('/').pop() || ''
+          a.download = node?.name || ''
+          a.target = '_blank'
           a.click()
         },
       }
