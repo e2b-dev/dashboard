@@ -95,13 +95,9 @@ export class SandboxManager {
     switch (type) {
       case FilesystemEventType.CREATE:
       case FilesystemEventType.RENAME:
-        if (parentNode?.type === FileType.DIR) {
+        if (parentNode && state.isLoaded(parentDir)) {
           void this.refreshDirectory(parentDir)
-          break
         }
-
-        void this.loadDirectory(normalizedPath)
-
         break
 
       case FilesystemEventType.REMOVE:
@@ -189,7 +185,6 @@ export class SandboxManager {
     if (
       !node ||
       node.type !== FileType.DIR ||
-      state.isLoaded(normalizedPath) ||
       state.loadingPaths.has(normalizedPath)
     )
       return
