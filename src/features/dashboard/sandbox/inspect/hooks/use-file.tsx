@@ -45,6 +45,7 @@ export function useFileOperations(path: string) {
           operations.selectNode(path)
         }
       },
+      download: () => operations.downloadFile(path),
     }),
     [operations, path, selectedPath]
   )
@@ -57,10 +58,6 @@ export function useFile(path: string) {
   const node = useFilesystemNode(path)
   const state = useFileState(path)
   const ops = useFileOperations(path)
-
-  if (!node || node.type !== FileType.FILE) {
-    throw new Error(`Node at path ${path} is not a file`)
-  }
 
   return {
     ...node,
