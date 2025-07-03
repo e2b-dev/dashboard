@@ -40,6 +40,11 @@ const buttonVariants = cva(
           'hover:bg-error/20 focus:bg-error/20',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
+        warning: [
+          'bg-warning/10 text-warning',
+          'hover:bg-warning/20 focus:bg-warning/20',
+          'active:translate-y-[1px] active:shadow-none',
+        ].join(' '),
         outline: [
           'border border-border bg-transparent',
           'hover:bg-bg-300/80 focus:bg-bg-300/80',
