@@ -156,6 +156,17 @@ export function SandboxInspectProvider({
         refreshFile: async (path: string) => {
           await sandboxManagerRef.current?.readFile(path)
         },
+        downloadFile: async (path: string) => {
+          const downloadUrl =
+            await sandboxManagerRef.current?.getDownloadUrl(path)
+
+          if (!downloadUrl) return
+
+          const a = document.createElement('a')
+          a.href = downloadUrl
+          a.download = path.split('/').pop() || ''
+          a.click()
+        },
       }
     }
   }
@@ -184,7 +195,6 @@ export function SandboxInspectProvider({
         headers: {
           ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
         },
-        secure: true,
       })
 
       sandboxManagerRef.current = new SandboxManager(

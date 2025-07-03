@@ -24,4 +24,5 @@ export interface FilesystemOperations {
   selectNode: (path: string) => void
   resetSelected: () => void
   refreshFile: (path: string) => Promise<void>
+  downloadFile: (path: string) => Promise<void>
 }
