@@ -26,7 +26,8 @@ export class SandboxManager {
    */
   private static readonly errorMap: Record<string, string> = {
     'signal timed out': 'The operation timed out. Please try again later.',
-    'user aborted a request': 'The request was cancelled.',
+    'user aborted a request':
+      'The request was cancelled. Try downloading the file.',
   }
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
