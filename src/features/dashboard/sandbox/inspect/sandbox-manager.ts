@@ -189,7 +189,7 @@ export class SandboxManager {
     if (
       !node ||
       node.type !== FileType.DIR ||
-      node.isLoaded ||
+      state.isLoaded(normalizedPath) ||
       state.loadingPaths.has(normalizedPath)
     )
       return
@@ -208,7 +208,6 @@ export class SandboxManager {
             type: FileType.DIR,
             isExpanded: false,
             isSelected: false,
-            isLoaded: false,
             children: [],
           }
         } else {
@@ -230,8 +229,6 @@ export class SandboxManager {
           state.removeNode(childPath)
         }
       }
-
-      state.updateNode(normalizedPath, { isLoaded: true })
     } catch (error) {
       const errorMessage = SandboxManager.pipeError(
         error,
@@ -241,6 +238,7 @@ export class SandboxManager {
       console.error(`Failed to load directory ${normalizedPath}:`, error)
     } finally {
       state.setLoading(normalizedPath, false)
+      state.setLoaded(normalizedPath, true)
     }
   }
 
@@ -250,9 +248,6 @@ export class SandboxManager {
 
     const node = state.getNode(normalizedPath)
     if (!node || node.type !== FileType.DIR) return
-
-    // mark directory as stale but keep existing children until fresh data arrives
-    state.updateNode(normalizedPath, { isLoaded: false })
 
     await this.loadDirectory(normalizedPath)
   }
@@ -329,6 +324,7 @@ export class SandboxManager {
       state.setFileContent(normalizedPath, { type: 'unreadable' })
     } finally {
       state.setLoading(normalizedPath, false)
+      state.setLoaded(normalizedPath, true)
     }
   }
 
