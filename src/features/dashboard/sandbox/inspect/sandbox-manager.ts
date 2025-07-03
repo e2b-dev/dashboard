@@ -21,17 +21,12 @@ export class SandboxManager {
   private static readonly READ_DEBOUNCE_MS = 250
 
   /**
-   * Small utility to create a deferred promise (aka Promise with exposed
-   * resolve/reject).
+   * Mapping from substrings found in error messages to user-friendly messages.
+   * Extend this map whenever new error patterns need custom handling.
    */
-  private static createDeferred<T>() {
-    let resolve!: (value: T | PromiseLike<T>) => void
-    let reject!: (reason?: unknown) => void
-    const promise: Promise<T> = new Promise<T>((res, rej) => {
-      resolve = res
-      reject = rej
-    })
-    return { promise, resolve, reject }
+  private static readonly errorMap: Record<string, string> = {
+    'signal timed out': 'The operation timed out. Please try again later.',
+    'user aborted a request': 'The request was cancelled.',
   }
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
@@ -238,8 +233,10 @@ export class SandboxManager {
 
       state.updateNode(normalizedPath, { isLoaded: true })
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to load directory'
+      const errorMessage = SandboxManager.pipeError(
+        error,
+        'Failed to load directory'
+      )
       state.setError(normalizedPath, errorMessage)
       console.error(`Failed to load directory ${normalizedPath}:`, error)
     } finally {
@@ -324,9 +321,11 @@ export class SandboxManager {
 
       state.setFileContent(normalizedPath, contentState)
     } catch (err) {
+      const errorMessage = SandboxManager.pipeError(err, 'Failed to read file')
+
       console.error(`Failed to read file ${normalizedPath}:`, err)
 
-      state.setError(normalizedPath, 'Failed to read file')
+      state.setError(normalizedPath, errorMessage)
       state.setFileContent(normalizedPath, { type: 'unreadable' })
     } finally {
       state.setLoading(normalizedPath, false)
@@ -352,5 +351,43 @@ export class SandboxManager {
     console.log('downloadUrl', downloadUrl)
 
     return downloadUrl
+  }
+
+  /**
+   * Small utility to create a deferred promise (aka Promise with exposed
+   * resolve/reject).
+   */
+  private static createDeferred<T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void
+    let reject!: (reason?: unknown) => void
+    const promise: Promise<T> = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  /**
+   * Returns a user-friendly message for a given error. It checks the error's
+   * message against known substrings in `errorMap` and falls back to the
+   * supplied default message if no match is found.
+   */
+  private static pipeError(error: unknown, defaultMessage: string): string {
+    const originalMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : ''
+
+    const lowerOriginal = originalMessage.toLowerCase()
+
+    for (const [search, msg] of Object.entries(SandboxManager.errorMap)) {
+      if (lowerOriginal.includes(search.toLowerCase())) {
+        return msg
+      }
+    }
+
+    return originalMessage || defaultMessage
   }
 }
