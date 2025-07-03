@@ -6,7 +6,6 @@ interface FilesystemDir {
   path: string
   children: string[] // paths of children
   isExpanded?: boolean
-  isLoaded?: boolean
 }
 
 interface FilesystemFile {
