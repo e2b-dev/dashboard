@@ -84,10 +84,11 @@ export function SandboxInspectProvider({
           path: normalizedRoot,
           type: FileType.DIR,
           isExpanded: true,
-          isLoaded: true,
           children: [],
         },
       ])
+
+      state.setLoaded(normalizedRoot, true)
 
       if (seedEntries && seedEntries.length) {
         const seedNodes: FilesystemNode[] = seedEntries.map((entry) => {
@@ -125,7 +126,7 @@ export function SandboxInspectProvider({
 
           if (!node) return
 
-          if (node.type === FileType.FILE) {
+          if (node.type === FileType.FILE && !store.getState().isLoaded(path)) {
             await sandboxManagerRef.current?.readFile(path)
           }
 
@@ -146,7 +147,7 @@ export function SandboxInspectProvider({
           const newExpandedState = !node.isExpanded
           state.setExpanded(normalizedPath, newExpandedState)
 
-          if (newExpandedState && !node.isLoaded) {
+          if (newExpandedState && !state.isLoaded(normalizedPath)) {
             await sandboxManagerRef.current?.loadDirectory(normalizedPath)
           }
         },
