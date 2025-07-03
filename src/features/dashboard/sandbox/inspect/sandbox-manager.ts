@@ -301,12 +301,10 @@ export class SandboxManager {
     try {
       state.setLoading(normalizedPath, true)
 
-      const bytes = await this.sandbox.files.read(normalizedPath, {
-        format: 'bytes',
+      const blob = await this.sandbox.files.read(normalizedPath, {
+        format: 'blob',
         requestTimeoutMs: 30_000,
       })
-
-      const blob = new Blob([bytes])
 
       const contentState = await determineFileContentState(blob)
 
