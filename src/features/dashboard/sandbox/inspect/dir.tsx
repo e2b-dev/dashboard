@@ -1,5 +1,5 @@
 import { FilesystemNode } from './filesystem/types'
-import { AlertCircle, ChevronRight, CircleSlash } from 'lucide-react'
+import { AlertCircle, ChevronRight } from 'lucide-react'
 import SandboxInspectNode from './node'
 import { useDirectory } from './hooks/use-directory'
 import { cn } from '@/lib/utils'
@@ -7,6 +7,7 @@ import { DataTableRow } from '@/ui/data-table'
 import { motion } from 'motion/react'
 import { FileType } from 'e2b'
 import NodeLabel from './node-label'
+import SandboxInspectEmptyNode from './empty'
 
 interface SandboxInspectDirProps {
   dir: FilesystemNode & {
@@ -62,23 +63,22 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           isLoading={isLoading}
         />
         {hasError && (
-          <span className="text-error flex items-center gap-1 truncate pl-1 text-xs text-ellipsis">
+          <span className="text-error flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
             <AlertCircle className="size-3" />
             {error}
           </span>
         )}
-        {!hasChildren && !isLoading && isLoaded && (
-          <span className="text-fg-500 flex translate-y-0.25 items-center gap-1 pl-1 text-xs">
-            <CircleSlash className="size-3" />
-          </span>
-        )}
       </DataTableRow>
 
-      {isExpanded && hasChildren && (
+      {isExpanded && isLoaded && (
         <div className="flex flex-col pl-2">
-          {children.map((child) => (
-            <SandboxInspectNode key={child.path} path={child.path} />
-          ))}
+          {hasChildren ? (
+            children.map((child) => (
+              <SandboxInspectNode key={child.path} path={child.path} />
+            ))
+          ) : (
+            <SandboxInspectEmptyNode />
+          )}
         </div>
       )}
     </>
