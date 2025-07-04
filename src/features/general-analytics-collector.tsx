@@ -8,7 +8,7 @@ export function GeneralAnalyticsCollector() {
   const posthog = usePostHog()
 
   useEffect(() => {
-    if (!posthog) return
+    if (!posthog || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
 
     supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
