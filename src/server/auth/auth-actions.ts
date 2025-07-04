@@ -165,11 +165,8 @@ export const forgotPasswordAction = actionClient
   .action(async ({ parsedInput }) => {
     const { email } = parsedInput
     const supabase = await createClient()
-    const origin = (await headers()).get('origin')
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}${AUTH_URLS.CALLBACK}?redirect_to=${PROTECTED_URLS.RESET_PASSWORD}`,
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
 
     if (error) {
       console.error(ERROR_CODES.SUPABASE, 'Error resetting password:', error)

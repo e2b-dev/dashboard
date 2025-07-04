@@ -1,4 +1,7 @@
-import { createClient, createRouteClient } from '@/lib/clients/supabase/server'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { logInfo } from '@/lib/clients/logger'
+import { createRouteClient } from '@/lib/clients/supabase/server'
+import { encodedRedirect } from '@/lib/utils/auth'
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -6,33 +9,42 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/'
-  const redirectTo = request.nextUrl.clone()
-  redirectTo.pathname = next
+  const next =
+    type === 'recovery'
+      ? PROTECTED_URLS.RESET_PASSWORD
+      : (searchParams.get('next') ?? PROTECTED_URLS.DASHBOARD)
 
-  console.log('Auth confirm route:', {
-    token_hash,
+  const signInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
+  const redirectUrl = new URL(request.nextUrl.origin + next)
+
+  if (!token_hash || !type)
+    return encodedRedirect('error', signInUrl.toString(), 'Invalid Request')
+
+  logInfo('AUTH_CONFIRM', {
+    token_hash: token_hash.slice(0, 10) + '...',
     type,
     next,
-    redirectTo: redirectTo.toString(),
+    redirectUrl: redirectUrl.toString(),
   })
 
-  if (token_hash && type) {
-    const supabase = createRouteClient(request)
+  const response = NextResponse.redirect(redirectUrl)
+  const supabase = createRouteClient(request, response)
 
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    })
+  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
 
-    console.log('OTP verification result:', { error })
-
-    if (!error) {
-      return NextResponse.redirect(redirectTo)
-    }
+  if (error) {
+    console.error(
+      'AUTH_CONFIRM',
+      {
+        token_hash: token_hash.slice(0, 10) + '...',
+        type,
+        next,
+        redirectUrl: redirectUrl.toString(),
+      },
+      error
+    )
+    return encodedRedirect('error', signInUrl.toString(), 'Invalid Token')
   }
 
-  // return the user to an error page with some instructions
-  redirectTo.pathname = '/auth/auth-code-error'
-  return NextResponse.redirect(redirectTo)
+  return response
 }
