@@ -1,6 +1,5 @@
 export const AUTH_URLS = {
   FORGOT_PASSWORD: '/forgot-password',
-  RESET_PASSWORD: '/dashboard/account/reset-password',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
   CALLBACK: '/api/auth/callback',
@@ -19,6 +18,7 @@ export const PROTECTED_URLS = {
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
   KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
+  RESET_PASSWORD: '/dashboard/account/reset-password',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV

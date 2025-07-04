@@ -168,7 +168,7 @@ export const forgotPasswordAction = actionClient
     const origin = (await headers()).get('origin')
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}${AUTH_URLS.CALLBACK}?redirect_to=${AUTH_URLS.RESET_PASSWORD}`,
+      redirectTo: `${origin}${AUTH_URLS.CALLBACK}?redirect_to=${PROTECTED_URLS.RESET_PASSWORD}`,
     })
 
     if (error) {

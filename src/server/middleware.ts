@@ -184,7 +184,7 @@ export function getAuthRedirect(
     return NextResponse.redirect(buildRedirectUrl(AUTH_URLS.SIGN_IN, request))
   }
 
-  if (request.nextUrl.pathname === '/' && isAuthenticated) {
+  if (isAuthRoute(request.nextUrl.pathname) && isAuthenticated) {
     return NextResponse.redirect(
       buildRedirectUrl(PROTECTED_URLS.DASHBOARD, request)
     )
