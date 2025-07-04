@@ -44,7 +44,23 @@ export default function DashboardSidebarContent() {
   )
 
   const isActive = (href: string) => {
-    return href === pathname
+    if (!pathname) return false
+
+    if (pathname === href) return true
+
+    // split into segments for prefix comparison
+    const hrefSegments = href.split('/').filter(Boolean)
+    const pathSegments = pathname.split('/').filter(Boolean)
+
+    if (pathSegments.length < hrefSegments.length) return false
+
+    for (let i = 0; i < hrefSegments.length; i++) {
+      if (hrefSegments[i] !== pathSegments[i]) {
+        return false
+      }
+    }
+
+    return true
   }
 
   return (
@@ -67,7 +83,7 @@ export default function DashboardSidebarContent() {
                     asChild
                     tooltip={item.label}
                   >
-                    <Link suppressHydrationWarning prefetch href={href}>
+                    <Link suppressHydrationWarning href={href}>
                       <item.icon
                         className={cn(
                           'text-fg-500 w-4',
