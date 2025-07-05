@@ -9,13 +9,28 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next =
-    type === 'recovery'
-      ? PROTECTED_URLS.RESET_PASSWORD
-      : (searchParams.get('next') ?? PROTECTED_URLS.DASHBOARD)
 
   const signInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
-  const redirectUrl = new URL(request.nextUrl.origin + next)
+
+  const nextParam = searchParams.get('next')
+  const isAbsoluteNext = !!nextParam && /^https?:\/\//i.test(nextParam)
+
+  let next: string
+  let redirectUrl: URL
+
+  if (isAbsoluteNext) {
+    // absolute URLs take precedence over any other rule
+    next = nextParam as string
+    redirectUrl = new URL(next)
+  } else {
+    // when recovering without an explicit next destination, force RESET_PASSWORD
+    next =
+      type === 'recovery' && (!nextParam || nextParam.trim() === '')
+        ? PROTECTED_URLS.RESET_PASSWORD
+        : (nextParam ?? PROTECTED_URLS.DASHBOARD)
+
+    redirectUrl = new URL(request.nextUrl.origin + next)
+  }
 
   if (!token_hash || !type)
     return encodedRedirect('error', signInUrl.toString(), 'Invalid Request')
