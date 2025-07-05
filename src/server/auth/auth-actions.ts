@@ -14,6 +14,7 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
+import { ERROR_CODES } from '@/configs/logs'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -164,13 +165,17 @@ export const forgotPasswordAction = actionClient
   .action(async ({ parsedInput }) => {
     const { email } = parsedInput
     const supabase = await createClient()
-    const origin = (await headers()).get('origin')
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}${AUTH_URLS.CALLBACK}?redirect_to=${AUTH_URLS.RESET_PASSWORD}`,
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
 
     if (error) {
+      console.error(ERROR_CODES.SUPABASE, 'Error resetting password:', error)
+      if (error.message.includes('security purposes')) {
+        return returnServerError(
+          'Please wait before requesting another password reset'
+        )
+      }
+
       throw error
     }
   })

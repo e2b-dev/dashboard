@@ -76,17 +76,6 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    // Redirect to dashboard if user is logged in and on auth routes
-    if (
-      isAuthRoute(request.nextUrl.pathname) &&
-      (await supabase.auth.getSession()).data.session
-    ) {
-      return NextResponse.redirect(
-        new URL(PROTECTED_URLS.DASHBOARD, request.url)
-      )
-    }
-
-    // Refresh session and handle auth redirects
     const { error, data } = await getUserSession(supabase)
 
     // Handle authentication redirects
