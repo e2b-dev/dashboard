@@ -5,20 +5,53 @@ import { encodedRedirect } from '@/lib/utils/auth'
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+
+const confirmSchema = z.object({
+  token_hash: z.string().min(1),
+  type: z.enum([
+    'signup',
+    'recovery',
+    'invite',
+    'magiclink',
+    'email',
+    'email_change',
+  ]),
+  confirmation_url: z.string().url(),
+  next: z.string().url(),
+})
 
 const normalizeOrigin = (origin: string) => origin.replace('www.', '')
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
 
-  const supabaseTokenHash = searchParams.get('token_hash')
-  const supabaseType = searchParams.get('type') as EmailOtpType | null
-  const supabaseClientFlowUrl = searchParams.get('confirmation_url')
+  const result = confirmSchema.safeParse({
+    token_hash: searchParams.get('token_hash'),
+    type: searchParams.get('type'),
+    confirmation_url: searchParams.get('confirmation_url'),
+    next: searchParams.get('next'),
+  })
 
-  const dashboardUrl = request.nextUrl
   const dashboardSignInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
 
-  const supabaseRedirectTo = searchParams.get('next')
+  if (!result.success) {
+    logError('AUTH_CONFIRM_INVALID_PARAMS', {
+      errors: result.error.errors,
+    })
+    return encodedRedirect(
+      'error',
+      dashboardSignInUrl.toString(),
+      'Invalid Request'
+    )
+  }
+
+  const supabaseTokenHash = result.data.token_hash
+  const supabaseType = result.data.type
+  const supabaseClientFlowUrl = result.data.confirmation_url
+  const supabaseRedirectTo = result.data.next
+
+  const dashboardUrl = request.nextUrl
 
   const isDifferentOrigin =
     supabaseRedirectTo &&
@@ -37,94 +70,73 @@ export async function GET(request: NextRequest) {
     origin: request.nextUrl.origin,
   })
 
-  if (
-    !supabaseTokenHash ||
-    !supabaseType ||
-    !supabaseRedirectTo ||
-    !supabaseClientFlowUrl
-  ) {
-    logError('AUTH_CONFIRM_INVALID_PARAMS', {
-      supabaseTokenHash: !!supabaseTokenHash,
-      supabaseType: !!supabaseType,
-      supabaseRedirectTo: !!supabaseRedirectTo,
-      supabaseClientFlowUrl: !!supabaseClientFlowUrl,
-    })
-    return encodedRedirect(
-      'error',
-      dashboardSignInUrl.toString(),
-      'Invalid Request'
-    )
-  }
-
   // when the next param is an absolute URL, with a different origin,
   // we need to redirect to the supabase client flow url
   if (isDifferentOrigin) {
-    throw redirect(supabaseClientFlowUrl)
+    throw redirect(supabaseClientFlowUrl!)
   }
 
-  let redirectUrl: URL
-
-  const next =
-    supabaseType === 'recovery'
-      ? PROTECTED_URLS.RESET_PASSWORD
-      : (supabaseRedirectTo ?? PROTECTED_URLS.DASHBOARD)
-
-  // try absolute url, else relative
   try {
-    redirectUrl = new URL(next)
-  } catch (e) {
-    redirectUrl = new URL(request.nextUrl.origin + next)
-  }
+    const next =
+      supabaseType === 'recovery'
+        ? `${request.nextUrl.origin}${PROTECTED_URLS.RESET_PASSWORD}`
+        : (supabaseRedirectTo ??
+          `${request.nextUrl.origin}${PROTECTED_URLS.DASHBOARD}`)
 
-  if (!redirectUrl) {
-    logError('AUTH_CONFIRM_INVALID_NEXT', {
-      next,
-    })
-    return encodedRedirect(
-      'error',
-      dashboardSignInUrl.toString(),
-      'Invalid Next'
-    )
-  }
+    const redirectUrl = new URL(next)
 
-  logInfo('AUTH_CONFIRM_VERIFY', {
-    supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-    supabaseType,
-    next,
-    redirectUrl: redirectUrl.toString(),
-  })
-
-  const response = NextResponse.redirect(redirectUrl)
-  const supabase = createRouteClient(request, response)
-
-  const { error } = await supabase.auth.verifyOtp({
-    type: supabaseType,
-    token_hash: supabaseTokenHash,
-  })
-
-  if (error) {
-    logError('AUTH_CONFIRM_ERROR', {
+    logInfo('AUTH_CONFIRM_VERIFY', {
       supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
       supabaseType,
       next,
       redirectUrl: redirectUrl.toString(),
-      errorCode: error.code,
-      errorStatus: error.status,
-      errorMessage: error.message,
     })
 
-    let errorMessage = 'Invalid Token'
-    if (error.status === 403 && error.code === 'otp_expired') {
-      errorMessage = 'Email link has expired. Please request a new one.'
+    const response = NextResponse.redirect(redirectUrl)
+    const supabase = createRouteClient(request, response)
+
+    const { error } = await supabase.auth.verifyOtp({
+      type: supabaseType,
+      token_hash: supabaseTokenHash,
+    })
+
+    if (error) {
+      logError('AUTH_CONFIRM_ERROR', {
+        supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
+        supabaseType,
+        next,
+        redirectUrl: redirectUrl.toString(),
+        errorCode: error.code,
+        errorStatus: error.status,
+        errorMessage: error.message,
+      })
+
+      let errorMessage = 'Invalid Token'
+      if (error.status === 403 && error.code === 'otp_expired') {
+        errorMessage = 'Email link has expired. Please request a new one.'
+      }
+
+      return encodedRedirect(
+        'error',
+        dashboardSignInUrl.toString(),
+        errorMessage
+      )
     }
 
-    return encodedRedirect('error', dashboardSignInUrl.toString(), errorMessage)
+    logInfo('AUTH_CONFIRM_SUCCESS', {
+      supabaseType,
+      redirectUrl: redirectUrl.toString(),
+    })
+
+    return response
+  } catch (e) {
+    logError('AUTH_CONFIRM_ERROR', {
+      error: e,
+    })
+    return encodedRedirect(
+      'error',
+      dashboardSignInUrl.toString(),
+      'Invalid Token'
+    )
   }
-
-  logInfo('AUTH_CONFIRM_SUCCESS', {
-    supabaseType,
-    redirectUrl: redirectUrl.toString(),
-  })
-
-  return response
 }
