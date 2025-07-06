@@ -14,10 +14,14 @@ export async function GET(request: NextRequest) {
 
   const signInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
 
+  const normalizeOrigin = (origin: string) => origin.replace('www.', '')
+
   const nextParam = searchParams.get('next')
-  const baseHostname = new URL(BASE_URL).hostname
+
   const isDifferentOrigin =
-    nextParam && new URL(nextParam).hostname !== baseHostname
+    nextParam &&
+    normalizeOrigin(new URL(nextParam).origin) !==
+      normalizeOrigin(request.nextUrl.origin)
 
   let next: string
   let redirectUrl: URL
