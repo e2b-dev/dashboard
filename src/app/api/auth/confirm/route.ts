@@ -68,17 +68,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (isAbsoluteNext) {
-    const baseDomain = (() => {
-      const hostParts = redirectUrl.hostname.split('.')
-      return hostParts.length > 2
-        ? hostParts.slice(-2).join('.')
-        : redirectUrl.hostname
-    })()
-
     response.cookies.getAll().forEach(({ name, value, ...options }) => {
       response.cookies.set(name, value, {
         ...options,
-        domain: `.${baseDomain}`,
+        domain: request.nextUrl.origin,
       })
     })
   }
