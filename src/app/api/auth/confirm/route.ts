@@ -1,6 +1,6 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { logInfo, logError } from '@/lib/clients/logger'
-import { createRouteClient } from '@/lib/clients/supabase/server'
+import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL(next)
 
     const response = NextResponse.redirect(redirectUrl)
-    const supabase = createRouteClient(request, response)
+    const supabase = await createClient()
 
     const { error } = await supabase.auth.verifyOtp({
       type: supabaseType,
