@@ -1,8 +1,7 @@
-import { AUTH_URLS, PROTECTED_URLS, BASE_URL } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { logInfo, logError } from '@/lib/clients/logger'
 import { createRouteClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
-import { type EmailOtpType } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -21,7 +20,8 @@ const confirmSchema = z.object({
   next: z.string().url(),
 })
 
-const normalizeOrigin = (origin: string) => origin.replace('www.', '')
+const normalizeOrigin = (origin: string) =>
+  origin.replace('www.', '').replace(/\/$/, '')
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
