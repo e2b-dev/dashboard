@@ -1,4 +1,4 @@
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS, BASE_URL } from '@/configs/urls'
 import { logInfo, logError } from '@/lib/clients/logger'
 import { createRouteClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
   const signInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
 
   const nextParam = searchParams.get('next')
+  const baseHostname = new URL(BASE_URL).hostname
   const isDifferentOrigin =
-    nextParam && new URL(nextParam).hostname !== request.nextUrl.hostname
+    nextParam && new URL(nextParam).hostname !== baseHostname
 
   let next: string
   let redirectUrl: URL
