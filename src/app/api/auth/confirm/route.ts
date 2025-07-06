@@ -6,73 +6,90 @@ import { type EmailOtpType } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
 
+const normalizeOrigin = (origin: string) => origin.replace('www.', '')
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type') as EmailOtpType | null
-  const confirmationUrl = searchParams.get('confirmation_url')
 
-  const signInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
+  const supabaseTokenHash = searchParams.get('token_hash')
+  const supabaseType = searchParams.get('type') as EmailOtpType | null
+  const supabaseClientFlowUrl = searchParams.get('confirmation_url')
 
-  const normalizeOrigin = (origin: string) => origin.replace('www.', '')
+  const dashboardUrl = request.nextUrl
+  const dashboardSignInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
 
-  const nextParam = searchParams.get('next')
+  const supabaseRedirectTo = searchParams.get('next')
 
   const isDifferentOrigin =
-    nextParam &&
-    normalizeOrigin(new URL(nextParam).origin) !==
-      normalizeOrigin(request.nextUrl.origin)
-
-  let next: string
-  let redirectUrl: URL
+    supabaseRedirectTo &&
+    normalizeOrigin(new URL(supabaseRedirectTo).origin) !==
+      normalizeOrigin(dashboardUrl.origin)
 
   logInfo('AUTH_CONFIRM_INIT', {
-    token_hash: token_hash ? `${token_hash.slice(0, 10)}...` : null,
-    type,
-    nextParam,
+    supabase_token_hash: supabaseTokenHash
+      ? `${supabaseTokenHash.slice(0, 10)}...`
+      : null,
+    supabaseType,
+    supabaseRedirectTo,
     isDifferentOrigin,
-    confirmationUrl,
+    supabaseClientFlowUrl,
     requestUrl: request.url,
     origin: request.nextUrl.origin,
   })
 
-  if (isDifferentOrigin) {
-    if (confirmationUrl) {
-      logInfo('AUTH_CONFIRM_REDIRECT_CONFIRMATION', {
-        confirmationUrl,
-      })
-      throw redirect(confirmationUrl)
-    }
-    next = nextParam as string
-    redirectUrl = new URL(next)
-  } else {
-    next =
-      type === 'recovery'
-        ? PROTECTED_URLS.RESET_PASSWORD
-        : (nextParam ?? PROTECTED_URLS.DASHBOARD)
-
-    try {
-      redirectUrl = new URL(next)
-    } catch (e) {
-      logInfo('AUTH_CONFIRM_URL_FALLBACK', {
-        next,
-        error: e instanceof Error ? e.message : String(e),
-      })
-      redirectUrl = new URL(request.nextUrl.origin + next)
-    }
+  if (
+    !supabaseTokenHash ||
+    !supabaseType ||
+    !supabaseRedirectTo ||
+    !supabaseClientFlowUrl
+  ) {
+    logError('AUTH_CONFIRM_INVALID_PARAMS', {
+      supabaseTokenHash: !!supabaseTokenHash,
+      supabaseType: !!supabaseType,
+      supabaseRedirectTo: !!supabaseRedirectTo,
+      supabaseClientFlowUrl: !!supabaseClientFlowUrl,
+    })
+    return encodedRedirect(
+      'error',
+      dashboardSignInUrl.toString(),
+      'Invalid Request'
+    )
   }
 
-  if (!token_hash || !type) {
-    logError('AUTH_CONFIRM_INVALID_PARAMS', {
-      token_hash: !!token_hash,
-      type: !!type,
+  // when the next param is an absolute URL, with a different origin,
+  // we need to redirect to the supabase client flow url
+  if (isDifferentOrigin) {
+    throw redirect(supabaseClientFlowUrl)
+  }
+
+  let redirectUrl: URL
+
+  const next =
+    supabaseType === 'recovery'
+      ? PROTECTED_URLS.RESET_PASSWORD
+      : (supabaseRedirectTo ?? PROTECTED_URLS.DASHBOARD)
+
+  // try absolute url, else relative
+  try {
+    redirectUrl = new URL(next)
+  } catch (e) {
+    redirectUrl = new URL(request.nextUrl.origin + next)
+  }
+
+  if (!redirectUrl) {
+    logError('AUTH_CONFIRM_INVALID_NEXT', {
+      next,
     })
-    return encodedRedirect('error', signInUrl.toString(), 'Invalid Request')
+    return encodedRedirect(
+      'error',
+      dashboardSignInUrl.toString(),
+      'Invalid Next'
+    )
   }
 
   logInfo('AUTH_CONFIRM_VERIFY', {
-    token_hash: `${token_hash.slice(0, 10)}...`,
-    type,
+    supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
+    supabaseType,
     next,
     redirectUrl: redirectUrl.toString(),
   })
@@ -80,12 +97,15 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(redirectUrl)
   const supabase = createRouteClient(request, response)
 
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  const { error } = await supabase.auth.verifyOtp({
+    type: supabaseType,
+    token_hash: supabaseTokenHash,
+  })
 
   if (error) {
     logError('AUTH_CONFIRM_ERROR', {
-      token_hash: `${token_hash.slice(0, 10)}...`,
-      type,
+      supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
+      supabaseType,
       next,
       redirectUrl: redirectUrl.toString(),
       errorCode: error.code,
@@ -98,11 +118,11 @@ export async function GET(request: NextRequest) {
       errorMessage = 'Email link has expired. Please request a new one.'
     }
 
-    return encodedRedirect('error', signInUrl.toString(), errorMessage)
+    return encodedRedirect('error', dashboardSignInUrl.toString(), errorMessage)
   }
 
   logInfo('AUTH_CONFIRM_SUCCESS', {
-    type,
+    supabaseType,
     redirectUrl: redirectUrl.toString(),
   })
 
