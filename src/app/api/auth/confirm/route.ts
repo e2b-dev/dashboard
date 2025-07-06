@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
   const result = confirmSchema.safeParse({
     token_hash: searchParams.get('token_hash'),
     type: searchParams.get('type'),
-    confirmation_url: searchParams.get('confirmation_url'),
     next: searchParams.get('next'),
   })
 
@@ -48,8 +47,10 @@ export async function GET(request: NextRequest) {
 
   const supabaseTokenHash = result.data.token_hash
   const supabaseType = result.data.type
-  const supabaseClientFlowUrl = result.data.confirmation_url
   const supabaseRedirectTo = result.data.next
+  const supabaseClientFlowUrl = new URL(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${supabaseTokenHash}&type=${supabaseType}&next=${supabaseRedirectTo}`
+  )
 
   const dashboardUrl = request.nextUrl
 
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
   // when the next param is an absolute URL, with a different origin,
   // we need to redirect to the supabase client flow url
   if (isDifferentOrigin) {
-    throw redirect(supabaseClientFlowUrl!)
+    throw redirect(supabaseClientFlowUrl.toString())
   }
 
   try {
