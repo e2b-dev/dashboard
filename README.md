@@ -88,6 +88,19 @@ This project requires a Redis-compatible key-value store. You'll need to:
    - Go to Authentication > Providers
    - Enable the providers you want to use (GitHub, Google, E-Mail)
    - Configure each provider with the appropriate credentials
+6. Configure e-mail templates:
+   - Navigate to **Authentication → Templates** in the Supabase dashboard
+   - Update the URLs in the **Reset Password** and **Confirm Sign-Up** templates so that the CTA links point back to the dashboard's confirmation endpoint:
+
+   **Reset Password**
+   ```
+   {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
+   ```
+
+   **Confirm Sign-Up**
+   ```
+   {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
+   ```
 
 #### c. Database Setup
 1. Apply the database migrations manually:
