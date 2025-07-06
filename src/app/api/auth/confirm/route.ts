@@ -80,8 +80,7 @@ export async function GET(request: NextRequest) {
     const next =
       supabaseType === 'recovery'
         ? `${request.nextUrl.origin}${PROTECTED_URLS.RESET_PASSWORD}`
-        : (supabaseRedirectTo ??
-          `${request.nextUrl.origin}${PROTECTED_URLS.DASHBOARD}`)
+        : supabaseRedirectTo
 
     const redirectUrl = new URL(next)
 
