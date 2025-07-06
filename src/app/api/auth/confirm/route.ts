@@ -1,42 +1,77 @@
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { logInfo } from '@/lib/clients/logger'
+import { AUTH_URLS, PROTECTED_URLS, BASE_URL } from '@/configs/urls'
+import { logInfo, logError } from '@/lib/clients/logger'
 import { createRouteClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { type EmailOtpType } from '@supabase/supabase-js'
+import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
+  const confirmationUrl = searchParams.get('confirmation_url')
 
   const signInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
 
+  const normalizeOrigin = (origin: string) => origin.replace('www.', '')
+
   const nextParam = searchParams.get('next')
-  const isAbsoluteNext = !!nextParam && /^https?:\/\//i.test(nextParam)
+
+  const isDifferentOrigin =
+    nextParam &&
+    normalizeOrigin(new URL(nextParam).origin) !==
+      normalizeOrigin(request.nextUrl.origin)
 
   let next: string
   let redirectUrl: URL
 
-  if (isAbsoluteNext) {
-    // absolute URLs take precedence over any other rule
+  logInfo('AUTH_CONFIRM_INIT', {
+    token_hash: token_hash ? `${token_hash.slice(0, 10)}...` : null,
+    type,
+    nextParam,
+    isDifferentOrigin,
+    confirmationUrl,
+    requestUrl: request.url,
+    origin: request.nextUrl.origin,
+  })
+
+  if (isDifferentOrigin) {
+    if (confirmationUrl) {
+      logInfo('AUTH_CONFIRM_REDIRECT_CONFIRMATION', {
+        confirmationUrl,
+      })
+      throw redirect(confirmationUrl)
+    }
     next = nextParam as string
     redirectUrl = new URL(next)
   } else {
-    // when recovering without an explicit next destination, force RESET_PASSWORD
     next =
-      type === 'recovery' && (!nextParam || nextParam.trim() === '')
+      type === 'recovery'
         ? PROTECTED_URLS.RESET_PASSWORD
         : (nextParam ?? PROTECTED_URLS.DASHBOARD)
 
-    redirectUrl = new URL(request.nextUrl.origin + next)
+    try {
+      redirectUrl = new URL(next)
+    } catch (e) {
+      logInfo('AUTH_CONFIRM_URL_FALLBACK', {
+        next,
+        error: e instanceof Error ? e.message : String(e),
+      })
+      redirectUrl = new URL(request.nextUrl.origin + next)
+    }
   }
 
-  if (!token_hash || !type)
+  if (!token_hash || !type) {
+    logError('AUTH_CONFIRM_INVALID_PARAMS', {
+      token_hash: !!token_hash,
+      type: !!type,
+    })
     return encodedRedirect('error', signInUrl.toString(), 'Invalid Request')
+  }
 
-  logInfo('AUTH_CONFIRM', {
-    token_hash: token_hash.slice(0, 10) + '...',
+  logInfo('AUTH_CONFIRM_VERIFY', {
+    token_hash: `${token_hash.slice(0, 10)}...`,
     type,
     next,
     redirectUrl: redirectUrl.toString(),
@@ -45,19 +80,18 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(redirectUrl)
   const supabase = createRouteClient(request, response)
 
-  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
+  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
 
   if (error) {
-    console.error(
-      'AUTH_CONFIRM',
-      {
-        token_hash: token_hash.slice(0, 10) + '...',
-        type,
-        next,
-        redirectUrl: redirectUrl.toString(),
-      },
-      error
-    )
+    logError('AUTH_CONFIRM_ERROR', {
+      token_hash: `${token_hash.slice(0, 10)}...`,
+      type,
+      next,
+      redirectUrl: redirectUrl.toString(),
+      errorCode: error.code,
+      errorStatus: error.status,
+      errorMessage: error.message,
+    })
 
     let errorMessage = 'Invalid Token'
     if (error.status === 403 && error.code === 'otp_expired') {
@@ -67,21 +101,10 @@ export async function GET(request: NextRequest) {
     return encodedRedirect('error', signInUrl.toString(), errorMessage)
   }
 
-  if (isAbsoluteNext) {
-    const baseDomain = (() => {
-      const hostParts = redirectUrl.hostname.split('.')
-      return hostParts.length > 2
-        ? hostParts.slice(-2).join('.')
-        : redirectUrl.hostname
-    })()
-
-    response.cookies.getAll().forEach(({ name, value, ...options }) => {
-      response.cookies.set(name, value, {
-        ...options,
-        domain: `.${baseDomain}`,
-      })
-    })
-  }
+  logInfo('AUTH_CONFIRM_SUCCESS', {
+    type,
+    redirectUrl: redirectUrl.toString(),
+  })
 
   return response
 }
