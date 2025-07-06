@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   const supabaseType = result.data.type
   const supabaseRedirectTo = result.data.next
   const supabaseClientFlowUrl = new URL(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${supabaseTokenHash}&type=${supabaseType}&next=${supabaseRedirectTo}`
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${supabaseTokenHash}&type=${supabaseType}&redirect_to=${supabaseRedirectTo}`
   )
 
   const dashboardUrl = request.nextUrl
