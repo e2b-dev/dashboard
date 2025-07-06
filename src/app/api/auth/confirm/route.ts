@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(redirectUrl)
   const supabase = createRouteClient(request, response)
 
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
 
   if (error) {
     console.error(
@@ -58,7 +58,29 @@ export async function GET(request: NextRequest) {
       },
       error
     )
-    return encodedRedirect('error', signInUrl.toString(), 'Invalid Token')
+
+    let errorMessage = 'Invalid Token'
+    if (error.status === 403 && error.code === 'otp_expired') {
+      errorMessage = 'Email link has expired. Please request a new one.'
+    }
+
+    return encodedRedirect('error', signInUrl.toString(), errorMessage)
+  }
+
+  if (isAbsoluteNext) {
+    const baseDomain = (() => {
+      const hostParts = redirectUrl.hostname.split('.')
+      return hostParts.length > 2
+        ? hostParts.slice(-2).join('.')
+        : redirectUrl.hostname
+    })()
+
+    response.cookies.getAll().forEach(({ name, value, ...options }) => {
+      response.cookies.set(name, value, {
+        ...options,
+        domain: `.${baseDomain}`,
+      })
+    })
   }
 
   return response
