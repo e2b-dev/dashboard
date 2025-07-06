@@ -15,6 +15,7 @@ import {
   validateEmail,
 } from '@/server/auth/validate-email'
 import { ERROR_CODES } from '@/configs/logs'
+import { logInfo } from '@/lib/clients/logger'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -30,6 +31,12 @@ export const signInWithOAuthAction = actionClient
     const supabase = await createClient()
 
     const origin = (await headers()).get('origin')
+
+    logInfo('SIGN_IN_WITH_OAUTH_ACTION', {
+      provider,
+      returnTo,
+      origin,
+    })
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider,
