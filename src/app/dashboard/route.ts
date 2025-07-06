@@ -3,7 +3,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { createRouteClient } from '@/lib/clients/supabase/server'
+import { createClient } from '@/lib/clients/supabase/server'
 
 const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES(teamId),
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 2. Create Supabase client and get user
-  const supabase = createRouteClient(request)
+  const supabase = await createClient()
 
   const { data, error } = await supabase.auth.getUser()
 
