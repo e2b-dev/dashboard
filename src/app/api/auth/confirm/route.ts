@@ -16,24 +16,37 @@ export async function GET(request: NextRequest) {
 
   const nextParam = searchParams.get('next')
   const isAbsoluteNext = !!nextParam && /^https?:\/\//i.test(nextParam)
+  const isDifferentOrigin =
+    isAbsoluteNext && new URL(nextParam).origin !== request.nextUrl.origin
 
   let next: string
   let redirectUrl: URL
 
-  if (isAbsoluteNext) {
+  logInfo('AUTH_CONFIRM', {
+    token_hash: token_hash?.slice(0, 10) + '...',
+    type,
+    isAbsoluteNext,
+    nextParam,
+    confirmationUrl,
+  })
+
+  if (isDifferentOrigin) {
     if (confirmationUrl) {
       throw redirect(confirmationUrl)
     }
     next = nextParam as string
     redirectUrl = new URL(next)
   } else {
-    // when recovering without an explicit next destination, force RESET_PASSWORD
     next =
-      type === 'recovery' && (!nextParam || nextParam.trim() === '')
+      type === 'recovery'
         ? PROTECTED_URLS.RESET_PASSWORD
         : (nextParam ?? PROTECTED_URLS.DASHBOARD)
 
-    redirectUrl = new URL(request.nextUrl.origin + next)
+    try {
+      redirectUrl = new URL(next)
+    } catch (e) {
+      redirectUrl = new URL(request.nextUrl.origin + next)
+    }
   }
 
   if (!token_hash || !type)
