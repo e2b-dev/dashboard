@@ -16,7 +16,6 @@ const confirmSchema = z.object({
     'email',
     'email_change',
   ]),
-  confirmation_url: z.string().url(),
   next: z.string().url(),
 })
 
