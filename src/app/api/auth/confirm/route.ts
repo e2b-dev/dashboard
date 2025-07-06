@@ -84,13 +84,6 @@ export async function GET(request: NextRequest) {
 
     const redirectUrl = new URL(next)
 
-    logInfo('AUTH_CONFIRM_VERIFY', {
-      supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-      supabaseType,
-      next,
-      redirectUrl: redirectUrl.toString(),
-    })
-
     const response = NextResponse.redirect(redirectUrl)
     const supabase = createRouteClient(request, response)
 
@@ -103,7 +96,7 @@ export async function GET(request: NextRequest) {
       logError('AUTH_CONFIRM_ERROR', {
         supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
         supabaseType,
-        next,
+        supabaseRedirectTo,
         redirectUrl: redirectUrl.toString(),
         errorCode: error.code,
         errorStatus: error.status,
@@ -123,7 +116,9 @@ export async function GET(request: NextRequest) {
     }
 
     logInfo('AUTH_CONFIRM_SUCCESS', {
+      supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
       supabaseType,
+      supabaseRedirectTo,
       redirectUrl: redirectUrl.toString(),
     })
 
