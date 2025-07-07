@@ -20,7 +20,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
       role="button"
       tabIndex={0}
       className={cn(
-        'hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 px-1.5 transition-none group-[data-slot=inspect-dir]:px-2 even:bg-transparent focus:outline-none',
+        'hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 min-h-7 cursor-pointer gap-1 px-1.5 transition-none group-[data-slot=inspect-dir]:px-2 even:bg-transparent focus:outline-none',
         {
           'bg-bg-200': isSelected,
         }
