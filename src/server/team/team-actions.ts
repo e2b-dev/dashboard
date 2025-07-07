@@ -1,7 +1,6 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { Database } from '@/types/database.types'
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { z } from 'zod'
 import { kv } from '@vercel/kv'
