@@ -103,19 +103,20 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   if (!user) return null
 
   return (
-    <Card className={cn('overflow-hidden rounded-xs border', className)}>
-      <CardHeader>
-        <CardTitle>E-Mail</CardTitle>
-        <CardDescription>Update your e-mail address.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((values) =>
-              updateEmail({ email: values.email })
-            )}
-            className="flex gap-2"
-          >
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit((values) =>
+          updateEmail({ email: values.email })
+        )}
+        className="w-full"
+      >
+        <Card className={cn('overflow-hidden rounded-xs border', className)}>
+          <CardHeader>
+            <CardTitle>E-Mail</CardTitle>
+            <CardDescription>Update your e-mail address.</CardDescription>
+          </CardHeader>
+
+          <CardContent className="flex flex-col gap-3">
             <FormField
               control={form.control}
               name="email"
@@ -132,19 +133,25 @@ export function EmailSettings({ className }: EmailSettingsProps) {
                 </FormItem>
               )}
             />
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="bg-bg-100 justify-between">
-        <p className="text-fg-500 text-sm">Has to be a valid e-mail address.</p>
-        <Button
-          loading={isPending}
-          disabled={form.watch('email') === user?.email}
-          type="submit"
-        >
-          Save
-        </Button>
-      </CardFooter>
-    </Card>
+          </CardContent>
+
+          <CardFooter className="bg-bg-100 justify-between">
+            <p className="text-fg-500 text-sm">
+              Has to be a valid e-mail address.
+            </p>
+            <Button
+              loading={isPending}
+              disabled={form.watch('email') === user?.email}
+              type="submit"
+              onClick={form.handleSubmit((values) =>
+                updateEmail({ email: values.email })
+              )}
+            >
+              Save
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+    </Form>
   )
 }

@@ -1,7 +1,6 @@
 'use server'
 
 import { authActionClient } from '@/lib/clients/action'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { z } from 'zod'
 import { headers } from 'next/headers'
@@ -58,25 +57,31 @@ export const updateUserAction = authActionClient
       case 'email_address_invalid':
         return returnValidationErrors(UpdateUserSchema, {
           email: {
-            _errors: ['Invalid e-mail address'],
+            _errors: ['Invalid e-mail address.'],
           },
         })
       case 'email_exists':
         return returnValidationErrors(UpdateUserSchema, {
           email: {
-            _errors: ['E-mail already in use'],
+            _errors: ['E-mail already in use.'],
           },
         })
       case 'same_password':
         return returnValidationErrors(UpdateUserSchema, {
           password: {
-            _errors: ['New password cannot be the same as the old password'],
+            _errors: ['New password cannot be the same as the old password.'],
           },
         })
       case 'weak_password':
         return returnValidationErrors(UpdateUserSchema, {
           password: {
-            _errors: ['Password is too weak'],
+            _errors: ['Password is too weak.'],
+          },
+        })
+      case 'reauthentication_needed':
+        return returnValidationErrors(UpdateUserSchema, {
+          password: {
+            _errors: ['Please re-authenticate to update your password.'],
           },
         })
       default:
