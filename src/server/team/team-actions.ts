@@ -1,21 +1,21 @@
 'use server'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { KV_KEYS } from '@/configs/keys'
-import { authActionClient } from '@/lib/clients/action'
-import { l } from '@/lib/clients/logger'
-import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { returnServerError } from '@/lib/utils/action'
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
-import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
-import { CreateTeamsResponse } from '@/types/billing'
-import { kv } from '@vercel/kv'
-import { returnValidationErrors } from 'next-safe-action'
-import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { kv } from '@vercel/kv'
+import { KV_KEYS } from '@/configs/keys'
+import { revalidatePath } from 'next/cache'
+import { uploadFile, deleteFile, getFiles } from '@/lib/clients/storage'
+import { authActionClient } from '@/lib/clients/action'
+import { returnServerError } from '@/lib/utils/action'
 import { zfd } from 'zod-form-data'
 import { getTeam } from './get-team'
+import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
+import { CreateTeamsResponse } from '@/types/billing'
+import { returnValidationErrors } from 'next-safe-action'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { l } from '@/lib/clients/logger'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -301,7 +301,7 @@ export const uploadTeamProfilePictureAction = authActionClient
           await deleteFile(filePath)
         }
       } catch (cleanupError) {
-        l.warn('Error during profile picture cleanup:', cleanupError)
+        l.warn('upload_team_profile_picture:cleanup_error', cleanupError)
       }
     })()
 

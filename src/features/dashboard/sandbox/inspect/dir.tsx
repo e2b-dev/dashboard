@@ -39,7 +39,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           }
         }}
         className={cn(
-          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 cursor-pointer gap-1 truncate transition-none select-none even:bg-transparent focus:outline-none'
+          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 min-h-7 cursor-pointer gap-1 truncate transition-none select-none even:bg-transparent focus:outline-none'
         )}
         data-slot="inspect-dir"
       >
@@ -74,37 +74,22 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         {isExpanded && isLoaded && (
           <motion.div
             key="dir-content"
-            className="flex flex-col pl-2"
+            className="flex flex-col overflow-hidden pl-2"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15, ease: 'circOut' }}
+            transition={{
+              duration: 0.15,
+              ease: 'circOut',
+            }}
           >
-            <AnimatePresence initial={false}>
-              {hasChildren ? (
-                children.map((child) => (
-                  <motion.div
-                    key={child.path}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.1, ease: 'circOut' }}
-                  >
-                    <SandboxInspectNode path={child.path} />
-                  </motion.div>
-                ))
-              ) : (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.1, ease: 'circOut' }}
-                >
-                  <SandboxInspectEmptyNode />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {hasChildren ? (
+              children.map((child) => (
+                <SandboxInspectNode key={child.path} path={child.path} />
+              ))
+            ) : (
+              <SandboxInspectEmptyNode />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
