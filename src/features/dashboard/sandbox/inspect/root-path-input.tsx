@@ -2,12 +2,11 @@
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/ui/primitives/input'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/ui/primitives/button'
 import { Loader } from '@/ui/loader'
-import { ArrowRight, Check, MoveRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
+import { ArrowRight } from 'lucide-react'
 
 interface RootPathInputProps {
   className?: string
@@ -42,6 +41,10 @@ export default function RootPathInput({
     })
   }
 
+  useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
+
   const isDirty = value !== initialValue
 
   return (
@@ -57,7 +60,7 @@ export default function RootPathInput({
         onChange={(e) => setValue(e.target.value)}
         disabled={isPending}
         className="border-none pl-0 focus:!border-none"
-        placeholder="/home/user ?"
+        placeholder="/home/user"
       />
 
       <Button
