@@ -30,6 +30,13 @@ export class SandboxManager {
       'The request was cancelled. Try downloading the file.',
   }
 
+  // Detect error substrings that imply the requested path is actually a directory
+  private static readonly dirErrorHints: string[] = [
+    'eisdir',
+    'is a directory',
+    'illegal operation on a directory',
+  ]
+
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
     string,
@@ -310,6 +317,59 @@ export class SandboxManager {
 
       state.setFileContent(normalizedPath, contentState)
     } catch (err) {
+      // ────────────────────────────────────────────────────────────────
+      // Handle the special case where the SDK mis-classifies a symlink
+      // to a directory as FileType.FILE.  The read() call then throws
+      // an EISDIR / "is a directory" error.  We intercept that, convert
+      // the node to a directory, load its children and *skip* setting an
+      // error state so the UI does not flicker.
+      // ────────────────────────────────────────────────────────────────
+
+      const rawMessage =
+        err instanceof Error
+          ? err.message.toLowerCase()
+          : String(err).toLowerCase()
+
+      const looksLikeDirectory = SandboxManager.dirErrorHints.some((hint) =>
+        rawMessage.includes(hint)
+      )
+
+      if (looksLikeDirectory) {
+        try {
+          const entries = await this.sandbox.files.list(normalizedPath)
+
+          state.updateNode(normalizedPath, {
+            type: FileType.DIR,
+            isExpanded: true,
+            children: [],
+          })
+
+          state.setError(normalizedPath)
+
+          const nodes: FilesystemNode[] = entries.map((entry: EntryInfo) =>
+            entry.type === FileType.DIR
+              ? {
+                  name: entry.name,
+                  path: entry.path,
+                  type: FileType.DIR,
+                  isExpanded: false,
+                  isSelected: false,
+                  children: [],
+                }
+              : {
+                  name: entry.name,
+                  path: entry.path,
+                  type: FileType.FILE,
+                  isSelected: false,
+                }
+          )
+
+          state.addNodes(normalizedPath, nodes)
+
+          return
+        } catch {}
+      }
+
       const errorMessage = SandboxManager.pipeError(err, 'Failed to read file')
 
       console.error(`Failed to read file ${normalizedPath}:`, err)
