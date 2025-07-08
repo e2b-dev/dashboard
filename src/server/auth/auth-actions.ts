@@ -187,9 +187,21 @@ export const forgotPasswordAction = actionClient
     }
   })
 
-export const signOutAction = async () => {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
+const SignOutSchema = z.object({
+  returnTo: z.string().optional(),
+})
 
-  throw redirect(AUTH_URLS.SIGN_IN)
-}
+export const signOutAction = actionClient
+  .schema(SignOutSchema)
+  .metadata({ actionName: 'signOut' })
+  .action(async ({ parsedInput }) => {
+    const { returnTo } = parsedInput
+
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+
+    throw redirect(
+      AUTH_URLS.SIGN_IN +
+        (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
+    )
+  })

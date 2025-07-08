@@ -53,7 +53,7 @@ export const updateUserAction = authActionClient
       }
     }
 
-    switch (error.code) {
+    switch (error?.code) {
       case 'email_address_invalid':
         return returnValidationErrors(UpdateUserSchema, {
           email: {
@@ -79,11 +79,9 @@ export const updateUserAction = authActionClient
           },
         })
       case 'reauthentication_needed':
-        return returnValidationErrors(UpdateUserSchema, {
-          password: {
-            _errors: ['Please re-authenticate to update your password.'],
-          },
-        })
+        return {
+          requiresReauth: true,
+        }
       default:
         throw error
     }
