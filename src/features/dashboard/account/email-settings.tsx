@@ -82,21 +82,26 @@ export function EmailSettings({ className }: EmailSettingsProps) {
 
     if (searchParams.get('type') === 'update_email') {
       if (searchParams.has('success')) {
-        /*         if (searchParams.has('new_email')) {
-          setUser((state) => ({
-            ...state!,
-            email: searchParams.get('new_email')!,
-          }))
-        } */
-
         toast(
           defaultSuccessToast(decodeURIComponent(searchParams.get('success')!))
         )
-
-        /*         refetchUser() */
-      } else {
-        toast(defaultErrorToast(decodeURIComponent(searchParams.get('error')!)))
+        return
       }
+
+      if (searchParams.has('message')) {
+        toast(
+          defaultSuccessToast(decodeURIComponent(searchParams.get('message')!))
+        )
+        return
+      }
+
+      toast(
+        defaultErrorToast(
+          decodeURIComponent(
+            searchParams.get('error') ?? 'Failed to update e-mail.'
+          )
+        )
+      )
     }
   }, [searchParams])
 

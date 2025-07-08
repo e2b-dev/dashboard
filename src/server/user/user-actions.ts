@@ -85,7 +85,7 @@ export const updateUserAction = authActionClient
           },
         })
       default:
-        throw new Error(error.message)
+        throw error
     }
   })
 
