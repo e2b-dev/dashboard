@@ -30,7 +30,10 @@ export const getSandboxRoot = authActionClient
       })
 
       return {
-        entries: await sandbox.files.list(rootPath),
+        entries: await sandbox.files.list(rootPath, {
+          user: 'root',
+          requestTimeoutMs: 20_000,
+        }),
       }
     } catch (err) {
       if (err instanceof NotFoundError && sandbox) {
