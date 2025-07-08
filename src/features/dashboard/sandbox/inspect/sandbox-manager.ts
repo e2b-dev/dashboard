@@ -64,7 +64,7 @@ export class SandboxManager {
       this.watchHandle = await this.sandbox.files.watchDir(
         this.rootPath,
         (event) => this.handleFilesystemEvent(event),
-        { recursive: true, timeoutMs: 0 }
+        { recursive: true, timeoutMs: 0, user: 'root' }
       )
     } catch (error) {
       console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
@@ -192,7 +192,10 @@ export class SandboxManager {
     state.setError(normalizedPath) // clear any previous errors
 
     try {
-      const entries = await this.sandbox.files.list(normalizedPath)
+      const entries = await this.sandbox.files.list(normalizedPath, {
+        user: 'root',
+        requestTimeoutMs: 20_000,
+      })
 
       const nodes: FilesystemNode[] = entries.map((entry: EntryInfo) => {
         if (entry.type === FileType.DIR) {
@@ -302,6 +305,7 @@ export class SandboxManager {
       const blob = await this.sandbox.files.read(normalizedPath, {
         format: 'blob',
         requestTimeoutMs: 30_000,
+        user: 'root',
       })
 
       const contentState = await determineFileContentState(blob)
