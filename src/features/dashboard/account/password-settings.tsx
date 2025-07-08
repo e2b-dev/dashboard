@@ -140,6 +140,7 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
               type="submit"
               loading={isPending}
               onClick={form.handleSubmit(onSubmit)}
+              disabled={isPending || !form.formState.isValid}
             >
               Update password
             </Button>
