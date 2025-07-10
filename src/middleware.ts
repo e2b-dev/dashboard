@@ -1,18 +1,15 @@
-import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+import { ALLOW_SEO_INDEXING } from './configs/flags'
+import { l } from './lib/clients/logger'
+import { getRewriteForPath } from './lib/utils/rewrites'
 import {
   getAuthRedirect,
   getUserSession,
   handleTeamResolution,
-  isAuthRoute,
   isDashboardRoute,
   resolveTeamForDashboard,
 } from './server/middleware'
-import { PROTECTED_URLS } from './configs/urls'
-import { logError } from './lib/clients/logger'
-import { ERROR_CODES } from './configs/logs'
-import { getRewriteForPath } from './lib/utils/rewrites'
-import { ALLOW_SEO_INDEXING } from './configs/flags'
 
 export async function middleware(request: NextRequest) {
   try {
@@ -93,7 +90,7 @@ export async function middleware(request: NextRequest) {
     // Process team resolution result
     return handleTeamResolution(request, response, teamResult)
   } catch (error) {
-    logError(ERROR_CODES.MIDDLEWARE, error)
+    l.error('MIDDLEWARE:UNEXPECTED_ERROR', error)
     // Return a basic response to avoid infinite loops
     return NextResponse.next({
       request,

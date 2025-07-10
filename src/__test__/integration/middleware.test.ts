@@ -1,13 +1,12 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
-import { middleware } from '@/middleware'
-import { checkUserTeamAuthorization } from '@/lib/utils/server'
+import { COOKIE_KEYS } from '@/configs/keys'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { COOKIE_KEYS } from '@/configs/keys'
-import { PROTECTED_URLS } from '@/configs/urls'
+import { checkUserTeamAuthorization } from '@/lib/utils/server'
+import { middleware } from '@/middleware'
 import { createServerClient } from '@supabase/ssr'
-import { AUTH_URLS } from '@/configs/urls'
+import { NextRequest, NextResponse } from 'next/server'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // MOCKS SETUP
 // These mocks replace actual implementations with test doubles
@@ -132,7 +131,7 @@ describe('Middleware Integration Tests', () => {
               error: null,
             }),
           },
-        }) as ReturnType<typeof createServerClient>
+        }) as unknown as ReturnType<typeof createServerClient>
     )
   })
 
@@ -157,7 +156,7 @@ describe('Middleware Integration Tests', () => {
                 error: { message: 'Not authenticated' },
               }),
             },
-          }) as ReturnType<typeof createServerClient>
+          }) as unknown as ReturnType<typeof createServerClient>
       )
 
       const request = createMockRequest({
@@ -172,7 +171,7 @@ describe('Middleware Integration Tests', () => {
       expect(redirectCalls.length).toBeGreaterThan(0)
 
       if (redirectCalls.length > 0) {
-        const redirectUrl = redirectCalls[0][0].toString()
+        const redirectUrl = redirectCalls[0]?.[0]?.toString()
         expect(redirectUrl).toContain(AUTH_URLS.SIGN_IN)
       }
     })
@@ -214,7 +213,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain('default-team')
+        expect(redirectCalls[0]?.[0]?.toString()).toContain('default-team')
       }
     })
   })
@@ -243,7 +242,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        const url = redirectCalls[0][0].toString()
+        const url = redirectCalls[0]?.[0]?.toString()
         expect(url).toContain(PROTECTED_URLS.DASHBOARD)
         expect(url).not.toContain('tampered-team-id')
       }
@@ -318,7 +317,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain('default-team')
+        expect(redirectCalls[0]?.[0]?.toString()).toContain('default-team')
       }
     })
 
@@ -354,7 +353,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain(
+        expect(redirectCalls[0]?.[0]?.toString()).toContain(
           PROTECTED_URLS.NEW_TEAM
         )
       }
@@ -394,7 +393,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain('/')
+        expect(redirectCalls[0]?.[0]?.toString()).toContain('/')
       }
     })
   })

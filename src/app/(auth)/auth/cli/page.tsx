@@ -1,14 +1,13 @@
-import { Suspense } from 'react'
-import { redirect } from 'next/navigation'
-import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
-import { createClient } from '@/lib/clients/supabase/server'
-import { logError } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { bailOutFromPPR, generateE2BUserAccessToken } from '@/lib/utils/server'
+import { l } from '@/lib/clients/logger'
+import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { bailOutFromPPR, generateE2BUserAccessToken } from '@/lib/utils/server'
 import { getDefaultTeamRelation } from '@/server/auth/get-default-team'
+import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 
 // Mark route as dynamic to prevent static optimization
 export const dynamic = 'force-dynamic'
@@ -104,7 +103,9 @@ export default async function CLIAuthPage({
 
   // Validate redirect URL
   if (!next?.startsWith('http://localhost')) {
-    logError(ERROR_CODES.CLI_AUTH, 'Invalid redirect URL')
+    l.error('CLI_AUTH:INVALID_REDIRECT_URL', {
+      next,
+    })
     redirect(PROTECTED_URLS.DASHBOARD)
   }
 
@@ -138,7 +139,7 @@ export default async function CLIAuthPage({
         throw err
       }
 
-      logError(ERROR_CODES.CLI_AUTH, err)
+      l.error('CLI_AUTH:UNEXPECTED_ERROR', err)
 
       return encodedRedirect('error', '/auth/cli', (err as Error).message, {
         next,

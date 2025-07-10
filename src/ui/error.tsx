@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
-import { ErrorIndicator } from './error-indicator'
-import { logError } from '@/lib/clients/logger'
-import Frame from './frame'
+import { l } from '@/lib/clients/logger'
 import { cn } from '@/lib/utils'
 import * as Sentry from '@sentry/nextjs'
+import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
+import { ErrorIndicator } from './error-indicator'
+import Frame from './frame'
 
 export default function ErrorBoundary({
   error,
@@ -28,7 +28,7 @@ export default function ErrorBoundary({
         },
       })
     } else {
-      logError('Error boundary caught:', error)
+      l.error('ERROR_BOUNDARY: Error boundary caught', error)
     }
   }, [error])
 

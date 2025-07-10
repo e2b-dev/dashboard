@@ -22,6 +22,7 @@ const config = {
       fullUrl: true,
     },
   },
+  serverExternalPackages: ['winston', 'next-logger', "fumadocs-mdx"],
   trailingSlash: false,
   headers: async () => [
     {

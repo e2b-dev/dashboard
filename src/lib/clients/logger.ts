@@ -1,41 +1,25 @@
-import ansis from 'ansis'
+/**
+ * Universal logger that picks the correct implementation for the current runtime
+ * (Node, Edge, Browser) and exposes an API compatible with `pino`.
+ *
+ * In Node & Browser we return the real pino instance.
+ * In Edge we fall back to the minimal JSON logger implemented in `logger.edge.ts`.
+ */
 
-export const logger = console
+import type { Logger } from 'winston'
 
-const stringifyArg = (arg: unknown) =>
-  typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+const loggerImpl = ((): Logger => {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('./logger.node').logger as Logger
+  }
 
-export const logError = (...args: Parameters<typeof console.error>) => {
-  console.error(
-    ansis.bgRedBright.white(' ERROR '),
-    ansis.redBright(args.map(stringifyArg).join(' '))
-  )
-}
+  // edge (console) logger will be used in edge or browser runtime
 
-export const logDebug = (...args: Parameters<typeof console.debug>) => {
-  console.debug(
-    ansis.bgBlueBright.white(' DEBUG '),
-    ansis.blueBright(args.map(stringifyArg).join(' '))
-  )
-}
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('./logger.edge').logger as Logger
+})()
 
-export const logInfo = (...args: Parameters<typeof console.info>) => {
-  console.info(
-    ansis.bgGray.black(' INFO '),
-    ansis.gray(args.map(stringifyArg).join(' '))
-  )
-}
-
-export const logSuccess = (...args: Parameters<typeof console.log>) => {
-  console.log(
-    ansis.bgGreenBright.white(' SUCCESS '),
-    ansis.greenBright(args.map(stringifyArg).join(' '))
-  )
-}
-
-export const logWarning = (...args: Parameters<typeof console.warn>) => {
-  console.warn(
-    ansis.bgYellowBright.white(' WARNING '),
-    ansis.yellowBright(args.map(stringifyArg).join(' '))
-  )
-}
+export const l = loggerImpl
+export const logger = loggerImpl
+export default loggerImpl

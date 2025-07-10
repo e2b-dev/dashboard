@@ -1,15 +1,15 @@
-import { Suspense } from 'react'
+import { l } from '@/lib/clients/logger'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/ui/primitives/card'
+import { Suspense } from 'react'
 import { VCPUChart } from './vcpu-chart'
-import { ChartPlaceholder } from '@/ui/chart-placeholder'
-import { getUsageThroughReactCache } from '@/server/usage/get-usage'
-import { logError } from '@/lib/clients/logger'
 
 async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
   const result = await getUsageThroughReactCache({ teamId })
@@ -19,6 +19,11 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
       result?.serverError ||
       result?.validationErrors?.formErrors?.[0] ||
       'Could not load usage data.'
+
+    l.error('VCPU_CARD:ERROR', result?.serverError, {
+      teamId,
+      errorMessage,
+    })
 
     throw new Error(errorMessage)
   }

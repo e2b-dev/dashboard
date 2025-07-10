@@ -2,24 +2,24 @@
 
 'use client'
 
-import { ArrowUpRight, Cpu, PinIcon, X } from 'lucide-react'
-import { ColumnDef, FilterFn } from '@tanstack/react-table'
-import { rankItem } from '@tanstack/match-sorter-utils'
-import { Sandbox, SandboxMetrics, Template } from '@/types/api'
-import { Badge } from '@/ui/primitives/badge'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { DateRange } from 'react-day-picker'
-import { isWithinInterval } from 'date-fns'
-import { CgSmartphoneRam } from 'react-icons/cg'
-import { cn } from '@/lib/utils'
-import { useMemo } from 'react'
-import { Button } from '@/ui/primitives/button'
-import { useRouter } from 'next/navigation'
-import { useTemplateTableStore } from '../templates/stores/table-store'
+import { l } from '@/lib/clients/logger'
 import { useServerContext } from '@/lib/hooks/use-server-context'
+import { cn } from '@/lib/utils'
+import { Sandbox, SandboxMetrics, Template } from '@/types/api'
 import { JsonPopover } from '@/ui/json-popover'
+import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
+import { rankItem } from '@tanstack/match-sorter-utils'
+import { ColumnDef, FilterFn } from '@tanstack/react-table'
+import { isWithinInterval } from 'date-fns'
+import { ArrowUpRight, Cpu } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import posthog from 'posthog-js'
-import { logError } from '@/lib/clients/logger'
+import { useMemo } from 'react'
+import { DateRange } from 'react-day-picker'
+import { CgSmartphoneRam } from 'react-icons/cg'
+import { useTemplateTableStore } from '../templates/stores/table-store'
 
 export type SandboxWithMetrics = Sandbox & { metrics: SandboxMetrics[] }
 
@@ -53,8 +53,7 @@ export const fuzzyFilter: FilterFn<Sandbox> = (
       return stringifiedMetadata.includes(value)
     }
   } catch (error) {
-    logError('Error in fuzzyFilter', {
-      error,
+    l.error('SANDBOXES_TABLE:FUZZY_FILTER', error, {
       row,
       columnId,
       value,
