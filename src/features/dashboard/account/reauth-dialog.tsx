@@ -14,8 +14,17 @@ export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
       open={open}
       onOpenChange={onOpenChange}
       title="Re-authentication Required"
-      description="Your session is over 24 hours old. To update your password, you'll need to sign out and sign back in."
-      confirm="Sign out"
+      description={
+        <p className="text-fg-300 text-md mt-2">
+          Your last <strong>sign in</strong> was too far in the past. To update
+          your <strong>password</strong>, you'll need to{' '}
+          <strong>re-authenticate</strong>.
+        </p>
+      }
+      confirm="Sign in again"
+      confirmProps={{
+        variant: 'default',
+      }}
       onConfirm={() => signOutAction({ returnTo: '/dashboard/account' })}
     />
   )
