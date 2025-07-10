@@ -9,7 +9,6 @@ const config = {
   experimental: {
     reactCompiler: true,
     ppr: true,
-    nodeMiddleware: true,
     staleTimes: {
       dynamic: 180,
       static: 180,
