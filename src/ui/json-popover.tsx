@@ -1,4 +1,5 @@
 import { useShikiTheme } from '@/configs/shiki'
+import { cn } from '@/lib/utils'
 import {
   Popover,
   PopoverContent,
@@ -7,7 +8,6 @@ import {
 import { useState } from 'react'
 import ShikiHighlighter from 'react-shiki'
 import { ScrollArea, ScrollBar } from './primitives/scroll-area'
-import { cn } from '@/lib/utils'
 
 interface JsonPopoverProps {
   json: unknown

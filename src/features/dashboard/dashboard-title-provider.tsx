@@ -1,9 +1,9 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { useEffect, useMemo } from 'react'
-import { usePathname } from 'next/navigation'
 import { METADATA } from '@/configs/metadata'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { usePathname } from 'next/navigation'
+import { useEffect, useMemo } from 'react'
 
 /**
  * DashboardTitleProvider updates the document title based on the current team and pathname.
