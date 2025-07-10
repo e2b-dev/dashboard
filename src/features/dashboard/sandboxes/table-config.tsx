@@ -2,25 +2,23 @@
 
 'use client'
 
-import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
-import { rankItem } from '@tanstack/match-sorter-utils'
 import { Sandbox } from '@/types/api'
-import { DateRange } from 'react-day-picker'
+import { rankItem } from '@tanstack/match-sorter-utils'
+import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'
+import { DateRange } from 'react-day-picker'
 
+import { l } from '@/lib/clients/logger'
+import { ClientSandboxMetric } from '@/types/sandboxes.types'
+import posthog from 'posthog-js'
 import {
   CpuUsageCell,
-  RamUsageCell,
   IdCell,
-  TemplateCell,
   MetadataCell,
+  RamUsageCell,
   StartedAtCell,
+  TemplateCell,
 } from './table-cells'
-import posthog from 'posthog-js'
-import { logError } from '@/lib/clients/logger'
-import { ClientSandboxMetric } from '@/types/sandboxes.types'
-import { useSandboxTableStore } from './stores/table-store'
-import { Row } from '@tanstack/react-table'
 
 export type SandboxWithMetrics = Sandbox & {
   metrics?: ClientSandboxMetric | null
@@ -59,8 +57,7 @@ export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
       return stringifiedMetadata.includes(value)
     }
   } catch (error) {
-    logError('Error in fuzzyFilter', {
-      error,
+    l.error('SANDBOXES_TABLE:FUZZY_FILTER', error, {
       row,
       columnId,
       value,

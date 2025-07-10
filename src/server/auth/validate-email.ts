@@ -1,5 +1,5 @@
 import { KV_KEYS } from '@/configs/keys'
-import { ERROR_CODES } from '@/configs/logs'
+import { l } from '@/lib/clients/logger'
 import { kv } from '@vercel/kv'
 
 /**
@@ -87,7 +87,7 @@ export async function validateEmail(
         return { valid: true, data }
     }
   } catch (error) {
-    console.error(ERROR_CODES.EMAIL_VALIDATION, error)
+    l.error('EMAIL_VALIDATION:ERROR', error)
     return null
   }
 }

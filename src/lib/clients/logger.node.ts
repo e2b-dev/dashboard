@@ -1,13 +1,6 @@
-import { logger as baseLogger } from '@/../next-logger.config'
-import type { Logger } from 'pino'
+import { loggerInstance } from '@/../next-logger.config'
+import type { Logger } from 'winston'
 
-declare global {
-  const logger: typeof baseLogger
-}
-
-// instantiated in next-logger.config.js
-
-// @ts-expect-error - globalThis is not typed
-const logger = global.logger as Logger
+const logger = loggerInstance as Logger
 
 export { logger }

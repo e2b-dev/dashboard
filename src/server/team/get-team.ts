@@ -1,11 +1,11 @@
 import 'server-only'
 
+import { authActionClient } from '@/lib/clients/action'
+import { l } from '@/lib/clients/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { returnServerError } from '@/lib/utils/action'
 import { ClientTeam } from '@/types/dashboard.types'
 import { z } from 'zod'
-import { authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
-import { logError } from '@/lib/clients/logger'
 
 const GetTeamSchema = z.object({
   teamId: z.string().uuid(),
@@ -92,7 +92,8 @@ export const getUserTeams = authActionClient
           .in('id', Array.from(defaultUserIds))
 
       if (authUsersError) {
-        logError(authUsersError)
+        l.error('GET_USER_TEAMS:SUPABASE_ERROR', authUsersError)
+
         return usersTeamsData.map((userTeam) => ({
           ...userTeam.teams,
           is_default: userTeam.is_default,
@@ -134,7 +135,10 @@ export const getUserTeams = authActionClient
 
       return teams
     } catch (err) {
-      logError(err)
+      l.error('GET_USER_TEAMS:UNEXPECTED_ERROR', err, {
+        usersTeamsData,
+      })
+
       return usersTeamsData.map((userTeam) => ({
         ...userTeam.teams,
         is_default: userTeam.is_default,

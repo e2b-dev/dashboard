@@ -1,14 +1,13 @@
+import sitemap from '@/app/sitemap'
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
+import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
+import { BASE_URL } from '@/configs/urls'
+import { l } from '@/lib/clients/logger'
 import {
   getRewriteForPath,
   rewriteContentPagesHtml,
 } from '@/lib/utils/rewrites'
-import { ERROR_CODES } from '@/configs/logs'
 import { NextRequest } from 'next/server'
-import sitemap from '@/app/sitemap'
-import { BASE_URL } from '@/configs/urls'
-import { ALLOW_SEO_INDEXING } from '@/configs/flags'
-import { logError } from '@/lib/clients/logger'
-import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -87,7 +86,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return res
   } catch (error) {
-    logError(ERROR_CODES.URL_REWRITE, error)
+    l.error('URL_REWRITE:UNEXPECTED_ERROR', error)
 
     return new Response(
       `Proxy Error: ${error instanceof Error ? error.message : 'Unknown error'}`,

@@ -1,15 +1,15 @@
-import { Suspense } from 'react'
+import { l } from '@/lib/clients/logger'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/ui/primitives/card'
+import { Suspense } from 'react'
 import { RAMChart } from './ram-chart'
-import { ChartPlaceholder } from '@/ui/chart-placeholder'
-import { getUsageThroughReactCache } from '@/server/usage/get-usage'
-import { logError } from '@/lib/clients/logger'
 
 async function RAMCardContentResolver({ teamId }: { teamId: string }) {
   const result = await getUsageThroughReactCache({ teamId })
@@ -20,6 +20,11 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
       (Array.isArray(result?.validationErrors?.formErrors) &&
         result?.validationErrors?.formErrors[0]) ||
       'Could not load RAM usage data.'
+
+    l.error('RAM_CARD:ERROR', result?.serverError, {
+      teamId,
+      errorMessage,
+    })
 
     throw new Error(errorMessage)
   }

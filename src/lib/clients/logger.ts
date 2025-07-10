@@ -9,20 +9,10 @@
 import type { Logger } from 'winston'
 
 const loggerImpl = ((): Logger => {
-  if (typeof window !== 'undefined') {
-    // Browser
-
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('./logger.browser').logger as Logger
-  }
-
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    // Vercel Edge Runtime
-
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('./logger.node').logger as Logger
   }
-  // Default to Node
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('./logger.edge').logger as Logger

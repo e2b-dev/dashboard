@@ -1,18 +1,17 @@
 import 'server-only'
 
-import { z } from 'zod'
-import { DefaultTemplate, TeamUser, Template } from '@/types/api'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
-import { logError } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { actionClient, authActionClient } from '@/lib/clients/action'
-import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
+import { l } from '@/lib/clients/logger'
+import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { handleDefaultInfraError } from '@/lib/utils/action'
+import { DefaultTemplate } from '@/types/api'
+import { z } from 'zod'
 
 const GetTeamTemplatesSchema = z.object({
   teamId: z.string().uuid(),
@@ -45,7 +44,9 @@ export const getTeamTemplates = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      logError(ERROR_CODES.INFRA, '/templates', status, res.error, res.data)
+      l.error('GET_TEAM_TEMPLATES:INFRA_ERROR', res.error, res.response, {
+        status,
+      })
 
       return handleDefaultInfraError(status)
     }
@@ -114,11 +115,9 @@ export const getDefaultTemplates = actionClient
         .single()
 
       if (buildError) {
-        logError(
-          ERROR_CODES.INFRA,
-          `Failed to fetch build for env ${env.id}`,
-          buildError
-        )
+        l.error('GET_DEFAULT_TEMPLATES:INFRA_ERROR', buildError, {
+          envId: env.id,
+        })
         continue
       }
 
@@ -128,11 +127,9 @@ export const getDefaultTemplates = actionClient
         .eq('env_id', env.id)
 
       if (aliasesError) {
-        logError(
-          ERROR_CODES.INFRA,
-          `Failed to fetch aliases for env ${env.id}`,
-          aliasesError
-        )
+        l.error('GET_DEFAULT_TEMPLATES:INFRA_ERROR', aliasesError, {
+          envId: env.id,
+        })
         continue
       }
 

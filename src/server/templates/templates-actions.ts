@@ -1,13 +1,12 @@
 'use server'
 
-import { z } from 'zod'
-import { revalidatePath } from 'next/cache'
-import { authActionClient } from '@/lib/clients/action'
-import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { logError } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
+import { l } from '@/lib/clients/logger'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 
 const DeleteTemplateParamsSchema = z.object({
   templateId: z.string(),
@@ -32,13 +31,10 @@ export const deleteTemplateAction = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      logError(
-        ERROR_CODES.INFRA,
-        '/templates/{templateID}',
+
+      l.error('DELETE_TEMPLATE_ACTION:INFRA_ERROR', res.error, res.response, {
         status,
-        res.error,
-        res.data
-      )
+      })
 
       if (status === 404) {
         return returnServerError('Template not found')
@@ -93,13 +89,9 @@ export const updateTemplateAction = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      logError(
-        ERROR_CODES.INFRA,
-        '/templates/{templateID}',
+      l.error('UPDATE_TEMPLATE_ACTION:INFRA_ERROR', res.error, res.response, {
         status,
-        res.error,
-        res.data
-      )
+      })
 
       if (status === 404) {
         return returnServerError('Template not found')

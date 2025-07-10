@@ -11,7 +11,7 @@ import { uploadFile, deleteFile, getFiles } from '@/lib/clients/storage'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { zfd } from 'zod-form-data'
-import { logWarning } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger'
 import { returnValidationErrors } from 'next-safe-action'
 import { getTeam } from './get-team'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
@@ -302,7 +302,7 @@ export const uploadTeamProfilePictureAction = authActionClient
           await deleteFile(filePath)
         }
       } catch (cleanupError) {
-        logWarning('Error during profile picture cleanup:', cleanupError)
+        l.warn('Error during profile picture cleanup:', cleanupError)
       }
     })()
 

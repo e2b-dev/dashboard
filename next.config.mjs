@@ -9,7 +9,6 @@ const config = {
   experimental: {
     reactCompiler: true,
     ppr: true,
-    nodeMiddleware: true,
     staleTimes: {
       dynamic: 180,
       static: 180,
@@ -23,6 +22,7 @@ const config = {
       fullUrl: true,
     },
   },
+  serverExternalPackages: ['winston', 'next-logger', "fumadocs-mdx"],
   trailingSlash: false,
   headers: async () => [
     {

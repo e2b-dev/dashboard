@@ -1,21 +1,20 @@
-import type { Metadata } from 'next'
 import {
-  DocsPage,
   DocsBody,
-  DocsTitle,
   DocsDescription,
-  DocsCategory,
+  DocsPage,
+  DocsTitle,
 } from 'fumadocs-ui/page'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 /* import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui"; */
 /* import * as Preview from "@/components/preview"; */
-import { source } from '@/lib/source'
-import { createMetadata, metadataImage } from '@/configs/metadata'
+import { createMetadata, metadataImage } from '@/configs/fumadocs'
 import { METADATA } from '@/configs/metadata'
 import components from '@/features/docs/components'
-import { buttonVariants } from '@/ui/primitives/button'
-import { cn } from '@/lib/utils'
 import Footer from '@/features/docs/footer/footer'
+import { source } from '@/lib/source'
+import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/ui/primitives/button'
 
 /* function PreviewRenderer({ preview }: { preview: string }): ReactNode {
   if (preview && preview in Preview) {
@@ -69,7 +68,7 @@ export default async function Page(props: {
       <DocsBody>
         {/*         {preview ? <PreviewRenderer preview={preview} /> : null} */}
         <Mdx components={components({ slug: params.slug || [] })} />
-        {page.data.index ? <DocsCategory page={page} from={source} /> : null}
+        {/*         {page.data.index ? <DocsCategory page={page} from={source} /> : null} */}
       </DocsBody>
     </DocsPage>
   )

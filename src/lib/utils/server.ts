@@ -1,19 +1,16 @@
 import 'server-cli-only'
 
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'
+import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
 import { E2BError, UnauthenticatedError } from '@/types/errors'
-import { z } from 'zod'
-import { cookies } from 'next/headers'
 import { unstable_noStore } from 'next/cache'
-import { COOKIE_KEYS } from '@/configs/keys'
-import { logError, logger } from '../clients/logger'
-import { kv } from '@/lib/clients/kv'
-import { KV_KEYS } from '@/configs/keys'
-import { ERROR_CODES, INFO_CODES } from '@/configs/logs'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { CreatedAccessToken } from '@/types/api'
+import { cookies } from 'next/headers'
+import { z } from 'zod'
 import { infra } from '../clients/api'
+import { l } from '../clients/logger'
 import { returnServerError } from './action'
 
 /*
@@ -63,13 +60,7 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   })
 
   if (res.error) {
-    logError(
-      ERROR_CODES.INFRA,
-      '/access-tokens',
-      res.response.status,
-      res.error,
-      res.data
-    )
+    l.error('GENERATE_E2B_USER_ACCESS_TOKEN:INFRASERVER_ERROR', res.error)
 
     return returnServerError(`Failed to generate e2b user access token`)
   }
@@ -164,14 +155,10 @@ export async function resolveTeamId(identifier: string): Promise<string> {
     .single()
 
   if (error || !team) {
-    logger.error(
-      {
-        code: ERROR_CODES.SELECTED_TEAM_RESOLUTION,
-        identifier,
-        error,
-      },
-      `Failed to resolve team ID from slug: ${identifier}`
-    )
+    l.error('RESOLVE_TEAM_ID:FAILED_TO_RESOLVE_TEAM_ID_FROM_SLUG', error, {
+      identifier,
+    })
+
     throw new E2BError('INVALID_PARAMETERS', 'Invalid team identifier')
   }
   // Cache the result
@@ -204,9 +191,8 @@ export async function resolveTeamIdInServerComponent(identifier: string) {
     teamId = await resolveTeamId(identifier)
     cookiesStore.set(COOKIE_KEYS.SELECTED_TEAM_ID, teamId)
 
-    logger.info(
-      INFO_CODES.EXPENSIVE_OPERATION,
-      'Resolving teamId resolution in server component from data sources',
+    l.info(
+      'RESOLVE_TEAM_ID_IN_SERVER_COMPONENT:RESOLVING_TEAM_ID_FROM_DATA_SOURCES',
       {
         identifier,
         teamId,

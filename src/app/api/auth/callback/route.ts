@@ -1,9 +1,8 @@
-import { createClient } from '@/lib/clients/supabase/server'
-import { redirect } from 'next/navigation'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { logInfo } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
+import { l } from '@/lib/clients/logger'
+import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
+import { redirect } from 'next/navigation'
 
 export async function GET(request: Request) {
   // The `/auth/callback` route is required for the server-side auth flow implemented
@@ -16,10 +15,11 @@ export async function GET(request: Request) {
   const returnTo = requestUrl.searchParams.get('returnTo')?.toString()
   const redirectTo = requestUrl.searchParams.get('redirect_to')?.toString()
 
-  logInfo('Auth callback:', {
+  l.info('AUTH_CALLBACK:REQUEST', {
     code: !!code,
     origin,
     returnTo,
+    redirectTo,
   })
 
   if (code) {
@@ -27,21 +27,27 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      console.error(
-        ERROR_CODES.SUPABASE,
-        'Error exchanging code for session:',
-        error
-      )
+      l.error('AUTH_CALLBACK:SUPABASE_ERROR', error, {
+        code,
+        origin,
+        returnTo,
+        redirectTo,
+      })
+
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
-      logInfo('OTP was successfully exchanged for user:', data.user.id)
+      l.info('AUTH_CALLBACK:OTP_EXCHANGED', {
+        userId: data.user.id,
+      })
     }
   }
 
   if (redirectTo) {
     const returnToUrl = new URL(redirectTo, origin)
     if (returnToUrl.origin === origin) {
-      logInfo('Redirecting to:', redirectTo)
+      l.info('AUTH_CALLBACK:REDIRECTING_TO', {
+        redirectTo,
+      })
       return redirect(redirectTo)
     }
   }
@@ -57,12 +63,14 @@ export async function GET(request: Request) {
     }
 
     if (returnToUrl.origin === origin) {
-      logInfo('Returning to:', returnTo)
+      l.info('AUTH_CALLBACK:RETURNING_TO', {
+        returnTo,
+      })
       return redirect(returnTo)
     }
   }
 
   // Default redirect to dashboard
-  logInfo('Redirecting to dashboard')
+  l.info('AUTH_CALLBACK:REDIRECTING_TO_DASHBOARD')
   return redirect(PROTECTED_URLS.DASHBOARD)
 }

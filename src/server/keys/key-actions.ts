@@ -1,13 +1,12 @@
 'use server'
 
-import { z } from 'zod'
-import { revalidatePath } from 'next/cache'
-import { authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { logError } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
+import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
+import { l } from '@/lib/clients/logger'
+import { returnServerError } from '@/lib/utils/action'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 
 // Create API Key
 
@@ -39,7 +38,10 @@ export const createApiKeyAction = authActionClient
     })
 
     if (res.error) {
-      logError(ERROR_CODES.INFRA, '/api-keys', res.error)
+      l.error('CREATE_API_KEY:ERROR', res.error, {
+        teamId,
+        name,
+      })
 
       return returnServerError('Failed to create API Key')
     }
@@ -79,7 +81,10 @@ export const deleteApiKeyAction = authActionClient
     })
 
     if (res.error) {
-      logError(ERROR_CODES.INFRA, '/api-keys/{apiKeyID}', res.error)
+      l.error('DELETE_API_KEY:ERROR', res.error, {
+        teamId,
+        apiKeyId,
+      })
 
       return returnServerError('Failed to delete API Key')
     }
