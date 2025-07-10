@@ -59,7 +59,7 @@ export default function DashboardSidebarMenu({
   }
 
   const handleLogout = () => {
-    signOutAction({})
+    signOutAction()
   }
 
   const handleMenuOpenChange = (open: boolean) => {

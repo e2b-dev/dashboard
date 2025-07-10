@@ -25,7 +25,7 @@ export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
       confirmProps={{
         variant: 'default',
       }}
-      onConfirm={() => signOutAction({ returnTo: '/dashboard/account' })}
+      onConfirm={() => signOutAction('/dashboard/account')}
     />
   )
 }

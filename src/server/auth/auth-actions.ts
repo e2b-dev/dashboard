@@ -6,7 +6,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Provider } from '@supabase/supabase-js'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { actionClient } from '@/lib/clients/action'
+import { actionClient, authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
@@ -187,21 +187,13 @@ export const forgotPasswordAction = actionClient
     }
   })
 
-const SignOutSchema = z.object({
-  returnTo: z.string().optional(),
-})
+export async function signOutAction(returnTo?: string) {
+  const supabase = await createClient()
 
-export const signOutAction = actionClient
-  .schema(SignOutSchema)
-  .metadata({ actionName: 'signOut' })
-  .action(async ({ parsedInput }) => {
-    const { returnTo } = parsedInput
+  await supabase.auth.signOut()
 
-    const supabase = await createClient()
-    await supabase.auth.signOut()
-
-    throw redirect(
-      AUTH_URLS.SIGN_IN +
-        (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
-    )
-  })
+  throw redirect(
+    AUTH_URLS.SIGN_IN +
+      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
+  )
+}
