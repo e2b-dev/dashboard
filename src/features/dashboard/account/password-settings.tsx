@@ -26,8 +26,9 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ReauthDialog } from './reauth-dialog'
+import { getUserProviders } from '@/lib/utils/auth'
 
 const formSchema = z
   .object({
@@ -54,6 +55,11 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
   const { user } = useUser()
   const { toast } = useToast()
   const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
+
+  const hasEmailProvider = useMemo(
+    () => getUserProviders(user)?.includes('email'),
+    [user]
+  )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,7 +97,7 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
     updatePassword({ password: values.password })
   }
 
-  if (!user) return null
+  if (!user || !hasEmailProvider) return null
 
   return (
     <>

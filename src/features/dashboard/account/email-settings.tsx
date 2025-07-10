@@ -20,7 +20,7 @@ import {
 import { Input } from '@/ui/primitives/input'
 import { useUser } from '@/lib/hooks/use-user'
 import { useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -28,6 +28,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/lib/hooks/use-toast'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { getUserProviders } from '@/lib/utils/auth'
 
 const formSchema = z.object({
   email: z.string().email('Invalid e-mail address'),
@@ -55,6 +56,11 @@ export function EmailSettings({ className }: EmailSettingsProps) {
       email: searchParams.get('new_email') || user?.email || '',
     },
   })
+
+  const hasEmailProvider = useMemo(
+    () => getUserProviders(user)?.includes('email'),
+    [user]
+  )
 
   const { execute: updateEmail, isPending } = useAction(updateUserAction, {
     onSuccess: () => {
@@ -105,7 +111,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
     }
   }, [searchParams])
 
-  if (!user) return null
+  if (!user || !hasEmailProvider) return null
 
   return (
     <Form {...form}>
