@@ -1,6 +1,7 @@
 'use client'
 
-import { forgotPasswordAction } from '@/server/auth/auth-actions'
+import { updateUserAction } from '@/server/user/user-actions'
+import { signOutAction } from '@/server/auth/auth-actions'
 import {
   Card,
   CardContent,
@@ -10,62 +11,205 @@ import {
   CardTitle,
 } from '@/ui/primitives/card'
 import { Button } from '@/ui/primitives/button'
+import { Input } from '@/ui/primitives/input'
 import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
+import { useToast } from '@/lib/hooks/use-toast'
 import {
-  defaultSuccessToast,
-  defaultErrorToast,
-  useToast,
-} from '@/lib/hooks/use-toast'
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/ui/primitives/form'
+import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { useMemo, useState } from 'react'
+import { ReauthDialog } from './reauth-dialog'
+import { getUserProviders } from '@/lib/utils/auth'
+
+const formSchema = z
+  .object({
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters'),
+    nonce: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
+
+type FormValues = z.infer<typeof formSchema>
 
 interface PasswordSettingsProps {
   className?: string
+  requiresReauth: boolean
 }
 
-export function PasswordSettings({ className }: PasswordSettingsProps) {
+export function PasswordSettings({
+  className,
+  requiresReauth,
+}: PasswordSettingsProps) {
+  'use no memo'
+
   const { user } = useUser()
   const { toast } = useToast()
+  const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
 
-  const { execute: forgotPassword, isExecuting: isForgotPasswordPending } =
-    useAction(forgotPasswordAction, {
-      onSuccess: () => {
-        toast(defaultSuccessToast('Password reset e-mail sent.'))
-      },
-      onError: ({ error }) => {
+  const hasEmailProvider = useMemo(
+    () => getUserProviders(user)?.includes('email'),
+    [user]
+  )
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      password: '',
+      confirmPassword: '',
+    },
+  })
+
+  const { execute: updatePassword, isPending } = useAction(updateUserAction, {
+    onSuccess: ({ data }) => {
+      if (data?.requiresReauth) {
+        setReauthDialogOpen(true)
+        return
+      }
+
+      toast(defaultSuccessToast('Password updated.'))
+
+      form.reset()
+    },
+    onError: ({ error }) => {
+      if (error.validationErrors?.fieldErrors?.password) {
+        form.setError('confirmPassword', {
+          message: error.validationErrors.fieldErrors.password?.[0],
+        })
+      } else {
         toast(
-          defaultErrorToast(error.serverError || 'Failed to reset password.')
+          defaultErrorToast(error.serverError || 'Failed to update password.')
         )
-      },
-    })
+      }
+    },
+  })
 
-  if (!user) return null
+  function onSubmit(values: FormValues) {
+    if (requiresReauth) {
+      return
+    }
+
+    updatePassword({ password: values.password })
+  }
+
+  function handleAuthenticate() {
+    signOutAction('/dashboard/account')
+  }
+
+  if (!user || !hasEmailProvider) return null
 
   return (
-    <Card className={cn('overflow-hidden rounded-xs border', className)}>
-      <CardHeader>
-        <CardTitle>Password</CardTitle>
-        <CardDescription>Change your account password.</CardDescription>
-      </CardHeader>
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
+          <Card className={cn('overflow-hidden rounded-xs border', className)}>
+            <CardHeader>
+              <CardTitle>Password</CardTitle>
+              <CardDescription>Change your account password.</CardDescription>
+            </CardHeader>
 
-      <CardFooter className="bg-bg-100 justify-between gap-6">
-        <p className="text-fg-500 text-sm">Sends a reset link.</p>
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (!user?.email) return
+            <CardContent
+              className={cn(
+                'relative flex w-full max-w-90 flex-col gap-2',
+                requiresReauth && 'max-w-120'
+              )}
+            >
+              {requiresReauth ? (
+                <>
+                  <p className="text-fg-300 text-md">
+                    For security reasons, you must sign in within the last 5
+                    minutes to update your password. Please sign in again to
+                    continue.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleAuthenticate}
+                    className="mt-2 w-fit"
+                  >
+                    Sign in again
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="New password"
+                            disabled={requiresReauth}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            const formData = new FormData()
-            formData.set('email', user.email)
-            formData.set('callbackUrl', '/dashboard/account')
-
-            forgotPassword(formData)
-          }}
-          loading={isForgotPasswordPending}
-        >
-          Change Password
-        </Button>
-      </CardFooter>
-    </Card>
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Confirm password"
+                            disabled={requiresReauth}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !requiresReauth) {
+                                form.handleSubmit(onSubmit)()
+                              }
+                            }}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+            </CardContent>
+            <CardFooter className="bg-bg-100 justify-between gap-6">
+              <p className="text-fg-500 text-sm">
+                Your password must be at least 8 characters long.
+              </p>
+              <Button
+                type="submit"
+                loading={isPending}
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={
+                  isPending || !form.formState.isValid || requiresReauth
+                }
+              >
+                Update password
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
+      <ReauthDialog
+        open={reauthDialogOpen}
+        onOpenChange={setReauthDialogOpen}
+      />
+    </>
   )
 }

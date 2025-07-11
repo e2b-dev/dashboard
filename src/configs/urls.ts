@@ -18,7 +18,7 @@ export const PROTECTED_URLS = {
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
   KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
-  RESET_PASSWORD: '/dashboard/account/reset-password',
+  RESET_PASSWORD: '/dashboard/account',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV

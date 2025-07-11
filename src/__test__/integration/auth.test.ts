@@ -417,5 +417,23 @@ describe('Auth Actions - Integration Tests', () => {
         })
       )
     })
+
+    /**
+     * AUTHENTICATION TEST: Verifies that sign-out redirects to sign-in page with returnTo
+     */
+    it('should redirect to sign-in page with returnTo parameter', async () => {
+      // Setup: Mock Supabase client to return successful sign-out
+      mockSupabaseClient.auth.signOut.mockResolvedValue({
+        error: null,
+      })
+
+      // Execute and Verify: Call the sign-out action and expect it to throw redirect
+      await expect(signOutAction('/dashboard')).rejects.toEqual(
+        expect.objectContaining({
+          destination:
+            AUTH_URLS.SIGN_IN + '?returnTo=' + encodeURIComponent('/dashboard'),
+        })
+      )
+    })
   })
 })

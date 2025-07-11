@@ -67,24 +67,26 @@ export function NameSettings({ className }: NameSettingsProps) {
   if (!user) return null
 
   return (
-    <Card
-      className={cn('overflow-hidden rounded-xs border', className)}
-      hideUnderline
-    >
-      <CardHeader>
-        <CardTitle>Name</CardTitle>
-        <CardDescription>
-          Update your account name, which will be visible to your team members.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((values) =>
-              updateName({ name: values.name })
-            )}
-            className="flex gap-2"
-          >
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit((values) =>
+          updateName({ name: values.name })
+        )}
+        className="w-full"
+      >
+        <Card
+          className={cn('overflow-hidden rounded-xs border', className)}
+          hideUnderline
+        >
+          <CardHeader>
+            <CardTitle>Name</CardTitle>
+            <CardDescription>
+              Update your account name, which will be visible to your team
+              members.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="flex flex-col gap-3">
             <FormField
               control={form.control}
               name="name"
@@ -97,19 +99,23 @@ export function NameSettings({ className }: NameSettingsProps) {
                 </FormItem>
               )}
             />
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="bg-bg-100 justify-between">
-        <p className="text-fg-500 text-sm">Max 32 characters.</p>
-        <Button
-          loading={isPending}
-          disabled={form.watch('name') === user?.user_metadata?.name}
-          type="submit"
-        >
-          Save
-        </Button>
-      </CardFooter>
-    </Card>
+          </CardContent>
+
+          <CardFooter className="bg-bg-100 justify-between">
+            <p className="text-fg-500 text-sm">Max 32 characters.</p>
+            <Button
+              loading={isPending}
+              disabled={form.watch('name') === user?.user_metadata?.name}
+              type="submit"
+              onClick={form.handleSubmit((values) =>
+                updateName({ name: values.name })
+              )}
+            >
+              Save
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+    </Form>
   )
 }

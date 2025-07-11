@@ -1,9 +1,9 @@
 import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { NameSettings } from '@/features/dashboard/account/name-settings'
 import { EmailSettings } from '@/features/dashboard/account/email-settings'
-import { PasswordSettings } from '@/features/dashboard/account/password-settings'
 import { Suspense } from 'react'
 import { AccessTokenSettings } from '@/features/dashboard/account/access-token-settings'
+import { PasswordSettingsServer } from '@/features/dashboard/account/password-settings-server'
 
 export default async function AccountPage() {
   return (
@@ -25,7 +25,7 @@ export default async function AccountPage() {
       </Suspense>
 
       <Suspense fallback={null}>
-        <PasswordSettings />
+        <PasswordSettingsServer />
       </Suspense>
     </DashboardPageLayout>
   )
