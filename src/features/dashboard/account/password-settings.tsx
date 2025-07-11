@@ -1,6 +1,7 @@
 'use client'
 
 import { updateUserAction } from '@/server/user/user-actions'
+import { signOutAction } from '@/server/auth/auth-actions'
 import {
   Card,
   CardContent,
@@ -47,9 +48,13 @@ type FormValues = z.infer<typeof formSchema>
 
 interface PasswordSettingsProps {
   className?: string
+  requiresReauth: boolean
 }
 
-export function PasswordSettings({ className }: PasswordSettingsProps) {
+export function PasswordSettings({
+  className,
+  requiresReauth,
+}: PasswordSettingsProps) {
   'use no memo'
 
   const { user } = useUser()
@@ -94,7 +99,15 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
   })
 
   function onSubmit(values: FormValues) {
+    if (requiresReauth) {
+      return
+    }
+
     updatePassword({ password: values.password })
+  }
+
+  function handleAuthenticate() {
+    signOutAction('/dashboard/account')
   }
 
   if (!user || !hasEmailProvider) return null
@@ -109,45 +122,71 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
               <CardDescription>Change your account password.</CardDescription>
             </CardHeader>
 
-            <CardContent className="flex w-full max-w-90 flex-col gap-2">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="New password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <CardContent
+              className={cn(
+                'relative flex w-full max-w-90 flex-col gap-2',
+                requiresReauth && 'max-w-120'
+              )}
+            >
+              {requiresReauth ? (
+                <>
+                  <p className="text-fg-300 text-md">
+                    For security reasons, you must sign in within the last 5
+                    minutes to update your password. Please sign in again to
+                    continue.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleAuthenticate}
+                    className="mt-2 w-fit"
+                  >
+                    Sign in again
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="New password"
+                            disabled={requiresReauth}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm password"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            form.handleSubmit(onSubmit)()
-                          }
-                        }}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Confirm password"
+                            disabled={requiresReauth}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !requiresReauth) {
+                                form.handleSubmit(onSubmit)()
+                              }
+                            }}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </CardContent>
             <CardFooter className="bg-bg-100 justify-between gap-6">
               <p className="text-fg-500 text-sm">
@@ -157,7 +196,9 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
                 type="submit"
                 loading={isPending}
                 onClick={form.handleSubmit(onSubmit)}
-                disabled={isPending || !form.formState.isValid}
+                disabled={
+                  isPending || !form.formState.isValid || requiresReauth
+                }
               >
                 Update password
               </Button>
