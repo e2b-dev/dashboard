@@ -1,11 +1,19 @@
 import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { NameSettings } from '@/features/dashboard/account/name-settings'
 import { EmailSettings } from '@/features/dashboard/account/email-settings'
-import { PasswordSettings } from '@/features/dashboard/account/password-settings'
 import { Suspense } from 'react'
 import { AccessTokenSettings } from '@/features/dashboard/account/access-token-settings'
+import { PasswordSettingsServer } from '@/features/dashboard/account/password-settings-server'
 
-export default async function AccountPage() {
+export interface AccountPageSearchParams {
+  reauth?: '1'
+}
+
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<AccountPageSearchParams>
+}) {
   return (
     <DashboardPageLayout
       hideFrame
@@ -25,7 +33,7 @@ export default async function AccountPage() {
       </Suspense>
 
       <Suspense fallback={null}>
-        <PasswordSettings />
+        <PasswordSettingsServer searchParams={await searchParams} />
       </Suspense>
     </DashboardPageLayout>
   )

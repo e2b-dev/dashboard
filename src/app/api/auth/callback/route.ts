@@ -50,6 +50,12 @@ export async function GET(request: Request) {
   if (returnTo) {
     // Ensure returnTo is a relative URL to prevent open redirect vulnerabilities
     const returnToUrl = new URL(returnTo, origin)
+
+    if (returnTo === PROTECTED_URLS.ACCOUNT_SETTINGS) {
+      returnToUrl.searchParams.set('reauth', '1')
+      return redirect(returnToUrl.toString())
+    }
+
     if (returnToUrl.origin === origin) {
       logInfo('Returning to:', returnTo)
       return redirect(returnTo)

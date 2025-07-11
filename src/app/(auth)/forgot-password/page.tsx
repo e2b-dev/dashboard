@@ -62,6 +62,7 @@ export default function ForgotPassword() {
         >
           Sign in
         </button>
+        .
       </p>
 
       <form

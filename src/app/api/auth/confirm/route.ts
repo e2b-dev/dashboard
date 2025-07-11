@@ -84,7 +84,6 @@ export async function GET(request: NextRequest) {
 
     const redirectUrl = new URL(next)
 
-    const response = NextResponse.redirect(redirectUrl)
     const supabase = await createClient()
 
     const { error } = await supabase.auth.verifyOtp({
@@ -115,14 +114,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // handle re-auth
+    if (redirectUrl.pathname === PROTECTED_URLS.ACCOUNT_SETTINGS) {
+      redirectUrl.searchParams.set('reauth', '1')
+
+      return NextResponse.redirect(redirectUrl.toString())
+    }
+
     logInfo('AUTH_CONFIRM_SUCCESS', {
       supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
       supabaseType,
       supabaseRedirectTo,
       redirectUrl: redirectUrl.toString(),
+      reauth: redirectUrl.searchParams.get('reauth'),
     })
 
-    return response
+    return NextResponse.redirect(redirectUrl.toString())
   } catch (e) {
     logError('AUTH_CONFIRM_ERROR', {
       error: e,

@@ -9,6 +9,10 @@ interface ReauthDialogProps {
 }
 
 export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
+  const handleReauth = () => {
+    signOutAction('/dashboard/account')
+  }
+
   return (
     <AlertDialog
       open={open}
@@ -16,16 +20,15 @@ export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
       title="Re-authentication Required"
       description={
         <p className="text-fg-300 text-md mt-2">
-          Your last <strong>sign in</strong> was too far in the past. To update
-          your <strong>password</strong>, you'll need to{' '}
-          <strong>re-authenticate</strong>.
+          To change your password, you'll need to{' '}
+          <strong>re-authenticate</strong> for security.
         </p>
       }
       confirm="Sign in again"
       confirmProps={{
         variant: 'default',
       }}
-      onConfirm={() => signOutAction('/dashboard/account')}
+      onConfirm={handleReauth}
     />
   )
 }

@@ -16,6 +16,7 @@ import {
 } from '@/server/auth/validate-email'
 import { ERROR_CODES } from '@/configs/logs'
 import { logInfo } from '@/lib/clients/logger'
+import { NextResponse } from 'next/server'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -146,6 +147,10 @@ export const signInAction = actionClient
     const { email, password, returnTo = '' } = parsedInput
     const supabase = await createClient()
 
+    const headerStore = await headers()
+
+    const origin = headerStore.get('origin') || ''
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -158,7 +163,19 @@ export const signInAction = actionClient
       throw error
     }
 
-    redirect(returnTo || PROTECTED_URLS.DASHBOARD)
+    // handle extra case for password reset
+    if (
+      returnTo.trim().length > 0 &&
+      returnTo === PROTECTED_URLS.ACCOUNT_SETTINGS
+    ) {
+      const url = new URL(returnTo, origin)
+
+      url.searchParams.set('reauth', '1')
+
+      throw redirect(url.toString())
+    }
+
+    throw redirect(returnTo || PROTECTED_URLS.DASHBOARD)
   })
 
 const forgotPasswordSchema = zfd.formData({

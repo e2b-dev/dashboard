@@ -186,6 +186,7 @@ export default function Login() {
         >
           Sign up
         </Link>
+        .
       </p>
 
       {message && <AuthFormMessage className="mt-4" message={message} />}

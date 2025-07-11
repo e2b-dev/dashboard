@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { ReauthDialog } from './reauth-dialog'
 import { getUserProviders } from '@/lib/utils/auth'
 
@@ -47,14 +47,25 @@ type FormValues = z.infer<typeof formSchema>
 
 interface PasswordSettingsProps {
   className?: string
+  showPasswordChangeForm: boolean
 }
 
-export function PasswordSettings({ className }: PasswordSettingsProps) {
+export function PasswordSettings({
+  className,
+  showPasswordChangeForm,
+}: PasswordSettingsProps) {
   'use no memo'
 
   const { user } = useUser()
   const { toast } = useToast()
   const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
+  const [clientShowPasswordForm, setClientShowPasswordForm] = useState(
+    showPasswordChangeForm
+  )
+
+  useEffect(() => {
+    setClientShowPasswordForm(showPasswordChangeForm)
+  }, [showPasswordChangeForm])
 
   const hasEmailProvider = useMemo(
     () => getUserProviders(user)?.includes('email'),
@@ -79,6 +90,8 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
       toast(defaultSuccessToast('Password updated.'))
 
       form.reset()
+      setClientShowPasswordForm(false)
+      window.history.replaceState({}, '', window.location.pathname)
     },
     onError: ({ error }) => {
       if (error.validationErrors?.fieldErrors?.password) {
@@ -97,74 +110,100 @@ export function PasswordSettings({ className }: PasswordSettingsProps) {
     updatePassword({ password: values.password })
   }
 
+  function handleChangePassword() {
+    setReauthDialogOpen(true)
+  }
+
   if (!user || !hasEmailProvider) return null
 
   return (
     <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-          <Card className={cn('overflow-hidden rounded-xs border', className)}>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>Change your account password.</CardDescription>
-            </CardHeader>
+      <Card className={cn('overflow-hidden rounded-xs border', className)}>
+        <CardHeader>
+          <CardTitle>Password</CardTitle>
+          <CardDescription>Change your account password.</CardDescription>
+        </CardHeader>
 
-            <CardContent className="flex w-full max-w-90 flex-col gap-2">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="New password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <CardContent className="relative flex w-full max-w-90 flex-col gap-2">
+          {clientShowPasswordForm ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
+                <div className="flex flex-col gap-2">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="New password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm password"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            form.handleSubmit(onSubmit)()
-                          }
-                        }}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-            <CardFooter className="bg-bg-100 justify-between gap-6">
-              <p className="text-fg-500 text-sm">
-                Your password must be at least 8 characters long.
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Confirm password"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                form.handleSubmit(onSubmit)()
+                              }
+                            }}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </form>
+            </Form>
+          ) : (
+            <>
+              <p className="text-fg-300 text-md">
+                To change your password, you'll need to re-authenticate for
+                security.
               </p>
               <Button
-                type="submit"
-                loading={isPending}
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={isPending || !form.formState.isValid}
+                type="button"
+                onClick={handleChangePassword}
+                className="mt-2 w-fit"
               >
-                Update password
+                Change Password
               </Button>
-            </CardFooter>
-          </Card>
-        </form>
-      </Form>
+            </>
+          )}
+        </CardContent>
+
+        {clientShowPasswordForm && (
+          <CardFooter className="bg-bg-100 justify-between gap-6">
+            <p className="text-fg-500 text-sm">
+              Your password must be at least 8 characters long.
+            </p>
+            <Button
+              type="submit"
+              loading={isPending}
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={isPending || !form.formState.isValid}
+            >
+              Update password
+            </Button>
+          </CardFooter>
+        )}
+      </Card>
+
       <ReauthDialog
         open={reauthDialogOpen}
         onOpenChange={setReauthDialogOpen}
