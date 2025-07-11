@@ -17,7 +17,7 @@
     "db:migrations:create": "bun run scripts:create-migration",
     "db:migrations:apply": "bun run scripts:apply-migrations",
     "<<<<<< Gen": "",
-    "generate:infra": "bunx openapi-typescript https://raw.githubusercontent.com/e2b-dev/infra/main/spec/openapi.yml -o ./src/types/infra-api.d.ts",
+    "generate:infra": "bunx openapi-typescript ./spec/openapi.yaml -o ./src/types/infra-api.d.ts",
     "generate:supabase": "bunx supabase@latest gen types typescript --schema public > src/types/database.types.ts --project-id $SUPABASE_PROJECT_ID",
     "generate:envd": "buf generate --template ./spec/envd/buf.gen.yaml",
     "<<<<<< Scripts": "",

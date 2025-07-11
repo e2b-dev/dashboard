@@ -201,18 +201,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all running sandboxes with metrics */
-        get: {
+        get?: never;
+        put?: never;
+        /** @description List metrics for given sandboxes */
+        post: {
             parameters: {
-                query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
-                    metadata?: string;
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GetMetrics"];
+                };
+            };
             responses: {
                 /** @description Successfully returned all running sandboxes with metrics */
                 200: {
@@ -220,7 +223,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RunningSandboxWithMetrics"][];
+                        "application/json": components["schemas"]["SandboxesWithMetrics"];
                     };
                 };
                 400: components["responses"]["400"];
@@ -228,8 +231,6 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -267,47 +268,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["SandboxLogs"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get sandbox metrics */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the sandbox metrics */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxMetric"][];
                     };
                 };
                 401: components["responses"]["401"];
@@ -1209,14 +1169,14 @@ export interface components {
             cpuUsedPct: number;
             /**
              * Format: int64
-             * @description Memory used in MiB
+             * @description Memory used in bytes
              */
-            memUsedMiB: number;
+            memUsed: number;
             /**
              * Format: int64
-             * @description Total memory in MiB
+             * @description Total memory in bytes
              */
-            memTotalMiB: number;
+            memTotal: number;
         };
         Sandbox: {
             /** @description Identifier of the template from which is the sandbox created */
@@ -1284,29 +1244,14 @@ export interface components {
             metadata?: components["schemas"]["SandboxMetadata"];
             state: components["schemas"]["SandboxState"];
         };
-        RunningSandboxWithMetrics: {
-            /** @description Identifier of the template from which is the sandbox created */
-            templateID: string;
-            /** @description Alias of the template */
-            alias?: string;
-            /** @description Identifier of the sandbox */
-            sandboxID: string;
-            /** @description Identifier of the client */
-            clientID: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox was started
-             */
-            startedAt: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox will expire
-             */
-            endAt: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            memoryMB: components["schemas"]["MemoryMB"];
-            metadata?: components["schemas"]["SandboxMetadata"];
-            metrics?: components["schemas"]["SandboxMetric"][];
+        GetMetrics: {
+            /** @description List of sandbox IDs to get metrics for */
+            sandboxIDs: string[];
+        };
+        SandboxesWithMetrics: {
+            sandboxes: {
+                [key: string]: components["schemas"]["SandboxMetric"];
+            };
         };
         NewSandbox: {
             /** @description Identifier of the required template */
@@ -1407,6 +1352,8 @@ export interface components {
              * @enum {string}
              */
             status: "building" | "waiting" | "ready" | "error";
+            /** @description Message with the status reason, currently reporting only for error status */
+            reason?: string;
         };
         /**
          * @description Status of the node

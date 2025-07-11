@@ -5,14 +5,19 @@ import {
 
 type Sandbox = InfraComponents['schemas']['ListedSandbox']
 
+type Sandboxes = InfraComponents['schemas']['ListedSandbox'][]
+
+type SandboxMetric = InfraComponents['schemas']['SandboxMetric']
+
+type SandboxesMetricsRecord =
+  InfraComponents['schemas']['SandboxesWithMetrics']['sandboxes']
+
 type Template = InfraComponents['schemas']['Template']
 
 type DefaultTemplate = Template & {
   isDefault: true
   defaultDescription?: string
 }
-
-type SandboxMetrics = InfraComponents['schemas']['SandboxMetric']
 
 type TeamUser = InfraComponents['schemas']['TeamUser']
 
@@ -27,8 +32,10 @@ type TeamAPIKey = InfraComponents['schemas']['TeamAPIKey']
 
 export type {
   Sandbox,
+  Sandboxes,
   Template,
-  SandboxMetrics,
+  SandboxesMetricsRecord,
+  SandboxMetric,
   DefaultTemplate,
   CreatedAccessToken,
   CreatedTeamAPIKey,

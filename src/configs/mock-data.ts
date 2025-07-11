@@ -1,5 +1,11 @@
 import { nanoid } from 'nanoid'
-import { DefaultTemplate, Sandbox, SandboxMetrics, Template } from '@/types/api'
+import {
+  DefaultTemplate,
+  Sandbox,
+  Sandboxes,
+  SandboxesMetricsRecord,
+  Template,
+} from '@/types/api'
 import { addHours, subHours } from 'date-fns'
 
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
@@ -218,8 +224,8 @@ const COMPONENTS = [
   'monitoring',
 ] as const
 
-function generateMockSandboxes(count: number): Sandbox[] {
-  const sandboxes: Sandbox[] = []
+function generateMockSandboxes(count: number): Sandboxes {
+  const sandboxes: Sandboxes = []
   const baseDate = new Date()
 
   for (let i = 0; i < count; i++) {
@@ -318,10 +324,8 @@ function generateMockSandboxes(count: number): Sandbox[] {
   return sandboxes
 }
 
-function generateMockMetrics(
-  sandboxes: Sandbox[]
-): Map<string, SandboxMetrics> {
-  const metrics = new Map<string, SandboxMetrics>()
+function generateMockMetrics(sandboxes: Sandbox[]): SandboxesMetricsRecord {
+  const metrics: SandboxesMetricsRecord = {}
 
   // Define characteristics by template type
   const templatePatterns: Record<
@@ -387,13 +391,13 @@ function generateMockMetrics(
     const memPct = memBaseline + baseLoad * memVolatility + memoryNoise
     const memMiBUsed = Math.floor(sandbox.memoryMB * Math.min(0.945, memPct))
 
-    metrics.set(sandbox.sandboxID, {
+    metrics[sandbox.sandboxID] = {
       cpuCount: sandbox.cpuCount,
       cpuUsedPct,
-      memTotalMiB: Math.round(sandbox.memoryMB * 0.945),
-      memUsedMiB: memMiBUsed,
+      memTotal: Math.round(sandbox.memoryMB * 0.945),
+      memUsed: memMiBUsed,
       timestamp: new Date().toISOString(),
-    })
+    }
   }
 
   return metrics
