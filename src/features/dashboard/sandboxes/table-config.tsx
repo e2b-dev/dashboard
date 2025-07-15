@@ -209,7 +209,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
       return (
         <span className="text-fg-500 flex items-center overflow-hidden whitespace-nowrap">
           <Badge className={cn('font-mono')}>
-            <span className={cn('mr-1 flex items-center gap-1', textClassName)}>
+            <span className={cn('flex items-center gap-1', textClassName)}>
               <Cpu className={cn('size-3', textClassName)} />{' '}
               {cpuPercentage.toFixed(0)}%
             </span>
