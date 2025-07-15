@@ -1,6 +1,19 @@
 import { withSentryConfig } from '@sentry/nextjs'
 
 
+const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data:;
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+`
+
 /** @type {import('next').NextConfig} */
 const config = {
   eslint: {
@@ -29,6 +42,10 @@ const config = {
     {
       source: '/(.*)',
       headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: cspHeader.replace(/\n/g, ''),
+        },
         {
           // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
           key: 'X-Frame-Options',
