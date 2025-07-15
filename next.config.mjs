@@ -21,8 +21,6 @@ const infraConnectSrc = `${infraApiUrl.toString()} ${infraApiUrl.protocol}//*.${
  * - Image data retrieval from Supabase storage bucket (profile pictures)
  * - PostHog analytics
  * - Sentry error tracking
- * - KV REST API calls
- * - Billing API calls
  */
 const cspHeader = `
     default-src 'self';
