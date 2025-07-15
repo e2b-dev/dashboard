@@ -51,7 +51,7 @@ export default function RemainingTime({ endAt }: RemainingTimeProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <p>{formatted}</p>
+      <p suppressHydrationWarning>{formatted}</p>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: remaining === 0 ? 1 : 0 }}
