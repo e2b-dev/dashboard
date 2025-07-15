@@ -5,14 +5,15 @@ import { SearchInput } from './table-search'
 import SandboxesTableFilters from './table-filters'
 import { PollingButton } from '@/ui/polling-button'
 import { useSandboxTableStore } from './stores/table-store'
-import { Sandbox, Template } from '@/types/api'
+import { Template } from '@/types/api'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
+import { SandboxesTable } from './table-config'
 
 interface SandboxesHeaderProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>
   templates: Template[]
-  table: Table<Sandbox>
+  table: SandboxesTable
 }
 
 export function SandboxesHeader({

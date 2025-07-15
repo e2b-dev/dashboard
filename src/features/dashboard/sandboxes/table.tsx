@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo, memo } from 'react'
+import { useRef, useMemo } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import {
   ColumnFiltersState,
@@ -14,12 +14,11 @@ import {
 import { DataTable } from '@/ui/data-table'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import {
-  fallbackData,
-  SandboxWithMetrics,
   fuzzyFilter,
   dateRangeFilter,
   resourceRangeFilter,
   COLUMNS,
+  SandboxWithMetrics,
 } from './table-config'
 import React from 'react'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
@@ -32,17 +31,24 @@ import ClientOnly from '@/ui/client-only'
 import TableHeader from './table-header'
 import { cn } from '@/lib/utils'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
+import {
+  useLatestSandboxMetrics,
+  useSandboxesMetrics,
+} from './hooks/use-sandboxes-metrics'
+import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 
 const INITIAL_VISUAL_ROWS_COUNT = 50
 
 interface SandboxesTableProps {
   sandboxes: Sandbox[]
   templates: Template[]
+  initialMetrics: ClientSandboxesMetrics | null
 }
 
 export default function SandboxesTable({
   sandboxes,
   templates,
+  initialMetrics,
 }: SandboxesTableProps) {
   'use no memo'
 
@@ -157,9 +163,22 @@ export default function SandboxesTable({
     resetScroll()
   }, [sorting, globalFilter])
 
+  const { metrics } = useSandboxesMetrics({
+    initialMetrics,
+    sandboxIds: sandboxes.map((sandbox) => sandbox.sandboxID),
+    pollingInterval: 3000,
+  })
+
+  const data = useMemo(() => {
+    return sandboxes.map((sandbox) => ({
+      ...sandbox,
+      metrics: metrics?.[sandbox.sandboxID] ?? null,
+    })) as SandboxWithMetrics[]
+  }, [sandboxes, metrics])
+
   const table = useReactTable({
     columns: COLUMNS,
-    data: sandboxes ?? fallbackData,
+    data,
     state: {
       globalFilter,
       sorting,
@@ -168,6 +187,7 @@ export default function SandboxesTable({
       rowPinning,
       // @ts-expect-error - templates state not in type definition
       templates,
+      metrics,
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -183,7 +203,7 @@ export default function SandboxesTable({
       resourceRange: resourceRangeFilter,
     },
     enableGlobalFilter: true,
-    globalFilterFn: fuzzyFilter as FilterFn<Sandbox>,
+    globalFilterFn: fuzzyFilter as FilterFn<SandboxWithMetrics>,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

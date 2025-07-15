@@ -2,10 +2,10 @@
 
 'use client'
 
-import { ArrowUpRight, Cpu, PinIcon, X } from 'lucide-react'
-import { ColumnDef, FilterFn } from '@tanstack/react-table'
+import { ArrowUpRight, Cpu } from 'lucide-react'
+import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
-import { Sandbox, SandboxMetrics, Template } from '@/types/api'
+import { Sandbox, Template } from '@/types/api'
 import { Badge } from '@/ui/primitives/badge'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { DateRange } from 'react-day-picker'
@@ -20,8 +20,12 @@ import { useServerContext } from '@/lib/hooks/use-server-context'
 import { JsonPopover } from '@/ui/json-popover'
 import posthog from 'posthog-js'
 import { logError } from '@/lib/clients/logger'
+import { ClientSandboxMetric } from '@/types/sandboxes.types'
 
-export type SandboxWithMetrics = Sandbox & { metrics: SandboxMetrics[] }
+export type SandboxWithMetrics = Sandbox & { metrics: ClientSandboxMetric }
+export type SandboxesTable = ReturnType<
+  typeof useReactTable<SandboxWithMetrics>
+>
 
 export const trackTableInteraction = (
   action: string,
@@ -35,7 +39,7 @@ export const trackTableInteraction = (
 
 // FILTERS
 
-export const fuzzyFilter: FilterFn<Sandbox> = (
+export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
   row,
   columnId,
   value,
@@ -69,7 +73,7 @@ export const fuzzyFilter: FilterFn<Sandbox> = (
   return itemRank.passed
 }
 
-export const dateRangeFilter: FilterFn<Sandbox> = (
+export const dateRangeFilter: FilterFn<SandboxWithMetrics> = (
   row,
   columnId,
   value: DateRange,
@@ -124,9 +128,9 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
 
 // TABLE CONFIG
 
-export const fallbackData: Sandbox[] = []
+export const fallbackData: SandboxWithMetrics[] = []
 
-export const COLUMNS: ColumnDef<Sandbox>[] = [
+export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
   // FIXME: Currently disabled due to issues with url state management when sandboxes dissapear
   /*   {
     id: 'pin',
@@ -201,66 +205,36 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
     enableGlobalFilter: true,
   },
   {
-    id: 'cpuCount',
-    header: 'CPU Count',
-    cell: ({ row }) => {
-      const cpuCount = row.original.cpuCount
-
-      return (
-        <Badge className={cn('text-fg-500 px-0 font-mono whitespace-nowrap')}>
-          <span className={cn('text-contrast-2 flex items-center gap-0.5')}>
-            <Cpu className={cn('size-3')} /> {cpuCount}{' '}
-          </span>{' '}
-          core{cpuCount > 1 ? 's' : ''}
-        </Badge>
-      )
-    },
-    size: 130,
-    minSize: 130,
-    // @ts-expect-error resourceRange is not a valid filterFn
-    filterFn: 'resourceRange',
-    enableGlobalFilter: false,
-  },
-  {
-    id: 'memoryMB',
-    header: 'Memory',
-    cell: ({ row }) => {
-      const memoryMB = row.original.memoryMB
-      return (
-        <Badge className={cn('text-fg-500 px-0 font-mono whitespace-nowrap')}>
-          <span className={cn('text-contrast-1 flex items-center gap-0.5')}>
-            <CgSmartphoneRam className={cn('size-3')} /> {memoryMB}{' '}
-          </span>{' '}
-          MB
-        </Badge>
-      )
-    },
-    size: 105,
-    minSize: 105,
-    // @ts-expect-error resourceRange is not a valid filterFn
-    filterFn: 'resourceRange',
-    enableGlobalFilter: false,
-  },
-  // NOTE: Currently disabled due to issue with the metrics api
-  /*   {
     id: 'cpuUsage',
-    accessorFn: (row) => row.metrics[0]?.cpuUsedPct ?? 0,
+    accessorFn: (row) => row.metrics?.cpuUsedPct ?? 0,
     header: 'CPU Usage',
     cell: ({ getValue, row }) => {
-      const cpu = getValue() as number
+      const cpuPercentage = getValue() as number
 
       const textClassName = cn(
-        cpu >= 80 ? 'text-error' : cpu >= 50 ? 'text-warning' : 'text-success'
+        cpuPercentage >= 80
+          ? 'text-error'
+          : cpuPercentage >= 50
+            ? 'text-warning'
+            : 'text-success'
       )
 
       return (
-        <Badge className={cn('font-mono whitespace-nowrap')}>
-          <span className={cn('mr-1 flex items-center gap-1', textClassName)}>
-            <Cpu className={cn('size-3', textClassName)} /> {cpu.toFixed(0)}%
-          </span>{' '}
-          · {row.original.cpuCount} core
-          {row.original.cpuCount > 1 ? 's' : ''}
-        </Badge>
+        <span className="text-fg-500 flex items-center overflow-hidden whitespace-nowrap">
+          <Badge className={cn('font-mono')}>
+            <span className={cn('mr-1 flex items-center gap-1', textClassName)}>
+              <Cpu className={cn('size-3', textClassName)} />{' '}
+              {cpuPercentage.toFixed(0)}%
+            </span>
+          </Badge>
+          of{' '}
+          <Badge className={cn('text-fg-500 font-mono')}>
+            <span className={cn('text-contrast-2 flex items-center gap-0.5')}>
+              <Cpu className={cn('size-3')} /> {row.original.cpuCount}{' '}
+            </span>{' '}
+            core{row.original.cpuCount > 1 ? 's' : ''}
+          </Badge>
+        </span>
       )
     },
     size: 170,
@@ -271,19 +245,14 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
   {
     id: 'ramUsage',
     accessorFn: (row) => {
-      if (!row.metrics[0]?.memUsedMiB || !row.metrics[0]?.memTotalMiB) return 0
-      return (row.metrics[0]?.memUsedMiB / row.metrics[0]?.memTotalMiB) * 100
+      if (!row.metrics?.memUsedMb || !row.metrics?.memTotalMb) return 0
+      return (row.metrics?.memUsedMb / row.metrics?.memTotalMb) * 100
     },
     header: 'RAM Usage',
     cell: ({ getValue, row }) => {
       const ramPercentage = getValue() as number
 
-      const totalRamMB = row.original.memoryMB
-
-      // Convert MiB to MB - memoize this calculation
-      const usedRamMB = useMemo(() => {
-        return Math.round(row.original.metrics[0]?.memUsedMiB / 0.945)
-      }, [row.original.metrics[0]?.memUsedMiB])
+      const totalRamMB = row.original.memoryMB.toLocaleString()
 
       // Memoize the text class name calculation
       const textClassName = useMemo(() => {
@@ -299,27 +268,31 @@ export const COLUMNS: ColumnDef<Sandbox>[] = [
       // Memoize the badge content to prevent unnecessary re-renders
       const badgeContent = useMemo(() => {
         return (
-          <>
-            <span className={cn('flex items-center gap-1', textClassName)}>
-              <CgSmartphoneRam className={cn('size-3', textClassName)} />{' '}
-              {usedRamMB.toLocaleString()}
-            </span>{' '}
-            /{totalRamMB.toLocaleString()} MB
-          </>
+          <span className={cn('flex items-center gap-1', textClassName)}>
+            <CgSmartphoneRam className={cn('size-3', textClassName)} />{' '}
+            {row.original.metrics?.memUsedMb.toLocaleString()} MB
+          </span>
         )
-      }, [textClassName, usedRamMB, totalRamMB])
+      }, [textClassName, row.original.metrics?.memUsedMb, ramPercentage])
 
       return (
-        <Badge className={'gap-0 font-mono whitespace-nowrap'}>
-          {badgeContent}
-        </Badge>
+        <span className="text-fg-500 flex items-center overflow-hidden whitespace-nowrap">
+          <Badge className={'gap-0 font-mono'}>{badgeContent}</Badge>
+          of{' '}
+          <Badge className={cn('text-fg-500 truncate font-mono')}>
+            <span className={cn('text-contrast-1 flex items-center gap-0.5')}>
+              <CgSmartphoneRam className={cn('size-3')} /> {totalRamMB}{' '}
+            </span>
+            MB
+          </Badge>
+        </span>
       )
     },
     size: 160,
     minSize: 160,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
-  }, */
+  },
   {
     id: 'metadata',
     accessorFn: (row) => JSON.stringify(row.metadata ?? {}),

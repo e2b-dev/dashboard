@@ -9,6 +9,7 @@ import { StartedAtFilter } from '../table-filters'
 import { PollingInterval } from '@/types/dashboard.types'
 import { createHashStorage } from '@/lib/utils/store'
 import { trackTableInteraction } from '../table-config'
+import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 
 interface SandboxTableState {
   // Page state
@@ -24,6 +25,10 @@ interface SandboxTableState {
   templateIds: string[]
   cpuCount: number | undefined
   memoryMB: number | undefined
+
+  // Metrics state
+  metrics: ClientSandboxesMetrics | null
+  metricsPending: boolean
 }
 
 interface SandboxTableActions {
@@ -38,6 +43,10 @@ interface SandboxTableActions {
   setCpuCount: (count: number | undefined) => void
   setMemoryMB: (mb: number | undefined) => void
   resetFilters: () => void
+
+  // Metrics actions
+  setMetrics: (metrics: ClientSandboxesMetrics | null) => void
+  setMetricsPending: (pending: boolean) => void
 
   // Page actions
   setPollingInterval: (interval: PollingInterval) => void
@@ -59,13 +68,16 @@ const initialState: SandboxTableState = {
   templateIds: [],
   cpuCount: undefined,
   memoryMB: undefined,
+
+  // Metrics state
+  metrics: null,
+  metricsPending: false,
 }
 
 export const useSandboxTableStore = create<Store>()(
   persist(
     (set, get) => ({
       ...initialState,
-
       // Table actions
       setSorting: (sorting) => {
         set((state) => ({
@@ -161,6 +173,15 @@ export const useSandboxTableStore = create<Store>()(
           globalFilter: initialState.globalFilter,
         })
         trackTableInteraction('reset filters')
+      },
+
+      // Metrics actions
+      setMetrics: (metrics) => {
+        set({ metrics })
+      },
+
+      setMetricsPending: (pending) => {
+        set({ metricsPending: pending })
       },
 
       // Page actions

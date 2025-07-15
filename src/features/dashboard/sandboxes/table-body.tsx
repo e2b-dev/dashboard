@@ -7,11 +7,12 @@ import { useSandboxTableStore } from './stores/table-store'
 import { ExternalLink, X } from 'lucide-react'
 import { TableRow } from './table-row'
 import { Sandbox } from '@/types/api'
+import { SandboxesTable, SandboxWithMetrics } from './table-config'
 
 interface TableBodyProps {
   sandboxes: Sandbox[] | undefined
-  table: Table<Sandbox>
-  visualRows: Row<Sandbox>[]
+  table: SandboxesTable
+  visualRows: Row<SandboxWithMetrics>[]
 }
 
 export const TableBody = memo(function TableBody({

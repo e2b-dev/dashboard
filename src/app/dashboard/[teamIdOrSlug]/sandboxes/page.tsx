@@ -9,6 +9,7 @@ import {
 import { Suspense } from 'react'
 import ErrorBoundary from '@/ui/error'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
 
 interface PageProps {
   params: Promise<{
@@ -63,7 +64,16 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
     )
   }
 
-  const sandboxes = sandboxesRes.data
+  const metricsRes = await getTeamSandboxesMetrics({
+    teamId,
+    sandboxIds: sandboxesRes.data.sandboxes.map((sandbox) => sandbox.sandboxID),
+  })
+
+  if (metricsRes?.serverError) {
+    console.error(metricsRes.serverError)
+  }
+
+  const sandboxes = sandboxesRes.data.sandboxes
   const templates = [
     ...(defaultTemplateRes?.data?.templates
       ? defaultTemplateRes.data.templates
@@ -71,5 +81,11 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
     ...templatesRes.data.templates,
   ]
 
-  return <SandboxesTable sandboxes={sandboxes} templates={templates} />
+  return (
+    <SandboxesTable
+      sandboxes={sandboxes}
+      templates={templates}
+      initialMetrics={metricsRes?.data?.metrics || null}
+    />
+  )
 }

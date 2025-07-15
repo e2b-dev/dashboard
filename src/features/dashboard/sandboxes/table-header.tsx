@@ -7,11 +7,11 @@ import {
 } from '@/ui/data-table'
 import { flexRender, HeaderGroup, Row, TableState } from '@tanstack/react-table'
 import Scanline from '@/ui/scanline'
-import { Sandbox } from '@/types/api'
+import { SandboxWithMetrics } from './table-config'
 
 interface TableHeaderProps {
-  topRows: Row<Sandbox>[]
-  headerGroups: HeaderGroup<Sandbox>[]
+  topRows: Row<SandboxWithMetrics>[]
+  headerGroups: HeaderGroup<SandboxWithMetrics>[]
   state: TableState
 }
 
