@@ -243,6 +243,7 @@ components:
           description: Alias of the template
         clientID:
           type: string
+          deprecated: true
           description: Identifier of the client
         envdVersion:
           type: string
@@ -273,6 +274,7 @@ components:
           description: Identifier of the sandbox
         clientID:
           type: string
+          deprecated: true
           description: Identifier of the client
         startedAt:
           type: string
@@ -319,6 +321,7 @@ components:
           description: Identifier of the sandbox
         clientID:
           type: string
+          deprecated: true
           description: Identifier of the client
         startedAt:
           type: string
@@ -336,16 +339,6 @@ components:
           $ref: "#/components/schemas/SandboxMetadata"
         state:
           $ref: "#/components/schemas/SandboxState"
-
-    GetMetrics:
-      required:
-        - sandboxIDs
-      properties:
-        sandboxIDs:
-          type: array
-          items:
-            type: string
-          description: List of sandbox IDs to get metrics for
 
     SandboxesWithMetrics:
       required:
@@ -921,19 +914,25 @@ paths:
           $ref: "#/components/responses/500"
 
   /sandboxes/metrics:
-    post:
+    get:
       description: List metrics for given sandboxes
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/GetMetrics"
+      parameters:
+        - name: sandbox_ids
+          in: query
+          required: true
+          description: Comma-separated list of sandbox IDs to get metrics for
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            maxItems: 100
+            uniqueItems: true
       responses:
         "200":
           description: Successfully returned all running sandboxes with metrics

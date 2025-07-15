@@ -29,8 +29,6 @@ export function useSandboxesMetrics({
       ? [`/api/teams/${teamId}/sandboxes/metrics`, sandboxIds]
       : null,
     async ([url]) => {
-      console.log('fetching metrics')
-
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -50,6 +48,8 @@ export function useSandboxesMetrics({
     },
     {
       refreshInterval: pollingInterval,
+      errorRetryInterval: 1000,
+      errorRetryCount: 3,
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,

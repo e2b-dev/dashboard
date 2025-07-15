@@ -12,4 +12,7 @@ export const infra = createClient<InfraPaths>({
       ...options,
     })
   },
+  querySerializer: {
+    array: { style: 'form', explode: false },
+  },
 })

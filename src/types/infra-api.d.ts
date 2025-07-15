@@ -201,21 +201,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /** @description List metrics for given sandboxes */
-        post: {
+        get: {
             parameters: {
-                query?: never;
+                query: {
+                    /** @description Comma-separated list of sandbox IDs to get metrics for */
+                    sandbox_ids: string[];
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["GetMetrics"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description Successfully returned all running sandboxes with metrics */
                 200: {
@@ -231,6 +228,8 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1231,7 +1230,10 @@ export interface components {
             sandboxID: string;
             /** @description Alias of the template */
             alias?: string;
-            /** @description Identifier of the client */
+            /**
+             * @deprecated
+             * @description Identifier of the client
+             */
             clientID: string;
             /** @description Version of the envd running in the sandbox */
             envdVersion: string;
@@ -1245,7 +1247,10 @@ export interface components {
             alias?: string;
             /** @description Identifier of the sandbox */
             sandboxID: string;
-            /** @description Identifier of the client */
+            /**
+             * @deprecated
+             * @description Identifier of the client
+             */
             clientID: string;
             /**
              * Format: date-time
@@ -1273,7 +1278,10 @@ export interface components {
             alias?: string;
             /** @description Identifier of the sandbox */
             sandboxID: string;
-            /** @description Identifier of the client */
+            /**
+             * @deprecated
+             * @description Identifier of the client
+             */
             clientID: string;
             /**
              * Format: date-time
@@ -1289,10 +1297,6 @@ export interface components {
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             state: components["schemas"]["SandboxState"];
-        };
-        GetMetrics: {
-            /** @description List of sandbox IDs to get metrics for */
-            sandboxIDs: string[];
         };
         SandboxesWithMetrics: {
             sandboxes: {

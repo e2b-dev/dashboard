@@ -30,7 +30,7 @@ export const getTeamSandboxesMetrics = authActionClient
       const infraRes = await infra.GET('/sandboxes/metrics', {
         params: {
           query: {
-            sandboxIDs: sandboxIds.join(','),
+            sandbox_ids: sandboxIds,
           },
         },
         headers: {
