@@ -12,7 +12,6 @@ import {
 import { DropdownMenuTrigger } from '@/ui/primitives/dropdown-menu'
 import { cn } from '@/lib/utils'
 import * as React from 'react'
-import { Slider } from '@/ui/primitives/slider'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { useDebounceValue } from 'usehooks-ts'

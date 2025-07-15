@@ -2,7 +2,7 @@ import useSWR from 'swr'
 import { useSandboxTableStore } from '../stores/table-store'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 interface MetricsResponse {
   metrics: ClientSandboxesMetrics
@@ -67,6 +67,10 @@ export function useSandboxesMetrics({
       },
     }
   )
+
+  useEffect(() => {
+    setMetrics(initialMetrics)
+  }, [initialMetrics, setMetrics])
 
   return {
     metrics: data?.metrics ?? null,

@@ -347,6 +347,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox metrics */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Starting timestamp of the metrics that should be returned in milliseconds */
+                    start?: number;
+                    end?: number;
+                };
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxMetric"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/pause": {
         parameters: {
             query?: never;
@@ -1370,6 +1416,8 @@ export interface components {
             commit: string;
             /** @description Identifier of the node */
             nodeID: string;
+            /** @description Identifier of the cluster */
+            clusterID?: string | null;
             status: components["schemas"]["NodeStatus"];
             /**
              * Format: int32
@@ -1388,6 +1436,11 @@ export interface components {
             allocatedMemoryMiB: number;
             /**
              * Format: uint64
+             * @description Number of sandbox create successes
+             */
+            createSuccesses: number;
+            /**
+             * Format: uint64
              * @description Number of sandbox create fails
              */
             createFails: number;
@@ -1398,6 +1451,8 @@ export interface components {
             sandboxStartingCount: number;
         };
         NodeDetail: {
+            /** @description Identifier of the cluster */
+            clusterID?: string | null;
             /** @description Version of the orchestrator */
             version: string;
             /** @description Commit of the orchestrator */
@@ -1409,6 +1464,11 @@ export interface components {
             sandboxes: components["schemas"]["ListedSandbox"][];
             /** @description List of cached builds id on the node */
             cachedBuilds: string[];
+            /**
+             * Format: uint64
+             * @description Number of sandbox create successes
+             */
+            createSuccesses: number;
             /**
              * Format: uint64
              * @description Number of sandbox create fails

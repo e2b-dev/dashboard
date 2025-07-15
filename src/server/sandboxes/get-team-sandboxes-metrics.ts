@@ -27,9 +27,11 @@ export const getTeamSandboxesMetrics = authActionClient
       const { teamId, sandboxIds } = parsedInput
       const { session } = ctx
 
-      const infraRes = await infra.POST('/sandboxes/metrics', {
-        body: {
-          sandboxIDs: sandboxIds,
+      const infraRes = await infra.GET('/sandboxes/metrics', {
+        params: {
+          query: {
+            sandboxIDs: sandboxIds.join(','),
+          },
         },
         headers: {
           ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
@@ -39,7 +41,7 @@ export const getTeamSandboxesMetrics = authActionClient
       if (infraRes.error) {
         const status = infraRes.response.status
 
-        logError('/api-keys', status, infraRes.error, infraRes.data)
+        logError('/sandboxes/metrics', status, infraRes.error, infraRes.data)
 
         return handleDefaultInfraError(status)
       }

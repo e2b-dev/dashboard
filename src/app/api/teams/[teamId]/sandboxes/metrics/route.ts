@@ -27,9 +27,11 @@ export async function POST(
       return Response.json({ error: 'Unauthenticated' }, { status: 401 })
     }
 
-    const infraRes = await infra.POST('/sandboxes/metrics', {
-      body: {
-        sandboxIDs: sandboxIds,
+    const infraRes = await infra.GET('/sandboxes/metrics', {
+      params: {
+        query: {
+          sandboxIDs: sandboxIds.join(','),
+        },
       },
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
@@ -41,7 +43,7 @@ export async function POST(
 
       logError(
         ERROR_CODES.INFRA,
-        '/api-keys',
+        '/sandboxes/metrics',
         status,
         infraRes.error,
         infraRes.data

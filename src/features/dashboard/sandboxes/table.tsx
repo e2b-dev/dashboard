@@ -139,24 +139,9 @@ export default function SandboxesTable({
       newFilters.push({ id: 'memoryMB', value: memoryMB })
     }
 
-    /* NOTE: Currently disabled due to issue with the metrics api
-    if (!cpuCount) {
-      newFilters = newFilters.filter((f) => f.id !== 'cpuUsage')
-    } else {
-      newFilters = newFilters.filter((f) => f.id !== 'cpuUsage')
-      newFilters.push({ id: 'cpuUsage', value: cpuCount })
-    }
-
-    if (!memoryMB) {
-      newFilters = newFilters.filter((f) => f.id !== 'ramUsage')
-    } else {
-      newFilters = newFilters.filter((f) => f.id !== 'ramUsage')
-      newFilters.push({ id: 'ramUsage', value: memoryMB })
-    } */
-
     resetScroll()
     setColumnFilters(newFilters)
-  }, [startedAtFilter, templateIds, cpuCount, memoryMB])
+  }, [startedAtFilter, templateIds, cpuCount, memoryMB, columnFilters])
 
   // effect hook for scrolling to top when sorting or global filter changes
   React.useEffect(() => {

@@ -98,19 +98,6 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
   columnId,
   value: number
 ) => {
-  /* NOTE: Currently disabled due to issue with the metrics api
-   if (columnId === 'cpuUsage') {
-    const rowValue = row.original.cpuCount
-    if (!rowValue || !value || value === 0) return true
-    return rowValue === value
-  }
-
-  if (columnId === 'ramUsage') {
-    const rowValue = row.original.memoryMB
-    if (!rowValue || !value || value === 0) return true
-    return rowValue === value
-  } */
-
   if (columnId === 'cpuCount') {
     const rowValue = row.original.cpuCount
     if (!rowValue || !value || value === 0) return true
@@ -227,7 +214,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
               {cpuPercentage.toFixed(0)}%
             </span>
           </Badge>
-          of{' '}
+          of
           <Badge className={cn('text-fg-500 font-mono')}>
             <span className={cn('text-contrast-2 flex items-center gap-0.5')}>
               <Cpu className={cn('size-3')} /> {row.original.cpuCount}{' '}
@@ -254,7 +241,6 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
 
       const totalRamMB = row.original.memoryMB.toLocaleString()
 
-      // Memoize the text class name calculation
       const textClassName = useMemo(() => {
         return cn(
           ramPercentage >= 80
@@ -265,20 +251,22 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
         )
       }, [ramPercentage])
 
-      // Memoize the badge content to prevent unnecessary re-renders
       const badgeContent = useMemo(() => {
         return (
-          <span className={cn('flex items-center gap-1', textClassName)}>
+          <span className={cn('flex items-center gap-1')}>
             <CgSmartphoneRam className={cn('size-3', textClassName)} />{' '}
-            {row.original.metrics?.memUsedMb.toLocaleString()} MB
+            <span className={cn('text-fg-500 text-xs', textClassName)}>
+              {row.original.metrics?.memUsedMb.toLocaleString()}
+            </span>
+            MB
           </span>
         )
-      }, [textClassName, row.original.metrics?.memUsedMb, ramPercentage])
+      }, [textClassName, row.original.metrics?.memUsedMb])
 
       return (
         <span className="text-fg-500 flex items-center overflow-hidden whitespace-nowrap">
           <Badge className={'gap-0 font-mono'}>{badgeContent}</Badge>
-          of{' '}
+          of
           <Badge className={cn('text-fg-500 truncate font-mono')}>
             <span className={cn('text-contrast-1 flex items-center gap-0.5')}>
               <CgSmartphoneRam className={cn('size-3')} /> {totalRamMB}{' '}
