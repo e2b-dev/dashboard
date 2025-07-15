@@ -141,7 +141,8 @@ export default function SandboxesTable({
 
     resetScroll()
     setColumnFilters(newFilters)
-  }, [startedAtFilter, templateIds, cpuCount, memoryMB, columnFilters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startedAtFilter, templateIds, cpuCount, memoryMB])
 
   // effect hook for scrolling to top when sorting or global filter changes
   React.useEffect(() => {
