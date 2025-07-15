@@ -197,6 +197,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     header: 'CPU Usage',
     cell: ({ getValue, row }) => {
       const cpuPercentage = getValue() as number
+      const hasMetrics = row.original.metrics != null
 
       const textClassName = cn(
         cpuPercentage >= 80
@@ -207,25 +208,26 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
       )
 
       return (
-        <span className="text-fg-500 flex items-center overflow-hidden whitespace-nowrap">
-          <Badge className={cn('font-mono')}>
+        <span
+          className={cn(
+            'text-fg-500 flex items-center gap-1 truncate font-mono whitespace-nowrap'
+          )}
+        >
+          {hasMetrics ? (
             <span className={cn('flex items-center gap-1', textClassName)}>
-              <Cpu className={cn('size-3', textClassName)} />{' '}
-              {cpuPercentage.toFixed(0)}%
+              {`${cpuPercentage.toFixed(0)}%`}
             </span>
-          </Badge>
-          of
-          <Badge className={cn('text-fg-500 font-mono')}>
-            <span className={cn('text-contrast-2 flex items-center gap-0.5')}>
-              <Cpu className={cn('size-3')} /> {row.original.cpuCount}{' '}
-            </span>{' '}
-            core{row.original.cpuCount > 1 ? 's' : ''}
-          </Badge>
+          ) : (
+            'N/A'
+          )}
+          <span className="text-fg-500 mx-1">·</span>
+          <span className="text-contrast-2">{row.original.cpuCount}</span> Core
+          {row.original.cpuCount > 1 ? 's' : ''}
         </span>
       )
     },
-    size: 170,
-    minSize: 170,
+    size: 175,
+    minSize: 120,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
   },
@@ -235,9 +237,11 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
       if (!row.metrics?.memUsedMb || !row.metrics?.memTotalMb) return 0
       return (row.metrics?.memUsedMb / row.metrics?.memTotalMb) * 100
     },
-    header: 'RAM Usage',
+    header: 'Memory Usage',
     cell: ({ getValue, row }) => {
       const ramPercentage = getValue() as number
+      const hasMetrics =
+        row.original.metrics != null && row.original.metrics.memUsedMb != null
 
       const totalRamMB = row.original.memoryMB.toLocaleString()
 
@@ -251,32 +255,30 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
         )
       }, [ramPercentage])
 
-      const badgeContent = useMemo(() => {
-        return (
-          <span className={cn('flex items-center gap-1')}>
-            <CgSmartphoneRam className={cn('size-3', textClassName)} />{' '}
-            <span className={cn('text-fg-500 text-xs', textClassName)}>
-              {row.original.metrics?.memUsedMb.toLocaleString()}
-            </span>
-            MB
-          </span>
-        )
-      }, [textClassName, row.original.metrics?.memUsedMb])
+      const usedRamMB = hasMetrics
+        ? row.original.metrics.memUsedMb.toLocaleString()
+        : '0'
 
       return (
-        <span className="text-fg-500 flex items-center overflow-hidden whitespace-nowrap">
-          <Badge className={'gap-0 font-mono'}>{badgeContent}</Badge>
-          of
-          <Badge className={cn('text-fg-500 truncate font-mono')}>
-            <span className={cn('text-contrast-1 flex items-center gap-0.5')}>
-              <CgSmartphoneRam className={cn('size-3')} /> {totalRamMB}{' '}
+        <span
+          className={cn(
+            'text-fg-500 flex items-center gap-1 truncate font-mono whitespace-nowrap'
+          )}
+        >
+          {hasMetrics ? (
+            <span className={cn('flex items-center gap-1', textClassName)}>
+              {`${ramPercentage.toFixed(0)}%`}
             </span>
-            MB
-          </Badge>
+          ) : (
+            'N/A'
+          )}
+          <span className="text-fg-500 mx-1">·</span>
+          <span className={textClassName}>{usedRamMB}</span> /{' '}
+          <span className="text-contrast-1">{totalRamMB}</span> MB
         </span>
       )
     },
-    size: 160,
+    size: 175,
     minSize: 160,
     // @ts-expect-error resourceRange is not a valid filterFn
     filterFn: 'resourceRange',
