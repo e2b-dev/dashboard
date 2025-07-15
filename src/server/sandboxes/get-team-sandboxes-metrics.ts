@@ -27,6 +27,12 @@ export const getTeamSandboxesMetrics = authActionClient
       const { teamId, sandboxIds } = parsedInput
       const { session } = ctx
 
+      if (sandboxIds.length === 0) {
+        return {
+          metrics: {},
+        }
+      }
+
       const infraRes = await infra.GET('/sandboxes/metrics', {
         params: {
           query: {
@@ -36,6 +42,7 @@ export const getTeamSandboxesMetrics = authActionClient
         headers: {
           ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
+        cache: 'no-store',
       })
 
       if (infraRes.error) {

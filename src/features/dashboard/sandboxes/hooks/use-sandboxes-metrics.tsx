@@ -29,6 +29,12 @@ export function useSandboxesMetrics({
       ? [`/api/teams/${teamId}/sandboxes/metrics`, sandboxIds]
       : null,
     async ([url]) => {
+      if (sandboxIds.length === 0) {
+        return {
+          metrics: {},
+        }
+      }
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -41,7 +47,9 @@ export function useSandboxesMetrics({
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch metrics')
+        const { error } = await response.json()
+
+        throw new Error(error || 'Failed to fetch metrics')
       }
 
       return (await response.json()) as MetricsResponse

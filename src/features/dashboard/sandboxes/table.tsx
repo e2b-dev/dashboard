@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import {
   ColumnFiltersState,
@@ -10,6 +10,7 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
   FilterFn,
+  Row,
 } from '@tanstack/react-table'
 import { DataTable } from '@/ui/data-table'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
@@ -149,9 +150,13 @@ export default function SandboxesTable({
     resetScroll()
   }, [sorting, globalFilter])
 
+  const [visualRows, setVisualRows] = React.useState<Row<SandboxWithMetrics>[]>(
+    []
+  )
+
   const { metrics } = useSandboxesMetrics({
     initialMetrics,
-    sandboxIds: sandboxes.map((sandbox) => sandbox.sandboxID),
+    sandboxIds: visualRows.map((row) => row.original.sandboxID),
     pollingInterval: 3000,
   })
 
@@ -201,10 +206,9 @@ export default function SandboxesTable({
 
   const centerRows = table.getCenterRows()
 
-  const visualRows = useMemo(
-    () => centerRows.slice(0, visualRowsCount),
-    [centerRows, visualRowsCount]
-  )
+  useEffect(() => {
+    setVisualRows(centerRows.slice(0, visualRowsCount))
+  }, [centerRows, visualRowsCount])
 
   const handleBottomReached = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget

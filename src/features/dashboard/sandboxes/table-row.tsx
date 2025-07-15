@@ -10,7 +10,7 @@ interface TableRowProps {
 
 export const TableRow = memo(function TableRow({ row }: TableRowProps) {
   return (
-    <DataTableRow key={row.id} isSelected={row.getIsSelected()}>
+    <DataTableRow key={row.id} isSelected={row.getIsSelected()} className="h-8">
       {row.getVisibleCells().map((cell) => (
         <DataTableCell key={cell.id} cell={cell}>
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
