@@ -81,6 +81,7 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
     }
 
     setColumnFilters(newFilters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cpuCount, memoryMB, isPublic])
 
   const columns = useColumns([])
