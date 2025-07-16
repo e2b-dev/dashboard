@@ -27,6 +27,7 @@ export const getSandboxDetails = authActionClient
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
+      cache: 'no-store',
     })
 
     if (res.error) {
@@ -45,14 +46,6 @@ export const getSandboxDetails = authActionClient
           'Sandbox not found. Please check if the Sandbox is running.'
         )
       }
-
-      logError(
-        ERROR_CODES.INFRA,
-        '/sandboxes/{sandboxID}',
-        status,
-        res.error,
-        res.data
-      )
 
       return handleDefaultInfraError(status)
     }
