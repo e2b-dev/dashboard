@@ -34,6 +34,28 @@ The integration tests use a dummy environment set in `vitest.config.ts` which pr
 - E2E tests run the `scripts:check-all-env` script before execution to ensure all required environment variables are set.
 - This is configured in `package.json`: `"test:e2e": "bun scripts:check-all-env && vitest run src/__test__/e2e/"`
 
+### Development Tests
+
+Development tests are specialized tests designed to assist with feature development by creating realistic scenarios for manual testing and observation in the dashboard.
+
+**Location:** `src/__test__/development/`
+
+**Purpose:** These tests spawn real resources (like sandboxes) that can be observed in the dashboard while developing features, eliminating the need to manually manage test resources.
+
+**Examples:**
+- `metrics.test.ts`: Spawns stressed sandboxes in batches to test dashboard performance and metrics visualization
+
+**Environment Setup:**
+To run development tests, you must create a `.env.test` file with the required environment variables:
+```bash
+# .env.test
+TEST_E2B_DOMAIN=your-test-domain
+TEST_E2B_API_KEY=your-test-api-key
+TEST_METRICS_TEMPLATE=base  # optional, defaults to 'base'
+```
+
+**Note:** Development tests interact with real E2B services and will create actual resources. Use with caution and ensure proper cleanup.
+
 ## Running Tests
 
 ### Locally
