@@ -32,11 +32,9 @@ import ClientOnly from '@/ui/client-only'
 import TableHeader from './table-header'
 import { cn } from '@/lib/utils'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import {
-  useLatestSandboxMetrics,
-  useSandboxesMetrics,
-} from './hooks/use-sandboxes-metrics'
+import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 
 const INITIAL_VISUAL_ROWS_COUNT = 50
 
@@ -157,14 +155,16 @@ export default function SandboxesTable({
   const { metrics } = useSandboxesMetrics({
     initialMetrics,
     sandboxIds: visualRows.map((row) => row.original.sandboxID),
-    pollingInterval: 3000,
+    pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
 
   const data = useMemo(() => {
-    return sandboxes.map((sandbox) => ({
+    const result = sandboxes.map((sandbox) => ({
       ...sandbox,
       metrics: metrics?.[sandbox.sandboxID] ?? null,
     })) as SandboxWithMetrics[]
+
+    return result
   }, [sandboxes, metrics])
 
   const table = useReactTable({

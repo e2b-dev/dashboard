@@ -36,6 +36,7 @@ export async function POST(
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
+      cache: 'no-store',
     })
 
     if (infraRes.error) {

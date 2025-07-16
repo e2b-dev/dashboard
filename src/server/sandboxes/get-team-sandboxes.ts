@@ -46,6 +46,7 @@ export const getTeamSandboxes = authActionClient
         headers: {
           ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
+        cache: 'no-store',
       })
 
       if (sandboxesRes.error) {

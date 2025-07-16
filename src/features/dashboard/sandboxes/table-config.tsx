@@ -12,7 +12,7 @@ import { DateRange } from 'react-day-picker'
 import { isWithinInterval } from 'date-fns'
 import { CgSmartphoneRam } from 'react-icons/cg'
 import { cn } from '@/lib/utils'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Button } from '@/ui/primitives/button'
 import { useRouter } from 'next/navigation'
 import { useTemplateTableStore } from '../templates/stores/table-store'
@@ -196,32 +196,32 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     accessorFn: (row) => row.metrics?.cpuUsedPct ?? 0,
     header: 'CPU Usage',
     cell: ({ getValue, row }) => {
-      const cpuPercentage = getValue() as number
+      const cpuRaw = getValue() as number
+      const cpuPercentage = Math.round(cpuRaw)
       const hasMetrics = row.original.metrics != null
 
+      // color: <70 neutral, 70-89 warning, >=90 error
       const textClassName = cn(
-        cpuPercentage >= 80
+        cpuPercentage >= 90
           ? 'text-error'
-          : cpuPercentage >= 50
+          : cpuPercentage >= 70
             ? 'text-warning'
-            : 'text-success'
+            : 'text-fg'
       )
 
       return (
         <span
           className={cn(
-            'text-fg-500 flex items-center gap-1 truncate font-mono whitespace-nowrap'
+            'text-fg-500 flex w-full items-center gap-0.5 truncate font-mono whitespace-nowrap'
           )}
         >
           {hasMetrics ? (
-            <span className={cn('flex items-center gap-1', textClassName)}>
-              {`${cpuPercentage.toFixed(0)}%`}
-            </span>
+            <span className={cn(textClassName)}>{cpuPercentage}% </span>
           ) : (
-            'N/A'
+            <span>n/a</span>
           )}
           <span className="text-fg-500 mx-1">·</span>
-          {row.original.cpuCount} Core
+          <span className="text-contrast-1">{row.original.cpuCount}</span> Core
           {row.original.cpuCount > 1 ? 's' : ''}
         </span>
       )
@@ -239,21 +239,21 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     },
     header: 'Memory Usage',
     cell: ({ getValue, row }) => {
-      const ramPercentage = getValue() as number
+      const ramRaw = getValue() as number
+      const ramPercentage = Math.round(ramRaw)
       const hasMetrics =
         row.original.metrics != null && row.original.metrics.memUsedMb != null
 
       const totalRamMB = row.original.memoryMB.toLocaleString()
 
-      const textClassName = useMemo(() => {
-        return cn(
-          ramPercentage >= 80
-            ? 'text-error'
-            : ramPercentage >= 50
-              ? 'text-warning'
-              : 'text-success'
-        )
-      }, [ramPercentage])
+      // color: <70 neutral, 70-94 warning, >=95 error
+      const textClassName = cn(
+        ramPercentage >= 95
+          ? 'text-error'
+          : ramPercentage >= 70
+            ? 'text-warning'
+            : 'text-fg'
+      )
 
       const usedRamMB = hasMetrics
         ? row.original.metrics.memUsedMb.toLocaleString()
@@ -262,18 +262,17 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
       return (
         <span
           className={cn(
-            'text-fg-500 flex items-center gap-1 truncate font-mono whitespace-nowrap'
+            'text-fg-500 flex items-center gap-0.5 truncate font-mono whitespace-nowrap'
           )}
         >
           {hasMetrics ? (
-            <span className={cn('flex items-center gap-1', textClassName)}>
-              {`${ramPercentage.toFixed(0)}%`}
-            </span>
+            <span className={cn(textClassName)}>{ramPercentage}% </span>
           ) : (
-            'N/A'
+            <span>n/a</span>
           )}
           <span className="text-fg-500 mx-1">·</span>
-          <span className={textClassName}>{usedRamMB}</span> / {totalRamMB} MB
+          <span className={textClassName}>{usedRamMB}</span> /{' '}
+          <span className="text-contrast-2">{totalRamMB} </span> MB
         </span>
       )
     },
