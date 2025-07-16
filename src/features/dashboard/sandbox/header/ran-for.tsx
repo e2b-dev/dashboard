@@ -1,7 +1,7 @@
 'use client'
 
 import { SandboxInfo } from '@/types/api'
-import { useState, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useLayoutEffect, useCallback } from 'react'
 
 interface RanForProps {
   state?: SandboxInfo['state']
@@ -36,12 +36,18 @@ export default function RanFor({ state, startedAt, endAt }: RanForProps) {
   const [ranFor, setRanFor] = useState<string>(calcRanFor())
 
   useLayoutEffect(() => {
-    const interval = setInterval(() => {
-      setRanFor(calcRanFor())
-    }, 5000)
+    const interval = setInterval(
+      () => {
+        setRanFor(calcRanFor())
+      },
+      new Date(endAt || Date.now()).getTime() - new Date(startedAt).getTime() <
+        60000
+        ? 1000
+        : 5000
+    )
 
     return () => clearInterval(interval)
-  }, [calcRanFor])
+  }, [calcRanFor, startedAt, endAt])
 
   return <p>{ranFor}</p>
 }

@@ -3,22 +3,31 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
+import SandboxInspectIncompatible from './inspect/incompatible'
+import templateId from './header/template-id'
+import { cn } from '@/lib/utils'
 
 interface SandboxDetailsTabsProps {
   tabs: string[]
   children: ReactNode
+  isEnvdVersionCompatible: boolean
+  templateNameOrId: string
 }
 
 export default function SandboxDetailsTabs({
   tabs,
   children,
+  isEnvdVersionCompatible,
+  templateNameOrId,
 }: SandboxDetailsTabsProps) {
   const pathname = usePathname()
   const tab = pathname.split('/').pop() || tabs[0]
 
+  const showInspectTab = tab === 'inspect' && isEnvdVersionCompatible
+
   return (
     <Tabs defaultValue={tab} value={tab} className="min-h-0 w-full flex-1">
-      <TabsList className="w-full justify-start pl-4">
+      <TabsList className="bg-bg z-30 w-full justify-start pl-4">
         {tabs.map((tab) => (
           <TabsTrigger key={tab} value={tab} className="w-fit flex-none">
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -29,9 +38,16 @@ export default function SandboxDetailsTabs({
         <TabsContent
           key={tab}
           value={tab}
-          className="flex min-h-0 flex-1 flex-col"
+          className={cn(
+            'flex flex-1 flex-col',
+            !showInspectTab ? 'min-h-126 md:min-h-0' : 'min-h-0'
+          )}
         >
-          {children}
+          {showInspectTab ? (
+            children
+          ) : (
+            <SandboxInspectIncompatible templateNameOrId={templateNameOrId} />
+          )}
         </TabsContent>
       ))}
     </Tabs>
