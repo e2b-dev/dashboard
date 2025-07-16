@@ -45,9 +45,7 @@ export function useSandboxesMetrics({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ sandboxIds }),
-        next: {
-          revalidate: 3,
-        },
+        cache: 'no-store',
       })
 
       if (!response.ok) {
