@@ -7,7 +7,10 @@
 
 import React, { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { ClientSandboxMetric } from '@/types/sandboxes.types'
+import {
+  ClientSandboxesMetrics,
+  ClientSandboxMetric,
+} from '@/types/sandboxes.types'
 import { CellContext } from '@tanstack/react-table'
 import { SandboxWithMetrics } from './table-config'
 import { Button } from '@/ui/primitives/button'
@@ -22,6 +25,7 @@ import { JsonPopover } from '@/ui/json-popover'
 declare module '@tanstack/react-table' {
   interface TableState {
     templates?: Template[]
+    metrics?: ClientSandboxesMetrics
   }
 }
 
