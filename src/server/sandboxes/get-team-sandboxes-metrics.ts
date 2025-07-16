@@ -27,7 +27,10 @@ export const getTeamSandboxesMetrics = authActionClient
       const { teamId, sandboxIds } = parsedInput
       const { session } = ctx
 
-      if (sandboxIds.length === 0) {
+      if (
+        sandboxIds.length === 0 ||
+        process.env.NEXT_PUBLIC_MOCK_DATA === '1'
+      ) {
         return {
           metrics: {},
         }

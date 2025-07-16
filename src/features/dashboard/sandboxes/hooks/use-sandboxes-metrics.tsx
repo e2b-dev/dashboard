@@ -1,6 +1,8 @@
 import useSWR from 'swr'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { Sandboxes } from '@/types/api'
+import { MOCK_METRICS_DATA } from '@/configs/mock-data'
 
 interface MetricsResponse {
   metrics: ClientSandboxesMetrics
@@ -8,17 +10,19 @@ interface MetricsResponse {
 }
 
 interface UseSandboxesMetricsProps {
-  sandboxIds: string[]
+  sandboxes: Sandboxes
   initialMetrics?: ClientSandboxesMetrics | null
   pollingInterval?: number
 }
 
 export function useSandboxesMetrics({
-  sandboxIds,
+  sandboxes,
   initialMetrics = null,
   pollingInterval,
 }: UseSandboxesMetricsProps) {
   const teamId = useSelectedTeam()?.id
+
+  const sandboxIds = sandboxes.map((sbx) => sbx.sandboxID)
 
   const { data, error, isLoading } = useSWR<MetricsResponse>(
     sandboxIds.length > 0
@@ -29,6 +33,10 @@ export function useSandboxesMetrics({
         return {
           metrics: {},
         }
+      }
+
+      if (process.env.NEXT_PUBLIC_MOCK_DATA === '1') {
+        return MOCK_METRICS_DATA(sandboxes)
       }
 
       const response = await fetch(url, {

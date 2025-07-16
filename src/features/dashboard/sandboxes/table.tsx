@@ -154,7 +154,7 @@ export default function SandboxesTable({
 
   const { metrics } = useSandboxesMetrics({
     initialMetrics,
-    sandboxIds: visualRows.map((row) => row.original.sandboxID),
+    sandboxes: visualRows.map((row) => row.original),
     pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
 

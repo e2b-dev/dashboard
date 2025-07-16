@@ -7,6 +7,8 @@ import {
   Template,
 } from '@/types/api'
 import { addHours, subHours } from 'date-fns'
+import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
+import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   {
@@ -324,8 +326,8 @@ function generateMockSandboxes(count: number): Sandboxes {
   return sandboxes
 }
 
-function generateMockMetrics(sandboxes: Sandbox[]): SandboxesMetricsRecord {
-  const metrics: SandboxesMetricsRecord = {}
+function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
+  const metrics: ClientSandboxesMetrics = {}
 
   // Define characteristics by template type
   const templatePatterns: Record<
@@ -394,17 +396,19 @@ function generateMockMetrics(sandboxes: Sandbox[]): SandboxesMetricsRecord {
     metrics[sandbox.sandboxID] = {
       cpuCount: sandbox.cpuCount,
       cpuUsedPct,
-      memTotal: Math.round(sandbox.memoryMB * 0.945),
-      memUsed: memMiBUsed,
+      memTotalMb: Math.round(sandbox.memoryMB * 0.945),
+      memUsedMb: Math.round(memMiBUsed * 0.945),
       timestamp: new Date().toISOString(),
     }
   }
 
-  return metrics
+  return {
+    metrics,
+  }
 }
 
 export const MOCK_METRICS_DATA = (sandboxes: Sandbox[]) =>
   generateMockMetrics(sandboxes)
-export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(300)
+export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES
