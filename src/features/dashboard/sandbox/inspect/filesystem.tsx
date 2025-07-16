@@ -24,7 +24,7 @@ export default function SandboxInspectFilesystem({
       transition={{ duration: 0.25, ease: 'easeInOut' }}
       header={<SandboxInspectFilesystemHeader rootPath={rootPath} />}
     >
-      <div className="animate-fade-slide-in h-full flex-1 overflow-hidden">
+      <div className="h-full flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           {children.length > 0 ? (
             children.map((child) => (
