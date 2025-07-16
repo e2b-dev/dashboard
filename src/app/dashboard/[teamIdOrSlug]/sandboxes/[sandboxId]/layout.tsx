@@ -31,14 +31,13 @@ export default async function SandboxLayout({
     throw notFound()
   }
 
-  const isEnvdVersionCompatible = false
-  /*     Boolean(
-      res.data.envdVersion &&
-        isVersionCompatible(
-          res.data.envdVersion,
-          SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
-        )
-    ) */
+  const isEnvdVersionCompatible = Boolean(
+    res.data.envdVersion &&
+      isVersionCompatible(
+        res.data.envdVersion,
+        SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
+      )
+  )
 
   return (
     <SandboxProvider sandboxInfo={res?.data}>
