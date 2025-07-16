@@ -221,7 +221,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
             <span>n/a</span>
           )}
           <span className="text-fg-500 mx-1">·</span>
-          <span className="text-contrast-1">{row.original.cpuCount}</span> Core
+          <span className="text-contrast-2">{row.original.cpuCount}</span> Core
           {row.original.cpuCount > 1 ? 's' : ''}
         </span>
       )
@@ -272,7 +272,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
           )}
           <span className="text-fg-500 mx-1">·</span>
           <span className={textClassName}>{usedRamMB}</span> /{' '}
-          <span className="text-contrast-2">{totalRamMB} </span> MB
+          <span className="text-contrast-1">{totalRamMB} </span> MB
         </span>
       )
     },
