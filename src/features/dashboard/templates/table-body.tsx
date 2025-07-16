@@ -78,7 +78,7 @@ export function TableBody({
         <DataTableRow
           key={row.id}
           isSelected={row.getIsSelected()}
-          className="h-7 border-b"
+          className="h-8 border-b"
         >
           {row.getVisibleCells().map((cell) => (
             <DataTableCell key={cell.id} cell={cell}>

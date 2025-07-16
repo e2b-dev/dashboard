@@ -1,8 +1,3 @@
-/*
- * Memoized table cell components for sandboxes metrics.
- * These are isolated so that only the metric cell re-renders when its
- * particular sandbox metrics object changes.
- */
 'use client'
 
 import React, { useMemo } from 'react'
@@ -94,7 +89,7 @@ export const RamUsageCell = React.memo<RamUsageCellProps>(
           : 'text-fg'
     )
 
-    const usedRamMB = hasMetrics ? metrics!.memUsedMb.toLocaleString() : '0'
+    const usedRamMB = hasMetrics ? metrics!.memUsedMb.toLocaleString() : 'n/a'
 
     return (
       <span
@@ -108,8 +103,9 @@ export const RamUsageCell = React.memo<RamUsageCellProps>(
           <span>n/a</span>
         )}
         <span className="text-fg-500 mx-1">·</span>
-        <span className={textClassName}>{usedRamMB}</span> /{' '}
-        <span className="text-contrast-1">{totalRamMB} </span> MB
+        <span className={hasMetrics ? textClassName : ''}>
+          {usedRamMB}
+        </span> / <span className="text-contrast-1">{totalRamMB} </span> MB
       </span>
     )
   },
