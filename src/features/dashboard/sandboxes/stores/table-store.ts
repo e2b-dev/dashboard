@@ -9,7 +9,6 @@ import { StartedAtFilter } from '../table-filters'
 import { PollingInterval } from '@/types/dashboard.types'
 import { createHashStorage } from '@/lib/utils/store'
 import { trackTableInteraction } from '../table-config'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 
 interface SandboxTableState {
   // Page state

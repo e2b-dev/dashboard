@@ -391,13 +391,13 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
     // Memory calculation
     const memoryNoise = (Math.random() - 0.5) * memVolatility
     const memPct = memBaseline + baseLoad * memVolatility + memoryNoise
-    const memMiBUsed = Math.floor(sandbox.memoryMB * Math.min(0.945, memPct))
+    const memUsedMb = Math.floor(sandbox.memoryMB * Math.min(1.0, memPct))
 
     metrics[sandbox.sandboxID] = {
       cpuCount: sandbox.cpuCount,
       cpuUsedPct,
-      memTotalMb: Math.round(sandbox.memoryMB * 0.945),
-      memUsedMb: Math.round(memMiBUsed * 0.945),
+      memTotalMb: sandbox.memoryMB,
+      memUsedMb: memUsedMb,
       timestamp: new Date().toISOString(),
     }
   }
