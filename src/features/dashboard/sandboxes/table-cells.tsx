@@ -98,14 +98,13 @@ export const RamUsageCell = React.memo<RamUsageCellProps>(
         )}
       >
         {hasMetrics ? (
-          <span className={textClassName}>{ramPercentage}% </span>
-        ) : (
-          <span>n/a</span>
-        )}
-        <span className="text-fg-500 mx-1">·</span>
-        <span className={hasMetrics ? textClassName : ''}>
-          {usedRamMB}
-        </span> / <span className="text-contrast-1">{totalRamMB} </span> MB
+          <>
+            <span className={textClassName}>{ramPercentage}% </span>
+            <span className="text-fg-500 mx-1">·</span>
+          </>
+        ) : null}
+        <span className={hasMetrics ? textClassName : ''}>{usedRamMB}</span> /{' '}
+        <span className="text-contrast-1">{totalRamMB} </span> MB
       </span>
     )
   },
