@@ -89,7 +89,7 @@ export default async function SandboxDetailsHeader({
               value={sandboxInfo.sandboxID}
               size="icon"
               variant="ghost"
-              className="text-fg-500"
+              className="text-fg-300"
             />
           </div>
         </div>
