@@ -36,7 +36,7 @@ export default function StartedAt({ startedAt }: StartedAtProps) {
         value={startedAt}
         variant="ghost"
         size="slate"
-        className="size-3.5"
+        className="text-fg-300 size-3.5"
       />
     </div>
   )
