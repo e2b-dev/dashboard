@@ -1,3 +1,4 @@
+import { PROTECTED_URLS } from '@/configs/urls'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
@@ -8,7 +9,7 @@ export async function GET(request: Request) {
   const newEmail = requestUrl.searchParams.get('new_email')
   const code = requestUrl.searchParams.get('code')
 
-  const next = '/dashboard/account'
+  const next = PROTECTED_URLS.ACCOUNT_SETTINGS
 
   if (!code && message) {
     // E-Mail updates can be validated on both e-mails. This case is for the first validation link press.

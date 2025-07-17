@@ -2,6 +2,7 @@
 
 import { AlertDialog } from '@/ui/alert-dialog'
 import { signOutAction } from '@/server/auth/auth-actions'
+import { PROTECTED_URLS } from '@/configs/urls'
 
 interface ReauthDialogProps {
   open?: boolean
@@ -10,7 +11,7 @@ interface ReauthDialogProps {
 
 export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
   const handleReauth = () => {
-    signOutAction('/dashboard/account')
+    signOutAction(PROTECTED_URLS.ACCOUNT_SETTINGS)
   }
 
   return (
