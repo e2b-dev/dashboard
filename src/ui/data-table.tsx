@@ -131,7 +131,6 @@ const DataTableRow = React.forwardRef<HTMLDivElement, DataTableRowProps>(
           {
             'bg-bg-200': isSelected,
           },
-          'odd:bg-bg even:bg-bg-100/80',
           className
         )}
         {...props}
