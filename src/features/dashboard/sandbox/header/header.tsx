@@ -12,6 +12,7 @@ import StartedAt from './started-at'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
 import Metadata from './metadata'
+import CopyButton from '@/ui/copy-button'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
@@ -22,8 +23,6 @@ export default async function SandboxDetailsHeader({
   teamIdOrSlug,
   sandboxInfo,
 }: SandboxDetailsHeaderProps) {
-  const sandboxId = sandboxInfo.sandboxID + '-' + sandboxInfo.clientID
-
   const initialPollingInterval = (await cookies()).get(
     COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL
   )?.value
@@ -82,9 +81,17 @@ export default async function SandboxDetailsHeader({
             <ChevronLeftIcon className="size-5" />
             Sandboxes
           </Link>
-          <h1 className="text-fg-500 text-xl font-bold md:text-2xl">
-            <span className="text-fg">{sandboxId}</span>'S DETAILS
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-fg text-xl font-bold md:text-2xl">
+              {sandboxInfo.sandboxID}
+            </h1>
+            <CopyButton
+              value={sandboxInfo.sandboxID}
+              size="icon"
+              variant="ghost"
+              className="text-fg-500"
+            />
+          </div>
         </div>
         <RefreshControl
           initialPollingInterval={
