@@ -1,3 +1,5 @@
+'use client'
+
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button, ButtonProps } from '@/ui/primitives/button'
 import { CheckIcon, CopyIcon } from 'lucide-react'
