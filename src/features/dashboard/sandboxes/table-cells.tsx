@@ -33,7 +33,7 @@ export const CpuUsageCell = React.memo<CpuUsageCellProps>(
   function CpuUsageCell({ metrics, cpuCount }) {
     const cpuRaw = metrics?.cpuUsedPct ?? 0
     const cpuPercentage = Math.round(cpuRaw)
-    const hasMetrics = metrics != null
+    const hasMetrics = metrics !== null && metrics !== undefined
 
     const textClassName = cn(
       cpuPercentage >= 90
@@ -46,7 +46,7 @@ export const CpuUsageCell = React.memo<CpuUsageCellProps>(
     return (
       <span
         className={cn(
-          'text-fg-500 flex w-full items-center gap-0.5 truncate font-mono whitespace-nowrap'
+          'text-fg-500 inline w-full truncate font-mono whitespace-nowrap'
         )}
       >
         {hasMetrics ? (
@@ -54,8 +54,8 @@ export const CpuUsageCell = React.memo<CpuUsageCellProps>(
         ) : (
           <span>n/a</span>
         )}
-        <span className="text-fg-500 mx-1">·</span>
-        <span className="text-contrast-2">{cpuCount ?? '-'}</span> Core
+        <span className="text-fg-500 mx-2">·</span>
+        <span className="text-contrast-2">{cpuCount ?? '-'}</span>&nbsp;Core
         {cpuCount && cpuCount > 1 ? 's' : ''}
       </span>
     )
@@ -77,7 +77,7 @@ export const RamUsageCell = React.memo<RamUsageCellProps>(
       percentage = (metrics.memUsedMb / metrics.memTotalMb) * 100
     }
     const ramPercentage = Math.round(percentage)
-    const hasMetrics = metrics != null && metrics.memUsedMb != null
+    const hasMetrics = metrics !== null && metrics !== undefined
 
     const totalRamMB = memoryMB.toLocaleString()
 
@@ -94,17 +94,22 @@ export const RamUsageCell = React.memo<RamUsageCellProps>(
     return (
       <span
         className={cn(
-          'text-fg-500 flex items-center gap-0.5 truncate font-mono whitespace-nowrap'
+          'text-fg-500 inline truncate font-mono whitespace-nowrap'
         )}
       >
         {hasMetrics ? (
           <>
             <span className={textClassName}>{ramPercentage}% </span>
-            <span className="text-fg-500 mx-1">·</span>
+            <span className="text-fg-500">·</span>
+            <span className={textClassName}> {usedRamMB}</span> /
           </>
-        ) : null}
-        <span className={hasMetrics ? textClassName : ''}>{usedRamMB}</span> /{' '}
-        <span className="text-contrast-1">{totalRamMB} </span> MB
+        ) : (
+          <>
+            <span className="text-fg-500">n/a </span>
+            <span className="text-fg-500">·</span>
+          </>
+        )}
+        <span className="text-contrast-1"> {totalRamMB} </span> MB
       </span>
     )
   },
