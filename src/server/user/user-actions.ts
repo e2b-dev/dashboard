@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { headers } from 'next/headers'
 import { returnValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
-import { isSessionAgeValidForPasswordUpdate } from '../auth/check-session-age'
 
 const UpdateUserSchema = z
   .object({
@@ -31,16 +30,6 @@ export const updateUserAction = authActionClient
   .metadata({ actionName: 'updateUser' })
   .action(async ({ parsedInput, ctx }) => {
     const { supabase } = ctx
-
-    const isSessionAgeValid = await isSessionAgeValidForPasswordUpdate(
-      ctx.session
-    )
-
-    if (!isSessionAgeValid) {
-      return {
-        requiresReauth: true,
-      }
-    }
 
     const origin = (await headers()).get('origin')
 
