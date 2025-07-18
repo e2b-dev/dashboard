@@ -8,16 +8,16 @@ const TeamStateSchema = z.object({
   teamSlug: z.string(),
 })
 
+const COOKIE_SETTINGS: Partial<ResponseCookie> = {
+  path: '/',
+  maxAge: 60 * 60 * 24 * 365, // 1 year
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+}
+
 export async function POST(request: Request) {
   try {
     const body = TeamStateSchema.parse(await request.json())
-
-    const COOKIE_SETTINGS: Partial<ResponseCookie> = {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    }
 
     const cookieStore = await cookies()
 
