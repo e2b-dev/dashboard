@@ -3,7 +3,7 @@
 import {
   AlertTriangle,
   ArrowLeft,
-  ChevronLeft,
+  CircleAlert,
   ExternalLink,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -18,6 +18,26 @@ import {
 import { PROTECTED_URLS } from '@/configs/urls'
 import Link from 'next/link'
 import CopyButton from '@/ui/copy-button'
+
+interface StepCardProps {
+  step: number
+  description: string
+  children: React.ReactNode
+}
+
+function StepCard({ step, description, children }: StepCardProps) {
+  return (
+    <div className="flex gap-3">
+      <div className="text-fg bg-bg-300 flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-medium">
+        {step}
+      </div>
+      <div className="flex-1 space-y-2 pt-1">
+        <p className="text-fg font-bold">{description}</p>
+        <div className="text-fg-600 text-sm">{children}</div>
+      </div>
+    </div>
+  )
+}
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
@@ -35,7 +55,7 @@ export default function SandboxInspectIncompatible({
         className="w-full max-w-md"
       >
         <Card className="bg-bg-100 w-full border shadow-lg">
-          <CardHeader className="pb-4">
+          <CardHeader>
             <div className="flex gap-3 max-md:flex-col md:items-center">
               <div className="bg-warning/10 flex h-10 w-10 items-center justify-center rounded-full">
                 <AlertTriangle className="text-warning h-5 w-5" />
@@ -50,29 +70,65 @@ export default function SandboxInspectIncompatible({
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <p className="text-fg-500 text-sm">
-                The underlying template of this Sandbox is incompatible with the
-                filesystem inspector. To view accurate filesystem data, you need
-                to <b className="text-fg">rebuild the Template</b>.
-              </p>
-            </div>
+          <CardContent className="space-y-8">
+            <p className="text-fg-500">
+              The underlying template of this Sandbox is incompatible with the
+              filesystem inspector. To view accurate filesystem data, you need
+              to <b className="text-fg">rebuild the Template</b>.
+            </p>
 
             {templateNameOrId && (
-              <div className="bg-bg-200 relative rounded-md p-3">
-                <p className="text-fg-500 mb-1 text-xs font-medium">
-                  Template to Update:
-                </p>
-                <CopyButton
-                  variant="ghost"
-                  size="iconSm"
-                  value={templateNameOrId}
-                  className="absolute top-2 right-2"
-                />
-                <code className="text-fg-800 w-full font-mono text-sm">
-                  {templateNameOrId}
-                </code>
+              <div className="space-y-8 pl-1">
+                <StepCard
+                  step={1}
+                  description="Navigate to your Template folder"
+                >
+                  <div className="relative mt-2 space-y-2">
+                    <p className="text-fg-300 gap-1.5 text-xs">
+                      Go to your Template folder
+                    </p>
+                    <div className="flex w-fit items-center justify-between gap-2">
+                      <code className="text-fg bg-bg-300 rounded border px-2 py-1 text-xs">
+                        cd
+                        {' your-template-folder'}
+                      </code>
+                      <CopyButton
+                        variant="ghost"
+                        size="iconSm"
+                        value={`cd your-template-folder`}
+                        className="text-fg-300 size-5"
+                      />
+                    </div>
+                    <p className="text-fg-300 inline-flex gap-1.5 text-xs">
+                      Your Template folder should contain an{' '}
+                      <code className="text-accent">e2b.toml</code> file.
+                    </p>
+                  </div>
+                </StepCard>
+
+                <StepCard step={2} description="Build the template">
+                  <div className="group relative mt-2">
+                    <p className="text-fg-500 text-xs">
+                      Optional: Add{' '}
+                      <code className="text-fg-800 bg-bg-200 rounded px-1 text-xs">
+                        -c "start.sh"
+                      </code>{' '}
+                      to specify a custom start command
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <code className="text-fg-800 bg-bg-200 rounded px-2 py-1 font-mono text-sm">
+                        <span className="text-fg-500">$</span> e2b template
+                        build
+                      </code>
+                      <CopyButton
+                        variant="ghost"
+                        size="iconSm"
+                        value="e2b template build"
+                        className="opacity-0 transition-opacity group-hover:opacity-100"
+                      />
+                    </div>
+                  </div>
+                </StepCard>
               </div>
             )}
 
@@ -90,7 +146,7 @@ export default function SandboxInspectIncompatible({
                   }
                   target="_blank"
                 >
-                  Build a Template
+                  Documentation
                   <ExternalLink className="h-3 w-3" />
                 </Link>
               </Button>
