@@ -3,7 +3,7 @@
 import {
   AlertTriangle,
   ArrowLeft,
-  CircleAlert,
+  ChevronLeft,
   ExternalLink,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -17,27 +17,8 @@ import {
 } from '@/ui/primitives/card'
 import { PROTECTED_URLS } from '@/configs/urls'
 import Link from 'next/link'
-import CopyButton from '@/ui/copy-button'
-
-interface StepCardProps {
-  step: number
-  description: string
-  children: React.ReactNode
-}
-
-function StepCard({ step, description, children }: StepCardProps) {
-  return (
-    <div className="flex gap-3">
-      <div className="text-fg bg-bg-300 flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-medium">
-        {step}
-      </div>
-      <div className="flex-1 space-y-2 pt-1">
-        <p className="text-fg font-bold">{description}</p>
-        <div className="text-fg-600 text-sm">{children}</div>
-      </div>
-    </div>
-  )
-}
+import { CodeBlock } from '@/ui/code-block'
+import { Badge } from '@/ui/primitives/badge'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
@@ -54,92 +35,75 @@ export default function SandboxInspectIncompatible({
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="w-full max-w-md"
       >
-        <Card className="bg-bg-100 w-full border shadow-lg">
+        <Card className="w-full">
           <CardHeader>
             <div className="flex gap-3 max-md:flex-col md:items-center">
-              <div className="bg-warning/10 flex h-10 w-10 items-center justify-center rounded-full">
-                <AlertTriangle className="text-warning h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">
-                  Incompatible Template Version
-                </CardTitle>
-                <CardDescription className="text-fg-500 text-sm">
-                  This Sandbox uses an outdated Template.
-                </CardDescription>
-              </div>
+              <AlertTriangle className="text-warning h-5 w-5" />
+              <CardTitle className="text-lg">Incompatible Template</CardTitle>
             </div>
+            <CardDescription>
+              This Sandbox uses a Template, which is incompatible with the
+              filesystem inspector.
+              <br />
+              <br />
+              To view filesystem data, you need to{' '}
+              <span className="text-fg font-medium">rebuild the Template</span>.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-8">
-            <p className="text-fg-500">
-              The underlying template of this Sandbox is incompatible with the
-              filesystem inspector. To view accurate filesystem data, you need
-              to <b className="text-fg">rebuild the Template</b>.
-            </p>
-
+          <CardContent className="space-y-10">
             {templateNameOrId && (
-              <div className="space-y-8 pl-1">
-                <StepCard
-                  step={1}
-                  description="Navigate to your Template folder"
-                >
-                  <div className="relative mt-2 space-y-2">
-                    <p className="text-fg-300 gap-1.5 text-xs">
-                      Go to your Template folder
-                    </p>
-                    <div className="flex w-fit items-center justify-between gap-2">
-                      <code className="text-fg bg-bg-300 rounded border px-2 py-1 text-xs">
-                        cd
-                        {' your-template-folder'}
-                      </code>
-                      <CopyButton
-                        variant="ghost"
-                        size="iconSm"
-                        value={`cd your-template-folder`}
-                        className="text-fg-300 size-5"
-                      />
-                    </div>
-                    <p className="text-fg-300 inline-flex gap-1.5 text-xs">
-                      Your Template folder should contain an{' '}
-                      <code className="text-accent">e2b.toml</code> file.
-                    </p>
-                  </div>
-                </StepCard>
+              <ol className="ml-4 list-decimal space-y-8 font-sans">
+                <li className="flex-col space-y-3">
+                  <p className="font-semibold">
+                    Navigate to your Template's folder
+                  </p>
+                  <CodeBlock className="-ml-4" title="" lang="bash">
+                    {`cd your-template-folder`}
+                  </CodeBlock>
+                  <p className="-ml-4">
+                    The folder should contain an{' '}
+                    <Badge
+                      className="mx-1 h-5.5 rounded-none"
+                      variant="outline"
+                    >
+                      e2b.toml
+                    </Badge>{' '}
+                    file.
+                  </p>
+                </li>
 
-                <StepCard step={2} description="Build the template">
-                  <div className="group relative mt-2">
-                    <p className="text-fg-500 text-xs">
-                      Optional: Add{' '}
-                      <code className="text-fg-800 bg-bg-200 rounded px-1 text-xs">
-                        -c "start.sh"
-                      </code>{' '}
-                      to specify a custom start command
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <code className="text-fg-800 bg-bg-200 rounded px-2 py-1 font-mono text-sm">
-                        <span className="text-fg-500">$</span> e2b template
-                        build
-                      </code>
-                      <CopyButton
-                        variant="ghost"
-                        size="iconSm"
-                        value="e2b template build"
-                        className="opacity-0 transition-opacity group-hover:opacity-100"
-                      />
-                    </div>
-                  </div>
-                </StepCard>
-              </div>
+                <li className="space-y-3">
+                  <p className="font-semibold">Build the template</p>
+                  <CodeBlock className="-ml-4" title="" lang="bash">
+                    {`e2b template build # -c "start.sh"`}
+                  </CodeBlock>
+                  <p className="-ml-4">
+                    Add{' '}
+                    <Badge
+                      className="mx-1 h-5.5 rounded-none"
+                      variant="outline"
+                    >
+                      -c "your start command"
+                    </Badge>{' '}
+                    to specify a start command. (optional)
+                  </p>
+                </li>
+              </ol>
             )}
 
-            <div className="flex flex-col gap-2 md:flex-row">
-              <Button asChild variant="outline" className="w-full">
+            <div className="flex flex-col justify-stretch gap-2 md:flex-row md:justify-between">
+              <Button
+                asChild
+                variant="ghost"
+                size="slate"
+                className="text-fg-500 hover:text-fg font-sans font-medium normal-case"
+              >
                 <Link href={PROTECTED_URLS.DASHBOARD + '?tab=sandboxes'}>
-                  <ArrowLeft className="text-fg-500 h-4 w-4" />
-                  Go to Sandboxes
+                  <ChevronLeft className="text-fg-500 h-4 w-4" />
+                  Back to Sandboxes
                 </Link>
               </Button>
-              <Button asChild className="w-full">
+              <Button asChild variant="outline" className="">
                 <Link
                   href={
                     'https://e2b.dev/docs/sandbox-template#3-customize-e2b-dockerfile'
