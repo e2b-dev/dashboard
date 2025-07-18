@@ -1,6 +1,5 @@
 import { withSentryConfig } from '@sentry/nextjs'
 
-
 const infraApiUrl = new URL(process.env.INFRA_API_URL)
 const infraApiHostnameSplits = infraApiUrl.hostname.split('.')
 const infraApiUrlHasSubdomain = infraApiHostnameSplits.length === 3
