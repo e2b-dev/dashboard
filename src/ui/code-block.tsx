@@ -9,14 +9,26 @@ import {
   useRef,
 } from 'react'
 
-import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { cn } from '@/lib/utils'
 import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
-import Frame from './frame'
-import { buttonVariants } from './primitives/button'
+import { cn } from '@/lib/utils'
 import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
+import { buttonVariants } from './primitives/button'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { useShikiTheme } from '@/configs/shiki'
+import ShikiHighlighter from 'react-shiki'
+import CopyButton from './copy-button'
 
 export type CodeBlockProps = HTMLAttributes<HTMLElement> & {
+  /**
+   * Title of the code block
+   */
+  title?: string
+
+  /**
+   * Language for syntax highlighting
+   */
+  lang?: string
+
   /**
    * Icon of code block
    *
@@ -61,35 +73,31 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
   (
     {
       title,
+      lang = 'bash',
       allowCopy = true,
       keepBackground = false,
       icon,
       viewportProps,
+      children,
       ...props
     },
     ref
   ) => {
     const [isCopied, copy] = useClipboard()
     const areaRef = useRef<HTMLDivElement>(null)
+    const shikiTheme = useShikiTheme()
+
     const onCopy = useCallback(() => {
-      const pre = areaRef.current?.getElementsByTagName('pre').item(0)
-
-      if (!pre) return
-
-      const clone = pre.cloneNode(true) as HTMLElement
-      clone.querySelectorAll('.nd-copy-ignore').forEach((node) => {
-        node.remove()
-      })
-
-      copy(clone.textContent ?? '')
-    }, [copy])
+      const textContent = typeof children === 'string' ? children : ''
+      copy(textContent)
+    }, [copy, children])
 
     return (
       <figure
         ref={ref}
         {...props}
         className={cn(
-          'not-prose group bg-bg-200 relative border p-2 text-xs',
+          'not-prose group bg-bg-200 border-border-200 relative border p-2 text-xs',
           keepBackground &&
             'bg-[var(--shiki-light-bg)] dark:bg-[var(--shiki-dark-bg)]',
           props.className
@@ -116,18 +124,18 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
             </figcaption>
             {allowCopy ? (
               <CopyButton
-                className="-me-2"
-                onCopy={onCopy}
-                isCopied={isCopied}
+                className="-mr-2"
+                value={typeof children === 'string' ? children : ''}
               />
             ) : null}
           </div>
         ) : (
           allowCopy && (
             <CopyButton
-              className="absolute top-2 right-2 z-[2] backdrop-blur-md"
-              onCopy={onCopy}
-              isCopied={isCopied}
+              className="absolute top-2 right-2 z-[2]"
+              variant="ghost"
+              size="slate"
+              value={typeof children === 'string' ? children : ''}
             />
           )
         )}
@@ -136,7 +144,15 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
             {...viewportProps}
             className={cn('max-h-[600px] max-w-full', viewportProps?.className)}
           >
-            {props.children}
+            <ShikiHighlighter
+              language={lang}
+              theme={shikiTheme}
+              className="text-xs"
+              addDefaultStyles={false}
+              showLanguage={false}
+            >
+              {typeof children === 'string' ? children : ''}
+            </ShikiHighlighter>
           </ScrollViewport>
           <ScrollBar orientation="horizontal" />
           <ScrollBar orientation="vertical" />
@@ -147,35 +163,3 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
 )
 
 CodeBlock.displayName = 'CodeBlock'
-
-function CopyButton({
-  className,
-  onCopy,
-  isCopied,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  onCopy: () => void
-  isCopied: boolean
-}) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        buttonVariants({
-          variant: 'ghost',
-        }),
-        'transition-opacity group-hover:opacity-100 [&_svg]:size-3.5',
-        !isCopied && '[@media(hover:hover)]:opacity-0',
-        className
-      )}
-      aria-label={isCopied ? 'Copied Text' : 'Copy Text'}
-      onClick={onCopy}
-      {...props}
-    >
-      <Check className={cn('transition-transform', !isCopied && 'scale-0')} />
-      <Copy
-        className={cn('absolute transition-transform', isCopied && 'scale-0')}
-      />
-    </button>
-  )
-}

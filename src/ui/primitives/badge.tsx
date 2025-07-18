@@ -16,6 +16,12 @@ const badgeVariants = cva(
         accent: 'bg-accent/15 text-accent',
         'contrast-1': 'bg-contrast-1/20 text-contrast-1',
         'contrast-2': 'bg-contrast-2/20 text-contrast-2',
+        outline: 'border border-border-200 bg-bg-200',
+      },
+      size: {
+        default: 'px-2 py-1 text-xs',
+        sm: 'px-1 py-0.5 text-xs',
+        lg: 'px-3 py-1.5 text-sm',
       },
       defaultVariants: {
         variant: 'default',
