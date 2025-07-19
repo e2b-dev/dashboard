@@ -24,12 +24,6 @@
     },
     "isolatedModules": true
   },
-  "include": [
-    "next-env.d.ts",
-    "src",
-    ".next/types/**/*.ts",
-    "archive/_docs",
-    "archive/source.ts"
-  ],
-  "exclude": ["node_modules"]
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "archive"]
 }
