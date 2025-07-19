@@ -1,5 +1,23 @@
 import { z } from 'zod'
 
+const CSPSrcSchema = z.string().refine((domains) =>
+  domains.split(' ').every((domain) => {
+    // CSP allows either:
+    // 1. Full URLs with scheme: https://example.com
+    // 2. Wildcard subdomains without scheme: *.example.com
+    // 3. Plain domains without scheme: example.com
+    const fullUrlPattern = /^https?:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*$/i
+    const wildcardPattern = /^\*\.[a-z0-9-]+(?:\.[a-z0-9-]+)*$/i
+    const plainDomainPattern = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*$/i
+
+    return (
+      fullUrlPattern.test(domain) ||
+      wildcardPattern.test(domain) ||
+      plainDomainPattern.test(domain)
+    )
+  })
+)
+
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   INFRA_API_URL: z.string().url(),
@@ -10,6 +28,9 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.string().url().optional(),
   OTEL_SERVICE_NAME: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
+  CSP_SCRIPT_SRC: CSPSrcSchema.optional(),
+  CSP_STYLE_SRC: CSPSrcSchema.optional(),
+  CSP_IMG_SRC: CSPSrcSchema.optional(),
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
