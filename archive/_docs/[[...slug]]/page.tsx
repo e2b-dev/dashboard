@@ -1,20 +1,9 @@
-import {
-  DocsBody,
-  DocsDescription,
-  DocsPage,
-  DocsTitle,
-} from 'fumadocs-ui/page'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 /* import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui"; */
 /* import * as Preview from "@/components/preview"; */
-import { createMetadata, metadataImage } from '@/configs/fumadocs'
-import { METADATA } from '@/configs/metadata'
-import components from '@/features/docs/components'
-import Footer from '@/features/docs/footer/footer'
-import { source } from '@/lib/source'
-import { cn } from '@/lib/utils'
-import { buttonVariants } from '@/ui/primitives/button'
+import { createMetadata, METADATA, metadataImage } from '../../metadata'
+import { source } from '../../source'
 
 /* function PreviewRenderer({ preview }: { preview: string }): ReactNode {
   if (preview && preview in Preview) {
@@ -27,15 +16,17 @@ import { buttonVariants } from '@/ui/primitives/button'
 
 export default async function Page(props: {
   params: Promise<{ slug?: string[] }>
-}): Promise<React.ReactElement<unknown>> {
+}) {
   const params = await props.params
 
   const page = source.getPage(params.slug)
 
   if (!page) notFound()
 
-  const path = `src/content/docs/${page.file.path}`
-  const { body: Mdx, toc, lastModified } = page.data
+  const path = `src/content/docs/${page.path}`
+
+  return null
+  /*   const { body: Mdx, toc, lastModified } = page.data
 
   return (
     <DocsPage
@@ -66,12 +57,11 @@ export default async function Page(props: {
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
-        {/*         {preview ? <PreviewRenderer preview={preview} /> : null} */}
+          {preview ? <PreviewRenderer preview={preview} /> : null} }
         <Mdx components={components({ slug: params.slug || [] })} />
-        {/*         {page.data.index ? <DocsCategory page={page} from={source} /> : null} */}
       </DocsBody>
     </DocsPage>
-  )
+  ) */
 }
 
 export async function generateMetadata(props: {

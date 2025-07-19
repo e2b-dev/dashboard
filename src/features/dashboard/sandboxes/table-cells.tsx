@@ -1,7 +1,7 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { useServerContext } from '@/lib/hooks/use-server-context'
+import { useServerContext } from '@/features/dashboard/server-context'
 import { cn } from '@/lib/utils'
 import { Template } from '@/types/api'
 import { JsonPopover } from '@/ui/json-popover'

@@ -2,7 +2,7 @@
 
 import { ToastProvider } from '@/ui/primitives/toast'
 import { TooltipProvider } from '@/ui/primitives/tooltip'
-import { RootProvider } from 'fumadocs-ui/provider'
+import { ThemeProvider } from 'next-themes'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { useEffect } from 'react'
@@ -14,18 +14,16 @@ interface ClientProvidersProps {
 export default function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <PostHogProvider>
-      <RootProvider
-        theme={{
-          attribute: 'class',
-          defaultTheme: 'system',
-          enableSystem: true,
-          disableTransitionOnChange: true,
-        }}
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
       >
         <TooltipProvider>
           <ToastProvider>{children}</ToastProvider>
         </TooltipProvider>
-      </RootProvider>
+      </ThemeProvider>
     </PostHogProvider>
   )
 }

@@ -11,7 +11,7 @@ export const infra = createClient<InfraPaths>({
       // @ts-expect-error -- duplex not on type, keep it for now
       duplex: !!body ? 'half' : undefined,
       ...options,
-    })
+    } as RequestInit)
   },
   querySerializer: {
     array: { style: 'form', explode: false },
