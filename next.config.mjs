@@ -5,7 +5,7 @@ const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline' ${process.env.CSP_SCRIPT_SRC};
     style-src 'self' 'unsafe-inline' ${process.env.CSP_STYLE_SRC};
-    img-src 'self' data: ${process.env.CSP_IMG_SRC};
+    img-src 'self' data: ${process.env.NEXT_PUBLIC_SUPABASE_URL} ${process.env.CSP_IMG_SRC};
     font-src 'self';
     object-src 'none';
     base-uri 'self';
