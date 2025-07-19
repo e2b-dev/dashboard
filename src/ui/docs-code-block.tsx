@@ -85,72 +85,63 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
     }, [copy])
 
     return (
-      <Frame
-        classNames={{
-          wrapper: 'my-6 w-full',
-        }}
+      <figure
+        ref={ref}
+        {...props}
+        className={cn(
+          'not-prose group bg-bg-200 relative border p-2 text-xs',
+          keepBackground &&
+            'bg-[var(--shiki-light-bg)] dark:bg-[var(--shiki-dark-bg)]',
+          props.className
+        )}
       >
-        <figure
-          ref={ref}
-          {...props}
-          className={cn(
-            'not-prose group relative text-xs',
-            keepBackground &&
-              'bg-[var(--shiki-light-bg)] dark:bg-[var(--shiki-dark-bg)]',
-            props.className
-          )}
-        >
-          {title ? (
-            <div className="bg-bg-100 flex h-8 flex-row items-center gap-2 border-b px-3 py-1">
-              {icon ? (
-                <div
-                  className="text-fg-300 [&_svg]:size-3"
-                  dangerouslySetInnerHTML={
-                    typeof icon === 'string'
-                      ? {
-                          __html: icon,
-                        }
-                      : undefined
-                  }
-                >
-                  {typeof icon !== 'string' ? icon : null}
-                </div>
-              ) : null}
-              <figcaption className="text-fd-muted-foreground flex-1 truncate">
-                {title}
-              </figcaption>
-              {allowCopy ? (
-                <CopyButton
-                  className="-me-2"
-                  onCopy={onCopy}
-                  isCopied={isCopied}
-                />
-              ) : null}
-            </div>
-          ) : (
-            allowCopy && (
+        {title ? (
+          <div className="bg-bg-100 flex h-8 flex-row items-center gap-2 border-b px-3 py-1">
+            {icon ? (
+              <div
+                className="text-fg-300 [&_svg]:size-3"
+                dangerouslySetInnerHTML={
+                  typeof icon === 'string'
+                    ? {
+                        __html: icon,
+                      }
+                    : undefined
+                }
+              >
+                {typeof icon !== 'string' ? icon : null}
+              </div>
+            ) : null}
+            <figcaption className="text-fd-muted-foreground flex-1 truncate">
+              {title}
+            </figcaption>
+            {allowCopy ? (
               <CopyButton
-                className="absolute top-2 right-2 z-[2] backdrop-blur-md"
+                className="-me-2"
                 onCopy={onCopy}
                 isCopied={isCopied}
               />
-            )
-          )}
-          <ScrollArea ref={areaRef} dir="ltr">
-            <ScrollViewport
-              {...viewportProps}
-              className={cn(
-                'max-h-[600px] max-w-full',
-                viewportProps?.className
-              )}
-            >
-              {props.children}
-            </ScrollViewport>
-            <ScrollBar orientation="horizontal" />
-            <ScrollBar orientation="vertical" />
-          </ScrollArea>
-        </figure>
-      </Frame>
+            ) : null}
+          </div>
+        ) : (
+          allowCopy && (
+            <CopyButton
+              className="absolute top-2 right-2 z-[2] backdrop-blur-md"
+              onCopy={onCopy}
+              isCopied={isCopied}
+            />
+          )
+        )}
+        <ScrollArea ref={areaRef} dir="ltr">
+          <ScrollViewport
+            {...viewportProps}
+            className={cn('max-h-[600px] max-w-full', viewportProps?.className)}
+          >
+            {props.children}
+          </ScrollViewport>
+          <ScrollBar orientation="horizontal" />
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
+      </figure>
     )
   }
 )

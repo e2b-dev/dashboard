@@ -6,5 +6,3 @@ export type ClientTeam = Database['public']['Tables']['teams']['Row'] & {
   // e.g. "max.mustermann@gmail.com" -> "Max.mustermann's Team"
   transformed_default_name?: string
 }
-
-export type PollingInterval = 0 | 15 | 30 | 60 // seconds
