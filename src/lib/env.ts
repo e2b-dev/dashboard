@@ -31,6 +31,7 @@ export const serverSchema = z.object({
   CSP_SCRIPT_SRC: CSPSrcSchema.optional(),
   CSP_STYLE_SRC: CSPSrcSchema.optional(),
   CSP_IMG_SRC: CSPSrcSchema.optional(),
+  CSP_FRAME_SRC: CSPSrcSchema.optional(),
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
