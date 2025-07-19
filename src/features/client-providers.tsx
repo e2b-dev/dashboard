@@ -3,9 +3,9 @@
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { useEffect } from 'react'
-import { RootProvider } from 'fumadocs-ui/provider'
 import { TooltipProvider } from '@/ui/primitives/tooltip'
 import { ToastProvider } from '@/ui/primitives/toast'
+import { ThemeProvider } from 'next-themes'
 
 interface ClientProvidersProps {
   children: React.ReactNode
@@ -14,18 +14,16 @@ interface ClientProvidersProps {
 export default function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <PostHogProvider>
-      <RootProvider
-        theme={{
-          attribute: 'class',
-          defaultTheme: 'system',
-          enableSystem: true,
-          disableTransitionOnChange: true,
-        }}
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
       >
         <TooltipProvider>
           <ToastProvider>{children}</ToastProvider>
         </TooltipProvider>
-      </RootProvider>
+      </ThemeProvider>
     </PostHogProvider>
   )
 }

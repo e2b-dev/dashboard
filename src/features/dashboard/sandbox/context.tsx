@@ -1,10 +1,10 @@
 'use client'
 
 import React, { createContext, useContext, ReactNode } from 'react'
-import { SandboxInfo } from '@/types/api'
+import { Sandbox } from '@/types/api'
 
 interface SandboxContextValue {
-  sandboxInfo: SandboxInfo
+  sandboxInfo: Sandbox
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -19,7 +19,7 @@ export function useSandboxContext() {
 
 interface SandboxProviderProps {
   children: ReactNode
-  sandboxInfo: SandboxInfo
+  sandboxInfo: Sandbox
 }
 
 export function SandboxProvider({
