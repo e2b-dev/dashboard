@@ -17,6 +17,9 @@ const cspHeader = `
 
 /** @type {import('next').NextConfig} */
 const config = {
+  eslint: {
+    dirs: ['src', 'scripts'], // Only run ESLint on these directories during production builds
+  },
   reactStrictMode: true,
   experimental: {
     reactCompiler: true,
