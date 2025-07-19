@@ -131,7 +131,7 @@ export const createFilesystemStore = (rootPath: string) =>
             parentNode = {
               name: parentName,
               path: normalizedParentPath,
-              type: 'dir',
+              type: FileType.DIR,
               isExpanded: false,
               children: [],
             }
