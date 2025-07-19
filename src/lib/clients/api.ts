@@ -10,7 +10,7 @@ export const infra = createClient<InfraPaths>({
       method,
       duplex: !!body ? 'half' : undefined,
       ...options,
-    })
+    } as RequestInit)
   },
   querySerializer: {
     array: { style: 'form', explode: false },
