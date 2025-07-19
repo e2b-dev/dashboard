@@ -28,7 +28,6 @@
     "storybook": "storybook dev -p 6006",
     "shad": "bunx shadcn@canary",
     "prebuild": "bun scripts:check-app-env && bun scripts:build-storybook",
-    "postinstall": "fumadocs-mdx",
     "<<<<<< Testing": "",
     "test:run": "bun scripts:check-all-env && vitest run",
     "test:integration": "bun scripts:check-app-env && vitest run src/__test__/integration/",

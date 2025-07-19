@@ -4,18 +4,18 @@ import {
   DocsBody,
   DocsTitle,
   DocsDescription,
-  DocsCategory,
 } from 'fumadocs-ui/page'
 import { notFound } from 'next/navigation'
 /* import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui"; */
 /* import * as Preview from "@/components/preview"; */
-import { source } from '@/lib/source'
-import { createMetadata, metadataImage } from '@/configs/metadata'
-import { METADATA } from '@/configs/metadata'
-import components from '@/features/docs/components'
-import { buttonVariants } from '@/ui/primitives/button'
-import { cn } from '@/lib/utils'
-import Footer from '@/features/docs/footer/footer'
+import { source } from '../../source'
+import { createMetadata, metadataImage } from '../../metadata'
+import { METADATA } from '../../metadata'
+import components from '../../../src/features/docs/components'
+import { buttonVariants } from '../../../src/ui/primitives/button'
+import { cn } from '../../../src/lib/utils'
+import Footer from '../../../src/features/docs/footer/footer'
+import React from 'react'
 
 /* function PreviewRenderer({ preview }: { preview: string }): ReactNode {
   if (preview && preview in Preview) {
@@ -28,15 +28,17 @@ import Footer from '@/features/docs/footer/footer'
 
 export default async function Page(props: {
   params: Promise<{ slug?: string[] }>
-}): Promise<React.ReactElement<unknown>> {
+}) {
   const params = await props.params
 
   const page = source.getPage(params.slug)
 
   if (!page) notFound()
 
-  const path = `src/content/docs/${page.file.path}`
-  const { body: Mdx, toc, lastModified } = page.data
+  const path = `src/content/docs/${page.path}`
+
+  return null
+  /*   const { body: Mdx, toc, lastModified } = page.data
 
   return (
     <DocsPage
@@ -67,12 +69,11 @@ export default async function Page(props: {
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
-        {/*         {preview ? <PreviewRenderer preview={preview} /> : null} */}
+          {preview ? <PreviewRenderer preview={preview} /> : null} }
         <Mdx components={components({ slug: params.slug || [] })} />
-        {page.data.index ? <DocsCategory page={page} from={source} /> : null}
       </DocsBody>
     </DocsPage>
-  )
+  ) */
 }
 
 export async function generateMetadata(props: {
