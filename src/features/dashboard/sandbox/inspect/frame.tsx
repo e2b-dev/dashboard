@@ -23,7 +23,7 @@ export default function SandboxInspectFrame({
     <motion.div
       transition={{ duration: 0.25, ease: 'easeInOut' }}
       className={cn(
-        'flex h-full min-h-0 flex-1 flex-col overflow-hidden border',
+        'bg-bg flex h-full min-h-0 flex-1 flex-col overflow-hidden border',
         classNames?.frame,
         className
       )}

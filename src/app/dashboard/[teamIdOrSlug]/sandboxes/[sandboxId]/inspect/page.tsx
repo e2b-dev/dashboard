@@ -8,6 +8,7 @@ import { COOKIE_KEYS } from '@/configs/keys'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
 import ClientOnly from '@/ui/client-only'
 import { cn } from '@/lib/utils'
+import { AsciiBackgroundPattern } from '@/ui/patterns'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -56,6 +57,10 @@ export default async function SandboxInspectPage({
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
       </ClientOnly>
+      <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
+        <AsciiBackgroundPattern className="w-1/2" />
+        <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
+      </div>
     </SandboxInspectProvider>
   )
 }
