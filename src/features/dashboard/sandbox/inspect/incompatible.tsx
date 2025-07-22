@@ -47,17 +47,17 @@ export default function SandboxInspectIncompatible({
           <CardHeader className="pb-10">
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-warning h-5 w-5" />
-              <CardTitle className="text-lg">Incompatible Template</CardTitle>
+              <CardTitle className="text-lg">Incompatible template</CardTitle>
             </div>
             <CardDescription className="text-fg-300 flex flex-col gap-3 leading-5">
               <span>
-                This Sandbox uses a Template, which is incompatible with the
+                This sandbox uses a template, which is incompatible with the
                 filesystem inspector.
               </span>
               <span>
                 To view filesystem data, you need to{' '}
                 <span className="text-fg font-medium">
-                  rebuild the Template
+                  rebuild the template
                 </span>
                 .
               </span>
@@ -68,7 +68,7 @@ export default function SandboxInspectIncompatible({
               <ol className="ml-4 list-decimal space-y-6.5 font-sans leading-5">
                 <li className="text-fg flex-col space-y-3 marker:font-semibold">
                   <p className="font-semibold">
-                    Navigate to your Template's folder
+                    Navigate to your template's folder
                   </p>
                   <CodeBlock className="-ml-4" title="" lang="bash">
                     {`cd your-template-folder`}
