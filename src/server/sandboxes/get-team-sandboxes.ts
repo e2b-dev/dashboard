@@ -61,8 +61,6 @@ export const getTeamSandboxes = authActionClient
         return handleDefaultInfraError(status)
       }
 
-      console.log('sandboxesRes.data', sandboxesRes.data)
-
       return {
         sandboxes: sandboxesRes.data,
       }

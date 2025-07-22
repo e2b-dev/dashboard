@@ -25,6 +25,11 @@ export const PROTECTED_URLS = {
   RESET_PASSWORD: '/dashboard/account',
 }
 
+export const HELP_URLS = {
+  BUILD_TEMPLATE:
+    'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
+}
+
 export const BASE_URL = process.env.VERCEL_ENV
   ? process.env.VERCEL_ENV === 'production'
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`

@@ -1,10 +1,9 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api'
-import { ChevronLeftIcon, ChevronRight } from 'lucide-react'
+import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import RanFor from './ran-for'
 import Status from './status'
-import Resource from './resource'
 import RemainingTime from './remaining-time'
 import RefreshControl from './refresh'
 import TemplateId from './template-id'
@@ -13,6 +12,7 @@ import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
 import Metadata from './metadata'
 import CopyButton from '@/ui/copy-button'
+import { ResourceUsageClient } from './resource-usage-client'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
@@ -58,13 +58,25 @@ export default async function SandboxDetailsHeader({
         />
       ),
     },
-    memoryMB: {
-      label: 'mem',
-      value: <Resource type="mem" value={sandboxInfo.memoryMB?.toString()} />,
-    },
     cpuCount: {
-      label: 'cpu',
-      value: <Resource type="cpu" value={sandboxInfo.cpuCount?.toString()} />,
+      label: 'CPU Usage',
+      value: (
+        <ResourceUsageClient
+          type="cpu"
+          total={sandboxInfo.cpuCount}
+          mode="usage"
+        />
+      ),
+    },
+    memoryMB: {
+      label: 'Memory Usage',
+      value: (
+        <ResourceUsageClient
+          type="mem"
+          total={sandboxInfo.memoryMB}
+          mode="usage"
+        />
+      ),
     },
   }
 
