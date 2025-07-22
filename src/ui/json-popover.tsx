@@ -7,6 +7,7 @@ import {
 } from '@/ui/primitives/popover'
 import { useState } from 'react'
 import ShikiHighlighter from 'react-shiki'
+import { Button } from './primitives/button'
 import { ScrollArea, ScrollBar } from './primitives/scroll-area'
 
 interface JsonPopoverProps {
@@ -23,15 +24,26 @@ export function JsonPopover({ json, children, className }: JsonPopoverProps) {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <div
+        <Button
+          variant="ghost"
+          size="slate"
           className={cn(
-            'h-full cursor-pointer truncate whitespace-nowrap',
+            'h-full w-full cursor-pointer justify-start truncate p-0 font-sans whitespace-nowrap',
             className
           )}
-          onDoubleClick={() => setIsOpen(true)}
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            setIsOpen(true)
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            setIsOpen(true)
+          }}
         >
           {children}
-        </div>
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="p-4">
         <ScrollArea hideCorner className="h-[400px] max-w-full">
