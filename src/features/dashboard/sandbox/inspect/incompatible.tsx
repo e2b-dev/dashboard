@@ -33,7 +33,7 @@ export default function SandboxInspectIncompatible({
 }: SandboxInspectIncompatibleProps) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
-      <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 z-0 flex overflow-hidden">
+      <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
       </div>
