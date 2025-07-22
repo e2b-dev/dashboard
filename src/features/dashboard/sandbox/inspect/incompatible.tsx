@@ -33,7 +33,7 @@ export default function SandboxInspectIncompatible({
 }: SandboxInspectIncompatibleProps) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
-      <div className="text-border-300 absolute top-40 -left-1/2 z-0 flex overflow-hidden">
+      <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 z-0 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
       </div>
@@ -49,7 +49,7 @@ export default function SandboxInspectIncompatible({
               <AlertTriangle className="text-warning h-5 w-5" />
               <CardTitle className="text-lg">Incompatible Template</CardTitle>
             </div>
-            <CardDescription className="text-fg-300 space-y-3 leading-5">
+            <CardDescription className="text-fg-300 flex flex-col gap-3 leading-5">
               <span>
                 This Sandbox uses a Template, which is incompatible with the
                 filesystem inspector.

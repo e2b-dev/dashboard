@@ -41,7 +41,7 @@ export default function SandboxDetailsTabs({
           value={tab}
           className={cn(
             'flex flex-1 flex-col',
-            !showInspectTab ? 'min-h-140 md:min-h-0' : 'min-h-0'
+            !showInspectTab ? 'min-h-150' : 'min-h-0'
           )}
         >
           {showInspectTab ? (
