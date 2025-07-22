@@ -2,7 +2,7 @@
 
 import {
   AlertTriangle,
-  ArrowLeft,
+  ArrowUpRight,
   ChevronLeft,
   ExternalLink,
 } from 'lucide-react'
@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
@@ -19,48 +20,56 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import Link from 'next/link'
 import { CodeBlock } from '@/ui/code-block'
 import { Badge } from '@/ui/primitives/badge'
+import ExternalIcon from '@/ui/external-icon'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
+  teamIdOrSlug: string
 }
 
 export default function SandboxInspectIncompatible({
   templateNameOrId,
+  teamIdOrSlug,
 }: SandboxInspectIncompatibleProps) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease: 'easeInOut' }}
         className="w-full max-w-md"
       >
         <Card className="w-full">
-          <CardHeader>
-            <div className="flex gap-3 max-md:flex-col md:items-center">
+          <CardHeader className="px-0 pb-10">
+            <div className="flex items-center gap-3">
               <AlertTriangle className="text-warning h-5 w-5" />
               <CardTitle className="text-lg">Incompatible Template</CardTitle>
             </div>
-            <CardDescription>
-              This Sandbox uses a Template, which is incompatible with the
-              filesystem inspector.
-              <br />
-              <br />
-              To view filesystem data, you need to{' '}
-              <span className="text-fg font-medium">rebuild the Template</span>.
+            <CardDescription className="text-fg-300 space-y-3 leading-5">
+              <p>
+                This Sandbox uses a Template, which is incompatible with the
+                filesystem inspector.
+              </p>
+              <p>
+                To view filesystem data, you need to{' '}
+                <span className="text-fg font-medium">
+                  rebuild the Template
+                </span>
+                .
+              </p>
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-10">
+          <CardContent className="p-0">
             {templateNameOrId && (
-              <ol className="ml-4 list-decimal space-y-8 font-sans">
-                <li className="flex-col space-y-3">
+              <ol className="ml-4 list-decimal space-y-6.5 font-sans leading-5">
+                <li className="text-fg flex-col space-y-3 marker:font-semibold">
                   <p className="font-semibold">
                     Navigate to your Template's folder
                   </p>
                   <CodeBlock className="-ml-4" title="" lang="bash">
                     {`cd your-template-folder`}
                   </CodeBlock>
-                  <p className="-ml-4">
+                  <p className="text-fg-300 -ml-4">
                     The folder should contain an{' '}
                     <Badge
                       className="mx-1 h-5.5 rounded-none"
@@ -72,12 +81,12 @@ export default function SandboxInspectIncompatible({
                   </p>
                 </li>
 
-                <li className="space-y-3">
+                <li className="text-fg flex-col space-y-3 marker:font-semibold">
                   <p className="font-semibold">Build the template</p>
                   <CodeBlock className="-ml-4" title="" lang="bash">
                     {`e2b template build # -c "start.sh"`}
                   </CodeBlock>
-                  <p className="-ml-4">
+                  <p className="text-fg-300 -ml-4">
                     Add{' '}
                     <Badge
                       className="mx-1 h-5.5 rounded-none"
@@ -90,32 +99,28 @@ export default function SandboxInspectIncompatible({
                 </li>
               </ol>
             )}
-
-            <div className="flex flex-col justify-stretch gap-2 md:flex-row md:justify-between">
-              <Button
-                asChild
-                variant="ghost"
-                size="slate"
-                className="text-fg-500 hover:text-fg font-sans font-medium normal-case"
-              >
-                <Link href={PROTECTED_URLS.DASHBOARD + '?tab=sandboxes'}>
-                  <ChevronLeft className="text-fg-500 h-4 w-4" />
-                  Back to Sandboxes
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="">
-                <Link
-                  href={
-                    'https://e2b.dev/docs/sandbox-template#3-customize-e2b-dockerfile'
-                  }
-                  target="_blank"
-                >
-                  Documentation
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
           </CardContent>
+          <CardFooter className="justify-between border-none px-0 pt-10">
+            <Button
+              variant="ghost"
+              size="slate"
+              className="text-fg-500 hover:text-fg font-sans normal-case"
+              asChild
+            >
+              <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>
+                <ChevronLeft className="size-5" />
+                Back to Sandboxes
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="pr-3 font-sans normal-case"
+            >
+              Documentation{' '}
+              <ArrowUpRight className="text-fg-500 size-5 !stroke-[1px]" />
+            </Button>
+          </CardFooter>
         </Card>
       </motion.div>
     </div>

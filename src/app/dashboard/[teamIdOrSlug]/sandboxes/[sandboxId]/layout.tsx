@@ -62,6 +62,7 @@ export default async function SandboxLayout({
           tabs={['inspect']}
           isEnvdVersionCompatible={isEnvdVersionCompatible}
           templateNameOrId={res.data.alias || res.data.templateID}
+          teamIdOrSlug={teamIdOrSlug}
         >
           {children}
         </SandboxDetailsTabs>
