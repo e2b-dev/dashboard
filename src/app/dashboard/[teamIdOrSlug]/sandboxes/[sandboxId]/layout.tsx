@@ -51,7 +51,7 @@ export default async function SandboxLayout({
             <Suspense fallback={null}>
               <ThemeSwitcher />
             </Suspense>
-            <DashboardSurveyPopover />
+            {process.env.NEXT_PUBLIC_POSTHOG_KEY && <DashboardSurveyPopover />}
           </div>
         </div>
         <SandboxDetailsHeader

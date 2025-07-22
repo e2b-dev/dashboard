@@ -1,6 +1,6 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api'
-import { ChevronLeftIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import RanFor from './ran-for'
 import Status from './status'
@@ -82,7 +82,8 @@ export default async function SandboxDetailsHeader({
             Sandboxes
           </Link>
           <div className="flex items-center gap-2">
-            <h1 className="text-fg text-xl font-bold md:text-2xl">
+            <h1 className="text-fg font-sans text-xl font-bold md:text-2xl">
+              <span className="text-fg-400">id/ </span>
               {sandboxInfo.sandboxID}
             </h1>
             <CopyButton
