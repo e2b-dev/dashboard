@@ -19,6 +19,8 @@ import {
 import posthog from 'posthog-js'
 import { logError } from '@/lib/clients/logger'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
+import { useSandboxTableStore } from './stores/table-store'
+import { Row } from '@tanstack/react-table'
 
 export type SandboxWithMetrics = Sandbox & {
   metrics?: ClientSandboxMetric | null
@@ -98,19 +100,50 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
   columnId,
   value: number
 ) => {
-  if (columnId === 'cpuCount') {
+  if (columnId === 'cpuUsage') {
     const rowValue = row.original.cpuCount
     if (!rowValue || !value || value === 0) return true
     return rowValue === value
   }
 
-  if (columnId === 'memoryMB') {
+  if (columnId === 'ramUsage') {
     const rowValue = row.original.memoryMB
     if (!rowValue || !value || value === 0) return true
     return rowValue === value
   }
 
   return true
+}
+
+// ---------- Sorting functions that rely on live metrics in the zustand store ----------
+
+const compareNumbers = (a: number, b: number) => (a === b ? 0 : a > b ? 1 : -1)
+
+export const cpuMetricSortingFn = (
+  rowA: Row<SandboxWithMetrics>,
+  rowB: Row<SandboxWithMetrics>
+) => {
+  const metrics = useSandboxTableStore.getState().metrics
+
+  const cpuA = metrics?.[rowA.original.sandboxID]?.cpuUsedPct ?? -1
+  const cpuB = metrics?.[rowB.original.sandboxID]?.cpuUsedPct ?? -1
+
+  return compareNumbers(cpuA, cpuB)
+}
+
+export const ramMetricSortingFn = (
+  rowA: Row<SandboxWithMetrics>,
+  rowB: Row<SandboxWithMetrics>
+) => {
+  const metrics = useSandboxTableStore.getState().metrics
+
+  const mA = metrics?.[rowA.original.sandboxID]
+  const mB = metrics?.[rowB.original.sandboxID]
+
+  const ramA = mA && mA.memTotalMb ? mA.memUsedMb / mA.memTotalMb : -1
+  const ramB = mB && mB.memTotalMb ? mB.memUsedMb / mB.memTotalMb : -1
+
+  return compareNumbers(ramA, ramB)
 }
 
 // TABLE CONFIG
@@ -141,36 +174,33 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
   {
     id: 'cpuUsage',
     header: 'CPU Usage',
-    accessorFn: (row) => row.metrics?.cpuUsedPct,
-    cell: ({ row }) => (
-      <CpuUsageCell
-        metrics={row.original.metrics}
-        cpuCount={row.original.cpuCount ?? null}
-      />
-    ),
+    accessorFn: (row) => {
+      const metrics = useSandboxTableStore.getState().metrics
+      return metrics?.[row.sandboxID]?.cpuUsedPct ?? null
+    },
+    cell: (props) => <CpuUsageCell {...props} />,
     size: 175,
     minSize: 120,
     enableSorting: true,
+    sortingFn: cpuMetricSortingFn,
     enableColumnFilter: false,
   },
   {
     id: 'ramUsage',
     header: 'Memory Usage',
     accessorFn: (row) => {
-      if (row.metrics?.memUsedMb && row.metrics.memTotalMb) {
-        return (row.metrics.memUsedMb / row.metrics.memTotalMb) * 100
+      const metrics = useSandboxTableStore.getState().metrics
+      const m = metrics?.[row.sandboxID]
+      if (m?.memUsedMb && m.memTotalMb) {
+        return Number(((m.memUsedMb / m.memTotalMb) * 100).toFixed(2))
       }
-      return 0
+      return null
     },
-    cell: ({ row }) => (
-      <RamUsageCell
-        metrics={row.original.metrics}
-        memoryMB={row.original.memoryMB}
-      />
-    ),
+    cell: (props) => <RamUsageCell {...props} />,
     size: 175,
     minSize: 160,
     enableSorting: true,
+    sortingFn: ramMetricSortingFn,
     enableColumnFilter: false,
   },
   {

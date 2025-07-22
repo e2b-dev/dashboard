@@ -1,5 +1,9 @@
+'use client'
+
 import useSWR from 'swr'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import { useSandboxTableStore } from '../stores/table-store'
+import { useEffect } from 'react'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
@@ -60,12 +64,21 @@ export function useSandboxesMetrics({
       refreshInterval: pollingInterval,
       errorRetryInterval: 1000,
       errorRetryCount: 3,
+      revalidateOnMount: true,
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
       fallbackData: initialMetrics ? { metrics: initialMetrics } : undefined,
     }
   )
+
+  const setMetrics = useSandboxTableStore((s) => s.setMetrics)
+
+  useEffect(() => {
+    if (data?.metrics) {
+      setMetrics(data.metrics)
+    }
+  }, [data?.metrics, setMetrics])
 
   return {
     metrics: data?.metrics ?? null,

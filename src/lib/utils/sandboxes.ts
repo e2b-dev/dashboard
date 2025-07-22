@@ -9,9 +9,9 @@ export function transformMetricsToClientMetrics(
       sandboxID,
       {
         cpuCount: metric.cpuCount,
-        cpuUsedPct: metric.cpuUsedPct,
-        memUsedMb: metric.memUsed / 1024 / 1024,
-        memTotalMb: metric.memTotal / 1024 / 1024,
+        cpuUsedPct: Number(metric.cpuUsedPct.toFixed(3)),
+        memUsedMb: Number((metric.memUsed / 1024 / 1024).toFixed(3)),
+        memTotalMb: Number((metric.memTotal / 1024 / 1024).toFixed(3)),
         timestamp: metric.timestamp,
       },
     ])

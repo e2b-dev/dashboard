@@ -2,10 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import {
-  ClientSandboxesMetrics,
-  ClientSandboxMetric,
-} from '@/types/sandboxes.types'
+import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { CellContext } from '@tanstack/react-table'
 import { SandboxWithMetrics } from './table-config'
 import { Button } from '@/ui/primitives/button'
@@ -16,6 +13,7 @@ import { useServerContext } from '@/lib/hooks/use-server-context'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useTemplateTableStore } from '../templates/stores/table-store'
 import { JsonPopover } from '@/ui/json-popover'
+import { useSandboxTableStore } from './stores/table-store'
 
 declare module '@tanstack/react-table' {
   interface TableState {
@@ -24,103 +22,109 @@ declare module '@tanstack/react-table' {
   }
 }
 
-interface CpuUsageCellProps {
-  metrics?: ClientSandboxMetric | null
-  cpuCount: number | null
+export function CpuUsageCell({
+  row,
+}: CellContext<SandboxWithMetrics, unknown>) {
+  const metrics = useSandboxTableStore(
+    (s) => s.metrics?.[row.original.sandboxID]
+  )
+
+  const percentage = metrics?.cpuUsedPct ?? 0
+  const cpuCount = row.original.cpuCount
+
+  const hasMetrics = metrics !== null && metrics !== undefined
+
+  const textClassName = useMemo(
+    () =>
+      cn(
+        percentage >= 90
+          ? 'text-error'
+          : percentage >= 70
+            ? 'text-warning'
+            : 'text-fg'
+      ),
+    [percentage]
+  )
+
+  return (
+    <span
+      className={cn('text-fg-500 inline truncate font-mono whitespace-nowrap')}
+    >
+      {hasMetrics ? (
+        <>
+          <span className={textClassName}>{percentage}% </span>
+          <span className="text-fg-500">·</span>
+        </>
+      ) : (
+        <>
+          <span className="text-fg-500">n/a </span>
+          <span className="text-fg-500">·</span>
+        </>
+      )}
+      <span className="text-contrast-2"> {cpuCount ?? '-'}</span>&nbsp;Core
+      {cpuCount && cpuCount > 1 ? 's' : ''}
+    </span>
+  )
 }
 
-export const CpuUsageCell = React.memo<CpuUsageCellProps>(
-  function CpuUsageCell({ metrics, cpuCount }) {
-    const cpuRaw = metrics?.cpuUsedPct ?? 0
-    const cpuPercentage = Math.round(cpuRaw)
-    const hasMetrics = metrics !== null && metrics !== undefined
+export function RamUsageCell({
+  row,
+}: CellContext<SandboxWithMetrics, unknown>) {
+  const metrics = useSandboxTableStore(
+    (s) => s.metrics?.[row.original.sandboxID]
+  )
 
-    const textClassName = cn(
-      cpuPercentage >= 90
-        ? 'text-error'
-        : cpuPercentage >= 70
-          ? 'text-warning'
-          : 'text-fg'
-    )
-
-    return (
-      <span
-        className={cn(
-          'text-fg-500 inline w-full truncate font-mono whitespace-nowrap'
-        )}
-      >
-        {hasMetrics ? (
-          <span className={textClassName}>{cpuPercentage}% </span>
-        ) : (
-          <span>n/a</span>
-        )}
-        <span className="text-fg-500 mx-2">·</span>
-        <span className="text-contrast-2">{cpuCount ?? '-'}</span>&nbsp;Core
-        {cpuCount && cpuCount > 1 ? 's' : ''}
-      </span>
-    )
-  },
-  (prev, next) =>
-    prev.metrics?.cpuUsedPct === next.metrics?.cpuUsedPct &&
-    prev.cpuCount === next.cpuCount
-)
-
-interface RamUsageCellProps {
-  metrics?: ClientSandboxMetric | null
-  memoryMB: number
-}
-
-export const RamUsageCell = React.memo<RamUsageCellProps>(
-  function RamUsageCell({ metrics, memoryMB }) {
-    let percentage = 0
+  const percentage = useMemo(() => {
     if (metrics?.memUsedMb && metrics.memTotalMb) {
-      percentage = (metrics.memUsedMb / metrics.memTotalMb) * 100
+      return Number(((metrics.memUsedMb / metrics.memTotalMb) * 100).toFixed(2))
     }
-    const ramPercentage = Math.round(percentage)
-    const hasMetrics = metrics !== null && metrics !== undefined
+    return 0
+  }, [metrics])
 
-    const totalRamMB = memoryMB.toLocaleString()
+  const hasMetrics = metrics !== null && metrics !== undefined
 
-    const textClassName = cn(
-      ramPercentage >= 95
-        ? 'text-error'
-        : ramPercentage >= 70
-          ? 'text-warning'
-          : 'text-fg'
-    )
+  const totalRamMB = useMemo(
+    () => row.original.memoryMB.toLocaleString(),
+    [row.original.memoryMB]
+  )
 
-    const usedRamMB = hasMetrics ? metrics!.memUsedMb.toLocaleString() : 'n/a'
+  const usedRamMB = useMemo(
+    () => (hasMetrics ? metrics.memUsedMb.toLocaleString() : 'n/a'),
+    [hasMetrics, metrics]
+  )
 
-    return (
-      <span
-        className={cn(
-          'text-fg-500 inline truncate font-mono whitespace-nowrap'
-        )}
-      >
-        {hasMetrics ? (
-          <>
-            <span className={textClassName}>{ramPercentage}% </span>
-            <span className="text-fg-500">·</span>
-            <span className={textClassName}> {usedRamMB}</span> /
-          </>
-        ) : (
-          <>
-            <span className="text-fg-500">n/a </span>
-            <span className="text-fg-500">·</span>
-          </>
-        )}
-        <span className="text-contrast-1"> {totalRamMB} </span> MB
-      </span>
-    )
-  },
-  (prev, next) => {
-    const equal =
-      prev.metrics?.memUsedMb === next.metrics?.memUsedMb &&
-      prev.metrics?.memTotalMb === next.metrics?.memTotalMb &&
-      prev.memoryMB === next.memoryMB
-    return equal
-  }
-)
+  const textClassName = useMemo(
+    () =>
+      cn(
+        percentage >= 95
+          ? 'text-error'
+          : percentage >= 70
+            ? 'text-warning'
+            : 'text-fg'
+      ),
+    [percentage]
+  )
+
+  return (
+    <span
+      className={cn('text-fg-500 inline truncate font-mono whitespace-nowrap')}
+    >
+      {hasMetrics ? (
+        <>
+          <span className={textClassName}>{percentage}% </span>
+          <span className="text-fg-500">·</span>
+          <span className={textClassName}> {usedRamMB}</span> /
+        </>
+      ) : (
+        <>
+          <span className="text-fg-500">n/a </span>
+          <span className="text-fg-500">·</span>
+        </>
+      )}
+      <span className="text-contrast-1"> {totalRamMB} </span> MB
+    </span>
+  )
+}
 
 // ---------- Generic column cell components ----------
 
