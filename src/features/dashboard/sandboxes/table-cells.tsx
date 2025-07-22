@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { CellContext } from '@tanstack/react-table'
 import { SandboxWithMetrics } from './table-config'
 import { Button } from '@/ui/primitives/button'
