@@ -83,7 +83,6 @@ export default async function SandboxDetailsHeader({
           </Link>
           <div className="flex items-center gap-2">
             <h1 className="text-fg font-sans text-xl font-bold md:text-2xl">
-              <span className="text-fg-400">id/ </span>
               {sandboxInfo.sandboxID}
             </h1>
             <CopyButton

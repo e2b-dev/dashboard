@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 import SandboxInspectIncompatible from './inspect/incompatible'
-import templateId from './header/template-id'
 import { cn } from '@/lib/utils'
 
 interface SandboxDetailsTabsProps {
@@ -12,6 +11,7 @@ interface SandboxDetailsTabsProps {
   children: ReactNode
   isEnvdVersionCompatible: boolean
   templateNameOrId: string
+  teamIdOrSlug: string
 }
 
 export default function SandboxDetailsTabs({
@@ -19,6 +19,7 @@ export default function SandboxDetailsTabs({
   children,
   isEnvdVersionCompatible,
   templateNameOrId,
+  teamIdOrSlug,
 }: SandboxDetailsTabsProps) {
   const pathname = usePathname()
   const tab = pathname.split('/').pop() || tabs[0]
@@ -40,13 +41,16 @@ export default function SandboxDetailsTabs({
           value={tab}
           className={cn(
             'flex flex-1 flex-col',
-            !showInspectTab ? 'min-h-126 md:min-h-0' : 'min-h-0'
+            !showInspectTab ? 'min-h-140 md:min-h-0' : 'min-h-0'
           )}
         >
           {showInspectTab ? (
             children
           ) : (
-            <SandboxInspectIncompatible templateNameOrId={templateNameOrId} />
+            <SandboxInspectIncompatible
+              templateNameOrId={templateNameOrId}
+              teamIdOrSlug={teamIdOrSlug}
+            />
           )}
         </TabsContent>
       ))}
