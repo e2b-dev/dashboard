@@ -20,7 +20,7 @@ import { HELP_URLS, PROTECTED_URLS } from '@/configs/urls'
 import Link from 'next/link'
 import { CodeBlock } from '@/ui/code-block'
 import { Badge } from '@/ui/primitives/badge'
-import ExternalIcon from '@/ui/external-icon'
+import { AsciiBackgroundPattern } from '@/ui/patterns'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
@@ -33,14 +33,18 @@ export default function SandboxInspectIncompatible({
 }: SandboxInspectIncompatibleProps) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
+      <div className="text-border-300 absolute top-40 -left-1/2 z-0 flex overflow-hidden">
+        <AsciiBackgroundPattern className="w-1/2" />
+        <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
+      </div>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, ease: 'easeInOut' }}
-        className="w-full max-w-md"
+        className="relative z-10 w-full max-w-md"
       >
-        <Card className="w-full">
-          <CardHeader className="px-0 pb-10">
+        <Card className="bg-bg w-full border">
+          <CardHeader className="pb-10">
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-warning h-5 w-5" />
               <CardTitle className="text-lg">Incompatible Template</CardTitle>
@@ -59,7 +63,7 @@ export default function SandboxInspectIncompatible({
               </span>
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="py-0">
             {templateNameOrId && (
               <ol className="ml-4 list-decimal space-y-6.5 font-sans leading-5">
                 <li className="text-fg flex-col space-y-3 marker:font-semibold">
@@ -100,7 +104,7 @@ export default function SandboxInspectIncompatible({
               </ol>
             )}
           </CardContent>
-          <CardFooter className="justify-between border-none px-0 pt-10">
+          <CardFooter className="justify-between border-none pt-10">
             <Button
               variant="ghost"
               size="slate"
@@ -114,13 +118,12 @@ export default function SandboxInspectIncompatible({
             </Button>
             <Button
               size="lg"
-              variant="outline"
+              variant="warning"
               className="pr-3 font-sans normal-case"
               asChild
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
-                Documentation{' '}
-                <ArrowUpRight className="text-fg-500 size-5 !stroke-[1px]" />
+                Documentation <ArrowUpRight className="size-5 !stroke-[1px]" />
               </Link>
             </Button>
           </CardFooter>
