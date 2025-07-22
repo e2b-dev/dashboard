@@ -170,6 +170,10 @@ export function MetadataCell({
   const value = getValue() as string
   const json = useMemo(() => JSON.parse(value), [value])
 
+  if (value.trim() === '{}') {
+    return <span className="text-fg-500">n/a</span>
+  }
+
   return (
     <JsonPopover
       className="text-fg-500 hover:text-fg hover:underline"
