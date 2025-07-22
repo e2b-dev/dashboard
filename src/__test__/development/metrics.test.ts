@@ -17,8 +17,8 @@ const SBX_TIMEOUT_MS = 60_000
 const STRESS_TIMEOUT_MS = 60_000
 const TEMPLATE = process.env.TEST_METRICS_TEMPLATE ?? 'base'
 
-const MEMORY_MB = 800 // allocate this much memory inside sandbox in MB
-const CPU_OPS = 5_000_000 // iterations of CPU intensive math
+const MEMORY_MB = 1024 // allocate this much memory inside sandbox in MB
+const CPU_OPS = 100_000_000 // iterations of CPU intensive math
 
 function buildStressCode(memoryMb: number, cpuOps: number): string {
   return `
@@ -85,11 +85,13 @@ describe('E2B Sandbox metrics', () => {
 
       try {
         // Execute stress code inside each sandbox
-        sandboxes.map((sbx) =>
-          sbx.commands.run(stressCode, {
-            timeoutMs: STRESS_TIMEOUT_MS,
-          })
-        )
+        void (await Promise.all(
+          sandboxes.map((sbx) =>
+            sbx.commands.run(stressCode, {
+              timeoutMs: STRESS_TIMEOUT_MS,
+            })
+          )
+        ))
       } catch (error) {
         // ignore errors
       }
