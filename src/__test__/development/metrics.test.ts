@@ -83,18 +83,22 @@ describe('E2B Sandbox metrics', () => {
 
       const stressCode = buildStressCode(MEMORY_MB, CPU_OPS)
 
-      try {
-        // Execute stress code inside each sandbox
-        void (await Promise.all(
-          sandboxes.map((sbx) =>
-            sbx.commands.run(stressCode, {
-              timeoutMs: STRESS_TIMEOUT_MS,
-            })
+      const runStressCode = async () => {
+        try {
+          // Execute stress code inside each sandbox
+          await Promise.all(
+            sandboxes.map((sbx) =>
+              sbx.commands.run(stressCode, {
+                timeoutMs: STRESS_TIMEOUT_MS,
+              })
+            )
           )
-        ))
-      } catch (error) {
-        // ignore errors
+        } catch (error) {
+          console.error(error)
+        }
       }
+
+      runStressCode()
 
       expect(sandboxes.length).toBe(SPAWN_COUNT)
     }
