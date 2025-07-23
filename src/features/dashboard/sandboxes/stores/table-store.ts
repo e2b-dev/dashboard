@@ -7,7 +7,6 @@ import {
   RowPinningState,
   SortingState,
 } from '@tanstack/react-table'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { StartedAtFilter } from '../table-filters'
 import { PollingInterval } from '@/types/dashboard.types'
 import { createHashStorage } from '@/lib/utils/store'
@@ -27,9 +26,6 @@ interface SandboxTableState {
   templateIds: string[]
   cpuCount: number | undefined
   memoryMB: number | undefined
-
-  // Metrics
-  metrics: ClientSandboxesMetrics
 }
 
 interface SandboxTableActions {
@@ -44,9 +40,6 @@ interface SandboxTableActions {
   setCpuCount: (count: number | undefined) => void
   setMemoryMB: (mb: number | undefined) => void
   resetFilters: () => void
-
-  // Metrics actions
-  setMetrics: (metrics: ClientSandboxesMetrics) => void
 
   // Page actions
   setPollingInterval: (interval: PollingInterval) => void
@@ -68,9 +61,6 @@ const initialState: SandboxTableState = {
   templateIds: [],
   cpuCount: undefined,
   memoryMB: undefined,
-
-  // Metrics
-  metrics: {},
 }
 
 export const useSandboxTableStore = create<Store>()(
@@ -174,11 +164,6 @@ export const useSandboxTableStore = create<Store>()(
         trackTableInteraction('reset filters')
       },
 
-      // Metrics actions
-      setMetrics: (metrics) => {
-        set({ metrics })
-      },
-
       // Page actions
       setPollingInterval: (pollingInterval) => {
         set({ pollingInterval })
@@ -192,12 +177,6 @@ export const useSandboxTableStore = create<Store>()(
       storage: createJSONStorage(() =>
         createHashStorage<SandboxTableState>(initialState)
       ),
-      partialize: (state) => {
-        const { metrics, ...rest } = state as unknown as SandboxTableState & {
-          metrics: ClientSandboxesMetrics
-        }
-        return rest
-      },
     }
   )
 )

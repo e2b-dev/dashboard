@@ -13,19 +13,18 @@ import { useServerContext } from '@/lib/hooks/use-server-context'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useTemplateTableStore } from '../templates/stores/table-store'
 import { JsonPopover } from '@/ui/json-popover'
-import { useSandboxTableStore } from './stores/table-store'
+import { useSandboxMetricsStore } from './stores/metrics-store'
 
 declare module '@tanstack/react-table' {
   interface TableState {
     templates?: Template[]
-    metrics?: ClientSandboxesMetrics
   }
 }
 
 export function CpuUsageCell({
   row,
 }: CellContext<SandboxWithMetrics, unknown>) {
-  const metrics = useSandboxTableStore(
+  const metrics = useSandboxMetricsStore(
     (s) => s.metrics?.[row.original.sandboxID]
   )
 
@@ -70,7 +69,7 @@ export function CpuUsageCell({
 export function RamUsageCell({
   row,
 }: CellContext<SandboxWithMetrics, unknown>) {
-  const metrics = useSandboxTableStore(
+  const metrics = useSandboxMetricsStore(
     (s) => s.metrics?.[row.original.sandboxID]
   )
 

@@ -35,6 +35,7 @@ import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { useSandboxMetricsStore } from './stores/metrics-store'
 
 const INITIAL_VISUAL_ROWS_COUNT = 50
 
@@ -152,19 +153,11 @@ export default function SandboxesTable({
     []
   )
 
-  const { metrics } = useSandboxesMetrics({
+  useSandboxesMetrics({
     initialMetrics,
     sandboxes: visualRows.map((row) => row.original),
     pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
-
-  const setMetrics = useSandboxTableStore((s) => s.setMetrics)
-
-  React.useEffect(() => {
-    if (metrics) {
-      setMetrics(metrics)
-    }
-  }, [metrics, setMetrics])
 
   const data = useMemo(() => sandboxes as SandboxWithMetrics[], [sandboxes])
 

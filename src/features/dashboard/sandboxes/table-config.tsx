@@ -115,37 +115,6 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
   return true
 }
 
-// ---------- Sorting functions that rely on live metrics in the zustand store ----------
-
-const compareNumbers = (a: number, b: number) => (a === b ? 0 : a > b ? 1 : -1)
-
-export const cpuMetricSortingFn = (
-  rowA: Row<SandboxWithMetrics>,
-  rowB: Row<SandboxWithMetrics>
-) => {
-  const metrics = useSandboxTableStore.getState().metrics
-
-  const cpuA = metrics?.[rowA.original.sandboxID]?.cpuUsedPct ?? -1
-  const cpuB = metrics?.[rowB.original.sandboxID]?.cpuUsedPct ?? -1
-
-  return compareNumbers(cpuA, cpuB)
-}
-
-export const ramMetricSortingFn = (
-  rowA: Row<SandboxWithMetrics>,
-  rowB: Row<SandboxWithMetrics>
-) => {
-  const metrics = useSandboxTableStore.getState().metrics
-
-  const mA = metrics?.[rowA.original.sandboxID]
-  const mB = metrics?.[rowB.original.sandboxID]
-
-  const ramA = mA && mA.memTotalMb ? mA.memUsedMb / mA.memTotalMb : -1
-  const ramB = mB && mB.memTotalMb ? mB.memUsedMb / mB.memTotalMb : -1
-
-  return compareNumbers(ramA, ramB)
-}
-
 // TABLE CONFIG
 
 export const fallbackData: SandboxWithMetrics[] = []
@@ -174,34 +143,22 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
   {
     id: 'cpuUsage',
     header: 'CPU Usage',
-    accessorFn: (row) => {
-      const metrics = useSandboxTableStore.getState().metrics
-      return metrics?.[row.sandboxID]?.cpuUsedPct ?? null
-    },
     cell: (props) => <CpuUsageCell {...props} />,
     size: 175,
     minSize: 120,
-    enableSorting: true,
-    sortingFn: cpuMetricSortingFn,
-    enableColumnFilter: false,
+    enableSorting: false,
+    enableColumnFilter: true,
+    filterFn: resourceRangeFilter,
   },
   {
     id: 'ramUsage',
     header: 'Memory Usage',
-    accessorFn: (row) => {
-      const metrics = useSandboxTableStore.getState().metrics
-      const m = metrics?.[row.sandboxID]
-      if (m?.memUsedMb && m.memTotalMb) {
-        return Number(((m.memUsedMb / m.memTotalMb) * 100).toFixed(2))
-      }
-      return null
-    },
     cell: (props) => <RamUsageCell {...props} />,
     size: 175,
     minSize: 160,
-    enableSorting: true,
-    sortingFn: ramMetricSortingFn,
-    enableColumnFilter: false,
+    enableSorting: false,
+    enableColumnFilter: true,
+    filterFn: resourceRangeFilter,
   },
   {
     id: 'metadata',

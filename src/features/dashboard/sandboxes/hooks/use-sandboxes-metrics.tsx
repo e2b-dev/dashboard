@@ -7,6 +7,7 @@ import { useEffect } from 'react'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
+import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface MetricsResponse {
   metrics: ClientSandboxesMetrics
@@ -35,7 +36,7 @@ export function useSandboxesMetrics({
     async ([url]) => {
       if (sandboxIds.length === 0) {
         return {
-          metrics: {},
+          metrics: initialMetrics ?? {},
         }
       }
 
@@ -62,17 +63,17 @@ export function useSandboxesMetrics({
     },
     {
       refreshInterval: pollingInterval,
-      errorRetryInterval: 1000,
+      errorRetryInterval: 2000,
       errorRetryCount: 3,
       revalidateOnMount: true,
       revalidateIfStale: true,
-      revalidateOnFocus: true,
+      revalidateOnFocus: false,
       revalidateOnReconnect: true,
       fallbackData: initialMetrics ? { metrics: initialMetrics } : undefined,
     }
   )
 
-  const setMetrics = useSandboxTableStore((s) => s.setMetrics)
+  const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
 
   useEffect(() => {
     if (data?.metrics) {
