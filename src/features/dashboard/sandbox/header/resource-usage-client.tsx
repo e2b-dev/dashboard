@@ -14,20 +14,25 @@ export const ResourceUsageClient = memo(
     const metrics = useMemo(
       () =>
         props.type === 'cpu' ? lastMetrics?.cpuUsedPct : lastMetrics?.memUsedMb,
-      [props.type, lastMetrics?.cpuUsedPct, lastMetrics?.memUsedMb]
+      [props.type, lastMetrics]
     )
 
     return (
       <ResourceUsage
         {...props}
         classNames={{
-          wrapper: 'font-sans tracking-widest',
+          wrapper: 'font-sans text-md',
+          ...props.classNames,
         }}
         metrics={metrics}
       />
     )
   },
   (prevProps, nextProps) => {
-    return prevProps.type === nextProps.type
+    return (
+      prevProps.type === nextProps.type &&
+      prevProps.total === nextProps.total &&
+      prevProps.mode === nextProps.mode
+    )
   }
 )
