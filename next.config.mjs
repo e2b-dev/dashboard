@@ -1,10 +1,26 @@
 import { withSentryConfig } from '@sentry/nextjs'
-import { createMDX } from 'fumadocs-mdx/next'
 
-const withMDX = createMDX()
+
+const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' ${process.env.CSP_SCRIPT_SRC};
+    style-src 'self' 'unsafe-inline' ${process.env.CSP_STYLE_SRC};
+    img-src 'self' data: ${process.env.NEXT_PUBLIC_SUPABASE_URL} ${process.env.CSP_IMG_SRC};
+    frame-src 'self' ${process.env.CSP_FRAME_SRC};
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    worker-src 'self' blob: ${process.env.CSP_SCRIPT_SRC};
+    upgrade-insecure-requests;
+`
 
 /** @type {import('next').NextConfig} */
 const config = {
+  eslint: {
+    dirs: ['src', 'scripts'], // Only run ESLint on these directories during production builds
+  },
   reactStrictMode: true,
   experimental: {
     reactCompiler: true,
@@ -25,12 +41,21 @@ const config = {
   trailingSlash: false,
   headers: async () => [
     {
-      source: '/:path*',
+      source: '/(.*)',
       headers: [
         {
           // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
           key: 'X-Frame-Options',
           value: 'SAMEORIGIN',
+        },
+      ],
+    },
+    {
+      source: '/dashboard/(.*)',
+      headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: cspHeader.replace(/\n/g, ''),
         },
       ],
     },
@@ -75,7 +100,7 @@ const config = {
   skipTrailingSlashRedirect: true,
 }
 
-export default withSentryConfig(withMDX(config), {
+export default withSentryConfig(config, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

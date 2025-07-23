@@ -172,7 +172,7 @@ describe('Middleware Integration Tests', () => {
       expect(redirectCalls.length).toBeGreaterThan(0)
 
       if (redirectCalls.length > 0) {
-        const redirectUrl = redirectCalls[0][0].toString()
+        const redirectUrl = redirectCalls[0]![0].toString()
         expect(redirectUrl).toContain(AUTH_URLS.SIGN_IN)
       }
     })
@@ -214,7 +214,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain('default-team')
+        expect(redirectCalls[0]![0].toString()).toContain('default-team')
       }
     })
   })
@@ -243,7 +243,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        const url = redirectCalls[0][0].toString()
+        const url = redirectCalls[0]![0].toString()
         expect(url).toContain(PROTECTED_URLS.DASHBOARD)
         expect(url).not.toContain('tampered-team-id')
       }
@@ -318,7 +318,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain('default-team')
+        expect(redirectCalls[0]![0].toString()).toContain('default-team')
       }
     })
 
@@ -354,7 +354,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain(
+        expect(redirectCalls[0]![0].toString()).toContain(
           PROTECTED_URLS.NEW_TEAM
         )
       }
@@ -394,7 +394,7 @@ describe('Middleware Integration Tests', () => {
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
       expect(redirectCalls.length).toBeGreaterThan(0)
       if (redirectCalls.length > 0) {
-        expect(redirectCalls[0][0].toString()).toContain('/')
+        expect(redirectCalls[0]![0].toString()).toContain('/')
       }
     })
   })
