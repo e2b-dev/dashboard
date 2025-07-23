@@ -159,7 +159,7 @@ export default function SandboxesTable({
     pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
 
-  const data = useMemo(() => sandboxes as SandboxWithMetrics[], [sandboxes])
+  const data = useMemo(() => sandboxes, [sandboxes])
 
   const table = useReactTable({
     columns: COLUMNS,
