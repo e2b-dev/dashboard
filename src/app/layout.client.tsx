@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import { GTMBody } from '@/features/google-tag-manager'
 import { cn } from '@/lib/utils'
 import { useParams } from 'next/navigation'
