@@ -65,6 +65,9 @@ export default async function SandboxDetailsHeader({
           type="cpu"
           total={sandboxInfo.cpuCount}
           mode="usage"
+          classNames={{
+            dot: 'mx-1',
+          }}
         />
       ),
     },
@@ -75,6 +78,9 @@ export default async function SandboxDetailsHeader({
           type="mem"
           total={sandboxInfo.memoryMB}
           mode="usage"
+          classNames={{
+            dot: 'mx-1',
+          }}
         />
       ),
     },

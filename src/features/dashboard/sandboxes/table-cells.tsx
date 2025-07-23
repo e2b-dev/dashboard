@@ -2,7 +2,6 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useServerContext } from '@/features/dashboard/server-context'
-import { cn } from '@/lib/utils'
 import { Template } from '@/types/api'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
@@ -10,6 +9,7 @@ import { CellContext } from '@tanstack/react-table'
 import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
+import ResourceUsage from '../common/resource-usage'
 import { useTemplateTableStore } from '../templates/stores/table-store'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import { SandboxWithMetrics } from './table-config'
@@ -27,41 +27,12 @@ export function CpuUsageCell({
     (s) => s.metrics?.[row.original.sandboxID]
   )
 
-  const percentage = metrics?.cpuUsedPct ?? 0
-  const cpuCount = row.original.cpuCount
-
-  const hasMetrics = metrics !== null && metrics !== undefined
-
-  const textClassName = useMemo(
-    () =>
-      cn(
-        percentage >= 90
-          ? 'text-error'
-          : percentage >= 70
-            ? 'text-warning'
-            : 'text-fg'
-      ),
-    [percentage]
-  )
-
   return (
-    <span
-      className={cn('text-fg-500 inline truncate font-mono whitespace-nowrap')}
-    >
-      {hasMetrics ? (
-        <>
-          <span className={textClassName}>{percentage}% </span>
-          <span className="text-fg-500">·</span>
-        </>
-      ) : (
-        <>
-          <span className="text-fg-500">n/a </span>
-          <span className="text-fg-500">·</span>
-        </>
-      )}
-      <span className="text-contrast-2"> {cpuCount ?? '-'}</span>&nbsp;Core
-      {cpuCount && cpuCount > 1 ? 's' : ''}
-    </span>
+    <ResourceUsage
+      type="cpu"
+      metrics={metrics?.cpuUsedPct}
+      total={row.original.cpuCount}
+    />
   )
 }
 
@@ -72,55 +43,12 @@ export function RamUsageCell({
     (s) => s.metrics?.[row.original.sandboxID]
   )
 
-  const percentage = useMemo(() => {
-    if (metrics?.memUsedMb && metrics.memTotalMb) {
-      return Number(((metrics.memUsedMb / metrics.memTotalMb) * 100).toFixed(2))
-    }
-    return 0
-  }, [metrics])
-
-  const hasMetrics = metrics !== null && metrics !== undefined
-
-  const totalRamMB = useMemo(
-    () => row.original.memoryMB.toLocaleString(),
-    [row.original.memoryMB]
-  )
-
-  const usedRamMB = useMemo(
-    () => (hasMetrics ? metrics.memUsedMb.toLocaleString() : 'n/a'),
-    [hasMetrics, metrics]
-  )
-
-  const textClassName = useMemo(
-    () =>
-      cn(
-        percentage >= 95
-          ? 'text-error'
-          : percentage >= 70
-            ? 'text-warning'
-            : 'text-fg'
-      ),
-    [percentage]
-  )
-
   return (
-    <span
-      className={cn('text-fg-500 inline truncate font-mono whitespace-nowrap')}
-    >
-      {hasMetrics ? (
-        <>
-          <span className={textClassName}>{percentage}% </span>
-          <span className="text-fg-500">·</span>
-          <span className={textClassName}> {usedRamMB}</span> /
-        </>
-      ) : (
-        <>
-          <span className="text-fg-500">n/a </span>
-          <span className="text-fg-500">·</span>
-        </>
-      )}
-      <span className="text-contrast-1"> {totalRamMB} </span> MB
-    </span>
+    <ResourceUsage
+      type="mem"
+      metrics={metrics?.memUsedMb}
+      total={row.original.memoryMB}
+    />
   )
 }
 

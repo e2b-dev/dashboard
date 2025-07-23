@@ -9,6 +9,7 @@ export interface ResourceUsageProps {
   mode?: 'usage' | 'simple'
   classNames?: {
     wrapper?: string
+    dot?: string
   }
 }
 
@@ -21,17 +22,23 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
 }) => {
   const isCpu = type === 'cpu'
   const unit = isCpu ? 'Core' : 'MB'
+  const hasMetrics = metrics !== null && metrics !== undefined
 
   if (mode === 'simple') {
     const displayTotal = total ? total.toLocaleString() : 'n/a'
     return (
       <p className="text-sm">
         {displayTotal} {unit}
+        {isCpu && total && total > 1 ? 's' : ''}
       </p>
     )
   }
 
-  const percentage = metrics && total ? (metrics / total) * 100 : 0
+  const percentage = isCpu
+    ? (metrics ?? 0)
+    : metrics && total
+      ? (metrics / total) * 100
+      : 0
   const roundedPercentage = Math.round(percentage)
 
   const textClassName = cn(
@@ -42,7 +49,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         : 'text-fg'
   )
 
-  const displayValue = metrics ? metrics.toLocaleString() : 'n/a'
+  const displayValue = hasMetrics ? metrics.toLocaleString() : 'n/a'
   const totalValue = total ? total.toLocaleString() : '-'
 
   return (
@@ -52,19 +59,24 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         classNames?.wrapper
       )}
     >
-      {metrics !== null && total !== null ? (
+      {hasMetrics ? (
         <>
           <span className={textClassName}>{roundedPercentage}% </span>
-          <span className="text-fg-500">·</span>
-          <span className={textClassName}> {displayValue}</span> /
+          <span className={cn('text-fg-500', classNames?.dot)}>·</span>
+          {!isCpu && (
+            <>
+              <span className={textClassName}> {displayValue}</span> /
+            </>
+          )}
         </>
       ) : (
         <>
           <span className="text-fg-500">n/a </span>
-          <span className="text-fg-500">·</span>
+          <span className={cn('text-fg-500', classNames?.dot)}>·</span>
         </>
       )}
       <span className="text-contrast-1"> {totalValue} </span> {unit}
+      {isCpu && total && total > 1 ? 's' : ''}
     </span>
   )
 }
