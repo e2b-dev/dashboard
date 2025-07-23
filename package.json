@@ -11,8 +11,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "<<<<<< Development Tools": "",
-    "dev:scan": "bun dev & bun scan",
-    "start:scan": "bun start & bun scan",
+    "scan:local": "bunx react-scan@latest localhost:3000",
     "<<<<<< Database": "",
     "db:migrations:create": "bun run scripts:create-migration",
     "db:migrations:apply": "bun run scripts:apply-migrations",
@@ -123,6 +122,7 @@
     "zustand-computed": "^2.0.2"
   },
   "devDependencies": {
+    "react-scan": "^0.4.3",
     "@bufbuild/buf": "^1.54.0",
     "@bufbuild/protobuf": "^2.5.2",
     "@bufbuild/protoc-gen-es": "^2.5.2",
