@@ -147,7 +147,7 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
             <ShikiHighlighter
               language={lang}
               theme={shikiTheme}
-              className="text-xs"
+              className="text-xs [&_span]:!px-0"
               addDefaultStyles={false}
               showLanguage={false}
             >

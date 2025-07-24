@@ -1,11 +1,6 @@
 'use client'
 
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  ChevronLeft,
-  ExternalLink,
-} from 'lucide-react'
+import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -31,6 +26,8 @@ export default function SandboxInspectIncompatible({
   templateNameOrId,
   teamIdOrSlug,
 }: SandboxInspectIncompatibleProps) {
+  const codeClassNames = 'mx-0.5 h-5.5 rounded-none align-middle'
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
       <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
@@ -41,44 +38,33 @@ export default function SandboxInspectIncompatible({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, ease: 'easeInOut' }}
-        className="relative z-10 w-full max-w-md"
+        className="relative z-10 h-fit w-fit"
       >
-        <Card className="bg-bg w-full border">
-          <CardHeader className="pb-10">
+        <Card className="bg-bg flex h-full min-h-160 w-full max-w-150 flex-col justify-between border p-7">
+          <CardHeader className="px-0 pt-0 pb-7">
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-warning h-5 w-5" />
               <CardTitle className="text-lg">Incompatible template</CardTitle>
             </div>
-            <CardDescription className="text-fg-300 flex flex-col gap-3 leading-5">
-              <span>
-                This sandbox uses a template, which is incompatible with the
-                filesystem inspector.
-              </span>
-              <span>
-                To view filesystem data, you need to{' '}
-                <span className="text-fg font-medium">
-                  rebuild the template
-                </span>
-                .
-              </span>
+            <CardDescription className="text-fg-300 leading-5">
+              This Sandbox used a template, incompatible with the filesystem
+              inspector. To use the inspector in any new sandbox you launch,{' '}
+              <span className="text-fg font-medium">rebuild the template</span>.
             </CardDescription>
           </CardHeader>
-          <CardContent className="py-0">
+          <CardContent className="pb-auto flex-1 p-0">
             {templateNameOrId && (
-              <ol className="ml-4 list-decimal space-y-6.5 font-sans leading-5">
+              <ol className="ml-4 list-decimal space-y-6 font-sans leading-5">
                 <li className="text-fg flex-col space-y-3 marker:font-semibold">
                   <p className="font-semibold">
                     Navigate to your template's folder
                   </p>
-                  <CodeBlock className="-ml-4" title="" lang="bash">
-                    {`cd your-template-folder`}
+                  <CodeBlock className="-ml-4" lang="bash">
+                    {`cd path/to/your/template`}
                   </CodeBlock>
                   <div className="text-fg-300 -ml-4 inline-block">
                     The folder should contain an{' '}
-                    <Badge
-                      className="mx-1 h-5.5 rounded-none"
-                      variant="outline"
-                    >
+                    <Badge className={codeClassNames} variant="outline">
                       e2b.toml
                     </Badge>{' '}
                     file.
@@ -86,29 +72,45 @@ export default function SandboxInspectIncompatible({
                 </li>
 
                 <li className="text-fg flex-col space-y-3 marker:font-semibold">
-                  <p className="font-semibold">Build the template</p>
-                  <CodeBlock className="-ml-4" title="" lang="bash">
-                    {`e2b template build # -c "start.sh"`}
-                  </CodeBlock>
-                  <div className="text-fg-300 -ml-4 inline-block">
-                    Add{' '}
-                    <Badge
-                      className="mx-1 h-5.5 rounded-none"
-                      variant="outline"
-                    >
-                      -c "your start command"
+                  <p className="font-semibold">Rebuild the template</p>
+                  <div className="text-fg-300 -ml-4 inline-block leading-6">
+                    Use{' '}
+                    <Badge className={codeClassNames} variant="outline">
+                      e2b template build
                     </Badge>{' '}
-                    to specify a start command. (optional)
+                    along with custom{' '}
+                    <Link
+                      className="text-fg underline"
+                      href={HELP_URLS.START_COMMAND}
+                      target="_blank"
+                    >
+                      start commands
+                    </Link>{' '}
+                    and any other arguments to rebuild. For example:
+                    <Badge className={codeClassNames} variant="outline">
+                      -c "start.sh"
+                    </Badge>
+                  </div>
+                </li>
+
+                <li className="text-fg flex-col space-y-3 marker:font-semibold">
+                  <p className="font-semibold">
+                    New sandboxes have filesystem inspector
+                  </p>
+                  <div className="text-fg-300 -ml-4 inline-block leading-6">
+                    Any new sandbox you launch will have filesystem inspector
+                    enabled.{' '}
+                    <b>This won&apos;t affect already started sandboxes.</b>
                   </div>
                 </li>
               </ol>
             )}
           </CardContent>
-          <CardFooter className="justify-between border-none pt-10">
+          <CardFooter className="pt-auto justify-between border-none px-0 pb-0 max-md:flex-col max-md:gap-4">
             <Button
               variant="ghost"
               size="slate"
-              className="text-fg-500 hover:text-fg font-sans normal-case"
+              className="text-fg-500 hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
               <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>
@@ -118,12 +120,13 @@ export default function SandboxInspectIncompatible({
             </Button>
             <Button
               size="lg"
-              variant="warning"
-              className="pr-3 font-sans normal-case"
+              variant="outline"
+              className="pr-3 font-sans normal-case max-md:w-full"
               asChild
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
-                Documentation <ArrowUpRight className="size-5 !stroke-[1px]" />
+                Documentation{' '}
+                <ArrowUpRight className="text-border-500 size-5 !stroke-[1px]" />
               </Link>
             </Button>
           </CardFooter>
