@@ -1,8 +1,10 @@
+import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
 import { DashboardSurveyPopover } from '@/features/dashboard/navbar/dashboard-survey-popover'
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
 import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { isVersionCompatible } from '@/lib/utils/version'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
@@ -29,13 +31,13 @@ export default async function SandboxLayout({
     throw notFound()
   }
 
-  const isEnvdVersionCompatible = false /* Boolean(
+  const isEnvdVersionIncompatibleForInspect = Boolean(
     res.data.envdVersion &&
       isVersionCompatible(
         res.data.envdVersion,
         SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
       )
-  ) */
+  )
 
   return (
     <SandboxProvider teamId={teamId} sandboxInfo={res?.data}>
@@ -58,7 +60,9 @@ export default async function SandboxLayout({
         />
         <SandboxDetailsTabs
           tabs={['inspect']}
-          isEnvdVersionCompatible={isEnvdVersionCompatible}
+          isEnvdVersionIncompatibleForInspect={
+            isEnvdVersionIncompatibleForInspect
+          }
           templateNameOrId={res.data.alias || res.data.templateID}
           teamIdOrSlug={teamIdOrSlug}
         >

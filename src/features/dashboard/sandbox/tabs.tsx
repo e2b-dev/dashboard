@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 interface SandboxDetailsTabsProps {
   tabs: string[]
   children: ReactNode
-  isEnvdVersionCompatible: boolean
+  isEnvdVersionIncompatibleForInspect: boolean
   templateNameOrId: string
   teamIdOrSlug: string
 }
@@ -17,14 +17,15 @@ interface SandboxDetailsTabsProps {
 export default function SandboxDetailsTabs({
   tabs,
   children,
-  isEnvdVersionCompatible,
+  isEnvdVersionIncompatibleForInspect,
   templateNameOrId,
   teamIdOrSlug,
 }: SandboxDetailsTabsProps) {
   const pathname = usePathname()
   const tab = pathname.split('/').pop() || tabs[0]
 
-  const showInspectTab = tab === 'inspect' && isEnvdVersionCompatible
+  const showInspectTab =
+    tab === 'inspect' && isEnvdVersionIncompatibleForInspect
 
   return (
     <Tabs defaultValue={tab} value={tab} className="min-h-0 w-full flex-1">
