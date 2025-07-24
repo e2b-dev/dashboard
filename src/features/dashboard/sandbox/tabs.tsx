@@ -40,10 +40,7 @@ export default function SandboxDetailsTabs({
         <TabsContent
           key={tab}
           value={tab}
-          className={cn(
-            'flex flex-1 flex-col',
-            !showInspectTab ? 'min-h-150' : 'min-h-0'
-          )}
+          className={cn('flex flex-1 flex-col')}
         >
           {showInspectTab ? (
             children

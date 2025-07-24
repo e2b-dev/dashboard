@@ -28,6 +28,7 @@ export const PROTECTED_URLS = {
 export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
+  START_COMMAND: 'https://e2b.dev/docs/sandbox-template/start-cmd',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV
