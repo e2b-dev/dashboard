@@ -45,7 +45,8 @@ export async function POST(
       l.error('GET_TEAM_SANDBOXES_METRICS:INFRA_ERROR', infraRes.error, {
         path: '/sandboxes/metrics',
         status,
-        body: infraRes.response.body,
+        sandboxIds,
+        userId: session.user.id,
       })
 
       return Response.json(

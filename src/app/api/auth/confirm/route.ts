@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { error, data } = await supabase.auth.verifyOtp({
       type: supabaseType,
       token_hash: supabaseTokenHash,
     })
@@ -127,6 +127,7 @@ export async function GET(request: NextRequest) {
       supabaseRedirectTo,
       redirectUrl: redirectUrl.toString(),
       reauth: redirectUrl.searchParams.get('reauth'),
+      userId: data?.user?.id,
     })
 
     return NextResponse.redirect(redirectUrl.toString())

@@ -60,7 +60,12 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   })
 
   if (res.error) {
-    l.error('GENERATE_E2B_USER_ACCESS_TOKEN:INFRASERVER_ERROR', res.error)
+    l.error('GENERATE_E2B_USER_ACCESS_TOKEN:INFRA_ERROR', res.error, {
+      status: res.response.status,
+      method: 'POST',
+      path: '/access-tokens',
+      name: TOKEN_NAME,
+    })
 
     return returnServerError(`Failed to generate e2b user access token`)
   }

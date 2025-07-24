@@ -44,7 +44,9 @@ export const getTeamTemplates = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      l.error('GET_TEAM_TEMPLATES:INFRA_ERROR', res.error, res.response, {
+      l.error('GET_TEAM_TEMPLATES:INFRA_ERROR', res.error, {
+        teamId,
+        userId: session.user.id,
         status,
       })
 

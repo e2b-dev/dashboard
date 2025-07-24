@@ -31,6 +31,7 @@ export const getTeamApiKeys = authActionClient
       l.error('GET_TEAM_API_KEYS:ERROR', res.error, {
         status,
         teamId,
+        userId: session.user.id,
       })
 
       return handleDefaultInfraError(status)

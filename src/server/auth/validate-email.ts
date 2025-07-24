@@ -87,7 +87,9 @@ export async function validateEmail(
         return { valid: true, data }
     }
   } catch (error) {
-    l.error('EMAIL_VALIDATION:ERROR', error)
+    l.error('EMAIL_VALIDATION:ERROR', error, {
+      email,
+    })
     return null
   }
 }

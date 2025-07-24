@@ -52,9 +52,10 @@ export const getTeamSandboxes = authActionClient
         const status = sandboxesRes.response.status
 
         l.error('GET_TEAM_SANDBOXES:INFRA_ERROR', sandboxesRes.error, {
+          teamId,
+          userId: session.user.id,
           path: '/v2/sandboxes',
           status,
-          body: sandboxesRes.response.body,
         })
 
         return handleDefaultInfraError(status)

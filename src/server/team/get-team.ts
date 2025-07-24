@@ -137,6 +137,7 @@ export const getUserTeams = authActionClient
     } catch (err) {
       l.error('GET_USER_TEAMS:UNEXPECTED_ERROR', err, {
         usersTeamsData,
+        userId: user.id,
       })
 
       return usersTeamsData.map((userTeam) => ({

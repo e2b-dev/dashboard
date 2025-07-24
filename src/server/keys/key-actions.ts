@@ -40,6 +40,7 @@ export const createApiKeyAction = authActionClient
     if (res.error) {
       l.error('CREATE_API_KEY:ERROR', res.error, {
         teamId,
+        userId: session.user.id,
         name,
       })
 
@@ -83,6 +84,7 @@ export const deleteApiKeyAction = authActionClient
     if (res.error) {
       l.error('DELETE_API_KEY:ERROR', res.error, {
         teamId,
+        userId: session.user.id,
         apiKeyId,
       })
 

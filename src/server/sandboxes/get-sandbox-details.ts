@@ -34,6 +34,7 @@ export const getSandboxDetails = authActionClient
       l.error('GET_SANDBOX_DETAILS:INFRA_ERROR', res.error, {
         status,
         teamId,
+        userId: session.user.id,
         sandboxId,
       })
 

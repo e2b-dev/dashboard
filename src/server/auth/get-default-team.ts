@@ -14,7 +14,6 @@ export async function getDefaultTeamRelation(userId: string) {
     l.error('GET_DEFAULT_TEAM_RELATION:ERROR', error, {
       userId,
       error: error?.message,
-      data: data,
     })
     throw new Error('No default team found')
   }
@@ -43,7 +42,6 @@ export async function getDefaultTeam(userId: string) {
     l.error('GET_DEFAULT_TEAM:ERROR', error, {
       userId,
       error: error?.message,
-      data: data,
     })
     throw new Error('No default team found')
   }
