@@ -10,10 +10,8 @@ function write(level: string, args: unknown[]): Logger {
   } else {
     console.log(message, ...rest)
   }
-
   return logger as Logger
 }
-
 export const logger: Partial<Logger> = {
   debug: (...args: unknown[]) => write('debug', args),
   info: (...args: unknown[]) => write('info', args),
