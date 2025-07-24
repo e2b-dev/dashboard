@@ -1,4 +1,4 @@
-import { GITHUB_URL } from '@/configs/socials'
+import { GITHUB_URL } from '@/configs/urls'
 import ExternalIcon from '@/ui/external-icon'
 import {
   SidebarFooter,
