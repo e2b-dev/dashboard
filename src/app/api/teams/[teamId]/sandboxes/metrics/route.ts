@@ -1,13 +1,13 @@
 import 'server-cli-only'
 
-import { infra } from '@/lib/clients/api'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { infra } from '@/lib/clients/api'
 import { createClient } from '@/lib/clients/supabase/server'
 import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
-import { logError } from '@/lib/clients/logger'
-import { ERROR_CODES } from '@/configs/logs'
-import { MetricsRequestSchema, MetricsResponse } from './types'
+
+import { l } from '@/lib/clients/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { MetricsRequestSchema, MetricsResponse } from './types'
 
 export async function POST(
   request: Request,
@@ -42,13 +42,11 @@ export async function POST(
     if (infraRes.error) {
       const status = infraRes.response.status
 
-      logError(
-        ERROR_CODES.INFRA,
-        '/sandboxes/metrics',
+      l.error('GET_TEAM_SANDBOXES_METRICS:INFRA_ERROR', infraRes.error, {
+        path: '/sandboxes/metrics',
         status,
-        infraRes.error,
-        infraRes.data
-      )
+        body: infraRes.response.body,
+      })
 
       return Response.json(
         { error: handleDefaultInfraError(status) },
