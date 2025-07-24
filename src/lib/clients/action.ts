@@ -1,8 +1,8 @@
+import { UnknownError } from '@/types/errors'
 import { createSafeActionClient } from 'next-safe-action'
-import { checkAuthenticated } from '../utils/server'
 import { z } from 'zod'
 import { ActionError } from '../utils/action'
-import { UnknownError } from '@/types/errors'
+import { checkAuthenticated } from '../utils/server'
 import { l } from './logger'
 
 export const actionClient = createSafeActionClient({
@@ -51,7 +51,6 @@ export const actionClient = createSafeActionClient({
     actionOrFunctionName,
     durationMs: duration.toFixed(2),
     input: clientInput,
-    result: resultWithoutCtx,
   }
 
   const error =
