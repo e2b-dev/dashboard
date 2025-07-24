@@ -1,24 +1,24 @@
 'use client'
 
+import { DefaultTemplate, Template } from '@/types/api'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ColumnDef,
   FilterFn,
-  getSortedRowModel,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
   TableOptions,
 } from '@tanstack/react-table'
-import { rankItem } from '@tanstack/match-sorter-utils'
-import { DefaultTemplate, Template } from '@/types/api'
-import { useMemo } from 'react'
 import posthog from 'posthog-js'
+import { useMemo } from 'react'
 import {
   ActionsCell,
+  CpuCell,
+  CreatedAtCell,
+  MemoryCell,
   TemplateIdCell,
   TemplateNameCell,
-  CpuCell,
-  MemoryCell,
-  CreatedAtCell,
   UpdatedAtCell,
   VisibilityCell,
 } from './table-cells'

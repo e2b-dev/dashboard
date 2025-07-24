@@ -1,12 +1,11 @@
 'use client'
 
-import useSWR from 'swr'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
-import { useSandboxTableStore } from '../stores/table-store'
-import { useEffect } from 'react'
+import { MOCK_METRICS_DATA } from '@/configs/mock-data'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'
-import { MOCK_METRICS_DATA } from '@/configs/mock-data'
+import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import { useEffect } from 'react'
+import useSWR from 'swr'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface MetricsResponse {

@@ -1,9 +1,9 @@
 import 'server-only'
 
-import { z } from 'zod'
-import { BillingLimit } from '@/types/billing'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
+import { BillingLimit } from '@/types/billing'
+import { z } from 'zod'
 
 const GetBillingLimitsParamsSchema = z.object({
   teamId: z.string().uuid(),

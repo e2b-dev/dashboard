@@ -1,6 +1,6 @@
 import { STORAGE_BUCKET_NAME } from '@/configs/storage'
-import { supabaseAdmin } from './supabase/admin'
 import { FileObject } from '@supabase/storage-js'
+import { supabaseAdmin } from './supabase/admin'
 
 /**
  * Upload a file to Supabase Storage

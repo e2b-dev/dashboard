@@ -1,10 +1,10 @@
 'use client'
 
-import { Tooltip, TooltipContent, TooltipTrigger } from './primitives/tooltip'
-import { Kbd, KbdProps } from './primitives/kbd'
-import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { ReactNode } from 'react'
+import { Kbd, KbdProps } from './primitives/kbd'
 import { Separator } from './primitives/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from './primitives/tooltip'
 
 interface ShortcutTooltipProps {
   children: React.ReactNode

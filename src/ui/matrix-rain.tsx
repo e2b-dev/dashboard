@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 const MatrixRainBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)

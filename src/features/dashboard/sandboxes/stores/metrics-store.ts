@@ -1,7 +1,7 @@
 'use client'
 
-import { create } from 'zustand'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import { create } from 'zustand'
 
 interface SandboxMetricsState {
   metrics: ClientSandboxesMetrics

@@ -1,12 +1,10 @@
+import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
+import { bailOutFromPPR } from '@/lib/utils/server'
 import { getTeamApiKeys } from '@/server/keys/get-api-keys'
+import { ErrorIndicator } from '@/ui/error-indicator'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import ApiKeyTableRow from './table-row'
-import { bailOutFromPPR } from '@/lib/utils/server'
-import { ErrorIndicator } from '@/ui/error-indicator'
-import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
-import { Separator } from '@/ui/primitives/separator'
-import TextSeparator from '@/ui/text-separator'
 
 interface TableBodyContentProps {
   teamId: string

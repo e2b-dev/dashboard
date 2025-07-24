@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
-import { Button } from './primitives/button'
 import React from 'react'
+import { Button } from './primitives/button'
 import { Separator } from './primitives/separator'
 
 interface TableFilterButtonProps

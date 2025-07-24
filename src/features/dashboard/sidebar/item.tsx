@@ -1,9 +1,9 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import Dotted from '@/ui/dotted'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Dotted from '@/ui/dotted'
 
 interface SidebarItemProps {
   label: React.ReactNode

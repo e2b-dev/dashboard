@@ -1,11 +1,21 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
-import { CellContext } from '@tanstack/react-table'
-import { MoreVertical, Lock, LockOpen, Cpu } from 'lucide-react'
-import { CgSmartphoneRam } from 'react-icons/cg'
+import { ByE2BBadge } from '@/features/dashboard/templates/by-e2b-badge'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { cn } from '@/lib/utils'
+import {
+  deleteTemplateAction,
+  updateTemplateAction,
+} from '@/server/templates/templates-actions'
 import { DefaultTemplate, Template } from '@/types/api'
-import { useToast } from '@/lib/hooks/use-toast'
+import { AlertDialog } from '@/ui/alert-dialog'
+import { Loader } from '@/ui/loader'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -16,18 +26,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import {
-  deleteTemplateAction,
-  updateTemplateAction,
-} from '@/server/templates/templates-actions'
-import { Badge } from '@/ui/primitives/badge'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { Loader } from '@/ui/loader'
-import { AlertDialog } from '@/ui/alert-dialog'
-import { cn } from '@/lib/utils'
+import { CellContext } from '@tanstack/react-table'
+import { Cpu, Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { ByE2BBadge } from '@/features/dashboard/templates/by-e2b-badge'
+import { useMemo, useState } from 'react'
+import { CgSmartphoneRam } from 'react-icons/cg'
 
 export function ActionsCell({
   row,

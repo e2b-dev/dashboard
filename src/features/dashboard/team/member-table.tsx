@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+import { Loader } from '@/ui/loader'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import {
   Table,
@@ -7,11 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { Loader } from '@/ui/loader'
-import { FC } from 'react'
+import { FC, Suspense } from 'react'
 import MemberTableBody from './member-table-body'
-import { Suspense } from 'react'
-import { cn } from '@/lib/utils'
 
 interface MemberTableProps {
   teamId: string

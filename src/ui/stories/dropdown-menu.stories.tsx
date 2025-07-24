@@ -1,18 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { Button } from '../primitives/button'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-  DropdownMenuGroup,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuShortcut,
+  DropdownMenuTrigger,
 } from '../primitives/dropdown-menu'
-import { Button } from '../primitives/button'
 
 const meta = {
   title: 'UI/DropdownMenu',

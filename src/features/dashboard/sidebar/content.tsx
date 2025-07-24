@@ -1,9 +1,11 @@
 'use client'
 
-import { DashboardNavLink } from '@/configs/dashboard-navs'
-import { MAIN_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
-import { cn } from '@/lib/utils'
+import {
+  DashboardNavLink,
+  MAIN_DASHBOARD_LINKS,
+} from '@/configs/dashboard-navs'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { useMemo } from 'react'
 
@@ -16,7 +18,6 @@ import {
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
 import { usePathname } from 'next/navigation'
-import TeamBlockageAlert from './blocked-banner'
 
 type GroupedLinks = {
   [key: string]: DashboardNavLink[]

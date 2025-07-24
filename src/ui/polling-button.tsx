@@ -1,15 +1,14 @@
+import { PollingInterval } from '@/types/dashboard.types'
 import { Button } from '@/ui/primitives/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/ui/primitives/select'
 import { RefreshCw } from 'lucide-react'
-import { Separator } from './primitives/separator'
-import { PollingInterval } from '@/types/dashboard.types'
 import { useEffect, useState } from 'react'
+import { Separator } from './primitives/separator'
 
 interface PollingButtonProps {
   pollingInterval: PollingInterval

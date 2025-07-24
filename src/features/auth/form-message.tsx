@@ -1,9 +1,9 @@
 'use client'
 
-import { Alert, AlertDescription } from '@/ui/primitives/alert'
 import { cn } from '@/lib/utils'
-import { CheckCircle2, AlertCircle, Info } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { Alert, AlertDescription } from '@/ui/primitives/alert'
+import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { motion } from 'motion/react'
 
 // TODO: this type is used in more places than just authentication
 // -> should probably be renamed / moved to a more appropriate location

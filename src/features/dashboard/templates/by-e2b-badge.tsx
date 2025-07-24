@@ -1,6 +1,6 @@
+import HelpTooltip from '@/ui/help-tooltip'
 import LogoWithoutText from '../../../ui/logo-without-text'
 import { Badge } from '../../../ui/primitives/badge'
-import HelpTooltip from '@/ui/help-tooltip'
 
 export function ByE2BBadge() {
   return (

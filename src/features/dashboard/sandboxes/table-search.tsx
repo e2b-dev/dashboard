@@ -1,9 +1,9 @@
-import { DebouncedInput } from '@/ui/primitives/input'
-import { cn } from '@/lib/utils'
-import React, { useCallback } from 'react'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
-import { Kbd } from '@/ui/primitives/kbd'
 import useKeydown from '@/lib/hooks/use-keydown'
+import { cn } from '@/lib/utils'
+import { DebouncedInput } from '@/ui/primitives/input'
+import { Kbd } from '@/ui/primitives/kbd'
+import React, { useCallback } from 'react'
 
 export const SearchInput = React.memo(
   React.forwardRef<

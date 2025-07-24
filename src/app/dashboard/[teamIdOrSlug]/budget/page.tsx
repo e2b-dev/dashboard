@@ -1,6 +1,6 @@
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import CreditsCard from '@/features/dashboard/budget/credits-card'
 import UsageLimits from '@/features/dashboard/budget/usage-limits'
+import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 
 interface BudgetPageProps {

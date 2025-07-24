@@ -1,10 +1,10 @@
 'use client'
 
-import * as React from 'react'
-import { ChevronUp, ChevronDown } from 'lucide-react'
-import { Input } from './primitives/input'
-import { Button } from './primitives/button'
 import { cn } from '@/lib/utils'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import * as React from 'react'
+import { Button } from './primitives/button'
+import { Input } from './primitives/input'
 
 export interface NumberInputProps
   extends Omit<

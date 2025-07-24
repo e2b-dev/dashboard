@@ -1,6 +1,6 @@
-import { GridPattern } from '@/ui/grid-pattern'
-import { GradientBorder } from '@/ui/gradient-border'
 import { cn } from '@/lib/utils'
+import { GradientBorder } from '@/ui/gradient-border'
+import { GridPattern } from '@/ui/grid-pattern'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

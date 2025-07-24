@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Inbox } from 'lucide-react'
+import { ReactNode } from 'react'
 import {
   Card,
   CardContent,
@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from './primitives/card'
-import { ReactNode } from 'react'
 
 interface EmptyIndicatorProps {
   title?: ReactNode

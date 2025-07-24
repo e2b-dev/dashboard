@@ -1,11 +1,11 @@
-import { CardDescription, CardTitle } from '@/ui/primitives/card'
 import { TIERS } from '@/configs/tiers'
-import BillingTierCard from '@/features/dashboard/billing/tier-card'
-import { Suspense } from 'react'
 import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
+import BillingTierCard from '@/features/dashboard/billing/tier-card'
+import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { CardDescription, CardTitle } from '@/ui/primitives/card'
+import { Suspense } from 'react'
 
 export default async function BillingPage({
   params,

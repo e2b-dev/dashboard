@@ -1,9 +1,9 @@
 import {
   Card,
-  CardHeader,
   CardContent,
-  CardTitle,
   CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/ui/primitives/card'
 import { Suspense } from 'react'
 import AddMemberForm from './add-member-form'

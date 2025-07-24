@@ -1,22 +1,22 @@
 'use client'
 
+import { IconsMap } from '@/configs/docs'
+import { cn } from '@/lib/utils'
 import type {
-  TabsContentProps,
   TabsProps as BaseProps,
+  TabsContentProps,
 } from '@radix-ui/react-tabs'
 import {
-  useMemo,
-  useState,
   createContext,
   useContext,
-  useRef,
-  useLayoutEffect,
-  useId,
   useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'react'
 import * as Primitive from './primitives/tabs'
-import { cn } from '@/lib/utils'
-import { IconsMap } from '@/configs/docs'
 
 export { Primitive }
 

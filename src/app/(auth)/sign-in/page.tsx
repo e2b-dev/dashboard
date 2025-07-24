@@ -1,19 +1,10 @@
 'use client'
 
-import { signInAction } from '@/server/auth/auth-actions'
+import { AUTH_URLS } from '@/configs/urls'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
-import TextSeparator from '@/ui/text-separator'
+import { signInAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
-import { Input } from '@/ui/primitives/input'
-import { AUTH_URLS } from '@/configs/urls'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { useEffect, Suspense, useState } from 'react'
-import { useAction } from 'next-safe-action/hooks'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import {
   Form,
   FormControl,
@@ -22,6 +13,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
+import { Input } from '@/ui/primitives/input'
+import TextSeparator from '@/ui/text-separator'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const signInSchema = z.object({
   email: z.string().email('Valid email is required'),

@@ -1,13 +1,13 @@
+import { Sandbox } from '@/types/api'
 import { DataTableBody } from '@/ui/data-table'
-import { Table, Row } from '@tanstack/react-table'
-import { memo, useMemo } from 'react'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { useSandboxTableStore } from './stores/table-store'
+import { Row } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
-import { TableRow } from './table-row'
-import { Sandbox } from '@/types/api'
+import { memo, useMemo } from 'react'
+import { useSandboxTableStore } from './stores/table-store'
 import { SandboxesTable, SandboxWithMetrics } from './table-config'
+import { TableRow } from './table-row'
 
 interface TableBodyProps {
   sandboxes: Sandbox[] | undefined

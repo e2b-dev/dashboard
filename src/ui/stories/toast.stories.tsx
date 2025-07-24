@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import {
   Toast,
-  ToastTitle,
-  ToastDescription,
   ToastAction,
   ToastClose,
+  ToastDescription,
   ToastProvider,
+  ToastTitle,
   ToastViewport,
 } from '../primitives/toast'
 

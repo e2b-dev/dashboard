@@ -1,6 +1,6 @@
 import { useTreeContext } from 'fumadocs-ui/provider'
-import SidebarItem from './sidebar-item'
 import Header from './header'
+import SidebarItem from './sidebar-item'
 
 export default function Sidebar() {
   const tree = useTreeContext()

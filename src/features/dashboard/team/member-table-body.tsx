@@ -1,9 +1,9 @@
+import { bailOutFromPPR } from '@/lib/utils/server'
+import { getTeamMembers } from '@/server/team/get-team-members'
+import { ErrorIndicator } from '@/ui/error-indicator'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import MemberTableRow from './member-table-row'
-import { getTeamMembers } from '@/server/team/get-team-members'
-import { bailOutFromPPR } from '@/lib/utils/server'
-import { ErrorIndicator } from '@/ui/error-indicator'
 
 interface TableBodyContentProps {
   teamId: string

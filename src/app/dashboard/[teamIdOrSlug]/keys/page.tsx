@@ -1,11 +1,11 @@
-import ApiKeysTable from '@/features/dashboard/keys/table'
 import CreateApiKeyDialog from '@/features/dashboard/keys/create-api-key-dialog'
+import ApiKeysTable from '@/features/dashboard/keys/table'
+import DashboardPageLayout from '@/features/dashboard/page-layout'
+import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { Button } from '@/ui/primitives/button'
 import { CardDescription, CardTitle } from '@/ui/primitives/card'
-import { Suspense } from 'react'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { Plus } from 'lucide-react'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { Suspense } from 'react'
 
 interface KeysPageClientProps {
   params: Promise<{

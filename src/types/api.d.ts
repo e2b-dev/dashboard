@@ -1,7 +1,4 @@
-import {
-  paths as InfraPaths,
-  components as InfraComponents,
-} from '@/types/infra-api'
+import { components as InfraComponents } from '@/types/infra-api'
 
 type Sandbox = InfraComponents['schemas']['ListedSandbox']
 
@@ -31,15 +28,15 @@ type CreatedTeamAPIKey = InfraComponents['schemas']['CreatedTeamAPIKey']
 type TeamAPIKey = InfraComponents['schemas']['TeamAPIKey']
 
 export type {
-  Sandbox,
-  Sandboxes,
-  Template,
-  SandboxesMetricsRecord,
-  SandboxMetric,
-  DefaultTemplate,
   CreatedAccessToken,
   CreatedTeamAPIKey,
+  DefaultTemplate,
+  IdentifierMaskingDetails,
+  Sandbox,
+  Sandboxes,
+  SandboxesMetricsRecord,
+  SandboxMetric,
   TeamAPIKey,
   TeamUser,
-  IdentifierMaskingDetails,
+  Template,
 }

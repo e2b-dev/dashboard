@@ -1,16 +1,16 @@
+import { IconType } from 'react-icons/lib'
 import {
-  SiJavascript,
-  SiTypescript,
   SiDocker,
+  SiGnubash,
+  SiGo,
+  SiJavascript,
+  SiJson,
+  SiMarkdown,
   SiPython,
   SiRuby,
-  SiGo,
-  SiJson,
+  SiTypescript,
   SiYaml,
-  SiMarkdown,
-  SiGnubash,
 } from 'react-icons/si'
-import { IconType } from 'react-icons/lib'
 
 /**
  * Maps programming language/file type identifiers to their corresponding React icons

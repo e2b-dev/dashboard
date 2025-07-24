@@ -1,5 +1,4 @@
 import { UnknownError } from '@/types/errors'
-import { InferSafeActionFnResult } from 'next-safe-action'
 
 /**
  * Custom error class for action-specific errors.

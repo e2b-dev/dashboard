@@ -38,4 +38,4 @@ const CreateTeamSchema = z.object({
   name: TeamNameSchema,
 })
 
-export { UpdateTeamNameSchema, CreateTeamSchema }
+export { CreateTeamSchema, UpdateTeamNameSchema }

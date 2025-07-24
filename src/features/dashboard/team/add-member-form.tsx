@@ -1,5 +1,13 @@
 'use client'
 
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { cn } from '@/lib/utils'
+import { addTeamMemberAction } from '@/server/team/team-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -9,16 +17,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { addTeamMemberAction } from '@/server/team/team-actions'
-import { z } from 'zod'
 import { Input } from '@/ui/primitives/input'
-import { useToast } from '@/lib/hooks/use-toast'
-import { cn } from '@/lib/utils'
-import { useForm } from 'react-hook-form'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const addMemberSchema = z.object({
   email: z.string().email(),

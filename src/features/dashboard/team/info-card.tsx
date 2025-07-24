@@ -1,8 +1,8 @@
 'use client'
 
-import { Input } from '@/ui/primitives/input'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import CopyButton from '@/ui/copy-button'
+import { Badge } from '@/ui/primitives/badge'
 import {
   Card,
   CardContent,
@@ -10,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Badge } from '@/ui/primitives/badge'
-import CopyButton from '@/ui/copy-button'
+import { Skeleton } from '@/ui/primitives/skeleton'
 
 interface InfoCardProps {
   className?: string

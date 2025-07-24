@@ -1,5 +1,12 @@
 'use client'
 
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { useUser } from '@/lib/hooks/use-user'
+import { cn } from '@/lib/utils'
 import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -18,14 +25,10 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { useUser } from '@/lib/hooks/use-user'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
-import { cn } from '@/lib/utils'
-import { useToast } from '@/lib/hooks/use-toast'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name cannot be empty').max(32, 'Max 32 characters'),

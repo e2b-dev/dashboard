@@ -1,23 +1,20 @@
 'use client'
 
-import { useSelectedTeam, useTeams } from '@/lib/hooks/use-teams'
-import { useRef, useState } from 'react'
-import { useToast } from '@/lib/hooks/use-toast'
-import { Avatar, AvatarImage, AvatarFallback } from '@/ui/primitives/avatar'
-import { cn, exponentialSmoothing } from '@/lib/utils'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
-  Pencil,
-  Loader2,
-  ImageIcon,
-  ChevronsUp,
-  ImagePlusIcon,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cardVariants } from '@/ui/primitives/card'
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { cn, exponentialSmoothing } from '@/lib/utils'
 import { uploadTeamProfilePictureAction } from '@/server/team/team-actions'
-import { useAction } from 'next-safe-action/hooks'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
+import { cardVariants } from '@/ui/primitives/card'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
+import { useAction } from 'next-safe-action/hooks'
+import { useRef, useState } from 'react'
 
 interface ProfilePictureCardProps {
   className?: string

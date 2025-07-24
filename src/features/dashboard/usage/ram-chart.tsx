@@ -1,21 +1,20 @@
 'use client'
 
+import { UsageData } from '@/server/usage/types'
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { useMemo } from 'react'
+import { Area, AreaChart, XAxis, YAxis } from 'recharts'
 import {
   bigNumbersAxisTickFormatter,
   chartConfig,
-  commonAreaProps,
   commonChartProps,
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
-import { UsageData } from '@/server/usage/types'
-import { useMemo } from 'react'
 
 interface RAMChartProps {
   data: UsageData['compute']

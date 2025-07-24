@@ -1,8 +1,8 @@
-import Link from 'next/link'
-import DocsNavLinks from './links'
+import { cn } from '@/lib/utils'
 import LogoWithoutText from '@/ui/logo-without-text'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
-import { cn } from '@/lib/utils'
+import Link from 'next/link'
+import DocsNavLinks from './links'
 
 interface NavProps {
   className?: string

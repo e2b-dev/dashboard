@@ -1,10 +1,10 @@
 'use client'
 
+import useKeydown from '@/lib/hooks/use-keydown'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
-import useKeydown from '@/lib/hooks/use-keydown'
 
 export const SearchInput = () => {
   const { globalFilter, setGlobalFilter } = useTemplateTableStore()

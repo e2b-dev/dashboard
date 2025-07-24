@@ -1,5 +1,6 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import { FC } from 'react'
 import { Button } from './primitives/button'
 import {
@@ -12,7 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from './primitives/dialog'
-import { cn } from '@/lib/utils'
 
 interface AlertDialogProps
   extends React.ComponentPropsWithoutRef<typeof Dialog> {

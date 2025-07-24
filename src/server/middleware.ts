@@ -1,12 +1,11 @@
-import { checkUserTeamAuthorization, resolveTeamId } from '@/lib/utils/server'
-import { kv } from '@/lib/clients/kv'
-import { KV_KEYS } from '@/configs/keys'
-import { NextRequest, NextResponse } from 'next/server'
-import { COOKIE_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { z } from 'zod'
+import { checkUserTeamAuthorization, resolveTeamId } from '@/lib/utils/server'
 import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
 /**
  * Core function to resolve team ID and ensure access for dashboard routes.

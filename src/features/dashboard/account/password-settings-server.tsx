@@ -1,5 +1,5 @@
-import { PasswordSettings } from './password-settings'
 import { AccountPageSearchParams } from '@/app/dashboard/account/page'
+import { PasswordSettings } from './password-settings'
 
 interface PasswordSettingsServerProps {
   className?: string

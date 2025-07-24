@@ -1,19 +1,19 @@
 /* Toast */
 
-.ToastRoot[data-state="open"] {
+.ToastRoot[data-state='open'] {
   animation: slideIn 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-.ToastRoot[data-state="closed"] {
+.ToastRoot[data-state='closed'] {
   animation: hide 100ms ease-in !important;
 }
-.ToastRoot[data-swipe="move"] {
+.ToastRoot[data-swipe='move'] {
   transform: translateX(var(--radix-toast-swipe-move-x)) !important;
 }
-.ToastRoot[data-swipe="cancel"] {
+.ToastRoot[data-swipe='cancel'] {
   transform: translateX(0) !important;
   transition: transform 200ms ease-out !important;
 }
-.ToastRoot[data-swipe="end"] {
+.ToastRoot[data-swipe='end'] {
   animation: swipeOut 100ms ease-out !important;
 }
 

@@ -1,19 +1,22 @@
 'use client'
 
-import { useToast } from '@/lib/hooks/use-toast'
-import { TableCell, TableRow } from '@/ui/primitives/table'
-import { Button } from '@/ui/primitives/button'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { useUser } from '@/lib/hooks/use-user'
+import { removeTeamMemberAction } from '@/server/team/team-actions'
+import { TeamMember } from '@/server/team/types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
-import { removeTeamMemberAction } from '@/server/team/team-actions'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { useUser } from '@/lib/hooks/use-user'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { TeamMember } from '@/server/team/types'
+import { Button } from '@/ui/primitives/button'
+import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useAction } from 'next-safe-action/hooks'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 interface TableRowProps {
   member: TeamMember

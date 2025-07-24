@@ -1,14 +1,13 @@
+import { Template } from '@/types/api'
+import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
-import { Table } from '@tanstack/react-table'
-import { SearchInput } from './table-search'
-import SandboxesTableFilters from './table-filters'
-import { PollingButton } from '@/ui/polling-button'
-import { useSandboxTableStore } from './stores/table-store'
-import { Template } from '@/types/api'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
+import { useSandboxTableStore } from './stores/table-store'
 import { SandboxesTable } from './table-config'
+import SandboxesTableFilters from './table-filters'
+import { SearchInput } from './table-search'
 
 interface SandboxesHeaderProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>

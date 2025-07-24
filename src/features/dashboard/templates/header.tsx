@@ -1,10 +1,10 @@
+import { Template } from '@/types/api'
+import { Badge } from '@/ui/primitives/badge'
+import { Table } from '@tanstack/react-table'
+import { Hexagon, ListFilter } from 'lucide-react'
 import { Suspense } from 'react'
 import TemplatesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
-import { Badge } from '@/ui/primitives/badge'
-import { Hexagon, ListFilter } from 'lucide-react'
-import { Table } from '@tanstack/react-table'
-import { Template } from '@/types/api'
 
 interface TemplatesHeaderProps {
   table: Table<Template>

@@ -1,26 +1,30 @@
 'use client'
 
+import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
+import { cn } from '@/lib/utils'
+import { DefaultTemplate, Template } from '@/types/api'
+import ClientOnly from '@/ui/client-only'
+import {
+  DataTable,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from '@/ui/data-table'
+import HelpTooltip from '@/ui/help-tooltip'
+import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import {
   ColumnFiltersState,
+  ColumnSizingState,
   flexRender,
   TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import { DefaultTemplate, Template } from '@/types/api'
-import { DataTableHead, DataTableRow, DataTableHeader } from '@/ui/data-table'
-import { useEffect, useState, useRef } from 'react'
-import { ColumnSizingState } from '@tanstack/react-table'
-import { DataTable } from '@/ui/data-table'
-import { fallbackData, templatesTableConfig, useColumns } from './table-config'
-import { useTemplateTableStore } from './stores/table-store'
+import { useEffect, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
-import { TableBody } from './table-body'
 import TemplatesHeader from './header'
-import ClientOnly from '@/ui/client-only'
-import HelpTooltip from '@/ui/help-tooltip'
-import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import { cn } from '@/lib/utils'
+import { useTemplateTableStore } from './stores/table-store'
+import { TableBody } from './table-body'
+import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
 interface TemplatesTableProps {
   templates: (Template | DefaultTemplate)[]

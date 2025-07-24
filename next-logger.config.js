@@ -52,7 +52,9 @@ const REDACTION_PATHS = [
 const logger = (defaultConfig = {}) =>
   createLogger({
     level:
-      process.env.NEXT_PUBLIC_VERBOSE && process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+      process.env.NEXT_PUBLIC_VERBOSE && process.env.NODE_ENV !== 'production'
+        ? 'debug'
+        : 'info',
     format: combine(
       piiRedact({
         paths: REDACTION_PATHS,

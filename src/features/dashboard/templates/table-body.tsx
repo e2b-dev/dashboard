@@ -1,15 +1,11 @@
-import { Table } from '@tanstack/react-table'
 import { Template } from '@/types/api'
-import { DataTableBody, DataTableRow, DataTableCell } from '@/ui/data-table'
-import { flexRender } from '@tanstack/react-table'
+import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { useTemplateTableStore } from './stores/table-store'
-import { useMemo } from 'react'
+import { flexRender, Table } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
-import ExternalIcon from '@/ui/external-icon'
-import { cn } from '@/lib/utils'
-import Scanline from '@/ui/scanline'
+import { useMemo } from 'react'
+import { useTemplateTableStore } from './stores/table-store'
 
 interface TableBodyProps {
   templates: Template[] | undefined

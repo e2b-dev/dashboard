@@ -1,7 +1,7 @@
-import { getBillingLimits } from '@/server/billing/get-billing-limits'
-import LimitCard from './limit-card'
-import AlertCard from './alert-card'
 import { cn } from '@/lib/utils'
+import { getBillingLimits } from '@/server/billing/get-billing-limits'
+import AlertCard from './alert-card'
+import LimitCard from './limit-card'
 
 interface UsageLimitsProps {
   className?: string

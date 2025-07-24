@@ -4,1632 +4,1632 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Health check */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Request was successful */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/teams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List all teams */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all teams */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Team"][];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List all running sandboxes */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
-                    metadata?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all running sandboxes */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ListedSandbox"][];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        /** @description Create a sandbox from the template */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["NewSandbox"];
-                };
-            };
-            responses: {
-                /** @description The sandbox was created successfully */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Sandbox"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v2/sandboxes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List all sandboxes */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
-                    metadata?: string;
-                    /** @description Filter sandboxes by one or more states */
-                    state?: components["schemas"]["SandboxState"][];
-                    /** @description Cursor to start the list from */
-                    nextToken?: string;
-                    /** @description Maximum number of items to return per page */
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all running sandboxes */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ListedSandbox"][];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List metrics for given sandboxes */
-        get: {
-            parameters: {
-                query: {
-                    /** @description Comma-separated list of sandbox IDs to get metrics for */
-                    sandbox_ids: string[];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all running sandboxes with metrics */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxesWithMetrics"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get sandbox logs */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
-                    start?: number;
-                    /** @description Maximum number of logs that should be returned */
-                    limit?: number;
-                };
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the sandbox logs */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxLogs"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get a sandbox by id */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the sandbox */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxDetail"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        /** @description Kill a sandbox */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The sandbox was killed successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get sandbox metrics */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Starting timestamp of the metrics that should be returned in milliseconds */
-                    start?: number;
-                    end?: number;
-                };
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the sandbox metrics */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxMetric"][];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/pause": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Pause the sandbox */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The sandbox was paused successfully and can be resumed */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                409: components["responses"]["409"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/resume": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Resume the sandbox */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ResumedSandbox"];
-                };
-            };
-            responses: {
-                /** @description The sandbox was resumed successfully */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Sandbox"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                409: components["responses"]["409"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/timeout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: int32
-                         * @description Timeout in seconds from the current time after which the sandbox should expire
-                         */
-                        timeout: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Successfully set the sandbox timeout */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sandboxes/{sandboxID}/refreshes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Refresh the sandbox extending its time to live */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sandboxID: components["parameters"]["sandboxID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description Duration for which the sandbox should be kept alive in seconds */
-                        duration?: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Successfully refreshed the sandbox */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List all templates */
-        get: {
-            parameters: {
-                query?: {
-                    teamID?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all templates */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Template"][];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        /** @description Create a new template */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequest"];
-                };
-            };
-            responses: {
-                /** @description The build was accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Template"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/templates/{templateID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Rebuild an template */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequest"];
-                };
-            };
-            responses: {
-                /** @description The build was accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Template"];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        /** @description Delete a template */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The template was deleted successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        /** @description Update template */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateUpdateRequest"];
-                };
-            };
-            responses: {
-                /** @description The template was updated successfully */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        trace?: never;
-    };
-    "/templates/{templateID}/builds/{buildID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Start the build */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                    buildID: components["parameters"]["buildID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The build has started */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/templates/{templateID}/builds/{buildID}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get template build info */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Index of the starting build log that should be returned with the template */
-                    logsOffset?: number;
-                };
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                    buildID: components["parameters"]["buildID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the template */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateBuild"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/nodes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List all nodes */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all nodes */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Node"][];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/nodes/{nodeID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get node info */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeID: components["parameters"]["nodeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the node */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NodeDetail"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        /** @description Change status of a node */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeID: components["parameters"]["nodeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["NodeStatusChange"];
-                };
-            };
-            responses: {
-                /** @description The node status was changed successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/access-tokens": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Create a new access token */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["NewAccessToken"];
-                };
-            };
-            responses: {
-                /** @description Access token created successfully */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CreatedAccessToken"];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/access-tokens/{accessTokenID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** @description Delete an access token */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    accessTokenID: components["parameters"]["accessTokenID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Access token deleted successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List all team API keys */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all team API keys */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TeamAPIKey"][];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        /** @description Create a new team API key */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["NewTeamAPIKey"];
-                };
-            };
-            responses: {
-                /** @description Team API key created successfully */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CreatedTeamAPIKey"];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api-keys/{apiKeyID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** @description Delete a team API key */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    apiKeyID: components["parameters"]["apiKeyID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Team API key deleted successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        /** @description Update a team API key */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    apiKeyID: components["parameters"]["apiKeyID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateTeamAPIKey"];
-                };
-            };
-            responses: {
-                /** @description Team API key updated successfully */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        trace?: never;
-    };
-}
-export type webhooks = Record<string, never>;
-export interface components {
-    schemas: {
-        Team: {
-            /** @description Identifier of the team */
-            teamID: string;
-            /** @description Name of the team */
-            name: string;
-            /** @description API key for the team */
-            apiKey: string;
-            /** @description Whether the team is the default team */
-            isDefault: boolean;
-        };
-        TeamUser: {
-            /**
-             * Format: uuid
-             * @description Identifier of the user
-             */
-            id: string;
-            /** @description Email of the user */
-            email: string;
-        };
-        TemplateUpdateRequest: {
-            /** @description Whether the template is public or only accessible by the team */
-            public?: boolean;
-        };
-        /**
-         * Format: int32
-         * @description CPU cores for the sandbox
-         */
-        CPUCount: number;
-        /**
-         * Format: int32
-         * @description Memory for the sandbox in MB
-         */
-        MemoryMB: number;
-        SandboxMetadata: {
-            [key: string]: string;
-        };
-        /**
-         * @description State of the sandbox
-         * @enum {string}
-         */
-        SandboxState: "running" | "paused";
-        EnvVars: {
-            [key: string]: string;
-        };
-        /** @description Log entry with timestamp and line */
-        SandboxLog: {
-            /**
-             * Format: date-time
-             * @description Timestamp of the log entry
-             */
-            timestamp: string;
-            /** @description Log line content */
-            line: string;
-        };
-        SandboxLogs: {
-            /** @description Logs of the sandbox */
-            logs: components["schemas"]["SandboxLog"][];
-        };
-        /** @description Metric entry with timestamp and line */
-        SandboxMetric: {
-            /**
-             * Format: date-time
-             * @description Timestamp of the metric entry
-             */
-            timestamp: string;
-            /**
-             * Format: int32
-             * @description Number of CPU cores
-             */
-            cpuCount: number;
-            /**
-             * Format: float
-             * @description CPU usage percentage
-             */
-            cpuUsedPct: number;
-            /**
-             * Format: int64
-             * @description Memory used in bytes
-             */
-            memUsed: number;
-            /**
-             * Format: int64
-             * @description Total memory in bytes
-             */
-            memTotal: number;
-        };
-        Sandbox: {
-            /** @description Identifier of the template from which is the sandbox created */
-            templateID: string;
-            /** @description Identifier of the sandbox */
-            sandboxID: string;
-            /** @description Alias of the template */
-            alias?: string;
-            /**
-             * @deprecated
-             * @description Identifier of the client
-             */
-            clientID: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion: string;
-            /** @description Access token used for envd communication */
-            envdAccessToken?: string;
-        };
-        SandboxDetail: {
-            /** @description Identifier of the template from which is the sandbox created */
-            templateID: string;
-            /** @description Alias of the template */
-            alias?: string;
-            /** @description Identifier of the sandbox */
-            sandboxID: string;
-            /**
-             * @deprecated
-             * @description Identifier of the client
-             */
-            clientID: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox was started
-             */
-            startedAt: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox will expire
-             */
-            endAt: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion?: string;
-            /** @description Access token used for envd communication */
-            envdAccessToken?: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            memoryMB: components["schemas"]["MemoryMB"];
-            metadata?: components["schemas"]["SandboxMetadata"];
-            state: components["schemas"]["SandboxState"];
-        };
-        ListedSandbox: {
-            /** @description Identifier of the template from which is the sandbox created */
-            templateID: string;
-            /** @description Alias of the template */
-            alias?: string;
-            /** @description Identifier of the sandbox */
-            sandboxID: string;
-            /**
-             * @deprecated
-             * @description Identifier of the client
-             */
-            clientID: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox was started
-             */
-            startedAt: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox will expire
-             */
-            endAt: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            memoryMB: components["schemas"]["MemoryMB"];
-            metadata?: components["schemas"]["SandboxMetadata"];
-            state: components["schemas"]["SandboxState"];
-        };
-        SandboxesWithMetrics: {
-            sandboxes: {
-                [key: string]: components["schemas"]["SandboxMetric"];
-            };
-        };
-        NewSandbox: {
-            /** @description Identifier of the required template */
-            templateID: string;
-            /**
-             * Format: int32
-             * @description Time to live for the sandbox in seconds.
-             * @default 15
-             */
-            timeout: number;
-            /**
-             * @description Automatically pauses the sandbox after the timeout
-             * @default false
-             */
-            autoPause: boolean;
-            /** @description Secure all system communication with sandbox */
-            secure?: boolean;
-            metadata?: components["schemas"]["SandboxMetadata"];
-            envVars?: components["schemas"]["EnvVars"];
-        };
-        ResumedSandbox: {
-            /**
-             * Format: int32
-             * @description Time to live for the sandbox in seconds.
-             * @default 15
-             */
-            timeout: number;
-            /**
-             * @description Automatically pauses the sandbox after the timeout
-             * @default false
-             */
-            autoPause: boolean;
-        };
-        Template: {
-            /** @description Identifier of the template */
-            templateID: string;
-            /** @description Identifier of the last successful build for given template */
-            buildID: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            memoryMB: components["schemas"]["MemoryMB"];
-            /** @description Whether the template is public or only accessible by the team */
-            public: boolean;
-            /** @description Aliases of the template */
-            aliases?: string[];
-            /**
-             * Format: date-time
-             * @description Time when the template was created
-             */
-            createdAt: string;
-            /**
-             * Format: date-time
-             * @description Time when the template was last updated
-             */
-            updatedAt: string;
-            createdBy: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: date-time
-             * @description Time when the template was last used
-             */
-            lastSpawnedAt: string;
-            /**
-             * Format: int64
-             * @description Number of times the template was used
-             */
-            spawnCount: number;
-            /**
-             * Format: int32
-             * @description Number of times the template was built
-             */
-            buildCount: number;
-        };
-        TemplateBuildRequest: {
-            /** @description Alias of the template */
-            alias?: string;
-            /** @description Dockerfile for the template */
-            dockerfile: string;
-            /** @description Identifier of the team */
-            teamID?: string;
-            /** @description Start command to execute in the template after the build */
-            startCmd?: string;
-            /** @description Ready check command to execute in the template after the build */
-            readyCmd?: string;
-            cpuCount?: components["schemas"]["CPUCount"];
-            memoryMB?: components["schemas"]["MemoryMB"];
-        };
-        TemplateBuild: {
-            /**
-             * @description Build logs
-             * @default []
-             */
-            logs: string[];
-            /** @description Identifier of the template */
-            templateID: string;
-            /** @description Identifier of the build */
-            buildID: string;
-            /**
-             * @description Status of the template
-             * @enum {string}
-             */
-            status: "building" | "waiting" | "ready" | "error";
-            /** @description Message with the status reason, currently reporting only for error status */
-            reason?: string;
-        };
-        /**
-         * @description Status of the node
-         * @enum {string}
-         */
-        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
-        NodeStatusChange: {
-            status: components["schemas"]["NodeStatus"];
-        };
-        Node: {
-            /** @description Version of the orchestrator */
-            version: string;
-            /** @description Commit of the orchestrator */
-            commit: string;
-            /** @description Identifier of the node */
-            nodeID: string;
-            /** @description Identifier of the cluster */
-            clusterID?: string | null;
-            status: components["schemas"]["NodeStatus"];
-            /**
-             * Format: int32
-             * @description Number of sandboxes running on the node
-             */
-            sandboxCount: number;
-            /**
-             * Format: int32
-             * @description Number of allocated CPU cores
-             */
-            allocatedCPU: number;
-            /**
-             * Format: int32
-             * @description Amount of allocated memory in MiB
-             */
-            allocatedMemoryMiB: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create successes
-             */
-            createSuccesses: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create fails
-             */
-            createFails: number;
-            /**
-             * Format: int
-             * @description Number of starting Sandboxes
-             */
-            sandboxStartingCount: number;
-        };
-        NodeDetail: {
-            /** @description Identifier of the cluster */
-            clusterID?: string | null;
-            /** @description Version of the orchestrator */
-            version: string;
-            /** @description Commit of the orchestrator */
-            commit: string;
-            /** @description Identifier of the node */
-            nodeID: string;
-            status: components["schemas"]["NodeStatus"];
-            /** @description List of sandboxes running on the node */
-            sandboxes: components["schemas"]["ListedSandbox"][];
-            /** @description List of cached builds id on the node */
-            cachedBuilds: string[];
-            /**
-             * Format: uint64
-             * @description Number of sandbox create successes
-             */
-            createSuccesses: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create fails
-             */
-            createFails: number;
-        };
-        CreatedAccessToken: {
-            /**
-             * Format: uuid
-             * @description Identifier of the access token
-             */
-            id: string;
-            /** @description Name of the access token */
-            name: string;
-            /** @description The fully created access token */
-            token: string;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /**
-             * Format: date-time
-             * @description Timestamp of access token creation
-             */
-            createdAt: string;
-        };
-        NewAccessToken: {
-            /** @description Name of the access token */
-            name: string;
-        };
-        TeamAPIKey: {
-            /**
-             * Format: uuid
-             * @description Identifier of the API key
-             */
-            id: string;
-            /** @description Name of the API key */
-            name: string;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /**
-             * Format: date-time
-             * @description Timestamp of API key creation
-             */
-            createdAt: string;
-            createdBy?: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: date-time
-             * @description Last time this API key was used
-             */
-            lastUsed?: string | null;
-        };
-        CreatedTeamAPIKey: {
-            /**
-             * Format: uuid
-             * @description Identifier of the API key
-             */
-            id: string;
-            /** @description Raw value of the API key */
-            key: string;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the API key */
-            name: string;
-            /**
-             * Format: date-time
-             * @description Timestamp of API key creation
-             */
-            createdAt: string;
-            createdBy?: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: date-time
-             * @description Last time this API key was used
-             */
-            lastUsed?: string | null;
-        };
-        NewTeamAPIKey: {
-            /** @description Name of the API key */
-            name: string;
-        };
-        UpdateTeamAPIKey: {
-            /** @description New name for the API key */
-            name: string;
-        };
-        Error: {
-            /**
-             * Format: int32
-             * @description Error code
-             */
-            code: number;
-            /** @description Error */
-            message: string;
-        };
-        IdentifierMaskingDetails: {
-            /** @description Prefix that identifies the token or key type */
-            prefix: string;
-            /** @description Length of the token or key */
-            valueLength: number;
-            /** @description Prefix used in masked version of the token or key */
-            maskedValuePrefix: string;
-            /** @description Suffix used in masked version of the token or key */
-            maskedValueSuffix: string;
-        };
-    };
-    responses: {
-        /** @description Bad request */
-        400: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Authentication error */
-        401: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Not found */
-        404: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Conflict */
-        409: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Server error */
-        500: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-    };
+  '/health': {
     parameters: {
-        templateID: string;
-        buildID: string;
-        sandboxID: string;
-        nodeID: string;
-        apiKeyID: string;
-        accessTokenID: string;
-    };
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Health check */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Request was successful */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/teams': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List all teams */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all teams */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Team'][]
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List all running sandboxes */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+          metadata?: string
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all running sandboxes */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['ListedSandbox'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /** @description Create a sandbox from the template */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NewSandbox']
+        }
+      }
+      responses: {
+        /** @description The sandbox was created successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Sandbox']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v2/sandboxes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List all sandboxes */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+          metadata?: string
+          /** @description Filter sandboxes by one or more states */
+          state?: components['schemas']['SandboxState'][]
+          /** @description Cursor to start the list from */
+          nextToken?: string
+          /** @description Maximum number of items to return per page */
+          limit?: number
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all running sandboxes */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['ListedSandbox'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/metrics': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List metrics for given sandboxes */
+    get: {
+      parameters: {
+        query: {
+          /** @description Comma-separated list of sandbox IDs to get metrics for */
+          sandbox_ids: string[]
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all running sandboxes with metrics */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxesWithMetrics']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}/logs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get sandbox logs */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Starting timestamp of the logs that should be returned in milliseconds */
+          start?: number
+          /** @description Maximum number of logs that should be returned */
+          limit?: number
+        }
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the sandbox logs */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxLogs']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get a sandbox by id */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the sandbox */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxDetail']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    /** @description Kill a sandbox */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The sandbox was killed successfully */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}/metrics': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get sandbox metrics */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Starting timestamp of the metrics that should be returned in milliseconds */
+          start?: number
+          end?: number
+        }
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the sandbox metrics */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxMetric'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}/pause': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Pause the sandbox */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The sandbox was paused successfully and can be resumed */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}/resume': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Resume the sandbox */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ResumedSandbox']
+        }
+      }
+      responses: {
+        /** @description The sandbox was resumed successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Sandbox']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}/timeout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration. */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          'application/json': {
+            /**
+             * Format: int32
+             * @description Timeout in seconds from the current time after which the sandbox should expire
+             */
+            timeout: number
+          }
+        }
+      }
+      responses: {
+        /** @description Successfully set the sandbox timeout */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sandboxes/{sandboxID}/refreshes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Refresh the sandbox extending its time to live */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          'application/json': {
+            /** @description Duration for which the sandbox should be kept alive in seconds */
+            duration?: number
+          }
+        }
+      }
+      responses: {
+        /** @description Successfully refreshed the sandbox */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List all templates */
+    get: {
+      parameters: {
+        query?: {
+          teamID?: string
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all templates */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Template'][]
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /** @description Create a new template */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['TemplateBuildRequest']
+        }
+      }
+      responses: {
+        /** @description The build was accepted */
+        202: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Template']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Rebuild an template */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['TemplateBuildRequest']
+        }
+      }
+      responses: {
+        /** @description The build was accepted */
+        202: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Template']
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    /** @description Delete a template */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The template was deleted successfully */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    /** @description Update template */
+    patch: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['TemplateUpdateRequest']
+        }
+      }
+      responses: {
+        /** @description The template was updated successfully */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    trace?: never
+  }
+  '/templates/{templateID}/builds/{buildID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Start the build */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+          buildID: components['parameters']['buildID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The build has started */
+        202: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/builds/{buildID}/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get template build info */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Index of the starting build log that should be returned with the template */
+          logsOffset?: number
+        }
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+          buildID: components['parameters']['buildID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the template */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateBuild']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/nodes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List all nodes */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all nodes */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Node'][]
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/nodes/{nodeID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get node info */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          nodeID: components['parameters']['nodeID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the node */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['NodeDetail']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /** @description Change status of a node */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          nodeID: components['parameters']['nodeID']
+        }
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          'application/json': components['schemas']['NodeStatusChange']
+        }
+      }
+      responses: {
+        /** @description The node status was changed successfully */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/access-tokens': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Create a new access token */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NewAccessToken']
+        }
+      }
+      responses: {
+        /** @description Access token created successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['CreatedAccessToken']
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/access-tokens/{accessTokenID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** @description Delete an access token */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          accessTokenID: components['parameters']['accessTokenID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Access token deleted successfully */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api-keys': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List all team API keys */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all team API keys */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamAPIKey'][]
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /** @description Create a new team API key */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NewTeamAPIKey']
+        }
+      }
+      responses: {
+        /** @description Team API key created successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['CreatedTeamAPIKey']
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api-keys/{apiKeyID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** @description Delete a team API key */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          apiKeyID: components['parameters']['apiKeyID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Team API key deleted successfully */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    /** @description Update a team API key */
+    patch: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          apiKeyID: components['parameters']['apiKeyID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['UpdateTeamAPIKey']
+        }
+      }
+      responses: {
+        /** @description Team API key updated successfully */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    trace?: never
+  }
 }
-export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export type webhooks = Record<string, never>
+export interface components {
+  schemas: {
+    Team: {
+      /** @description Identifier of the team */
+      teamID: string
+      /** @description Name of the team */
+      name: string
+      /** @description API key for the team */
+      apiKey: string
+      /** @description Whether the team is the default team */
+      isDefault: boolean
+    }
+    TeamUser: {
+      /**
+       * Format: uuid
+       * @description Identifier of the user
+       */
+      id: string
+      /** @description Email of the user */
+      email: string
+    }
+    TemplateUpdateRequest: {
+      /** @description Whether the template is public or only accessible by the team */
+      public?: boolean
+    }
+    /**
+     * Format: int32
+     * @description CPU cores for the sandbox
+     */
+    CPUCount: number
+    /**
+     * Format: int32
+     * @description Memory for the sandbox in MB
+     */
+    MemoryMB: number
+    SandboxMetadata: {
+      [key: string]: string
+    }
+    /**
+     * @description State of the sandbox
+     * @enum {string}
+     */
+    SandboxState: 'running' | 'paused'
+    EnvVars: {
+      [key: string]: string
+    }
+    /** @description Log entry with timestamp and line */
+    SandboxLog: {
+      /**
+       * Format: date-time
+       * @description Timestamp of the log entry
+       */
+      timestamp: string
+      /** @description Log line content */
+      line: string
+    }
+    SandboxLogs: {
+      /** @description Logs of the sandbox */
+      logs: components['schemas']['SandboxLog'][]
+    }
+    /** @description Metric entry with timestamp and line */
+    SandboxMetric: {
+      /**
+       * Format: date-time
+       * @description Timestamp of the metric entry
+       */
+      timestamp: string
+      /**
+       * Format: int32
+       * @description Number of CPU cores
+       */
+      cpuCount: number
+      /**
+       * Format: float
+       * @description CPU usage percentage
+       */
+      cpuUsedPct: number
+      /**
+       * Format: int64
+       * @description Memory used in bytes
+       */
+      memUsed: number
+      /**
+       * Format: int64
+       * @description Total memory in bytes
+       */
+      memTotal: number
+    }
+    Sandbox: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /** @description Alias of the template */
+      alias?: string
+      /**
+       * @deprecated
+       * @description Identifier of the client
+       */
+      clientID: string
+      /** @description Version of the envd running in the sandbox */
+      envdVersion: string
+      /** @description Access token used for envd communication */
+      envdAccessToken?: string
+    }
+    SandboxDetail: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string
+      /** @description Alias of the template */
+      alias?: string
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /**
+       * @deprecated
+       * @description Identifier of the client
+       */
+      clientID: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was started
+       */
+      startedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox will expire
+       */
+      endAt: string
+      /** @description Version of the envd running in the sandbox */
+      envdVersion?: string
+      /** @description Access token used for envd communication */
+      envdAccessToken?: string
+      cpuCount: components['schemas']['CPUCount']
+      memoryMB: components['schemas']['MemoryMB']
+      metadata?: components['schemas']['SandboxMetadata']
+      state: components['schemas']['SandboxState']
+    }
+    ListedSandbox: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string
+      /** @description Alias of the template */
+      alias?: string
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /**
+       * @deprecated
+       * @description Identifier of the client
+       */
+      clientID: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was started
+       */
+      startedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox will expire
+       */
+      endAt: string
+      cpuCount: components['schemas']['CPUCount']
+      memoryMB: components['schemas']['MemoryMB']
+      metadata?: components['schemas']['SandboxMetadata']
+      state: components['schemas']['SandboxState']
+    }
+    SandboxesWithMetrics: {
+      sandboxes: {
+        [key: string]: components['schemas']['SandboxMetric']
+      }
+    }
+    NewSandbox: {
+      /** @description Identifier of the required template */
+      templateID: string
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 15
+       */
+      timeout: number
+      /**
+       * @description Automatically pauses the sandbox after the timeout
+       * @default false
+       */
+      autoPause: boolean
+      /** @description Secure all system communication with sandbox */
+      secure?: boolean
+      metadata?: components['schemas']['SandboxMetadata']
+      envVars?: components['schemas']['EnvVars']
+    }
+    ResumedSandbox: {
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 15
+       */
+      timeout: number
+      /**
+       * @description Automatically pauses the sandbox after the timeout
+       * @default false
+       */
+      autoPause: boolean
+    }
+    Template: {
+      /** @description Identifier of the template */
+      templateID: string
+      /** @description Identifier of the last successful build for given template */
+      buildID: string
+      cpuCount: components['schemas']['CPUCount']
+      memoryMB: components['schemas']['MemoryMB']
+      /** @description Whether the template is public or only accessible by the team */
+      public: boolean
+      /** @description Aliases of the template */
+      aliases?: string[]
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Time when the template was last updated
+       */
+      updatedAt: string
+      createdBy: components['schemas']['TeamUser'] | null
+      /**
+       * Format: date-time
+       * @description Time when the template was last used
+       */
+      lastSpawnedAt: string
+      /**
+       * Format: int64
+       * @description Number of times the template was used
+       */
+      spawnCount: number
+      /**
+       * Format: int32
+       * @description Number of times the template was built
+       */
+      buildCount: number
+    }
+    TemplateBuildRequest: {
+      /** @description Alias of the template */
+      alias?: string
+      /** @description Dockerfile for the template */
+      dockerfile: string
+      /** @description Identifier of the team */
+      teamID?: string
+      /** @description Start command to execute in the template after the build */
+      startCmd?: string
+      /** @description Ready check command to execute in the template after the build */
+      readyCmd?: string
+      cpuCount?: components['schemas']['CPUCount']
+      memoryMB?: components['schemas']['MemoryMB']
+    }
+    TemplateBuild: {
+      /**
+       * @description Build logs
+       * @default []
+       */
+      logs: string[]
+      /** @description Identifier of the template */
+      templateID: string
+      /** @description Identifier of the build */
+      buildID: string
+      /**
+       * @description Status of the template
+       * @enum {string}
+       */
+      status: 'building' | 'waiting' | 'ready' | 'error'
+      /** @description Message with the status reason, currently reporting only for error status */
+      reason?: string
+    }
+    /**
+     * @description Status of the node
+     * @enum {string}
+     */
+    NodeStatus: 'ready' | 'draining' | 'connecting' | 'unhealthy'
+    NodeStatusChange: {
+      status: components['schemas']['NodeStatus']
+    }
+    Node: {
+      /** @description Version of the orchestrator */
+      version: string
+      /** @description Commit of the orchestrator */
+      commit: string
+      /** @description Identifier of the node */
+      nodeID: string
+      /** @description Identifier of the cluster */
+      clusterID?: string | null
+      status: components['schemas']['NodeStatus']
+      /**
+       * Format: int32
+       * @description Number of sandboxes running on the node
+       */
+      sandboxCount: number
+      /**
+       * Format: int32
+       * @description Number of allocated CPU cores
+       */
+      allocatedCPU: number
+      /**
+       * Format: int32
+       * @description Amount of allocated memory in MiB
+       */
+      allocatedMemoryMiB: number
+      /**
+       * Format: uint64
+       * @description Number of sandbox create successes
+       */
+      createSuccesses: number
+      /**
+       * Format: uint64
+       * @description Number of sandbox create fails
+       */
+      createFails: number
+      /**
+       * Format: int
+       * @description Number of starting Sandboxes
+       */
+      sandboxStartingCount: number
+    }
+    NodeDetail: {
+      /** @description Identifier of the cluster */
+      clusterID?: string | null
+      /** @description Version of the orchestrator */
+      version: string
+      /** @description Commit of the orchestrator */
+      commit: string
+      /** @description Identifier of the node */
+      nodeID: string
+      status: components['schemas']['NodeStatus']
+      /** @description List of sandboxes running on the node */
+      sandboxes: components['schemas']['ListedSandbox'][]
+      /** @description List of cached builds id on the node */
+      cachedBuilds: string[]
+      /**
+       * Format: uint64
+       * @description Number of sandbox create successes
+       */
+      createSuccesses: number
+      /**
+       * Format: uint64
+       * @description Number of sandbox create fails
+       */
+      createFails: number
+    }
+    CreatedAccessToken: {
+      /**
+       * Format: uuid
+       * @description Identifier of the access token
+       */
+      id: string
+      /** @description Name of the access token */
+      name: string
+      /** @description The fully created access token */
+      token: string
+      mask: components['schemas']['IdentifierMaskingDetails']
+      /**
+       * Format: date-time
+       * @description Timestamp of access token creation
+       */
+      createdAt: string
+    }
+    NewAccessToken: {
+      /** @description Name of the access token */
+      name: string
+    }
+    TeamAPIKey: {
+      /**
+       * Format: uuid
+       * @description Identifier of the API key
+       */
+      id: string
+      /** @description Name of the API key */
+      name: string
+      mask: components['schemas']['IdentifierMaskingDetails']
+      /**
+       * Format: date-time
+       * @description Timestamp of API key creation
+       */
+      createdAt: string
+      createdBy?: components['schemas']['TeamUser'] | null
+      /**
+       * Format: date-time
+       * @description Last time this API key was used
+       */
+      lastUsed?: string | null
+    }
+    CreatedTeamAPIKey: {
+      /**
+       * Format: uuid
+       * @description Identifier of the API key
+       */
+      id: string
+      /** @description Raw value of the API key */
+      key: string
+      mask: components['schemas']['IdentifierMaskingDetails']
+      /** @description Name of the API key */
+      name: string
+      /**
+       * Format: date-time
+       * @description Timestamp of API key creation
+       */
+      createdAt: string
+      createdBy?: components['schemas']['TeamUser'] | null
+      /**
+       * Format: date-time
+       * @description Last time this API key was used
+       */
+      lastUsed?: string | null
+    }
+    NewTeamAPIKey: {
+      /** @description Name of the API key */
+      name: string
+    }
+    UpdateTeamAPIKey: {
+      /** @description New name for the API key */
+      name: string
+    }
+    Error: {
+      /**
+       * Format: int32
+       * @description Error code
+       */
+      code: number
+      /** @description Error */
+      message: string
+    }
+    IdentifierMaskingDetails: {
+      /** @description Prefix that identifies the token or key type */
+      prefix: string
+      /** @description Length of the token or key */
+      valueLength: number
+      /** @description Prefix used in masked version of the token or key */
+      maskedValuePrefix: string
+      /** @description Suffix used in masked version of the token or key */
+      maskedValueSuffix: string
+    }
+  }
+  responses: {
+    /** @description Bad request */
+    400: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Authentication error */
+    401: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Not found */
+    404: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Conflict */
+    409: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Server error */
+    500: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+  }
+  parameters: {
+    templateID: string
+    buildID: string
+    sandboxID: string
+    nodeID: string
+    apiKeyID: string
+    accessTokenID: string
+  }
+  requestBodies: never
+  headers: never
+  pathItems: never
+}
+export type $defs = Record<string, never>
+export type operations = Record<string, never>

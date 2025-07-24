@@ -3,8 +3,7 @@
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
@@ -99,4 +98,4 @@ const AutosizeInput = React.forwardRef<
 })
 AutosizeInput.displayName = 'AutosizeInput'
 
-export { Input, DebouncedInput, AutosizeInput }
+export { AutosizeInput, DebouncedInput, Input }

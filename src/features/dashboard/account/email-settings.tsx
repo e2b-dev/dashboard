@@ -1,6 +1,15 @@
 'use client'
 
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { useUser } from '@/lib/hooks/use-user'
+import { cn } from '@/lib/utils'
+import { getUserProviders } from '@/lib/utils/auth'
 import { updateUserAction } from '@/server/user/user-actions'
+import { Button } from '@/ui/primitives/button'
 import {
   Card,
   CardContent,
@@ -9,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Button } from '@/ui/primitives/button'
 import {
   Form,
   FormControl,
@@ -18,17 +26,12 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { useUser } from '@/lib/hooks/use-user'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { cn } from '@/lib/utils'
-import { useToast } from '@/lib/hooks/use-toast'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { getUserProviders } from '@/lib/utils/auth'
 
 const formSchema = z.object({
   email: z.string().email('Invalid e-mail address'),

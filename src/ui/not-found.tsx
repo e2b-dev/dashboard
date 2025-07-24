@@ -1,6 +1,8 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import { ArrowLeft, HomeIcon, LayoutDashboard } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from './primitives/button'
 import {
   Card,
@@ -10,8 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from './primitives/card'
-import { HomeIcon, ArrowLeft, LayoutDashboard } from 'lucide-react'
-import Link from 'next/link'
 
 export default function NotFound() {
   return (

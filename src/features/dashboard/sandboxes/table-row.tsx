@@ -1,7 +1,6 @@
-import { memo } from 'react'
-import { Row } from '@tanstack/react-table'
 import { DataTableCell, DataTableRow } from '@/ui/data-table'
-import { flexRender } from '@tanstack/react-table'
+import { flexRender, Row } from '@tanstack/react-table'
+import { memo } from 'react'
 import { SandboxWithMetrics } from './table-config'
 
 interface TableRowProps {

@@ -1,8 +1,8 @@
 'use client'
 
-import * as React from 'react'
-import { format, isFuture, isPast } from 'date-fns'
+import { format, isFuture } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
+import * as React from 'react'
 import { DateRange, SelectRangeEventHandler } from 'react-day-picker'
 
 import { cn } from '@/lib/utils'

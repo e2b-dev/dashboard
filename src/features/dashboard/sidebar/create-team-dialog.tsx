@@ -1,8 +1,10 @@
 'use client'
 
-import * as React from 'react'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
+import { createTeamAction } from '@/server/team/team-actions'
+import { CreateTeamSchema } from '@/server/team/types'
+import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { Button } from '@/ui/primitives/button'
 import {
   Form,
   FormControl,
@@ -21,12 +22,9 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { createTeamAction } from '@/server/team/team-actions'
-import { toast } from '@/lib/hooks/use-toast'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useRouter } from 'next/navigation'
-import { defaultSuccessToast } from '@/lib/hooks/use-toast'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { CreateTeamSchema } from '@/server/team/types'
 
 interface CreateTeamDialogProps {
   open: boolean

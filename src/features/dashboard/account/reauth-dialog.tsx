@@ -1,8 +1,8 @@
 'use client'
 
-import { AlertDialog } from '@/ui/alert-dialog'
-import { signOutAction } from '@/server/auth/auth-actions'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { signOutAction } from '@/server/auth/auth-actions'
+import { AlertDialog } from '@/ui/alert-dialog'
 
 interface ReauthDialogProps {
   open?: boolean

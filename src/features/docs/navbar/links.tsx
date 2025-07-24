@@ -1,7 +1,7 @@
 'use client'
 
-import { useSidebar } from 'fumadocs-ui/provider'
 import { Button } from '@/ui/primitives/button'
+import { useSidebar } from 'fumadocs-ui/provider'
 import { MenuIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback } from 'react'

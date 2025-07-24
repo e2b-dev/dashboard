@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { Settings2, Terminal, Trash2 } from 'lucide-react'
 import { Button } from '../primitives/button'
-import { Terminal, Trash2, Settings2 } from 'lucide-react'
 
 const meta = {
   title: 'UI/Button',

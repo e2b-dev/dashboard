@@ -1,7 +1,7 @@
+import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import { TerminalIcon } from 'lucide-react'
 import { type HTMLAttributes } from 'react'
-import { cn } from '@/lib/utils'
 import { IconBaseProps } from 'react-icons/lib'
 
 export function IconContainer({

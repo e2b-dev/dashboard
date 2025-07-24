@@ -1,14 +1,14 @@
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/ui/primitives/card'
 import { Suspense } from 'react'
 import { SandboxesChart } from './sandboxes-chart'
-import { ChartPlaceholder } from '@/ui/chart-placeholder'
-import { getUsageThroughReactCache } from '@/server/usage/get-usage'
 
 export function SandboxesCard({
   className,

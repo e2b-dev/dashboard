@@ -1,3 +1,8 @@
+import { getInvoices } from '@/server/billing/get-invoices'
+import { ErrorIndicator } from '@/ui/error-indicator'
+import { Loader } from '@/ui/loader'
+import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { Button } from '@/ui/primitives/button'
 import {
   Table,
   TableBody,
@@ -6,14 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { Loader } from '@/ui/loader'
-import { Button } from '@/ui/primitives/button'
-import { Suspense } from 'react'
 import Link from 'next/link'
-import { getInvoices } from '@/server/billing/get-invoices'
-import { bailOutFromPPR } from '@/lib/utils/server'
-import { ErrorIndicator } from '@/ui/error-indicator'
+import { Suspense } from 'react'
 
 interface BillingInvoicesTableProps {
   teamId: string

@@ -1,16 +1,16 @@
+import {
+  CodeBlockProps,
+  CodeBlock as DocsCodeBlock,
+  Pre,
+} from '@/ui/docs-code-block'
+import { Tabs as DocsTabs, Tab, TabsProps } from '@/ui/docs-tabs'
+import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
-import { Tab, Tabs as DocsTabs, TabsProps } from '@/ui/docs-tabs'
 import { TypeTable } from 'fumadocs-ui/components/type-table'
 import defaultMdxComponents from 'fumadocs-ui/mdx'
+import { AlertCircle } from 'lucide-react'
 import { MDXComponents } from 'mdx/types'
 import { ComponentProps, forwardRef, Fragment } from 'react'
-import { AlertCircle } from 'lucide-react'
-import {
-  Pre,
-  CodeBlock as DocsCodeBlock,
-  CodeBlockProps,
-} from '@/ui/docs-code-block'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 
 const Callout = forwardRef<
   HTMLDivElement,

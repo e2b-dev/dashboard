@@ -1,6 +1,8 @@
 'use client'
 
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { createApiKeyAction } from '@/server/keys/key-actions'
+import CopyButton from '@/ui/copy-button'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -13,15 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
-import { Input } from '@/ui/primitives/input'
-import { Label } from '@/ui/primitives/label'
-import { FC, ReactNode, useState } from 'react'
-import CopyButton from '@/ui/copy-button'
-import { usePostHog } from 'posthog-js/react'
-import { useAction } from 'next-safe-action/hooks'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
   FormControl,
@@ -29,8 +22,14 @@ import {
   FormItem,
   FormMessage,
 } from '@/ui/primitives/form'
-import { useToast } from '@/lib/hooks/use-toast'
-import { defaultErrorToast } from '@/lib/hooks/use-toast'
+import { Input } from '@/ui/primitives/input'
+import { Label } from '@/ui/primitives/label'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
+import { usePostHog } from 'posthog-js/react'
+import { FC, ReactNode, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const formSchema = z.object({
   name: z

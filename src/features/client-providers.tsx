@@ -1,11 +1,11 @@
 'use client'
 
+import { ToastProvider } from '@/ui/primitives/toast'
+import { TooltipProvider } from '@/ui/primitives/tooltip'
+import { RootProvider } from 'fumadocs-ui/provider'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { useEffect } from 'react'
-import { RootProvider } from 'fumadocs-ui/provider'
-import { TooltipProvider } from '@/ui/primitives/tooltip'
-import { ToastProvider } from '@/ui/primitives/toast'
 
 interface ClientProvidersProps {
   children: React.ReactNode

@@ -2,8 +2,8 @@ import { InfoIcon } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
   TooltipProvider,
+  TooltipTrigger,
 } from './primitives/tooltip'
 
 interface HelpTooltipProps {

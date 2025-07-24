@@ -1,6 +1,6 @@
-import { ThemeRegistration } from 'shiki'
 import { useTheme } from 'next-themes'
 import { useMemo } from 'react'
+import { ThemeRegistration } from 'shiki'
 
 import baseThemeDark from '@shikijs/themes/rose-pine'
 import baseThemeLight from '@shikijs/themes/rose-pine-dawn'

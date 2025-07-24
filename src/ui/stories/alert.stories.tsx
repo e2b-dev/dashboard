@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { Alert, AlertDescription, AlertTitle } from '../primitives/alert'
 import {
-  TerminalIcon,
   AlertCircleIcon,
   AlertTriangleIcon,
-  InfoIcon,
-  ZapIcon,
   FlaskConicalIcon,
+  InfoIcon,
+  TerminalIcon,
+  ZapIcon,
 } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '../primitives/alert'
 
 const meta = {
   title: 'UI/Alert',

@@ -7,15 +7,15 @@
  * is discoverable by search engines.
  */
 
-import { MetadataRoute } from 'next'
-import { XMLParser } from 'fast-xml-parser'
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import {
   DOCS_NEXT_DOMAIN,
   LANDING_PAGE_DOMAIN,
   ROUTE_REWRITE_CONFIG,
 } from '@/configs/rewrites'
 import { DomainConfig } from '@/types/rewrites.types'
-import { ALLOW_SEO_INDEXING } from '@/configs/flags'
+import { XMLParser } from 'fast-xml-parser'
+import { MetadataRoute } from 'next'
 
 // Cache the sitemap for 15 minutes (in seconds)
 const SITEMAP_CACHE_TIME = 15 * 60

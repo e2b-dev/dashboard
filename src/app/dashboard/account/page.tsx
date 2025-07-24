@@ -1,9 +1,9 @@
-import DashboardPageLayout from '@/features/dashboard/page-layout'
-import { NameSettings } from '@/features/dashboard/account/name-settings'
-import { EmailSettings } from '@/features/dashboard/account/email-settings'
-import { Suspense } from 'react'
 import { AccessTokenSettings } from '@/features/dashboard/account/access-token-settings'
+import { EmailSettings } from '@/features/dashboard/account/email-settings'
+import { NameSettings } from '@/features/dashboard/account/name-settings'
 import { PasswordSettingsServer } from '@/features/dashboard/account/password-settings-server'
+import DashboardPageLayout from '@/features/dashboard/page-layout'
+import { Suspense } from 'react'
 
 export interface AccountPageSearchParams {
   reauth?: '1'

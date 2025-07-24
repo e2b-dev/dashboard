@@ -1,13 +1,13 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { SidebarMenuItem, SidebarMenuButton } from '@/ui/primitives/sidebar'
-import { AlertOctagonIcon } from 'lucide-react'
 import { cn, exponentialSmoothing } from '@/lib/utils'
+import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
+import { AlertOctagonIcon } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { AnimatePresence, motion } from 'motion/react'
 
 interface TeamBlockageAlertProps {
   className?: string

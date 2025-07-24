@@ -1,14 +1,14 @@
 'use client'
 
-import { usePostHog } from 'posthog-js/react'
-import { useState, useEffect } from 'react'
-import { Survey } from 'posthog-js'
 import { useToast } from '@/lib/hooks/use-toast'
-import { Popover, PopoverContent } from '@/ui/primitives/popover'
-import { PopoverTrigger } from '@radix-ui/react-popover'
 import { Button } from '@/ui/primitives/button'
-import { MessageSquarePlus } from 'lucide-react'
+import { Popover, PopoverContent } from '@/ui/primitives/popover'
 import { SurveyContent } from '@/ui/survey'
+import { PopoverTrigger } from '@radix-ui/react-popover'
+import { MessageSquarePlus } from 'lucide-react'
+import { Survey } from 'posthog-js'
+import { usePostHog } from 'posthog-js/react'
+import { useEffect, useState } from 'react'
 
 export function DashboardSurveyPopover() {
   const posthog = usePostHog()

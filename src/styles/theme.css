@@ -63,20 +63,43 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-xs: 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-sm: 0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-md: 0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-lg: 0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-xl: 0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-2xl: 0 25px 50px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-inner: inset 0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-xs:
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-sm:
+    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-md:
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-lg:
+    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-xl:
+    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-2xl: 0 25px 50px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-inner: inset 0 2px 4px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
 
-  --drop-shadow-xs: 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-sm: 0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-md: 0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-lg: 0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-xl: 0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-2xl: 0 25px 50px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-xs:
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-sm:
+    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-md:
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-lg:
+    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-xl:
+    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-2xl: 0 25px 50px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
 
   --color-fd-background: var(--bg);
   --color-fd-foreground: var(--fg);
@@ -96,8 +119,8 @@
   --color-fd-ring: var(--ring);
 
   /* Fonts */
-  --font-sans: "IBM Plex Sans", sans-serif;
-  --font-mono: "IBM Plex Mono", monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
   /* Animations */
   @keyframes accordion-down {
@@ -159,7 +182,8 @@
   --animate-shimmer: shimmer 1s ease-in-out infinite;
   --animate-grid: grid 30s linear infinite;
   --animate-wave: wave 2s linear linear infinite;
-  --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s
+    cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @utility container {

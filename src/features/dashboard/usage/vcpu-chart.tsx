@@ -1,10 +1,12 @@
 'use client'
 
+import { UsageData } from '@/server/usage/types'
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
+import { useMemo } from 'react'
 import { Area, AreaChart, XAxis, YAxis } from 'recharts'
 import {
   bigNumbersAxisTickFormatter,
@@ -13,8 +15,6 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
-import { UsageData } from '@/server/usage/types'
-import { useMemo } from 'react'
 
 interface VCPUChartProps {
   data: UsageData['compute']

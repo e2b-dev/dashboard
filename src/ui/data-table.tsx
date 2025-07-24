@@ -1,20 +1,20 @@
-import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { Cell, Header } from '@tanstack/react-table'
-import { Separator } from '@/ui/primitives/separator'
 import { Button } from '@/ui/primitives/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/ui/primitives/select'
+import { Separator } from '@/ui/primitives/separator'
+import { Cell, Header } from '@tanstack/react-table'
 import {
   ArrowDownWideNarrow,
   ArrowUpDown,
   ArrowUpNarrowWide,
 } from 'lucide-react'
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/ui/primitives/select'
+import * as React from 'react'
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -294,11 +294,11 @@ function DataTablePagination({
 }
 
 export {
-  DataTableHead,
-  DataTableCell,
-  DataTableRow,
   DataTable,
-  DataTableHeader,
   DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
   DataTablePagination,
+  DataTableRow,
 }

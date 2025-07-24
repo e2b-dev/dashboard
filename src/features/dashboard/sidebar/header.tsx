@@ -1,5 +1,6 @@
 'use client'
 
+import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
 import Logo from '@/ui/logo'
 import { Button } from '@/ui/primitives/button'
@@ -9,13 +10,11 @@ import {
   SidebarMenu,
   useSidebar,
 } from '@/ui/primitives/sidebar'
+import ShortcutTooltip from '@/ui/shortcut-tooltip'
 import { ArrowLeftToLine, ArrowRightFromLine } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import DashboardSidebarMenu from './menu'
 import DashboardSidebarCommand from './command'
-import ShortcutTooltip from '@/ui/shortcut-tooltip'
-import useKeydown from '@/lib/hooks/use-keydown'
-import TeamBlockageAlert from './blocked-banner'
+import DashboardSidebarMenu from './menu'
 
 export default function DashboardSidebarHeader() {
   const { toggleSidebar, open, openMobile } = useSidebar()

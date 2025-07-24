@@ -1,3 +1,14 @@
+import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
+import { cn } from '@/lib/utils'
+import { Template } from '@/types/api'
+import { NumberInput } from '@/ui/number-input'
+import { Button } from '@/ui/primitives/button'
+import {
+  Command,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/ui/primitives/command'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,26 +19,15 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { DropdownMenuTrigger } from '@/ui/primitives/dropdown-menu'
-import { cn } from '@/lib/utils'
-import * as React from 'react'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
-import { useDebounceValue } from 'usehooks-ts'
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
-import { Button } from '@/ui/primitives/button'
-import { ListFilter } from 'lucide-react'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { Template } from '@/types/api'
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/ui/primitives/command'
+import { ListFilter } from 'lucide-react'
+import * as React from 'react'
 import { memo, useCallback } from 'react'
-import { NumberInput } from '@/ui/number-input'
+import { useDebounceValue } from 'usehooks-ts'
 
 export type StartedAtFilter = '1h ago' | '6h ago' | '12h ago' | undefined
 

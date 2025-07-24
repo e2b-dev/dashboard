@@ -1,11 +1,15 @@
 'use client'
 
-import { updateTeamNameAction } from '@/server/team/team-actions'
-import { Button } from '@/ui/primitives/button'
-import { Input } from '@/ui/primitives/input'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { exponentialSmoothing } from '@/lib/utils'
+import { updateTeamNameAction } from '@/server/team/team-actions'
+import { UpdateTeamNameSchema } from '@/server/team/types'
+import { Button } from '@/ui/primitives/button'
 import {
   Card,
   CardContent,
@@ -15,17 +19,16 @@ import {
 } from '@/ui/primitives/card'
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
-  FormControl,
   FormMessage,
 } from '@/ui/primitives/form'
-import { useToast } from '@/lib/hooks/use-toast'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { UpdateTeamNameSchema } from '@/server/team/types'
+import { Input } from '@/ui/primitives/input'
+import { Skeleton } from '@/ui/primitives/skeleton'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { AnimatePresence, motion } from 'motion/react'
-import { exponentialSmoothing } from '@/lib/utils'
 
 interface NameCardProps {
   className?: string

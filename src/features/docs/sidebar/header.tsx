@@ -1,7 +1,7 @@
-import Link from 'next/link'
-import { FileIcon, LinkIcon } from 'lucide-react'
-import { Button } from '@/ui/primitives/button'
 import { Avatar, AvatarFallback } from '@/ui/primitives/avatar'
+import { Button } from '@/ui/primitives/button'
+import { FileIcon } from 'lucide-react'
+import Link from 'next/link'
 
 const tabs = [
   {

@@ -1,7 +1,4 @@
 {
   "title": "Analyze data with AI",
-  "pages": [
-    "index",
-    "pre-installed-libraries"
-  ]
+  "pages": ["index", "pre-installed-libraries"]
 }

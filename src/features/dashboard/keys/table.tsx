@@ -1,5 +1,6 @@
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { cn } from '@/lib/utils'
 import { Loader } from '@/ui/loader'
+import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import {
   Table,
   TableBody,
@@ -8,10 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { FC } from 'react'
+import { FC, Suspense } from 'react'
 import TableBodyContent from './table-body'
-import { Suspense } from 'react'
-import { cn } from '@/lib/utils'
 
 interface ApiKeysTableProps {
   teamId: string

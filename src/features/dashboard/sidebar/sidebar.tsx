@@ -1,7 +1,7 @@
 import { Sidebar, SidebarProps, SidebarRail } from '@/ui/primitives/sidebar'
-import DashboardSidebarHeader from './header'
-import DashboardSidebarFooter from './footer'
 import DashboardSidebarContent from './content'
+import DashboardSidebarFooter from './footer'
+import DashboardSidebarHeader from './header'
 
 export default function DashboardSidebar({ ...props }: SidebarProps) {
   return (

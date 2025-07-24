@@ -1,14 +1,14 @@
 'use client'
 
-import { forgotPasswordAction } from '@/server/auth/auth-actions'
+import { AUTH_URLS } from '@/configs/urls'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
+import { forgotPasswordAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
-import { AUTH_URLS } from '@/configs/urls'
-import { useSearchParams } from 'next/navigation'
-import { useRef, useEffect, useState } from 'react'
 import { useAction } from 'next-safe-action/hooks'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 
 export default function ForgotPassword() {
   const searchParams = useSearchParams()

@@ -1,10 +1,10 @@
-import { ThemeSwitcher } from '@/ui/theme-switcher'
 import { cn } from '@/lib/utils'
-import { Suspense } from 'react'
-import Frame from '@/ui/frame'
-import { DashboardSurveyPopover } from './navbar/dashboard-survey-popover'
 import { CatchErrorBoundary } from '@/ui/error'
+import Frame from '@/ui/frame'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
+import { ThemeSwitcher } from '@/ui/theme-switcher'
+import { Suspense } from 'react'
+import { DashboardSurveyPopover } from './navbar/dashboard-survey-popover'
 
 export interface DashboardPageLayoutProps {
   children: React.ReactNode

@@ -1,5 +1,3 @@
-import { ClientTeam } from './dashboard.types'
-
 /*
  * Server actions do not return thrown error messages in production, for security.
  *
@@ -22,8 +20,8 @@ type ActionResponse<T> = ActionErrorResponse | ActionSuccessResponse<T>
 type ActionFunction<TInput, TOutput> = (input: TInput) => Promise<TOutput>
 
 export type {
-  ActionResponse,
-  ActionFunction,
   ActionErrorResponse,
+  ActionFunction,
+  ActionResponse,
   ActionSuccessResponse,
 }

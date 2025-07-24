@@ -1,5 +1,8 @@
 'use client'
 
+import { cn } from '@/lib/utils'
+import { NumberInput } from '@/ui/number-input'
+import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,16 +15,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { Button } from '@/ui/primitives/button'
-import { FilterIcon, ListFilter } from 'lucide-react'
-import { TableFilterButton } from '@/ui/table-filter-button'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
-import { useDebounceValue } from 'usehooks-ts'
+import { TableFilterButton } from '@/ui/table-filter-button'
+import { ListFilter } from 'lucide-react'
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { useDebounceValue } from 'usehooks-ts'
 import { useTemplateTableStore } from './stores/table-store'
-import { NumberInput } from '@/ui/number-input'
 
 // Components
 const ResourcesFilter = () => {

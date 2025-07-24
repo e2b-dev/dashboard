@@ -1,17 +1,17 @@
-import type { Metadata } from 'next'
-import Sidebar from '@/features/dashboard/sidebar/sidebar'
+import { COOKIE_KEYS } from '@/configs/keys'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
-import { Suspense } from 'react'
+import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { ServerContextProvider } from '@/lib/hooks/use-server-context'
 import {
   resolveTeamIdInServerComponent,
   resolveTeamSlugInServerComponent,
 } from '@/lib/utils/server'
-import { getUserTeams } from '@/server/team/get-team'
 import { getSessionInsecure } from '@/server/auth/get-session'
+import { getUserTeams } from '@/server/team/get-team'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
+import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
-import { COOKIE_KEYS } from '@/configs/keys'
+import { Suspense } from 'react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode

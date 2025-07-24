@@ -1,15 +1,15 @@
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardPageLayout from '@/features/dashboard/page-layout'
 import SandboxesTable from '@/features/dashboard/sandboxes/table'
+import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
+import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
 import {
   getDefaultTemplates,
   getTeamTemplates,
 } from '@/server/templates/get-team-templates'
-import { Suspense } from 'react'
 import ErrorBoundary from '@/ui/error'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
+import { Suspense } from 'react'
 
 interface PageProps {
   params: Promise<{

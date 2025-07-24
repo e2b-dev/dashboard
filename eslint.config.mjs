@@ -15,7 +15,6 @@ const eslintConfig = [
       '@typescript-eslint/no-empty-object-type': 'off',
     },
   }),
-
 ]
 
 export default eslintConfig

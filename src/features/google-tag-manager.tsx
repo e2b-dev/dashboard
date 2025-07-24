@@ -31,4 +31,4 @@ function GTMBody() {
   )
 }
 
-export { GTMHead, GTMBody }
+export { GTMBody, GTMHead }

@@ -1,17 +1,17 @@
 'use client'
 
 import {
+  chartConfig,
+  commonChartProps,
+} from '@/features/dashboard/usage/chart-config'
+import { cn } from '@/lib/utils'
+import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
 import { Area, AreaChart } from 'recharts'
-import {
-  chartConfig,
-  commonChartProps,
-} from '@/features/dashboard/usage/chart-config'
-import { cn } from '@/lib/utils'
-import { Card, CardContent, CardHeader, CardTitle } from './primitives/card'
+import { Card } from './primitives/card'
 
 interface ChartPlaceholderProps {
   classNames?: {

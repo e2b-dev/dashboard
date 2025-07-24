@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
+import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
 
 const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES(teamId),

@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover'
+import { Calendar, Settings } from 'lucide-react'
 import { Button } from '../primitives/button'
-import { Settings, Calendar } from 'lucide-react'
 import { Input } from '../primitives/input'
 import { Label } from '../primitives/label'
+import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover'
 
 const meta = {
   title: 'UI/Popover',

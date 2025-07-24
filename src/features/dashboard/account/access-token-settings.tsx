@@ -1,5 +1,7 @@
 'use client'
 
+import { useUser } from '@/lib/hooks/use-user'
+import { cn } from '@/lib/utils'
 import {
   Card,
   CardContent,
@@ -8,8 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { useUser } from '@/lib/hooks/use-user'
-import { cn } from '@/lib/utils'
 import UserAccessToken from './user-access-token'
 
 interface AccessTokenSettingsProps {

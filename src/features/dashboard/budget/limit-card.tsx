@@ -1,9 +1,9 @@
 'use client'
 
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { BillingLimit } from '@/types/billing'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
 import LimitForm from './limit-form'
-import { BillingLimit } from '@/types/billing'
 
 interface LimitCardProps {
   className?: string

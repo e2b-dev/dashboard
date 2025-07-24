@@ -1,5 +1,8 @@
 'use client'
 
+import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
+import useKeydown from '@/lib/hooks/use-keydown'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
 import {
   CommandDialog,
@@ -9,18 +12,15 @@ import {
   CommandItem,
   CommandList,
 } from '@/ui/primitives/command'
-import { useEffect, useState } from 'react'
-import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
-import { useRouter } from 'next/navigation'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { Kbd } from '@/ui/primitives/kbd'
 import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { Terminal } from 'lucide-react'
-import { Kbd } from '@/ui/primitives/kbd'
-import useKeydown from '@/lib/hooks/use-keydown'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 interface DashboardSidebarCommandProps {
   className?: string

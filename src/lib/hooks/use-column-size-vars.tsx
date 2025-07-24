@@ -1,5 +1,5 @@
 import { Table } from '@tanstack/react-table'
-import { useMemo, useRef, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
  * Hook to gather all column sizes once and store them as CSS variables.

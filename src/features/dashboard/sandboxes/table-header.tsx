@@ -5,8 +5,8 @@ import {
   DataTableHeader,
   DataTableRow,
 } from '@/ui/data-table'
-import { flexRender, HeaderGroup, Row, TableState } from '@tanstack/react-table'
 import Scanline from '@/ui/scanline'
+import { flexRender, HeaderGroup, Row, TableState } from '@tanstack/react-table'
 import { SandboxWithMetrics } from './table-config'
 
 interface TableHeaderProps {

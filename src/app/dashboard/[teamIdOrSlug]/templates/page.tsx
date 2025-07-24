@@ -1,16 +1,13 @@
 import DashboardPageLayout from '@/features/dashboard/page-layout'
 import TemplatesTable from '@/features/dashboard/templates/table'
+import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import {
   getDefaultTemplates,
   getTeamTemplates,
 } from '@/server/templates/get-team-templates'
+import ErrorBoundary from '@/ui/error'
 import { Suspense } from 'react'
 import LoadingLayout from '../../loading'
-import ErrorBoundary from '@/ui/error'
-import {
-  bailOutFromPPR,
-  resolveTeamIdInServerComponent,
-} from '@/lib/utils/server'
 
 interface PageProps {
   params: Promise<{

@@ -1,15 +1,14 @@
 'use client'
 
-import { Button } from '@/ui/primitives/button'
 import { Tier } from '@/configs/tiers'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { useToast } from '@/lib/hooks/use-toast'
-import { forwardRef } from 'react'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { redirectToCheckoutAction } from '@/server/billing/billing-actions'
 import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
 import { useAction } from 'next-safe-action/hooks'
-import { defaultErrorToast } from '@/lib/hooks/use-toast'
+import { forwardRef } from 'react'
 
 interface BillingTierCardProps {
   tier: Tier

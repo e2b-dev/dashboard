@@ -1,15 +1,15 @@
 'use client'
 
-import React from 'react'
-import { PageTree } from 'fumadocs-core/server'
 import { cn, exponentialSmoothing } from '@/lib/utils'
 import { isActive } from '@/lib/utils/docs'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
 import { Button, buttonVariants } from '@/ui/primitives/button'
 import { Separator } from '@/ui/primitives/separator'
+import { AnimatePresence, motion, type Variants } from 'framer-motion'
+import { PageTree } from 'fumadocs-core/server'
+import { ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import React from 'react'
 
 const variants = {
   container: {

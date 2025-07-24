@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { Sandbox } from 'e2b'
+import { describe, expect, it } from 'vitest'
 
 // Ensure required environment variables exist
 const { TEST_E2B_DOMAIN, TEST_E2B_API_KEY } = import.meta.env

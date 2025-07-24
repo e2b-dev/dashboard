@@ -1,8 +1,15 @@
 'use client'
 
-import { useToast } from '@/lib/hooks/use-toast'
-import { TableCell, TableRow } from '@/ui/primitives/table'
-import { MoreHorizontal } from 'lucide-react'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { exponentialSmoothing } from '@/lib/utils'
+import { deleteApiKeyAction } from '@/server/keys/key-actions'
+import { TeamAPIKey } from '@/types/api'
+import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -12,15 +19,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { deleteApiKeyAction } from '@/server/keys/key-actions'
-import { AlertDialog } from '@/ui/alert-dialog'
-import { useState } from 'react'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { TableCell, TableRow } from '@/ui/primitives/table'
+import { MoreHorizontal } from 'lucide-react'
 import { motion } from 'motion/react'
-import { exponentialSmoothing } from '@/lib/utils'
 import { useAction } from 'next-safe-action/hooks'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { TeamAPIKey } from '@/types/api'
+import { useState } from 'react'
 
 interface TableRowProps {
   apiKey: TeamAPIKey

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { Button } from '../primitives/button'
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../primitives/card'
-import { Button } from '../primitives/button'
 
 const meta = {
   title: 'UI/Card',

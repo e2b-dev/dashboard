@@ -1,41 +1,39 @@
 'use client'
 
-import { useRef, useMemo, useEffect } from 'react'
-import { useLocalStorage } from 'usehooks-ts'
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
+import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
+import useIsMounted from '@/lib/hooks/use-is-mounted'
+import { cn } from '@/lib/utils'
+import { Sandbox, Template } from '@/types/api'
+import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import ClientOnly from '@/ui/client-only'
+import { DataTable } from '@/ui/data-table'
+import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import {
   ColumnFiltersState,
   ColumnSizingState,
-  useReactTable,
+  FilterFn,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  FilterFn,
   Row,
+  useReactTable,
 } from '@tanstack/react-table'
-import { DataTable } from '@/ui/data-table'
-import useIsMounted from '@/lib/hooks/use-is-mounted'
+import { subHours } from 'date-fns'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
+import { SandboxesHeader } from './header'
+import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
+import { TableBody } from './table-body'
 import {
-  fuzzyFilter,
-  dateRangeFilter,
-  resourceRangeFilter,
   COLUMNS,
+  dateRangeFilter,
+  fuzzyFilter,
+  resourceRangeFilter,
   SandboxWithMetrics,
 } from './table-config'
-import React from 'react'
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
-import { SandboxesHeader } from './header'
-import { TableBody } from './table-body'
-import { subHours } from 'date-fns'
-import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
-import { Sandbox, Template } from '@/types/api'
-import ClientOnly from '@/ui/client-only'
 import TableHeader from './table-header'
-import { cn } from '@/lib/utils'
-import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
-import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
-import { useSandboxMetricsStore } from './stores/metrics-store'
 
 const INITIAL_VISUAL_ROWS_COUNT = 50
 

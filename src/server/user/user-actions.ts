@@ -2,10 +2,10 @@
 
 import { authActionClient } from '@/lib/clients/action'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
-import { z } from 'zod'
-import { headers } from 'next/headers'
 import { returnValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+import { z } from 'zod'
 
 const UpdateUserSchema = z
   .object({

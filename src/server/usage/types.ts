@@ -17,4 +17,4 @@ type UsageData = {
   credits: number
 }
 
-export type { UsageData, SandboxesUsageDelta, ComputeUsageMonthDelta }
+export type { ComputeUsageMonthDelta, SandboxesUsageDelta, UsageData }

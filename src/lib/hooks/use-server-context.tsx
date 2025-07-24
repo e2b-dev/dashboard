@@ -2,7 +2,7 @@
 
 import { ClientTeam } from '@/types/dashboard.types'
 import { User } from '@supabase/supabase-js'
-import { createContext, useContext, ReactNode } from 'react'
+import { createContext, ReactNode, useContext } from 'react'
 
 interface ServerContextValue {
   selectedTeamId: string | null

@@ -9,12 +9,12 @@ import {
   useRef,
 } from 'react'
 
-import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
-import { cn } from '@/lib/utils'
-import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
-import { buttonVariants } from './primitives/button'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { cn } from '@/lib/utils'
+import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
 import Frame from './frame'
+import { buttonVariants } from './primitives/button'
+import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
 
 export type CodeBlockProps = HTMLAttributes<HTMLElement> & {
   /**

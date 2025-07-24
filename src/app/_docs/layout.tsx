@@ -2,13 +2,13 @@
 
 import '@/styles/docs.css'
 
+import { baseOptions } from '@/app/layout.config'
 import { DocsLayout, type DocsLayoutProps } from 'fumadocs-ui/layouts/docs'
 import type { ReactNode } from 'react'
-import { baseOptions } from '@/app/layout.config'
 /* import "fumadocs-twoslash/twoslash.css"; */
-import { source } from '@/lib/source'
 import { Nav } from '@/features/docs/navbar/navbar'
 import Sidebar from '@/features/docs/sidebar/sidebar'
+import { source } from '@/lib/source'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 /* import { Trigger } from "@/components/ai/search-ai"; */
 

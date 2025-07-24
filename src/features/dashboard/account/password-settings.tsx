@@ -1,6 +1,15 @@
 'use client'
 
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
+import { useUser } from '@/lib/hooks/use-user'
+import { cn } from '@/lib/utils'
+import { getUserProviders } from '@/lib/utils/auth'
 import { updateUserAction } from '@/server/user/user-actions'
+import { Button } from '@/ui/primitives/button'
 import {
   Card,
   CardContent,
@@ -9,15 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Button } from '@/ui/primitives/button'
-import { Input } from '@/ui/primitives/input'
-import { useUser } from '@/lib/hooks/use-user'
-import { cn } from '@/lib/utils'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { useToast } from '@/lib/hooks/use-toast'
 import {
   Form,
   FormControl,
@@ -25,10 +25,13 @@ import {
   FormItem,
   FormMessage,
 } from '@/ui/primitives/form'
-import { defaultSuccessToast, defaultErrorToast } from '@/lib/hooks/use-toast'
-import { useMemo, useState, useEffect } from 'react'
+import { Input } from '@/ui/primitives/input'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
+import { useEffect, useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { ReauthDialog } from './reauth-dialog'
-import { getUserProviders } from '@/lib/utils/auth'
 
 const formSchema = z
   .object({

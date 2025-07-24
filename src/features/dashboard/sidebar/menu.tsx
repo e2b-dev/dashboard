@@ -1,5 +1,11 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { useSelectedTeam, useTeams } from '@/lib/hooks/use-teams'
+import { useUser } from '@/lib/hooks/use-user'
+import { cn } from '@/lib/utils'
+import { signOutAction } from '@/server/auth/auth-actions'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,20 +17,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { useSelectedTeam, useTeams } from '@/lib/hooks/use-teams'
-import { usePathname, useRouter } from 'next/navigation'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
-import { Skeleton } from '@/ui/primitives/skeleton'
-import { Plus, LogOut, UserRoundCog, ChevronsUpDown } from 'lucide-react'
-import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
-import { useUser } from '@/lib/hooks/use-user'
-import { signOutAction } from '@/server/auth/auth-actions'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
+import { Skeleton } from '@/ui/primitives/skeleton'
+import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
+import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 import Link from 'next/link'
-import { CreateTeamDialog } from './create-team-dialog'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { CreateTeamDialog } from './create-team-dialog'
 
 interface DashboardSidebarMenuProps {
   className?: string

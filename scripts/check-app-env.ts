@@ -1,5 +1,5 @@
-import { serverSchema, clientSchema, validateEnv } from '../src/lib/env'
 import { loadEnvConfig } from '@next/env'
+import { clientSchema, serverSchema, validateEnv } from '../src/lib/env'
 
 const projectDir = process.cwd()
 loadEnvConfig(projectDir)

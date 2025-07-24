@@ -1,5 +1,4 @@
 import { Database } from '@/types/database.types'
-import Link from 'next/link'
 import { ReactNode } from 'react'
 
 // NOTE: local object of public tiers present in the database

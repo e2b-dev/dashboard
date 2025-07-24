@@ -1,11 +1,11 @@
 import DashboardPageLayout from '@/features/dashboard/page-layout'
-import { Suspense } from 'react'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { NameCard } from '@/features/dashboard/team/name-card'
 import { InfoCard } from '@/features/dashboard/team/info-card'
 import { MemberCard } from '@/features/dashboard/team/member-card'
+import { NameCard } from '@/features/dashboard/team/name-card'
 import { ProfilePictureCard } from '@/features/dashboard/team/profile-picture-card'
+import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import Scanline from '@/ui/scanline'
+import { Suspense } from 'react'
 
 interface GeneralPageProps {
   params: Promise<{

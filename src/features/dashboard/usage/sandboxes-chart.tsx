@@ -1,10 +1,20 @@
 'use client'
 
+import { cn } from '@/lib/utils'
+import { UsageData } from '@/server/usage/types'
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/ui/primitives/select'
+import { useMemo, useRef, useState } from 'react'
 import { Bar, BarChart, BarProps, XAxis, YAxis } from 'recharts'
 import {
   bigNumbersAxisTickFormatter,
@@ -13,17 +23,6 @@ import {
   commonXAxisProps,
   commonYAxisProps,
 } from './chart-config'
-import { UsageData } from '@/server/usage/types'
-import { useMemo, useState, useRef } from 'react'
-import { cn } from '@/lib/utils'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/primitives/select'
-import { BoxIcon } from 'lucide-react'
 
 const getWeek = (date: Date) => {
   const d = new Date(

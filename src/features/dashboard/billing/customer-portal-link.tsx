@@ -3,9 +3,9 @@
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { redirectToCustomerPortal } from '@/server/billing/billing-actions'
 import ExternalIcon from '@/ui/external-icon'
+import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import { useAction } from 'next-safe-action/hooks'
-import { Loader } from '@/ui/loader'
 
 interface CustomerPortalLinkProps {
   className?: string

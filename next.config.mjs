@@ -22,7 +22,7 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['winston', 'next-logger', "fumadocs-mdx"],
+  serverExternalPackages: ['winston', 'next-logger', 'fumadocs-mdx'],
   trailingSlash: false,
   headers: async () => [
     {
@@ -70,8 +70,8 @@ const config = {
     {
       source: '/ai-agents/:path*',
       destination: '/',
-      permanent: true
-    }
+      permanent: true,
+    },
   ],
   skipTrailingSlashRedirect: true,
 }
