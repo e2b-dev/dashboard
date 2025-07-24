@@ -47,8 +47,9 @@ export default function SandboxInspectIncompatible({
               <CardTitle className="text-lg">Incompatible template</CardTitle>
             </div>
             <CardDescription className="text-fg-300 leading-5">
-              This Sandbox used a template, incompatible with the filesystem
-              inspector. To use the inspector in any new sandbox you launch,{' '}
+              This sandbox used a template that is incompatible with the
+              filesystem inspector. To use the inspector in any new sandbox you
+              launch,{' '}
               <span className="text-fg font-medium">rebuild the template</span>.
             </CardDescription>
           </CardHeader>
