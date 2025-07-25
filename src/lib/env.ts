@@ -7,6 +7,7 @@ export const serverSchema = z.object({
   KV_REST_API_URL: z.string().url(),
 
   BILLING_API_URL: z.string().url().optional(),
+  OTEL_SERVICE_NAME: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),

@@ -3,7 +3,7 @@ import { registerOTel } from '@vercel/otel'
 
 export async function register() {
   registerOTel({
-    serviceName: 'dashboard',
+    serviceName: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
     instrumentationConfig: {
       fetch: {
         propagateContextUrls: [],
