@@ -122,7 +122,7 @@ export function SandboxInspectProvider({
     () => ({
       loadDirectory: async (path: string) => {
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running'))
+          toast(defaultErrorToast('Sandbox is not running anymore.'))
           return
         }
 
@@ -134,7 +134,7 @@ export function SandboxInspectProvider({
         if (!node) return
 
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running'))
+          toast(defaultErrorToast('Sandbox is not running anymore.'))
         } else if (
           node.type === FileType.FILE &&
           !storeRef.current!.getState().isLoaded(path)
@@ -160,7 +160,7 @@ export function SandboxInspectProvider({
         state.setExpanded(normalizedPath, newExpandedState)
 
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running'))
+          toast(defaultErrorToast('Sandbox is not running anymore.'))
           return
         }
 
@@ -170,7 +170,7 @@ export function SandboxInspectProvider({
       },
       refreshDirectory: async (path: string) => {
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running'))
+          toast(defaultErrorToast('Sandbox is not running anymore.'))
           return
         }
 
@@ -178,7 +178,7 @@ export function SandboxInspectProvider({
       },
       refreshFile: async (path: string) => {
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running'))
+          toast(defaultErrorToast('Sandbox is not running anymore.'))
           return
         }
 
@@ -186,7 +186,7 @@ export function SandboxInspectProvider({
       },
       downloadFile: async (path: string) => {
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running'))
+          toast(defaultErrorToast('Sandbox is not running anymore.'))
           return
         }
 
