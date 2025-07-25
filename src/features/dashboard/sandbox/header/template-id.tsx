@@ -9,12 +9,12 @@ export default function TemplateId() {
 
   return (
     <Badge variant="contrast-2" className="gap-2.5">
-      <p>{sandboxInfo?.templateID?.toString()}</p>
+      <p>{sandboxInfo?.alias ?? sandboxInfo?.templateID?.toString()}</p>
       <CopyButton
         size="slate"
         className="size-3.5"
         variant="ghost"
-        value={sandboxInfo?.templateID?.toString() ?? ''}
+        value={sandboxInfo?.alias ?? sandboxInfo?.templateID?.toString() ?? ''}
       />
     </Badge>
   )

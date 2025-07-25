@@ -33,7 +33,7 @@ export default async function SandboxDetailsHeader({
       value: <Status />,
     },
     templateID: {
-      label: 'template id',
+      label: 'template',
       value: <TemplateId />,
     },
     metadata: {
