@@ -13,12 +13,22 @@ export const PROTECTED_URLS = {
   TEAMS: '/dashboard/teams',
   TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
   SANDBOXES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/sandboxes`,
+  SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
+  SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
   KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   RESET_PASSWORD: '/dashboard/account',
+}
+
+export const HELP_URLS = {
+  BUILD_TEMPLATE:
+    'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
+  START_COMMAND: 'https://e2b.dev/docs/sandbox-template/start-cmd',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV

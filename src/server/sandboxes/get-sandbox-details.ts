@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 export const GetSandboxDetailsSchema = z.object({
   teamId: z.string().uuid(),
-  sandboxId: z.string().uuid(),
+  sandboxId: z.string(),
 })
 
 export const getSandboxDetails = authActionClient
@@ -27,6 +27,7 @@ export const getSandboxDetails = authActionClient
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
+      cache: 'no-store',
     })
 
     if (res.error) {
@@ -41,9 +42,7 @@ export const getSandboxDetails = authActionClient
       )
 
       if (status === 404) {
-        return returnServerError(
-          'Sandbox not found. Please check the sandbox ID and try again.'
-        )
+        return returnServerError('SANDBOX_NOT_FOUND')
       }
 
       return handleDefaultInfraError(status)

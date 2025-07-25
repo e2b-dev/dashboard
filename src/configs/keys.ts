@@ -6,6 +6,15 @@ export const COOKIE_KEYS = {
   SELECTED_TEAM_ID: 'e2b-selected-team-id',
   SELECTED_TEAM_SLUG: 'e2b-selected-team-slug',
   SIDEBAR_STATE: 'e2b-sidebar-state',
+  SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
+  SANDBOX_INSPECT_POLLING_INTERVAL: 'e2b-sandbox-inspect-polling-interval',
+}
+
+/*
+ * localStorage keys in use
+ */
+export const LOCAL_STORAGE_KEYS = {
+  SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
 }
 
 /*
