@@ -42,9 +42,7 @@ export const getSandboxDetails = authActionClient
       )
 
       if (status === 404) {
-        return returnServerError(
-          'Sandbox not found. Please check if the Sandbox is running.'
-        )
+        return returnServerError('SANDBOX_NOT_FOUND')
       }
 
       return handleDefaultInfraError(status)

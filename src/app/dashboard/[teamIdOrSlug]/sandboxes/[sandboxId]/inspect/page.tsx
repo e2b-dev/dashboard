@@ -35,22 +35,16 @@ export default async function SandboxInspectPage({
     rootPath,
   })
 
-  if (!res?.data) {
-    if (res?.serverError !== 'ROOT_PATH_NOT_FOUND') {
-      return notFound()
-    }
-  }
-
   return (
     <SandboxInspectProvider
       teamId={teamId}
       rootPath={rootPath}
-      seedEntries={res.data?.entries ?? []}
+      seedEntries={res?.data?.entries ?? []}
     >
       <ClientOnly
         className={cn(
           'sticky top-0 flex flex-1 gap-4 overflow-hidden p-4 max-md:min-h-[calc(100vh-var(--protected-nav-height))]',
-          'md:relative'
+          'md:relative md:!max-h-[100%]'
         )}
       >
         <SandboxInspectFilesystem rootPath={rootPath} />

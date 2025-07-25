@@ -1,15 +1,22 @@
 'use client'
 
-import React, { createContext, useContext, ReactNode } from 'react'
-import { SandboxInfo, SandboxMetric } from '@/types/api'
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from 'react'
+import { SandboxInfo } from '@/types/api'
 import useSWR from 'swr'
 import { SANDBOXE_DETAILS_LATEST_METRICS_POLLING_MS } from '@/configs/intervals'
 import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 
 interface SandboxContextValue {
-  sandboxInfo: SandboxInfo
+  sandboxInfo?: SandboxInfo
   lastMetrics?: ClientSandboxMetric
+  isRunning: boolean
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -24,24 +31,28 @@ export function useSandboxContext() {
 
 interface SandboxProviderProps {
   children: ReactNode
-  sandboxInfo: SandboxInfo
+  serverSandboxInfo?: SandboxInfo
   teamId: string
+  isRunning: boolean
 }
 
 export function SandboxProvider({
   children,
-  sandboxInfo,
+  serverSandboxInfo,
   teamId,
+  isRunning,
 }: SandboxProviderProps) {
   const { data } = useSWR(
-    [`/api/teams/${teamId}/sandboxes/metrics`, sandboxInfo.sandboxID],
+    [`/api/teams/${teamId}/sandboxes/metrics`, serverSandboxInfo?.sandboxID],
     async ([url]) => {
+      if (!serverSandboxInfo?.sandboxID) return null
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sandboxIds: [sandboxInfo.sandboxID] }),
+        body: JSON.stringify({ sandboxIds: [serverSandboxInfo.sandboxID] }),
         cache: 'no-store',
       })
 
@@ -53,7 +64,7 @@ export function SandboxProvider({
 
       const data = (await response.json()) as MetricsResponse
 
-      return data.metrics[sandboxInfo.sandboxID]
+      return data.metrics[serverSandboxInfo.sandboxID]
     },
     {
       refreshInterval: SANDBOXE_DETAILS_LATEST_METRICS_POLLING_MS,
@@ -65,11 +76,20 @@ export function SandboxProvider({
     }
   )
 
+  const [sandboxInfo, setSandboxInfo] = useState(serverSandboxInfo)
+
+  useEffect(() => {
+    if (!serverSandboxInfo) return
+
+    setSandboxInfo(serverSandboxInfo)
+  }, [serverSandboxInfo])
+
   return (
     <SandboxContext.Provider
       value={{
         sandboxInfo,
-        lastMetrics: data,
+        isRunning,
+        lastMetrics: data || undefined,
       }}
     >
       {children}

@@ -40,7 +40,7 @@ export default function SandboxDetailsTabs({
         <TabsContent
           key={tab}
           value={tab}
-          className={cn('flex flex-1 flex-col')}
+          className={cn('flex flex-1 flex-col md:overflow-hidden')}
         >
           {showInspectTab ? (
             children

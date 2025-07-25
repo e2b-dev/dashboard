@@ -1,20 +1,21 @@
 'use client'
 
-import { SandboxInfo } from '@/types/api'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/ui/primitives/button'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, StopCircle } from 'lucide-react'
 import { revalidateSandboxDetailsLayout } from '@/server/sandboxes/sandbox-actions'
 import { cn } from '@/lib/utils'
 import HelpTooltip from '@/ui/help-tooltip'
 import { motion } from 'motion/react'
+import { useSandboxContext } from '../context'
+import { Badge } from '@/ui/primitives/badge'
 
-interface RemainingTimeProps {
-  endAt: SandboxInfo['endAt']
-}
+export default function RemainingTime() {
+  const { sandboxInfo, isRunning } = useSandboxContext()
 
-export default function RemainingTime({ endAt }: RemainingTimeProps) {
+  const endAt = sandboxInfo?.endAt
+
   const getRemainingSeconds = useCallback(() => {
     if (!endAt) return 0
     const endTs = typeof endAt === 'number' ? endAt : new Date(endAt).getTime()
@@ -48,6 +49,14 @@ export default function RemainingTime({ endAt }: RemainingTimeProps) {
       )
     })
   }, [teamIdOrSlug, sandboxId])
+
+  if (!isRunning) {
+    return (
+      <Badge variant="muted">
+        <StopCircle className="size-3" /> Stopped
+      </Badge>
+    )
+  }
 
   return (
     <div className="flex items-center gap-2">

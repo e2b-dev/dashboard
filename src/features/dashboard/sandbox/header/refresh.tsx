@@ -43,10 +43,14 @@ export default function RefreshControl({
   const handleIntervalChange = useCallback(
     async (interval: PollingInterval) => {
       setPollingInterval(interval)
-      await fetch('/api/sandbox/details/polling', {
-        method: 'POST',
-        body: JSON.stringify({ interval }),
-      })
+      try {
+        await fetch('/api/sandbox/details/polling', {
+          method: 'POST',
+          body: JSON.stringify({ interval }),
+        })
+      } catch (error) {
+        console.error(error)
+      }
     },
     []
   )

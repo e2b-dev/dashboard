@@ -1,17 +1,10 @@
-import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
-import { DashboardSurveyPopover } from '@/features/dashboard/navbar/dashboard-survey-popover'
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
-import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
-import SandboxDetailsTabs from '@/features/dashboard/sandbox/tabs'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { isVersionCompatible } from '@/lib/utils/version'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
-import { SidebarTrigger } from '@/ui/primitives/sidebar'
-import { ThemeSwitcher } from '@/ui/theme-switcher'
-import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
+import SandboxLayoutClient from '@/features/dashboard/sandbox/layout'
+import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 
-export const fetchCache = 'default-cache'
+export const fetchCache = 'force-no-store'
 
 interface SandboxLayoutProps {
   children: React.ReactNode
@@ -27,49 +20,37 @@ export default async function SandboxLayout({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
   const res = await getSandboxDetails({ teamId, sandboxId })
 
-  if (!res?.data || res?.serverError) {
-    throw notFound()
+  let exists = false
+
+  if (res?.serverError !== 'SANDBOX_NOT_FOUND') {
+    exists = true
   }
 
-  const isEnvdVersionIncompatibleForInspect = false
-  // Boolean(
-  //   res.data.envdVersion &&
-  //     isVersionCompatible(
-  //       res.data.envdVersion,
-  //       SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
-  //     )
-  // )
+  if (!res?.data || res?.serverError) {
+    console.error(
+      'SANDBOX_DETAILS_LAYOUT',
+      res?.serverError || 'Unknown error',
+      res?.data
+    )
+  }
 
   return (
-    <SandboxProvider teamId={teamId} sandboxInfo={res?.data}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="bg-bg sticky top-0 z-50 flex h-[var(--protected-nav-height)] w-full border-b pr-3 md:pl-3">
-          <div className="flex w-full items-center gap-2">
-            <SidebarTrigger className="text-fg-300 h-full w-11 rounded-none border-r px-3 md:hidden" />
-
-            <h2 className="mr-auto text-lg font-bold">Sandbox</h2>
-
-            <Suspense fallback={null}>
-              <ThemeSwitcher />
-            </Suspense>
-            {process.env.NEXT_PUBLIC_POSTHOG_KEY && <DashboardSurveyPopover />}
-          </div>
-        </div>
-        <SandboxDetailsHeader
-          teamIdOrSlug={teamIdOrSlug}
-          sandboxInfo={res?.data}
-        />
-        <SandboxDetailsTabs
-          tabs={['inspect']}
-          isEnvdVersionIncompatibleForInspect={
-            isEnvdVersionIncompatibleForInspect
-          }
-          templateNameOrId={res.data.alias || res.data.templateID}
-          teamIdOrSlug={teamIdOrSlug}
-        >
-          {children}
-        </SandboxDetailsTabs>
-      </div>
+    <SandboxProvider
+      teamId={teamId}
+      serverSandboxInfo={res?.data}
+      isRunning={exists}
+    >
+      <SandboxLayoutClient
+        teamIdOrSlug={teamIdOrSlug}
+        header={
+          <SandboxDetailsHeader
+            teamIdOrSlug={teamIdOrSlug}
+            state={exists ? 'running' : 'paused'}
+          />
+        }
+      >
+        {children}
+      </SandboxLayoutClient>
     </SandboxProvider>
   )
 }

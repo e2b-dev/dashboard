@@ -67,7 +67,7 @@ export class SandboxManager {
   }
 
   private async startRootWatcher(): Promise<void> {
-    if (this.watchHandle) return
+    this.stopWatching()
 
     try {
       this.watchHandle = await this.sandbox.files.watchDir(
