@@ -1,7 +1,7 @@
 import type { Logger } from 'winston'
 
 // Simple logger that wraps console.log/error for Edge and Browser environments
-function write(level: string, args: unknown[]): Logger {
+function write(level: string, args: unknown[]): void {
   const message = args[0]
   const rest = args.slice(1)
 
