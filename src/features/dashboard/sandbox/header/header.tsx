@@ -11,17 +11,17 @@ import StartedAt from './started-at'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
 import Metadata from './metadata'
-import CopyButton from '@/ui/copy-button'
 import { ResourceUsageClient } from './resource-usage-client'
+import SandboxDetailsTitle from './title'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
-  sandboxInfo: SandboxInfo
+  state: SandboxInfo['state']
 }
 
 export default async function SandboxDetailsHeader({
   teamIdOrSlug,
-  sandboxInfo,
+  state,
 }: SandboxDetailsHeaderProps) {
   const initialPollingInterval = (await cookies()).get(
     COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL
@@ -30,40 +30,33 @@ export default async function SandboxDetailsHeader({
   const headerItems = {
     state: {
       label: 'status',
-      value: <Status state={sandboxInfo.state} />,
+      value: <Status />,
     },
     templateID: {
       label: 'template id',
-      value: <TemplateId templateID={sandboxInfo.templateID} />,
+      value: <TemplateId />,
     },
     metadata: {
       label: 'metadata',
-      value: <Metadata metadata={sandboxInfo.metadata} />,
+      value: <Metadata />,
     },
     remainingTime: {
       label: 'timeout in',
-      value: <RemainingTime endAt={sandboxInfo.endAt} />,
+      value: <RemainingTime />,
     },
     startedAt: {
       label: 'created at',
-      value: <StartedAt startedAt={sandboxInfo.startedAt} />,
+      value: <StartedAt />,
     },
     endAt: {
-      label: sandboxInfo.state === 'running' ? 'running for' : 'ran for',
-      value: (
-        <RanFor
-          state={sandboxInfo.state}
-          startedAt={sandboxInfo.startedAt}
-          endAt={sandboxInfo.endAt}
-        />
-      ),
+      label: state === 'running' ? 'running for' : 'ran for',
+      value: <RanFor />,
     },
     cpuCount: {
       label: 'CPU Usage',
       value: (
         <ResourceUsageClient
           type="cpu"
-          total={sandboxInfo.cpuCount}
           mode="usage"
           classNames={{
             dot: 'mx-1',
@@ -76,7 +69,6 @@ export default async function SandboxDetailsHeader({
       value: (
         <ResourceUsageClient
           type="mem"
-          total={sandboxInfo.memoryMB}
           mode="usage"
           classNames={{
             dot: 'mx-1',
@@ -99,17 +91,7 @@ export default async function SandboxDetailsHeader({
             <ChevronLeftIcon className="size-5" />
             Sandboxes
           </Link>
-          <div className="flex items-center gap-2">
-            <h1 className="text-fg font-sans text-xl font-bold md:text-2xl">
-              {sandboxInfo.sandboxID}
-            </h1>
-            <CopyButton
-              value={sandboxInfo.sandboxID}
-              size="icon"
-              variant="ghost"
-              className="text-fg-300"
-            />
-          </div>
+          <SandboxDetailsTitle />
         </div>
         <RefreshControl
           initialPollingInterval={

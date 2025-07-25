@@ -60,7 +60,7 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
   return (
     <SandboxInspectFrame
       classNames={{
-        frame: 'max-md:max-w-full max-md:border-none',
+        frame: 'max-md:max-w-full max-md:border-none max-h-full',
         header: 'max-md:bg-transparent max-md:h-9 max-md:border-none',
       }}
       initial={{

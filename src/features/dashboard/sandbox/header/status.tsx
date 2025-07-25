@@ -1,19 +1,19 @@
-import { SandboxInfo } from '@/types/api'
+'use client'
+
 import { Badge } from '@/ui/primitives/badge'
 import { Circle } from 'lucide-react'
+import { useSandboxContext } from '../context'
 
-interface StatusProps {
-  state: SandboxInfo['state']
-}
+export default function Status() {
+  const { isRunning } = useSandboxContext()
 
-export default function Status({ state }: StatusProps) {
   return (
     <Badge
-      variant={state === 'running' ? 'success' : 'error'}
+      variant={isRunning ? 'success' : 'error'}
       className="gap-2 uppercase"
     >
       <Circle className="size-2 animate-pulse fill-current" />
-      {state}
+      {isRunning ? 'Running' : 'Stopped'}
     </Badge>
   )
 }

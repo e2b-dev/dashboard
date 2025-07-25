@@ -1,13 +1,17 @@
 'use client'
 
-import { SandboxInfo } from '@/types/api'
 import CopyButton from '@/ui/copy-button'
+import { useSandboxContext } from '../context'
 
-interface StartedAtProps {
-  startedAt: SandboxInfo['startedAt']
-}
+export default function StartedAt() {
+  const { sandboxInfo } = useSandboxContext()
 
-export default function StartedAt({ startedAt }: StartedAtProps) {
+  if (!sandboxInfo) {
+    return null
+  }
+
+  const startedAt = sandboxInfo.startedAt
+
   const date = new Date(startedAt)
   const now = new Date()
   const isToday = date.toDateString() === now.toDateString()

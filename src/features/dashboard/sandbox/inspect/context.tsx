@@ -3,14 +3,16 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import { supabase } from '@/lib/clients/supabase/client'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import Sandbox, { EntryInfo, FileType } from 'e2b'
 import { useRouter } from 'next/navigation'
 import {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
-  useLayoutEffect,
+  useEffect,
   useMemo,
   useRef,
 } from 'react'
@@ -41,11 +43,11 @@ export function SandboxInspectProvider({
   seedEntries,
   teamId,
 }: SandboxInspectProviderProps) {
-  const { sandboxInfo } = useSandboxContext()
+  const { sandboxInfo, isRunning } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
-  const operationsRef = useRef<FilesystemOperations | null>(null)
 
+  const { toast } = useToast()
   const router = useRouter()
 
   /*
@@ -112,112 +114,148 @@ export function SandboxInspectProvider({
 
         state.addNodes(normalizedRoot, seedNodes)
       }
-
-      const store = storeRef.current
-      operationsRef.current = {
-        loadDirectory: async (path: string) => {
-          await sandboxManagerRef.current?.loadDirectory(path)
-        },
-        selectNode: async (path: string) => {
-          const node = store.getState().getNode(path)
-
-          if (!node) return
-
-          if (node.type === FileType.FILE && !store.getState().isLoaded(path)) {
-            await sandboxManagerRef.current?.readFile(path)
-          }
-
-          store.getState().setSelected(path)
-        },
-        resetSelected: () => {
-          store.getState().setSelected(undefined)
-        },
-        toggleDirectory: async (path: string) => {
-          const normalizedPath = normalizePath(path)
-          const state = store.getState()
-          const node = state.getNode(normalizedPath)
-
-          if (!node || node.type !== FileType.DIR) return
-
-          const newExpandedState = !node.isExpanded
-          state.setExpanded(normalizedPath, newExpandedState)
-
-          if (newExpandedState && !state.isLoaded(normalizedPath)) {
-            await sandboxManagerRef.current?.loadDirectory(normalizedPath)
-          }
-        },
-        refreshDirectory: async (path: string) => {
-          await sandboxManagerRef.current?.refreshDirectory(path)
-        },
-        refreshFile: async (path: string) => {
-          await sandboxManagerRef.current?.readFile(path)
-        },
-        downloadFile: async (path: string) => {
-          const downloadUrl =
-            await sandboxManagerRef.current?.getDownloadUrl(path)
-
-          if (!downloadUrl) return
-
-          const node = store.getState().getNode(path)
-
-          const a = document.createElement('a')
-          a.href = downloadUrl
-          a.download = node?.name || ''
-          a.target = '_blank'
-          a.click()
-        },
-      }
     }
   }
 
-  /*
-   * ---------- watcher (side-effect) initialisation / cleanup ----------
-   */
-  useLayoutEffect(() => {
-    const connectSandbox = async () => {
-      if (!storeRef.current) return
+  // ---------- filesystem operations exposed via context ----------
+  const operations = useMemo<FilesystemOperations>(
+    () => ({
+      loadDirectory: async (path: string) => {
+        if (!isRunning) {
+          toast(defaultErrorToast('Sandbox is not running'))
+          return
+        }
 
-      // (re)create the sandbox-manager when sandbox / team / root changes
-      if (sandboxManagerRef.current) {
-        sandboxManagerRef.current.stopWatching()
-      }
+        await sandboxManagerRef.current?.loadDirectory(path)
+      },
+      selectNode: async (path: string) => {
+        const node = storeRef.current!.getState().getNode(path)
 
-      const { data } = await supabase.auth.getSession()
+        if (!node) return
 
-      if (!data || !data.session) {
-        router.replace(AUTH_URLS.SIGN_IN)
-        return
-      }
+        if (!isRunning) {
+          toast(defaultErrorToast('Sandbox is not running'))
+        } else if (
+          node.type === FileType.FILE &&
+          !storeRef.current!.getState().isLoaded(path)
+        ) {
+          await sandboxManagerRef.current?.readFile(path)
+        }
 
-      const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
-        },
-      })
+        storeRef.current!.getState().setSelected(path)
+      },
+      resetSelected: () => {
+        storeRef.current!.setState((state) => {
+          state.selectedPath = undefined
+        })
+      },
+      toggleDirectory: async (path: string) => {
+        const normalizedPath = normalizePath(path)
+        const state = storeRef.current!.getState()
+        const node = state.getNode(normalizedPath)
 
-      sandboxManagerRef.current = new SandboxManager(
-        storeRef.current,
-        sandbox,
-        rootPath,
-        sandboxInfo.envdAccessToken !== undefined
-      )
+        if (!node || node.type !== FileType.DIR) return
+
+        const newExpandedState = !node.isExpanded
+        state.setExpanded(normalizedPath, newExpandedState)
+
+        if (!isRunning) {
+          toast(defaultErrorToast('Sandbox is not running'))
+          return
+        }
+
+        if (newExpandedState && !state.isLoaded(normalizedPath)) {
+          await sandboxManagerRef.current?.loadDirectory(normalizedPath)
+        }
+      },
+      refreshDirectory: async (path: string) => {
+        if (!isRunning) {
+          toast(defaultErrorToast('Sandbox is not running'))
+          return
+        }
+
+        await sandboxManagerRef.current?.refreshDirectory(path)
+      },
+      refreshFile: async (path: string) => {
+        if (!isRunning) {
+          toast(defaultErrorToast('Sandbox is not running'))
+          return
+        }
+
+        await sandboxManagerRef.current?.readFile(path)
+      },
+      downloadFile: async (path: string) => {
+        if (!isRunning) {
+          toast(defaultErrorToast('Sandbox is not running'))
+          return
+        }
+
+        const downloadUrl =
+          await sandboxManagerRef.current?.getDownloadUrl(path)
+
+        if (!downloadUrl) return
+
+        const node = storeRef.current!.getState().getNode(path)
+
+        const a = document.createElement('a')
+        a.href = downloadUrl
+        a.download = node?.name || ''
+        a.target = '_blank'
+        a.click()
+      },
+    }),
+    [isRunning, toast]
+  )
+
+  const connectSandbox = useCallback(async () => {
+    if (!storeRef.current || !sandboxInfo) return
+
+    // (re)create the sandbox-manager when sandbox / team / root changes
+    if (sandboxManagerRef.current) {
+      sandboxManagerRef.current.stopWatching()
     }
 
-    connectSandbox()
+    const { data } = await supabase.auth.getSession()
 
-    return () => {
-      sandboxManagerRef.current?.stopWatching()
+    if (!data || !data.session) {
+      router.replace(AUTH_URLS.SIGN_IN)
+      return
     }
-  }, [sandboxInfo.sandboxID, teamId, rootPath, router])
 
-  if (!storeRef.current || !operationsRef.current) {
+    const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
+      domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
+      },
+    })
+
+    sandboxManagerRef.current = new SandboxManager(
+      storeRef.current,
+      sandbox,
+      rootPath,
+      sandboxInfo.envdAccessToken !== undefined
+    )
+  }, [sandboxInfo?.sandboxID, teamId, rootPath, router])
+
+  // handle sandbox connection / disconnection
+  useEffect(() => {
+    if (isRunning) {
+      if (!sandboxManagerRef.current) {
+        connectSandbox()
+      }
+      return
+    }
+
+    sandboxManagerRef.current?.stopWatching()
+  }, [isRunning, connectSandbox])
+
+  if (!storeRef.current || !sandboxInfo) {
     return null // should never happen, but satisfies type-checker
   }
 
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
-    operations: operationsRef.current,
+    operations,
   }
 
   return (

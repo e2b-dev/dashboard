@@ -9,12 +9,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { RefreshCw, Home, ArrowUp } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { RefreshCw, Home, ArrowUp, ArrowLeft } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useSandboxContext } from '../context'
+import { PROTECTED_URLS } from '@/configs/urls'
 
 export default function SandboxInspectNotFound() {
   const router = useRouter()
+  const { isRunning } = useSandboxContext()
+
+  const { teamIdOrSlug } = useParams()
+
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
   const [isPending, startTransition] = useTransition()
   const [isResetPending, resetTransition] = useTransition()
@@ -52,52 +58,70 @@ export default function SandboxInspectNotFound() {
     <div className="animate-fade-slide-in flex w-full items-center justify-center pt-24 max-sm:p-4">
       <Card className="border-border bg-bg-100/40 w-full max-w-md border backdrop-blur-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-light">Empty Directory</CardTitle>
+          <CardTitle className="text-2xl font-light">
+            {isRunning ? 'Empty Directory' : 'Not Connected'}
+          </CardTitle>
         </CardHeader>
         <CardContent className="text-fg-500 text-center">
           <p>
-            This directory appears to be empty or does not exist. You can reset
-            to the default state, navigate to root, or refresh to try again.
+            {isRunning
+              ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
+              : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'}
           </p>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 pt-4">
-          <div className="flex w-full justify-between gap-4">
+          {isRunning ? (
+            <>
+              <div className="flex w-full justify-between gap-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => setRootPath('')}
+                  disabled={isPending && pendingPath === ''}
+                >
+                  <Home className="text-fg-500 h-4 w-4" />
+                  Reset
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => setRootPath('/')}
+                  disabled={isPending && pendingPath === '/'}
+                >
+                  <ArrowUp className="text-fg-500 h-4 w-4" />
+                  To Root
+                </Button>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  resetTransition(async () => {
+                    router.refresh()
+                  })
+                }
+                className="w-full gap-2"
+                disabled={isResetPending}
+              >
+                <RefreshCw
+                  className={cn('text-fg-500 h-4 w-4 transition-transform', {
+                    'animate-spin': isResetPending,
+                  })}
+                />
+                Refresh
+              </Button>
+            </>
+          ) : (
             <Button
               variant="outline"
-              className="flex-1 gap-2"
-              onClick={() => setRootPath('')}
-              disabled={isPending && pendingPath === ''}
+              onClick={() =>
+                router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
+              }
+              className="w-full gap-2"
             >
-              <Home className="text-fg-500 h-4 w-4" />
-              Reset
+              <ArrowLeft className="text-fg-500 h-4 w-4" />
+              Back to Sandboxes
             </Button>
-            <Button
-              variant="outline"
-              className="flex-1 gap-2"
-              onClick={() => setRootPath('/')}
-              disabled={isPending && pendingPath === '/'}
-            >
-              <ArrowUp className="text-fg-500 h-4 w-4" />
-              To Root
-            </Button>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() =>
-              resetTransition(async () => {
-                router.refresh()
-              })
-            }
-            className="w-full gap-2"
-            disabled={isResetPending}
-          >
-            <RefreshCw
-              className={cn('text-fg-500 h-4 w-4 transition-transform', {
-                'animate-spin': isResetPending,
-              })}
-            />
-            Refresh
-          </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

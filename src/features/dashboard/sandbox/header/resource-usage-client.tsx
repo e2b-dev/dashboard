@@ -9,13 +9,20 @@ interface ResourceUsageClientProps extends ResourceUsageProps {}
 
 export const ResourceUsageClient = memo(
   function ResourceUsageClient({ ...props }: ResourceUsageClientProps) {
-    const { lastMetrics } = useSandboxContext()
+    const { lastMetrics, sandboxInfo } = useSandboxContext()
 
     const metrics = useMemo(
       () =>
         props.type === 'cpu' ? lastMetrics?.cpuUsedPct : lastMetrics?.memUsedMb,
       [props.type, lastMetrics]
     )
+
+    const total = useMemo(() => {
+      if (props.type === 'cpu') {
+        return sandboxInfo?.cpuCount
+      }
+      return sandboxInfo?.memoryMB
+    }, [props.type, sandboxInfo])
 
     return (
       <ResourceUsage
@@ -25,6 +32,7 @@ export const ResourceUsageClient = memo(
           ...props.classNames,
         }}
         metrics={metrics}
+        total={total}
       />
     )
   },
