@@ -72,6 +72,17 @@ const config = {
       destination: '/',
       permanent: true,
     },
+    // Campaigns
+    {
+      source: '/start',
+      destination: 'https://e2bdev.notion.site/Careers-at-E2B-2163f176991f43f69b0984bf2a142920',
+      permanent: true,
+    },
+    {
+      source: '/(humans|machines)',
+      destination: 'https://e2b.dev/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
+      permanent: true,
+    }
   ],
   skipTrailingSlashRedirect: true,
 }
