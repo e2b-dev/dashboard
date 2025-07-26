@@ -24,6 +24,7 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
       { path: '/research' },
       { path: '/startups' },
       { path: '/enterprise' },
+      { path: '/careers' },
       {
         path: '/blog/category',
         pathPreprocessor: (path) => path.replace('/blog', ''),
