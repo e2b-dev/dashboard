@@ -35,7 +35,7 @@ export const actionClient = createSafeActionClient({
   const result = await next()
 
   // strip ctx from result logging to avoid leaking sensitive data (supabase client)
-  const { ctx, ...resultWithoutCtx } = result as Record<string, unknown>
+  const { ctx } = result as Record<string, unknown>
 
   const actionOrFunctionName =
     metadata?.serverFunctionName || metadata?.actionName || 'Unknown action'

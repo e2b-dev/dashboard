@@ -6,7 +6,7 @@
  * In Edge we fall back to the minimal JSON logger implemented in `logger.edge.ts`.
  */
 
-import type { Logger } from 'winston'
+import type { Logger } from 'pino'
 
 const loggerImpl = ((): Logger => {
   if (process.env.NEXT_RUNTIME === 'nodejs') {

@@ -8,7 +8,7 @@ export const serverSchema = z.object({
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
   BILLING_API_URL: z.string().url().optional(),
-  OTEL_SERVICE_NAME: z.string().optional(),
+  SERVICE_NAME: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),

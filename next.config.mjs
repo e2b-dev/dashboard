@@ -22,8 +22,16 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['winston', 'next-logger', 'fumadocs-mdx'],
+  serverExternalPackages: ['fumadocs-mdx'],
   trailingSlash: false,
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+    });
+
+    return config;
+  },
   headers: async () => [
     {
       source: '/(.*)',
