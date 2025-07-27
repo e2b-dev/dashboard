@@ -75,13 +75,19 @@ const config = {
     // Campaigns
     {
       source: '/start',
-      destination: '/careers',
+      destination: '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=start_ooh',
       permanent: false,
       statusCode: 302,
     },
     {
-      source: '/(humans|machines)',
+      source: '/machines',
       destination: '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
+      permanent: false,
+      statusCode: 302,
+    },
+{
+      source: '/humans',
+      destination: '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=humans_ooh',
       permanent: false,
       statusCode: 302,
     }
