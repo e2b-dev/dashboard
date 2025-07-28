@@ -1,10 +1,10 @@
+import { PROTECTED_URLS } from '@/configs/urls'
 import { DataTableCell, DataTableRow } from '@/ui/data-table'
 import { flexRender, Row } from '@tanstack/react-table'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { memo } from 'react'
 import { SandboxWithMetrics } from './table-config'
-import { useParams } from 'next/navigation'
-import { PROTECTED_URLS } from '@/configs/urls'
-import Link from 'next/link'
 
 interface TableRowProps {
   row: Row<SandboxWithMetrics>
@@ -23,6 +23,7 @@ export const TableRow = memo(function TableRow({ row }: TableRowProps) {
         teamIdOrSlug,
         row.original.sandboxID
       )}
+      prefetch={false}
     >
       <DataTableRow
         key={row.id}

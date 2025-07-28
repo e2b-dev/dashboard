@@ -11,7 +11,7 @@ export const actionClient = createSafeActionClient({
       return e.message
     }
 
-    l.error('ACTION_CLIENT:UNEXPECTED_SERVER_ERROR', e)
+    l.error('action_client:unexpected_error', e)
 
     return UnknownError().message
   },
@@ -40,16 +40,14 @@ export const actionClient = createSafeActionClient({
   const actionOrFunctionName =
     metadata?.serverFunctionName || metadata?.actionName || 'Unknown action'
 
-  const actionOrFunction = metadata?.serverFunctionName
-    ? 'Server Function'
-    : 'Server Action'
+  const type = metadata?.serverFunctionName
+    ? 'action'
+    : 'function'
 
   const duration = performance.now() - startTime
 
-  const logPayload = {
-    actionOrFunction,
-    actionOrFunctionName,
-    durationMs: duration.toFixed(2),
+  const meta = {
+    durationMs: duration.toFixed(3),
     input: clientInput,
   }
 
@@ -57,9 +55,16 @@ export const actionClient = createSafeActionClient({
     result.serverError || result.validationErrors || result.success === false
 
   if (error) {
-    l.error(`ACTION_CLIENT - ${actionOrFunctionName}`, error, logPayload)
+    l.error(
+      `action_client:${type} ${actionOrFunctionName}`,
+      error,
+      meta 
+    )
   } else {
-    l.info(`ACTION_CLIENT - ${actionOrFunctionName}`, logPayload)
+    l.info(
+      `action_client:${type} ${actionOrFunctionName}`,
+      meta 
+    )
   }
 
   return result
