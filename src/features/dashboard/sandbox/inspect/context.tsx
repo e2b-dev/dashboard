@@ -47,7 +47,6 @@ export function SandboxInspectProvider({
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
 
-  const { toast } = useToast()
   const router = useRouter()
 
   /*
@@ -122,7 +121,6 @@ export function SandboxInspectProvider({
     () => ({
       loadDirectory: async (path: string) => {
         if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running anymore.'))
           return
         }
 
@@ -133,9 +131,8 @@ export function SandboxInspectProvider({
 
         if (!node) return
 
-        if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running anymore.'))
-        } else if (
+        if (
+          isRunning &&
           node.type === FileType.FILE &&
           !storeRef.current!.getState().isLoaded(path)
         ) {
@@ -159,36 +156,22 @@ export function SandboxInspectProvider({
         const newExpandedState = !node.isExpanded
         state.setExpanded(normalizedPath, newExpandedState)
 
-        if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running anymore.'))
-          return
-        }
-
-        if (newExpandedState && !state.isLoaded(normalizedPath)) {
+        if (isRunning && newExpandedState && !state.isLoaded(normalizedPath)) {
           await sandboxManagerRef.current?.loadDirectory(normalizedPath)
         }
       },
       refreshDirectory: async (path: string) => {
-        if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running anymore.'))
-          return
-        }
+        if (!isRunning) return
 
         await sandboxManagerRef.current?.refreshDirectory(path)
       },
       refreshFile: async (path: string) => {
-        if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running anymore.'))
-          return
-        }
+        if (!isRunning) return
 
         await sandboxManagerRef.current?.readFile(path)
       },
       downloadFile: async (path: string) => {
-        if (!isRunning) {
-          toast(defaultErrorToast('Sandbox is not running anymore.'))
-          return
-        }
+        if (!isRunning) return
 
         const downloadUrl =
           await sandboxManagerRef.current?.getDownloadUrl(path)
@@ -204,7 +187,7 @@ export function SandboxInspectProvider({
         a.click()
       },
     }),
-    [isRunning, toast]
+    [isRunning]
   )
 
   const connectSandbox = useCallback(async () => {

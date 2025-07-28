@@ -14,6 +14,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { useSandboxContext } from '../context'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { AsciiBackgroundPattern } from '@/ui/patterns'
 
 export default function SandboxInspectNotFound() {
   const router = useRouter()
@@ -55,75 +56,82 @@ export default function SandboxInspectNotFound() {
   }, [isPending])
 
   return (
-    <div className="animate-fade-slide-in flex w-full items-center justify-center pt-24 max-sm:p-4">
-      <Card className="border-border bg-bg-100/40 w-full max-w-md border backdrop-blur-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-light">
-            {isRunning ? 'Empty Directory' : 'Not Connected'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-fg-500 text-center">
-          <p>
-            {isRunning
-              ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
-              : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'}
-          </p>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4 pt-4">
-          {isRunning ? (
-            <>
-              <div className="flex w-full justify-between gap-4">
+    <>
+      <div className="text-border-200 pointer-events-none absolute -top-30 -right-100 flex overflow-hidden">
+        <AsciiBackgroundPattern className="w-1/2" />
+        <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
+      </div>
+
+      <div className="animate-fade-slide-in flex w-full items-center justify-center pt-24 max-sm:p-4">
+        <Card className="border-border bg-bg-100/40 w-full max-w-md border backdrop-blur-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-light">
+              {isRunning ? 'Empty Directory' : 'Not Connected'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-fg-500 text-center">
+            <p>
+              {isRunning
+                ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
+                : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'}
+            </p>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4 pt-4">
+            {isRunning ? (
+              <>
+                <div className="flex w-full justify-between gap-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setRootPath('')}
+                    disabled={isPending && pendingPath === ''}
+                  >
+                    <Home className="text-fg-500 h-4 w-4" />
+                    Reset
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setRootPath('/')}
+                    disabled={isPending && pendingPath === '/'}
+                  >
+                    <ArrowUp className="text-fg-500 h-4 w-4" />
+                    To Root
+                  </Button>
+                </div>
                 <Button
                   variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={() => setRootPath('')}
-                  disabled={isPending && pendingPath === ''}
+                  onClick={() =>
+                    resetTransition(async () => {
+                      router.refresh()
+                    })
+                  }
+                  className="w-full gap-2"
+                  disabled={isResetPending}
                 >
-                  <Home className="text-fg-500 h-4 w-4" />
-                  Reset
+                  <RefreshCw
+                    className={cn('text-fg-500 h-4 w-4 transition-transform', {
+                      'animate-spin': isResetPending,
+                    })}
+                  />
+                  Refresh
                 </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={() => setRootPath('/')}
-                  disabled={isPending && pendingPath === '/'}
-                >
-                  <ArrowUp className="text-fg-500 h-4 w-4" />
-                  To Root
-                </Button>
-              </div>
+              </>
+            ) : (
               <Button
                 variant="outline"
                 onClick={() =>
-                  resetTransition(async () => {
-                    router.refresh()
-                  })
+                  router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
                 }
                 className="w-full gap-2"
-                disabled={isResetPending}
               >
-                <RefreshCw
-                  className={cn('text-fg-500 h-4 w-4 transition-transform', {
-                    'animate-spin': isResetPending,
-                  })}
-                />
-                Refresh
+                <ArrowLeft className="text-fg-500 h-4 w-4" />
+                Back to Sandboxes
               </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() =>
-                router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
-              }
-              className="w-full gap-2"
-            >
-              <ArrowLeft className="text-fg-500 h-4 w-4" />
-              Back to Sandboxes
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    </>
   )
 }
