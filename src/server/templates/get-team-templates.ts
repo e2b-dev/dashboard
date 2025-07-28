@@ -44,10 +44,12 @@ export const getTeamTemplates = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      l.error('GET_TEAM_TEMPLATES:INFRA_ERROR', res.error, {
-        teamId,
-        userId: session.user.id,
-        status,
+      l.error({
+        key: 'get_team_templates:infra_error', message: res.error.message, error: res.error, meta: {
+          teamId,
+          userId: session.user.id,
+          status,
+        }
       })
 
       return handleDefaultInfraError(status)
@@ -117,8 +119,10 @@ export const getDefaultTemplates = actionClient
         .single()
 
       if (buildError) {
-        l.error('GET_DEFAULT_TEMPLATES:INFRA_ERROR', buildError, {
-          envId: env.id,
+        l.error({
+          key: "get_team_templates:env_builds_supabase_error", error: buildError, meta: {
+            envId: env.id,
+          }
         })
         continue
       }
@@ -129,8 +133,10 @@ export const getDefaultTemplates = actionClient
         .eq('env_id', env.id)
 
       if (aliasesError) {
-        l.error('GET_DEFAULT_TEMPLATES:INFRA_ERROR', aliasesError, {
-          envId: env.id,
+        l.error({
+          key: "get_team_templates:env_aliases_supabase_error", error: aliasesError, meta: {
+            envId: env.id,
+          }
         })
         continue
       }

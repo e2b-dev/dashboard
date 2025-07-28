@@ -22,7 +22,7 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['fumadocs-mdx'],
+  serverExternalPackages: ['pino', 'fumadocs-mdx'],
   trailingSlash: false,
   webpack: (config) => {
     config.module.rules.push({

@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 
-export async function register() {
+export default async function register() {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 

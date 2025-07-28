@@ -6,9 +6,9 @@
  * In Edge we fall back to the minimal JSON logger implemented in `logger.edge.ts`.
  */
 
-import type { Logger } from 'pino'
+import { Logger } from 'pino'
 
-const loggerImpl = ((): Logger => {
+const loggerImpl = (() => {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('./logger.node').logger as Logger

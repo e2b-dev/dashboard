@@ -1,17 +1,30 @@
 import { UnknownError } from '@/types/errors'
+import { SpanStatusCode } from '@opentelemetry/api'
 import { createSafeActionClient } from 'next-safe-action'
+import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { ActionError } from '../utils/action'
 import { checkAuthenticated } from '../utils/server'
 import { l } from './logger'
+import { tracer } from './otel'
+
+const t = tracer()
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
+    const s = t.startSpan('action_client')
+
+    s.setStatus({ code: SpanStatusCode.ERROR })
+    s.recordException(e)
+
     if (e instanceof ActionError) {
       return e.message
     }
 
-    l.error('action_client:unexpected_error', e)
+    l.error({
+      key: 'action_client:unexpected_server_error',
+      error: serializeError(e),
+    })
 
     return UnknownError().message
   },
@@ -30,42 +43,50 @@ export const actionClient = createSafeActionClient({
   },
   defaultValidationErrorsShape: 'flattened',
 }).use(async ({ next, clientInput, metadata }) => {
+  const s = t.startSpan('action_client')
+
   const startTime = performance.now()
 
   const result = await next()
 
-  // strip ctx from result logging to avoid leaking sensitive data (supabase client)
-  const { ctx } = result as Record<string, unknown>
-
   const actionOrFunctionName =
     metadata?.serverFunctionName || metadata?.actionName || 'Unknown action'
 
-  const type = metadata?.serverFunctionName
-    ? 'action'
-    : 'function'
-
   const duration = performance.now() - startTime
 
-  const meta = {
-    durationMs: duration.toFixed(3),
+  const type = metadata?.serverFunctionName ? 'function' : 'action'
+  const name = actionOrFunctionName
+
+  const logPayload = {
     input: clientInput,
+    durationMs: duration.toFixed(2),
   }
+
+  s.setAttribute('type', type)
+  s.setAttribute('name', name)
+  s.setAttribute('duration_ms', logPayload.durationMs)
 
   const error =
     result.serverError || result.validationErrors || result.success === false
 
   if (error) {
-    l.warn(
-      `action_client:${type} ${actionOrFunctionName}`,
-      error,
-      meta 
-    )
+    s.setStatus({ code: SpanStatusCode.ERROR })
+    s.recordException(error)
+
+    l.error({
+      key: 'action_client:failure',
+      type,
+      name,
+      error: serializeError(error),
+      meta: logPayload,
+    })
   } else {
-    l.info(
-      `action_client:${type} ${actionOrFunctionName}`,
-      meta 
-    )
+    s.setStatus({ code: SpanStatusCode.OK })
+
+    l.info({ key: `action_client:success`, type, name, meta: logPayload })
   }
+
+  s.end(duration)
 
   return result
 })

@@ -1,4 +1,4 @@
-import 'server-only'
+import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
@@ -51,11 +51,13 @@ export const getTeamSandboxes = authActionClient
       if (sandboxesRes.error) {
         const status = sandboxesRes.response.status
 
-        l.error('GET_TEAM_SANDBOXES:INFRA_ERROR', sandboxesRes.error, {
-          teamId,
-          userId: session.user.id,
-          path: '/v2/sandboxes',
-          status,
+        l.error({
+          key: 'get_team_sandboxes:infra_error', message: sandboxesRes.error.message, error: sandboxesRes.error, meta: {
+            teamId,
+            userId: session.user.id,
+            path: '/v2/sandboxes',
+            status,
+          }
         })
 
         return handleDefaultInfraError(status)

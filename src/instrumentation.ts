@@ -2,47 +2,17 @@ import * as Sentry from '@sentry/nextjs'
 import { registerOTel } from '@vercel/otel'
 import type { Logger } from 'pino'
 
-const REDACTION_PATHS = [
-  'password',
-  'confirmPassword',
-  'accessToken',
-  'secret',
-  'token',
-  'apiKey',
-  'key',
-  '*.*.password',
-  '*.*.confirmPassword',
-  '*.*.accessToken',
-  '*.*.secret',
-  '*.*.token',
-  '*.*.apiKey',
-  '*.*.key',
-  '*.*.*.password',
-  '*.*.*.confirmPassword',
-  '*.*.*.accessToken',
-  '*.*.*.secret',
-  '*.*.*.token',
-  '*.*.*.apiKey',
-  '*.*.*.key',
-]
+type AppLogFn = (params: { key: string, message?: string, error?: unknown, meta?: Record<string, unknown> }) => void
 
-interface LogFnParams {
-  key: string
-  message?: string
-  context?: Record<string, string>
-}
-
-type AppLogger = Logger & {
-  child: (...args: Parameters<Logger['child']>) => AppLogger
-
-  info: (params: LogFnParams) => void
-  warn: (params: LogFnParams) => void
-  error: (params: LogFnParams) => void
-  debug: (params: LogFnParams) => void
+export type AppLogger = Omit<Logger, "info" | "warn" | "error" | "debug"> & {
+  info: AppLogFn
+  warn: AppLogFn
+  error: AppLogFn
+  debug: AppLogFn
 }
 
 declare global {
-  var logger: AppLogger | undefined
+  var logger: Logger | undefined
 }
 
 export async function register() {
@@ -58,39 +28,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('../sentry.server.config')
 
-    const pino = (await import('pino')).default
-
-    if (process.env.LOKI_HOST) {
-      const pinoLoki = (await import('pino-loki')).default
-
-      const transport = pinoLoki({
-        host: process.env.LOKI_HOST,
-        headers: {
-          Authorization: `Basic ${process.env.LOKI_PASSWORD}`,
-        },
-        labels: {
-          app: 'dashboard',
-        },
-      })
-
-      const consoleDestination = pino.destination({
-        sync: true,
-        minLength: 100,
-        json: true,
-      })
-
-      const logger = pino(transport)
-      globalThis.logger = logger
-      return
-    }
-
-    const logger = pino({
-      level: process.env.LOG_LEVEL || 'info',
-      redact: {
-        paths: REDACTION_PATHS,
-        censor: '[Redacted]',
-      },
-    })
+    const logger = await (await import('./instrumentation-node')).register()
     globalThis.logger = logger
   }
 
