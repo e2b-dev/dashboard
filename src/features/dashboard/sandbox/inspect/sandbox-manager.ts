@@ -10,6 +10,7 @@ import type { FilesystemStore } from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
 import { determineFileContentState } from '@/lib/utils/filesystem'
+import { l } from '@/lib/clients/logger'
 
 export const HANDLED_ERRORS = {
   'signal timed out': 'The operation timed out. Please try again later.',
@@ -64,7 +65,14 @@ export class SandboxManager {
       this.watchHandle = await this.sandbox.files.watchDir(
         this.rootPath,
         (event) => this.handleFilesystemEvent(event),
-        { recursive: true, requestTimeoutMs: 0, timeoutMs: 0, user: 'root' }
+        {
+          recursive: true, requestTimeoutMs: 0, timeoutMs: 0, user: 'root', onExit: (e) => {
+            l.error('sandbox_manager:watch_dir_exit', e, {
+              sandboxID: this.sandbox.sandboxId,
+              rootPath: this.rootPath,
+            })
+          }
+        }
       )
     } catch (error) {
       console.error(`Failed to start root watcher on ${this.rootPath}:`, error)

@@ -55,7 +55,7 @@ export const actionClient = createSafeActionClient({
     result.serverError || result.validationErrors || result.success === false
 
   if (error) {
-    l.error(
+    l.warn(
       `action_client:${type} ${actionOrFunctionName}`,
       error,
       meta 
