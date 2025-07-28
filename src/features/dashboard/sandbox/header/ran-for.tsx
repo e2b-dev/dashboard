@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useLayoutEffect, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSandboxContext } from '../context'
 
 export default function RanFor() {
@@ -10,12 +10,17 @@ export default function RanFor() {
   const startedAt = sandboxInfo?.startedAt
   const endAt = sandboxInfo?.endAt
 
-  const calcRanFor = useCallback(() => {
-    if (!startedAt) return '-'
+  const startDate = useMemo(
+    () => (startedAt ? new Date(startedAt) : null),
+    [startedAt]
+  )
+  const endDate = useMemo(() => (endAt ? new Date(endAt) : null), [endAt])
 
-    const start = new Date(startedAt)
-    const end =
-      state === 'running' ? new Date() : endAt ? new Date(endAt) : new Date()
+  const calcRanFor = useCallback(() => {
+    if (!startDate) return '-'
+
+    const end = state === 'running' ? new Date() : (endDate ?? new Date())
+    const start = startDate
     const diffMs = end.getTime() - start.getTime()
     if (diffMs < 0) return '-'
 
@@ -31,25 +36,29 @@ export default function RanFor() {
     if (hours > 0) parts.push(`${hours} hours`)
     if (minutes > 0) parts.push(`${minutes} minutes`)
     return parts.join(' ')
-  }, [startedAt, state, endAt])
+  }, [startDate, state, endDate])
 
   const [ranFor, setRanFor] = useState<string>(calcRanFor())
 
-  useLayoutEffect(() => {
-    if (!startedAt || !endAt || !isRunning) return
+  useEffect(() => {
+    if (!startDate) return
 
-    const interval = setInterval(
-      () => {
-        setRanFor(calcRanFor())
-      },
-      new Date(endAt || Date.now()).getTime() - new Date(startedAt).getTime() <
-        60000
-        ? 1000
-        : 5000
-    )
+    let timerId: ReturnType<typeof setTimeout>
 
-    return () => clearInterval(interval)
-  }, [calcRanFor, startedAt, endAt, isRunning])
+    const tick = () => {
+      setRanFor(calcRanFor())
+
+      if (!isRunning) return
+
+      const diffMs = Date.now() - startDate.getTime()
+      const nextDelay = diffMs < 60_000 ? 1_000 : 3_000
+      timerId = setTimeout(tick, nextDelay)
+    }
+
+    tick()
+
+    return () => clearTimeout(timerId)
+  }, [calcRanFor, startDate, isRunning])
 
   if (!sandboxInfo) {
     return null
