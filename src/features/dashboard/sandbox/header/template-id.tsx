@@ -2,13 +2,11 @@
 
 import CopyButton from '@/ui/copy-button'
 import { Badge } from '@/ui/primitives/badge'
-import { useSandboxContext } from '../context'
 import { useMemo } from 'react'
+import { useSandboxContext } from '../context'
 
 export default function TemplateId() {
   const { sandboxInfo } = useSandboxContext()
-
-  console.log('sandboxInfo', sandboxInfo)
 
   const value = useMemo(() => {
     return sandboxInfo?.alias || sandboxInfo?.templateID?.toString() || ''

@@ -48,6 +48,7 @@ export interface FilesystemState {
   errorPaths: Map<string, string>
   sortingDirection: 'asc' | 'desc'
   fileContents: Map<string, FileContentState>
+  lastUpdated: Date | null
 }
 
 // mutations/actions that modify state
@@ -63,6 +64,7 @@ export interface FilesystemMutations {
   setFileContent: (path: string, updates: FileContentState) => void
   resetFileContent: (path: string) => void
   reset: () => void
+  setLastUpdated: (lastUpdated: Date | null) => void
 }
 
 // computed/derived values
@@ -118,6 +120,7 @@ export const createFilesystemStore = (rootPath: string) =>
       errorPaths: new Map<string, string>(),
       sortingDirection: 'asc' as 'asc' | 'desc',
       fileContents: new Map<string, FileContentState>(),
+      lastUpdated: new Date(),
 
       addNodes: (parentPath: string, nodes: FilesystemNode[]) => {
         const normalizedParentPath = normalizePath(parentPath)
@@ -362,6 +365,12 @@ export const createFilesystemStore = (rootPath: string) =>
         const normalizedPath = normalizePath(path)
         return get().fileContents.get(normalizedPath)
       },
+
+      setLastUpdated: (lastUpdated) => {
+        set((state: FilesystemState) => {
+          state.lastUpdated = lastUpdated
+        })
+      }
     }))
   )
 

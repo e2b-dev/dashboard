@@ -3,7 +3,6 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import { supabase } from '@/lib/clients/supabase/client'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import Sandbox, { EntryInfo, FileType } from 'e2b'
 import { useRouter } from 'next/navigation'
