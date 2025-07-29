@@ -8,10 +8,10 @@ import { checkAuthenticated } from '../utils/server'
 import { l } from './logger'
 import { tracer } from './otel'
 
-const t = tracer()
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
+    const t = tracer()
     const s = t.startSpan('action_client')
 
     s.setStatus({ code: SpanStatusCode.ERROR })
@@ -43,6 +43,7 @@ export const actionClient = createSafeActionClient({
   },
   defaultValidationErrorsShape: 'flattened',
 }).use(async ({ next, clientInput, metadata }) => {
+  const t = tracer()
   const s = t.startSpan('action_client')
 
   const startTime = performance.now()

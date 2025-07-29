@@ -28,8 +28,10 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('../sentry.server.config')
 
-    const logger = await (await import('./instrumentation-node')).register()
-    globalThis.logger = logger
+    await import("pino")
+    await import('pino-loki')
+    // @ts-expect-error - incorrectly typed
+    await import('next-logger')
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {

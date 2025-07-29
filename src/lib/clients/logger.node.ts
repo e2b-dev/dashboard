@@ -1,3 +1,3 @@
-const logger = globalThis.logger
+import { logger } from '../../../next-logger.config'
 
 export { logger }
