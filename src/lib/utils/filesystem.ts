@@ -67,7 +67,7 @@ export function joinPath(...segments: string[]): string {
   if (segments.length === 0) return '/'
 
   const joined = segments
-    .filter((segment) => segment !== '' && segment != null)
+    .filter((segment) => segment !== '' && segment !== null && segment !== undefined)
     .join('/')
 
   return normalizePath(joined)
