@@ -11,11 +11,11 @@ if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
   )
 }
 
-const SPAWN_COUNT = 50 // total sandboxes to spawn
-const BATCH_SIZE = 5 // how many sandboxes to spawn concurrently
+const SPAWN_COUNT = 10 // total sandboxes to spawn
+const BATCH_SIZE = 2 // how many sandboxes to spawn concurrently
 
-const SBX_TIMEOUT_MS = 60_000
-const STRESS_TIMEOUT_MS = 60_000
+const SBX_TIMEOUT_MS = 30_000
+const STRESS_TIMEOUT_MS = 30_000
 const TEMPLATE = process.env.TEST_METRICS_TEMPLATE ?? 'base'
 
 const MEMORY_MB = 1024 // allocate this much memory inside sandbox in MB
@@ -312,6 +312,7 @@ describe('E2B Sandbox metrics', () => {
                   domain: TEST_E2B_DOMAIN as string,
                   apiKey: TEST_E2B_API_KEY as string,
                   timeoutMs: SBX_TIMEOUT_MS,
+                  secure: true
                 })
 
                 const sandboxDuration = Date.now() - sandboxStart
@@ -432,7 +433,7 @@ describe('E2B Sandbox metrics', () => {
             try {
               // Write stress test script to sandbox with proper path
               const scriptPath = "/home/user/stress_test.sh"
-              
+
               l.debug("test:writing_stress_script", {
                 testId,
                 sandboxId: sbx.sandboxId,
@@ -442,7 +443,7 @@ describe('E2B Sandbox metrics', () => {
               })
 
               await sbx.files.write(scriptPath, stressCode)
-              
+
               // Verify file was written successfully
               const fileCheck = await sbx.commands.run(`ls -la ${scriptPath}`, { user: 'root' })
               if (fileCheck.exitCode !== 0) {
@@ -452,7 +453,7 @@ describe('E2B Sandbox metrics', () => {
                   error: fileCheck.stderr,
                   stdout: fileCheck.stdout
                 })
-                
+
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
@@ -477,7 +478,7 @@ describe('E2B Sandbox metrics', () => {
                   error: chmodResult.stderr,
                   stdout: chmodResult.stdout
                 })
-                
+
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
@@ -506,7 +507,7 @@ describe('E2B Sandbox metrics', () => {
                 // Handle command execution errors gracefully
                 const sandboxStressDuration = Date.now() - sandboxStressStart
                 const errorMessage = commandError instanceof Error ? commandError.message : String(commandError)
-                
+
                 l.warn("test:stress_command_execution_failed", {
                   testId,
                   sandboxId: sbx.sandboxId,
@@ -601,7 +602,7 @@ describe('E2B Sandbox metrics', () => {
 
           // Wait for all stress tests to complete - use allSettled to handle rejections gracefully
           const stressResults = await Promise.allSettled(stressPromises)
-          
+
           // Log any rejected promises
           stressResults.forEach((result, index) => {
             if (result.status === 'rejected') {

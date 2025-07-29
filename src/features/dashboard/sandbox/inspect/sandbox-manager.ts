@@ -71,7 +71,7 @@ export class SandboxManager {
               sandboxID: this.sandbox.sandboxId,
               rootPath: this.rootPath,
             })
-          }
+          },
         }
       )
     } catch (error) {
@@ -311,7 +311,7 @@ export class SandboxManager {
       state.setLoading(normalizedPath, true)
 
       const blob = await this.sandbox.files.read(normalizedPath, {
-        format: 'blob',
+        format: "blob",
         requestTimeoutMs: 30_000,
         user: 'root',
       })

@@ -112,8 +112,8 @@ export const signUpAction = actionClient
         emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
         data: validationResult?.data
           ? {
-              email_validation: validationResult?.data,
-            }
+            email_validation: validationResult?.data,
+          }
           : undefined,
       },
     })
@@ -210,6 +210,6 @@ export async function signOutAction(returnTo?: string) {
 
   throw redirect(
     AUTH_URLS.SIGN_IN +
-      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
+    (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
   )
 }
