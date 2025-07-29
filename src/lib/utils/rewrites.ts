@@ -77,7 +77,7 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
     return
   }
 
-  l.warn('CHEERIO_SEO_REWRITER: <head> tag not found. Cannot insert SEO tags.')
+  l.warn({ key: 'cheerio_seo_rewriter:head_tag_not_found', meta: { pathname, allowIndexing } })
 }
 
 /**

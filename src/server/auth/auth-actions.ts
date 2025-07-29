@@ -31,7 +31,8 @@ export const signInWithOAuthAction = actionClient
 
     const origin = (await headers()).get('origin')
 
-    l.info('SIGN_IN_WITH_OAUTH_ACTION', {
+    l.info({
+      key: 'sign_in_with_oauth_action:init',
       provider,
       returnTo,
       origin,
@@ -191,7 +192,7 @@ export const forgotPasswordAction = actionClient
     const { error } = await supabase.auth.resetPasswordForEmail(email)
 
     if (error) {
-      l.error('FORGOT_PASSWORD_ACTION:SUPABASE_ERROR', error)
+      l.error({ key: 'forgot_password_action:supabase_error', error })
 
       if (error.message.includes('security purposes')) {
         return returnServerError(

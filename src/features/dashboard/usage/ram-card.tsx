@@ -21,9 +21,13 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
         result?.validationErrors?.formErrors[0]) ||
       'Could not load RAM usage data.'
 
-    l.error('RAM_CARD:ERROR', result?.serverError, {
-      teamId,
-      errorMessage,
+    l.error({
+      key: 'ram_card:server_error',
+      error: result?.serverError,
+      meta: {
+        teamId,
+        errorMessage,
+      }
     })
 
     throw new Error(errorMessage)

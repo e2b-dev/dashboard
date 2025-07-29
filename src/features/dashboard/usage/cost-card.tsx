@@ -21,9 +21,14 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
         result?.validationErrors?.formErrors[0]) ||
       'Could not load cost usage data.'
 
-    l.error('COST_CARD:ERROR', result?.serverError, {
-      teamId,
-      errorMessage,
+    l.error({
+      key: 'cost_card:server_error',
+      error: result?.serverError,
+      meta: {
+
+        teamId,
+        errorMessage,
+      }
     })
 
     throw new Error(errorMessage)

@@ -20,9 +20,13 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
       result?.validationErrors?.formErrors?.[0] ||
       'Could not load usage data.'
 
-    l.error('VCPU_CARD:ERROR', result?.serverError, {
-      teamId,
-      errorMessage,
+    l.error({
+      key: 'vcpu_card:server_error',
+      error: result?.serverError,
+      meta: {
+        teamId,
+        errorMessage,
+      }
     })
 
     throw new Error(errorMessage)

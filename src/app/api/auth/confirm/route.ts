@@ -4,6 +4,7 @@ import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
+import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 
 const confirmSchema = z.object({
@@ -34,10 +35,13 @@ export async function GET(request: NextRequest) {
   const dashboardSignInUrl = new URL(request.nextUrl.origin + AUTH_URLS.SIGN_IN)
 
   if (!result.success) {
-    l.error('AUTH_CONFIRM:INVALID_PARAMS', result.error, {
-      errors: result.error.errors,
-      type: searchParams.get('type'),
-      next: searchParams.get('next'),
+    l.error({
+      key: 'auth_confirm:invalid_params',
+      error: result.error.flatten(),
+      meta: {
+        type: searchParams.get('type'),
+        next: searchParams.get('next'),
+      }
     })
 
     return encodedRedirect(
@@ -59,18 +63,21 @@ export async function GET(request: NextRequest) {
   const isDifferentOrigin =
     supabaseRedirectTo &&
     normalizeOrigin(new URL(supabaseRedirectTo).origin) !==
-      normalizeOrigin(dashboardUrl.origin)
+    normalizeOrigin(dashboardUrl.origin)
 
-  l.info('AUTH_CONFIRM:INIT', {
-    supabase_token_hash: supabaseTokenHash
-      ? `${supabaseTokenHash.slice(0, 10)}...`
-      : null,
-    supabaseType,
-    supabaseRedirectTo,
-    isDifferentOrigin,
-    supabaseClientFlowUrl,
-    requestUrl: request.url,
-    origin: request.nextUrl.origin,
+  l.info({
+    key: 'auth_confirm:init',
+    meta: {
+      supabase_token_hash: supabaseTokenHash
+        ? `${supabaseTokenHash.slice(0, 10)}...`
+        : null,
+      supabaseType,
+      supabaseRedirectTo,
+      isDifferentOrigin,
+      supabaseClientFlowUrl,
+      requestUrl: request.url,
+      origin: request.nextUrl.origin,
+    }
   })
 
   // when the next param is an absolute URL, with a different origin,
@@ -95,11 +102,18 @@ export async function GET(request: NextRequest) {
     })
 
     if (error) {
-      l.error('AUTH_CONFIRM:ERROR', error, {
-        supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-        supabaseType,
-        supabaseRedirectTo,
-        redirectUrl: redirectUrl.toString(),
+      l.error({
+        key: 'auth_confirm:supabase_error',
+        message: error.message,
+        error: serializeError(error),
+        meta: {
+          supabase_token_hash: supabaseTokenHash
+            ? `${supabaseTokenHash.slice(0, 10)}...`
+            : null,
+          supabaseType,
+          supabaseRedirectTo,
+          redirectUrl: redirectUrl.toString(),
+        }
       })
 
       let errorMessage = 'Invalid Token'
@@ -121,21 +135,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectUrl.toString())
     }
 
-    l.info('AUTH_CONFIRM:SUCCESS', {
-      supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-      supabaseType,
-      supabaseRedirectTo,
-      redirectUrl: redirectUrl.toString(),
-      reauth: redirectUrl.searchParams.get('reauth'),
-      userId: data?.user?.id,
+    l.info({
+      key: 'auth_confirm:success',
+      meta: {
+        supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
+        supabaseType,
+        supabaseRedirectTo,
+        redirectUrl: redirectUrl.toString(),
+        reauth: redirectUrl.searchParams.get('reauth'),
+        userId: data?.user?.id,
+      }
     })
 
     return NextResponse.redirect(redirectUrl.toString())
   } catch (e) {
-    l.error('AUTH_CONFIRM:ERROR', e, {
-      supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-      supabaseType,
-      supabaseRedirectTo,
+    const sE = serializeError(e) as object
+
+    l.error({
+      key: 'AUTH_CONFIRM:ERROR',
+      message: "message" in sE ? sE.message : undefined,
+      error: sE,
+      meta: {
+        supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
+        supabaseType,
+        supabaseRedirectTo,
+      }
     })
 
     return encodedRedirect(

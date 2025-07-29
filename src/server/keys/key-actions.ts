@@ -38,10 +38,15 @@ export const createApiKeyAction = authActionClient
     })
 
     if (res.error) {
-      l.error('CREATE_API_KEY:ERROR', res.error, {
-        teamId,
-        userId: session.user.id,
-        name,
+      l.error({
+        key: 'create_api_key:error',
+        message: res.error.message,
+        error: res.error,
+        meta: {
+          teamId,
+          userId: session.user.id,
+          name
+        }
       })
 
       return returnServerError('Failed to create API Key')
@@ -82,10 +87,15 @@ export const deleteApiKeyAction = authActionClient
     })
 
     if (res.error) {
-      l.error('DELETE_API_KEY:ERROR', res.error, {
-        teamId,
-        userId: session.user.id,
-        apiKeyId,
+      l.error({
+        key: 'delete_api_key_action:error',
+        message: res.error.message,
+        error: res.error,
+        meta: {
+          teamId,
+          userId: session.user.id,
+          apiKeyId,
+        }
       })
 
       return returnServerError('Failed to delete API Key')

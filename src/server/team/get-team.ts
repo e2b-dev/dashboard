@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { returnServerError } from '@/lib/utils/action'
 import { ClientTeam } from '@/types/dashboard.types'
 import { z } from 'zod'
+import { serializeError } from 'serialize-error'
 
 const GetTeamSchema = z.object({
   teamId: z.string().uuid(),
@@ -82,7 +83,7 @@ export const getUserTeams = authActionClient
 
       const defaultUserIds = new Set(
         allConnectedDefaultTeamRelations?.map((relation) => relation.user_id) ||
-          []
+        []
       )
 
       const { data: defaultTeamAuthUsers, error: authUsersError } =
@@ -92,7 +93,7 @@ export const getUserTeams = authActionClient
           .in('id', Array.from(defaultUserIds))
 
       if (authUsersError) {
-        l.error('GET_USER_TEAMS:SUPABASE_ERROR', authUsersError)
+        l.error({ key: 'get_usr_teams:supabase_error', message: authUsersError.message, error: serializeError(authUsersError) })
 
         return usersTeamsData.map((userTeam) => ({
           ...userTeam.teams,
@@ -135,9 +136,13 @@ export const getUserTeams = authActionClient
 
       return teams
     } catch (err) {
-      l.error('GET_USER_TEAMS:UNEXPECTED_ERROR', err, {
-        usersTeamsData,
-        userId: user.id,
+      l.error({
+        key: 'get_user_teams:unexpected_error',
+        error: serializeError(err),
+        meta: {
+          usersTeamsData,
+          userId: user.id,
+        }
       })
 
       return usersTeamsData.map((userTeam) => ({

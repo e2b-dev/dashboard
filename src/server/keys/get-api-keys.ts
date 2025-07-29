@@ -28,10 +28,15 @@ export const getTeamApiKeys = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      l.error('GET_TEAM_API_KEYS:ERROR', res.error, {
-        status,
-        teamId,
-        userId: session.user.id,
+
+      l.error({
+        key: 'get_team_api_keys:error',
+        error: res.error,
+        meta: {
+          status,
+          teamId,
+          userId: session.user.id,
+        }
       })
 
       return handleDefaultInfraError(status)

@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/rules-of-hooks */
+
 
 'use client'
 
@@ -19,6 +19,7 @@ import {
   StartedAtCell,
   TemplateCell,
 } from './table-cells'
+import { serializeError } from 'serialize-error'
 
 export type SandboxWithMetrics = Sandbox & {
   metrics?: ClientSandboxMetric | null
@@ -57,10 +58,14 @@ export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
       return stringifiedMetadata.includes(value)
     }
   } catch (error) {
-    l.error('SANDBOXES_TABLE:FUZZY_FILTER', error, {
-      row,
-      columnId,
-      value,
+    l.error({
+      key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
+      error: serializeError(error),
+      meta: {
+        row,
+        columnId,
+        value,
+      }
     })
     return false
   }

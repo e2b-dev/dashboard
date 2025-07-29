@@ -1,6 +1,10 @@
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
-import pino from 'pino'
+import { pino } from 'pino'
 
+// ----------------------------------------------------------------------------
+// Paths that should be redacted from all log entries. Pino uses fast-redact
+// under the hood so we can pass the same wildcard syntax we previously used
+// with `piiRedact`.
+// ----------------------------------------------------------------------------
 const REDACTION_PATHS = [
   'password',
   'confirmPassword',
@@ -8,7 +12,6 @@ const REDACTION_PATHS = [
   'secret',
   'token',
   'apiKey',
-  'key',
   '*.*.password',
   '*.*.confirmPassword',
   '*.*.accessToken',
@@ -25,7 +28,7 @@ const REDACTION_PATHS = [
   '*.*.*.key',
 ]
 
-const logger = (() => {
+const createLogger = () => {
   const baseConfig = {
     redact: {
       paths: REDACTION_PATHS,
@@ -39,35 +42,69 @@ const logger = (() => {
 
   if (process.env.LOKI_HOST) {
     try {
-      const transport = pino.transport({
-        targets: [
-          {
-            target: 'pino-loki',
-            level: 'info',
-            options: {
-              labels: {
-                app: process.env.SERVICE_NAME || 'dashboard',
-                service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
-                env: process.env.NODE_ENV || 'development',
-              },
-              host: process.env.LOKI_HOST,
-              basicAuth: {
-                username: process.env.LOKI_USERNAME,
-                password: process.env.LOKI_PASSWORD,
-              },
-            },
-          },
-          {
-            target: 'pino/file',
-            level: 'info',
-            options: {
-              destination: 1,
-            },
-          },
-        ],
-      })
+      // const transport = pino.transport({
+      //   targets: [
+      //     {
+      //       target: 'pino-loki',
+      //       level: 'info',
+      //       options: {
+      //         labels: {
+      //           app: process.env.SERVICE_NAME || 'dashboard',
+      //           service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
+      //           env: process.env.NODE_ENV || 'development',
+      //         },
+      //         host: process.env.LOKI_HOST,
+      //         basicAuth: {
+      //           username: process.env.LOKI_USERNAME,
+      //           password: process.env.LOKI_PASSWORD,
+      //         },
+      //       },
+      //     },
+      //     {
+      //       target: 'pino/file',
+      //       level: 'info',
+      //       options: {
+      //         destination: 1,
+      //       },
+      //     },
+      //   ],
+      // })
+      //
+      // console.info('transport', transport)
 
-      const logger = pino(transport)
+      const logger = pino({
+        redact: {
+          paths: REDACTION_PATHS,
+          censor: '[Redacted]',
+        },
+        transport: {
+          targets: [
+            {
+              target: 'pino-loki',
+              level: 'info',
+              options: {
+                labels: {
+                  app: process.env.SERVICE_NAME || 'dashboard',
+                  service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
+                  env: process.env.NODE_ENV || 'development',
+                },
+                host: process.env.LOKI_HOST,
+                basicAuth: {
+                  username: process.env.LOKI_USERNAME,
+                  password: process.env.LOKI_PASSWORD,
+                },
+              },
+            },
+            {
+              target: 'pino/file',
+              level: 'info',
+              options: {
+                destination: 1,
+              },
+            },
+          ],
+        },
+      })
       return logger
     } catch (error) {
       console.error(
@@ -79,8 +116,8 @@ const logger = (() => {
   }
 
   return pino(baseConfig)
-})()
-
-module.exports = {
-  logger,
 }
+
+const logger = createLogger()
+
+export { logger }

@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
+import { serializeError } from 'serialize-error'
 
 // Mark route as dynamic to prevent static optimization
 export const dynamic = 'force-dynamic'
@@ -103,9 +104,13 @@ export default async function CLIAuthPage({
 
   // Validate redirect URL
   if (!next?.startsWith('http://localhost')) {
-    l.error('CLI_AUTH:INVALID_REDIRECT_URL', {
-      next,
-      userId: user?.id,
+    l.error({
+      key: 'cli_auth:invalid_redirect_url',
+      meta:
+      {
+        next,
+        userId: user?.id,
+      }
     })
     redirect(PROTECTED_URLS.DASHBOARD)
   }
@@ -140,9 +145,13 @@ export default async function CLIAuthPage({
         throw err
       }
 
-      l.error('CLI_AUTH:UNEXPECTED_ERROR', err, {
-        userId: user?.id,
-        next,
+      l.error({
+        key: 'cli_auth:unexpected_error',
+        error: serializeError(err),
+        meta: {
+          userId: user?.id,
+          next,
+        }
       })
 
       return encodedRedirect('error', '/auth/cli', (err as Error).message, {

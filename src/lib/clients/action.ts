@@ -8,7 +8,6 @@ import { checkAuthenticated } from '../utils/server'
 import { l } from './logger'
 import { tracer } from './otel'
 
-
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
     const t = tracer()

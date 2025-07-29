@@ -8,6 +8,7 @@ import {
   rewriteContentPagesHtml,
 } from '@/lib/utils/rewrites'
 import { NextRequest } from 'next/server'
+import { serializeError } from 'serialize-error'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
@@ -47,10 +48,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       ...(notFound
         ? { cache: 'no-store' }
         : {
-            next: {
-              revalidate: REVALIDATE_TIME,
-            },
-          }),
+          next: {
+            revalidate: REVALIDATE_TIME,
+          },
+        }),
     })
 
     const contentType = res.headers.get('Content-Type')
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return res
   } catch (error) {
-    l.error('URL_REWRITE:UNEXPECTED_ERROR', error)
+    l.error({ key: 'url_rewrite:unexpected_error', error: serializeError(error) })
 
     return new Response(
       `Proxy Error: ${error instanceof Error ? error.message : 'Unknown error'}`,

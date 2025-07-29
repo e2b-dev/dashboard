@@ -32,10 +32,16 @@ export const deleteTemplateAction = authActionClient
     if (res.error) {
       const status = res.response.status
 
-      l.error('DELETE_TEMPLATE_ACTION:INFRA_ERROR', res.error, {
-        userId: ctx.session.user.id,
-        templateId,
-        status,
+      l.error({
+        key: 'DELETE_TEMPLATE_ACTION:INFRA_ERROR',
+        message: res.error.message,
+        error: res.error,
+        meta: {
+          userId: ctx.session.user.id,
+          templateId,
+
+          status,
+        }
       })
 
       if (status === 404) {
@@ -91,10 +97,16 @@ export const updateTemplateAction = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      l.error('UPDATE_TEMPLATE_ACTION:INFRA_ERROR', res.error, {
-        userId: ctx.session.user.id,
-        templateId,
-        status,
+
+      l.error({
+        key: 'update_template_action:infra_error',
+        message: res.error.message,
+        error: res.error,
+        meta: {
+          userId: ctx.session.user.id,
+          templateId,
+          status,
+        }
       })
 
       if (status === 404) {
