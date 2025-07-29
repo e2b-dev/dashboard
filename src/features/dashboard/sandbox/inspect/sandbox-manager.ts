@@ -351,8 +351,6 @@ export class SandboxManager {
       useSignature: this.isSandboxSecure || undefined,
     })
 
-    console.log('downloadUrl', downloadUrl)
-
     return downloadUrl
   }
 
