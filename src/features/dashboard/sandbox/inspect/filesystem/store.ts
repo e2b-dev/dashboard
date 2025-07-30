@@ -1,16 +1,16 @@
 'use client'
 
-import { create } from 'zustand'
-import { immer } from 'zustand/middleware/immer'
-import { enableMapSet } from 'immer'
 import {
-  normalizePath,
+  getBasename,
   getParentPath,
   isChildPath,
-  getBasename,
+  normalizePath,
 } from '@/lib/utils/filesystem'
-import { FilesystemNode } from './types'
 import { FileType } from 'e2b'
+import { enableMapSet } from 'immer'
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { FilesystemNode } from './types'
 
 enableMapSet()
 
@@ -49,6 +49,7 @@ export interface FilesystemState {
   sortingDirection: 'asc' | 'desc'
   fileContents: Map<string, FileContentState>
   lastUpdated: Date | null
+  watcherError: string | null
 }
 
 // mutations/actions that modify state
@@ -65,6 +66,7 @@ export interface FilesystemMutations {
   resetFileContent: (path: string) => void
   reset: () => void
   setLastUpdated: (lastUpdated: Date | null) => void
+  setWatcherError: (error: string | null) => void
 }
 
 // computed/derived values
@@ -121,6 +123,7 @@ export const createFilesystemStore = (rootPath: string) =>
       sortingDirection: 'asc' as 'asc' | 'desc',
       fileContents: new Map<string, FileContentState>(),
       lastUpdated: new Date(),
+      watcherError: null,
 
       addNodes: (parentPath: string, nodes: FilesystemNode[]) => {
         const normalizedParentPath = normalizePath(parentPath)
@@ -370,7 +373,13 @@ export const createFilesystemStore = (rootPath: string) =>
         set((state: FilesystemState) => {
           state.lastUpdated = lastUpdated
         })
-      }
+      },
+
+      setWatcherError: (error) => {
+        set((state: FilesystemState) => {
+          state.watcherError = error
+        })
+      },
     }))
   )
 

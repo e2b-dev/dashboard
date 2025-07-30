@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { AlertTriangle } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSandboxContext } from '../context'
-import { useLastUpdated } from './hooks/use-last-updated'
+import { useLastUpdated, useWatcherError } from './hooks/use-watcher'
 
 interface StoppedBannerProps {
   rootNodeCount: number
@@ -20,11 +20,14 @@ interface StoppedBannerProps {
 export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
   const { isRunning } = useSandboxContext()
   const lastUpdated = useLastUpdated()
+  const watcherError = useWatcherError()
 
   const show = useMemo(
-    () => !isRunning && rootNodeCount > 0,
-    [isRunning, rootNodeCount]
+    () => !!watcherError || (!isRunning && rootNodeCount > 0),
+    [isRunning, rootNodeCount, watcherError]
   )
+
+  const showWatcherError = watcherError && isRunning
 
   return (
     <AnimatePresence mode="wait">
@@ -42,10 +45,18 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
           <CardHeader className="!p-4">
             <CardTitle className="inline-flex items-center gap-2">
               <AlertTriangle className="size-5 text-warning" />
-              Sandbox Stopped
+              {showWatcherError
+                ? 'Live filesystem updates disabled'
+                : 'Sandbox Stopped'}
             </CardTitle>
-            <CardDescription>
-              Filesystem data is stale and is kept locally on your device.
+            <CardDescription
+              className={cn({
+                'text-warning': showWatcherError,
+              })}
+            >
+              {showWatcherError
+                ? watcherError
+                : 'Filesystem data is stale and is kept locally on your device.'}
               <span className="text-fg-500">
                 {' '}
                 Last updated: {lastUpdated?.toLocaleTimeString()}

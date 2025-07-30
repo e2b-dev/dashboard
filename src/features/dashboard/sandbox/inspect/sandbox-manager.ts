@@ -1,19 +1,24 @@
 import {
+  determineFileContentState,
+  getParentPath,
+  joinPath,
+  normalizePath,
+} from '@/lib/utils/filesystem'
+import {
+  type EntryInfo,
+  type FilesystemEvent,
+  FilesystemEventType,
   FileType,
   type Sandbox,
-  type FilesystemEvent,
   type WatchHandle,
-  type EntryInfo,
-  FilesystemEventType,
 } from 'e2b'
 import type { FilesystemStore } from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
-import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
-import { determineFileContentState } from '@/lib/utils/filesystem'
 
 export const HANDLED_ERRORS = {
   'signal timed out': 'The operation timed out. Please try again later.',
-  'user aborted a request': 'The request was cancelled. Try downloading the file.',
+  'user aborted a request':
+    'The request was cancelled. Try downloading the file.',
 } as const
 
 export class SandboxManager {
@@ -25,7 +30,6 @@ export class SandboxManager {
 
   private static readonly LOAD_DEBOUNCE_MS = 250
   private static readonly READ_DEBOUNCE_MS = 250
-
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
@@ -47,7 +51,12 @@ export class SandboxManager {
     }
   > = new Map()
 
-  constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string, isSandboxSecure: boolean) {
+  constructor(
+    store: FilesystemStore,
+    sandbox: Sandbox,
+    rootPath: string,
+    isSandboxSecure: boolean
+  ) {
     this.store = store
     this.sandbox = sandbox
     this.rootPath = normalizePath(rootPath)
@@ -64,7 +73,20 @@ export class SandboxManager {
       this.watchHandle = await this.sandbox.files.watchDir(
         this.rootPath,
         (event) => this.handleFilesystemEvent(event),
-        { recursive: true, timeoutMs: 0, requestTimeoutMs: 0 }
+        {
+          recursive: true,
+          timeoutMs: 0,
+          requestTimeoutMs: 0,
+          onExit: (error) => {
+            this.store
+              .getState()
+              .setWatcherError(
+                'Failed to establish live filesystem updates: ' +
+                  (error?.message ||
+                    'Please try again later. If the problem persists, contact support.')
+              )
+          },
+        }
       )
     } catch (error) {
       console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
@@ -311,7 +333,7 @@ export class SandboxManager {
       const contentState = await determineFileContentState(blob)
 
       state.setFileContent(normalizedPath, contentState)
-    } catch (err) { 
+    } catch (err) {
       const errorMessage = SandboxManager.pipeError(err, 'Failed to read file')
 
       console.error(`Failed to read file ${normalizedPath}:`, err)
