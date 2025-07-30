@@ -75,6 +75,7 @@ export class SandboxManager {
         (event) => this.handleFilesystemEvent(event),
         {
           recursive: true,
+          user: 'root',
           timeoutMs: 0,
           requestTimeoutMs: 0,
           onExit: (error) => {
