@@ -22,15 +22,15 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['pino', 'fumadocs-mdx'],
+  serverExternalPackages: ['pino', 'pino-pretty', 'pino-loki'],
   trailingSlash: false,
   webpack: (config) => {
     config.module.rules.push({
       test: /\.node$/,
       use: 'node-loader',
-    });
+    })
 
-    return config;
+    return config
   },
   headers: async () => [
     {
