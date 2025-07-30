@@ -1,11 +1,6 @@
 import { VERBOSE } from '@/configs/flags'
 import { LoggerOptions, pino } from 'pino'
 
-// ----------------------------------------------------------------------------
-// Paths that should be redacted from all log entries. Pino uses fast-redact
-// under the hood so we can pass the same wildcard syntax we previously used
-// with `piiRedact`.
-// ----------------------------------------------------------------------------
 const REDACTION_PATHS = [
   'password',
   'confirmPassword',
@@ -64,9 +59,8 @@ const createLogger = () => {
             level: VERBOSE ? 'debug' : 'info',
             options: {
               labels: {
-                app: process.env.SERVICE_NAME || 'dashboard',
-                service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
                 env: process.env.NODE_ENV || 'development',
+                vercelEnv: process.env.VERCEL_ENV || undefined,
               },
               host: process.env.LOKI_HOST,
               basicAuth: {

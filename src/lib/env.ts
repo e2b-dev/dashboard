@@ -8,8 +8,24 @@ export const serverSchema = z.object({
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
   BILLING_API_URL: z.string().url().optional(),
-  SERVICE_NAME: z.string().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
+
+  LOKI_HOST: z.string().url().optional(),
+  LOKI_USERNAME: z.string().optional(),
+  LOKI_PASSWORD: z.string().optional(),
+
+  OTEL_SERVICE_NAME: z.string().optional(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+  OTEL_EXPORTER_OTLP_PROTOCOL: z
+    .enum(['grpc', 'http/protobuf', 'http/json'])
+    .optional(),
+  OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
+  OTEL_TRACES_EXPORTER: z.enum(['otlp', 'none']).optional(),
+  OTEL_METRICS_EXPORTER: z.enum(['otlp', 'none']).optional(),
+  OTEL_LOGS_EXPORTER: z.enum(['otlp', 'none']).optional(),
+  OTEL_NODE_RESOURCE_DETECTORS: z.string().optional(),
+  OTEL_RESOURCE_ATTRIBUTES: z.string().optional(),
+
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   VERCEL_URL: z.string().optional(),
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
