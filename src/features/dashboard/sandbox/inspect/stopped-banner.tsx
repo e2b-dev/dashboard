@@ -49,11 +49,7 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
                 ? 'Live filesystem updates disabled'
                 : 'Sandbox Stopped'}
             </CardTitle>
-            <CardDescription
-              className={cn({
-                'text-warning': showWatcherError,
-              })}
-            >
+            <CardDescription>
               {showWatcherError
                 ? watcherError
                 : 'Filesystem data is stale and is kept locally on your device.'}
