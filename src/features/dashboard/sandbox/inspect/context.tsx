@@ -186,7 +186,7 @@ export function SandboxInspectProvider({
         a.click()
       },
     }),
-    [isRunning]
+    [isRunning, sandboxManagerRef.current, storeRef.current]
   )
 
   const connectSandbox = useCallback(async () => {
