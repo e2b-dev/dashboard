@@ -130,9 +130,7 @@ export function SandboxInspectProvider({
           store.getState().setSelected(path)
         },
         resetSelected: () => {
-          store.setState((state) => {
-            state.selectedPath = undefined
-          })
+          store.getState().setSelected(undefined)
         },
         toggleDirectory: async (path: string) => {
           const normalizedPath = normalizePath(path)
