@@ -30,63 +30,65 @@ const REDACTION_PATHS = [
 ]
 
 const createLogger = () => {
-  const baseConfig = {
-    redact: {
-      paths: REDACTION_PATHS,
-      censor: '[Redacted]',
-    },
+  const baseConfig = (additionalTargets?: any[]) => {
+    return {
+      redact: {
+        paths: REDACTION_PATHS,
+        censor: '[Redacted]',
+      },
+      transport: {
+        targets: [
+          {
+            target: 'pino-pretty',
+            level: VERBOSE ? 'debug' : 'info',
+            options: {
+              colorize: true,
+            },
+          },
+          ...(additionalTargets || []),
+        ],
+      },
+    }
   }
 
   if (process.env.NEXT_RUNTIME === 'edge' || typeof process === 'undefined') {
-    return pino(baseConfig)
+    return pino(baseConfig())
   }
 
   if (process.env.LOKI_HOST) {
     try {
-      const logger = pino({
-        redact: {
-          paths: REDACTION_PATHS,
-          censor: '[Redacted]',
-        },
-        transport: {
-          targets: [
-            {
-              target: 'pino-pretty',
-              level: VERBOSE ? 'debug' : 'info',
-              options: {
-                colorize: true,
+      const logger = pino(
+        baseConfig([
+          {
+            target: 'pino-loki',
+            level: VERBOSE ? 'debug' : 'info',
+            options: {
+              labels: {
+                app: process.env.SERVICE_NAME || 'dashboard',
+                service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
+                env: process.env.NODE_ENV || 'development',
+              },
+              host: process.env.LOKI_HOST,
+              basicAuth: {
+                username: process.env.LOKI_USERNAME,
+                password: process.env.LOKI_PASSWORD,
               },
             },
-            {
-              target: 'pino-loki',
-              level: VERBOSE ? 'debug' : 'info',
-              options: {
-                labels: {
-                  app: process.env.SERVICE_NAME || 'dashboard',
-                  service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
-                  env: process.env.NODE_ENV || 'development',
-                },
-                host: process.env.LOKI_HOST,
-                basicAuth: {
-                  username: process.env.LOKI_USERNAME,
-                  password: process.env.LOKI_PASSWORD,
-                },
-              },
-            },
-          ],
-        },
-      })
+          },
+        ])
+      )
+
       return logger
     } catch (error) {
       console.error(
         'Failed to create Loki transport, falling back to basic logger:',
         error
       )
-      return pino(baseConfig)
+      return pino(baseConfig())
     }
   }
 
-  return pino(baseConfig)
+  return pino(baseConfig())
 }
 
 const logger = createLogger()
