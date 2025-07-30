@@ -3,6 +3,21 @@ import { createMDX } from 'fumadocs-mdx/next'
 
 const withMDX = createMDX()
 
+const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' ${process.env.CSP_SCRIPT_SRC};
+    style-src 'self' 'unsafe-inline' ${process.env.CSP_STYLE_SRC};
+    img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com ${process.env.NEXT_PUBLIC_SUPABASE_URL} ${process.env.CSP_IMG_SRC};
+    frame-src 'self' https://vercel.live ${process.env.CSP_FRAME_SRC};
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    worker-src 'self' blob: ${process.env.CSP_SCRIPT_SRC};
+    upgrade-insecure-requests;
+`
+
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
@@ -26,7 +41,7 @@ const config = {
   trailingSlash: false,
   headers: async () => [
     {
-      source: '/:path*',
+      source: '/(.*)',
       headers: [
         {
           // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
@@ -35,6 +50,17 @@ const config = {
         },
       ],
     },
+    // CSP is only enabled in production and can be disabled by setting CSP_DISABLE=1
+    process.env.NODE_ENV === 'production' &&
+      process.env.CSP_DISABLED !== '1' && {
+        source: '/dashboard/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: cspHeader.replace(/\n/g, ''),
+          },
+        ],
+      },
   ],
   rewrites: async () => [
     {
@@ -75,22 +101,25 @@ const config = {
     // Campaigns
     {
       source: '/start',
-      destination: '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=start_ooh',
+      destination:
+        '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=start_ooh',
       permanent: false,
       statusCode: 302,
     },
     {
       source: '/machines',
-      destination: '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
+      destination:
+        '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
       permanent: false,
       statusCode: 302,
     },
-{
+    {
       source: '/humans',
-      destination: '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=humans_ooh',
+      destination:
+        '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=humans_ooh',
       permanent: false,
       statusCode: 302,
-    }
+    },
   ],
   skipTrailingSlashRedirect: true,
 }
