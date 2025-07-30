@@ -1,5 +1,5 @@
 import { VERBOSE } from '@/configs/flags'
-import { pino } from 'pino'
+import { LoggerOptions, pino } from 'pino'
 
 // ----------------------------------------------------------------------------
 // Paths that should be redacted from all log entries. Pino uses fast-redact
@@ -30,7 +30,7 @@ const REDACTION_PATHS = [
 ]
 
 const createLogger = () => {
-  const baseConfig = (additionalTargets?: any[]) => {
+  const baseConfig = (additionalTargets?: any[]): LoggerOptions => {
     return {
       redact: {
         paths: REDACTION_PATHS,
@@ -39,10 +39,10 @@ const createLogger = () => {
       transport: {
         targets: [
           {
-            target: 'pino-pretty',
+            target: 'pino/file',
             level: VERBOSE ? 'debug' : 'info',
             options: {
-              colorize: true,
+              destination: 1,
             },
           },
           ...(additionalTargets || []),
