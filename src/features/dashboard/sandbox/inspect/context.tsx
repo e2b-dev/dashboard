@@ -48,10 +48,6 @@ export function SandboxInspectProvider({
 
   const router = useRouter()
 
-  const sandboxId = useMemo(() => {
-    return sandboxInfo.sandboxID + '-' + sandboxInfo.clientID
-  }, [sandboxInfo.sandboxID, sandboxInfo.clientID])
-
   /*
    * ---------- synchronous store initialisation ----------
    * We want the tree to render immediately using the "seedEntries" streamed from the
@@ -195,7 +191,7 @@ export function SandboxInspectProvider({
         return
       }
 
-      const sandbox = await Sandbox.connect(sandboxId, {
+      const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         headers: {
           ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
@@ -214,7 +210,7 @@ export function SandboxInspectProvider({
     return () => {
       sandboxManagerRef.current?.stopWatching()
     }
-  }, [sandboxId, teamId, rootPath, router])
+  }, [sandboxInfo.sandboxID, teamId, rootPath, router])
 
   if (!storeRef.current || !operationsRef.current) {
     return null // should never happen, but satisfies type-checker
