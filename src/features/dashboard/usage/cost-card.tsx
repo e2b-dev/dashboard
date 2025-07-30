@@ -25,7 +25,6 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
       key: 'cost_card:server_error',
       error: result?.serverError,
       meta: {
-
         teamId,
         errorMessage,
       }
