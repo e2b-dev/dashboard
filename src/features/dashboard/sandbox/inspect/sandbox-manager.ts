@@ -78,17 +78,19 @@ export class SandboxManager {
           timeoutMs: 0,
           requestTimeoutMs: 0,
           onExit: (error) => {
-            this.store
-              .getState()
-              .setWatcherError(
-                'Failed to establish live filesystem updates: ' +
-                  (error?.message ||
-                    'Please try again later. If the problem persists, contact support.')
-              )
+            console.warn(`Watcher exited on ${this.rootPath}:`, error)
           },
         }
       )
     } catch (error) {
+      this.store
+        .getState()
+        .setWatcherError(
+          'Failed to establish live filesystem updates: ' +
+            (error instanceof Error
+              ? error.message
+              : 'Please try again later. If the problem persists, contact support.')
+        )
       console.error(`Failed to start root watcher on ${this.rootPath}:`, error)
       throw error
     }
