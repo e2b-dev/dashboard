@@ -1,12 +1,14 @@
 'use client'
 
+import { l } from '@/lib/clients/logger'
 import { cn } from '@/lib/utils'
-import { Input } from '@/ui/primitives/input'
-import { useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/ui/primitives/button'
 import { Loader } from '@/ui/loader'
+import { Button } from '@/ui/primitives/button'
+import { Input } from '@/ui/primitives/input'
 import { ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, useTransition } from 'react'
+import { serializeError } from 'serialize-error'
 
 interface RootPathInputProps {
   className?: string
@@ -28,8 +30,13 @@ export default function RootPathInput({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: newPath }),
       })
-    } catch {
-      // ignore
+    } catch (error) {
+      l.error({
+        key: 'sandbox_inspect_root_path_input:save_root_path_failed',
+        message:
+          error instanceof Error ? error.message : 'Failed to save root path',
+        error: serializeError(error),
+      })
     }
   }
 

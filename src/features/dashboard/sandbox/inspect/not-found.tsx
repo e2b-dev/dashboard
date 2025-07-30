@@ -1,6 +1,9 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { l } from '@/lib/clients/logger'
 import { cn } from '@/lib/utils'
+import { AsciiBackgroundPattern } from '@/ui/patterns'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -9,12 +12,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { RefreshCw, Home, ArrowUp, ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
+import { serializeError } from 'serialize-error'
 import { useSandboxContext } from '../context'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { AsciiBackgroundPattern } from '@/ui/patterns'
 
 export default function SandboxInspectNotFound() {
   const router = useRouter()
@@ -33,8 +35,13 @@ export default function SandboxInspectNotFound() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: newPath }),
       })
-    } catch {
-      // ignore
+    } catch (error) {
+      l.error({
+        key: 'sandbox_inspect_not_found:save_root_path_failed',
+        message:
+          error instanceof Error ? error.message : 'Failed to save root path',
+        error: serializeError(error),
+      })
     }
   }
 

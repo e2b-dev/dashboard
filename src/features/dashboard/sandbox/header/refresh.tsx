@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useTransition } from 'react'
-import { PollingButton, PollingButtonProps } from '@/ui/polling-button'
-import { useState } from 'react'
+import { l } from '@/lib/clients/logger'
 import { revalidateSandboxDetailsLayout } from '@/server/sandboxes/sandbox-actions'
-import { useParams, useRouter } from 'next/navigation'
+import { PollingButton } from '@/ui/polling-button'
+import { useParams } from 'next/navigation'
+import { useCallback, useState, useTransition } from 'react'
+import { serializeError } from 'serialize-error'
 
 const pollingIntervals = [
   { value: 0, label: 'Off' },
@@ -49,7 +50,12 @@ export default function RefreshControl({
           body: JSON.stringify({ interval }),
         })
       } catch (error) {
-        console.error(error)
+        l.error({
+          key: 'sandbox_inspect_refresh:save_polling_interval_failed',
+          message:
+            error instanceof Error ? error.message : 'Failed to save root path',
+          error: serializeError(error),
+        })
       }
     },
     []

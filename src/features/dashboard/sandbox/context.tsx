@@ -43,9 +43,14 @@ export function SandboxProvider({
   isRunning,
 }: SandboxProviderProps) {
   const { data } = useSWR(
-    [`/api/teams/${teamId}/sandboxes/metrics`, serverSandboxInfo?.sandboxID],
+    !serverSandboxInfo?.sandboxID
+      ? null
+      : [
+          `/api/teams/${teamId}/sandboxes/metrics`,
+          serverSandboxInfo?.sandboxID,
+        ],
     async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID) return null
+      if (!serverSandboxInfo?.sandboxID || !isRunning) return null
 
       const response = await fetch(url, {
         method: 'POST',
