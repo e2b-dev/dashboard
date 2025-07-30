@@ -1,110 +1,65 @@
 import { FileContentState } from '@/features/dashboard/sandbox/inspect/filesystem/store'
 
+// Leverage pathe (a tiny, browser-friendly path replacement)
+import { normalize, dirname, basename, join } from 'pathe'
+
 /**
- * Normalize a path by removing duplicate slashes and resolving . and .. segments
+ * Normalize a path so that it:
+ *   • always starts with "/" (root-relative)
+ *   • has duplicate slashes removed
+ *   • resolves . and .. segments
  */
 export function normalizePath(path: string): string {
-  // Handle empty path
-  if (!path || path === '') return '/'
-
-  // Ensure path starts with /
-  if (!path.startsWith('/')) {
-    path = '/' + path
-  }
-
-  // Split path into segments
-  const segments = path
-    .split('/')
-    .filter((segment) => segment !== '' && segment !== '.')
-  const normalized: string[] = []
-
-  for (const segment of segments) {
-    if (segment === '..') {
-      // Pop the last segment if we have one (don't go above root)
-      if (normalized.length > 0) {
-        normalized.pop()
-      }
-    } else {
-      normalized.push(segment)
-    }
-  }
-
-  // Join segments back together
-  const result = '/' + normalized.join('/')
-
-  // Ensure we don't return empty string, always at least '/'
-  return result === '' ? '/' : result
+  if (!path) return '/'
+  const normalized = normalize(path)
+  return normalized.startsWith('/') ? normalized : `/${normalized}`
 }
 
-/**
- * Get the parent directory of a path
- */
+/** Get the parent directory of a path */
 export function getParentPath(path: string): string {
-  const normalized = normalizePath(path)
-  if (normalized === '/') return '/'
-
-  const lastSlashIndex = normalized.lastIndexOf('/')
-  if (lastSlashIndex === 0) return '/'
-
-  return normalized.substring(0, lastSlashIndex)
+  const norm = normalizePath(path)
+  return norm === '/' ? '/' : dirname(norm) || '/'
 }
 
-/**
- * Get the basename (filename) of a path
- */
+/** Get the basename (filename) of a path */
 export function getBasename(path: string): string {
-  const normalized = normalizePath(path)
-  if (normalized === '/') return '/'
-
-  const lastSlashIndex = normalized.lastIndexOf('/')
-  return normalized.substring(lastSlashIndex + 1)
+  const norm = normalizePath(path)
+  return norm === '/' ? '/' : basename(norm)
 }
 
-/**
- * Join path segments together
- */
-export function joinPath(...segments: string[]): string {
+/** Join path segments together */
+export function joinPath(...segments: (string | null | undefined)[]): string {
   if (segments.length === 0) return '/'
-
-  const joined = segments
-    .filter((segment) => segment !== '' && segment !== null && segment !== undefined)
-    .join('/')
-
-  return normalizePath(joined)
+  const filtered = segments.filter(
+    (s): s is string => s !== '' && s !== null && s !== undefined
+  )
+  return normalizePath(join(...filtered))
 }
 
-/**
- * Check if a path is a child of another path
- */
+/** Check if a path is a strict child of another path */
 export function isChildPath(parentPath: string, childPath: string): boolean {
-  const normalizedParent = normalizePath(parentPath)
-  const normalizedChild = normalizePath(childPath)
+  const parent = normalizePath(parentPath)
+  const child = normalizePath(childPath)
+  if (parent === child) return false
 
-  if (normalizedParent === normalizedChild) return false
-
-  // Ensure parent ends with / for proper comparison
-  const parentWithSlash =
-    normalizedParent === '/' ? '/' : normalizedParent + '/'
-
-  return normalizedChild.startsWith(parentWithSlash)
+  const parentWithSlash = parent === '/' ? '/' : `${parent}/`
+  return child.startsWith(parentWithSlash)
 }
 
-/**
- * Get the depth of a path (number of directory levels)
- */
+/** Get the depth of a path (number of directory levels) */
 export function getPathDepth(path: string): number {
-  const normalized = normalizePath(path)
-  if (normalized === '/') return 0
-
-  return normalized.split('/').length - 1
+  const norm = normalizePath(path)
+  return norm === '/' ? 0 : norm.split('/').length - 1
 }
 
-/**
- * Check if a path is the root path
- */
+/** Check if a path is the root path */
 export function isRootPath(path: string): boolean {
   return normalizePath(path) === '/'
 }
+
+// ---------------------------------------------------------------------------
+// Binary/text blob helpers (unchanged)
+// ---------------------------------------------------------------------------
 
 export async function determineFileContentState(
   blob: Blob

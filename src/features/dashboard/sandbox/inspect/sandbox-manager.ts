@@ -11,6 +11,11 @@ import { FilesystemNode } from './filesystem/types'
 import { normalizePath, joinPath, getParentPath } from '@/lib/utils/filesystem'
 import { determineFileContentState } from '@/lib/utils/filesystem'
 
+export const HANDLED_ERRORS = {
+  'signal timed out': 'The operation timed out. Please try again later.',
+  'user aborted a request': 'The request was cancelled. Try downloading the file.',
+} as const
+
 export class SandboxManager {
   private watchHandle?: WatchHandle
   private readonly rootPath: string
@@ -20,22 +25,6 @@ export class SandboxManager {
   private static readonly LOAD_DEBOUNCE_MS = 250
   private static readonly READ_DEBOUNCE_MS = 250
 
-  /**
-   * Mapping from substrings found in error messages to user-friendly messages.
-   * Extend this map whenever new error patterns need custom handling.
-   */
-  private static readonly errorMap: Record<string, string> = {
-    'signal timed out': 'The operation timed out. Please try again later.',
-    'user aborted a request':
-      'The request was cancelled. Try downloading the file.',
-  }
-
-  // Detect error substrings that imply the requested path is actually a directory
-  private static readonly dirErrorHints: string[] = [
-    'eisdir',
-    'is a directory',
-    'illegal operation on a directory',
-  ]
 
   private loadTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private pendingLoads: Map<
@@ -316,60 +305,7 @@ export class SandboxManager {
       const contentState = await determineFileContentState(blob)
 
       state.setFileContent(normalizedPath, contentState)
-    } catch (err) {
-      // ────────────────────────────────────────────────────────────────
-      // Handle the special case where the SDK mis-classifies a symlink
-      // to a directory as FileType.FILE.  The read() call then throws
-      // an EISDIR / "is a directory" error.  We intercept that, convert
-      // the node to a directory, load its children and *skip* setting an
-      // error state so the UI does not flicker.
-      // ────────────────────────────────────────────────────────────────
-
-      const rawMessage =
-        err instanceof Error
-          ? err.message.toLowerCase()
-          : String(err).toLowerCase()
-
-      const looksLikeDirectory = SandboxManager.dirErrorHints.some((hint) =>
-        rawMessage.includes(hint)
-      )
-
-      if (looksLikeDirectory) {
-        try {
-          const entries = await this.sandbox.files.list(normalizedPath)
-
-          state.updateNode(normalizedPath, {
-            type: FileType.DIR,
-            isExpanded: true,
-            children: [],
-          })
-
-          state.setError(normalizedPath)
-
-          const nodes: FilesystemNode[] = entries.map((entry: EntryInfo) =>
-            entry.type === FileType.DIR
-              ? {
-                  name: entry.name,
-                  path: entry.path,
-                  type: FileType.DIR,
-                  isExpanded: false,
-                  isSelected: false,
-                  children: [],
-                }
-              : {
-                  name: entry.name,
-                  path: entry.path,
-                  type: FileType.FILE,
-                  isSelected: false,
-                }
-          )
-
-          state.addNodes(normalizedPath, nodes)
-
-          return
-        } catch {}
-      }
-
+    } catch (err) { 
       const errorMessage = SandboxManager.pipeError(err, 'Failed to read file')
 
       console.error(`Failed to read file ${normalizedPath}:`, err)
@@ -432,7 +368,7 @@ export class SandboxManager {
 
     const lowerOriginal = originalMessage.toLowerCase()
 
-    for (const [search, msg] of Object.entries(SandboxManager.errorMap)) {
+    for (const [search, msg] of Object.entries(HANDLED_ERRORS)) {
       if (lowerOriginal.includes(search.toLowerCase())) {
         return msg
       }
