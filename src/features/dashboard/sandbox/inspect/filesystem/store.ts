@@ -56,7 +56,7 @@ export interface FilesystemMutations {
   removeNode: (path: string) => void
   updateNode: (path: string, updates: Partial<FilesystemNode>) => void
   setExpanded: (path: string, expanded: boolean) => void
-  setSelected: (path: string) => void
+  setSelected: (path?: string) => void
   setLoading: (path: string, loading: boolean) => void
   setLoaded: (path: string, loaded: boolean) => void
   setError: (path: string, error?: string) => void
@@ -234,8 +234,8 @@ export const createFilesystemStore = (rootPath: string) =>
         })
       },
 
-      setSelected: (path: string) => {
-        const normalizedPath = normalizePath(path)
+      setSelected: (path) => {
+        const normalizedPath = path ? normalizePath(path) : undefined
 
         set((state: FilesystemState) => {
           state.selectedPath = normalizedPath
