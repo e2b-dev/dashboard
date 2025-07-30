@@ -2,15 +2,6 @@ import * as Sentry from '@sentry/nextjs'
 import { registerOTel } from '@vercel/otel'
 import type { Logger } from 'pino'
 
-type AppLogFn = (params: { key: string, message?: string, error?: unknown, meta?: Record<string, unknown> }) => void
-
-export type AppLogger = Omit<Logger, "info" | "warn" | "error" | "debug"> & {
-  info: AppLogFn
-  warn: AppLogFn
-  error: AppLogFn
-  debug: AppLogFn
-}
-
 declare global {
   var logger: Logger | undefined
 }
@@ -28,8 +19,9 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('../sentry.server.config')
 
-    await import("pino")
+    await import('pino')
     await import('pino-loki')
+    await import('pino-pretty')
     // @ts-expect-error - incorrectly typed
     await import('next-logger')
   }

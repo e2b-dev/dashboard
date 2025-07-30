@@ -1,3 +1,4 @@
+import { VERBOSE } from '@/configs/flags'
 import { pino } from 'pino'
 
 // ----------------------------------------------------------------------------
@@ -42,36 +43,6 @@ const createLogger = () => {
 
   if (process.env.LOKI_HOST) {
     try {
-      // const transport = pino.transport({
-      //   targets: [
-      //     {
-      //       target: 'pino-loki',
-      //       level: 'info',
-      //       options: {
-      //         labels: {
-      //           app: process.env.SERVICE_NAME || 'dashboard',
-      //           service: process.env.OTEL_SERVICE_NAME || 'e2b-dashboard',
-      //           env: process.env.NODE_ENV || 'development',
-      //         },
-      //         host: process.env.LOKI_HOST,
-      //         basicAuth: {
-      //           username: process.env.LOKI_USERNAME,
-      //           password: process.env.LOKI_PASSWORD,
-      //         },
-      //       },
-      //     },
-      //     {
-      //       target: 'pino/file',
-      //       level: 'info',
-      //       options: {
-      //         destination: 1,
-      //       },
-      //     },
-      //   ],
-      // })
-      //
-      // console.info('transport', transport)
-
       const logger = pino({
         redact: {
           paths: REDACTION_PATHS,
@@ -80,8 +51,15 @@ const createLogger = () => {
         transport: {
           targets: [
             {
+              target: 'pino-pretty',
+              level: VERBOSE ? 'debug' : 'info',
+              options: {
+                colorize: true,
+              },
+            },
+            {
               target: 'pino-loki',
-              level: 'info',
+              level: VERBOSE ? 'debug' : 'info',
               options: {
                 labels: {
                   app: process.env.SERVICE_NAME || 'dashboard',
@@ -93,13 +71,6 @@ const createLogger = () => {
                   username: process.env.LOKI_USERNAME,
                   password: process.env.LOKI_PASSWORD,
                 },
-              },
-            },
-            {
-              target: 'pino/file',
-              level: 'info',
-              options: {
-                destination: 1,
               },
             },
           ],
