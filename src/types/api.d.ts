@@ -2,6 +2,8 @@ import { components as InfraComponents } from '@/types/infra-api'
 
 type Sandbox = InfraComponents['schemas']['ListedSandbox']
 
+type SandboxInfo = InfraComponents['schemas']['SandboxDetail']
+
 type Sandboxes = InfraComponents['schemas']['ListedSandbox'][]
 
 type SandboxMetric = InfraComponents['schemas']['SandboxMetric']
@@ -33,6 +35,7 @@ export type {
   DefaultTemplate,
   IdentifierMaskingDetails,
   Sandbox,
+  SandboxInfo,
   Sandboxes,
   SandboxesMetricsRecord,
   SandboxMetric,
