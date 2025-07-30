@@ -3,13 +3,25 @@ import { createMDX } from 'fumadocs-mdx/next'
 
 const withMDX = createMDX()
 
+const infraApiUrl = new URL(process.env.INFRA_API_URL)
+const infraApiHostnameSplits = infraApiUrl.hostname.split('.')
+const infraApiUrlHasSubdomain = infraApiHostnameSplits.length === 3
+
+const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL)
+const infraConnectSrc = `${infraApiUrl.toString()} ${infraApiUrl.protocol}//*.${
+  infraApiUrlHasSubdomain
+    ? `${infraApiHostnameSplits[1]}.${infraApiHostnameSplits[2]}`
+    : `${infraApiHostnameSplits[0]}.${infraApiHostnameSplits[1]}`
+}`
+
 const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline' ${process.env.CSP_SCRIPT_SRC};
     style-src 'self' 'unsafe-inline' ${process.env.CSP_STYLE_SRC};
-    img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com ${process.env.NEXT_PUBLIC_SUPABASE_URL} ${process.env.CSP_IMG_SRC};
+    img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com ${supabaseUrl.toString()} ${process.env.CSP_IMG_SRC};
     frame-src 'self' https://vercel.live ${process.env.CSP_FRAME_SRC};
     font-src 'self';
+    connect-src 'self' https://*.sentry.io https://*.posthog.com https://*.vercel.com ${infraConnectSrc} ${supabaseUrl.toString()};
     object-src 'none';
     base-uri 'self';
     form-action 'self';
