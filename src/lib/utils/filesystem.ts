@@ -11,19 +11,21 @@ import { normalize, dirname, basename, join } from 'pathe'
  */
 export function normalizePath(path: string): string {
   if (!path) return '/'
-  const normalized = normalize(path)
-  return normalized.startsWith('/') ? normalized : `/${normalized}`
+
+  return normalize(path)
 }
 
 /** Get the parent directory of a path */
 export function getParentPath(path: string): string {
   const norm = normalizePath(path)
+
   return norm === '/' ? '/' : dirname(norm) || '/'
 }
 
 /** Get the basename (filename) of a path */
 export function getBasename(path: string): string {
   const norm = normalizePath(path)
+
   return norm === '/' ? '/' : basename(norm)
 }
 

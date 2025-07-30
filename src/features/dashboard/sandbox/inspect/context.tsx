@@ -201,7 +201,8 @@ export function SandboxInspectProvider({
       sandboxManagerRef.current = new SandboxManager(
         storeRef.current,
         sandbox,
-        rootPath
+        rootPath,
+        sandboxInfo.envdAccessToken !== undefined
       )
     }
 
