@@ -106,9 +106,9 @@ export default async function CLIAuthPage({
   if (!next?.startsWith('http://localhost')) {
     l.error({
       key: 'cli_auth:invalid_redirect_url',
-      meta: {
+      user_id: user?.id,
+      context: {
         next,
-        userId: user?.id,
       },
     })
     redirect(PROTECTED_URLS.DASHBOARD)
