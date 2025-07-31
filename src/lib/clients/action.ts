@@ -115,7 +115,7 @@ export const actionClient = createSafeActionClient({
     )
   }
 
-  s.end(duration)
+  s.end()
 
   return result
 })
