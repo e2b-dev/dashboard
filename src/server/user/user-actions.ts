@@ -91,7 +91,7 @@ export const updateUserAction = authActionClient
 export const getUserAccessTokenAction = authActionClient
   .metadata({ actionName: 'getUserAccessToken' })
   .action(async ({ ctx }) => {
-    const { user, session } = ctx
+    const { session } = ctx
 
     const token = await generateE2BUserAccessToken(session.access_token)
 

@@ -36,11 +36,28 @@ export const getSandboxRoot = authActionClient
       }
     } catch (err) {
       if (err instanceof NotFoundError && sandbox) {
-        l.warn('get_sandbox_root:not_found', err)
+        l.warn({
+          key: 'get_sandbox_root:not_found',
+          sandbox_id: sandboxId,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            rootPath,
+          },
+        })
         return returnServerError('ROOT_PATH_NOT_FOUND')
       }
 
-      l.error('get_sandbox_root:unexpected_error', err)
+      l.error({
+        key: 'get_sandbox_root:unexpected_error',
+        error: err,
+        team_id: teamId,
+        user_id: session.user.id,
+        sandbox_id: sandboxId,
+        context: {
+          rootPath,
+        },
+      })
 
       return returnServerError('Failed to list root directory.')
     }

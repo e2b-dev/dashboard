@@ -46,9 +46,7 @@ export async function GET(request: Request) {
     } else {
       l.info({
         key: 'auth_callback:otp_exchanged',
-        context: {
-          userId: data.user.id,
-        },
+        user_id: data.user.id,
       })
     }
   }

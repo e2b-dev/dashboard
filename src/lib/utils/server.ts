@@ -209,9 +209,9 @@ export async function resolveTeamIdInServerComponent(identifier: string) {
 
     l.info({
       key: 'resolve_team_id_in_server_component:resolving_team_id_from_data_sources',
+      team_id: teamId,
       context: {
         identifier,
-        teamId,
       },
     })
   }

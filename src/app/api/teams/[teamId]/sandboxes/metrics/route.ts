@@ -46,12 +46,12 @@ export async function POST(
         key: 'get_team_sandboxes_metrics',
         message: infraRes.error.message,
         error: infraRes.error,
+        team_id: teamId,
+        user_id: session.user.id,
         context: {
-          teamId,
           path: '/sandboxes/metrics',
           status,
           sandboxIds,
-          userId: session.user.id,
         },
       })
 

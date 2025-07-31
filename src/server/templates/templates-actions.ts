@@ -36,10 +36,9 @@ export const deleteTemplateAction = authActionClient
         key: 'DELETE_TEMPLATE_ACTION:INFRA_ERROR',
         message: res.error.message,
         error: res.error,
+        user_id: ctx.session.user.id,
+        template_id: templateId,
         context: {
-          userId: ctx.session.user.id,
-          templateId,
-
           status,
         },
       })
@@ -102,9 +101,9 @@ export const updateTemplateAction = authActionClient
         key: 'update_template_action:infra_error',
         message: res.error.message,
         error: res.error,
+        user_id: ctx.session.user.id,
+        template_id: templateId,
         context: {
-          userId: ctx.session.user.id,
-          templateId,
           status,
         },
       })

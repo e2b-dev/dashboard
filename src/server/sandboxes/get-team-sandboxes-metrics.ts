@@ -55,12 +55,12 @@ export const getTeamSandboxesMetrics = authActionClient
           key: 'get_team_sandboxes:infra_error',
           message: infraRes.error.message,
           error: infraRes.error,
+          team_id: teamId,
+          user_id: session.user.id,
           context: {
-            path: '/sandboxes/metrics',
-            teamId,
-            userId: session.user.id,
             status,
             sandboxIds,
+            path: '/sandboxes/metrics',
           },
         })
 

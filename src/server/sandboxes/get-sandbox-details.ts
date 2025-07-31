@@ -36,10 +36,10 @@ export const getSandboxDetails = authActionClient
         key: 'get_sandbox_details:infra_error',
         message: res.error.message,
         error: res.error,
+        team_id: teamId,
+        user_id: session.user.id,
         context: {
           status,
-          teamId,
-          userId: session.user.id,
           sandboxId,
         },
       })

@@ -137,13 +137,13 @@ export async function GET(request: NextRequest) {
 
     l.info({
       key: 'auth_confirm:success',
+      user_id: data?.user?.id,
       context: {
         supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
         supabaseType,
         supabaseRedirectTo,
         redirectUrl: redirectUrl.toString(),
         reauth: redirectUrl.searchParams.get('reauth'),
-        userId: data?.user?.id,
       },
     })
 

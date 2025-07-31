@@ -48,9 +48,9 @@ export const getTeamTemplates = authActionClient
         key: 'get_team_templates:infra_error',
         message: res.error.message,
         error: res.error,
+        team_id: teamId,
+        user_id: session.user.id,
         context: {
-          teamId,
-          userId: session.user.id,
           status,
         },
       })
@@ -123,11 +123,9 @@ export const getDefaultTemplates = actionClient
 
       if (buildError) {
         l.error({
-          key: 'get_team_templates:env_builds_supabase_error',
+          key: 'get_default_templates:env_builds_supabase_error',
           error: buildError,
-          context: {
-            envId: env.id,
-          },
+          template_id: env.id,
         })
         continue
       }
@@ -139,11 +137,9 @@ export const getDefaultTemplates = actionClient
 
       if (aliasesError) {
         l.error({
-          key: 'get_team_templates:env_aliases_supabase_error',
+          key: 'get_default_templates:env_aliases_supabase_error',
           error: aliasesError,
-          context: {
-            envId: env.id,
-          },
+          template_id: env.id,
         })
         continue
       }

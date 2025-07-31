@@ -97,6 +97,7 @@ export const getUserTeams = authActionClient
           key: 'get_usr_teams:supabase_error',
           message: authUsersError.message,
           error: serializeError(authUsersError),
+          user_id: user.id,
         })
 
         return usersTeamsData.map((userTeam) => ({
@@ -143,9 +144,9 @@ export const getUserTeams = authActionClient
       l.error({
         key: 'get_user_teams:unexpected_error',
         error: serializeError(err),
+        user_id: user.id,
         context: {
           usersTeamsData,
-          userId: user.id,
         },
       })
 

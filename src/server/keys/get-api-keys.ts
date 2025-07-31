@@ -32,10 +32,10 @@ export const getTeamApiKeys = authActionClient
       l.error({
         key: 'get_team_api_keys:error',
         error: res.error,
+        team_id: teamId,
+        user_id: session.user.id,
         context: {
           status,
-          teamId,
-          userId: session.user.id,
         },
       })
 

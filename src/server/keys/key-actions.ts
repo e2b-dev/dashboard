@@ -42,9 +42,9 @@ export const createApiKeyAction = authActionClient
         key: 'create_api_key:error',
         message: res.error.message,
         error: res.error,
+        team_id: teamId,
+        user_id: session.user.id,
         context: {
-          teamId,
-          userId: session.user.id,
           name,
         },
       })
@@ -91,9 +91,9 @@ export const deleteApiKeyAction = authActionClient
         key: 'delete_api_key_action:error',
         message: res.error.message,
         error: res.error,
+        team_id: teamId,
+        user_id: session.user.id,
         context: {
-          teamId,
-          userId: session.user.id,
           apiKeyId,
         },
       })

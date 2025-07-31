@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { serializeError } from 'serialize-error'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { l } from './lib/clients/logger'
 import { getRewriteForPath } from './lib/utils/rewrites'
@@ -10,7 +11,6 @@ import {
   isDashboardRoute,
   resolveTeamForDashboard,
 } from './server/middleware'
-import { serializeError } from 'serialize-error'
 
 export async function middleware(request: NextRequest) {
   try {
@@ -91,7 +91,10 @@ export async function middleware(request: NextRequest) {
     // Process team resolution result
     return handleTeamResolution(request, response, teamResult)
   } catch (error) {
-    l.error({ key: 'middleware:unexpected_error', error: serializeError(error) })
+    l.error({
+      key: 'middleware:unexpected_error',
+      error: serializeError(error),
+    })
     // Return a basic response to avoid infinite loops
     return NextResponse.next({
       request,

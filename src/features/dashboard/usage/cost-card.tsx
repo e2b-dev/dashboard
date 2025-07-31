@@ -24,8 +24,8 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
     l.error({
       key: 'cost_card:server_error',
       error: result?.serverError,
+      team_id: teamId,
       context: {
-        teamId,
         errorMessage,
       },
     })

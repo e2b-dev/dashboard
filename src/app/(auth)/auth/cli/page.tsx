@@ -147,8 +147,8 @@ export default async function CLIAuthPage({
       l.error({
         key: 'cli_auth:unexpected_error',
         error: serializeError(err),
+        user_id: user?.id,
         context: {
-          userId: user?.id,
           next,
         },
       })
