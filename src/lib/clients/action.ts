@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { ActionError, flattenClientInputValue } from '../utils/action'
 import { checkAuthenticated } from '../utils/server'
 import { l } from './logger'
+import { getTracer } from './tracer'
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
@@ -42,7 +43,7 @@ export const actionClient = createSafeActionClient({
   },
   defaultValidationErrorsShape: 'flattened',
 }).use(async ({ next, clientInput, metadata }) => {
-  const t = trace.getTracer('action_client')
+  const t = getTracer()
 
   const actionOrFunctionName =
     metadata?.serverFunctionName || metadata?.actionName || 'Unknown action'
