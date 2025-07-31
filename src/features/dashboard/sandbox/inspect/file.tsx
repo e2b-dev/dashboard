@@ -1,14 +1,13 @@
-import { FileType } from 'e2b'
-import { FilesystemNode } from './filesystem/types'
+import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
 import { AlertCircle, FileIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import NodeLabel from './node-label'
+import { FilesystemNode } from './filesystem/types'
 import { useFile } from './hooks/use-file'
+import NodeLabel from './node-label'
 
 interface SandboxInspectFileProps {
   file: FilesystemNode & {
-    type: FileType.FILE
+    type: 'file'
   }
 }
 

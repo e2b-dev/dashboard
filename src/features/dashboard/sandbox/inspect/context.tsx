@@ -4,7 +4,7 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import { supabase } from '@/lib/clients/supabase/client'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
-import Sandbox, { EntryInfo, FileType } from 'e2b'
+import Sandbox, { EntryInfo } from 'e2b'
 import { useRouter } from 'next/navigation'
 import {
   createContext,
@@ -78,7 +78,7 @@ export function SandboxInspectProvider({
         {
           name: rootName,
           path: normalizedRoot,
-          type: FileType.DIR,
+          type: 'dir',
           isExpanded: true,
           children: [],
         },
@@ -93,12 +93,12 @@ export function SandboxInspectProvider({
             path: normalizePath(entry.path),
           }
 
-          if (entry.type === FileType.DIR) {
+          if (entry.type === 'dir') {
             state.setLoaded(base.path, false)
 
             return {
               ...base,
-              type: FileType.DIR,
+              type: 'dir',
               isExpanded: false,
               children: [],
             }
@@ -106,7 +106,7 @@ export function SandboxInspectProvider({
 
           return {
             ...base,
-            type: FileType.FILE,
+            type: 'file',
           }
         })
 
@@ -132,7 +132,7 @@ export function SandboxInspectProvider({
 
         if (
           isRunning &&
-          node.type === FileType.FILE &&
+          node.type === 'file' &&
           !storeRef.current!.getState().isLoaded(path)
         ) {
           await sandboxManagerRef.current?.readFile(path)
@@ -150,7 +150,7 @@ export function SandboxInspectProvider({
         const state = storeRef.current!.getState()
         const node = state.getNode(normalizedPath)
 
-        if (!node || node.type !== FileType.DIR) return
+        if (!node || node.type !== 'dir') return
 
         const newExpandedState = !node.isExpanded
         state.setExpanded(normalizedPath, newExpandedState)

@@ -1,17 +1,16 @@
-import { FilesystemNode } from './filesystem/types'
-import { AlertCircle, ChevronRight } from 'lucide-react'
-import SandboxInspectNode from './node'
-import { useDirectory } from './hooks/use-directory'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { motion, AnimatePresence } from 'motion/react'
-import { FileType } from 'e2b'
-import NodeLabel from './node-label'
+import { AlertCircle, ChevronRight } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import SandboxInspectEmptyNode from './empty'
+import { FilesystemNode } from './filesystem/types'
+import { useDirectory } from './hooks/use-directory'
+import SandboxInspectNode from './node'
+import NodeLabel from './node-label'
 
 interface SandboxInspectDirProps {
   dir: FilesystemNode & {
-    type: FileType.DIR
+    type: 'dir'
   }
 }
 

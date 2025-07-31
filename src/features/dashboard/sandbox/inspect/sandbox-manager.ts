@@ -8,7 +8,6 @@ import {
   type EntryInfo,
   type FilesystemEvent,
   FilesystemEventType,
-  FileType,
   type Sandbox,
   type WatchHandle,
 } from 'e2b'
@@ -149,7 +148,7 @@ export class SandboxManager {
 
     state.removeNode(removedPath)
 
-    if (node?.type === FileType.FILE) {
+    if (node?.type === 'file') {
       state.resetFileContent(removedPath)
     }
   }
@@ -159,7 +158,7 @@ export class SandboxManager {
 
     const node = this.store.getState().getNode(normalizedPath)
 
-    if (node?.type === FileType.FILE) {
+    if (node?.type === 'file') {
       return
     }
 
@@ -206,11 +205,7 @@ export class SandboxManager {
     const state = this.store.getState()
     const node = state.getNode(normalizedPath)
 
-    if (
-      !node ||
-      node.type !== FileType.DIR ||
-      state.loadingPaths.has(normalizedPath)
-    )
+    if (!node || node.type !== 'dir' || state.loadingPaths.has(normalizedPath))
       return
 
     state.setLoading(normalizedPath, true)
@@ -223,11 +218,11 @@ export class SandboxManager {
       })
 
       const nodes: FilesystemNode[] = entries.map((entry: EntryInfo) => {
-        if (entry.type === FileType.DIR) {
+        if (entry.type === 'dir') {
           return {
             name: entry.name,
             path: entry.path,
-            type: FileType.DIR,
+            type: 'dir',
             isExpanded: false,
             isSelected: false,
             children: [],
@@ -236,7 +231,7 @@ export class SandboxManager {
           return {
             name: entry.name,
             path: entry.path,
-            type: FileType.FILE,
+            type: 'file',
             isSelected: false,
           }
         }
@@ -269,7 +264,7 @@ export class SandboxManager {
     const state = this.store.getState()
 
     const node = state.getNode(normalizedPath)
-    if (!node || node.type !== FileType.DIR) return
+    if (!node || node.type !== 'dir') return
 
     await this.loadDirectory(normalizedPath)
   }
@@ -279,7 +274,7 @@ export class SandboxManager {
     const state = this.store.getState()
     const node = state.getNode(normalizedPath)
 
-    if (!node || node.type !== FileType.FILE) return
+    if (!node || node.type !== 'file') return
 
     let pending = this.pendingReads.get(normalizedPath)
     if (!pending) {
@@ -322,7 +317,7 @@ export class SandboxManager {
     const state = this.store.getState()
     const node = state.getNode(normalizedPath)
 
-    if (!node || node.type !== FileType.FILE) return
+    if (!node || node.type !== 'file') return
 
     try {
       state.setLoading(normalizedPath, true)
@@ -354,7 +349,7 @@ export class SandboxManager {
     const state = this.store.getState()
     const node = state.getNode(normalizedPath)
 
-    if (!node || node.type !== FileType.FILE) {
+    if (!node || node.type !== 'file') {
       console.error(
         `Failed to get download URL for file. Invalid node: ${node} ${normalizedPath}`
       )

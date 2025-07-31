@@ -6,7 +6,6 @@ import {
   isChildPath,
   normalizePath,
 } from '@/lib/utils/filesystem'
-import { FileType } from 'e2b'
 import { enableMapSet } from 'immer'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
@@ -100,8 +99,8 @@ function compareFilesystemNodes(
 ): number {
   if (!nodeA || !nodeB) return 0
 
-  if (nodeA.type === FileType.DIR && nodeB.type === FileType.FILE) return -1
-  if (nodeA.type === FileType.FILE && nodeB.type === FileType.DIR) return 1
+  if (nodeA.type === 'dir' && nodeB.type === 'file') return -1
+  if (nodeA.type === 'file' && nodeB.type === 'dir') return 1
 
   const cmp = nodeA.name.localeCompare(nodeB.name, undefined, {
     sensitivity: 'base',
@@ -137,14 +136,14 @@ export const createFilesystemStore = (rootPath: string) =>
             parentNode = {
               name: parentName,
               path: normalizedParentPath,
-              type: FileType.DIR,
+              type: 'dir',
               isExpanded: false,
               children: [],
             }
             state.nodes.set(normalizedParentPath, parentNode)
           }
 
-          if (parentNode.type === FileType.FILE) {
+          if (parentNode.type === 'file') {
             throw new Error('Parent node is a file')
           }
 

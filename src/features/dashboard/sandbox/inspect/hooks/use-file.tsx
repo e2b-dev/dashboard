@@ -1,10 +1,9 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useSandboxInspectContext } from '../context'
 import { useStore } from 'zustand'
+import { useSandboxInspectContext } from '../context'
 import { useFilesystemNode, useSelectedPath } from './use-node'
-import { FileType } from 'e2b'
 
 /**
  * Hook for accessing file state (loading, error)

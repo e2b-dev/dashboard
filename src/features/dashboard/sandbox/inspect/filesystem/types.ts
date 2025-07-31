@@ -1,7 +1,5 @@
-import { FileType } from 'e2b'
-
 interface FilesystemDir {
-  type: FileType.DIR
+  type: 'dir'
   name: string
   path: string
   children: string[] // paths of children
@@ -9,7 +7,7 @@ interface FilesystemDir {
 }
 
 interface FilesystemFile {
-  type: FileType.FILE
+  type: 'file'
   name: string
   path: string
 }
