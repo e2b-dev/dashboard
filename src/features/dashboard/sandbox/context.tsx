@@ -17,6 +17,9 @@ interface SandboxContextValue {
   sandboxInfo?: SandboxInfo
   lastMetrics?: ClientSandboxMetric
   isRunning: boolean
+
+  isSandboxInfoLoading: boolean
+  refetchSandboxInfo: () => void
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -42,7 +45,63 @@ export function SandboxProvider({
   teamId,
   isRunning,
 }: SandboxProviderProps) {
-  const { data } = useSWR(
+  const [isRunningState, setIsRunningState] = useState(isRunning)
+  const [lastFallbackData, setLastFallbackData] = useState(serverSandboxInfo)
+
+  const {
+    data: sandboxInfoData,
+    mutate: refetchSandboxInfo,
+    isLoading: isSandboxInfoLoading,
+    isValidating: isSandboxInfoValidating,
+  } = useSWR<SandboxInfo | void>(
+    !serverSandboxInfo?.sandboxID
+      ? null
+      : [`/api/sandbox/details`, serverSandboxInfo?.sandboxID],
+    async ([url]) => {
+      if (!serverSandboxInfo?.sandboxID) return
+
+      const origin = document.location.origin
+
+      const requestUrl = new URL(url, origin)
+
+      requestUrl.searchParams.set('teamId', teamId)
+      requestUrl.searchParams.set('sandboxId', serverSandboxInfo.sandboxID)
+
+      const response = await fetch(requestUrl.toString(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const status = response.status
+
+        if (status === 404) {
+          setIsRunningState(false)
+          return
+        }
+
+        if (!isRunningState) {
+          setIsRunningState(true)
+        }
+
+        throw new Error(`Failed to fetch sandbox info: ${status}`)
+      }
+
+      return (await response.json()) as SandboxInfo
+    },
+    {
+      fallbackData: lastFallbackData,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      revalidateOnMount: false,
+    }
+  )
+
+  const { data: metricsData } = useSWR(
     !serverSandboxInfo?.sandboxID
       ? null
       : [
@@ -81,20 +140,20 @@ export function SandboxProvider({
     }
   )
 
-  const [sandboxInfo, setSandboxInfo] = useState(serverSandboxInfo)
-
   useEffect(() => {
-    if (!serverSandboxInfo) return
-
-    setSandboxInfo(serverSandboxInfo)
+    if (serverSandboxInfo) {
+      setLastFallbackData(serverSandboxInfo)
+    }
   }, [serverSandboxInfo])
 
   return (
     <SandboxContext.Provider
       value={{
-        sandboxInfo,
-        isRunning,
-        lastMetrics: data || undefined,
+        sandboxInfo: sandboxInfoData || undefined,
+        isRunning: isRunningState,
+        lastMetrics: metricsData || undefined,
+        isSandboxInfoLoading: isSandboxInfoLoading || isSandboxInfoValidating,
+        refetchSandboxInfo,
       }}
     >
       {children}

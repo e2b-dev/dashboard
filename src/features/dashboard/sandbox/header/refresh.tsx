@@ -1,11 +1,10 @@
 'use client'
 
 import { l } from '@/lib/clients/logger'
-import { revalidateSandboxDetailsLayout } from '@/server/sandboxes/sandbox-actions'
 import { PollingButton } from '@/ui/polling-button'
-import { useParams } from 'next/navigation'
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useState } from 'react'
 import { serializeError } from 'serialize-error'
+import { useSandboxContext } from '../context'
 
 const pollingIntervals = [
   { value: 0, label: 'Off' },
@@ -29,17 +28,8 @@ export default function RefreshControl({
   const [pollingInterval, setPollingInterval] = useState<PollingInterval>(
     initialPollingInterval ?? pollingIntervals[2]!.value
   )
-  const [isPending, startTransition] = useTransition()
-  const { teamIdOrSlug, sandboxId } = useParams()
 
-  const handleRefresh = useCallback(() => {
-    startTransition(async () => {
-      await revalidateSandboxDetailsLayout(
-        teamIdOrSlug as string,
-        sandboxId as string
-      )
-    })
-  }, [teamIdOrSlug, sandboxId])
+  const { refetchSandboxInfo, isSandboxInfoLoading } = useSandboxContext()
 
   const handleIntervalChange = useCallback(
     async (interval: PollingInterval) => {
@@ -66,8 +56,8 @@ export default function RefreshControl({
       intervals={pollingIntervals}
       pollingInterval={pollingInterval}
       onIntervalChange={handleIntervalChange}
-      isPolling={isPending}
-      onRefresh={handleRefresh}
+      isPolling={isSandboxInfoLoading}
+      onRefresh={refetchSandboxInfo}
       className={className}
     />
   )

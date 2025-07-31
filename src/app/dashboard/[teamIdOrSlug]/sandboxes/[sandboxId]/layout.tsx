@@ -1,8 +1,8 @@
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
+import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
+import SandboxLayoutClient from '@/features/dashboard/sandbox/layout'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
-import SandboxLayoutClient from '@/features/dashboard/sandbox/layout'
-import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 
 export const fetchCache = 'force-no-store'
 
@@ -20,11 +20,7 @@ export default async function SandboxLayout({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
   const res = await getSandboxDetails({ teamId, sandboxId })
 
-  let exists = false
-
-  if (res?.serverError !== 'SANDBOX_NOT_FOUND') {
-    exists = true
-  }
+  const exists = res?.serverError !== 'SANDBOX_NOT_FOUND'
 
   if (!res?.data || res?.serverError) {
     console.error(

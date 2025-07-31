@@ -23,11 +23,11 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
   const watcherError = useWatcherError()
 
   const show = useMemo(
-    () => !!watcherError || (!isRunning && rootNodeCount > 0),
+    () => (!!watcherError || !isRunning) && rootNodeCount > 0,
     [isRunning, rootNodeCount, watcherError]
   )
 
-  const showWatcherError = watcherError && isRunning
+  const showWatcherError = watcherError && isRunning && rootNodeCount > 0
 
   return (
     <AnimatePresence mode="wait">
