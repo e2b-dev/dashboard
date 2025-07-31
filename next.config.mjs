@@ -22,7 +22,7 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['pino'],
+  serverExternalPackages: ['pino', 'pino-loki'],
   trailingSlash: false,
   webpack: (config) => {
     config.module.rules.push({
