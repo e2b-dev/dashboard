@@ -1,18 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useState, useTransition } from 'react'
-import { useParams } from 'next/navigation'
-import { Button } from '@/ui/primitives/button'
-import { RefreshCw, StopCircle } from 'lucide-react'
-import { revalidateSandboxDetailsLayout } from '@/server/sandboxes/sandbox-actions'
 import { cn } from '@/lib/utils'
 import HelpTooltip from '@/ui/help-tooltip'
-import { motion } from 'motion/react'
-import { useSandboxContext } from '../context'
 import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
+import { RefreshCw, StopCircle } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useCallback, useEffect, useState } from 'react'
+import { useSandboxContext } from '../context'
 
 export default function RemainingTime() {
-  const { sandboxInfo, isRunning } = useSandboxContext()
+  const { sandboxInfo, isRunning, refetchSandboxInfo, isSandboxInfoLoading } =
+    useSandboxContext()
 
   const endAt = sandboxInfo?.endAt
 
@@ -23,9 +22,6 @@ export default function RemainingTime() {
   }, [endAt])
 
   const [remaining, setRemaining] = useState<number>(getRemainingSeconds)
-
-  const [isPending, startTransition] = useTransition()
-  const { teamIdOrSlug, sandboxId } = useParams()
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -40,15 +36,6 @@ export default function RemainingTime() {
   const formatted = `${minutes.toString().padStart(2, '0')}:${seconds
     .toString()
     .padStart(2, '0')}`
-
-  const handleRefresh = useCallback(() => {
-    startTransition(async () => {
-      await revalidateSandboxDetailsLayout(
-        teamIdOrSlug as string,
-        sandboxId as string
-      )
-    })
-  }, [teamIdOrSlug, sandboxId])
 
   if (!isRunning) {
     return (
@@ -72,13 +59,13 @@ export default function RemainingTime() {
             <Button
               variant="ghost"
               size="slate"
-              onClick={handleRefresh}
-              disabled={isPending}
+              onClick={refetchSandboxInfo}
+              disabled={isSandboxInfoLoading}
               asChild
             >
               <RefreshCw
                 className={cn('size-3', {
-                  'animate-spin duration-300 ease-in-out': isPending,
+                  'animate-spin duration-300 ease-in-out': isSandboxInfoLoading,
                 })}
               />
             </Button>
