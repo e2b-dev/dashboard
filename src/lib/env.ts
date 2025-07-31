@@ -10,6 +10,7 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.string().url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
 
+  LOKI_SERVICE_NAME: z.string().optional(),
   LOKI_HOST: z.string().url().optional(),
   LOKI_USERNAME: z.string().optional(),
   LOKI_PASSWORD: z.string().optional(),

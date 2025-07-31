@@ -59,6 +59,7 @@ const createLogger = () => {
             level: VERBOSE ? 'debug' : 'info',
             options: {
               labels: {
+                service_name: process.env.LOKI_SERVICE_NAME || 'e2b-dashboard',
                 env: process.env.NODE_ENV || 'development',
                 vercelEnv: process.env.VERCEL_ENV || undefined,
               },
