@@ -75,6 +75,10 @@ const createLogger = () => {
                 service_name: process.env.LOKI_SERVICE_NAME || 'e2b-dashboard',
                 env: process.env.NODE_ENV || 'development',
                 vercel_env: process.env.VERCEL_ENV || undefined,
+                vercel_url: process.env.VERCEL_URL || undefined,
+                vercel_branch_url: process.env.VERCEL_BRANCH_URL || undefined,
+                vercel_project_production_url:
+                  process.env.VERCEL_PROJECT_PRODUCTION_URL || undefined,
               },
               host: process.env.LOKI_HOST,
               basicAuth: {
