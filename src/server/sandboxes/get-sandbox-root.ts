@@ -1,9 +1,9 @@
-import { z } from 'zod'
-import { authActionClient } from '@/lib/clients/action'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { returnServerError } from '@/lib/utils/action'
+import { authActionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger'
+import { returnServerError } from '@/lib/utils/action'
 import Sandbox, { NotFoundError } from 'e2b'
+import { z } from 'zod'
 
 export const GetSandboxRootSchema = z.object({
   teamId: z.string().uuid(),
@@ -26,7 +26,6 @@ export const getSandboxRoot = authActionClient
       sandbox = await Sandbox.connect(sandboxId, {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         headers,
-        secure: true,
       })
 
       return {

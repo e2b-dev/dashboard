@@ -209,7 +209,6 @@ export function SandboxInspectProvider({
       headers: {
         ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
       },
-      secure: true,
     })
 
     sandboxManagerRef.current = new SandboxManager(
