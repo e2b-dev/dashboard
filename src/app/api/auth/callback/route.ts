@@ -18,12 +18,12 @@ export async function GET(request: Request) {
 
   l.info({
     key: 'auth_callback:request',
-    meta: {
+    context: {
       code: !!code,
       origin,
       returnTo,
       redirectTo,
-    }
+    },
   })
 
   if (code) {
@@ -34,21 +34,21 @@ export async function GET(request: Request) {
       l.error({
         key: 'auth_callback:supabase_error',
         error: serializeError(error),
-        meta: {
-        code,
-        origin,
-        returnTo,
-        redirectTo,
-        }
+        context: {
+          code,
+          origin,
+          returnTo,
+          redirectTo,
+        },
       })
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
       l.info({
         key: 'auth_callback:otp_exchanged',
-        meta: {
+        context: {
           userId: data.user.id,
-        }
+        },
       })
     }
   }
@@ -58,9 +58,9 @@ export async function GET(request: Request) {
     if (returnToUrl.origin === origin) {
       l.info({
         key: 'auth_callback:redirecting_to',
-        meta: {
+        context: {
           redirectTo,
-        }
+        },
       })
       return redirect(redirectTo)
     }
@@ -79,9 +79,9 @@ export async function GET(request: Request) {
     if (returnToUrl.origin === origin) {
       l.info({
         key: 'auth_callback:returning_to',
-        meta: {
+        context: {
           returnTo,
-        }
+        },
       })
       return redirect(returnTo)
     }
@@ -90,9 +90,9 @@ export async function GET(request: Request) {
   // Default redirect to dashboard
   l.info({
     key: 'auth_callback:redirecting_to_dashboard',
-    meta: {
+    context: {
       returnTo,
-    }
+    },
   })
   return redirect(PROTECTED_URLS.DASHBOARD)
 }

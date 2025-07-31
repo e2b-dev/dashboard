@@ -24,10 +24,10 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
     l.error({
       key: 'ram_card:server_error',
       error: result?.serverError,
-      meta: {
+      context: {
         teamId,
         errorMessage,
-      }
+      },
     })
 
     throw new Error(errorMessage)

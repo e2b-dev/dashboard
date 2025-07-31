@@ -106,11 +106,10 @@ export default async function CLIAuthPage({
   if (!next?.startsWith('http://localhost')) {
     l.error({
       key: 'cli_auth:invalid_redirect_url',
-      meta:
-      {
+      meta: {
         next,
         userId: user?.id,
-      }
+      },
     })
     redirect(PROTECTED_URLS.DASHBOARD)
   }
@@ -148,10 +147,10 @@ export default async function CLIAuthPage({
       l.error({
         key: 'cli_auth:unexpected_error',
         error: serializeError(err),
-        meta: {
+        context: {
           userId: user?.id,
           next,
-        }
+        },
       })
 
       return encodedRedirect('error', '/auth/cli', (err as Error).message, {

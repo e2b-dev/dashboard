@@ -1,4 +1,5 @@
 import { VERBOSE } from '@/configs/flags'
+import { trace } from '@opentelemetry/api'
 import { LoggerOptions, pino } from 'pino'
 
 const REDACTION_PATHS = [
@@ -31,6 +32,16 @@ const createLogger = () => {
         paths: REDACTION_PATHS,
         censor: '[Redacted]',
       },
+      formatters: {
+        log: (logObject: any) => {
+          const s = trace.getActiveSpan()
+          return {
+            ...logObject,
+            trace_id: s?.spanContext().traceId,
+            span_id: s?.spanContext().spanId,
+          }
+        },
+      },
       transport: {
         targets: [
           {
@@ -58,6 +69,8 @@ const createLogger = () => {
             target: 'pino-loki',
             level: VERBOSE ? 'debug' : 'info',
             options: {
+              batching: true,
+              interval: 5,
               labels: {
                 service_name: process.env.LOKI_SERVICE_NAME || 'e2b-dashboard',
                 env: process.env.NODE_ENV || 'development',
@@ -68,6 +81,7 @@ const createLogger = () => {
                 username: process.env.LOKI_USERNAME,
                 password: process.env.LOKI_PASSWORD,
               },
+              convertArrays: true,
             },
           },
         ])

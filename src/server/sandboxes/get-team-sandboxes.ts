@@ -55,12 +55,12 @@ export const getTeamSandboxes = authActionClient
           key: 'get_team_sandboxes:infra_error',
           message: sandboxesRes.error.message,
           error: sandboxesRes.error,
-          meta: {
+          context: {
             teamId,
             userId: session.user.id,
             path: '/v2/sandboxes',
             status,
-          }
+          },
         })
 
         return handleDefaultInfraError(status)

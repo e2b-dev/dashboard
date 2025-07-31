@@ -77,7 +77,10 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
     return
   }
 
-  l.warn({ key: 'cheerio_seo_rewriter:head_tag_not_found', meta: { pathname, allowIndexing } })
+  l.warn({
+    key: 'cheerio_seo_rewriter:head_tag_not_found',
+    context: { pathname, allowIndexing },
+  })
 }
 
 /**

@@ -8,11 +8,11 @@ import { createClient } from '@/lib/clients/supabase/server'
 import { E2BError, UnauthenticatedError } from '@/types/errors'
 import { unstable_noStore } from 'next/cache'
 import { cookies } from 'next/headers'
+import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { infra } from '../clients/api'
 import { l } from '../clients/logger'
 import { returnServerError } from './action'
-import { serializeError } from 'serialize-error'
 
 /*
  *  This function checks if the user is authenticated and returns the user and the supabase client.
@@ -64,12 +64,13 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
     l.error({
       key: 'GENERATE_E2B_USER_ACCESS_TOKEN:INFRA_ERROR',
       message: res.error.message,
-      error: res.error, meta: {
+      error: res.error,
+      context: {
         status: res.response.status,
         method: 'POST',
         path: '/access-tokens',
         name: TOKEN_NAME,
-      }
+      },
     })
 
     return returnServerError(`Failed to generate e2b user access token`)
@@ -169,9 +170,9 @@ export async function resolveTeamId(identifier: string): Promise<string> {
       key: 'resolve_team_id:failed_to_resolve_team_id_from_slug',
       message: error.message,
       error: serializeError(error),
-      meta: {
-        identifier
-      }
+      context: {
+        identifier,
+      },
     })
 
     throw new E2BError('INVALID_PARAMETERS', 'Invalid team identifier')
@@ -208,10 +209,10 @@ export async function resolveTeamIdInServerComponent(identifier: string) {
 
     l.info({
       key: 'resolve_team_id_in_server_component:resolving_team_id_from_data_sources',
-      meta: {
+      context: {
         identifier,
         teamId,
-      }
+      },
     })
   }
   return teamId

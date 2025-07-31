@@ -36,12 +36,12 @@ export const getSandboxDetails = authActionClient
         key: 'get_sandbox_details:infra_error',
         message: res.error.message,
         error: res.error,
-        meta: {
+        context: {
           status,
           teamId,
           userId: session.user.id,
           sandboxId,
-        }
+        },
       })
 
       if (status === 404) {

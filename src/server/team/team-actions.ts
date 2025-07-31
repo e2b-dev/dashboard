@@ -305,7 +305,7 @@ export const uploadTeamProfilePictureAction = authActionClient
         l.warn({
           key: 'upload_team_profile_picture_action:cleanup_error',
           error: serializeError(cleanupError),
-          meta: {
+          context: {
             teamId,
             image: image.name,
           },

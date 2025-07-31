@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
     l.error({
       key: 'auth_confirm:invalid_params',
       error: result.error.flatten(),
-      meta: {
+      context: {
         type: searchParams.get('type'),
         next: searchParams.get('next'),
-      }
+      },
     })
 
     return encodedRedirect(
@@ -63,11 +63,11 @@ export async function GET(request: NextRequest) {
   const isDifferentOrigin =
     supabaseRedirectTo &&
     normalizeOrigin(new URL(supabaseRedirectTo).origin) !==
-    normalizeOrigin(dashboardUrl.origin)
+      normalizeOrigin(dashboardUrl.origin)
 
   l.info({
     key: 'auth_confirm:init',
-    meta: {
+    context: {
       supabase_token_hash: supabaseTokenHash
         ? `${supabaseTokenHash.slice(0, 10)}...`
         : null,
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       supabaseClientFlowUrl,
       requestUrl: request.url,
       origin: request.nextUrl.origin,
-    }
+    },
   })
 
   // when the next param is an absolute URL, with a different origin,
@@ -106,14 +106,14 @@ export async function GET(request: NextRequest) {
         key: 'auth_confirm:supabase_error',
         message: error.message,
         error: serializeError(error),
-        meta: {
+        context: {
           supabase_token_hash: supabaseTokenHash
             ? `${supabaseTokenHash.slice(0, 10)}...`
             : null,
           supabaseType,
           supabaseRedirectTo,
           redirectUrl: redirectUrl.toString(),
-        }
+        },
       })
 
       let errorMessage = 'Invalid Token'
@@ -137,14 +137,14 @@ export async function GET(request: NextRequest) {
 
     l.info({
       key: 'auth_confirm:success',
-      meta: {
+      context: {
         supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
         supabaseType,
         supabaseRedirectTo,
         redirectUrl: redirectUrl.toString(),
         reauth: redirectUrl.searchParams.get('reauth'),
         userId: data?.user?.id,
-      }
+      },
     })
 
     return NextResponse.redirect(redirectUrl.toString())
@@ -153,13 +153,13 @@ export async function GET(request: NextRequest) {
 
     l.error({
       key: 'AUTH_CONFIRM:ERROR',
-      message: "message" in sE ? sE.message : undefined,
+      message: 'message' in sE ? sE.message : undefined,
       error: sE,
-      meta: {
+      context: {
         supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
         supabaseType,
         supabaseRedirectTo,
-      }
+      },
     })
 
     return encodedRedirect(

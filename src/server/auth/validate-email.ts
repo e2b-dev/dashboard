@@ -91,9 +91,9 @@ export async function validateEmail(
     l.error({
       key: 'validate_email:error',
       error: serializeError(error),
-      meta: {
+      context: {
         email,
-      }
+      },
     })
     return null
   }

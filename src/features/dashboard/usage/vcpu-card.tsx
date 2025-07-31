@@ -23,10 +23,10 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
     l.error({
       key: 'vcpu_card:server_error',
       error: result?.serverError,
-      meta: {
+      context: {
         teamId,
         errorMessage,
-      }
+      },
     })
 
     throw new Error(errorMessage)

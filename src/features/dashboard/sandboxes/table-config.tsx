@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import { Sandbox } from '@/types/api'
@@ -11,6 +9,7 @@ import { DateRange } from 'react-day-picker'
 import { l } from '@/lib/clients/logger'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import posthog from 'posthog-js'
+import { serializeError } from 'serialize-error'
 import {
   CpuUsageCell,
   IdCell,
@@ -19,7 +18,6 @@ import {
   StartedAtCell,
   TemplateCell,
 } from './table-cells'
-import { serializeError } from 'serialize-error'
 
 export type SandboxWithMetrics = Sandbox & {
   metrics?: ClientSandboxMetric | null
@@ -61,11 +59,11 @@ export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
     l.error({
       key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
       error: serializeError(error),
-      meta: {
+      context: {
         row,
         columnId,
         value,
-      }
+      },
     })
     return false
   }

@@ -46,9 +46,9 @@ export async function getDefaultTeam(userId: string) {
       key: 'GET_DEFAULT_TEAM:ERROR',
       message: error?.message,
       error: serializeError(error),
-      meta: {
+      context: {
         userId,
-      }
+      },
     })
     throw new Error('No default team found')
   }

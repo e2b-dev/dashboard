@@ -42,11 +42,11 @@ export const createApiKeyAction = authActionClient
         key: 'create_api_key:error',
         message: res.error.message,
         error: res.error,
-        meta: {
+        context: {
           teamId,
           userId: session.user.id,
-          name
-        }
+          name,
+        },
       })
 
       return returnServerError('Failed to create API Key')
@@ -91,11 +91,11 @@ export const deleteApiKeyAction = authActionClient
         key: 'delete_api_key_action:error',
         message: res.error.message,
         error: res.error,
-        meta: {
+        context: {
           teamId,
           userId: session.user.id,
           apiKeyId,
-        }
+        },
       })
 
       return returnServerError('Failed to delete API Key')

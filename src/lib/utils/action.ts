@@ -50,3 +50,14 @@ export function handleDefaultInfraError(status: number) {
       return returnServerError(UnknownError().message)
   }
 }
+
+export const flattenClientInputValue = (
+  clientInput: unknown,
+  key: string
+): string | undefined => {
+  if (typeof clientInput === 'object' && clientInput && key in clientInput) {
+    return clientInput[key as keyof typeof clientInput]
+  }
+
+  return undefined
+}

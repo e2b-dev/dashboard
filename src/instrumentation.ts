@@ -20,10 +20,7 @@ export async function register() {
     await import('../sentry.server.config')
 
     await import('pino')
-    await import('pino-pretty')
-    if (process.env.LOKI_HOST) {
-      await import('pino-loki')
-    }
+    await import('pino-loki')
     // @ts-expect-error - incorrectly typed
     await import('next-logger')
   }
