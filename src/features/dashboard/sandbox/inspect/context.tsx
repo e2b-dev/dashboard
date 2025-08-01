@@ -3,6 +3,7 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import { supabase } from '@/lib/clients/supabase/client'
+import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import Sandbox, { EntryInfo } from 'e2b'
 import { useRouter } from 'next/navigation'
@@ -47,6 +48,7 @@ export function SandboxInspectProvider({
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
 
   const router = useRouter()
+  const { trackInteraction } = useSandboxInspectAnalytics()
 
   /*
    * ---------- synchronous store initialisation ----------
@@ -61,6 +63,12 @@ export function SandboxInspectProvider({
       storeRef.current.getState().rootPath !== normalizedRoot
 
     if (needsNewStore) {
+      trackInteraction('initialised', {
+        sandbox_id: sandboxInfo?.sandboxID,
+        team_id: teamId,
+        root_path: rootPath,
+      })
+
       // stop previous watcher (if any)
       if (sandboxManagerRef.current) {
         sandboxManagerRef.current.stopWatching()
@@ -139,6 +147,9 @@ export function SandboxInspectProvider({
         }
 
         storeRef.current!.getState().setSelected(path)
+        if (node.type === 'file') {
+          trackInteraction('selected_file', { path })
+        }
       },
       resetSelected: () => {
         storeRef.current!.setState((state) => {
@@ -157,6 +168,9 @@ export function SandboxInspectProvider({
 
         if (isRunning && newExpandedState && !state.isLoaded(normalizedPath)) {
           await sandboxManagerRef.current?.loadDirectory(normalizedPath)
+        }
+        if (newExpandedState) {
+          trackInteraction('expanded_dir', { path })
         }
       },
       refreshDirectory: async (path: string) => {
@@ -184,9 +198,11 @@ export function SandboxInspectProvider({
         a.download = node?.name || ''
         a.target = '_blank'
         a.click()
+
+        trackInteraction('downloaded_file', { path })
       },
     }),
-    [isRunning, sandboxManagerRef.current, storeRef.current]
+    [isRunning, sandboxManagerRef.current, storeRef.current, trackInteraction]
   )
 
   const connectSandbox = useCallback(async () => {
@@ -217,7 +233,13 @@ export function SandboxInspectProvider({
       rootPath,
       sandboxInfo.envdAccessToken !== undefined
     )
-  }, [sandboxInfo?.sandboxID, teamId, rootPath, router])
+
+    trackInteraction('started_watching', {
+      sandbox_id: sandboxInfo?.sandboxID,
+      team_id: teamId,
+      root_path: rootPath,
+    })
+  }, [sandboxInfo?.sandboxID, teamId, rootPath, router, trackInteraction])
 
   // handle sandbox connection / disconnection
   useEffect(() => {
@@ -229,7 +251,13 @@ export function SandboxInspectProvider({
     }
 
     sandboxManagerRef.current?.stopWatching()
-  }, [isRunning, connectSandbox])
+
+    trackInteraction('stopped_watching', {
+      sandbox_id: sandboxInfo?.sandboxID,
+      team_id: teamId,
+      root_path: rootPath,
+    })
+  }, [isRunning, connectSandbox, trackInteraction])
 
   if (!storeRef.current || !sandboxInfo) {
     return null // should never happen, but satisfies type-checker

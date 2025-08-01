@@ -1,7 +1,10 @@
 'use client'
 
-import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
-import { motion } from 'motion/react'
+import { HELP_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
+import { CodeBlock } from '@/ui/code-block'
+import { AsciiBackgroundPattern } from '@/ui/patterns'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -11,11 +14,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { HELP_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
+import { motion } from 'motion/react'
 import Link from 'next/link'
-import { CodeBlock } from '@/ui/code-block'
-import { Badge } from '@/ui/primitives/badge'
-import { AsciiBackgroundPattern } from '@/ui/patterns'
+import { useEffect } from 'react'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
@@ -27,6 +29,16 @@ export default function SandboxInspectIncompatible({
   teamIdOrSlug,
 }: SandboxInspectIncompatibleProps) {
   const codeClassNames = 'mx-0.5 h-5.5 rounded-none align-middle'
+  const { trackInteraction } = useSandboxInspectAnalytics()
+
+  useEffect(() => {
+    if (!templateNameOrId || !teamIdOrSlug) return
+
+    trackInteraction('viewed_incompatible', {
+      team_id: teamIdOrSlug,
+      template_name_or_id: templateNameOrId,
+    })
+  }, [trackInteraction, teamIdOrSlug])
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">

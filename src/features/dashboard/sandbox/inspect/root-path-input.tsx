@@ -1,6 +1,7 @@
 'use client'
 
 import { l } from '@/lib/clients/logger'
+import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
@@ -22,6 +23,7 @@ export default function RootPathInput({
   const [value, setValue] = useState(initialValue)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { trackInteraction } = useSandboxInspectAnalytics()
 
   const save = async (newPath: string) => {
     try {
@@ -44,6 +46,7 @@ export default function RootPathInput({
     if (!newPath) return
     startTransition(async () => {
       await save(newPath)
+      trackInteraction('changed_root_path', { new_path: newPath })
       router.refresh()
     })
   }
