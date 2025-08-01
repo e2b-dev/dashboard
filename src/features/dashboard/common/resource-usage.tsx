@@ -51,7 +51,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   )
 
   const displayValue = hasMetrics ? metrics.toLocaleString() : 'n/a'
-  const totalValue = total ? total.toLocaleString() : '-'
+  const totalValue = total ? total.toLocaleString() : 'n/a'
 
   return (
     <span
