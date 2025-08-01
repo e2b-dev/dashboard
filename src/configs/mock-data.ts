@@ -326,18 +326,30 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
   // Define characteristics by template type
   const templatePatterns: Record<
     string,
-    { memoryProfile: string; cpuIntensity: number }
+    { memoryProfile: string; cpuIntensity: number; diskGb: number }
   > = {
-    'node-typescript-v1': { memoryProfile: 'web', cpuIntensity: 0.4 },
-    'react-vite-v2': { memoryProfile: 'web', cpuIntensity: 0.5 },
-    'postgres-v15': { memoryProfile: 'database', cpuIntensity: 0.6 },
-    'redis-v7': { memoryProfile: 'cache', cpuIntensity: 0.2 },
-    'python-ml-v1': { memoryProfile: 'ml', cpuIntensity: 0.9 },
-    'elastic-v8': { memoryProfile: 'search', cpuIntensity: 0.7 },
-    'grafana-v9': { memoryProfile: 'visualization', cpuIntensity: 0.3 },
-    'nginx-v1': { memoryProfile: 'web', cpuIntensity: 0.2 },
-    'mongodb-v6': { memoryProfile: 'database', cpuIntensity: 0.5 },
-    'mysql-v8': { memoryProfile: 'database', cpuIntensity: 0.6 },
+    'node-typescript-v1': {
+      memoryProfile: 'web',
+      cpuIntensity: 0.4,
+      diskGb: 0,
+    },
+    'react-vite-v2': { memoryProfile: 'web', cpuIntensity: 0.5, diskGb: 10 },
+    'postgres-v15': {
+      memoryProfile: 'database',
+      cpuIntensity: 0.6,
+      diskGb: 100,
+    },
+    'redis-v7': { memoryProfile: 'cache', cpuIntensity: 0.2, diskGb: 20 },
+    'python-ml-v1': { memoryProfile: 'ml', cpuIntensity: 0.9, diskGb: 50 },
+    'elastic-v8': { memoryProfile: 'search', cpuIntensity: 0.7, diskGb: 80 },
+    'grafana-v9': {
+      memoryProfile: 'visualization',
+      cpuIntensity: 0.3,
+      diskGb: 15,
+    },
+    'nginx-v1': { memoryProfile: 'web', cpuIntensity: 0.2, diskGb: 0 },
+    'mongodb-v6': { memoryProfile: 'database', cpuIntensity: 0.5, diskGb: 100 },
+    'mysql-v8': { memoryProfile: 'database', cpuIntensity: 0.6, diskGb: 100 },
   }
 
   const memoryBaselines: Record<string, number> = {
@@ -358,10 +370,28 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
     visualization: 0.15,
   }
 
+  const diskBaselines: Record<string, number> = {
+    web: 0.1,
+    database: 0.5,
+    cache: 0.05,
+    ml: 0.4,
+    search: 0.3,
+    visualization: 0.2,
+  }
+  const diskVolatility: Record<string, number> = {
+    web: 0.2,
+    database: 0.15,
+    cache: 0.1,
+    ml: 0.3,
+    search: 0.25,
+    visualization: 0.15,
+  }
+
   for (const sandbox of sandboxes) {
     const pattern = templatePatterns[sandbox.templateID] || {
       memoryProfile: 'web',
       cpuIntensity: 0.5,
+      diskGb: 20,
     }
 
     const memBaseline = memoryBaselines[pattern.memoryProfile]!
@@ -386,6 +416,18 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
     const memoryNoise = (Math.random() - 0.5) * memVolatility
     const memPct = memBaseline + baseLoad * memVolatility + memoryNoise
     const memUsedMb = Math.floor(sandbox.memoryMB * Math.min(1.0, memPct))
+    const diskBaseline = diskBaselines[pattern.memoryProfile]!
+    const diskVolatilityVal = diskVolatility[pattern.memoryProfile]!
+    const diskNoise = (Math.random() - 0.5) * 0.1
+    const diskPct = diskBaseline + baseLoad * diskVolatilityVal + diskNoise
+    let diskUsedGb = 0
+    let diskTotalGb = 0
+    if (pattern.diskGb > 0) {
+      diskUsedGb = Number(
+        (pattern.diskGb * Math.min(1, Math.max(0, diskPct))).toFixed(2)
+      )
+      diskTotalGb = pattern.diskGb
+    }
 
     metrics[sandbox.sandboxID] = {
       cpuCount: sandbox.cpuCount,
@@ -393,6 +435,8 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
       memTotalMb: sandbox.memoryMB,
       memUsedMb: memUsedMb,
       timestamp: new Date().toISOString(),
+      diskUsedGb,
+      diskTotalGb,
     }
   }
 

@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import HelpTooltip from '@/ui/help-tooltip'
 import React from 'react'
 
 export interface ResourceUsageProps {
@@ -74,12 +73,6 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
       ) : (
         <>
           <span className="text-fg-500">n/a </span>
-          {type === 'disk' && (
-            <HelpTooltip>
-              This feature becomes available when upgrading the template this
-              sandbox uses.
-            </HelpTooltip>
-          )}
           <span className={cn('text-fg-500', classNames?.dot)}>·</span>
         </>
       )}
