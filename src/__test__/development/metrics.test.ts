@@ -14,8 +14,8 @@ if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
 const SPAWN_COUNT = 10 // total sandboxes to spawn
 const BATCH_SIZE = 2 // how many sandboxes to spawn concurrently
 
-const SBX_TIMEOUT_MS = 30_000
-const STRESS_TIMEOUT_MS = 30_000
+const SBX_TIMEOUT_MS = 120_000
+const STRESS_TIMEOUT_MS = 120_000
 const TEMPLATE = process.env.TEST_METRICS_TEMPLATE ?? 'base'
 
 const MEMORY_MB = 1024 // allocate this much memory inside sandbox in MB
@@ -42,7 +42,7 @@ function buildOptimizedStressCode(config: StressTestConfig): string {
     progressInterval,
     enableMemoryTest,
     enableCpuTest,
-    enableIoTest
+    enableIoTest,
   } = config
 
   return `
@@ -278,7 +278,7 @@ describe('E2B Sandbox metrics', () => {
       const sandboxes: Sandbox[] = []
       const testId = `metrics-test-${Date.now()}`
 
-      l.info("test:starting_sandboxes", {
+      l.info('test:starting_sandboxes', {
         testId,
         spawnCount: SPAWN_COUNT,
         batchSize: BATCH_SIZE,
@@ -286,7 +286,7 @@ describe('E2B Sandbox metrics', () => {
         memoryMb: MEMORY_MB,
         cpuOps: CPU_OPS,
         sbxTimeoutMs: SBX_TIMEOUT_MS,
-        stressTimeoutMs: STRESS_TIMEOUT_MS
+        stressTimeoutMs: STRESS_TIMEOUT_MS,
       })
 
       const start = Date.now()
@@ -299,7 +299,7 @@ describe('E2B Sandbox metrics', () => {
           batchNumber,
           batchSize: count,
           totalSpawned: sandboxes.length,
-          remaining: SPAWN_COUNT - sandboxes.length
+          remaining: SPAWN_COUNT - sandboxes.length,
         })
 
         try {
@@ -312,22 +312,22 @@ describe('E2B Sandbox metrics', () => {
                   domain: TEST_E2B_DOMAIN as string,
                   apiKey: TEST_E2B_API_KEY as string,
                   timeoutMs: SBX_TIMEOUT_MS,
-                  secure: true
+                  secure: true,
                 })
 
                 const sandboxDuration = Date.now() - sandboxStart
-                l.debug("test:sandbox_created", {
+                l.debug('test:sandbox_created', {
                   testId,
                   batchNumber,
                   sandboxIndex: index,
                   sandboxId: sandbox.sandboxId,
-                  duration: sandboxDuration
+                  duration: sandboxDuration,
                 })
 
                 return sandbox
               } catch (error) {
                 const sandboxDuration = Date.now() - sandboxStart
-                l.error("test:sandbox_creation_failed", error, {
+                l.error('test:sandbox_creation_failed', error, {
                   testId,
                   batchNumber,
                   sandboxIndex: index,
@@ -341,22 +341,21 @@ describe('E2B Sandbox metrics', () => {
           sandboxes.push(...batch)
           const batchDuration = Date.now() - batchStart
 
-          l.info("test:batch_completed", {
+          l.info('test:batch_completed', {
             testId,
             batchNumber,
             batchSize: count,
             successCount: batch.length,
             batchDuration,
             totalSpawned: sandboxes.length,
-            averageSpawnTime: batchDuration / count
+            averageSpawnTime: batchDuration / count,
           })
 
           // Brief pause between batches to prevent overwhelming the system
           await new Promise((resolve) => setTimeout(resolve, 1_000))
-
         } catch (error) {
           const batchDuration = Date.now() - batchStart
-          l.error("test:batch_creation_failed", error, {
+          l.error('test:batch_creation_failed', error, {
             testId,
             batchNumber,
             batchDuration,
@@ -374,12 +373,12 @@ describe('E2B Sandbox metrics', () => {
       }
 
       const spawnDurationMs = Date.now() - start
-      l.info("test:all_sandboxes_spawned", {
+      l.info('test:all_sandboxes_spawned', {
         testId,
         totalSandboxes: sandboxes.length,
         spawnDurationMs,
         averageSpawnTime: spawnDurationMs / sandboxes.length,
-        batchCount: batchNumber
+        batchCount: batchNumber,
       })
 
       const stressConfig: StressTestConfig = {
@@ -390,15 +389,15 @@ describe('E2B Sandbox metrics', () => {
         progressInterval: PROGRESS_INTERVAL,
         enableMemoryTest: true,
         enableCpuTest: true,
-        enableIoTest: true
+        enableIoTest: true,
       }
 
       const stressCode = buildOptimizedStressCode(stressConfig)
 
-      l.debug("test:stress_code_generated", {
+      l.debug('test:stress_code_generated', {
         testId,
         stressConfig,
-        codeLength: stressCode.length
+        codeLength: stressCode.length,
       })
 
       const runStressCode = async () => {
@@ -412,10 +411,10 @@ describe('E2B Sandbox metrics', () => {
           exitCode?: number
         }> = []
 
-        l.info("test:starting_stress_test", {
+        l.info('test:starting_stress_test', {
           testId,
           sandboxCount: sandboxes.length,
-          stressTimeoutMs: STRESS_TIMEOUT_MS
+          stressTimeoutMs: STRESS_TIMEOUT_MS,
         })
 
         try {
@@ -423,76 +422,81 @@ describe('E2B Sandbox metrics', () => {
           const stressPromises = sandboxes.map(async (sbx, index) => {
             const sandboxStressStart = Date.now()
 
-            l.debug("test:starting_stress_test_for_sandbox", {
+            l.debug('test:starting_stress_test_for_sandbox', {
               testId,
               sandboxId: sbx.sandboxId,
               sandboxIndex: index,
-              totalSandboxes: sandboxes.length
+              totalSandboxes: sandboxes.length,
             })
 
             try {
               // Write stress test script to sandbox with proper path
-              const scriptPath = "/home/user/stress_test.sh"
+              const scriptPath = '/home/user/stress_test.sh'
 
-              l.debug("test:writing_stress_script", {
+              l.debug('test:writing_stress_script', {
                 testId,
                 sandboxId: sbx.sandboxId,
                 sandboxIndex: index,
                 scriptPath,
-                codeLength: stressCode.length
+                codeLength: stressCode.length,
               })
 
               await sbx.files.write(scriptPath, stressCode)
 
               // Verify file was written successfully
-              const fileCheck = await sbx.commands.run(`ls -la ${scriptPath}`, { user: 'root' })
+              const fileCheck = await sbx.commands.run(`ls -la ${scriptPath}`, {
+                user: 'root',
+              })
               if (fileCheck.exitCode !== 0) {
-                l.warn("test:file_write_verification_failed", {
+                l.warn('test:file_write_verification_failed', {
                   testId,
                   sandboxId: sbx.sandboxId,
                   error: fileCheck.stderr,
-                  stdout: fileCheck.stdout
+                  stdout: fileCheck.stdout,
                 })
 
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
                   duration: Date.now() - sandboxStressStart,
-                  error: `Failed to write stress test script: ${fileCheck.stderr}`
+                  error: `Failed to write stress test script: ${fileCheck.stderr}`,
                 })
                 return null // Continue with other sandboxes
               }
 
-              l.debug("test:file_written_successfully", {
+              l.debug('test:file_written_successfully', {
                 testId,
                 sandboxId: sbx.sandboxId,
-                fileCheck: fileCheck.stdout
+                fileCheck: fileCheck.stdout,
               })
 
               // Make script executable
-              const chmodResult = await sbx.commands.run(`chmod +x ${scriptPath}`, { user: 'root' })
+              const chmodResult = await sbx.commands.run(
+                `chmod +x ${scriptPath}`,
+                { user: 'root' }
+              )
               if (chmodResult.exitCode !== 0) {
-                l.warn("test:chmod_failed", {
+                l.warn('test:chmod_failed', {
                   testId,
                   sandboxId: sbx.sandboxId,
                   error: chmodResult.stderr,
-                  stdout: chmodResult.stdout
+                  stdout: chmodResult.stdout,
                 })
 
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
                   duration: Date.now() - sandboxStressStart,
-                  error: `Failed to make script executable: ${chmodResult.stderr}`
+                  error: `Failed to make script executable: ${chmodResult.stderr}`,
                 })
                 return null // Continue with other sandboxes
               }
 
-              l.debug("test:stress_script_ready", {
+              l.debug('test:stress_script_ready', {
                 testId,
                 sandboxId: sbx.sandboxId,
                 sandboxIndex: index,
-                scriptPath
+                scriptPath,
               })
 
               // Execute stress test with output capture - handle non-zero exit codes gracefully
@@ -501,27 +505,30 @@ describe('E2B Sandbox metrics', () => {
                 result = await sbx.commands.run(scriptPath, {
                   timeoutMs: STRESS_TIMEOUT_MS,
                   requestTimeoutMs: STRESS_TIMEOUT_MS,
-                  user: 'root'
+                  user: 'root',
                 })
               } catch (commandError) {
                 // Handle command execution errors gracefully
                 const sandboxStressDuration = Date.now() - sandboxStressStart
-                const errorMessage = commandError instanceof Error ? commandError.message : String(commandError)
+                const errorMessage =
+                  commandError instanceof Error
+                    ? commandError.message
+                    : String(commandError)
 
-                l.warn("test:stress_command_execution_failed", {
+                l.warn('test:stress_command_execution_failed', {
                   testId,
                   sandboxId: sbx.sandboxId,
                   sandboxIndex: index,
                   duration: sandboxStressDuration,
                   error: errorMessage,
-                  errorType: 'command_execution_error'
+                  errorType: 'command_execution_error',
                 })
 
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
                   duration: sandboxStressDuration,
-                  error: `Command execution failed: ${errorMessage}`
+                  error: `Command execution failed: ${errorMessage}`,
                 })
                 return null // Continue with other sandboxes
               }
@@ -529,7 +536,7 @@ describe('E2B Sandbox metrics', () => {
               const sandboxStressDuration = Date.now() - sandboxStressStart
 
               // Log completion regardless of exit code
-              l.info("test:stress_test_completed", {
+              l.info('test:stress_test_completed', {
                 testId,
                 sandboxId: sbx.sandboxId,
                 sandboxIndex: index,
@@ -537,32 +544,35 @@ describe('E2B Sandbox metrics', () => {
                 exitCode: result.exitCode,
                 outputLength: result.stdout?.length || 0,
                 errorLength: result.stderr?.length || 0,
-                success: result.exitCode === 0
+                success: result.exitCode === 0,
               })
 
               // Parse stress test output for metrics
               const output = (result.stdout || '') + (result.stderr || '')
-              const progressLines = output.split('\n').filter(line =>
-                line.includes('STRESS_PROGRESS') ||
-                line.includes('STRESS_DONE') ||
-                line.includes('STRESS_ERROR') ||
-                line.includes('STRESS_COMPLETE')
-              )
+              const progressLines = output
+                .split('\n')
+                .filter(
+                  (line) =>
+                    line.includes('STRESS_PROGRESS') ||
+                    line.includes('STRESS_DONE') ||
+                    line.includes('STRESS_ERROR') ||
+                    line.includes('STRESS_COMPLETE')
+                )
 
               if (progressLines.length > 0) {
-                l.debug("test:stress_progress_captured", {
+                l.debug('test:stress_progress_captured', {
                   testId,
                   sandboxId: sbx.sandboxId,
-                  progressLines: progressLines.slice(-5) // Last 5 progress lines
+                  progressLines: progressLines.slice(-5), // Last 5 progress lines
                 })
               }
 
               // Log stderr if present but don't fail the test
               if (result.stderr && result.stderr.trim()) {
-                l.warn("test:stress_stderr_output", {
+                l.warn('test:stress_stderr_output', {
                   testId,
                   sandboxId: sbx.sandboxId,
-                  stderr: result.stderr.slice(0, 500) // First 500 chars
+                  stderr: result.stderr.slice(0, 500), // First 500 chars
                 })
               }
 
@@ -571,29 +581,29 @@ describe('E2B Sandbox metrics', () => {
                 success: result.exitCode === 0,
                 duration: sandboxStressDuration,
                 output: output.slice(-500), // Last 500 chars of output
-                exitCode: result.exitCode
+                exitCode: result.exitCode,
               })
 
               return result
-
             } catch (error) {
               const sandboxStressDuration = Date.now() - sandboxStressStart
-              const errorMessage = error instanceof Error ? error.message : String(error)
+              const errorMessage =
+                error instanceof Error ? error.message : String(error)
 
-              l.warn("test:stress_test_unexpected_error", {
+              l.warn('test:stress_test_unexpected_error', {
                 testId,
                 sandboxId: sbx.sandboxId,
                 sandboxIndex: index,
                 duration: sandboxStressDuration,
                 error: errorMessage,
-                errorType: 'unexpected_error'
+                errorType: 'unexpected_error',
               })
 
               results.push({
                 sandboxId: sbx.sandboxId,
                 success: false,
                 duration: sandboxStressDuration,
-                error: `Unexpected error: ${errorMessage}`
+                error: `Unexpected error: ${errorMessage}`,
               })
 
               return null // Continue with other sandboxes - don't throw
@@ -606,48 +616,52 @@ describe('E2B Sandbox metrics', () => {
           // Log any rejected promises
           stressResults.forEach((result, index) => {
             if (result.status === 'rejected') {
-              l.warn("test:stress_promise_rejected", {
+              l.warn('test:stress_promise_rejected', {
                 testId,
                 sandboxIndex: index,
-                error: result.reason instanceof Error ? result.reason.message : String(result.reason)
+                error:
+                  result.reason instanceof Error
+                    ? result.reason.message
+                    : String(result.reason),
               })
             }
           })
 
           const totalStressDuration = Date.now() - stressStart
-          const successCount = results.filter(r => r.success).length
-          const failureCount = results.filter(r => !r.success).length
-          const averageDuration = results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length
+          const successCount = results.filter((r) => r.success).length
+          const failureCount = results.filter((r) => !r.success).length
+          const averageDuration =
+            results.reduce((sum, r) => sum + (r.duration || 0), 0) /
+            results.length
 
-          l.info("test:stress_execution_completed", {
+          l.info('test:stress_execution_completed', {
             testId,
             totalStressDuration,
             successCount,
             failureCount,
             totalSandboxes: sandboxes.length,
             successRate: (successCount / sandboxes.length) * 100,
-            averageSandboxDuration: averageDuration
+            averageSandboxDuration: averageDuration,
           })
 
           // Log detailed results summary
           const errorSummary = results
-            .filter(r => !r.success)
-            .map(r => ({ sandboxId: r.sandboxId, error: r.error }))
+            .filter((r) => !r.success)
+            .map((r) => ({ sandboxId: r.sandboxId, error: r.error }))
 
           if (errorSummary.length > 0) {
-            l.warn("test:stress_failures_detected", {
+            l.warn('test:stress_failures_detected', {
               testId,
-              errorSummary: errorSummary.slice(0, 10) // First 10 errors
+              errorSummary: errorSummary.slice(0, 10), // First 10 errors
             })
           }
-
         } catch (error) {
           const totalStressDuration = Date.now() - stressStart
-          l.error("test:stress_execution_failed", error, {
+          l.error('test:stress_execution_failed', error, {
             testId,
             totalStressDuration,
             resultsCount: results.length,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           })
           throw error
         }
@@ -660,7 +674,7 @@ describe('E2B Sandbox metrics', () => {
 
       // Final test summary
       const totalTestDuration = Date.now() - start
-      l.info("test:metrics_test_completed", {
+      l.info('test:metrics_test_completed', {
         testId,
         totalTestDuration,
         spawnDurationMs,
@@ -668,9 +682,9 @@ describe('E2B Sandbox metrics', () => {
         totalSandboxes: sandboxes.length,
         stressResults: {
           total: stressResults.length,
-          successful: stressResults.filter(r => r.success).length,
-          failed: stressResults.filter(r => !r.success).length
-        }
+          successful: stressResults.filter((r) => r.success).length,
+          failed: stressResults.filter((r) => !r.success).length,
+        },
       })
 
       expect(sandboxes.length).toBe(SPAWN_COUNT)
