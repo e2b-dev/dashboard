@@ -18,7 +18,7 @@ const REDACTION_PATHS = [
   '*.key',
   '*.*.password',
   '*.*.confirmPassword',
-  '*.*.*.accessToken',
+  '*.*.accessToken',
   '*.*.secret',
   '*.*.token',
   '*.*.apiKey',
