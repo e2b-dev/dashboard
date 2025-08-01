@@ -59,8 +59,6 @@ export default function Login() {
     onError: ({ error }) => {
       if (error.serverError) {
         setMessage({ error: error.serverError })
-      } else if (error.validationErrors) {
-        setMessage({ error: 'Please check your credentials' })
       }
     },
   })

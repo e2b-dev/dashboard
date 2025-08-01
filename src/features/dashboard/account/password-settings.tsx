@@ -1,5 +1,6 @@
 'use client'
 
+import { USER_MESSAGES } from '@/configs/user-messages'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -90,7 +91,11 @@ export function PasswordSettings({
         return
       }
 
-      toast(defaultSuccessToast('Password updated.'))
+      toast(
+        defaultSuccessToast(USER_MESSAGES.passwordUpdated.message, {
+          duration: USER_MESSAGES.passwordUpdated.timeoutMs,
+        })
+      )
 
       form.reset()
       setClientShowPasswordForm(false)
@@ -103,7 +108,10 @@ export function PasswordSettings({
         })
       } else {
         toast(
-          defaultErrorToast(error.serverError || 'Failed to update password.')
+          defaultErrorToast(
+            error.serverError || USER_MESSAGES.failedUpdatePassword.message,
+            { duration: USER_MESSAGES.failedUpdatePassword.timeoutMs }
+          )
         )
       }
     },

@@ -189,19 +189,27 @@ function useToast() {
 
 // utils
 
-function defaultSuccessToast(description: React.ReactNode): Toast {
+function defaultSuccessToast(
+  description: React.ReactNode,
+  options?: Partial<Toast>
+): Toast {
   return {
     variant: 'success',
     title: 'Success',
     description,
+    ...options,
   }
 }
 
-function defaultErrorToast(description: React.ReactNode): Toast {
+function defaultErrorToast(
+  description: React.ReactNode,
+  options?: Partial<Toast>
+): Toast {
   return {
     variant: 'error',
     title: 'Error',
     description,
+    ...options,
   }
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { AUTH_URLS } from '@/configs/urls'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { signUpAction } from '@/server/auth/auth-actions'
@@ -66,7 +67,7 @@ export default function SignUp() {
 
   const { execute, isExecuting } = useAction(signUpAction, {
     onSuccess: () => {
-      setMessage({ success: 'Check your email for a verification link' })
+      setMessage({ success: USER_MESSAGES.signUpVerification.message })
     },
     onError: ({ error }) => {
       if (error.serverError) {
@@ -85,6 +86,16 @@ export default function SignUp() {
       form.setFocus('email')
     }
   }, [searchParams, form])
+
+  useEffect(() => {
+    if (message && 'success' in message) {
+      const timer = setTimeout(
+        () => setMessage(undefined),
+        USER_MESSAGES.signUpVerification.timeoutMs ?? 5000
+      )
+      return () => clearTimeout(timer)
+    }
+  }, [message])
 
   const onSubmit = (data: SignUpFormValues) => {
     const formData = new FormData()

@@ -1,5 +1,6 @@
 'use client'
 
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
@@ -70,14 +71,19 @@ export function NameCard({ className }: NameCardProps) {
           }
         },
         onSuccess: async () => {
-          toast(defaultSuccessToast('Team name updated.'))
+          toast(
+            defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message, {
+              duration: USER_MESSAGES.teamNameUpdated.timeoutMs,
+            })
+          )
         },
         onError: ({ error }) => {
           if (!error.serverError) return
 
           toast(
             defaultErrorToast(
-              error.serverError || 'Failed to update team name.'
+              error.serverError || USER_MESSAGES.failedUpdateTeamName.message,
+              { duration: USER_MESSAGES.failedUpdateTeamName.timeoutMs }
             )
           )
         },

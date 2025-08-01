@@ -1,6 +1,7 @@
 'use server'
 
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -95,13 +96,13 @@ export const signUpAction = actionClient
     if (validationResult?.data) {
       if (!validationResult.valid) {
         return returnServerError(
-          'Please use a valid email address - your company email works best'
+          'Please use a valid email address - your company email works best.'
         )
       }
 
       if (await shouldWarnAboutAlternateEmail(validationResult.data)) {
         return returnServerError(
-          'Is this a secondary email? Use your primary email for fast access'
+          'Is this a secondary email? Use your primary email for fast access.'
         )
       }
     }
@@ -113,8 +114,8 @@ export const signUpAction = actionClient
         emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
         data: validationResult?.data
           ? {
-            email_validation: validationResult?.data,
-          }
+              email_validation: validationResult?.data,
+            }
           : undefined,
       },
     })
@@ -122,9 +123,9 @@ export const signUpAction = actionClient
     if (error) {
       switch (error.code) {
         case 'email_exists':
-          return returnServerError('Email already in use')
+          return returnServerError(USER_MESSAGES.emailInUse.message)
         case 'weak_password':
-          return returnServerError('Password is too weak')
+          return returnServerError(USER_MESSAGES.passwordWeak.message)
         default:
           throw error
       }
@@ -157,7 +158,7 @@ export const signInAction = actionClient
 
     if (error) {
       if (error.code === 'invalid_credentials') {
-        return returnServerError('Invalid credentials')
+        return returnServerError(USER_MESSAGES.invalidCredentials.message)
       }
       throw error
     }
@@ -196,7 +197,7 @@ export const forgotPasswordAction = actionClient
 
       if (error.message.includes('security purposes')) {
         return returnServerError(
-          'Please wait before requesting another password reset'
+          'Please wait before requesting another password reset.'
         )
       }
 
@@ -211,6 +212,6 @@ export async function signOutAction(returnTo?: string) {
 
   throw redirect(
     AUTH_URLS.SIGN_IN +
-    (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
+      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
   )
 }

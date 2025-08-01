@@ -1,6 +1,7 @@
 'use client'
 
 import { AUTH_URLS } from '@/configs/urls'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { forgotPasswordAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
@@ -19,13 +20,11 @@ export default function ForgotPassword() {
   const { execute, isExecuting } = useAction(forgotPasswordAction, {
     onSuccess: () => {
       if (formRef.current) formRef.current.reset()
-      setMessage({ success: 'Check your email for a reset link' })
+      setMessage({ success: USER_MESSAGES.passwordReset.message })
     },
     onError: ({ error }) => {
       if (error.serverError) {
         setMessage({ error: error.serverError })
-      } else if (error.validationErrors) {
-        setMessage({ error: 'Please check your email address' })
       }
     },
   })
@@ -39,6 +38,16 @@ export default function ForgotPassword() {
     // Always focus the email field for accessibility
     emailRef.current?.focus()
   }, [searchParams])
+
+  useEffect(() => {
+    if (message && 'success' in message) {
+      const timer = setTimeout(
+        () => setMessage(undefined),
+        USER_MESSAGES.passwordReset.timeoutMs ?? 5000
+      )
+      return () => clearTimeout(timer)
+    }
+  }, [message])
 
   const handleBackToSignIn = () => {
     const email = emailRef.current?.value

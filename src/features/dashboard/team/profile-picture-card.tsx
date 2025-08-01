@@ -1,5 +1,6 @@
 'use client'
 
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
@@ -30,7 +31,11 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
     uploadTeamProfilePictureAction,
     {
       onSuccess: () => {
-        toast(defaultSuccessToast('Your team logo has been updated.'))
+        toast(
+          defaultSuccessToast(USER_MESSAGES.teamLogoUpdated.message, {
+            duration: USER_MESSAGES.teamLogoUpdated.timeoutMs,
+          })
+        )
       },
       onError: ({ error }) => {
         if (error.validationErrors?.fieldErrors.image) {
@@ -38,7 +43,12 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
           return
         }
 
-        toast(defaultErrorToast(error.serverError || 'Failed to update logo.'))
+        toast(
+          defaultErrorToast(
+            error.serverError || USER_MESSAGES.failedUpdateLogo.message,
+            { duration: USER_MESSAGES.failedUpdateLogo.timeoutMs }
+          )
+        )
       },
       onSettled: () => {
         if (fileInputRef.current) {

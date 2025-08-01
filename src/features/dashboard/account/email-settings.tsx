@@ -1,5 +1,6 @@
 'use client'
 
+import { USER_MESSAGES } from '@/configs/user-messages'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -67,7 +68,11 @@ export function EmailSettings({ className }: EmailSettingsProps) {
 
   const { execute: updateEmail, isPending } = useAction(updateUserAction, {
     onSuccess: () => {
-      toast(defaultSuccessToast('Check your email for a verification link.'))
+      toast(
+        defaultSuccessToast(USER_MESSAGES.emailUpdateVerification.message, {
+          duration: USER_MESSAGES.emailUpdateVerification.timeoutMs,
+        })
+      )
     },
     onError: ({ error }) => {
       if (error.validationErrors?.fieldErrors?.email?.[0]) {
