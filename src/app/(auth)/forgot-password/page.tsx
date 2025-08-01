@@ -4,40 +4,47 @@ import { AUTH_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { forgotPasswordAction } from '@/server/auth/auth-actions'
+import { forgotPasswordSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
-import { useAction } from 'next-safe-action/hooks'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function ForgotPassword() {
   const searchParams = useSearchParams()
-  const formRef = useRef<HTMLFormElement>(null)
-  const emailRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<AuthMessage | undefined>()
 
-  const { execute, isExecuting } = useAction(forgotPasswordAction, {
-    onSuccess: () => {
-      if (formRef.current) formRef.current.reset()
-      setMessage({ success: USER_MESSAGES.passwordReset.message })
-    },
-    onError: ({ error }) => {
-      if (error.serverError) {
-        setMessage({ error: error.serverError })
-      }
-    },
-  })
+  const {
+    form,
+    handleSubmitWithAction,
+    action: { isExecuting },
+  } = useHookFormAction(
+    forgotPasswordAction,
+    zodResolver(forgotPasswordSchema),
+    {
+      actionProps: {
+        onSuccess: () => {
+          form.reset()
+          setMessage({ success: USER_MESSAGES.passwordReset.message })
+        },
+        onError: ({ error }) => {
+          if (error.serverError) {
+            setMessage({ error: error.serverError })
+          }
+        },
+      },
+    }
+  )
 
-  // Handle email prefill from sign in page
   useEffect(() => {
     const email = searchParams.get('email')
-    if (email && emailRef.current) {
-      emailRef.current.value = email
+    if (email) {
+      form.setValue('email', email)
     }
-    // Always focus the email field for accessibility
-    emailRef.current?.focus()
-  }, [searchParams])
+  }, [searchParams, form])
 
   useEffect(() => {
     if (message && 'success' in message) {
@@ -50,13 +57,9 @@ export default function ForgotPassword() {
   }, [message])
 
   const handleBackToSignIn = () => {
-    const email = emailRef.current?.value
+    const email = form.getValues('email')
     const searchParams = email ? `?email=${encodeURIComponent(email)}` : ''
     window.location.href = `${AUTH_URLS.SIGN_IN}${searchParams}`
-  }
-
-  const handleSubmit = (formData: FormData) => {
-    execute(formData)
   }
 
   return (
@@ -75,13 +78,12 @@ export default function ForgotPassword() {
       </p>
 
       <form
-        ref={formRef}
+        onSubmit={handleSubmitWithAction}
         className="mt-5 flex flex-col gap-2 [&>input]:mb-1"
-        action={handleSubmit}
       >
         <Label htmlFor="email">E-Mail</Label>
         <Input
-          ref={emailRef}
+          {...form.register('email')}
           id="email"
           name="email"
           type="email"

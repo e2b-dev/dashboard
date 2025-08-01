@@ -38,7 +38,7 @@ export function AuthFormMessage({
       {'error' in message && (
         <Alert variant="error">
           <AlertCircle className="text-error h-4 w-4" />
-          <AlertDescription>
+          <AlertDescription className="text-error">
             {decodeURIComponent(message.error!)}
           </AlertDescription>
         </Alert>

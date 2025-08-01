@@ -15,7 +15,7 @@ import { Provider } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { zfd } from 'zod-form-data'
+import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -69,25 +69,10 @@ export const signInWithOAuthAction = actionClient
     )
   })
 
-const signUpSchema = zfd
-  .formData({
-    email: zfd.text(z.string().email('Valid email is required')),
-    password: zfd.text(
-      z.string().min(8, 'Password must be at least 8 characters')
-    ),
-    confirmPassword: zfd.text(),
-    returnTo: zfd.text(z.string().optional()),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match',
-  })
-
 export const signUpAction = actionClient
   .schema(signUpSchema)
   .metadata({ actionName: 'signUp' })
-  .action(async ({ parsedInput }) => {
-    const { email, password, confirmPassword, returnTo = '' } = parsedInput
+  .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
     const supabase = await createClient()
     const origin = (await headers()).get('origin') || ''
 
@@ -132,19 +117,10 @@ export const signUpAction = actionClient
     }
   })
 
-const signInSchema = zfd.formData({
-  email: zfd.text(z.string().email('Valid email is required')),
-  password: zfd.text(
-    z.string().min(8, 'Password must be at least 8 characters')
-  ),
-  returnTo: zfd.text(z.string().optional()),
-})
-
 export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
-  .action(async ({ parsedInput }) => {
-    const { email, password, returnTo = '' } = parsedInput
+  .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
     const supabase = await createClient()
 
     const headerStore = await headers()
@@ -178,16 +154,10 @@ export const signInAction = actionClient
     throw redirect(returnTo || PROTECTED_URLS.DASHBOARD)
   })
 
-const forgotPasswordSchema = zfd.formData({
-  email: zfd.text(z.string().email('Valid email is required')),
-  callbackUrl: zfd.text(z.string().optional()),
-})
-
 export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
-  .action(async ({ parsedInput }) => {
-    const { email } = parsedInput
+  .action(async ({ parsedInput: { email } }) => {
     const supabase = await createClient()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email)

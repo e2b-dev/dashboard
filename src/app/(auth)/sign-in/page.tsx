@@ -4,6 +4,7 @@ import { AUTH_URLS } from '@/configs/urls'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { signInAction } from '@/server/auth/auth-actions'
+import { signInSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -16,25 +17,16 @@ import {
 import { Input } from '@/ui/primitives/input'
 import TextSeparator from '@/ui/text-separator'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-
-const signInSchema = z.object({
-  email: z.string().email('Valid email is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  returnTo: z.string().optional(),
-})
-
-type SignInFormValues = z.infer<typeof signInSchema>
 
 export default function Login() {
   'use no memo'
 
   const searchParams = useSearchParams()
+
   const [message, setMessage] = useState<AuthMessage | undefined>(() => {
     const error = searchParams.get('error')
     const success = searchParams.get('success')
@@ -43,25 +35,25 @@ export default function Login() {
     return undefined
   })
 
-  // Get returnTo URL from search params
+  const {
+    form,
+    handleSubmitWithAction,
+    action: { isExecuting },
+  } = useHookFormAction(signInAction, zodResolver(signInSchema), {
+    actionProps: {
+      onError: ({ error }) => {
+        if (error.serverError) {
+          setMessage({ error: error.serverError })
+        }
+      },
+    },
+  })
+
   const returnTo = searchParams.get('returnTo') || ''
 
-  const form = useForm<SignInFormValues>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      returnTo,
-    },
-  })
-
-  const { execute, isExecuting } = useAction(signInAction, {
-    onError: ({ error }) => {
-      if (error.serverError) {
-        setMessage({ error: error.serverError })
-      }
-    },
-  })
+  useEffect(() => {
+    form.setValue('returnTo', returnTo)
+  }, [returnTo, form])
 
   // Handle email prefill from forgot password flow
   useEffect(() => {
@@ -84,14 +76,6 @@ export default function Login() {
     window.location.href = `${AUTH_URLS.FORGOT_PASSWORD}?${params.toString()}`
   }
 
-  const onSubmit = (data: SignInFormValues) => {
-    const formData = new FormData()
-    formData.append('email', data.email)
-    formData.append('password', data.password)
-    formData.append('returnTo', data.returnTo || '')
-    execute(formData)
-  }
-
   return (
     <div className="flex w-full flex-col">
       <h1 className="text-2xl font-medium">Sign in</h1>
@@ -105,7 +89,7 @@ export default function Login() {
       <Form {...form}>
         <form
           className="flex flex-col gap-2 [&>input]:mb-3"
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={handleSubmitWithAction}
         >
           <FormField
             control={form.control}
