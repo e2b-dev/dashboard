@@ -52,6 +52,22 @@ export function RamUsageCell({
   )
 }
 
+export function DiskUsageCell({
+  row,
+}: CellContext<SandboxWithMetrics, unknown>) {
+  const metrics = useSandboxMetricsStore(
+    (s) => s.metrics?.[row.original.sandboxID]
+  )
+
+  return (
+    <ResourceUsage
+      type="disk"
+      metrics={metrics?.diskUsedGb}
+      total={metrics?.diskTotalGb}
+    />
+  )
+}
+
 // ---------- Generic column cell components ----------
 
 export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {

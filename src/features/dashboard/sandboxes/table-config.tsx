@@ -12,6 +12,7 @@ import posthog from 'posthog-js'
 import { serializeError } from 'serialize-error'
 import {
   CpuUsageCell,
+  DiskUsageCell,
   IdCell,
   MetadataCell,
   RamUsageCell,
@@ -158,6 +159,16 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     minSize: 160,
     enableSorting: false,
     enableColumnFilter: true,
+    filterFn: resourceRangeFilter,
+  },
+  {
+    id: 'diskUsage',
+    header: 'Disk Usage',
+    cell: (props) => <DiskUsageCell {...props} />,
+    size: 175,
+    minSize: 160,
+    enableSorting: false,
+    enableColumnFilter: false,
     filterFn: resourceRangeFilter,
   },
   {

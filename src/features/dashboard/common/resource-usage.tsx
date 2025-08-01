@@ -1,8 +1,9 @@
-import React from 'react'
 import { cn } from '@/lib/utils'
+import HelpTooltip from '@/ui/help-tooltip'
+import React from 'react'
 
 export interface ResourceUsageProps {
-  type: 'cpu' | 'mem'
+  type: 'cpu' | 'mem' | 'disk'
   metrics?: number | null
   total?: number | null
   /** Display mode: 'usage' shows metrics/total, 'simple' shows only total */
@@ -21,7 +22,8 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   classNames,
 }) => {
   const isCpu = type === 'cpu'
-  const unit = isCpu ? 'Core' : 'MB'
+  const isDisk = type === 'disk'
+  const unit = isCpu ? 'Core' : isDisk ? 'GB' : 'MB'
   const hasMetrics = metrics !== null && metrics !== undefined
 
   if (mode === 'simple') {
@@ -72,6 +74,12 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
       ) : (
         <>
           <span className="text-fg-500">n/a </span>
+          {type === 'disk' && (
+            <HelpTooltip>
+              This feature becomes available when upgrading the template this
+              sandbox uses.
+            </HelpTooltip>
+          )}
           <span className={cn('text-fg-500', classNames?.dot)}>·</span>
         </>
       )}
