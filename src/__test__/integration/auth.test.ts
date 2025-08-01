@@ -100,7 +100,10 @@ describe('Auth Actions - Integration Tests', () => {
       formData.append('password', 'password123')
 
       // Execute: Call the sign-in action
-      await signInAction(formData)
+      await signInAction({
+        email: 'test@example.com',
+        password: 'password123',
+      })
 
       // Verify: Check that redirect was called with dashboard URL
       expect(redirect).toHaveBeenCalledWith(PROTECTED_URLS.DASHBOARD)
@@ -124,7 +127,11 @@ describe('Auth Actions - Integration Tests', () => {
       formData.append('returnTo', '/dashboard/team-123/sandboxes')
 
       // Execute: Call the sign-in action
-      await signInAction(formData)
+      await signInAction({
+        email: 'test@example.com',
+        password: 'password123',
+        returnTo: '/dashboard/team-123/sandboxes',
+      })
 
       // Verify: Check that redirect was called with returnTo URL
       expect(redirect).toHaveBeenCalledWith('/dashboard/team-123/sandboxes')
@@ -147,7 +154,10 @@ describe('Auth Actions - Integration Tests', () => {
       formData.append('password', 'wrongpassword')
 
       // Execute: Call the sign-in action
-      const result = await signInAction(formData)
+      const result = await signInAction({
+        email: 'test@example.com',
+        password: 'password123',
+      })
 
       // Verify: Check that encodedRedirect was called with error message
       expect(result).toBeDefined()
@@ -182,7 +192,11 @@ describe('Auth Actions - Integration Tests', () => {
       formData.append('confirmPassword', 'Password123!')
 
       // Execute: Call the sign-up action
-      const result = await signUpAction(formData)
+      const result = await signUpAction({
+        email: 'newuser@example.com',
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+      })
 
       // Verify: Check that encodedRedirect was called with success message
       expect(result).toBeDefined()
@@ -251,7 +265,11 @@ describe('Auth Actions - Integration Tests', () => {
       formData.append('confirmPassword', 'Password123!')
 
       // Execute: Call the sign-up action
-      const result = await signUpAction(formData)
+      const result = await signUpAction({
+        email: 'newuser@example.com',
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+      })
 
       // Verify: Check that encodedRedirect was called with error message
       expect(result).toBeDefined()
@@ -276,7 +294,9 @@ describe('Auth Actions - Integration Tests', () => {
       formData.append('email', 'user@example.com')
 
       // Execute: Call the forgot password action
-      const result = await forgotPasswordAction(formData)
+      const result = await forgotPasswordAction({
+        email: 'user@example.com',
+      })
 
       // Verify: Check that encodedRedirect was called with success message
       expect(result).toBeDefined()

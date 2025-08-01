@@ -54,6 +54,7 @@ vi.mock('next/server', async () => {
       value: {
         set: vi.fn(),
         get: vi.fn(),
+        delete: vi.fn(),
       },
       writable: true,
     })
@@ -67,6 +68,7 @@ vi.mock('next/server', async () => {
     Object.defineProperty(response, 'cookies', {
       value: {
         set: vi.fn(),
+        delete: vi.fn(),
       },
       writable: true,
     })
