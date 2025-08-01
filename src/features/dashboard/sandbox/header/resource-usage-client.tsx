@@ -1,9 +1,9 @@
 'use client'
 
-import { memo, useMemo } from 'react'
-import { useSandboxContext } from '../context'
 import type { ResourceUsageProps } from '@/features/dashboard/common/resource-usage'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
+import { memo, useMemo } from 'react'
+import { useSandboxContext } from '../context'
 
 interface ResourceUsageClientProps extends ResourceUsageProps {}
 
@@ -13,7 +13,11 @@ export const ResourceUsageClient = memo(
 
     const metrics = useMemo(
       () =>
-        props.type === 'cpu' ? lastMetrics?.cpuUsedPct : lastMetrics?.memUsedMb,
+        props.type === 'cpu'
+          ? lastMetrics?.cpuUsedPct
+          : props.type === 'mem'
+            ? lastMetrics?.memUsedMb
+            : lastMetrics?.diskUsedGb,
       [props.type, lastMetrics]
     )
 
@@ -21,7 +25,10 @@ export const ResourceUsageClient = memo(
       if (props.type === 'cpu') {
         return sandboxInfo?.cpuCount
       }
-      return sandboxInfo?.memoryMB
+      if (props.type === 'mem') {
+        return sandboxInfo?.memoryMB
+      }
+      return lastMetrics?.diskTotalGb
     }, [props.type, sandboxInfo])
 
     return (

@@ -1,17 +1,17 @@
+import { COOKIE_KEYS } from '@/configs/keys'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api'
 import { ChevronLeftIcon } from 'lucide-react'
-import Link from 'next/link'
-import RanFor from './ran-for'
-import Status from './status'
-import RemainingTime from './remaining-time'
-import RefreshControl from './refresh'
-import TemplateId from './template-id'
-import StartedAt from './started-at'
 import { cookies } from 'next/headers'
-import { COOKIE_KEYS } from '@/configs/keys'
+import Link from 'next/link'
 import Metadata from './metadata'
+import RanFor from './ran-for'
+import RefreshControl from './refresh'
+import RemainingTime from './remaining-time'
 import { ResourceUsageClient } from './resource-usage-client'
+import StartedAt from './started-at'
+import Status from './status'
+import TemplateId from './template-id'
 import SandboxDetailsTitle from './title'
 
 interface SandboxDetailsHeaderProps {
@@ -69,6 +69,18 @@ export default async function SandboxDetailsHeader({
       value: (
         <ResourceUsageClient
           type="mem"
+          mode="usage"
+          classNames={{
+            dot: 'mx-1',
+          }}
+        />
+      ),
+    },
+    diskGB: {
+      label: 'Disk Usage',
+      value: (
+        <ResourceUsageClient
+          type="disk"
           mode="usage"
           classNames={{
             dot: 'mx-1',
