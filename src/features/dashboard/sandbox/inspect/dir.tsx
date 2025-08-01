@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { AlertCircle, ChevronRight } from 'lucide-react'
+import { AlertCircle, FolderClosed, FolderOpen } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import SandboxInspectEmptyNode from './empty'
 import { FilesystemNode } from './filesystem/types'
@@ -38,24 +38,22 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           }
         }}
         className={cn(
-          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 min-h-7 cursor-pointer gap-1 truncate transition-none select-none even:bg-transparent focus:outline-none'
+          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 min-h-7 cursor-pointer gap-1.5 pl-1.5 truncate transition-none select-none even:bg-transparent focus:outline-none'
         )}
         data-slot="inspect-dir"
       >
-        <motion.span
-          initial={{
-            rotate: isExpanded && isLoaded ? 90 : 0,
-          }}
-          animate={{
-            rotate: isExpanded && isLoaded ? 90 : 0,
-            color:
-              isExpanded && isLoaded
-                ? 'var(--color-fg)'
-                : 'var(--color-fg-500)',
-          }}
+        <span
+          className={cn(
+            'transition-colors duration-150',
+            isExpanded && isLoaded ? 'text-fg' : 'text-fg-500'
+          )}
         >
-          <ChevronRight className="ml-1 size-4" />
-        </motion.span>
+          {isExpanded && isLoaded ? (
+            <FolderOpen className="size-3.5" />
+          ) : (
+            <FolderClosed className="size-3.5" />
+          )}
+        </span>
         <NodeLabel
           name={dir.name}
           isActive={isExpanded}
