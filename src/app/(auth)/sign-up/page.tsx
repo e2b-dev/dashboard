@@ -1,7 +1,10 @@
 'use client'
 
 import { AUTH_URLS } from '@/configs/urls'
-import { USER_MESSAGES } from '@/configs/user-messages'
+import {
+  getTimeoutMsFromUserMessage,
+  USER_MESSAGES,
+} from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { signUpAction } from '@/server/auth/auth-actions'
@@ -71,10 +74,10 @@ export default function SignUp() {
   }, [searchParams, form])
 
   useEffect(() => {
-    if (message && 'success' in message) {
+    if (message && 'success' in message && message.success) {
       const timer = setTimeout(
         () => setMessage(undefined),
-        USER_MESSAGES.signUpVerification.timeoutMs ?? 5000
+        getTimeoutMsFromUserMessage(message.success) || 5000
       )
       return () => clearTimeout(timer)
     }

@@ -1,7 +1,10 @@
 'use client'
 
 import { AUTH_URLS } from '@/configs/urls'
-import { USER_MESSAGES } from '@/configs/user-messages'
+import {
+  getTimeoutMsFromUserMessage,
+  USER_MESSAGES,
+} from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { forgotPasswordAction } from '@/server/auth/auth-actions'
 import { forgotPasswordSchema } from '@/server/auth/auth.types'
@@ -47,10 +50,20 @@ export default function ForgotPassword() {
   }, [searchParams, form])
 
   useEffect(() => {
-    if (message && 'success' in message) {
+    if (
+      message &&
+      (('success' in message && message.success) ||
+        ('error' in message && message.error))
+    ) {
       const timer = setTimeout(
         () => setMessage(undefined),
-        USER_MESSAGES.passwordReset.timeoutMs ?? 5000
+        getTimeoutMsFromUserMessage(
+          'success' in message
+            ? message.success!
+            : 'error' in message
+              ? message.error!
+              : ''
+        ) || 5000
       )
       return () => clearTimeout(timer)
     }

@@ -81,14 +81,12 @@ export const signUpAction = actionClient
     if (validationResult?.data) {
       if (!validationResult.valid) {
         return returnServerError(
-          'Please use a valid email address - your company email works best.'
+          USER_MESSAGES.signUpEmailValidationInvalid.message
         )
       }
 
       if (await shouldWarnAboutAlternateEmail(validationResult.data)) {
-        return returnServerError(
-          'Is this a secondary email? Use your primary email for fast access.'
-        )
+        return returnServerError(USER_MESSAGES.signUpEmailAlternate.message)
       }
     }
 
