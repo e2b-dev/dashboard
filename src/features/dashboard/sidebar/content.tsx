@@ -84,7 +84,7 @@ export default function DashboardSidebarContent() {
                     asChild
                     tooltip={item.label}
                   >
-                    <Link suppressHydrationWarning href={href}>
+                    <Link suppressHydrationWarning href={href} prefetch>
                       <item.icon
                         className={cn(
                           'text-fg-500 w-4',
