@@ -64,7 +64,7 @@ export function NameSettings({ className }: NameSettingsProps) {
     onError: ({ error }) => {
       toast(
         defaultErrorToast(
-          error?.serverError || USER_MESSAGES.failedUpdateName.message
+          error.serverError || USER_MESSAGES.failedUpdateName.message
         )
       )
     },
