@@ -136,6 +136,9 @@ export const signInAction = actionClient
       if (error.code === 'invalid_credentials') {
         return returnServerError(USER_MESSAGES.invalidCredentials.message)
       }
+      if (error.code === 'email_not_confirmed') {
+        return returnServerError(USER_MESSAGES.signInEmailNotConfirmed.message)
+      }
       throw error
     }
 

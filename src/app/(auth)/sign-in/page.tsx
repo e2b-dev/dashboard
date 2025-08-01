@@ -1,6 +1,7 @@
 'use client'
 
 import { AUTH_URLS } from '@/configs/urls'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { signInAction } from '@/server/auth/auth-actions'
@@ -42,6 +43,13 @@ export default function Login() {
   } = useHookFormAction(signInAction, zodResolver(signInSchema), {
     actionProps: {
       onError: ({ error }) => {
+        if (
+          error.serverError === USER_MESSAGES.signInEmailNotConfirmed.message
+        ) {
+          setMessage({ success: error.serverError })
+          return
+        }
+
         if (error.serverError) {
           setMessage({ error: error.serverError })
         }

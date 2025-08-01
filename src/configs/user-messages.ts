@@ -7,15 +7,20 @@ export type UserMessageKey = keyof typeof USER_MESSAGES
 
 export const USER_MESSAGES = {
   signUpVerification: {
-    message: 'Check your email for a verification link.',
+    message: 'Check your e-mail for a verification link.',
     timeoutMs: 30000,
   },
   passwordReset: {
-    message: 'Check your email for a reset link.',
+    message: 'Check your e-mail for a reset link.',
     timeoutMs: 30000,
   },
   emailUpdateVerification: {
-    message: 'Check your email for a verification link.',
+    message: 'Check your e-mail for a verification link.',
+    timeoutMs: 30000,
+  },
+  signInEmailNotConfirmed: {
+    message:
+      'You need to confirm your e-mail before signing in. Please check your e-mail for a verification link.',
     timeoutMs: 30000,
   },
   nameUpdated: {
@@ -43,7 +48,7 @@ export const USER_MESSAGES = {
     message: 'Failed to update logo.',
   },
   emailInUse: {
-    message: 'Email already in use',
+    message: 'E-mail already in use.',
   },
   passwordWeak: {
     message: 'Password is too weak',
@@ -52,9 +57,9 @@ export const USER_MESSAGES = {
     message: 'Invalid credentials.',
   },
   unauthorized: {
-    message: 'User is not authorized to perform this action',
+    message: 'User is not authorized to perform this action.',
   },
   checkCredentials: {
-    message: 'Please check your credentials',
+    message: 'Please check your credentials.',
   },
 }
