@@ -77,10 +77,9 @@ export const USER_MESSAGES = {
 export const getTimeoutMsFromUserMessage = (
   message: string
 ): number | undefined => {
-  const messageConfig = Object.values(USER_MESSAGES).find(
-    (m) => m.message === message
-  )
+  const messageConfig: UserMessageConfig | undefined = Object.values(
+    USER_MESSAGES
+  ).find((m) => m.message === message)
 
-  // @ts-expect-error - messageConfig is not typed
   return messageConfig?.timeoutMs
 }
