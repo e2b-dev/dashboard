@@ -31,11 +31,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
     uploadTeamProfilePictureAction,
     {
       onSuccess: () => {
-        toast(
-          defaultSuccessToast(USER_MESSAGES.teamLogoUpdated.message, {
-            duration: USER_MESSAGES.teamLogoUpdated.timeoutMs,
-          })
-        )
+        toast(defaultSuccessToast(USER_MESSAGES.teamLogoUpdated.message))
       },
       onError: ({ error }) => {
         if (error.validationErrors?.fieldErrors.image) {
@@ -45,8 +41,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
 
         toast(
           defaultErrorToast(
-            error.serverError || USER_MESSAGES.failedUpdateLogo.message,
-            { duration: USER_MESSAGES.failedUpdateLogo.timeoutMs }
+            error.serverError || USER_MESSAGES.failedUpdateLogo.message
           )
         )
       },

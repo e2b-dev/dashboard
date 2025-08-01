@@ -57,4 +57,4 @@ export const USER_MESSAGES = {
   checkCredentials: {
     message: 'Please check your credentials',
   },
-} as const satisfies Record<string, UserMessageConfig>
+}

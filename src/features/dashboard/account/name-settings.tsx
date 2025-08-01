@@ -59,17 +59,12 @@ export function NameSettings({ className }: NameSettingsProps) {
 
   const { execute: updateName, isPending } = useAction(updateUserAction, {
     onSuccess: async () => {
-      toast(
-        defaultSuccessToast(USER_MESSAGES.nameUpdated.message, {
-          duration: USER_MESSAGES.nameUpdated.timeoutMs,
-        })
-      )
+      toast(defaultSuccessToast(USER_MESSAGES.nameUpdated.message))
     },
-    onError: (error) => {
+    onError: ({ error }) => {
       toast(
         defaultErrorToast(
-          error.serverError || USER_MESSAGES.failedUpdateName.message,
-          { duration: USER_MESSAGES.failedUpdateName.timeoutMs }
+          error?.serverError || USER_MESSAGES.failedUpdateName.message
         )
       )
     },

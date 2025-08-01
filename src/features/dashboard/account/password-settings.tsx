@@ -91,11 +91,7 @@ export function PasswordSettings({
         return
       }
 
-      toast(
-        defaultSuccessToast(USER_MESSAGES.passwordUpdated.message, {
-          duration: USER_MESSAGES.passwordUpdated.timeoutMs,
-        })
-      )
+      toast(defaultSuccessToast(USER_MESSAGES.passwordUpdated.message))
 
       form.reset()
       setClientShowPasswordForm(false)
@@ -109,8 +105,7 @@ export function PasswordSettings({
       } else {
         toast(
           defaultErrorToast(
-            error.serverError || USER_MESSAGES.failedUpdatePassword.message,
-            { duration: USER_MESSAGES.failedUpdatePassword.timeoutMs }
+            error.serverError || USER_MESSAGES.failedUpdatePassword.message
           )
         )
       }

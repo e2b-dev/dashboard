@@ -71,19 +71,14 @@ export function NameCard({ className }: NameCardProps) {
           }
         },
         onSuccess: async () => {
-          toast(
-            defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message, {
-              duration: USER_MESSAGES.teamNameUpdated.timeoutMs,
-            })
-          )
+          toast(defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message))
         },
         onError: ({ error }) => {
           if (!error.serverError) return
 
           toast(
             defaultErrorToast(
-              error.serverError || USER_MESSAGES.failedUpdateTeamName.message,
-              { duration: USER_MESSAGES.failedUpdateTeamName.timeoutMs }
+              error.serverError || USER_MESSAGES.failedUpdateTeamName.message
             )
           )
         },
