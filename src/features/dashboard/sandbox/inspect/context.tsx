@@ -63,7 +63,7 @@ export function SandboxInspectProvider({
       storeRef.current.getState().rootPath !== normalizedRoot
 
     if (needsNewStore) {
-      trackInteraction('initialised', {
+      trackInteraction('initialized', {
         sandbox_id: sandboxInfo?.sandboxID,
         team_id: teamId,
         root_path: rootPath,
