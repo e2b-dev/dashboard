@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { GradientBorder } from '@/ui/gradient-border'
 import { GridPattern } from '@/ui/grid-pattern'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -21,16 +20,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         gradientDegrees={90}
       />
       <div className="z-10 flex h-full w-full items-center justify-center px-4">
-        <GradientBorder
-          direction="bg-gradient-to-b"
-          gradientFrom="from-border-400"
-          gradientVia="via-border-100"
-          gradientTo="to-border-200"
-          wrapperClassName="w-full max-w-96 rounded-sm"
-          className="rounded-sm p-6"
-        >
-          <div className="h-full w-full">{children}</div>
-        </GradientBorder>
+        <div className="h-fit border border-border-200 bg-bg w-full rounded-sm max-w-96 p-6">
+          {children}
+        </div>
       </div>
     </div>
   )
