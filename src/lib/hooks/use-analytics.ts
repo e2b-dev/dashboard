@@ -18,19 +18,3 @@ export const useSandboxInspectAnalytics = () => {
 
   return { trackInteraction: handler }
 }
-
-export const useSandboxDetailsAnalytics = () => {
-  const posthog = usePostHog()
-
-  const handler = useCallback(
-    (action: string, properties: Record<string, unknown> = {}) => {
-      posthog.capture('sandbox details interacted', {
-        action,
-        ...properties,
-      })
-    },
-    [posthog]
-  )
-
-  return { trackInteraction: handler }
-}

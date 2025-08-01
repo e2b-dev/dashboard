@@ -1,7 +1,6 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { RefreshCw, StopCircle } from 'lucide-react'
@@ -54,26 +53,19 @@ export default function RemainingTime() {
         transition={{ duration: 0.2 }}
         style={{ pointerEvents: remaining === 0 ? 'auto' : 'none' }}
       >
-        <HelpTooltip
-          trigger={
-            <Button
-              variant="ghost"
-              size="slate"
-              onClick={refetchSandboxInfo}
-              disabled={isSandboxInfoLoading}
-              asChild
-            >
-              <RefreshCw
-                className={cn('size-3', {
-                  'animate-spin duration-300 ease-in-out': isSandboxInfoLoading,
-                })}
-              />
-            </Button>
-          }
+        <Button
+          variant="ghost"
+          size="slate"
+          onClick={refetchSandboxInfo}
+          disabled={isSandboxInfoLoading}
+          asChild
         >
-          The sandbox may have been terminated since last refresh. Refreshing
-          could make this page inaccessible if the sandbox no longer exists.
-        </HelpTooltip>
+          <RefreshCw
+            className={cn('size-3', {
+              'animate-spin duration-300 ease-in-out': isSandboxInfoLoading,
+            })}
+          />
+        </Button>
       </motion.div>
     </div>
   )
