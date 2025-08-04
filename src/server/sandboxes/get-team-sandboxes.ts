@@ -67,8 +67,8 @@ export const getTeamSandboxes = authActionClient
         team_id: teamId,
         user_id: session.user.id,
         context: {
-          status: 200,
-          path: '/v2/sandboxes',
+          status: sandboxesRes.response.status,
+          path: '/sandboxes',
           sandbox_count: sandboxesRes.data.length,
         },
       })
