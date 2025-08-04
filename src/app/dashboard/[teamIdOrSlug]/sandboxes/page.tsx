@@ -64,14 +64,14 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
     )
   }
 
+  const maxSandboxesToFetchInitially = 100
+
   const metricsRes = await getTeamSandboxesMetrics({
     teamId,
-    sandboxIds: sandboxesRes.data.sandboxes.map((sandbox) => sandbox.sandboxID),
+    sandboxIds: sandboxesRes.data.sandboxes
+      .map((sandbox) => sandbox.sandboxID)
+      .slice(0, maxSandboxesToFetchInitially),
   })
-
-  if (metricsRes?.serverError) {
-    console.error(metricsRes.serverError)
-  }
 
   const sandboxes = sandboxesRes.data.sandboxes
   const templates = [

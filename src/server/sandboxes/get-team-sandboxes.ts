@@ -66,6 +66,18 @@ export const getTeamSandboxes = authActionClient
         return handleDefaultInfraError(status)
       }
 
+      l.info({
+        key: 'get_team_sandboxes:success',
+        message: 'Successfully fetched team sandboxes',
+        team_id: teamId,
+        user_id: session.user.id,
+        context: {
+          status: 200,
+          path: '/v2/sandboxes',
+          sandbox_count: sandboxesRes.data.length,
+        },
+      })
+
       return {
         sandboxes: sandboxesRes.data,
       }
