@@ -36,12 +36,7 @@ export const getTeamSandboxes = authActionClient
         }
       }
 
-      const sandboxesRes = await infra.GET('/v2/sandboxes', {
-        params: {
-          query: {
-            state: ['running'],
-          },
-        },
+      const sandboxesRes = await infra.GET('/sandboxes', {
         headers: {
           ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
@@ -59,7 +54,7 @@ export const getTeamSandboxes = authActionClient
           user_id: session.user.id,
           context: {
             status,
-            path: '/v2/sandboxes',
+            path: '/sandboxes',
           },
         })
 
