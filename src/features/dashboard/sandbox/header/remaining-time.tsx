@@ -16,13 +16,17 @@ export default function RemainingTime() {
 
   const getRemainingSeconds = useCallback(() => {
     if (!endAt) return 0
+
     const endTs = typeof endAt === 'number' ? endAt : new Date(endAt).getTime()
+
     return Math.max(0, Math.floor((endTs - Date.now()) / 1000))
   }, [endAt])
 
   const [remaining, setRemaining] = useState<number>(getRemainingSeconds)
 
   useEffect(() => {
+    setRemaining(getRemainingSeconds())
+
     const id = setInterval(() => {
       setRemaining(getRemainingSeconds())
     }, 1000)
@@ -30,11 +34,13 @@ export default function RemainingTime() {
     return () => clearInterval(id)
   }, [endAt, getRemainingSeconds])
 
-  const minutes = Math.floor(remaining / 60)
+  const hours = Math.floor(remaining / 3600)
+  const minutes = Math.floor((remaining % 3600) / 60)
   const seconds = remaining % 60
-  const formatted = `${minutes.toString().padStart(2, '0')}:${seconds
+
+  const formatted = `${hours > 0 ? `${hours.toString().padStart(2, '0')}h ` : ''}${minutes
     .toString()
-    .padStart(2, '0')}`
+    .padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
 
   if (!isRunning) {
     return (
