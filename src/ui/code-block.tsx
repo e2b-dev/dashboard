@@ -94,7 +94,7 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
         ref={ref}
         {...props}
         className={cn(
-          'not-prose group bg-bg-hover relative border p-2 text-xs',
+          'not-prose group bg-bg-hover border-border-200 relative border p-2 text-xs',
           keepBackground &&
             'bg-[var(--shiki-light-bg)] dark:bg-[var(--shiki-dark-bg)]',
           props.className
