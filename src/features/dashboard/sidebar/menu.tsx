@@ -135,7 +135,7 @@ export default function DashboardSidebarMenu({
                       <AvatarImage
                         src={team.profile_picture_url || undefined}
                       />
-                      <AvatarFallback className="bg-bg-400 group-focus:text-accent text-fg-tertiary text-xs">
+                      <AvatarFallback className="group-focus:text-accent text-fg-tertiary text-xs">
                         {team.name?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
