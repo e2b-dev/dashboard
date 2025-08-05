@@ -21,8 +21,8 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         accent: [
-          'bg-accent/10 text-accent-main-highlight',
-          'hover:bg-accent/20 focus:bg-accent/20',
+          'bg-accent-main-bg text-accent-main-highlight',
+          'hover:bg-accent-main-bg/80 focus:bg-accent-main-bg/80',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         ghost: [
