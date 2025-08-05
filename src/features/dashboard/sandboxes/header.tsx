@@ -64,7 +64,10 @@ export function SandboxesHeader({
               <Circle className="size-2 fill-current" />
             </Badge>
             {showFilteredRowCount && (
-              <Badge size="lg" variant="info" className="uppercase">
+              <Badge
+                variant="info"
+                className="h-min w-fit gap-2 font-bold uppercase"
+              >
                 {table.getFilteredRowModel().rows.length} filtered
                 <ListFilter className="size-3 !stroke-[3px]" />
               </Badge>
