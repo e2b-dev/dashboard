@@ -13,7 +13,7 @@ export default function TemplateId() {
   }, [sandboxInfo])
 
   return (
-    <Badge variant="info">
+    <Badge variant="info" className="gap-2.5">
       <p>{value}</p>
       <CopyButton
         size="slate"

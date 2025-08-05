@@ -27,7 +27,7 @@ import {
 
 const SIDEBAR_WIDTH = '14.5rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
-const SIDEBAR_WIDTH_ICON = '3.25rem' // 52px
+const SIDEBAR_WIDTH_ICON = '3.5rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
 const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-200 ease-in-out'
 
@@ -405,11 +405,7 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
-      className={cn(
-        'relative flex w-full min-w-0 flex-col px-3 pt-3 transition-all duration-100',
-        'group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:first:border-t-0 group-data-[collapsible=icon]:border-t group-data-[collapsible=icon]:border-stroke',
-        className
-      )}
+      className={cn('relative flex w-full min-w-0 flex-col px-3', className)}
       {...props}
     />
   )

@@ -29,7 +29,7 @@ export default function DashboardSidebarHeader() {
       <div
         className={cn('flex w-full items-center justify-between p-3 h-12', {
           // When the sidebar is closing, we want to stick the logo to the right.
-          'justify-end p-2 pb-0': !isOpen,
+          'justify-end': !isOpen,
         })}
       >
         {/* When the sidebar is closing, we want the logo to fade out AND be removed from the DOM. */}
@@ -66,10 +66,12 @@ export default function DashboardSidebarHeader() {
           </Button>
         </ShortcutTooltip>
       </div>
-      <SidebarMenu className="p-0 gap-0">
-        <DashboardSidebarMenu />
-        <DashboardSidebarCommand />
-      </SidebarMenu>
+      <SidebarGroup className="pt-0 transition-all duration-100 group-data-[collapsible=icon]:border-b pb-1.5">
+        <SidebarMenu className="flex flex-col gap-2">
+          <DashboardSidebarMenu />
+          <DashboardSidebarCommand />
+        </SidebarMenu>
+      </SidebarGroup>
     </SidebarHeader>
   )
 }

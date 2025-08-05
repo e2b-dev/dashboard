@@ -4,25 +4,30 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
 const badgeVariants = cva(
-  'inline-flex items-center cursor-default justify-center prose-label-highlight focus-visible:ring-1 w-fit whitespace-nowrap shrink-0 [&>svg]:size-3  [&>svg]:pointer-events-none ![&>svg]:pl-0.75 aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight transition-[color,box-shadow] overflow-hidden',
+  'inline-flex gap-1 items-center !text-label px-2 rounded-sm py-1 text-xs font-mono font-light transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-fg text-fg-inverted hover:bg-fg-200',
-        muted: 'bg-bg-200 text-fg-tertiary',
-        success: 'bg-success/20 text-success',
-        warning: 'bg-warning/20 text-warning',
-        error: 'bg-error/20 text-error',
-        accent: 'bg-accent/15 text-accent',
-        'contrast-1': 'bg-contrast-1/20 text-contrast-1',
-        'contrast-2': 'bg-contrast-2/20 text-contrast-2',
-        outline: 'border border-border-200 bg-bg-200',
+        default: 'bg-fill text-fg-secondary',
+        positive: 'bg-accent-positive-bg text-accent-positive-highlight',
+        warning: 'bg-accent-warning-bg text-accent-warning-highlight',
+        info: 'bg-accent-info-bg text-accent-info-highlight',
+        error: 'bg-accent-error-bg text-accent-error-highlight',
+        success: 'bg-accent-positive-bg text-accent-positive-highlight',
+
+        muted: 'bg-bg-1 text-fg-tertiary',
+        accent: 'bg-accent-main-bg text-accent-main-highlight',
+        outline: 'border border-stroke text-fg-secondary',
       },
       size: {
-        default: 'h-5 px-1 gap-1',
-        sm: 'h-4.5 px-1 text-xs gap-0.5',
-        lg: 'h-7 px-2.5 gap-1.5',
+        default: 'px-2 py-1 text-xs',
+        sm: 'px-1 py-0.5 text-xs',
+        lg: 'px-3 py-1.5 text-sm',
       },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
     },
     defaultVariants: {
       variant: 'default',

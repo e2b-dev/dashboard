@@ -79,16 +79,16 @@ export default function DashboardSidebarMenu({
             <SidebarMenuButton
               variant="outline"
               size="lg"
-              className={cn('group-data-[collapsible=icon]:pl-0!', className)}
+              className={cn(
+                'group-data-[collapsible=icon]:pl-0! p-2.5 h-14 pr-3',
+                className
+              )}
             >
               <Avatar
-                className={cn(
-                  'shrink-0 transition-all duration-100 ease-in-out',
-                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
-                  {
-                    'drop-shadow-sm filter': selectedTeam?.profile_picture_url,
-                  }
-                )}
+                className={cn('size-9 shrink-0 transition-all duration-300', {
+                  'border-0 drop-shadow-sm filter':
+                    selectedTeam?.profile_picture_url,
+                })}
               >
                 <AvatarImage
                   src={selectedTeam?.profile_picture_url || undefined}
@@ -99,11 +99,11 @@ export default function DashboardSidebarMenu({
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="text-fg-tertiary text-mono truncate text-[0.75rem]">
+                <span className="text-fg-tertiary font-mono truncate !text-label">
                   TEAM
                 </span>
                 {selectedTeam ? (
-                  <span className="text-fg truncate prose-body-highlight normal-case">
+                  <span className="text-fg truncate !text-body-highlight normal-case">
                     {selectedTeam.transformed_default_name || selectedTeam.name}
                   </span>
                 ) : (

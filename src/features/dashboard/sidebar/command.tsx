@@ -58,8 +58,8 @@ export default function DashboardSidebarCommand({
           )}
           onClick={() => setOpen(true)}
         >
-          <Terminal className="text-fg-tertiary size-4" />
-          Jump to
+          <ChevronRight className="text-fg-tertiary size-4" />
+          Go to
           <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -82,7 +82,7 @@ export default function DashboardSidebarCommand({
                 }}
                 className="group"
               >
-                <link.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent !size-4" />
+                <link.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent-main-highlight !size-4" />
                 {link.label}
               </CommandItem>
             ))}
