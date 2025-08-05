@@ -29,7 +29,10 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
               <Hexagon className="size-3 !stroke-[3px]" />
             </Badge>
             {showFilteredRowCount && (
-              <Badge size="lg" variant="info" className="uppercase">
+              <Badge
+                variant="info"
+                className="h-min w-fit gap-2 font-bold uppercase"
+              >
                 {table.getFilteredRowModel().rows.length} filtered
                 <ListFilter className="size-3 !stroke-[3px]" />
               </Badge>

@@ -492,7 +492,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button cursor-pointer whitespace-nowrap text-body-highlight flex w-full hover:bg-bg-highlight items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:font-medium data-[active=true]:text-accent-main-highlight data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+  'peer/menu-button cursor-pointer whitespace-nowrap text-body-highlight flex w-full hover:bg-bg-highlight items-center gap-2 overflow-hidden  p-2 text-left text-sm outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:font-medium data-[active=true]:text-accent-main-highlight data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
   {
     variants: {
       variant: {
