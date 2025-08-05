@@ -67,7 +67,7 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-accent-main-highlight text-xs">
+            <span className="text-accent-main-highlighttext-xs">
               {localValues.cpu === 0
                 ? 'Unfiltered'
                 : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
@@ -98,7 +98,7 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-accent-main-highlight text-xs">
+            <span className="text-accent-main-highlighttext-xs">
               {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>
@@ -182,7 +182,7 @@ const TemplatesTableFilters = React.forwardRef<
                   <DropdownMenuItem
                     className={
                       isPublic === true
-                        ? 'text-accent-main-highlight '
+                        ? 'text-accent-main-highlight'
                         : undefined
                     }
                     onClick={(e) => {
@@ -195,7 +195,7 @@ const TemplatesTableFilters = React.forwardRef<
                   <DropdownMenuItem
                     className={
                       isPublic === false
-                        ? 'text-accent-main-highlight '
+                        ? 'text-accent-main-highlight'
                         : undefined
                     }
                     onClick={(e) => {
