@@ -6,11 +6,11 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--accent-200);
+  background-color: var(--bg-highlight);
 }
 
 *::selection {
-  background-color: hsl(from var(--accent-main-highlight) h s l / 0.3);
+  background-color: var(--accent-main-bg);
 }
 
 .lucide {

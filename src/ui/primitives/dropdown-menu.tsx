@@ -42,8 +42,8 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       menuItemVariants({ variant }),
-      'data-[state=open]:bg-accent/10 data-[state=open]:text-accent-main-highlight',
-      'focus:bg-accent/10 focus:text-accent-main-highlight',
+      'data-[state=open]:bg-accent-main-bg data-[state=open]:text-accent-main-highlight',
+      'focus:bg-accent-main-bg focus:text-accent-main-highlight',
       inset && 'pl-4',
       className
     )}
@@ -118,7 +118,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
       'py-1.5 pr-2 pl-8',
       'font-mono text-xs',
       'outline-none',
-      'focus:bg-accent/10 focus:text-accent-main-highlight',
+      'focus:bg-accent-main-bg focus:text-accent-main-highlight',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       className
