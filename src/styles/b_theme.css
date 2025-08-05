@@ -13,7 +13,7 @@
   --color-border-500: var(--border-500);
 
   --color-bg: var(--bg);
-  --color-bg-100: var(--bg-100);
+  --color-bg-1: var(--bg-1);
   --color-bg-200: var(--bg-200);
   --color-bg-300: var(--bg-300);
   --color-bg-400: var(--bg-400);
@@ -103,7 +103,7 @@
 
   --color-fd-background: var(--bg);
   --color-fd-foreground: var(--fg);
-  --color-fd-muted: var(--bg-100);
+  --color-fd-muted: var(--bg-1);
   --color-fd-muted-foreground: var(--fg-300);
   --color-fd-popover: var(--bg);
   --color-fd-popover-foreground: var(--fg);
@@ -112,9 +112,9 @@
   --color-fd-border: var(--border);
   --color-fd-primary: var(--accent);
   --color-fd-primary-foreground: var(--accent-fg);
-  --color-fd-secondary: var(--bg-100);
+  --color-fd-secondary: var(--bg-1);
   --color-fd-secondary-foreground: var(--fg);
-  --color-fd-accent: var(--bg-100);
+  --color-fd-accent: var(--bg-1);
   --color-fd-accent-foreground: var(--fg);
   --color-fd-ring: var(--ring);
 
