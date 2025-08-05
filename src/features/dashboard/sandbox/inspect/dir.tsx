@@ -45,7 +45,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         <span
           className={cn(
             'transition-colors duration-150',
-            isExpanded && isLoaded ? 'text-fg' : 'text-fg-500'
+            isExpanded && isLoaded ? 'text-fg' : 'text-fg-tertiary'
           )}
         >
           {isExpanded && isLoaded ? (

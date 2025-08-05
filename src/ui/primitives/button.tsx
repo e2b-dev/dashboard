@@ -16,7 +16,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: [
-          'bg-fg text-bg',
+          'bg-fg text-fg-inverted',
           'hover:bg-fg-100 focus:bg-fg-100',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
@@ -31,7 +31,7 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         muted: [
-          'border border-border-200 bg-bg-200 text-fg-300 hover:text-fg',
+          'border border-border-200 bg-bg-200 text-fg-secondary hover:text-fg',
           'hover:bg-bg-200/90 focus:bg-bg-200/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),

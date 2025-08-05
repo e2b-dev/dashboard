@@ -79,10 +79,7 @@ export default function DashboardSidebarMenu({
             <SidebarMenuButton
               variant="outline"
               size="lg"
-              className={cn(
-                'hover:bg-bg-100 group-data-[collapsible=icon]:pl-0!',
-                className
-              )}
+              className={cn('group-data-[collapsible=icon]:pl-0!', className)}
             >
               <Avatar
                 className={cn('size-8 shrink-0 transition-all duration-300', {
@@ -98,7 +95,7 @@ export default function DashboardSidebarMenu({
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="text-fg-500 text-mono truncate text-[0.75rem]">
+                <span className="text-fg-tertiary text-mono truncate text-[0.75rem]">
                   TEAM
                 </span>
                 {selectedTeam ? (
@@ -109,7 +106,7 @@ export default function DashboardSidebarMenu({
                   <Skeleton className="h-4 w-full" />
                 )}
               </div>
-              <ChevronsUpDown className="text-fg-500 ml-auto size-4" />
+              <ChevronsUpDown className="text-fg-tertiary ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -134,7 +131,7 @@ export default function DashboardSidebarMenu({
                       <AvatarImage
                         src={team.profile_picture_url || undefined}
                       />
-                      <AvatarFallback className="bg-bg-400 group-focus:text-accent text-fg-500 text-xs">
+                      <AvatarFallback className="bg-bg-400 group-focus:text-accent text-fg-tertiary text-xs">
                         {team.name?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>

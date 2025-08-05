@@ -262,7 +262,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-xs normal-case">
-            <ListFilter className="text-fg-500 size-4" /> Filters{' '}
+            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

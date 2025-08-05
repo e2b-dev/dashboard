@@ -53,7 +53,7 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
             maximumFractionDigits: 2,
           }).format(latestVCPU || 0)}
         </p>
-        <span className="text-fg-500 text-xs">hours this month</span>
+        <span className="text-fg-tertiary text-xs">hours this month</span>
       </div>
       <VCPUChart data={result.data.compute} />
     </>

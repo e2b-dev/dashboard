@@ -38,7 +38,10 @@ export const menuContentStyles = cn(
   'data-[side=top]:slide-in-from-bottom-2'
 )
 
-export const menuLabelStyles = cn('font-mono text-xs uppercase', 'text-fg-500')
+export const menuLabelStyles = cn(
+  'font-mono text-xs uppercase',
+  'text-fg-tertiary'
+)
 
 export const menuSeparatorStyles = cn(
   '-mx-2 my-2',

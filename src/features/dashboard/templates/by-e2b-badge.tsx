@@ -12,7 +12,7 @@ export function ByE2BBadge() {
         </Badge>
       }
     >
-      <p className="text-fg-300 font-sans text-xs whitespace-break-spaces">
+      <p className="text-fg-secondary font-sans text-xs whitespace-break-spaces">
         This template was created by E2B. It is one of the default templates
         every user has access to.
       </p>

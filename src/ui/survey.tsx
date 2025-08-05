@@ -77,7 +77,7 @@ export function SurveyContent({
                         variant={'ghost'}
                         size="iconLg"
                         className={cn(
-                          'text-fg-500 hover:text-fg-300 size-14 rounded-xl hover:scale-[1.03]',
+                          'text-fg-tertiary hover:text-fg-secondary size-14 rounded-xl hover:scale-[1.03]',
                           {
                             'bg-bg-300 border-border-200 text-fg border':
                               responses[currentQuestionIndex] ===
@@ -153,7 +153,9 @@ export function SurveyContent({
 
   if (!survey) {
     return (
-      <p className="text-fg-500 text-center">No active surveys available</p>
+      <p className="text-fg-tertiary text-center">
+        No active surveys available
+      </p>
     )
   }
 

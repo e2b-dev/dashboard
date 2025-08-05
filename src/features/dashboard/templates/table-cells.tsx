@@ -122,7 +122,7 @@ export function ActionsCell({
           <Button
             variant="ghost"
             size="icon"
-            className="text-fg-500 size-5"
+            className="text-fg-tertiary size-5"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
           >
             {isUpdating ? (
@@ -175,7 +175,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="text-fg-500 truncate font-mono text-xs">
+    <div className="text-fg-tertiary truncate font-mono text-xs">
       {row.getValue('templateID')}
     </div>
   )
@@ -188,7 +188,7 @@ export function TemplateNameCell({
   return (
     <div
       className={cn('flex items-center gap-2 truncate font-mono font-medium', {
-        'text-fg-500': !getValue(),
+        'text-fg-tertiary': !getValue(),
       })}
     >
       <span>{(getValue() as string) ?? 'N/A'}</span>
@@ -202,7 +202,7 @@ export function CpuCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
   return (
-    <Badge className="text-fg-500 font-mono whitespace-nowrap">
+    <Badge className="text-fg-tertiary font-mono whitespace-nowrap">
       <Cpu className="text-contrast-2 size-2.5" />{' '}
       <span className="text-contrast-2">{cpuCount}</span> core
       {cpuCount > 1 ? 's' : ''}
@@ -215,7 +215,7 @@ export function MemoryCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
   return (
-    <Badge className="text-fg-500 font-mono whitespace-nowrap">
+    <Badge className="text-fg-tertiary font-mono whitespace-nowrap">
       <CgSmartphoneRam className="text-contrast-1 size-2.5" />{' '}
       <span className="text-contrast-1">{memoryMB.toLocaleString()} </span>
       MB
@@ -238,9 +238,9 @@ export function CreatedAtCell({
 
   return (
     <div className={cn('h-full truncate font-mono text-xs')}>
-      <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-500">{timezone}</span>
+      <span className="text-fg-tertiary">{timezone}</span>
     </div>
   )
 }
@@ -260,9 +260,9 @@ export function UpdatedAtCell({
 
   return (
     <div className={cn('h-full truncate font-mono text-xs')}>
-      <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-500">{timezone}</span>
+      <span className="text-fg-tertiary">{timezone}</span>
     </div>
   )
 }
@@ -272,7 +272,7 @@ export function VisibilityCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
     <Badge
-      className={cn('text-fg-500 font-mono whitespace-nowrap', {
+      className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
         'text-success': getValue(),
       })}
     >

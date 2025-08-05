@@ -28,7 +28,7 @@ const CommandDialog = ({ children, ...props }: DialogProps) => {
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0" hideCloseButton>
         <DialogTitle className="sr-only">Search through dashboard</DialogTitle>
-        <Command className="[&_[cmdk-group-heading]]:text-fg-500 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+        <Command className="[&_[cmdk-group-heading]]:text-fg-tertiary [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           {children}
         </Command>
       </DialogContent>
@@ -45,7 +45,7 @@ const CommandInput = React.forwardRef<
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        'placeholder:text-fg-500 flex h-8 w-full rounded-sm bg-transparent py-3 font-mono text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        'placeholder:text-fg-tertiary flex h-8 w-full rounded-sm bg-transparent py-3 font-mono text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
       {...props}
@@ -88,7 +88,7 @@ const CommandGroup = React.forwardRef<
   <CommandPrimitive.Group
     ref={ref}
     className={cn(
-      'text-fg [&_[cmdk-group-heading]]:text-fg-500 overflow-hidden [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase',
+      'text-fg [&_[cmdk-group-heading]]:text-fg-tertiary overflow-hidden [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase',
       className
     )}
     {...props}
@@ -131,7 +131,10 @@ const CommandShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
-      className={cn('text-fg-500 ml-auto text-xs tracking-widest', className)}
+      className={cn(
+        'text-fg-tertiary ml-auto text-xs tracking-widest',
+        className
+      )}
       {...props}
     />
   )

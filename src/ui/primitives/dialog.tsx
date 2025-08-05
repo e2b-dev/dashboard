@@ -52,7 +52,7 @@ const DialogContent = ({
       {children}
       {!props.hideCloseButton && (
         <DialogPrimitive.Close className="absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100">
-          <span className="text-fg-300 font-mono">[×]</span>
+          <span className="text-fg-secondary font-mono">[×]</span>
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       )}
@@ -116,7 +116,7 @@ const DialogDescription = ({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) => (
   <DialogPrimitive.Description
     data-slot="dialog-description"
-    className={cn('text-fg-500 text-sm', className)}
+    className={cn('text-fg-tertiary text-sm', className)}
     {...props}
   />
 )

@@ -227,7 +227,7 @@ const ChartTooltipContent = React.forwardRef<
                     // Layout and spacing
                     'flex w-full flex-wrap items-stretch gap-2',
                     // Icon styles
-                    '[&>svg]:text-fg-500 [&>svg]:h-2.5 [&>svg]:w-2.5',
+                    '[&>svg]:text-fg-tertiary [&>svg]:h-2.5 [&>svg]:w-2.5',
                     // Conditional alignment
                     indicator === 'dot' && 'items-center',
                   ].join(' ')

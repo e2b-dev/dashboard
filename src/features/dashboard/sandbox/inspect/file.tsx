@@ -33,7 +33,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
     >
       <FileIcon
         className={cn('size-3.5', {
-          'text-fg-500': !isSelected,
+          'text-fg-tertiary': !isSelected,
           'text-fg': isSelected,
         })}
       />

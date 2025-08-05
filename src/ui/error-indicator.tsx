@@ -41,7 +41,7 @@ export function ErrorIndicator({
         </CardDescription>
       </CardHeader>
       {message && (
-        <CardContent className="text-fg-500 mx-auto max-w-md pb-0 text-center">
+        <CardContent className="text-fg-tertiary mx-auto max-w-md pb-0 text-center">
           <p>{message}</p>
         </CardContent>
       )}
@@ -57,7 +57,7 @@ export function ErrorIndicator({
           className="w-full max-w-md gap-2"
         >
           <RefreshCcw
-            className={`text-fg-500 h-4 w-4 duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
+            className={`text-fg-tertiary h-4 w-4 duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
           />
           Refresh
         </Button>

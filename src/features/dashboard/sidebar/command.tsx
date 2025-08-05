@@ -52,10 +52,13 @@ export default function DashboardSidebarCommand({
         <SidebarMenuButton
           tooltip="Jump"
           variant={isSidebarOpen ? 'outline' : 'default'}
-          className={cn('text-fg-500 relative h-10 transition-all', className)}
+          className={cn(
+            'text-fg-tertiary relative h-10 transition-all',
+            className
+          )}
           onClick={() => setOpen(true)}
         >
-          <Terminal className="text-fg-500 size-4" />
+          <Terminal className="text-fg-tertiary size-4" />
           Jump to
           <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
         </SidebarMenuButton>
@@ -79,7 +82,7 @@ export default function DashboardSidebarCommand({
                 }}
                 className="group"
               >
-                <link.icon className="text-fg-500 group-[&[data-selected=true]]:text-accent !size-4" />
+                <link.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent !size-4" />
                 {link.label}
               </CommandItem>
             ))}

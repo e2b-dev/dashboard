@@ -53,7 +53,7 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
               {showWatcherError
                 ? watcherError
                 : 'Filesystem data is stale and is kept locally on your device.'}
-              <span className="text-fg-500">
+              <span className="text-fg-tertiary">
                 {' '}
                 Last updated: {lastUpdated?.toLocaleTimeString()}
               </span>

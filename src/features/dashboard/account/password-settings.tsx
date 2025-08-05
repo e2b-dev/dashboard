@@ -178,7 +178,7 @@ export function PasswordSettings({
             </Form>
           ) : (
             <>
-              <p className="text-fg-300 text-md">
+              <p className="text-fg-secondary text-md">
                 To change your password, you'll need to re-authenticate for
                 security.
               </p>
@@ -195,7 +195,7 @@ export function PasswordSettings({
 
         {clientShowPasswordForm && (
           <CardFooter className="bg-bg-100 justify-between gap-6">
-            <p className="text-fg-500 text-sm">
+            <p className="text-fg-tertiary text-sm">
               Your password must be at least 8 characters long.
             </p>
             <Button

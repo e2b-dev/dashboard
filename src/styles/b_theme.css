@@ -1,0 +1,204 @@
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* Border Radius */
+  --radius: 0.375rem;
+
+  /* Colors */
+  --color-border: var(--border);
+  --color-border-100: var(--border-100);
+  --color-border-200: var(--border-200);
+  --color-border-300: var(--border-300);
+  --color-border-400: var(--border-400);
+  --color-border-500: var(--border-500);
+
+  --color-bg: var(--bg);
+  --color-bg-100: var(--bg-100);
+  --color-bg-200: var(--bg-200);
+  --color-bg-300: var(--bg-300);
+  --color-bg-400: var(--bg-400);
+  --color-bg-500: var(--bg-500);
+
+  --color-fg: var(--fg);
+  --color-fg-100: var(--fg-100);
+  --color-fg-200: var(--fg-200);
+  --color-fg-300: var(--fg-300);
+  --color-fg-400: var(--fg-400);
+  --color-fg-500: var(--fg-500);
+
+  --color-accent: var(--accent);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+
+  --color-error: var(--error);
+  --color-error-100: var(--error-100);
+  --color-error-200: var(--error-200);
+  --color-error-300: var(--error-300);
+  --color-error-400: var(--error-400);
+  --color-error-500: var(--error-500);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-contrast-1: var(--contrast-1);
+  --color-contrast-2: var(--contrast-2);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-xs:
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-sm:
+    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-md:
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-lg:
+    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-xl:
+    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-2xl: 0 25px 50px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-inner: inset 0 2px 4px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+
+  --drop-shadow-xs:
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-sm:
+    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-md:
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-lg:
+    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-xl:
+    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-2xl: 0 25px 50px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+
+  --color-fd-background: var(--bg);
+  --color-fd-foreground: var(--fg);
+  --color-fd-muted: var(--bg-100);
+  --color-fd-muted-foreground: var(--fg-300);
+  --color-fd-popover: var(--bg);
+  --color-fd-popover-foreground: var(--fg);
+  --color-fd-card: var(--bg);
+  --color-fd-card-foreground: var(--fg);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-fg);
+  --color-fd-secondary: var(--bg-100);
+  --color-fd-secondary-foreground: var(--fg);
+  --color-fd-accent: var(--bg-100);
+  --color-fd-accent-foreground: var(--fg);
+  --color-fd-ring: var(--ring);
+
+  /* Fonts */
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-fira-code: 'Fira Code', monospace;
+
+  /* Animations */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes wave {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
+  @keyframes grid {
+    0% {
+      transform: translateY(-50%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-slide-in-from-bottom {
+    0% {
+      transform: translateY(5px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shiny-text {
+    0% {
+      background-position: calc(-100% - var(--shiny-width)) 0;
+    }
+    100% {
+      background-position: calc(100% + var(--shiny-width)) 0;
+    }
+  }
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-shimmer: shimmer 1s ease-in-out infinite;
+  --animate-grid: grid 30s linear infinite;
+  --animate-wave: wave 2s linear linear infinite;
+  --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s
+    cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shiny-text: shiny-text 0.5s linear infinite;
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  max-width: 1400px;
+}

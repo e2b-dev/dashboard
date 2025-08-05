@@ -114,7 +114,7 @@ export function NameCard({ className }: NameCardProps) {
                     <AnimatePresence initial={false}>
                       {team.transformed_default_name && (
                         <motion.span
-                          className="text-fg-500 ml-0.5 text-xs"
+                          className="text-fg-tertiary ml-0.5 text-xs"
                           animate={{
                             opacity: 1,
                             filter: 'blur(0px)',

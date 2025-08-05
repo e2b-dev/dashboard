@@ -31,9 +31,9 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
       <DropdownMenuTrigger className={className} asChild>
         <Button variant="ghost" size={'iconSm'}>
           {resolvedTheme === 'light' ? (
-            <Sun key="light" size={ICON_SIZE} className={'text-fg-300'} />
+            <Sun key="light" size={ICON_SIZE} className={'text-fg-secondary'} />
           ) : (
-            <Moon key="dark" size={ICON_SIZE} className={'text-fg-300'} />
+            <Moon key="dark" size={ICON_SIZE} className={'text-fg-secondary'} />
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -46,21 +46,21 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
             className="flex items-center gap-2"
             value="light"
           >
-            <Sun className="text-fg-300 size-3.5" />
+            <Sun className="text-fg-secondary size-3.5" />
             <span>Light</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem
             className="flex items-center gap-2"
             value="dark"
           >
-            <Moon className="text-fg-300 size-3.5" />
+            <Moon className="text-fg-secondary size-3.5" />
             <span>Dark</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem
             className="flex items-center gap-2"
             value="system"
           >
-            <Laptop className="text-fg-300 size-3.5" />
+            <Laptop className="text-fg-secondary size-3.5" />
             <span>System</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

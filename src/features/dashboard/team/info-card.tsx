@@ -41,11 +41,11 @@ export function InfoCard({ className }: InfoCardProps) {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="muted">Team ID</Badge>
-              <span className="text-fg-500">{team.id}</span>
+              <span className="text-fg-tertiary">{team.id}</span>
               <CopyButton
                 value={team.id}
                 variant="ghost"
-                className="text-fg-500 size-5"
+                className="text-fg-tertiary size-5"
               />
             </div>
           </div>

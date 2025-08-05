@@ -29,7 +29,9 @@ export default function Header() {
             </Avatar>
             <div>
               <span className="text-fg-100 font-mono">{tab.title}</span>
-              <p className="text-fg-500 text-[0.65rem]">{tab.description}</p>
+              <p className="text-fg-tertiary text-[0.65rem]">
+                {tab.description}
+              </p>
             </div>
           </Link>
         </Button>

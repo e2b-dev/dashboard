@@ -48,7 +48,7 @@ const SelectTrigger = React.forwardRef<
       'focus:bg-bg-100 active:translate-y-[1px]',
       'disabled:cursor-not-allowed disabled:opacity-50',
       '[&>span]:line-clamp-1',
-      'data-[placeholder]:text-fg-300',
+      'data-[placeholder]:text-fg-secondary',
       className,
       props.classNames?.trigger
     )}
@@ -56,7 +56,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <ChevronsUpDown
-      className={cn('text-fg-300 ml-2 size-3.5', props.classNames?.icon)}
+      className={cn('text-fg-secondary ml-2 size-3.5', props.classNames?.icon)}
     />
   </SelectPrimitive.Trigger>
 ))

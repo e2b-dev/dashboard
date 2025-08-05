@@ -19,7 +19,7 @@ export default function Title() {
         value={sandboxInfo.sandboxID}
         size="icon"
         variant="ghost"
-        className="text-fg-300"
+        className="text-fg-secondary"
       />
     </div>
   )

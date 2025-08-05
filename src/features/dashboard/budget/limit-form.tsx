@@ -135,7 +135,7 @@ export default function LimitForm({
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel className="text-accent text-xs">
-                    $ <span className="text-fg-500">[USD]</span>
+                    $ <span className="text-fg-tertiary">[USD]</span>
                   </FormLabel>
                   <FormControl>
                     <NumberInput

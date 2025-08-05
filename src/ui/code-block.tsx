@@ -1,7 +1,5 @@
 'use client'
-import { Check, Copy } from 'lucide-react'
 import {
-  type ButtonHTMLAttributes,
   type HTMLAttributes,
   type ReactNode,
   forwardRef,
@@ -9,14 +7,13 @@ import {
   useRef,
 } from 'react'
 
-import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
-import { cn } from '@/lib/utils'
-import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
-import { buttonVariants } from './primitives/button'
-import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useShikiTheme } from '@/configs/shiki'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { cn } from '@/lib/utils'
+import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
 import ShikiHighlighter from 'react-shiki'
 import CopyButton from './copy-button'
+import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
 
 export type CodeBlockProps = HTMLAttributes<HTMLElement> & {
   /**
@@ -107,7 +104,7 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
           <div className="bg-bg-100 flex h-8 flex-row items-center gap-2 border-b px-3 py-1">
             {icon ? (
               <div
-                className="text-fg-300 [&_svg]:size-3"
+                className="text-fg-secondary [&_svg]:size-3"
                 dangerouslySetInnerHTML={
                   typeof icon === 'string'
                     ? {

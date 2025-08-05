@@ -35,7 +35,7 @@ function DataTableHead<TData, TValue>({
       className={cn(
         'relative flex h-10 items-center p-2 text-left align-middle',
         'font-mono tracking-wider uppercase',
-        'text-fg-300 font-medium',
+        'text-fg-secondary font-medium',
         '[&:has([role=checkbox])]:pr-0',
         {
           'pl-0': header.column.getCanSort(),
@@ -54,7 +54,7 @@ function DataTableHead<TData, TValue>({
             size="icon"
             onClick={() => header.column.toggleSorting(undefined, true)}
             className={cn(
-              'text-fg-500 ml-2 size-5 min-w-5',
+              'text-fg-tertiary ml-2 size-5 min-w-5',
               sorting !== undefined && 'text-accent'
             )}
           >
@@ -232,7 +232,7 @@ function DataTablePagination({
   return (
     <div className={cn('flex items-center gap-8 border-t p-2 px-3', className)}>
       <div className="flex items-center gap-2 text-xs">
-        <div className="text-fg-300">
+        <div className="text-fg-secondary">
           Page {pageIndex + 1} of {pageCount}
         </div>
         <div className="flex items-center gap-1">
@@ -271,7 +271,7 @@ function DataTablePagination({
         </div>
       </div>
 
-      <div className="text-fg-300 flex items-center gap-2 text-xs">
+      <div className="text-fg-secondary flex items-center gap-2 text-xs">
         <Select
           value={pageSize.toString()}
           onValueChange={(value) => onPageSizeChange(Number(value))}

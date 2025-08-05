@@ -20,7 +20,7 @@ export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
       onOpenChange={onOpenChange}
       title="Re-authentication Required"
       description={
-        <p className="text-fg-300 text-md mt-2">
+        <p className="text-fg-secondary text-md mt-2">
           To change your password, you'll need to{' '}
           <strong>re-authenticate</strong> for security.
         </p>

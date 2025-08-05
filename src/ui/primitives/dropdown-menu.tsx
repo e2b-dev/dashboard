@@ -199,7 +199,10 @@ const DropdownMenuShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
-      className={cn('text-fg-500 ml-auto text-xs tracking-widest', className)}
+      className={cn(
+        'text-fg-tertiary ml-auto text-xs tracking-widest',
+        className
+      )}
       {...props}
     />
   )

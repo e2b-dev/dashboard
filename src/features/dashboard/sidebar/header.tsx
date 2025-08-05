@@ -56,7 +56,12 @@ export default function DashboardSidebarHeader() {
           )}
         </AnimatePresence>
         <ShortcutTooltip keys={['ctrl', 's']}>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+          <Button
+            variant="ghost"
+            className="text-fg-tertiary"
+            size="icon"
+            onClick={toggleSidebar}
+          >
             {isOpen ? (
               <ArrowLeftToLine className="size-4" />
             ) : (

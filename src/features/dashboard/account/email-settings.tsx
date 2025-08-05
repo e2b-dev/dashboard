@@ -155,7 +155,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
           </CardContent>
 
           <CardFooter className="bg-bg-100 justify-between">
-            <p className="text-fg-500 text-sm">
+            <p className="text-fg-tertiary text-sm">
               Has to be a valid e-mail address.
             </p>
             <Button

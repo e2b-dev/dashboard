@@ -11,7 +11,7 @@ function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
         'font-mono text-xs tracking-wider',
         'min-h-16 rounded-sm border',
 
-        'placeholder:text-fg-500 placeholder:font-mono',
+        'placeholder:text-fg-tertiary placeholder:font-mono',
         'focus:[border-bottom:1px_solid_var(--accent)] focus:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
 

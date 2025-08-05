@@ -15,7 +15,7 @@ export default function SandboxInspectHeader({
   return (
     <div className={cn('flex h-full w-full items-center gap-3', className)}>
       <div className="flex h-full w-full items-center gap-2">
-        <span className="text-fg-500 ml-2">{'$'}</span>
+        <span className="text-fg-tertiary ml-2">{'$'}</span>
         <RootPathInput className="w-full" initialValue={rootPath} />
       </div>
     </div>

@@ -58,7 +58,7 @@ export default function SandboxInspectIncompatible({
               <AlertTriangle className="text-warning h-5 w-5" />
               <CardTitle className="text-lg">Incompatible template</CardTitle>
             </div>
-            <CardDescription className="text-fg-300 leading-5">
+            <CardDescription className="text-fg-secondary leading-5">
               This sandbox used a template that is incompatible with the
               filesystem inspector. To use the inspector in any new sandbox you
               launch,{' '}
@@ -75,7 +75,7 @@ export default function SandboxInspectIncompatible({
                   <CodeBlock className="-ml-4" lang="bash">
                     {`cd path/to/your/template`}
                   </CodeBlock>
-                  <div className="text-fg-300 -ml-4 inline-block">
+                  <div className="text-fg-secondary -ml-4 inline-block">
                     The folder should contain an{' '}
                     <Badge className={codeClassNames} variant="outline">
                       e2b.toml
@@ -86,7 +86,7 @@ export default function SandboxInspectIncompatible({
 
                 <li className="text-fg flex-col space-y-3 marker:font-semibold">
                   <p className="font-semibold">Rebuild the template</p>
-                  <div className="text-fg-300 -ml-4 inline-block leading-6">
+                  <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
                     <Badge className={codeClassNames} variant="outline">
                       e2b template build
@@ -110,7 +110,7 @@ export default function SandboxInspectIncompatible({
                   <p className="font-semibold">
                     New sandboxes have filesystem inspector
                   </p>
-                  <div className="text-fg-300 -ml-4 inline-block leading-6">
+                  <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Any new sandbox you launch will have filesystem inspector
                     enabled.{' '}
                     <b>This won&apos;t affect already started sandboxes.</b>
@@ -123,7 +123,7 @@ export default function SandboxInspectIncompatible({
             <Button
               variant="ghost"
               size="slate"
-              className="text-fg-500 hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
+              className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
               <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>

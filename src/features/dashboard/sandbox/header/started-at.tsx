@@ -40,7 +40,7 @@ export default function StartedAt() {
         value={startedAt}
         variant="ghost"
         size="slate"
-        className="text-fg-300 size-3.5"
+        className="text-fg-secondary size-3.5"
       />
     </div>
   )

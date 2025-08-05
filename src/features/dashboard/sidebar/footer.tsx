@@ -18,7 +18,7 @@ export default function DashboardSidebarFooter() {
         <SidebarMenuItem key="github">
           <SidebarMenuButton asChild tooltip="GitHub">
             <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-              <Github className="text-fg-500 size-4" />
+              <Github className="size-4" />
               GitHub
               <ExternalIcon className="ml-auto size-4" />
             </Link>
@@ -27,7 +27,7 @@ export default function DashboardSidebarFooter() {
         <SidebarMenuItem key="docs">
           <SidebarMenuButton asChild tooltip="Documentation">
             <Link href="/docs" target="_blank" rel="noopener noreferrer">
-              <Book className="text-fg-500 size-4" />
+              <Book className="size-4" />
               Documentation
               <ExternalIcon className="ml-auto size-4" />
             </Link>

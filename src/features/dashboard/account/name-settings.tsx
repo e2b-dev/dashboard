@@ -108,7 +108,7 @@ export function NameSettings({ className }: NameSettingsProps) {
           </CardContent>
 
           <CardFooter className="bg-bg-100 justify-between">
-            <p className="text-fg-500 text-sm">Max 32 characters.</p>
+            <p className="text-fg-tertiary text-sm">Max 32 characters.</p>
             <Button
               loading={isPending}
               disabled={form.watch('name') === user?.user_metadata?.name}

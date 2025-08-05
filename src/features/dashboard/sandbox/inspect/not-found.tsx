@@ -78,7 +78,7 @@ export default function SandboxInspectNotFound() {
               {isRunning ? 'Empty Directory' : 'Not Connected'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-fg-500 text-center">
+          <CardContent className="text-fg-tertiary text-center">
             <p>
               {isRunning
                 ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
@@ -95,7 +95,7 @@ export default function SandboxInspectNotFound() {
                     onClick={() => setRootPath('')}
                     disabled={isPending && pendingPath === ''}
                   >
-                    <Home className="text-fg-500 h-4 w-4" />
+                    <Home className="text-fg-tertiary h-4 w-4" />
                     Reset
                   </Button>
                   <Button
@@ -104,7 +104,7 @@ export default function SandboxInspectNotFound() {
                     onClick={() => setRootPath('/')}
                     disabled={isPending && pendingPath === '/'}
                   >
-                    <ArrowUp className="text-fg-500 h-4 w-4" />
+                    <ArrowUp className="text-fg-tertiary h-4 w-4" />
                     To Root
                   </Button>
                 </div>
@@ -119,9 +119,12 @@ export default function SandboxInspectNotFound() {
                   disabled={isResetPending}
                 >
                   <RefreshCw
-                    className={cn('text-fg-500 h-4 w-4 transition-transform', {
-                      'animate-spin': isResetPending,
-                    })}
+                    className={cn(
+                      'text-fg-tertiary h-4 w-4 transition-transform',
+                      {
+                        'animate-spin': isResetPending,
+                      }
+                    )}
                   />
                   Refresh
                 </Button>
@@ -134,7 +137,7 @@ export default function SandboxInspectNotFound() {
                 }
                 className="w-full gap-2"
               >
-                <ArrowLeft className="text-fg-500 h-4 w-4" />
+                <ArrowLeft className="text-fg-tertiary h-4 w-4" />
                 Back to Sandboxes
               </Button>
             )}

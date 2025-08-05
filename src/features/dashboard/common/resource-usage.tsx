@@ -56,14 +56,14 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   return (
     <span
       className={cn(
-        'text-fg-500 inline w-full truncate font-mono whitespace-nowrap',
+        'text-fg-tertiary inline w-full truncate font-mono whitespace-nowrap',
         classNames?.wrapper
       )}
     >
       {hasMetrics ? (
         <>
           <span className={textClassName}>{roundedPercentage}% </span>
-          <span className={cn('text-fg-500', classNames?.dot)}>·</span>
+          <span className={cn('text-fg-tertiary', classNames?.dot)}>·</span>
           {!isCpu && (
             <>
               <span className={textClassName}> {displayValue}</span> /
@@ -72,8 +72,8 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         </>
       ) : (
         <>
-          <span className="text-fg-500">n/a </span>
-          <span className={cn('text-fg-500', classNames?.dot)}>·</span>
+          <span className="text-fg-tertiary">n/a </span>
+          <span className={cn('text-fg-tertiary', classNames?.dot)}>·</span>
         </>
       )}
       <span className="text-contrast-1"> {totalValue} </span> {unit}

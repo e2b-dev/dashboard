@@ -72,7 +72,7 @@ export function DiskUsageCell({
 
 export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
   return (
-    <div className="text-fg-500 truncate font-mono text-xs">
+    <div className="text-fg-tertiary truncate font-mono text-xs">
       {getValue() as string}
     </div>
   )
@@ -115,12 +115,12 @@ export function MetadataCell({
   const json = useMemo(() => JSON.parse(value), [value])
 
   if (value.trim() === '{}') {
-    return <span className="text-fg-500">n/a</span>
+    return <span className="text-fg-tertiary">n/a</span>
   }
 
   return (
     <JsonPopover
-      className="text-fg-500 hover:text-fg hover:underline"
+      className="text-fg-tertiary hover:text-fg hover:underline"
       json={json}
     >
       {value}
@@ -143,9 +143,9 @@ export function StartedAtCell({
 
   return (
     <div className="h-full truncate font-mono text-xs">
-      <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-500">{timezone}</span>
+      <span className="text-fg-tertiary">{timezone}</span>
     </div>
   )
 }

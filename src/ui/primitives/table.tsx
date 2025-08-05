@@ -80,7 +80,7 @@ const TableHead = React.forwardRef<
     className={cn(
       'h-10 px-4 text-left align-middle',
       'font-mono uppercase tracking-wider',
-      'font-medium text-fg-300',
+      'font-medium text-fg-secondary',
       '[&:has([role=checkbox])]:pr-0',
       className
     )}
@@ -116,7 +116,7 @@ const TableCaption = React.forwardRef<
     ref={ref}
     className={cn(
       'mt-4',
-      'font-mono text-sm text-fg-300',
+      'font-mono text-sm text-fg-secondary',
       'opacity-70',
       className
     )}
