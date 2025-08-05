@@ -18,7 +18,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           'font-mono text-xs tracking-wider',
 
           'placeholder:text-fg-tertiary placeholder:font-mono',
-          'focus:[border-bottom:1px_solid_var(--accent)] focus:outline-none',
+          'focus:[border-bottom:1px_solid_var(--accent-main-highlight)] focus:outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
 
           'file:border-0 file:bg-transparent',
@@ -27,8 +27,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           'file:border-2 file:border-dashed',
           'file:hover:bg-bg-300/80',
 
-          'autofill:border-accent-100/80 autofill:border-b-accent autofill:border-solid autofill:shadow-[inset_0_0_0px_1000px_hsl(from_var(--accent-100)_h_s_l/0.2)]',
-          'autofill:bg-accent-100/30 autofill:text-fg',
+          'autofill:border-accent-main-highlight/50 autofill:border-b-accent-main-highlight autofill:border-solid autofill:shadow-[inset_0_0_0px_1000px_hsl(from_var(--accent-main-highlight)_h_s_l/0.2)]',
+          'autofill:bg-accent-main-bg autofill:text-fg',
 
           className
         )}
