@@ -25,11 +25,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, hideUnderline = false, variant = 'slate', ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        cardVariants({ variant: variant }),
-        'rounded-sm',
-        className
-      )}
+      className={cn(cardVariants({ variant: variant }), '', className)}
       {...props}
     />
   )

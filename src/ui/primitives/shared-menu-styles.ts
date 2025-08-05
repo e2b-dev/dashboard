@@ -4,7 +4,7 @@ import { cva } from 'class-variance-authority'
 
 export const menuItemVariants = cva(
   [
-    'relative flex cursor-pointer rounded-sm select-none items-center gap-2',
+    'relative flex cursor-pointer  select-none items-center gap-2',
     'px-2 py-1.5',
     'font-mono text-xs',
     'outline-none',
@@ -26,7 +26,7 @@ export const menuItemVariants = cva(
 )
 
 export const menuContentStyles = cn(
-  'z-50 min-w-[8rem] overflow-hidden rounded-sm p-2',
+  'z-50 min-w-[8rem] overflow-hidden  p-2',
   cardVariants({ variant: 'layer' }),
   'shadow-sm',
   'data-[state=open]:animate-in data-[state=closed]:animate-out',

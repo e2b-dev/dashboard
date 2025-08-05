@@ -9,7 +9,7 @@ function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
       className={cn(
         'bg-bg flex w-full px-3 py-2',
         'font-mono text-xs tracking-wider',
-        'min-h-16 rounded-sm border',
+        'min-h-16  border',
 
         'placeholder:text-fg-tertiary placeholder:font-mono',
         'focus:[border-bottom:1px_solid_var(--accent)] focus:outline-none',

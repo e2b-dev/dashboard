@@ -68,7 +68,7 @@ export function SandboxesHeader({
             </Badge>
             {showFilteredRowCount && (
               <Badge
-                variant="contrast-1"
+                variant="info"
                 className="h-min w-fit gap-2 font-bold uppercase"
               >
                 {table.getFilteredRowModel().rows.length} filtered
