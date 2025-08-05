@@ -34,8 +34,8 @@ function DataTableHead<TData, TValue>({
     <div
       className={cn(
         'relative flex h-10 items-center p-2 text-left align-middle',
-        'font-mono prose-label-highlight uppercase',
-        'text-fg-secondary',
+        'font-mono tracking-wider uppercase',
+        'text-fg-secondary font-medium',
         '[&:has([role=checkbox])]:pr-0',
         {
           'pl-0': header.column.getCanSort(),
@@ -55,7 +55,7 @@ function DataTableHead<TData, TValue>({
             onClick={() => header.column.toggleSorting(undefined, true)}
             className={cn(
               'text-fg-tertiary ml-2 size-5 min-w-5',
-              sorting !== undefined && 'text-accent-main-highlight '
+              sorting !== undefined && 'text-accent'
             )}
           >
             {sorting === undefined ? (

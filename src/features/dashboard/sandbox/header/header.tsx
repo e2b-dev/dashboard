@@ -96,7 +96,7 @@ export default async function SandboxDetailsHeader({
         <div className="flex flex-col gap-1">
           <Link
             href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}
-            className="!text-fg-tertiary hover:!text-fg flex items-center gap-1 prose-body-highlight transition-colors"
+            className="text-fg-secondary hover:text-fg flex items-center gap-1.5 transition-colors"
             prefetch
             shallow
           >
@@ -133,7 +133,7 @@ function HeaderItem({ label, value }: HeaderItemProps) {
   return (
     <div className="flex flex-col gap-2">
       <span className="text-fg-tertiary text-xs uppercase">{label}</span>
-      {typeof value === 'string' ? <p className="">{value}</p> : value}
+      {typeof value === 'string' ? <p className="text-sm">{value}</p> : value}
     </div>
   )
 }

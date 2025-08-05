@@ -186,7 +186,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="truncate font-mono text-fg-tertiary">
+    <div className="text-fg-tertiary truncate font-mono text-xs">
       {row.getValue('templateID')}
     </div>
   )
@@ -198,7 +198,7 @@ export function TemplateNameCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
     <div
-      className={cn('flex items-center gap-2 truncate', {
+      className={cn('flex items-center gap-2 truncate font-mono font-medium', {
         'text-fg-tertiary': !getValue(),
       })}
     >
@@ -214,14 +214,26 @@ export function CpuCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
-  return <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+  return (
+    <Badge className="text-fg-tertiary font-mono whitespace-nowrap">
+      <Cpu className="text-contrast-2 size-2.5" />{' '}
+      <span className="text-contrast-2">{cpuCount}</span> core
+      {cpuCount > 1 ? 's' : ''}
+    </Badge>
+  )
 }
 
 export function MemoryCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
-  return <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+  return (
+    <Badge className="text-fg-tertiary font-mono whitespace-nowrap">
+      <CgSmartphoneRam className="text-contrast-1 size-2.5" />{' '}
+      <span className="text-contrast-1">{memoryMB.toLocaleString()} </span>
+      MB
+    </Badge>
+  )
 }
 
 export function CreatedAtCell({
@@ -272,9 +284,9 @@ export function VisibilityCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <span
+    <Badge
       className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
-        'text-accent-positive-highlight': getValue(),
+        'text-success': getValue(),
       })}
     >
       {getValue() ? 'Public' : 'Private'}

@@ -108,11 +108,10 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
             src={team?.profile_picture_url || ''}
             alt={`${team?.name}'s profile picture`}
           />
-          <AvatarFallback className="bg-bg-hover relative text-2xl ">
+          <AvatarFallback className="bg-bg-200 relative text-2xl font-semibold">
             <ImagePlusIcon className="text-fg-tertiary" />
             <Badge className="text-fg-secondary absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap uppercase backdrop-blur-md">
-              Upload{' '}
-              <ChevronsUp className="text-accent-main-highlight size-4" />
+              Upload <ChevronsUp className="text-accent size-4" />
             </Badge>
           </AvatarFallback>
           <AnimatePresence>

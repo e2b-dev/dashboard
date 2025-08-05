@@ -128,7 +128,7 @@ function TextContent({
   if (content.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
-        <span className="text-fg-secondary ">This file is empty.</span>
+        <span className="text-fg-secondary text-sm">This file is empty.</span>
         <Button variant="warning" size="sm" onClick={onDownload}>
           Download
           <Download className="ml-1.5 h-4 w-4" />
@@ -182,7 +182,9 @@ interface UnreadableContent {
 function UnreadableContent({ onDownload }: UnreadableContent) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3">
-      <span className="text-fg-secondary ">This file is not readable.</span>
+      <span className="text-fg-secondary text-sm">
+        This file is not readable.
+      </span>
       <Button variant="warning" size="sm" onClick={onDownload}>
         Download
         <Download className="ml-1.5 h-4 w-4" />

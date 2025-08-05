@@ -35,7 +35,7 @@ export function SidebarItem({ label, href, icon }: SidebarItemProps) {
             className={cn(
               'flex w-full items-center gap-1 px-2 py-1',
               pathname === href
-                ? 'text-accent-main-highlight '
+                ? 'text-accent'
                 : 'text-fg-secondary hover:text-fg'
             )}
           >
