@@ -45,7 +45,7 @@ const SelectTrigger = React.forwardRef<
       'flex h-10 w-full items-center justify-between ',
       'bg-bg cursor-pointer border border-dashed px-3 py-2 text-sm',
       'transition-colors outline-none',
-      'focus:bg-bg-100 active:translate-y-[1px]',
+      'focus:bg-bg-1 active:translate-y-[1px]',
       'disabled:cursor-not-allowed disabled:opacity-50',
       '[&>span]:line-clamp-1',
       'data-[placeholder]:text-fg-secondary',

@@ -95,7 +95,7 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
         )}
       >
         {title ? (
-          <div className="bg-bg-100 flex h-8 flex-row items-center gap-2 border-b px-3 py-1">
+          <div className="bg-bg-1 flex h-8 flex-row items-center gap-2 border-b px-3 py-1">
             {icon ? (
               <div
                 className="text-fg-secondary [&_svg]:size-3"

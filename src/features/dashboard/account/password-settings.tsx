@@ -194,7 +194,7 @@ export function PasswordSettings({
         </CardContent>
 
         {clientShowPasswordForm && (
-          <CardFooter className="bg-bg-100 justify-between gap-6">
+          <CardFooter className="bg-bg-1 justify-between gap-6">
             <p className="text-fg-tertiary text-sm">
               Your password must be at least 8 characters long.
             </p>

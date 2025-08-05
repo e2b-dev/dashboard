@@ -47,9 +47,9 @@ export function ChartPlaceholder({
           'h-50 w-full',
           classNames?.container,
           // Apply fading gradient styles ONLY when not loading (empty content is shown)
-          'before:from-bg-100 before:to-bg-100 relative before:absolute before:inset-0 before:z-20 before:bg-gradient-to-r before:via-transparent',
+          'before:from-bg-1 before:to-bg-1 relative before:absolute before:inset-0 before:z-20 before:bg-gradient-to-r before:via-transparent',
           // Add bottom fade gradient
-          'after:from-bg-100 after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-16 after:bg-gradient-to-t after:to-transparent'
+          'after:from-bg-1 after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-16 after:bg-gradient-to-t after:to-transparent'
         )}
       >
         <AreaChart data={mockData} {...commonChartProps}>
@@ -64,7 +64,7 @@ export function ChartPlaceholder({
               >
                 <stop
                   offset="0%"
-                  stopColor="var(--color-bg-100)"
+                  stopColor="var(--color-bg-1)"
                   stopOpacity="0.1"
                 />
                 <stop
@@ -84,7 +84,7 @@ export function ChartPlaceholder({
                 />
                 <stop
                   offset="100%"
-                  stopColor="var(--color-bg-100)"
+                  stopColor="var(--color-bg-1)"
                   stopOpacity="0.1"
                 />
                 <animateTransform

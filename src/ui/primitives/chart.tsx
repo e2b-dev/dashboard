@@ -64,9 +64,9 @@ const ChartContainer = React.forwardRef<
             '[&_.recharts-layer]:outline-none',
             // Grid and background styles
             "[&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border",
-            '[&_.recharts-radial-bar-background-sector]:fill-bg-100',
+            '[&_.recharts-radial-bar-background-sector]:fill-bg-1',
             // Tooltip and cursor styles
-            '[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-bg-100',
+            '[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-bg-1',
             "[&_.recharts-reference-line_[stroke='#ccc']]:stroke-border",
             // Sector styles
             "[&_.recharts-sector[stroke='#fff']]:stroke-transparent",

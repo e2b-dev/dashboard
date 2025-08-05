@@ -142,7 +142,7 @@ export function Tabs({
       {...props}
     >
       <Primitive.TabsList
-        className={cn('bg-bg-100 w-full justify-start border-b-0')}
+        className={cn('bg-bg-1 w-full justify-start border-b-0')}
       >
         {values.map((v, i) => {
           const Icon = IconsMap[v] || null

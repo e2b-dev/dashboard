@@ -32,7 +32,7 @@ export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
         <UserAccessToken className="max-w-lg" />
       </CardContent>
 
-      <CardFooter className="bg-bg-100 justify-between gap-6">
+      <CardFooter className="bg-bg-1 justify-between gap-6">
         <p className="text-fg-tertiary text-sm">
           Keep it safe, as it can be used to authenticate with E2B services.
         </p>

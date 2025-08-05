@@ -41,7 +41,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           type={isVisible ? 'text' : 'password'}
           value={token ?? '••••••••••••••••'}
           readOnly
-          className="bg-bg-100 font-mono"
+          className="bg-bg-1 font-mono"
         />
         <Button
           type="button"
