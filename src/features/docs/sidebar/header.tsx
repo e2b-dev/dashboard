@@ -23,7 +23,7 @@ export default function Header() {
             className="group flex w-full items-center justify-start gap-2"
           >
             <Avatar className="size-9">
-              <AvatarFallback className="bg-bg-100 text-fg">
+              <AvatarFallback className="text-fg">
                 <tab.icon className="size-4" />
               </AvatarFallback>
             </Avatar>
