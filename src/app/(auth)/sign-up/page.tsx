@@ -178,7 +178,7 @@ export default function SignUp() {
         </form>
       </Form>
 
-      <p className="text-fg-secondary mt-3  leading-6">
+      <p className="text-fg-secondary mt-3 text-sm leading-6">
         Already have an account?{' '}
         <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
           Sign in

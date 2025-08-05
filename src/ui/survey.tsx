@@ -77,7 +77,7 @@ export function SurveyContent({
                         variant={'ghost'}
                         size="iconLg"
                         className={cn(
-                          'text-fg-tertiary hover:text-fg-secondary size-14 hover:scale-[1.03]',
+                          'text-fg-tertiary hover:text-fg-secondary size-14 rounded-xl hover:scale-[1.03]',
                           {
                             'bg-bg-highlight focus:bg-bg-highlight text-fg border':
                               responses[currentQuestionIndex] ===

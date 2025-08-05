@@ -83,7 +83,7 @@ export default function SidebarItem({ item, level = 0 }: SidebarItemProps) {
           <span
             className={cn(
               'text-fg-tertiary truncate font-sans',
-              active && 'text-accent-main-highlight '
+              active && 'text-accent'
             )}
           >
             {item.name}
@@ -132,8 +132,8 @@ export default function SidebarItem({ item, level = 0 }: SidebarItemProps) {
       href={item.url}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'slate' }),
-        'group text-fg-tertiary hover:text-fg w-full justify-start pr-6 font-sans  normal-case',
-        active && 'text-accent-main-highlight hover:text-accent-main-highlight '
+        'group text-fg-tertiary hover:text-fg w-full justify-start pr-6 font-sans text-sm normal-case',
+        active && 'text-accent hover:text-accent'
       )}
     >
       {item.icon}

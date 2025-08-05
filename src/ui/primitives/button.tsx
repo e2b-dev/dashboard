@@ -16,8 +16,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: [
-          'bg-bg-inverted text-fg-inverted',
-          'hover:bg-bg-inverted-hover focus:bg-bg-inverted-hover',
+          'bg-fg text-fg-inverted',
+          'hover:bg-fg-100 focus:bg-fg-100',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         accent: [
@@ -31,8 +31,8 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         muted: [
-          'border bg-bg-hover text-fg-secondary hover:text-fg',
-          'hover:bg-bg-hover/90 focus:bg-bg-hover/90',
+          'border border-border-200 bg-bg-200 text-fg-secondary hover:text-fg',
+          'hover:bg-bg-200/90 focus:bg-bg-200/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         error: [

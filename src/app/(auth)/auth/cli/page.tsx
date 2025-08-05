@@ -51,7 +51,7 @@ async function handleCLIAuth(
 // UI Components
 function CLIIcons() {
   return (
-    <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
+    <p className="flex items-center justify-center gap-4 text-3xl font-bold tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
         <LaptopIcon size={50} />
       </span>

@@ -79,11 +79,7 @@ export default function DashboardSidebarMenu({
             <SidebarMenuButton
               variant="outline"
               size="lg"
-              className={cn(
-                'h-14 flex',
-                'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:!px-0',
-                className
-              )}
+              className={cn('group-data-[collapsible=icon]:pl-0!', className)}
             >
               <Avatar
                 className={cn(
@@ -102,8 +98,8 @@ export default function DashboardSidebarMenu({
                   {selectedTeam?.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left  leading-tight">
-                <span className="text-fg-tertiary font-mono truncate prose-label">
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="text-fg-tertiary text-mono truncate text-[0.75rem]">
                   TEAM
                 </span>
                 {selectedTeam ? (
@@ -139,7 +135,7 @@ export default function DashboardSidebarMenu({
                       <AvatarImage
                         src={team.profile_picture_url || undefined}
                       />
-                      <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
+                      <AvatarFallback className="bg-bg-400 group-focus:text-accent text-fg-tertiary text-xs">
                         {team.name?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>

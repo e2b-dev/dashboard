@@ -8,16 +8,15 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-bg-highlight text-fg-secondary',
-        positive: 'bg-accent-positive-bg text-accent-positive-highlight',
-        warning: 'bg-accent-warning-bg text-accent-warning-highlight',
-        info: 'bg-accent-info-bg text-accent-info-highlight',
-        error: 'bg-accent-error-bg text-accent-error-highlight',
-        code: 'bg-fill ring-1 ring-stroke text-fg-secondary',
-      },
-      can: {
-        none: '',
-        hover: 'hover:ring-1 ring-[currentColor]',
+        default: 'border-transparent bg-fg text-fg-inverted hover:bg-fg-200',
+        muted: 'bg-bg-200 text-fg-tertiary',
+        success: 'bg-success/20 text-success',
+        warning: 'bg-warning/20 text-warning',
+        error: 'bg-error/20 text-error',
+        accent: 'bg-accent/15 text-accent',
+        'contrast-1': 'bg-contrast-1/20 text-contrast-1',
+        'contrast-2': 'bg-contrast-2/20 text-contrast-2',
+        outline: 'border border-border-200 bg-bg-200',
       },
       size: {
         default: 'h-5 px-1 gap-1',

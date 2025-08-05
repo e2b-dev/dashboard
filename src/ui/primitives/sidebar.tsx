@@ -262,7 +262,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="bg-bg group-data-[variant=floating]:border-stroke flex h-full w-full flex-col group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+          className="bg-bg group-data-[variant=floating]:border-stroke flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
         >
           {children}
         </div>
@@ -427,8 +427,8 @@ function SidebarGroupLabel({
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        'text-fg-tertiary prose-label-highlight ring-ring flex h-8 shrink-0 items-center px-2 font-mono text-xs uppercase outline-hidden transition-[height,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-        'group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:h-0',
+        '!text-fg-tertiary text-label-highlight ring-ring flex h-8 shrink-0 items-center rounded-md px-2 font-mono text-xs uppercase outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
         className
       )}
       {...props}
@@ -448,7 +448,7 @@ function SidebarGroupAction({
       data-slot="sidebar-group-action"
       data-sidebar="group-action"
       className={cn(
-        'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight  absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         // Increases the hit area of the button on mobile.
         'after:absolute after:-inset-2 md:after:hidden',
         'group-data-[collapsible=icon]:hidden',
@@ -496,15 +496,16 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button cursor-pointer whitespace-nowrap prose-body-highlight flex w-full hover:bg-bg-hover items-center gap-2 overflow-hidden p-2 text-left outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight  data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight  group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+  'peer/menu-button cursor-pointer whitespace-nowrap text-body-highlight flex w-full hover:bg-bg-highlight items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:font-medium data-[active=true]:text-accent-main-highlight data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: '',
-        active: 'bg-bg-hover !text-accent-main-highlight  prose-body-highlight',
+        default: 'hover:bg-bg-highlight',
+        active:
+          'bg-bg-highlight !text-accent-main-highlight text-body-highlight',
         outline: [
-          'border border-stroke bg-transparent',
-          'hover:text-accent-main-highlight ',
+          'border border-border bg-transparent',
+          'hover:bg-bg-highlight hover:text-accent-main-highlight',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         ghost: [
@@ -513,8 +514,8 @@ const sidebarMenuButtonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         muted: [
-          'bg-bg-hover text-fg-secondary hover:text-fg',
-          'hover:bg-bg-hover/90 focus:bg-bg-hover/90',
+          'bg-bg-200 text-fg-secondary hover:text-fg',
+          'hover:bg-bg-200/90 focus:bg-bg-200/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         error: [
@@ -605,7 +606,7 @@ function SidebarMenuAction({
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
       className={cn(
-        'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight  peer-hover/menu-button:text-accent-main-highlight  absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight peer-hover/menu-button:text-accent-main-highlight absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         // Increases the hit area of the button on mobile.
         'after:absolute after:-inset-2 md:after:hidden',
         'peer-data-[size=sm]/menu-button:top-1',
@@ -613,7 +614,7 @@ function SidebarMenuAction({
         'peer-data-[size=lg]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
         showOnHover &&
-          'peer-data-[active=true]/menu-button:text-accent-main-highlight  group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
+          'peer-data-[active=true]/menu-button:text-accent-main-highlight group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
         className
       )}
       {...props}
@@ -630,8 +631,8 @@ function SidebarMenuBadge({
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
       className={cn(
-        'text-fg pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center px-1 text-xs  tabular-nums select-none',
-        'peer-hover/menu-button:text-accent-main-highlight  peer-data-[active=true]/menu-button:text-accent-main-highlight ',
+        'text-fg pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none',
+        'peer-hover/menu-button:text-accent-main-highlight peer-data-[active=true]/menu-button:text-accent-main-highlight',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',
         'peer-data-[size=lg]/menu-button:top-2.5',
@@ -727,8 +728,8 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight  [&>svg]:text-accent-main-highlight  flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-5 [&>svg]:shrink-0',
-        'data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight ',
+        'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight [&>svg]:text-accent-main-highlight flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-5 [&>svg]:shrink-0',
+        'data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight',
         size === 'sm' && 'text-xs',
         size === 'md' && '',
         'group-data-[collapsible=icon]:hidden',
