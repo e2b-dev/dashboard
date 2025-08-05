@@ -50,7 +50,7 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
     <div>
       <DropdownMenuItem
         className={cn(
-          startedAtFilter === '1h ago' && 'text-accent-main-highlight '
+          startedAtFilter === '1h ago' && 'text-accent-main-highlight'
         )}
         onClick={(e) => {
           e.preventDefault()
@@ -61,7 +61,7 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
       </DropdownMenuItem>
       <DropdownMenuItem
         className={cn(
-          startedAtFilter === '6h ago' && 'text-accent-main-highlight '
+          startedAtFilter === '6h ago' && 'text-accent-main-highlight'
         )}
         onClick={(e) => {
           e.preventDefault()
@@ -72,7 +72,7 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
       </DropdownMenuItem>
       <DropdownMenuItem
         className={cn(
-          startedAtFilter === '12h ago' && 'text-accent-main-highlight '
+          startedAtFilter === '12h ago' && 'text-accent-main-highlight'
         )}
         onClick={(e) => {
           e.preventDefault()
@@ -115,7 +115,7 @@ const TemplateFilter = memo(function TemplateFilter({
             onSelect={() => handleSelect(template.templateID)}
             className={cn(
               templateIds.includes(template.templateID) &&
-                'text-accent-main-highlight '
+                'text-accent-main-highlight'
             )}
           >
             {template.templateID}
@@ -169,7 +169,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-accent-main-highlight text-xs">
+            <span className="text-accent-main-highlighttext-xs">
               {localValues.cpu === 0
                 ? 'Unfiltered'
                 : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
@@ -200,7 +200,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-accent-main-highlight text-xs">
+            <span className="text-accent-main-highlighttext-xs">
               {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>

@@ -16,10 +16,8 @@ export default async function BillingCreditsContent({
   const usage = res.data
 
   return (
-    <span className="ml-2 prose-value-big">
-      <span className="text-accent-main-highlight prose-value-small mr-0.5">
-        ${' '}
-      </span>
+    <span className="ml-2 text-2xl font-bold">
+      <span className="text-accent-main-highlighttext-sm font-normal">$ </span>
       {usage.credits.toLocaleString(undefined, {
         maximumFractionDigits: 2,
         useGrouping: true,
