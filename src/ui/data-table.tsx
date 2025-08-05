@@ -34,8 +34,8 @@ function DataTableHead<TData, TValue>({
     <div
       className={cn(
         'relative flex h-10 items-center p-2 text-left align-middle',
-        'font-mono tracking-wider uppercase',
-        'text-fg-secondary font-medium',
+        'font-mono !text-label-highlight uppercase',
+        'text-fg-secondary',
         '[&:has([role=checkbox])]:pr-0',
         {
           'pl-0': header.column.getCanSort(),
@@ -107,6 +107,7 @@ function DataTableCell<TData, TValue>({
       className={cn(
         'p-1 px-2 align-middle font-sans text-xs [&:has([role=checkbox])]:pr-0',
         'flex items-center',
+        'text-fg-secondary !text-table',
         className
       )}
       {...props}

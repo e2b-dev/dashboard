@@ -6,7 +6,7 @@ export function ByE2BBadge() {
   return (
     <HelpTooltip
       trigger={
-        <Badge className="bg-bg-400 border-border-200 h-4.5 gap-1 border pr-0 pl-1">
+        <Badge className="bg-fill h-4.5 gap-1 border pr-0 pl-1">
           BY
           <LogoWithoutText className="-ml-1 h-4 w-4 min-w-4" />
         </Badge>

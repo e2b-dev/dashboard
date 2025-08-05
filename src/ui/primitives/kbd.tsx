@@ -59,7 +59,13 @@ export function Kbd({
       className={cn('pointer-events-none', className)}
       {...clientOnlyProps}
     >
-      <Badge variant="muted" {...badgeProps}>
+      <Badge
+        {...badgeProps}
+        className={cn(
+          badgeProps?.className,
+          'px-1 h-5 text-fg-tertiary bg-bg-highlight'
+        )}
+      >
         {keys.map((key, index) => {
           const formattedKey = formatKey(key)
           return (

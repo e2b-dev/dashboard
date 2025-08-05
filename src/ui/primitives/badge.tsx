@@ -4,28 +4,30 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex gap-1 items-center px-2 rounded-sm py-1 text-xs font-mono font-light transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex gap-1 items-center !text-label px-2 rounded-sm py-1 text-xs font-mono font-light transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-fg text-fg-inverted hover:bg-fg-200',
-        muted: 'bg-bg-200 text-fg-tertiary',
-        success: 'bg-success/20 text-success',
-        warning: 'bg-warning/20 text-warning',
-        error: 'bg-error/20 text-error',
-        accent: 'bg-accent/15 text-accent',
-        'contrast-1': 'bg-contrast-1/20 text-contrast-1',
-        'contrast-2': 'bg-contrast-2/20 text-contrast-2',
-        outline: 'border border-border-200 bg-bg-200',
+        default: 'bg-fill text-fg-secondary',
+        positive: 'bg-accent-positive-bg text-accent-positive-highlight',
+        warning: 'bg-accent-warning-bg text-accent-warning-highlight',
+        info: 'bg-accent-info-bg text-accent-info-highlight',
+        error: 'bg-accent-error-bg text-accent-error-highlight',
+        success: 'bg-accent-positive-bg text-accent-positive-highlight',
+
+        muted: 'bg-bg-1 text-fg-tertiary',
+        accent: 'bg-accent-main-bg text-accent-main-highlight',
+        outline: 'border border-stroke text-fg-secondary',
       },
       size: {
         default: 'px-2 py-1 text-xs',
         sm: 'px-1 py-0.5 text-xs',
         lg: 'px-3 py-1.5 text-sm',
       },
-      defaultVariants: {
-        variant: 'default',
-      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
     },
   }
 )

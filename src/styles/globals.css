@@ -10,7 +10,7 @@
 }
 
 *::selection {
-  background-color: hsl(from var(--accent) h s l / 0.3);
+  background-color: hsl(from var(--accent-main-highlight) h s l / 0.3);
 }
 
 .lucide {

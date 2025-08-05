@@ -27,10 +27,9 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { CellContext } from '@tanstack/react-table'
-import { Cpu, Lock, LockOpen, MoreVertical } from 'lucide-react'
+import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useMemo, useState } from 'react'
-import { CgSmartphoneRam } from 'react-icons/cg'
 
 export function ActionsCell({
   row,
@@ -175,7 +174,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="text-fg-tertiary truncate font-mono text-xs">
+    <div className="truncate font-mono text-xs">
       {row.getValue('templateID')}
     </div>
   )
@@ -187,7 +186,7 @@ export function TemplateNameCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
     <div
-      className={cn('flex items-center gap-2 truncate font-mono font-medium', {
+      className={cn('flex items-center gap-2 truncate', {
         'text-fg-tertiary': !getValue(),
       })}
     >
@@ -202,11 +201,11 @@ export function CpuCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
   return (
-    <Badge className="text-fg-tertiary font-mono whitespace-nowrap">
-      <Cpu className="text-contrast-2 size-2.5" />{' '}
-      <span className="text-contrast-2">{cpuCount}</span> core
+    <span className="text-fg-tertiary whitespace-nowrap">
+      <span className="text-fg !text-table-numeric font-mono">{cpuCount}</span>{' '}
+      Core
       {cpuCount > 1 ? 's' : ''}
-    </Badge>
+    </span>
   )
 }
 
@@ -215,11 +214,12 @@ export function MemoryCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
   return (
-    <Badge className="text-fg-tertiary font-mono whitespace-nowrap">
-      <CgSmartphoneRam className="text-contrast-1 size-2.5" />{' '}
-      <span className="text-contrast-1">{memoryMB.toLocaleString()} </span>
+    <span className="text-fg-tertiary whitespace-nowrap">
+      <span className="text-fg !text-table-numeric font-mono">
+        {memoryMB.toLocaleString()}{' '}
+      </span>
       MB
-    </Badge>
+    </span>
   )
 }
 
