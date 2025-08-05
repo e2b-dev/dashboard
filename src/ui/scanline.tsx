@@ -8,7 +8,7 @@ export default function Scanline({ className }: ScanlineProps) {
   return (
     <div
       className={cn(
-        'text-border/80 absolute inset-0 h-full w-full overflow-hidden',
+        'text-stroke/50 absolute inset-0 h-full w-full overflow-hidden',
         className
       )}
     >

@@ -34,7 +34,7 @@ const MemberTable: FC<MemberTableProps> = ({ teamId, className }) => {
           fallback={
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-left">
-                <Alert className="w-full text-left" variant="contrast2">
+                <Alert className="w-full text-left" variant="info">
                   <AlertTitle className="flex items-center gap-2">
                     <Loader />
                     Loading members...
