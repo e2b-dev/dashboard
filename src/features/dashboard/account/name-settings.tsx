@@ -107,7 +107,7 @@ export function NameSettings({ className }: NameSettingsProps) {
             />
           </CardContent>
 
-          <CardFooter className="bg-bg-100 justify-between">
+          <CardFooter className="bg-bg-1 justify-between">
             <p className="text-fg-tertiary text-sm">Max 32 characters.</p>
             <Button
               loading={isPending}
