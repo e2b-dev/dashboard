@@ -509,8 +509,8 @@ const sidebarMenuButtonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         muted: [
-          'bg-bg-200 text-fg-secondary hover:text-fg',
-          'hover:bg-bg-200/90 focus:bg-bg-200/90',
+          'bg-bg-hover text-fg-secondary hover:text-fg',
+          'hover:bg-bg-hover/90 focus:bg-bg-hover/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         error: [

@@ -130,7 +130,7 @@ const DataTableRow = React.forwardRef<HTMLDivElement, DataTableRowProps>(
           'transition-colors',
           'flex w-full items-center',
           {
-            'bg-bg-200': isSelected,
+            'bg-bg-hover': isSelected,
           },
           'bg-bg',
           className

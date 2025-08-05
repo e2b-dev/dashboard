@@ -93,7 +93,7 @@ export default function DashboardSidebarMenu({
                 <AvatarImage
                   src={selectedTeam?.profile_picture_url || undefined}
                 />
-                <AvatarFallback className="bg-bg-200 border-0">
+                <AvatarFallback className="bg-bg-hover border-0">
                   {selectedTeam?.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
