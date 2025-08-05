@@ -17,7 +17,7 @@ export default async function BillingCreditsContent({
 
   return (
     <span className="ml-2 text-2xl font-bold">
-      <span className="text-accent text-sm font-normal">$ </span>
+      <span className="text-accent-main-highlighttext-sm font-normal">$ </span>
       {usage.credits.toLocaleString(undefined, {
         maximumFractionDigits: 2,
         useGrouping: true,

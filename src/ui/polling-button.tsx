@@ -136,7 +136,7 @@ export function PollingButton({
       >
         <SelectTrigger className="text-fg-secondary h-6 w-fit gap-1 border-none bg-transparent pl-2 whitespace-nowrap">
           Auto-refresh
-          <span className="text-accent ml-1">
+          <span className="text-accent-main-highlightml-1">
             {pollingInterval === 0 ? 'Off' : formatTime(remainingTime)}
           </span>
         </SelectTrigger>

@@ -234,7 +234,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
     <>
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline gap-2">
-          <p className="text-accent font-mono text-2xl">
+          <p className="text-accent-main-highlightfont-mono text-2xl">
             {totalSandboxes.toLocaleString()}
           </p>
           <div className="flex items-baseline gap-2">
@@ -248,8 +248,8 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
               <SelectTrigger
                 classNames={{
                   trigger:
-                    'text-accent bg-transparent font-medium border-0 h-auto p-0 text-xs cursor-pointer',
-                  icon: 'ml-1 text-accent stroke-[2px]!',
+                    'text-accent-main-highlightbg-transparent font-medium border-0 h-auto p-0 text-xs cursor-pointer',
+                  icon: 'ml-1 text-accent-main-highlightstroke-[2px]!',
                 }}
               >
                 <SelectValue placeholder="Select grouping" />

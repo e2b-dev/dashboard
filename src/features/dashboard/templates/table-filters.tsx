@@ -67,7 +67,7 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-accent text-xs">
+            <span className="text-accent-main-highlighttext-xs">
               {localValues.cpu === 0
                 ? 'Unfiltered'
                 : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
@@ -98,7 +98,7 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-accent text-xs">
+            <span className="text-accent-main-highlighttext-xs">
               {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>
@@ -180,7 +180,11 @@ const TemplatesTableFilters = React.forwardRef<
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    className={isPublic === true ? 'text-accent' : undefined}
+                    className={
+                      isPublic === true
+                        ? 'text-accent-main-highlight'
+                        : undefined
+                    }
                     onClick={(e) => {
                       e.preventDefault()
                       setIsPublic(isPublic === true ? undefined : true)
@@ -189,7 +193,11 @@ const TemplatesTableFilters = React.forwardRef<
                     Public
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className={isPublic === false ? 'text-accent' : undefined}
+                    className={
+                      isPublic === false
+                        ? 'text-accent-main-highlight'
+                        : undefined
+                    }
                     onClick={(e) => {
                       e.preventDefault()
                       setIsPublic(isPublic === false ? undefined : false)

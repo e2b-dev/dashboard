@@ -156,7 +156,7 @@ const SelectItem = React.forwardRef<
     className={cn(menuItemVariants({ variant }), 'pr-8', className)}
     {...props}
   >
-    <span className="text-accent absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="text-accent-main-highlightabsolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>{'<<'}</SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
