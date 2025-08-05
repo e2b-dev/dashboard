@@ -14,9 +14,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           '[mask-image:radial-gradient(800px_400px_at_center,white,transparent)]',
           'z-10'
         )}
-        gradientFrom="var(--accent-main-highlight )"
-        gradientVia="var(--bg-highlight)"
-        gradientTo="var(--fill-highlight)"
+        gradientFrom="var(--accent-main-bg)"
+        gradientVia="hsl(from var(--fg-100) h s l / 0.1)"
+        gradientTo="var(--accent-main-bg)"
         gradientDegrees={90}
       />
       <div className="z-10 flex h-full w-full items-center justify-center px-4">
