@@ -46,7 +46,7 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         outline: [
-          'border border-border-100 bg-transparent',
+          'border border-stroke-active bg-transparent',
           'hover:bg-bg-1 focus:bg-bg-1',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
