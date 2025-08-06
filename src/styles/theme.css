@@ -15,13 +15,13 @@
   h1,
   h2,
   h3 {
-    @apply !text-headline uppercase;
+    @apply text-headline uppercase;
   }
 
   h4,
   h5,
   h6 {
-    @apply !text-headline-small uppercase;
+    @apply text-headline-small uppercase;
   }
 
   .font-mono {
