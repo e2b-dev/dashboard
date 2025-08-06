@@ -55,7 +55,7 @@ export default function SandboxInspectIncompatible({
         <Card className="bg-bg flex h-full min-h-160 w-full max-w-150 flex-col justify-between border p-7">
           <CardHeader className="px-0 pt-0 pb-7">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-warning h-5 w-5" />
+              <AlertTriangle className="text-accent-warning-highlight h-5 w-5" />
               <CardTitle className="text-lg">Incompatible template</CardTitle>
             </div>
             <CardDescription className="text-fg-secondary leading-5">

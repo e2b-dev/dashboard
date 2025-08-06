@@ -41,8 +41,8 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         warning: [
-          'bg-warning/10 text-warning',
-          'hover:bg-warning/20 focus:bg-warning/20',
+          'bg-accent-warning-bg text-accent-warning-highlight',
+          'hover:bg-accent-warning-bg focus:bg-accent-warning-bg',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         outline: [

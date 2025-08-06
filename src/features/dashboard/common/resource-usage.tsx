@@ -47,7 +47,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
     roundedPercentage >= (isCpu ? 90 : 95)
       ? 'text-error'
       : roundedPercentage >= 70
-        ? 'text-warning'
+        ? 'text-accent-warning-highlight'
         : 'text-fg'
   )
 

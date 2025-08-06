@@ -39,7 +39,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
       />
       <NodeLabel name={file.name} isActive={isSelected} isLoading={isLoading} />
       {hasError && (
-        <span className="text-warning flex items-center gap-1 truncate pt-0.5 pl-1 align-baseline text-xs text-ellipsis">
+        <span className="text-accent-warning-highlight flex items-center gap-1 truncate pt-0.5 pl-1 align-baseline text-xs text-ellipsis">
           <AlertCircle className="size-3" />
           {error}
         </span>
