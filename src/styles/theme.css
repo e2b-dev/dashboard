@@ -49,8 +49,8 @@
   --fill: #e0e0e0;
   --fill-highlight: #d1d1d1;
 
-  --stroke: #e0e0e0;
-  --stroke-active: #d1d1d1;
+  --stroke: #d6d6d6;
+  --stroke-active: #c2c2c2;
 
   --fg: #0a0a0a;
   --fg-secondary: #333333;
@@ -96,8 +96,8 @@
   --fill: #292929;
   --fill-highlight: #383838;
 
-  --stroke: #333333;
-  --stroke-active: #525252;
+  --stroke: #292929;
+  --stroke-active: #424242;
 
   --fg: #ffffff;
   --fg-secondary: #e6e6e6;
