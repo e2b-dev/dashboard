@@ -14,11 +14,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          'bg-bg flex h-8 w-full  border px-3 py-2',
-          'font-mono text-xs tracking-wider',
+          'bg-bg flex h-8 w-full border px-3 py-2',
+          'font-mono !text-body',
 
           'placeholder:text-fg-tertiary placeholder:font-mono',
           'focus:[border-bottom:1px_solid_var(--accent-main-highlight)] focus:outline-none',
+          'hover:bg-bg-highlight focus:bg-bg-highlight',
           'disabled:cursor-not-allowed disabled:opacity-50',
 
           'file:border-0 file:bg-transparent',
