@@ -30,7 +30,7 @@ export default function CustomerPortalLink({
     >
       Manage Subscription
       {isTransitioning ? (
-        <Loader className="text-accent-main-highlight" />
+        <Loader className="text-accent-main-highlight " />
       ) : (
         <ExternalIcon className="translate-x-1" />
       )}

@@ -1,10 +1,10 @@
 'use client'
 
-import { Button } from '@/ui/primitives/button'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
-import { useSandboxContext } from '../context'
+import { Button } from '@/ui/primitives/button'
 import { CircleSlash } from 'lucide-react'
+import { useSandboxContext } from '../context'
 
 export default function Metadata() {
   const { sandboxInfo } = useSandboxContext()

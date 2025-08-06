@@ -1,7 +1,7 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/keys'
+import { cookies } from 'next/headers'
 import { z } from 'zod'
 
 const BodySchema = z.object({ interval: z.number() })

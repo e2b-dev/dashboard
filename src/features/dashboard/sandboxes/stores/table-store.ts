@@ -8,8 +8,8 @@ import {
 } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { StartedAtFilter } from '../table-filters'
 import { trackTableInteraction } from '../table-config'
+import { StartedAtFilter } from '../table-filters'
 
 export const sandboxesPollingIntervals = [
   { value: 0, label: 'Off' },

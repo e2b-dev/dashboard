@@ -82,7 +82,7 @@ export default function DashboardSidebarCommand({
                 }}
                 className="group"
               >
-                <link.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent-main-highlight !size-4" />
+                <link.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent-main-highlight  !size-4" />
                 {link.label}
               </CommandItem>
             ))}

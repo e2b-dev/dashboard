@@ -134,7 +134,7 @@ export default function DashboardSidebarMenu({
                       <AvatarImage
                         src={team.profile_picture_url || undefined}
                       />
-                      <AvatarFallback className="group-focus:text-accent-main-highlighttext-fg-tertiary text-xs">
+                      <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
                         {team.name?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
@@ -149,7 +149,7 @@ export default function DashboardSidebarMenu({
             </DropdownMenuRadioGroup>
 
             <DropdownMenuItem
-              className="text-accent-main-highlightmt-1 font-sans"
+              className="text-accent-main-highlight mt-1 font-sans"
               onSelect={() => setCreateTeamOpen(true)}
             >
               <Plus className="ml-0.5 size-5" /> Create New Team
