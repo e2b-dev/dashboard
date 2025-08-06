@@ -106,12 +106,12 @@ export function ChartPlaceholder({
               >
                 <stop
                   offset="0%"
-                  stopColor="var(--color-fg-500)"
+                  stopColor="var(--color-fg-tertiary)"
                   stopOpacity={0.1} // More subtle for background
                 />
                 <stop
                   offset="100%"
-                  stopColor="var(--color-fg-500)"
+                  stopColor="var(--color-fg-tertiary)"
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -134,7 +134,7 @@ export function ChartPlaceholder({
           <Area
             type="monotone"
             dataKey="y"
-            stroke={'var(--color-fg-500)'}
+            stroke={'var(--color-fg-tertiary)'}
             strokeWidth={2}
             strokeOpacity={0.15} // More subtle for background
             fillOpacity={1} // Opacity handled by gradient stops

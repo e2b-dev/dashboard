@@ -56,7 +56,7 @@ const ChartContainer = React.forwardRef<
           [
             'flex aspect-video justify-center text-xs',
             // Axis and grid styles
-            '[&_.recharts-cartesian-axis-tick_text]:fill-fg-500',
+            '[&_.recharts-cartesian-axis-tick_text]:fill-fg-tertiary',
             "[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50",
             '[&_.recharts-curve.recharts-tooltip-cursor]:stroke-border',
             // Dot and stroke styles

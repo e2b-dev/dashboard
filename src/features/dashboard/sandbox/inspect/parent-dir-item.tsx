@@ -53,7 +53,7 @@ export default function SandboxInspectParentDirItem({
         }
       }}
     >
-      <FolderUp className="size-3.5 [color:var(--color-fg-500)]" />
+      <FolderUp className="size-3.5 [color:var(--color-fg-tertiary)]" />
       <span className="truncate">..</span>
     </DataTableRow>
   )
