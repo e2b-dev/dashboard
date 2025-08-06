@@ -261,7 +261,7 @@ export function VisibilityCell({
   return (
     <Badge
       className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
-        'text-success': getValue(),
+        'text-accent-positive-highlight': getValue(),
       })}
     >
       {getValue() ? 'Public' : 'Private'}

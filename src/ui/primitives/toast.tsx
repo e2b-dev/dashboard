@@ -35,7 +35,7 @@ const toastVariants = cva(
         default: 'border bg-bg/40 text-fg backdrop-blur-lg',
         error: 'group border-error/40 bg-error/10 backdrop-blur-lg text-error',
         success:
-          'group border-success/40 bg-success/10 backdrop-blur-lg text-success',
+          'group border-accent-positive-bg/40 bg-accent-positive-bg backdrop-blur-lg text-accent-positive-highlight',
       },
     },
     defaultVariants: {
