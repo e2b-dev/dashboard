@@ -13,7 +13,7 @@ export const menuItemVariants = cva(
   {
     variants: {
       variant: {
-        default: 'focus:bg-accent-main-bg focus:text-accent-main-highlight',
+        default: 'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
         error: 'text-red-500 focus:bg-red-500/10 focus:text-red-500',
         success: 'text-green-500 focus:bg-green-500/10 focus:text-green-500',
         warning: 'text-yellow-500 focus:bg-yellow-500/10 focus:text-yellow-500',

@@ -16,7 +16,7 @@ const badgeVariants = cva(
         success: 'bg-accent-positive-bg text-accent-positive-highlight',
 
         muted: 'bg-bg-1 text-fg-tertiary',
-        accent: 'bg-accent-main-bg text-accent-main-highlight',
+        accent: 'bg-accent-main-bg text-accent-main-highlight ',
         outline: 'border border-stroke text-fg-secondary',
       },
       size: {
