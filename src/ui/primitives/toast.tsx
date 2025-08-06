@@ -33,7 +33,8 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: 'border bg-bg/40 text-fg backdrop-blur-lg',
-        error: 'group border-error/40 bg-error/10 backdrop-blur-lg text-error',
+        error:
+          'group border-accent-error-highlight/40 bg-accent-error-bg backdrop-blur-lg text-accent-error-highlight',
         success:
           'group border-accent-positive-bg/40 bg-accent-positive-bg backdrop-blur-lg text-accent-positive-highlight',
       },

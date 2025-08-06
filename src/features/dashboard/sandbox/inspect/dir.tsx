@@ -60,7 +60,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           isLoading={isLoading}
         />
         {hasError && (
-          <span className="text-error flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
+          <span className="text-accent-error-highlight flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
             <AlertCircle className="size-3" />
             {error}
           </span>

@@ -514,8 +514,8 @@ const sidebarMenuButtonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         error: [
-          'bg-error/10 text-error hover:bg-error/15 hover:text-error',
-          'active:translate-y-[1px] active:shadow-none active:bg-error/15 active:text-error',
+          'bg-accent-error-bg text-accent-error-highlight hover:bg-accent-error-bg hover:text-accent-error-highlight',
+          'active:translate-y-[1px] active:shadow-none active:bg-accent-error-bg active:text-accent-error-highlight',
         ].join(' '),
         warning: [
           'bg-accent-warning-bg text-accent-warning-highlight hover:bg-accent-warning-bg hover:text-accent-warning-highlight',

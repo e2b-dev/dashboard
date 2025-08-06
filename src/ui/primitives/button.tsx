@@ -36,8 +36,8 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         error: [
-          'bg-error/10 text-error',
-          'hover:bg-error/20 focus:bg-error/20',
+          'bg-accent-error-bg text-accent-error-highlight',
+          'hover:bg-accent-error-bg focus:bg-accent-error-bg',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         warning: [
