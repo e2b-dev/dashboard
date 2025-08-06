@@ -8,8 +8,6 @@
 
   --error-fg: hsl(0 0% 98%);
 
-  --warning: hsl(35 100% 45%);
-
   /* Sidebar variables */
   --sidebar: var(--bg);
   --sidebar-foreground: var(--fg-300);
