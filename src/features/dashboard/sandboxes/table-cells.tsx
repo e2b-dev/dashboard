@@ -95,7 +95,10 @@ export function TemplateCell({
     <Button
       variant="link"
       className="text-fg h-auto p-0 text-xs normal-case"
-      onClick={() => {
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+
         useTemplateTableStore.getState().setGlobalFilter(templateId)
         router.push(
           PROTECTED_URLS.TEMPLATES(selectedTeamSlug ?? selectedTeamId)

@@ -30,6 +30,7 @@ import { CellContext } from '@tanstack/react-table'
 import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useMemo, useState } from 'react'
+import ResourceUsage from '../common/resource-usage'
 
 export function ActionsCell({
   row,
@@ -174,7 +175,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="truncate font-mono text-xs">
+    <div className="truncate font-mono text-fg-tertiary">
       {row.getValue('templateID')}
     </div>
   )
@@ -200,27 +201,14 @@ export function CpuCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
-  return (
-    <span className="text-fg-tertiary whitespace-nowrap">
-      <span className="text-fg !text-table-numeric font-mono">{cpuCount}</span>{' '}
-      Core
-      {cpuCount > 1 ? 's' : ''}
-    </span>
-  )
+  return <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
 }
 
 export function MemoryCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
-  return (
-    <span className="text-fg-tertiary whitespace-nowrap">
-      <span className="text-fg !text-table-numeric font-mono">
-        {memoryMB.toLocaleString()}{' '}
-      </span>
-      MB
-    </span>
-  )
+  return <ResourceUsage type="mem" total={memoryMB} mode="simple" />
 }
 
 export function CreatedAtCell({

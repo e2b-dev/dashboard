@@ -37,7 +37,7 @@ const Blockquote = forwardRef<HTMLQuoteElement, ComponentProps<'blockquote'>>(
     return (
       <blockquote
         ref={ref}
-        className="border-contrast-2 ml-4 border-l-[3px]"
+        className="border-accent-info-highlight ml-4 border-l-[3px]"
         {...props}
       >
         {children}

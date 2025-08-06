@@ -127,7 +127,7 @@ export function NameCard({ className }: NameCardProps) {
                           }}
                         >
                           Seen as -{' '}
-                          <span className="text-contrast-2">
+                          <span className="text-accent-info-highlight">
                             {team.transformed_default_name}
                           </span>
                         </motion.span>

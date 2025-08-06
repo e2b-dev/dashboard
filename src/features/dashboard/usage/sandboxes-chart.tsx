@@ -85,7 +85,7 @@ const CustomBarShape = (props: BarProps) => {
   const desiredRadius = 1
   const r = Math.min(desiredRadius, width / 2, height)
 
-  const borderColor = 'var(--color-contrast-2)'
+  const borderColor = 'var(--color-accent-info-highlight)'
   const strokeWidth = 1
 
   const fillPath = `
@@ -234,7 +234,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
     <>
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline gap-2">
-          <p className="text-accent-main-highlightfont-mono text-2xl">
+          <p className="text-accent-main-highlight font-mono text-2xl">
             {totalSandboxes.toLocaleString()}
           </p>
           <div className="flex items-baseline gap-2">
@@ -248,8 +248,8 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
               <SelectTrigger
                 classNames={{
                   trigger:
-                    'text-accent-main-highlightbg-transparent font-medium border-0 h-auto p-0 text-xs cursor-pointer',
-                  icon: 'ml-1 text-accent-main-highlightstroke-[2px]!',
+                    'text-accent-main-highlight bg-transparent font-medium border-0 h-auto p-0 text-xs cursor-pointer',
+                  icon: 'ml-1 text-accent-main-highlight stroke-[2px]!',
                 }}
               >
                 <SelectValue placeholder="Select grouping" />
@@ -292,7 +292,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
                 y1="9"
                 x2="5"
                 y2="0"
-                stroke="var(--color-contrast-2)"
+                stroke="var(--color-accent-info-highlight)"
                 opacity="0.7"
                 strokeWidth="1"
               />
@@ -353,7 +353,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
                 <ChartTooltipContent
                   labelFormatter={() => `${label} ${dateRangeString}`}
                   formatter={(value, name, item) => [
-                    <span key="value" className="text-contrast-2">
+                    <span key="value" className="text-accent-info-highlight">
                       {Number(value).toLocaleString()}
                     </span>,
                     `Sandboxes Started`,
