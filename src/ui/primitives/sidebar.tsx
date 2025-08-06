@@ -499,7 +499,7 @@ const sidebarMenuButtonVariants = cva(
         default: '',
         active: 'bg-bg-hover !text-accent-main-highlight  text-body-highlight',
         outline: [
-          'border border-border bg-transparent',
+          'border border-stroke bg-transparent',
           'hover:text-accent-main-highlight ',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
