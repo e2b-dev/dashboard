@@ -9,7 +9,6 @@
   --error-fg: hsl(0 0% 98%);
 
   --warning: hsl(35 100% 45%);
-  --success: hsl(140 95% 30%);
 
   /* Sidebar variables */
   --sidebar: var(--bg);
