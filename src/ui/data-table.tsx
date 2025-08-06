@@ -55,7 +55,7 @@ function DataTableHead<TData, TValue>({
             onClick={() => header.column.toggleSorting(undefined, true)}
             className={cn(
               'text-fg-tertiary ml-2 size-5 min-w-5',
-              sorting !== undefined && 'text-accent-main-highlight'
+              sorting !== undefined && 'text-accent-main-highlight '
             )}
           >
             {sorting === undefined ? (

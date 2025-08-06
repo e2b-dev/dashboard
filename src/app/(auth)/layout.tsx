@@ -14,7 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           '[mask-image:radial-gradient(800px_400px_at_center,white,transparent)]',
           'z-10'
         )}
-        gradientFrom="var(--accent-main-highlight)"
+        gradientFrom="var(--accent-main-highlight )"
         gradientVia="var(--bg-highlight)"
         gradientTo="var(--fill-highlight)"
         gradientDegrees={90}

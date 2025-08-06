@@ -1,7 +1,4 @@
 :root {
-  --contrast-1: hsl(200 85% 50%);
-  --contrast-2: hsl(235 86% 65%);
-
   --error: hsl(0 75% 50%);
   --error-100: hsl(0 75% 55%);
   --error-200: hsl(0 75% 60%);

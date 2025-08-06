@@ -87,7 +87,7 @@ export default function DashboardSidebarContent() {
                     <Link suppressHydrationWarning href={href} prefetch>
                       <item.icon
                         className={cn(
-                          isActive(href) && 'text-accent-main-highlight'
+                          isActive(href) && 'text-accent-main-highlight '
                         )}
                       />
                       <span>{item.label}</span>

@@ -12,7 +12,7 @@ function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
         'min-h-16 border',
 
         'placeholder:text-fg-tertiary placeholder:font-mono',
-        'focus:[border-bottom:1px_solid_var(--accent-main-highlight)] focus:outline-none',
+        'focus:[border-bottom:1px_solid_var(--accent-main-highlight )] focus:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
 
         'aria-invalid:border-destructive/60',
