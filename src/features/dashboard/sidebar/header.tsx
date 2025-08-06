@@ -2,7 +2,8 @@
 
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
-import Logo from '@/ui/logo'
+import ClientOnly from '@/ui/client-only'
+import LogoWithoutText from '@/ui/logo-without-text'
 import { Button } from '@/ui/primitives/button'
 import {
   SidebarGroup,
@@ -48,7 +49,10 @@ export default function DashboardSidebarHeader() {
               animate="visible"
               exit="hidden"
             >
-              <Logo />
+              <ClientOnly className="flex items-center -translate-x-1.5">
+                <LogoWithoutText className="scale-105" />
+                <span className="!text-headline-small">E2B</span>
+              </ClientOnly>
             </motion.span>
           )}
         </AnimatePresence>
