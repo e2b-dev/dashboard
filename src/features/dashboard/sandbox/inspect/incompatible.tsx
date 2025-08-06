@@ -42,7 +42,7 @@ export default function SandboxInspectIncompatible({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
-      <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
+      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
       </div>
@@ -139,7 +139,7 @@ export default function SandboxInspectIncompatible({
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
                 Documentation{' '}
-                <ArrowUpRight className="text-border-500 size-5 !stroke-[1px]" />
+                <ArrowUpRight className="text-fill-highlight size-5 !stroke-[1px]" />
               </Link>
             </Button>
           </CardFooter>
