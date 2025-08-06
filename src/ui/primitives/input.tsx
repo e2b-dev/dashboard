@@ -27,7 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           'file:border-2 file:border-dashed',
           'file:hover:bg-bg-1',
 
-          'autofill:border-accent-main-highlight /50 autofill:border-b-accent-main-highlight  autofill:border-solid autofill:shadow-[inset_0_0_0px_1000px_hsl(from_var(--accent-main-highlight )_h_s_l/0.2)]',
+          'autofill:border-accent-main-highlight autofill:border-b-accent-main-highlight autofill:border-solid autofill:shadow-[inset_0_0_0px_1000px_var(--accent-main-bg)]',
           'autofill:bg-accent-main-bg autofill:text-fg',
 
           className
