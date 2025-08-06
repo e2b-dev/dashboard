@@ -6,7 +6,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--bg-highlight);
+  background-color: var(--fg-tertiary);
 }
 
 *::selection {
