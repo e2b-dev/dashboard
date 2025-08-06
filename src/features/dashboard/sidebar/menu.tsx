@@ -80,15 +80,19 @@ export default function DashboardSidebarMenu({
               variant="outline"
               size="lg"
               className={cn(
-                'group-data-[collapsible=icon]:pl-0! p-2.5 h-14 pr-3',
+                'h-14 flex',
+                'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:!px-0',
                 className
               )}
             >
               <Avatar
-                className={cn('size-9 shrink-0 transition-all duration-300', {
-                  'border-0 drop-shadow-sm filter':
-                    selectedTeam?.profile_picture_url,
-                })}
+                className={cn(
+                  'shrink-0 transition-all duration-300',
+                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
+                  {
+                    'drop-shadow-sm filter': selectedTeam?.profile_picture_url,
+                  }
+                )}
               >
                 <AvatarImage
                   src={selectedTeam?.profile_picture_url || undefined}
