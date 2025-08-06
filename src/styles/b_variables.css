@@ -1,6 +1,4 @@
 :root {
-  --ring: hsl(32 85% 45%);
-
   --chart-1: hsl(32 85% 55%);
   --chart-2: hsl(212 85% 55%);
   --chart-3: hsl(152 85% 55%);
@@ -91,12 +89,6 @@
   --border-500: hsl(0 0% 25%);
 
   --ring: hsl(32 100% 50%);
-
-  --chart-1: hsl(220 70% 50%);
-  --chart-2: hsl(160 60% 45%);
-  --chart-3: hsl(30 80% 55%);
-  --chart-4: hsl(280 65% 60%);
-  --chart-5: hsl(340 75% 55%);
 
   --error: hsl(0 100% 65%);
   --error-100: hsl(0 90% 60%);

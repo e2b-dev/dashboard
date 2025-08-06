@@ -183,6 +183,12 @@
 
   --color-ring: var(--accent-main-highlight);
 
+  --color-chart-1: var(--accent-main-highlight);
+  --color-chart-2: var(--accent-positive-highlight);
+  --color-chart-3: var(--accent-info-highlight);
+  --color-chart-4: var(--accent-warning-highlight);
+  --color-chart-5: var(--accent-error-highlight);
+
   /* Font Family */
   --font-sans:
     'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
