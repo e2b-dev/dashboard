@@ -151,6 +151,16 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     const sE = serializeError(e) as object
 
+    // nextjs internally throws redirects and captures them to do the actual redirect
+    // we need to throw the error to let nextjs handle it
+    if (
+      'message' in sE &&
+      typeof sE.message === 'string' &&
+      sE.message.includes('NEXT_REDIRECT')
+    ) {
+      throw e
+    }
+
     l.error({
       key: 'AUTH_CONFIRM:ERROR',
       message: 'message' in sE ? sE.message : undefined,
