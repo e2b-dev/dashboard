@@ -28,7 +28,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   if (mode === 'simple') {
     const displayTotal = total ? total.toLocaleString() : 'n/a'
     return (
-      <p className=" text-fg-tertiary">
+      <p className="text-sm text-fg-tertiary">
         <span className="text-accent-info-highlight"> {displayTotal} </span>{' '}
         {unit}
         {isCpu && total && total > 1 ? 's' : ''}
