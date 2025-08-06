@@ -16,8 +16,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: [
-          'bg-fg text-fg-inverted',
-          'hover:bg-fg-100 focus:bg-fg-100',
+          'bg-bg-inverted text-fg-inverted',
+          'hover:bg-bg-inverted-hover focus:bg-bg-inverted-hover',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         accent: [
