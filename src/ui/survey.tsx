@@ -77,9 +77,9 @@ export function SurveyContent({
                         variant={'ghost'}
                         size="iconLg"
                         className={cn(
-                          'text-fg-tertiary hover:text-fg-secondary size-14 rounded-xl hover:scale-[1.03]',
+                          'text-fg-tertiary hover:text-fg-secondary size-14 hover:scale-[1.03]',
                           {
-                            'bg-bg-300 border-border-200 text-fg border':
+                            'bg-bg-highlight focus:bg-bg-highlight text-fg border':
                               responses[currentQuestionIndex] ===
                               String(emojiIndex + 1),
                           }

@@ -47,7 +47,7 @@ const buttonVariants = cva(
         ].join(' '),
         outline: [
           'border border-border-100 bg-transparent',
-          'hover:bg-bg-300/80 focus:bg-bg-300/80',
+          'hover:bg-bg-1 focus:bg-bg-1',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         link: [

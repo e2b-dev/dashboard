@@ -69,17 +69,17 @@ export function ChartPlaceholder({
                 />
                 <stop
                   offset="45%"
-                  stopColor="var(--color-bg-400)"
+                  stopColor="var(--color-bg-highlight)"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="50%"
-                  stopColor="var(--color-bg-400)"
+                  stopColor="var(--color-bg-highlight)"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="55%"
-                  stopColor="var(--color-bg-400)"
+                  stopColor="var(--color-bg-highlight)"
                   stopOpacity={0.8}
                 />
                 <stop
