@@ -43,10 +43,7 @@ export const menuLabelStyles = cn(
   'text-fg-tertiary'
 )
 
-export const menuSeparatorStyles = cn(
-  '-mx-2 my-2',
-  'border-t border-dashed border-border-200'
-)
+export const menuSeparatorStyles = cn('-mx-2 my-2', 'border-t border-dashed')
 
 export const menuViewportStyles = cn('p-1')
 

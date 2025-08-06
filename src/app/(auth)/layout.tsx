@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         gradientDegrees={90}
       />
       <div className="z-10 flex h-full w-full items-center justify-center px-4">
-        <div className="h-fit border border-border-200 bg-bg w-full rounded-sm max-w-96 p-6">
+        <div className="h-fit border bg-bg w-full rounded-sm max-w-96 p-6">
           {children}
         </div>
       </div>
