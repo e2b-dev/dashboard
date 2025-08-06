@@ -66,7 +66,7 @@ export default function SandboxInspectNotFound() {
 
   return (
     <>
-      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 flex overflow-hidden">
+      <div className="text-bg-highlight pointer-events-none absolute -top-30 -right-100 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
       </div>

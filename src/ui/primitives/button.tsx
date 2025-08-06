@@ -31,7 +31,7 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         muted: [
-          'border border-border-200 bg-bg-hover text-fg-secondary hover:text-fg',
+          'border bg-bg-hover text-fg-secondary hover:text-fg',
           'hover:bg-bg-hover/90 focus:bg-bg-hover/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
