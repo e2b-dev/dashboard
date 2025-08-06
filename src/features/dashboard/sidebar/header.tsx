@@ -5,12 +5,7 @@ import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import LogoWithoutText from '@/ui/logo-without-text'
 import { Button } from '@/ui/primitives/button'
-import {
-  SidebarGroup,
-  SidebarHeader,
-  SidebarMenu,
-  useSidebar,
-} from '@/ui/primitives/sidebar'
+import { SidebarHeader, SidebarMenu, useSidebar } from '@/ui/primitives/sidebar'
 import ShortcutTooltip from '@/ui/shortcut-tooltip'
 import { ArrowLeftToLine, ArrowRightFromLine } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -34,7 +29,7 @@ export default function DashboardSidebarHeader() {
       <div
         className={cn('flex w-full items-center justify-between p-3 h-12', {
           // When the sidebar is closing, we want to stick the logo to the right.
-          'justify-end': !isOpen,
+          'justify-end p-2 pb-0': !isOpen,
         })}
       >
         {/* When the sidebar is closing, we want the logo to fade out AND be removed from the DOM. */}
@@ -71,12 +66,10 @@ export default function DashboardSidebarHeader() {
           </Button>
         </ShortcutTooltip>
       </div>
-      <SidebarGroup className="pt-0 transition-all duration-100 group-data-[collapsible=icon]:border-b pb-1.5">
-        <SidebarMenu className="flex flex-col gap-2">
-          <DashboardSidebarMenu />
-          <DashboardSidebarCommand />
-        </SidebarMenu>
-      </SidebarGroup>
+      <SidebarMenu className="p-0 gap-0">
+        <DashboardSidebarMenu />
+        <DashboardSidebarCommand />
+      </SidebarMenu>
     </SidebarHeader>
   )
 }

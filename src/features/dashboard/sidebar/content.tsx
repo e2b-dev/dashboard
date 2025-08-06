@@ -65,7 +65,7 @@ export default function DashboardSidebarContent() {
   }
 
   return (
-    <SidebarContent className="overflow-x-hidden pt-1.5">
+    <SidebarContent className="overflow-x-hidden gap-0">
       {Object.entries(groupedNavLinks).map(([group, links], ix) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
@@ -87,7 +87,8 @@ export default function DashboardSidebarContent() {
                     <Link suppressHydrationWarning href={href} prefetch>
                       <item.icon
                         className={cn(
-                          isActive(href) && 'text-accent-main-highlight '
+                          'group-data-[collapsible=icon]:size-4.5 transition-[size,color]',
+                          isActive(href) && 'text-accent-main-highlight'
                         )}
                       />
                       <span>{item.label}</span>
