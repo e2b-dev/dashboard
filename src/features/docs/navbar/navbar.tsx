@@ -12,7 +12,7 @@ export function Nav({ className }: NavProps) {
   return (
     <nav
       className={cn(
-        'border-border bg-bg/70 z-50 h-[var(--fd-nav-height)] w-full border-b backdrop-blur-sm',
+        'border-stroke bg-bg/70 z-50 h-[var(--fd-nav-height)] w-full border-b backdrop-blur-sm',
         className
       )}
     >
