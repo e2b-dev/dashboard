@@ -28,12 +28,31 @@
 
 /* Common Variables */
 :root {
+  --public-nav-height: 50px;
+
   --protected-nav-height: 50px;
   --protected-sidebar-width: 0px;
+
+  --shadow: hsl(0 0% 90%);
+  --shadow-strength: 0.3;
 
   @media (min-width: 768px) {
     --protected-sidebar-width: 256px;
   }
+
+  /* Fumadocs 
+  
+  --fd-nav-height: var(--public-nav-height) !important;
+  --fd-sidebar-width: var(--protected-sidebar-width) !important;
+
+  --fd-background: var(--bg);
+  --fd-foreground: var(--fg);
+
+  --fd-muted: var(--bg-1);
+  --fd-muted-foreground: var(--fg-500);
+
+  --fd-accent: var(--bg-1);
+  --fd-accent-foreground: var(--fg); */
 }
 
 /* Theme Variables */
@@ -82,6 +101,9 @@
 
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgb(255, 135, 99, 0.16);
+
+  --shadow: hsl(0 0% 90%);
+  --shadow-strength: 0.3;
 }
 
 .dark {
@@ -129,9 +151,15 @@
 
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgba(255, 135, 99, 0.16);
+
+  --shadow: hsl(0 0% 3%);
+  --shadow-strength: 0.2;
 }
 
 @theme {
+  /* Border Radius */
+  --radius: 0.375rem;
+
   /* Colors */
   --color-ring: var(--stroke-active);
 
@@ -189,6 +217,45 @@
   --color-chart-4: var(--accent-warning-highlight);
   --color-chart-5: var(--accent-error-highlight);
 
+  /* Shadows */
+  --shadow-xs:
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-sm:
+    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-md:
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-lg:
+    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-xl:
+    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-2xl: 0 25px 50px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-inner: inset 0 2px 4px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+
+  --drop-shadow-xs:
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-sm:
+    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-md:
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-lg:
+    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-xl:
+    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-2xl: 0 25px 50px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+
   /* Font Family */
   --font-sans:
     'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
@@ -197,6 +264,106 @@
   --font-mono:
     'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
+  --font-fira-code: 'Fira Code', monospace;
+
+  /* Fumadocs 
+    --color-fd-background: var(--bg);
+    --color-fd-foreground: var(--fg);
+    --color-fd-muted: var(--bg-1);
+    --color-fd-muted-foreground: var(--fg-300);
+    --color-fd-popover: var(--bg);
+    --color-fd-popover-foreground: var(--fg);
+    --color-fd-card: var(--bg);
+    --color-fd-card-foreground: var(--fg);
+    --color-fd-border: var(--border);
+    --color-fd-primary: var(--accent);
+    --color-fd-primary-foreground: var(--accent-fg);
+    --color-fd-secondary: var(--bg-1);
+    --color-fd-secondary-foreground: var(--fg);
+    --color-fd-accent: var(--bg-1);
+    --color-fd-accent-foreground: var(--fg);
+    --color-fd-ring: var(--ring); 
+  */
+
+  /* Animations */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes wave {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
+  @keyframes grid {
+    0% {
+      transform: translateY(-50%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-slide-in-from-bottom {
+    0% {
+      transform: translateY(5px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shiny-text {
+    0% {
+      background-position: calc(-100% - var(--shiny-width)) 0;
+    }
+    100% {
+      background-position: calc(100% + var(--shiny-width)) 0;
+    }
+  }
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-shimmer: shimmer 1s ease-in-out infinite;
+  --animate-grid: grid 30s linear infinite;
+  --animate-wave: wave 2s linear linear infinite;
+  --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s
+    cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shiny-text: shiny-text 0.5s linear infinite;
+}
+
+/* Container */
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  max-width: 1400px;
 }
 
 /* Typography utilities */
