@@ -53,14 +53,21 @@ export default function DashboardSidebarCommand({
           tooltip="Go to..."
           variant={isSidebarOpen ? 'outline' : 'default'}
           className={cn(
-            'text-fg-tertiary relative h-10 transition-all',
+            'text-fg-tertiary h-10 relative transition-all',
+            'group-data-[collapsible=icon]:border-x-0 group-data-[collapsible=icon]:border-y group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!p-0',
             className
           )}
           onClick={() => setOpen(true)}
         >
-          <ChevronRight className="text-fg-tertiary size-4" />
-          Go to
-          <Kbd keys={['cmd', 'k']} className="pointer-events-none ml-auto" />
+          <ChevronRight className="text-fg-tertiary size-4 group-data-[collapsible=icon]:hidden" />
+          <span className="group-data-[collapsible=icon]:hidden">Go to</span>
+          <Kbd
+            keys={['cmd', 'k']}
+            className="pointer-events-none data-[collapsible=icon]:ml-0 ml-auto"
+            badgeProps={{
+              className: 'group-data-[collapsible=icon]:!bg-transparent',
+            }}
+          />
         </SidebarMenuButton>
       </SidebarMenuItem>
       <CommandDialog open={open} onOpenChange={setOpen}>
