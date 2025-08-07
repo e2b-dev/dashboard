@@ -128,7 +128,7 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
   }
 
   return (
-    <ClientOnly className="flex h-full flex-col px-6 pt-5">
+    <ClientOnly className="flex h-full flex-col px-6 pt-4">
       <TemplatesHeader table={table} />
 
       <div

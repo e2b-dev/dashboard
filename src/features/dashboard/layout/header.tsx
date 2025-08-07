@@ -21,10 +21,10 @@ export default function DashboardLayoutHeader({
   return (
     <div
       className={cn(
-        'sticky top-0 z-50 bg-bg/40 backdrop-blur-md p-6 flex items-center gap-3 h-11',
+        'sticky top-0 z-50 bg-bg/40 backdrop-blur-md p-6 flex items-center gap-3',
         {
           'border-b': config?.type === 'default',
-          'pb-0': config?.type === 'custom',
+          'pb-0 h-12': config?.type === 'custom',
         },
         className
       )}
