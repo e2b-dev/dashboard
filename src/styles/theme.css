@@ -352,6 +352,42 @@
     }
   }
 
+  @keyframes loader-slash {
+    0% {
+      content: '|';
+    }
+    25% {
+      content: '/';
+    }
+    50% {
+      content: '-';
+    }
+    75% {
+      content: '\\';
+    }
+    100% {
+      content: '|';
+    }
+  }
+
+  @keyframes loader-square {
+    0% {
+      content: '◰';
+    }
+    25% {
+      content: '◳';
+    }
+    50% {
+      content: '◲';
+    }
+    75% {
+      content: '◱';
+    }
+    100% {
+      content: '◰';
+    }
+  }
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-shimmer: shimmer 1s ease-in-out infinite;
@@ -360,6 +396,8 @@
   --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s
     cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shiny-text: shiny-text 0.5s linear infinite;
+  --animate-loader-slash: loader-slash 0.4s linear infinite;
+  --animate-loader-square: loader-square 0.4s linear infinite;
 }
 
 /* Container */
@@ -367,97 +405,6 @@
   margin-inline: auto;
   padding-inline: 2rem;
   max-width: 1400px;
-}
-
-/* Typography utilities */
-@utility prose-headline {
-  font-size: 1.25rem !important; /* 20px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 700 !important;
-}
-
-@utility prose-headline-small {
-  font-size: 1rem !important; /* 16px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 700 !important;
-}
-
-@utility prose-label {
-  font-size: 0.75rem !important; /* 12px */
-  line-height: 1.0625rem !important; /* 17px */
-  font-weight: 400 !important;
-}
-
-@utility prose-label-highlight {
-  font-size: 0.75rem !important; /* 12px */
-  line-height: 1.0625rem !important; /* 17px */
-  font-weight: 500 !important;
-}
-
-@utility prose-label-numeric {
-  font-size: 0.75rem !important; /* 12px */
-  line-height: 1.0625rem !important; /* 17px */
-  font-weight: 400 !important;
-}
-
-@utility prose-label-numeric-highlight {
-  font-size: 0.75rem !important; /* 12px */
-  line-height: 1.0625rem !important; /* 17px */
-  font-weight: 500 !important;
-}
-
-@utility prose-body-highlight {
-  font-size: 0.875rem !important; /* 14px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 500 !important;
-}
-
-@utility prose-body {
-  font-size: 0.875rem !important; /* 14px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 400 !important;
-}
-
-@utility prose-body-numeric {
-  font-size: 0.875rem !important; /* 14px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 400 !important;
-}
-
-@utility prose-body-numeric-highlight {
-  font-size: 0.875rem !important; /* 14px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 500 !important;
-}
-
-@utility prose-table-highlight {
-  font-size: 0.8125rem !important; /* 13px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 500 !important;
-}
-
-@utility prose-table {
-  font-size: 0.8125rem !important; /* 13px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 400 !important;
-}
-
-@utility prose-table-numeric {
-  font-size: 0.8125rem !important; /* 13px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 400 !important;
-}
-
-@utility prose-value-big {
-  font-size: 2rem !important; /* 32px */
-  line-height: 2rem !important; /* 32px */
-  font-weight: 700 !important;
-}
-
-@utility prose-value-small {
-  font-size: 1rem !important; /* 16px */
-  line-height: 1.25rem !important; /* 20px */
-  font-weight: 700 !important;
 }
 
 /* Typography utilities */
