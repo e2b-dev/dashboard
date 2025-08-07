@@ -46,7 +46,7 @@ export default function DashboardSidebarHeader() {
             >
               <ClientOnly className="flex items-center -translate-x-1.5">
                 <LogoWithoutText className="scale-105" />
-                <span className="!text-headline-small">E2B</span>
+                <span className="prose-headline-small">E2B</span>
               </ClientOnly>
             </motion.span>
           )}

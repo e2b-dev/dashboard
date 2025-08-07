@@ -8,7 +8,10 @@ export default function Status() {
   const { isRunning } = useSandboxContext()
 
   return (
-    <Badge variant={isRunning ? 'positive' : 'error'} className="uppercase">
+    <Badge
+      variant={isRunning ? 'positive' : 'error'}
+      className="gap-2 uppercase"
+    >
       <Circle className="size-2 animate-pulse fill-current" />
       {isRunning ? 'Running' : 'Stopped'}
     </Badge>

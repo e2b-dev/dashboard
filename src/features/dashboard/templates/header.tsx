@@ -24,7 +24,10 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
           <SearchInput />
 
           <div className="flex items-center gap-3">
-            <Badge size="lg" variant="positive" className="uppercase">
+            <Badge
+              variant="positive"
+              className="h-min w-fit gap-2 font-bold uppercase"
+            >
               {table.getCoreRowModel().rows.length} templates
               <Hexagon className="size-3 !stroke-[3px]" />
             </Badge>

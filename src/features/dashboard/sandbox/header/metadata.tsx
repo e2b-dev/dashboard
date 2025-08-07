@@ -11,7 +11,7 @@ export default function Metadata() {
 
   if (!sandboxInfo?.metadata) {
     return (
-      <Badge>
+      <Badge className={className}>
         <CircleSlash className="size-3" /> Empty
       </Badge>
     )

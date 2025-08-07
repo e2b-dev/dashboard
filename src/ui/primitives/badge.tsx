@@ -1,23 +1,23 @@
-import { cn } from '@/lib/utils/index'
+import { cn } from '@/lib/utils'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
 const badgeVariants = cva(
-  'inline-flex gap-1 items-center !text-label px-2  py-1 text-xs font-mono font-light transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center cursor-default h-4.5 justify-center px-1.25 text-xs prose-label focus-visible:ring-1 w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-0.5 [&>svg]:pointer-events-none ![&>svg]:pl-0.75 aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight transition-[color,box-shadow] overflow-hidden',
   {
     variants: {
       variant: {
-        default: 'bg-fill text-fg-secondary',
+        default: 'bg-bg-highlight text-fg-secondary',
         positive: 'bg-accent-positive-bg text-accent-positive-highlight',
         warning: 'bg-accent-warning-bg text-accent-warning-highlight',
         info: 'bg-accent-info-bg text-accent-info-highlight',
         error: 'bg-accent-error-bg text-accent-error-highlight',
-        success: 'bg-accent-positive-bg text-accent-positive-highlight',
-
-        muted: 'bg-bg-1 text-fg-tertiary',
-        accent: 'bg-accent-main-bg text-accent-main-highlight ',
-        outline: 'border border-stroke text-fg-secondary',
+        code: 'bg-fill ring-1 ring-stroke text-fg-secondary',
+      },
+      can: {
+        none: '',
+        hover: 'hover:ring-1 ring-[currentColor]',
       },
       size: {
         default: 'px-2 py-1 text-xs',
@@ -28,6 +28,7 @@ const badgeVariants = cva(
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      can: 'none',
     },
     defaultVariants: {
       variant: 'default',
