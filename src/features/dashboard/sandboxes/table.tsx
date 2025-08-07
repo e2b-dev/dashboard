@@ -208,7 +208,7 @@ export default function SandboxesTable({
   }
 
   return (
-    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] px-6 pb-6">
+    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] px-6 pt-5 pb-6">
       <SandboxesHeader
         searchInputRef={searchInputRef}
         templates={templates}
@@ -217,7 +217,7 @@ export default function SandboxesTable({
 
       <div
         className={cn(
-          'bg-bg flex-1 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+          'bg-bg flex-1 mt-4 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >

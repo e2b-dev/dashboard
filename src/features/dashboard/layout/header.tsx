@@ -3,6 +3,7 @@
 import { getDashboardPageConfig } from '@/configs/layout'
 import { cn } from '@/lib/utils/ui'
 import ClientOnly from '@/ui/client-only'
+import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
 import { usePathname } from 'next/navigation'
 import { DashboardSurveyPopover } from '../navbar/dashboard-survey-popover'
@@ -20,7 +21,7 @@ export default function DashboardLayoutHeader({
   return (
     <div
       className={cn(
-        'sticky top-0 z-50 bg-bg/40 backdrop-blur-md p-6 flex items-center gap-3',
+        'sticky top-0 z-50 bg-bg/40 backdrop-blur-md p-6 flex items-center gap-3 h-11',
         {
           'border-b': config?.type === 'default',
           'pb-0': config?.type === 'custom',
@@ -28,6 +29,7 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
+      <SidebarTrigger className="h-full w-11 rounded-none border-r px-3 md:hidden" />
       <h1 className="mr-auto">{config?.title}</h1>
       <ClientOnly>
         <ThemeSwitcher />

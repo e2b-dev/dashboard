@@ -44,7 +44,7 @@ export function SandboxesHeader({
     hasActiveFilters() || table.getState().globalFilter
 
   return (
-    <header className="pt-5 pb-6 flex flex-col gap-4">
+    <header className="flex flex-col gap-4">
       <div className="flex w-full flex-col gap-8">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
