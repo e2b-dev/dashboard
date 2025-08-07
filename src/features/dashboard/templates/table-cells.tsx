@@ -13,8 +13,7 @@ import {
 } from '@/server/templates/templates-actions'
 import { DefaultTemplate, Template } from '@/types/api'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { E2BBadge } from '@/ui/brand'
-import HelpTooltip from '@/ui/help-tooltip'
+import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -261,7 +260,7 @@ export function VisibilityCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <Badge
+    <span
       className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
         'text-accent-positive-highlight': getValue(),
       })}

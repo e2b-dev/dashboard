@@ -109,7 +109,7 @@ function DesktopContent({
               'relative flex h-fit w-full max-w-[1200px] pb-2',
               classNames?.frameWrapper
             ),
-            frame: cn(className, 'bg-bg-1'),
+            frame: cn(className, 'bg-bg-1/40 backdrop-blur-sm'),
           }}
         >
           {children}
