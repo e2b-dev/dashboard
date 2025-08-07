@@ -46,11 +46,11 @@ function UsagePageContent({ teamId }: { teamId: string }) {
       />
       <VCPUCard
         teamId={teamId}
-        className="col-span-1 min-h-[320px] border-b lg:col-span-6 lg:border-r lg:border-b-0"
+        className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-r"
       />
       <RAMCard
         teamId={teamId}
-        className="col-span-1 min-h-[320px] border-b lg:col-span-6 lg:border-b-0"
+        className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-b-0"
       />
     </CatchErrorBoundary>
   )
