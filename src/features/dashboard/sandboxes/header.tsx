@@ -60,7 +60,7 @@ export function SandboxesHeader({
 
           <div className="flex items-center gap-3">
             <Badge
-              variant="success"
+              variant="positive"
               className="h-min w-fit gap-2 font-bold uppercase"
             >
               {table.getCoreRowModel().rows.length} running

@@ -31,7 +31,7 @@ export function InfoCard({ className }: InfoCardProps) {
         {team ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Badge variant="accent">E-Mail</Badge>
+              <Badge variant="info">E-Mail</Badge>
               <span>{team.email}</span>
               <CopyButton
                 value={team.email}
@@ -40,9 +40,7 @@ export function InfoCard({ className }: InfoCardProps) {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="muted" className="bg-fill">
-                Team ID
-              </Badge>
+              <Badge>Team ID</Badge>
               <span className="text-fg-tertiary">{team.id}</span>
               <CopyButton
                 value={team.id}

@@ -35,7 +35,7 @@ export default async function DashboardPageLayout({
         <div className="flex w-full items-center gap-2">
           <SidebarTrigger className="h-full w-11 rounded-none border-r px-3 md:hidden" />
 
-          <h2 className="mr-auto text-lg font-bold">{title}</h2>
+          <h1 className="mr-auto">{title}</h1>
 
           <Suspense fallback={null}>
             <ThemeSwitcher />

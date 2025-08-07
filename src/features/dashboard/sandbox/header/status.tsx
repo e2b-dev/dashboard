@@ -9,7 +9,7 @@ export default function Status() {
 
   return (
     <Badge
-      variant={isRunning ? 'success' : 'error'}
+      variant={isRunning ? 'positive' : 'error'}
       className="gap-2 uppercase"
     >
       <Circle className="size-2 animate-pulse fill-current" />

@@ -77,7 +77,7 @@ export default function SandboxInspectIncompatible({
                   </CodeBlock>
                   <div className="text-fg-secondary -ml-4 inline-block">
                     The folder should contain an{' '}
-                    <Badge className={codeClassNames} variant="outline">
+                    <Badge className={codeClassNames} variant="code">
                       e2b.toml
                     </Badge>{' '}
                     file.
@@ -88,7 +88,7 @@ export default function SandboxInspectIncompatible({
                   <p className="font-semibold">Rebuild the template</p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
-                    <Badge className={codeClassNames} variant="outline">
+                    <Badge className={codeClassNames} variant="code">
                       e2b template build
                     </Badge>{' '}
                     along with custom{' '}
@@ -100,7 +100,7 @@ export default function SandboxInspectIncompatible({
                       start commands
                     </Link>{' '}
                     and any other arguments to rebuild. For example:
-                    <Badge className={codeClassNames} variant="outline">
+                    <Badge className={codeClassNames} variant="code">
                       -c "start.sh"
                     </Badge>
                   </div>

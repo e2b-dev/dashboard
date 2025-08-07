@@ -71,11 +71,7 @@ export function Kbd({
           return (
             <React.Fragment key={key}>
               {index > 0 && '+'}
-              {isMac && isSymbolKey(key) ? (
-                <span className="scale-[1.4]">{formattedKey}</span>
-              ) : (
-                formattedKey
-              )}
+              {formattedKey}
             </React.Fragment>
           )
         })}

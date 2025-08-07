@@ -103,11 +103,11 @@ export default function DashboardSidebarMenu({
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="text-fg-tertiary font-mono truncate !text-label">
+                <span className="text-fg-tertiary font-mono truncate prose-label">
                   TEAM
                 </span>
                 {selectedTeam ? (
-                  <span className="text-fg truncate !text-body-highlight normal-case">
+                  <span className="text-fg truncate prose-body-highlight normal-case">
                     {selectedTeam.transformed_default_name || selectedTeam.name}
                   </span>
                 ) : (
