@@ -15,7 +15,6 @@ import {
 import { DefaultTemplate, Template } from '@/types/api'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Loader } from '@/ui/loader'
-import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -259,12 +258,12 @@ export function VisibilityCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <Badge
+    <span
       className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
         'text-accent-positive-highlight': getValue(),
       })}
     >
       {getValue() ? 'Public' : 'Private'}
-    </Badge>
+    </span>
   )
 }

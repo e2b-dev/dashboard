@@ -63,7 +63,7 @@ export default function DashboardSidebarCommand({
           <span className="group-data-[collapsible=icon]:hidden">Go to</span>
           <Kbd
             keys={['cmd', 'k']}
-            className="pointer-events-none data-[collapsible=icon]:ml-0 ml-auto"
+            className="pointer-events-none group-data-[collapsible=icon]:mx-auto ml-auto"
             badgeProps={{
               className: 'group-data-[collapsible=icon]:!bg-transparent',
             }}
