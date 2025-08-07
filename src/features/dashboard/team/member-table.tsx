@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
-import { Loader } from '@/ui/loader'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
   TableBody,

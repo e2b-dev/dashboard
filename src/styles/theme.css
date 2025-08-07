@@ -352,6 +352,42 @@
     }
   }
 
+  @keyframes loader-slash {
+    0% {
+      content: '|';
+    }
+    25% {
+      content: '/';
+    }
+    50% {
+      content: '-';
+    }
+    75% {
+      content: '\\';
+    }
+    100% {
+      content: '|';
+    }
+  }
+
+  @keyframes loader-square {
+    0% {
+      content: '◰';
+    }
+    25% {
+      content: '◳';
+    }
+    50% {
+      content: '◲';
+    }
+    75% {
+      content: '◱';
+    }
+    100% {
+      content: '◰';
+    }
+  }
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-shimmer: shimmer 1s ease-in-out infinite;
@@ -360,6 +396,8 @@
   --animate-fade-slide-in: fade-slide-in-from-bottom 0.1s
     cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shiny-text: shiny-text 0.5s linear infinite;
+  --animate-loader-slash: loader-slash 0.4s linear infinite;
+  --animate-loader-square: loader-square 0.4s linear infinite;
 }
 
 /* Container */
@@ -458,4 +496,28 @@
   font-size: 1rem !important; /* 16px */
   line-height: 1.25rem !important; /* 20px */
   font-weight: 700 !important;
+}
+
+/* Loader utilities */
+@utility loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+@utility loader-sm {
+  font-size: 0.875rem;
+}
+
+@utility loader-md {
+  font-size: 1rem;
+}
+
+@utility loader-lg {
+  font-size: 1.125rem;
+}
+
+@utility loader-xl {
+  font-size: 1.5rem;
 }

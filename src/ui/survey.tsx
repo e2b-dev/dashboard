@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import {
   CardContent,
@@ -7,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
+import { Loader } from '@/ui/primitives/loader'
 import { Textarea } from '@/ui/primitives/textarea'
 import { SurveyQuestion as PostHogSurveyQuestion, Survey } from 'posthog-js'
 import { useCallback, useMemo, useState } from 'react'

@@ -14,7 +14,6 @@ import {
 } from '@/server/templates/templates-actions'
 import { DefaultTemplate, Template } from '@/types/api'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -25,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { Loader } from '@/ui/primitives/loader'
 import { CellContext } from '@tanstack/react-table'
 import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'

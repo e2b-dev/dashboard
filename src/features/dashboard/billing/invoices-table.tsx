@@ -1,8 +1,8 @@
 import { getInvoices } from '@/server/billing/get-invoices'
 import { ErrorIndicator } from '@/ui/error-indicator'
-import { Loader } from '@/ui/loader'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
+import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
   TableBody,
