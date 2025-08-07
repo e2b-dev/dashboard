@@ -6,20 +6,18 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      'border-primary ring-offset-background peer size-5 shrink-0 border data-[state=checked]:text-accent-main-highlight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-      className
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator
-      className={cn('flex items-center justify-center text-current')}
+function Checkbox({
+  className,
+  ...props
+}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        'peer data-[state=checked]:bg-accent-main-highlight hover:border-stroke-active data-[state=checked]:text-fg-inverted data-[state=checked]:border-accent-main-highlight focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight size-4 shrink-0 border transition-colors outline-none focus-visible:ring-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
+        className
+      )}
+      {...props}
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
