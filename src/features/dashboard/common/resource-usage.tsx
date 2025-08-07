@@ -57,7 +57,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   return (
     <span
       className={cn(
-        'text-fg-tertiary inline w-full truncate font-mono whitespace-nowrap',
+        'text-fg-tertiary inline w-full overflow-x-hidden font-mono whitespace-nowrap',
         classNames?.wrapper
       )}
     >

@@ -128,18 +128,18 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
   }
 
   return (
-    <ClientOnly className="flex h-full flex-col pt-3">
+    <ClientOnly className="flex h-full flex-col px-6 py-6">
       <TemplatesHeader table={table} />
 
       <div
         className={cn(
-          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
+          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-48px-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         <DataTable
           className={cn(
-            'h-full overflow-y-auto md:min-w-[calc(100svw-var(--sidebar-width-active))]',
+            'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
           style={{ ...columnSizeVars }}
