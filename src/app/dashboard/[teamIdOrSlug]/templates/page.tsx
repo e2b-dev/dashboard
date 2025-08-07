@@ -1,4 +1,3 @@
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import TemplatesTable from '@/features/dashboard/templates/table'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import {
@@ -6,8 +5,6 @@ import {
   getTeamTemplates,
 } from '@/server/templates/get-team-templates'
 import ErrorBoundary from '@/ui/error'
-import { Suspense } from 'react'
-import LoadingLayout from '../../loading'
 
 interface PageProps {
   params: Promise<{
@@ -18,13 +15,7 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { teamIdOrSlug } = await params
 
-  return (
-    <DashboardPageLayout title="Templates" fullscreen>
-      <Suspense fallback={<LoadingLayout />}>
-        <PageContent teamIdOrSlug={teamIdOrSlug} />
-      </Suspense>
-    </DashboardPageLayout>
-  )
+  return <PageContent teamIdOrSlug={teamIdOrSlug} />
 }
 
 interface PageContentProps {

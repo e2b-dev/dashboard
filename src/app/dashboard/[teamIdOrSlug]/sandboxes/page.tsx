@@ -1,5 +1,3 @@
-import LoadingLayout from '@/features/dashboard/loading-layout'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import SandboxesTable from '@/features/dashboard/sandboxes/table'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
@@ -9,7 +7,6 @@ import {
   getTeamTemplates,
 } from '@/server/templates/get-team-templates'
 import ErrorBoundary from '@/ui/error'
-import { Suspense } from 'react'
 
 interface PageProps {
   params: Promise<{
@@ -20,13 +17,7 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { teamIdOrSlug } = await params
 
-  return (
-    <DashboardPageLayout title="Sandboxes" fullscreen>
-      <Suspense fallback={<LoadingLayout />}>
-        <PageContent teamIdOrSlug={teamIdOrSlug} />
-      </Suspense>
-    </DashboardPageLayout>
-  )
+  return <PageContent teamIdOrSlug={teamIdOrSlug} />
 }
 
 interface PageContentProps {

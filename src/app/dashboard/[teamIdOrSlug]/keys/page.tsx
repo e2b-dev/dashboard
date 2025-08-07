@@ -1,7 +1,7 @@
 import CreateApiKeyDialog from '@/features/dashboard/keys/create-api-key-dialog'
 import ApiKeysTable from '@/features/dashboard/keys/table'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import Frame from '@/ui/frame'
 import { Button } from '@/ui/primitives/button'
 import { CardDescription, CardTitle } from '@/ui/primitives/card'
 import { Plus } from 'lucide-react'
@@ -18,7 +18,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <DashboardPageLayout title="API Keys">
+    <Frame classNames={{ wrapper: 'w-full' }}>
       <div className="grid w-full gap-6 p-4 sm:gap-8 sm:p-6">
         <section className="grid gap-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
@@ -44,6 +44,6 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
           </div>
         </section>
       </div>
-    </DashboardPageLayout>
+    </Frame>
   )
 }
