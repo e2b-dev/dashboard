@@ -13,7 +13,7 @@ export default function DashboardLayoutWrapper({
 
   if (config?.type === 'default') {
     return (
-      <div className="py-10 px-3 container mx-auto p-4 md:p-8 2xl:p-24 h-full w-full">
+      <div className="container mx-auto p-4 md:p-8 2xl:p-24 h-full w-full">
         {children}
       </div>
     )
