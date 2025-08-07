@@ -128,7 +128,7 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
   }
 
   return (
-    <ClientOnly className="flex h-full flex-col px-6 py-6">
+    <ClientOnly className="flex h-full flex-col px-6 pt-5">
       <TemplatesHeader table={table} />
 
       <div
@@ -148,7 +148,7 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
         >
           <DataTableHeader className="sticky top-0 shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
-              <DataTableRow key={headerGroup.id} className="hover:bg-bg">
+              <DataTableRow key={headerGroup.id} className="border-b-0">
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
                     key={header.id}
