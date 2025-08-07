@@ -63,18 +63,21 @@ export default function RootPathInput({
         e.preventDefault()
         handleSubmit(value)
       }}
-      className={cn('relative flex h-full items-center gap-2', className)}
+      className={cn('relative h-full', className)}
     >
+      <span className="text-fg-tertiary absolute left-2 top-1/2 -translate-y-1/2">
+        {'$'}
+      </span>
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         disabled={isPending}
-        className="border-none pl-0 focus:!border-none"
         placeholder="/home/user"
+        className="pl-6 pr-18 border-none h-full"
       />
 
       <Button
-        className="z-20 mr-1.5 h-7 rounded-none"
+        className="z-20 mr-1.5 h-7 rounded-none absolute right-0 top-1/2 -translate-y-1/2"
         size="sm"
         disabled={isPending || !isDirty}
         type="submit"

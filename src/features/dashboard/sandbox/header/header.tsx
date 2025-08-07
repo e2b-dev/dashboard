@@ -96,11 +96,11 @@ export default async function SandboxDetailsHeader({
         <div className="flex flex-col gap-1">
           <Link
             href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}
-            className="text-fg-secondary hover:text-fg flex items-center gap-1.5 transition-colors"
+            className="!text-fg-tertiary hover:!text-fg flex items-center gap-1 prose-body-highlight transition-colors"
             prefetch
             shallow
           >
-            <ChevronLeftIcon className="size-5" />
+            <ChevronLeftIcon className="size-4" />
             Sandboxes
           </Link>
           <SandboxDetailsTitle />
