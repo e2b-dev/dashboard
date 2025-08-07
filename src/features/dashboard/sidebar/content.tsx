@@ -87,7 +87,7 @@ export default function DashboardSidebarContent() {
                     <Link suppressHydrationWarning href={href} prefetch>
                       <item.icon
                         className={cn(
-                          'group-data-[collapsible=icon]:size-4.5 transition-[size,color]',
+                          'group-data-[collapsible=icon]:size-5 transition-[size,color]',
                           isActive(href) && 'text-accent-main-highlight'
                         )}
                       />
