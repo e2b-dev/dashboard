@@ -186,7 +186,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="truncate font-mono text-fg-tertiary">
+    <div className="overflow-x-hidden whitespace-nowrap font-mono text-fg-tertiary">
       {row.getValue('templateID')}
     </div>
   )
@@ -198,9 +198,12 @@ export function TemplateNameCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
     <div
-      className={cn('flex items-center gap-2 truncate', {
-        'text-fg-tertiary': !getValue(),
-      })}
+      className={cn(
+        'flex items-center gap-2 overflow-x-hidden whitespace-nowrap',
+        {
+          'text-fg-tertiary': !getValue(),
+        }
+      )}
     >
       <span>{(getValue() as string) ?? 'N/A'}</span>
       {'isDefault' in row.original && row.original.isDefault && (
@@ -238,7 +241,11 @@ export function CreatedAtCell({
   }, [dateTimeString])
 
   return (
-    <div className={cn('h-full truncate font-mono text-xs')}>
+    <div
+      className={cn(
+        'h-full overflow-x-hidden whitespace-nowrap font-mono text-xs'
+      )}
+    >
       <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
       <span className="text-fg-tertiary">{timezone}</span>

@@ -78,7 +78,7 @@ export function DiskUsageCell({
 
 export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
   return (
-    <div className="text-fg-tertiary truncate font-mono text-xs">
+    <div className="text-fg-tertiary overflow-x-hidden font-mono text-xs">
       {getValue() as string}
     </div>
   )
@@ -151,7 +151,7 @@ export function StartedAtCell({
   )
 
   return (
-    <div className="h-full truncate font-mono text-xs">
+    <div className="h-full whitespace-nowrap overflow-x-hidden font-mono text-xs">
       <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
       <span className="text-fg-tertiary">{timezone}</span>

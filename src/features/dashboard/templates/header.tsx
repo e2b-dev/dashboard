@@ -18,7 +18,7 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
     table.getState().globalFilter
 
   return (
-    <div className="flex items-center justify-between gap-3 px-3">
+    <div className="flex items-center justify-between gap-3">
       <div className="flex w-full flex-col gap-8">
         <div className="flex flex-col gap-4">
           <SearchInput />
