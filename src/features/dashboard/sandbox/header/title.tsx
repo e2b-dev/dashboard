@@ -12,7 +12,9 @@ export default function Title() {
 
   return (
     <div className="flex items-center gap-2">
-      <h2 className="text-fg prose-headline-small">{sandboxInfo.sandboxID}</h2>
+      <h2 className="text-fg prose-headline-small md:text-2xl">
+        {sandboxInfo.sandboxID}
+      </h2>
       <CopyButton
         value={sandboxInfo.sandboxID}
         size="icon"

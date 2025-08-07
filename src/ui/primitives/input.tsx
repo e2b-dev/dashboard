@@ -15,7 +15,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         className={cn(
           'bg-bg flex h-8 w-full border px-3 py-2',
-          '!text-body placeholder:text-fg-tertiary',
+          'prose-body placeholder:text-fg-tertiary',
 
           'focus:[border-bottom:1px_solid_var(--accent-main-highlight)] focus:outline-none',
           'hover:bg-bg-hover focus:bg-bg-hover',
