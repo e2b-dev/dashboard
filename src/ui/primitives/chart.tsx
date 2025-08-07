@@ -207,7 +207,7 @@ const ChartTooltipContent = React.forwardRef<
           [
             // Base styles
             'grid min-w-[6rem] items-start gap-1.5',
-            'rounded-md px-2.5 py-1.5 text-xs shadow-xl',
+            'px-2.5 py-1.5 text-xs shadow-xl',
           ].join(' '),
           className
         )}

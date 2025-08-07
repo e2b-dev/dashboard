@@ -22,7 +22,7 @@ export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
   if (!user) return null
 
   return (
-    <Card className={cn('overflow-hidden rounded-xs border', className)}>
+    <Card className={cn('overflow-hidden border', className)}>
       <CardHeader>
         <CardTitle>Access Token</CardTitle>
         <CardDescription>Manage your personal access token.</CardDescription>
