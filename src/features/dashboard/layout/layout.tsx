@@ -7,7 +7,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="max-h-dvh flex flex-col overflow-y-auto relative">
+    <div className="max-h-dvh h-full flex flex-col overflow-y-auto relative">
       <DashboardLayoutHeader />
       <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>
     </div>

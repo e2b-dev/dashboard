@@ -208,7 +208,7 @@ export default function SandboxesTable({
   }
 
   return (
-    <ClientOnly className="flex h-full min-h-0 flex-col pt-3">
+    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] px-6 pb-6">
       <SandboxesHeader
         searchInputRef={searchInputRef}
         templates={templates}
@@ -217,14 +217,14 @@ export default function SandboxesTable({
 
       <div
         className={cn(
-          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
+          'bg-bg flex-1 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         {isMounted && (
           <DataTable
             className={cn(
-              'h-full overflow-y-auto md:min-w-[calc(100svw-var(--sidebar-width-active))]',
+              'h-full overflow-y-auto md:min-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
               SIDEBAR_TRANSITION_CLASSNAMES
             )}
             onScroll={handleBottomReached}
