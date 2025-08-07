@@ -18,6 +18,7 @@ interface ChartPlaceholderProps {
     container?: string
     card?: string
   }
+  placeholderBg?: string
   emptyContent?: React.ReactNode
   isLoading?: boolean
 }
@@ -26,6 +27,7 @@ export function ChartPlaceholder({
   classNames,
   emptyContent,
   isLoading,
+  placeholderBg = 'var(--bg)',
 }: ChartPlaceholderProps) {
   const mockData = Array.from({ length: 20 }, (_, i) => {
     const date = new Date(2024, 0, i + 1)
@@ -40,16 +42,23 @@ export function ChartPlaceholder({
   })
 
   return (
-    <div className="relative aspect-auto">
+    <div
+      className="relative aspect-auto"
+      style={
+        {
+          '--placeholder-bg': placeholderBg,
+        } as React.CSSProperties
+      }
+    >
       <ChartContainer
         config={chartConfig}
         className={cn(
           'h-50 w-full',
           classNames?.container,
           // Apply fading gradient styles ONLY when not loading (empty content is shown)
-          'before:from-bg-1 before:to-bg-1 relative before:absolute before:inset-0 before:z-20 before:bg-gradient-to-r before:via-transparent',
+          'before:from-(--placeholder-bg) before:to-(--placeholder-bg) relative before:absolute before:inset-0 before:z-20 before:bg-gradient-to-r before:via-transparent',
           // Add bottom fade gradient
-          'after:from-bg-1 after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-16 after:bg-gradient-to-t after:to-transparent'
+          'after:from-(--placeholder-bg) after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-16 after:bg-gradient-to-t after:to-transparent'
         )}
       >
         <AreaChart data={mockData} {...commonChartProps}>
@@ -62,11 +71,7 @@ export function ChartPlaceholder({
                 x2="1"
                 y2="0"
               >
-                <stop
-                  offset="0%"
-                  stopColor="var(--color-bg-1)"
-                  stopOpacity="0.1"
-                />
+                <stop offset="0%" stopColor="var(--placeholder-bg)" />
                 <stop
                   offset="45%"
                   stopColor="var(--color-bg-highlight)"
@@ -82,11 +87,7 @@ export function ChartPlaceholder({
                   stopColor="var(--color-bg-highlight)"
                   stopOpacity={0.8}
                 />
-                <stop
-                  offset="100%"
-                  stopColor="var(--color-bg-1)"
-                  stopOpacity="0.1"
-                />
+                <stop offset="100%" stopColor="var(--placeholder-bg)" />
                 <animateTransform
                   attributeName="gradientTransform"
                   type="translate"
