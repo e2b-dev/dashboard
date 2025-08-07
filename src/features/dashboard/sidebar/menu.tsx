@@ -87,7 +87,7 @@ export default function DashboardSidebarMenu({
             >
               <Avatar
                 className={cn(
-                  'shrink-0 transition-all duration-300',
+                  'shrink-0 transition-all duration-100 ease-in-out',
                   'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
                   {
                     'drop-shadow-sm filter': selectedTeam?.profile_picture_url,
