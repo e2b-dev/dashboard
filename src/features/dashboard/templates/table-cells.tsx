@@ -13,7 +13,6 @@ import {
 } from '@/server/templates/templates-actions'
 import { DefaultTemplate, Template } from '@/types/api'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
