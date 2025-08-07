@@ -208,7 +208,7 @@ export default function SandboxesTable({
   }
 
   return (
-    <ClientOnly className="flex h-full flex-col pt-3">
+    <ClientOnly className="flex h-full min-h-0 flex-col pt-3">
       <SandboxesHeader
         searchInputRef={searchInputRef}
         templates={templates}

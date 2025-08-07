@@ -1,9 +1,9 @@
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { InfoCard } from '@/features/dashboard/team/info-card'
 import { MemberCard } from '@/features/dashboard/team/member-card'
 import { NameCard } from '@/features/dashboard/team/name-card'
 import { ProfilePictureCard } from '@/features/dashboard/team/profile-picture-card'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import Frame from '@/ui/frame'
 import Scanline from '@/ui/scanline'
 import { Suspense } from 'react'
 
@@ -18,7 +18,7 @@ export default async function GeneralPage({ params }: GeneralPageProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <DashboardPageLayout title="Team">
+    <Frame classNames={{ wrapper: 'w-full' }}>
       <div className="grid w-full grid-cols-12">
         <Suspense>
           <>
@@ -37,6 +37,6 @@ export default async function GeneralPage({ params }: GeneralPageProps) {
           <MemberCard teamId={teamId} className="" />
         </section>
       </div>
-    </DashboardPageLayout>
+    </Frame>
   )
 }

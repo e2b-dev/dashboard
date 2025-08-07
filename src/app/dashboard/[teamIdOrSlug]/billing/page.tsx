@@ -2,8 +2,8 @@ import { TIERS } from '@/configs/tiers'
 import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
 import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
 import BillingTierCard from '@/features/dashboard/billing/tier-card'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import Frame from '@/ui/frame'
 import { CardDescription, CardTitle } from '@/ui/primitives/card'
 import { Suspense } from 'react'
 
@@ -16,11 +16,12 @@ export default async function BillingPage({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <DashboardPageLayout
-      title="Billing"
-      className="grid h-full w-full gap-4 self-start p-4 sm:gap-6 sm:p-6"
+    <Frame
+      classNames={{
+        frame: 'grid h-full w-full gap-4 self-start p-4 sm:gap-6 sm:p-6',
+        wrapper: 'w-full',
+      }}
     >
-      {/* Plan Section */}
       <section className="col-span-1 grid gap-4 xl:col-span-12">
         <div className="flex flex-col gap-1">
           <CardTitle>Plan</CardTitle>
@@ -45,7 +46,6 @@ export default async function BillingPage({
         </div>
       </section>
 
-      {/* Billing History Section */}
       <section className="col-span-1 mt-8 grid gap-4 xl:col-span-12">
         <div className="flex flex-col gap-1">
           <CardTitle>Billing History</CardTitle>
@@ -58,6 +58,6 @@ export default async function BillingPage({
           <BillingInvoicesTable teamId={teamId} />
         </div>
       </section>
-    </DashboardPageLayout>
+    </Frame>
   )
 }
