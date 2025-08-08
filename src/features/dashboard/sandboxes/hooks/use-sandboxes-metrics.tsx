@@ -1,11 +1,13 @@
 'use client'
 
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
+import { l } from '@/lib/clients/logger'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import useSWR from 'swr'
+import { useDebounceValue } from 'usehooks-ts'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface MetricsResponse {
@@ -26,12 +28,24 @@ export function useSandboxesMetrics({
 }: UseSandboxesMetricsProps) {
   const teamId = useSelectedTeam()?.id
 
-  const sandboxIds = sandboxes.map((sbx) => sbx.sandboxID)
+  const sandboxIds = useMemo(
+    () => sandboxes.map((sbx) => sbx.sandboxID),
+    [sandboxes.length]
+  )
+  const [debouncedSandboxIds] = useDebounceValue(sandboxIds, 1000)
+
+  useEffect(() => {
+    l.info('debouncedSandboxIds', { debouncedSandboxIds })
+  }, [debouncedSandboxIds])
 
   const { data, error, isLoading } = useSWR<MetricsResponse>(
-    sandboxIds.length > 0 ? [`/api/teams/${teamId}/sandboxes/metrics`] : null,
-    async ([url]) => {
-      if (sandboxIds.length === 0) {
+    debouncedSandboxIds.length > 0
+      ? [`/api/teams/${teamId}/sandboxes/metrics`, debouncedSandboxIds]
+      : null,
+    async ([url, ids]: [string, string[]]) => {
+      l.info('fetching metrics', { url, ids })
+
+      if (ids.length === 0) {
         return {
           metrics: initialMetrics ?? {},
         }
@@ -46,7 +60,7 @@ export function useSandboxesMetrics({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sandboxIds }),
+        body: JSON.stringify({ ids }),
         cache: 'no-store',
       })
 
@@ -66,6 +80,7 @@ export function useSandboxesMetrics({
       revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+
       fallbackData: initialMetrics ? { metrics: initialMetrics } : undefined,
     }
   )
