@@ -32,7 +32,7 @@ export default function SandboxLayout({
   }
 
   return (
-    <div className="flex max-h-svh min-h-0 flex-1 flex-col max-md:overflow-y-auto">
+    <div className="flex max-h-svh min-h-0 flex-1 flex-col max-md:overflow-y-auto h-full">
       {header}
       <SandboxDetailsTabs
         tabs={['inspect']}
