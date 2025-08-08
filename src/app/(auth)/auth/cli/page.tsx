@@ -51,7 +51,7 @@ async function handleCLIAuth(
 // UI Components
 function CLIIcons() {
   return (
-    <p className="flex items-center justify-center gap-4 text-3xl font-bold tracking-tight sm:text-4xl">
+    <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
         <LaptopIcon size={50} />
       </span>
@@ -77,7 +77,7 @@ function ErrorAlert({ message }: { message: string }) {
 function SuccessState() {
   return (
     <>
-      <h2 className="text-brand-400 font-bold">Successfully linked</h2>
+      <h2 className="text-brand-400 ">Successfully linked</h2>
       <div>You can close this page and start using CLI.</div>
     </>
   )
