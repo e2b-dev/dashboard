@@ -28,7 +28,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
       <Card className="w-full">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <CardTitle>Manage Team Keys</CardTitle>
               <CardDescription className="max-w-[400px]">
                 Organization keys are used to authenticate API requests from
@@ -38,7 +38,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
 
             <Suspense fallback={null}>
               <CreateApiKeyDialog teamId={teamId}>
-                <Button className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto sm:self-start">
                   <Plus className="size-4" /> CREATE KEY
                 </Button>
               </CreateApiKeyDialog>
