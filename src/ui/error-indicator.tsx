@@ -35,8 +35,8 @@ export function ErrorIndicator({
   return (
     <Card className={cn('bg-bg w-full max-w-md border', className)}>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl ">{title}</CardTitle>
-        <CardDescription className="text-md ">{description}</CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       {message && (
         <CardContent className="text-fg-tertiary mx-auto max-w-md pb-0 text-center">

@@ -74,7 +74,7 @@ export default function SandboxInspectNotFound() {
       <div className="animate-fade-slide-in flex w-full items-center justify-center pt-24 max-sm:p-4">
         <Card className="border-stroke bg-bg-1/40 w-full max-w-md border backdrop-blur-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl ">
+            <CardTitle>
               {isRunning ? 'Empty Directory' : 'Not Connected'}
             </CardTitle>
           </CardHeader>

@@ -85,7 +85,7 @@ export default function SignUp() {
 
   return (
     <div className="flex w-full flex-col">
-      <h1 className="text-2xl ">Sign up</h1>
+      <h1>Sign up</h1>
 
       <Suspense>
         <OAuthProviders />
@@ -178,7 +178,7 @@ export default function SignUp() {
         </form>
       </Form>
 
-      <p className="text-fg-secondary mt-3 text-sm leading-6">
+      <p className="text-fg-secondary mt-3  leading-6">
         Already have an account?{' '}
         <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
           Sign in

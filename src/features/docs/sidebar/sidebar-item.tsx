@@ -132,7 +132,7 @@ export default function SidebarItem({ item, level = 0 }: SidebarItemProps) {
       href={item.url}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'slate' }),
-        'group text-fg-tertiary hover:text-fg w-full justify-start pr-6 font-sans text-sm normal-case',
+        'group text-fg-tertiary hover:text-fg w-full justify-start pr-6 font-sans  normal-case',
         active && 'text-accent-main-highlight hover:text-accent-main-highlight '
       )}
     >

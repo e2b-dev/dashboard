@@ -56,7 +56,7 @@ export default function SandboxInspectIncompatible({
           <CardHeader className="px-0 pt-0 pb-7">
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-accent-warning-highlight h-5 w-5" />
-              <CardTitle className="text-lg">Incompatible template</CardTitle>
+              <CardTitle>Incompatible template</CardTitle>
             </div>
             <CardDescription className="text-fg-secondary leading-5">
               This sandbox used a template that is incompatible with the
