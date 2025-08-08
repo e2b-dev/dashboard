@@ -199,8 +199,18 @@ export default function SandboxesTable({
   const virtualPaddingTop = paddingTop
   const virtualPaddingBottom = paddingBottom
 
+  const visualRowsKey = useMemo(
+    () => visualRows.map((r) => r.original.sandboxID).join(),
+    [visualRows.map((r) => r.original.sandboxID).join()]
+  )
+
+  const memoizedVisualRows = useMemo(
+    () => visualRows.map((r) => r.original),
+    [visualRowsKey]
+  )
+
   useSandboxesMetrics({
-    sandboxes: visualRows.map((r) => r.original),
+    sandboxes: memoizedVisualRows,
     initialMetrics,
     pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
