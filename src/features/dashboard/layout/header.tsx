@@ -29,7 +29,7 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
-      <SidebarTrigger className="h-full w-11 rounded-none border-r px-3 md:hidden" />
+      <SidebarTrigger className="h-full w-8 my-3 en" />
       <h1 className="mr-auto">{config?.title}</h1>
       <ClientOnly>
         <ThemeSwitcher />

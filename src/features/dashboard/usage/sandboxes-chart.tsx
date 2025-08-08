@@ -233,7 +233,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
   return (
     <>
       <div className="flex flex-col gap-2">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
           <p className="text-accent-main-highlight font-mono prose-value-big">
             {totalSandboxes.toLocaleString()}
           </p>
