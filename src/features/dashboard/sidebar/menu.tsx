@@ -102,7 +102,7 @@ export default function DashboardSidebarMenu({
                   {selectedTeam?.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left  leading-tight">
                 <span className="text-fg-tertiary font-mono truncate prose-label">
                   TEAM
                 </span>
@@ -154,7 +154,7 @@ export default function DashboardSidebarMenu({
             </DropdownMenuRadioGroup>
 
             <DropdownMenuItem
-              className="text-accent-main-highlight mt-1 font-sans"
+              className="text-accent-main-highlight mt-1 font-sans prose-label-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
               <Plus className="ml-0.5 size-5" /> Create New Team

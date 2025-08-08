@@ -33,7 +33,7 @@ export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
       </CardContent>
 
       <CardFooter className="bg-bg-1 justify-between gap-6">
-        <p className="text-fg-tertiary text-sm">
+        <p className="text-fg-tertiary ">
           Keep it safe, as it can be used to authenticate with E2B services.
         </p>
       </CardFooter>
