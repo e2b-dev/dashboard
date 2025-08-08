@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import {
   CardContent,
@@ -7,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
+import { Loader } from '@/ui/primitives/loader'
 import { Textarea } from '@/ui/primitives/textarea'
 import { SurveyQuestion as PostHogSurveyQuestion, Survey } from 'posthog-js'
 import { useCallback, useMemo, useState } from 'react'
@@ -77,9 +77,9 @@ export function SurveyContent({
                         variant={'ghost'}
                         size="iconLg"
                         className={cn(
-                          'text-fg-500 hover:text-fg-300 size-14 rounded-xl hover:scale-[1.03]',
+                          'text-fg-tertiary hover:text-fg-secondary size-14 hover:scale-[1.03]',
                           {
-                            'bg-bg-300 border-border-200 text-fg border':
+                            'bg-bg-highlight focus:bg-bg-highlight text-fg border':
                               responses[currentQuestionIndex] ===
                               String(emojiIndex + 1),
                           }
@@ -153,14 +153,16 @@ export function SurveyContent({
 
   if (!survey) {
     return (
-      <p className="text-fg-500 text-center">No active surveys available</p>
+      <p className="text-fg-tertiary text-center">
+        No active surveys available
+      </p>
     )
   }
 
   return (
     <div>
       <CardHeader>
-        <CardTitle className="font-sans text-xl normal-case">
+        <CardTitle className="normal-case">
           {currentQuestion?.question}
         </CardTitle>
         {currentQuestion?.description && (

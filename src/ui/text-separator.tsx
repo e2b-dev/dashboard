@@ -14,11 +14,11 @@ export default function TextSeparator({
 }: TextSeparatorProps) {
   return (
     <div className="my-6 flex items-center gap-2">
-      <Separator className="bg-border-200 w-auto flex-grow" />
+      <Separator className="bg-fill w-auto flex-grow" />
       <span className={cn('text-fg px-2 font-mono', classNames?.text)}>
         {text}
       </span>
-      <Separator className="bg-border-200 w-auto flex-grow" />
+      <Separator className="bg-fill w-auto flex-grow" />
     </div>
   )
 }

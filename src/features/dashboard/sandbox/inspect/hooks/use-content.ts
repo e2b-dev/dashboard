@@ -1,6 +1,6 @@
+import { useCallback } from 'react'
 import { useStore } from 'zustand/react'
 import { useSandboxInspectContext } from '../context'
-import { useCallback } from 'react'
 
 export function useContent(path: string) {
   const { store, operations } = useSandboxInspectContext()

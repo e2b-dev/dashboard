@@ -28,8 +28,9 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   if (mode === 'simple') {
     const displayTotal = total ? total.toLocaleString() : 'n/a'
     return (
-      <p className="text-sm">
-        {displayTotal} {unit}
+      <p className=" text-fg-tertiary">
+        <span className="text-accent-info-highlight"> {displayTotal} </span>{' '}
+        {unit}
         {isCpu && total && total > 1 ? 's' : ''}
       </p>
     )
@@ -44,9 +45,9 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
 
   const textClassName = cn(
     roundedPercentage >= (isCpu ? 90 : 95)
-      ? 'text-error'
+      ? 'text-accent-error-highlight'
       : roundedPercentage >= 70
-        ? 'text-warning'
+        ? 'text-accent-warning-highlight'
         : 'text-fg'
   )
 
@@ -56,14 +57,14 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   return (
     <span
       className={cn(
-        'text-fg-500 inline w-full truncate font-mono whitespace-nowrap',
+        'text-fg-tertiary inline w-full truncate font-mono whitespace-nowrap',
         classNames?.wrapper
       )}
     >
       {hasMetrics ? (
         <>
           <span className={textClassName}>{roundedPercentage}% </span>
-          <span className={cn('text-fg-500', classNames?.dot)}>·</span>
+          <span className={cn('text-fg-tertiary', classNames?.dot)}>·</span>
           {!isCpu && (
             <>
               <span className={textClassName}> {displayValue}</span> /
@@ -72,11 +73,11 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         </>
       ) : (
         <>
-          <span className="text-fg-500">n/a </span>
-          <span className={cn('text-fg-500', classNames?.dot)}>·</span>
+          <span className="text-fg-tertiary">n/a </span>
+          <span className={cn('text-fg-tertiary', classNames?.dot)}>·</span>
         </>
       )}
-      <span className="text-contrast-1"> {totalValue} </span> {unit}
+      <span className="text-accent-info-highlight"> {totalValue} </span> {unit}
       {isCpu && total && total > 1 ? 's' : ''}
     </span>
   )

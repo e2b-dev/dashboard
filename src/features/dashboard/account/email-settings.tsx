@@ -129,7 +129,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
         )}
         className="w-full"
       >
-        <Card className={cn('overflow-hidden rounded-xs border', className)}>
+        <Card className={cn('overflow-hidden  border', className)}>
           <CardHeader>
             <CardTitle>E-Mail</CardTitle>
             <CardDescription>Update your e-mail address.</CardDescription>
@@ -154,8 +154,8 @@ export function EmailSettings({ className }: EmailSettingsProps) {
             />
           </CardContent>
 
-          <CardFooter className="bg-bg-100 justify-between">
-            <p className="text-fg-500 text-sm">
+          <CardFooter className="bg-bg-1 justify-between">
+            <p className="text-fg-tertiary ">
               Has to be a valid e-mail address.
             </p>
             <Button

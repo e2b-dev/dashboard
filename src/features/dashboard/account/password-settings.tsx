@@ -124,7 +124,7 @@ export function PasswordSettings({
 
   return (
     <>
-      <Card className={cn('overflow-hidden rounded-xs border', className)}>
+      <Card className={cn('overflow-hidden  border', className)}>
         <CardHeader>
           <CardTitle>Password</CardTitle>
           <CardDescription>Change your account password.</CardDescription>
@@ -178,7 +178,7 @@ export function PasswordSettings({
             </Form>
           ) : (
             <>
-              <p className="text-fg-300 text-md">
+              <p className="text-fg-secondary text-md">
                 To change your password, you'll need to re-authenticate for
                 security.
               </p>
@@ -194,8 +194,8 @@ export function PasswordSettings({
         </CardContent>
 
         {clientShowPasswordForm && (
-          <CardFooter className="bg-bg-100 justify-between gap-6">
-            <p className="text-fg-500 text-sm">
+          <CardFooter className="bg-bg-1 justify-between gap-6">
+            <p className="text-fg-tertiary ">
               Your password must be at least 8 characters long.
             </p>
             <Button

@@ -77,13 +77,13 @@ export default function ForgotPassword() {
 
   return (
     <div className="flex w-full flex-col">
-      <h1 className="text-2xl font-medium">Reset Password</h1>
-      <p className="text-fg-300 text-sm leading-6">
+      <h1>Reset Password</h1>
+      <p className="text-fg-secondary leading-6">
         Remember your password?{' '}
         <button
           type="button"
           onClick={handleBackToSignIn}
-          className="text-fg font-medium underline"
+          className="text-fg  underline"
         >
           Sign in
         </button>

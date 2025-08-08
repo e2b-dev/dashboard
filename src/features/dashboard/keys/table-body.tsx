@@ -37,7 +37,7 @@ export default async function TableBodyContent({
     return (
       <TableRow>
         <TableCell colSpan={5}>
-          <Alert className="text-left" variant="contrast2">
+          <Alert className="text-left" variant="info">
             <AlertTitle>No API Keys</AlertTitle>
             <AlertDescription>
               No API keys found for this team.

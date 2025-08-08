@@ -57,7 +57,9 @@ export default async function DashboardLayout({
       teams={res.data}
       user={session!.user}
     >
-      <SidebarProvider defaultOpen={defaultOpen}>
+      <SidebarProvider
+        defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
+      >
         <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />

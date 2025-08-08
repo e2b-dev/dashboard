@@ -38,14 +38,14 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           }
         }}
         className={cn(
-          'group hover:bg-bg-200 focus:ring-ring focus:bg-bg-200 h-7 min-h-7 cursor-pointer gap-1.5 pl-1.5 truncate transition-none select-none even:bg-transparent focus:outline-none'
+          'group hover:bg-bg-hover focus:ring-ring focus:bg-bg-hover h-7 min-h-7 cursor-pointer gap-1.5 pl-1.5 truncate transition-none select-none even:bg-transparent focus:outline-none'
         )}
         data-slot="inspect-dir"
       >
         <span
           className={cn(
             'transition-colors duration-150',
-            isExpanded && isLoaded ? 'text-fg' : 'text-fg-500'
+            isExpanded && isLoaded ? 'text-fg' : 'text-fg-tertiary'
           )}
         >
           {isExpanded && isLoaded ? (
@@ -60,7 +60,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           isLoading={isLoading}
         />
         {hasError && (
-          <span className="text-error flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
+          <span className="text-accent-error-highlight flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
             <AlertCircle className="size-3" />
             {error}
           </span>

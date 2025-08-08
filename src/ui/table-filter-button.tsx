@@ -27,7 +27,7 @@ export const TableFilterButton = React.forwardRef<
       {value && (
         <>
           <Separator orientation="vertical" className="h-4" />
-          <span className="truncate text-contrast-1">{value}</span>
+          <span className="truncate text-accent-info-highlight">{value}</span>
         </>
       )}
     </Button>

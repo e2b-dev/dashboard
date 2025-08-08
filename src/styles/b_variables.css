@@ -1,0 +1,60 @@
+.dark {
+  --bg: hsl(0 0% 3%);
+  --bg-1: hsl(0 0% 5%);
+  --bg-200: hsl(0 0% 7%);
+  --bg-300: hsl(0 0% 9%);
+  --bg-400: hsl(0 0% 11%);
+  --bg-500: hsl(0 0% 13%);
+
+  --fg: hsl(0 0% 98%);
+  --fg-100: hsl(0 0% 90%);
+  --fg-200: hsl(0 0% 82%);
+  --fg-300: hsl(0 0% 74%);
+  --fg-400: hsl(0 0% 66%);
+  --fg-500: hsl(0 0% 60%);
+
+  --accent: hsl(32 100% 45%);
+  --accent-100: hsl(32 100% 40%);
+  --accent-200: hsl(32 100% 30%);
+  --accent-300: hsl(32 100% 20%);
+  --accent-400: hsl(32 100% 10%);
+  --accent-500: hsl(32 100% 5%);
+
+  --accent-fg: hsl(0 0% 100%);
+
+  --border: hsl(0 0% 10%);
+  --border-100: hsl(0 0% 13%);
+  --border-200: hsl(0 0% 16%);
+  --border-300: hsl(0 0% 19%);
+  --border-400: hsl(0 0% 22%);
+  --border-500: hsl(0 0% 25%);
+
+  --ring: hsl(32 100% 50%);
+
+  --error: hsl(0 100% 65%);
+  --error-100: hsl(0 90% 60%);
+  --error-200: hsl(0 85% 55%);
+  --error-300: hsl(0 80% 50%);
+  --error-400: hsl(0 75% 45%);
+  --error-500: hsl(0 70% 40%);
+
+  --error-fg: hsl(0 0% 100%);
+
+  --warning: hsl(60 100% 45%);
+  --success: hsl(160 100% 43%);
+
+  --contrast-1: hsl(200 85% 65%);
+  --contrast-2: hsl(235 86% 75%);
+
+  --sidebar: var(--bg);
+  --sidebar-foreground: var(--fg-300);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--accent-fg);
+  --sidebar-accent: var(--bg-1);
+  --sidebar-accent-foreground: var(--fg-300);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent);
+
+  --shadow: hsl(45 3% 3%);
+  --shadow-strength: 0.2;
+}

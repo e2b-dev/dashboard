@@ -18,7 +18,7 @@ export default function Footer() {
       {neighbours.previous && (
         <Button variant="outline" size="lg" asChild>
           <Link href={neighbours.previous.url}>
-            <MoveLeft className="text-fg-300 size-4" />
+            <MoveLeft className="text-fg-secondary size-4" />
             {neighbours.previous.name}
           </Link>
         </Button>
@@ -27,7 +27,7 @@ export default function Footer() {
         <Button variant="outline" size="lg" asChild>
           <Link href={neighbours.next.url}>
             {neighbours.next.name}
-            <MoveRight className="text-fg-300 size-4" />
+            <MoveRight className="text-fg-secondary size-4" />
           </Link>
         </Button>
       )}

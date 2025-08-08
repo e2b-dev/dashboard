@@ -39,21 +39,23 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           className={cn(
             cardVariants({ variant: 'default' }),
-            'overflow-hidden border rounded-none'
+            'overflow-hidden border'
           )}
         >
           <CardHeader className="!p-4">
             <CardTitle className="inline-flex items-center gap-2">
-              <AlertTriangle className="size-5 text-warning" />
-              {showWatcherError
-                ? 'Live filesystem updates disabled'
-                : 'Sandbox Stopped'}
+              <AlertTriangle className="size-5 text-accent-warning-highlight" />
+              <span className="prose-headline-small uppercase">
+                {showWatcherError
+                  ? 'Live filesystem updates disabled'
+                  : 'Sandbox Stopped'}
+              </span>
             </CardTitle>
             <CardDescription>
               {showWatcherError
                 ? watcherError
                 : 'Filesystem data is stale and is kept locally on your device.'}
-              <span className="text-fg-500">
+              <span className="text-fg-tertiary">
                 {' '}
                 Last updated: {lastUpdated?.toLocaleTimeString()}
               </span>

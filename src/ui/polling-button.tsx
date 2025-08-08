@@ -120,7 +120,7 @@ export function PollingButton({
             mutate()
           })()
         }}
-        className="text-fg-500 h-6"
+        className="text-fg-tertiary h-6"
         disabled={effectiveIsPolling}
       >
         <RefreshCw
@@ -134,9 +134,9 @@ export function PollingButton({
         value={pollingInterval.toString()}
         onValueChange={handleIntervalChange}
       >
-        <SelectTrigger className="text-fg-300 h-6 w-fit gap-1 border-none bg-transparent pl-2 whitespace-nowrap">
+        <SelectTrigger className="text-fg-secondary h-6 w-fit gap-1 border-none bg-transparent pl-2 whitespace-nowrap">
           Auto-refresh
-          <span className="text-accent ml-1">
+          <span className="text-accent-main-highlight ml-1">
             {pollingInterval === 0 ? 'Off' : formatTime(remainingTime)}
           </span>
         </SelectTrigger>

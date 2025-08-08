@@ -8,7 +8,10 @@ interface ExternalIconProps {
 export default function ExternalIcon({ className }: ExternalIconProps) {
   return (
     <ChevronRight
-      className={cn('text-accent size-4 -translate-y-1 -rotate-45', className)}
+      className={cn(
+        'text-accent-main-highlight size-4 -translate-y-1 -rotate-45',
+        className
+      )}
     />
   )
 }

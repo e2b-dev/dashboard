@@ -14,7 +14,7 @@ export function IconContainer({
     <div
       {...props}
       className={cn(
-        '[a[data-active=true]_&]:text-accent-fg from-bg to-bg-100 [a[data-active=true]_&]:from-accent/60 [a[data-active=true]_&]:to-accent rounded-sm border bg-gradient-to-b p-2',
+        '[a[data-active=true]_&]:text-fg from-bg to-bg-1 [a[data-active=true]_&]:from-accent-main-highlight/60 [a[data-active=true]_&]:to-accent-main-highlight   border bg-gradient-to-b p-2',
         props.className
       )}
     >

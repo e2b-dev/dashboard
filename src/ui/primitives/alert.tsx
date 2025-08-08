@@ -7,11 +7,14 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-bg border-border text-fg',
-        contrast1: 'border-contrast-1 [&>svg]:text-contrast-1 text-fg',
-        contrast2: 'border-contrast-2 [&>svg]:text-contrast-2 text-fg',
-        warning: 'text-warning border-warning [&>svg]:text-warning',
-        error: 'text-error border-error [&>svg]:text-error',
+        default: 'bg-bg border-stroke text-fg',
+        info: 'border-accent-info-highlight [&>svg]:text-accent-info-highlight text-fg',
+        success:
+          'border-accent-positive-highlight [&>svg]:text-accent-positive-highlight text-fg',
+        warning:
+          'border-accent-warning-highlight [&>svg]:text-accent-warning-highlight text-fg',
+        error:
+          'border-accent-error-highlight [&>svg]:text-accent-error-highlight text-fg',
       },
       border: {
         left: 'border-l-[3px]',
@@ -46,7 +49,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn('mb-2 leading-none font-medium tracking-tight', className)}
+    className={cn('mb-2 leading-none prose-headline-small', className)}
     {...props}
   />
 ))
@@ -58,7 +61,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('text-fg-300 text-sm [&_p]:leading-relaxed', className)}
+    className={cn('text-fg  [&_p]:leading-relaxed', className)}
     {...props}
   />
 ))

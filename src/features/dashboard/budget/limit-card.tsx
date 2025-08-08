@@ -20,7 +20,7 @@ export default function LimitCard({ className, value }: LimitCardProps) {
       <CardHeader>
         <CardTitle className="font-mono">Enable Budget Limit</CardTitle>
       </CardHeader>
-      <CardContent className="text-fg-300 max-w-[500px]">
+      <CardContent className="text-fg-secondary max-w-[500px]">
         <LimitForm
           className="mb-4"
           teamId={team.id}
@@ -37,7 +37,7 @@ export default function LimitCard({ className, value }: LimitCardProps) {
           limit.
         </p>
         <br />
-        <p className="text-error">
+        <p className="text-accent-error-highlight">
           <b>Caution:</b> Enabling a budget limit may cause interruptions to
           your service. Once your Budget Limit is reached, your team will not be
           able to create new sandboxes in the given billing period unless the

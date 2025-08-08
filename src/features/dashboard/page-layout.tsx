@@ -33,9 +33,9 @@ export default async function DashboardPageLayout({
     >
       <div className="bg-bg absolute inset-x-0 top-0 z-10 flex h-[var(--protected-nav-height)] border-b pr-3 md:pl-3">
         <div className="flex w-full items-center gap-2">
-          <SidebarTrigger className="text-fg-300 h-full w-11 rounded-none border-r px-3 md:hidden" />
+          <SidebarTrigger className="h-full w-11 rounded-none border-r px-3 md:hidden" />
 
-          <h2 className="mr-auto text-lg font-bold">{title}</h2>
+          <h1 className="mr-auto">{title}</h1>
 
           <Suspense fallback={null}>
             <ThemeSwitcher />
@@ -109,7 +109,7 @@ function DesktopContent({
               'relative flex h-fit w-full max-w-[1200px] pb-2',
               classNames?.frameWrapper
             ),
-            frame: cn(className, 'bg-bg-100'),
+            frame: cn(className, 'bg-bg backdrop-blur-sm'),
           }}
         >
           {children}

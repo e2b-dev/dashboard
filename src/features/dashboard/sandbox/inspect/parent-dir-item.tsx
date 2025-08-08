@@ -43,7 +43,7 @@ export default function SandboxInspectParentDirItem({
       role="button"
       tabIndex={0}
       className={cn(
-        'hover:bg-bg-200 focus:ring-ring text-fg-500 focus:bg-bg-200 h-7 min-h-7 cursor-pointer gap-1.5 pl-1.5 transition-none group-[data-slot=inspect-dir]:px-2 even:bg-transparent focus:outline-none',
+        'hover:bg-bg-hover focus:ring-ring text-fg-tertiary focus:bg-bg-hover h-7 min-h-7 cursor-pointer gap-1.5 pl-1.5 transition-none group-[data-slot=inspect-dir]:px-2 even:bg-transparent focus:outline-none',
         isPending && 'opacity-70'
       )}
       onClick={handleNavigateUp}
@@ -53,7 +53,7 @@ export default function SandboxInspectParentDirItem({
         }
       }}
     >
-      <FolderUp className="size-3.5 [color:var(--color-fg-500)]" />
+      <FolderUp className="size-3.5 [color:var(--color-fg-tertiary)]" />
       <span className="truncate">..</span>
     </DataTableRow>
   )

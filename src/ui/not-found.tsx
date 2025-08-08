@@ -16,14 +16,12 @@ import {
 export default function NotFound() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center">
-      <Card className="w-full max-w-md border border-border bg-bg-100/40 backdrop-blur-lg">
+      <Card className="w-full max-w-md border border-stroke bg-bg-1/40 backdrop-blur-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-4xl font-light">404</CardTitle>
-          <CardDescription className="mt-2 text-lg">
-            Page Not Found
-          </CardDescription>
+          <CardTitle>404</CardTitle>
+          <CardDescription>Page Not Found</CardDescription>
         </CardHeader>
-        <CardContent className="text-center text-fg-500">
+        <CardContent className="text-center text-fg-tertiary">
           <p>
             The page you are looking for might have been removed, had its name
             changed, or is temporarily unavailable.
@@ -33,13 +31,13 @@ export default function NotFound() {
           <div className="flex w-full justify-between gap-4">
             <Button variant="outline" asChild className="flex-1">
               <Link href="/" className="gap-2">
-                <HomeIcon className="h-4 w-4 text-fg-500" />
+                <HomeIcon className="h-4 w-4 text-fg-tertiary" />
                 Home
               </Link>
             </Button>
             <Button variant="outline" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD} className="gap-2">
-                <LayoutDashboard className="h-4 w-4 text-fg-500" />
+                <LayoutDashboard className="h-4 w-4 text-fg-tertiary" />
                 Dashboard
               </Link>
             </Button>
@@ -49,7 +47,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             className="w-full gap-2"
           >
-            <ArrowLeft className="h-4 w-4 text-fg-500" />
+            <ArrowLeft className="h-4 w-4 text-fg-tertiary" />
             Go Back
           </Button>
         </CardFooter>

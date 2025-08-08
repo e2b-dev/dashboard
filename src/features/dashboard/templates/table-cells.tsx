@@ -1,6 +1,5 @@
 'use client'
 
-import { ByE2BBadge } from '@/features/dashboard/templates/by-e2b-badge'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
@@ -14,8 +13,8 @@ import {
 } from '@/server/templates/templates-actions'
 import { DefaultTemplate, Template } from '@/types/api'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { Loader } from '@/ui/loader'
-import { Badge } from '@/ui/primitives/badge'
+import { E2BBadge } from '@/ui/brand'
+import HelpTooltip from '@/ui/help-tooltip'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -26,11 +25,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { Loader } from '@/ui/primitives/loader'
 import { CellContext } from '@tanstack/react-table'
-import { Cpu, Lock, LockOpen, MoreVertical } from 'lucide-react'
+import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useMemo, useState } from 'react'
-import { CgSmartphoneRam } from 'react-icons/cg'
+import ResourceUsage from '../common/resource-usage'
+
+function E2BTemplateBadge() {
+  return (
+    <HelpTooltip trigger={<E2BBadge />}>
+      <p className="text-fg-secondary font-sans text-xs whitespace-break-spaces">
+        This template was created by E2B. It is one of the default templates
+        every user has access to.
+      </p>
+    </HelpTooltip>
+  )
+}
 
 export function ActionsCell({
   row,
@@ -122,7 +133,7 @@ export function ActionsCell({
           <Button
             variant="ghost"
             size="icon"
-            className="text-fg-500 size-5"
+            className="text-fg-tertiary size-5"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
           >
             {isUpdating ? (
@@ -175,7 +186,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="text-fg-500 truncate font-mono text-xs">
+    <div className="truncate font-mono text-fg-tertiary">
       {row.getValue('templateID')}
     </div>
   )
@@ -187,12 +198,14 @@ export function TemplateNameCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
     <div
-      className={cn('flex items-center gap-2 truncate font-mono font-medium', {
-        'text-fg-500': !getValue(),
+      className={cn('flex items-center gap-2 truncate', {
+        'text-fg-tertiary': !getValue(),
       })}
     >
       <span>{(getValue() as string) ?? 'N/A'}</span>
-      {'isDefault' in row.original && row.original.isDefault && <ByE2BBadge />}
+      {'isDefault' in row.original && row.original.isDefault && (
+        <E2BTemplateBadge />
+      )}
     </div>
   )
 }
@@ -201,26 +214,14 @@ export function CpuCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
-  return (
-    <Badge className="text-fg-500 font-mono whitespace-nowrap">
-      <Cpu className="text-contrast-2 size-2.5" />{' '}
-      <span className="text-contrast-2">{cpuCount}</span> core
-      {cpuCount > 1 ? 's' : ''}
-    </Badge>
-  )
+  return <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
 }
 
 export function MemoryCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
-  return (
-    <Badge className="text-fg-500 font-mono whitespace-nowrap">
-      <CgSmartphoneRam className="text-contrast-1 size-2.5" />{' '}
-      <span className="text-contrast-1">{memoryMB.toLocaleString()} </span>
-      MB
-    </Badge>
-  )
+  return <ResourceUsage type="mem" total={memoryMB} mode="simple" />
 }
 
 export function CreatedAtCell({
@@ -238,9 +239,9 @@ export function CreatedAtCell({
 
   return (
     <div className={cn('h-full truncate font-mono text-xs')}>
-      <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-500">{timezone}</span>
+      <span className="text-fg-tertiary">{timezone}</span>
     </div>
   )
 }
@@ -260,9 +261,9 @@ export function UpdatedAtCell({
 
   return (
     <div className={cn('h-full truncate font-mono text-xs')}>
-      <span className="text-fg-500">{`${day} ${date} ${month} ${year}`}</span>{' '}
+      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-500">{timezone}</span>
+      <span className="text-fg-tertiary">{timezone}</span>
     </div>
   )
 }
@@ -271,12 +272,12 @@ export function VisibilityCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <Badge
-      className={cn('text-fg-500 font-mono whitespace-nowrap', {
-        'text-success': getValue(),
+    <span
+      className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
+        'text-accent-positive-highlight': getValue(),
       })}
     >
       {getValue() ? 'Public' : 'Private'}
-    </Badge>
+    </span>
   )
 }

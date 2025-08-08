@@ -85,7 +85,7 @@ export default function SignUp() {
 
   return (
     <div className="flex w-full flex-col">
-      <h1 className="text-2xl font-medium">Sign up</h1>
+      <h1>Sign up</h1>
 
       <Suspense>
         <OAuthProviders />
@@ -178,27 +178,20 @@ export default function SignUp() {
         </form>
       </Form>
 
-      <p className="text-fg-300 mt-3 text-sm leading-6">
+      <p className="text-fg-secondary mt-3  leading-6">
         Already have an account?{' '}
-        <Link
-          className="text-fg font-medium underline"
-          href={AUTH_URLS.SIGN_IN}
-        >
+        <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
           Sign in
         </Link>
         .
       </p>
-      <p className="text-fg/40 mt-4 text-sm leading-6">
+      <p className="text-fg/40 mt-4  leading-6">
         By signing up, you agree to our{' '}
-        <Link href="/terms" target="_blank" className="text-fg/60 font-medium">
+        <Link href="/terms" target="_blank" className="text-fg/60 ">
           Terms of Service
         </Link>{' '}
         and{' '}
-        <Link
-          href="/privacy"
-          target="_blank"
-          className="text-fg/60 font-medium"
-        >
+        <Link href="/privacy" target="_blank" className="text-fg/60 ">
           Privacy Policy
         </Link>
         .

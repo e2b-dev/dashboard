@@ -1,5 +1,5 @@
-import { useSandboxInspectContext } from '../context'
 import { useStore } from 'zustand'
+import { useSandboxInspectContext } from '../context'
 
 export function useLastUpdated() {
   const { store } = useSandboxInspectContext()

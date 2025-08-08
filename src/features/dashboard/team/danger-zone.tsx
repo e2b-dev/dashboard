@@ -53,8 +53,8 @@ async function DangerZoneContent({ teamId }: { teamId: string }) {
     <>
       <div className="flex items-center justify-between p-4">
         <div className="flex flex-col gap-1">
-          <h4 className="font-medium">Leave Team</h4>
-          <p className="text-fg-500 font-sans text-sm">
+          <h4 className="">Leave Team</h4>
+          <p className="text-fg-tertiary font-sans ">
             Remove yourself from this Team
           </p>
         </div>
@@ -74,8 +74,8 @@ async function DangerZoneContent({ teamId }: { teamId: string }) {
 
       <div className="flex items-center justify-between p-4">
         <div className="flex flex-col gap-1">
-          <h4 className="text-fg font-medium">Delete Team</h4>
-          <p className="text-fg-500 font-sans text-sm">
+          <h4 className="text-fg ">Delete Team</h4>
+          <p className="text-fg-tertiary font-sans ">
             Permanently delete this team and all of its data
           </p>
         </div>

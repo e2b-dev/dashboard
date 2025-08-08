@@ -96,14 +96,14 @@ export default function ApiKeyTableRow({
       >
         <TableCell className="text-left flex flex-col gap-1">
           {apiKey.name}
-          <span className="text-fg-500 pl-0.25 font-mono text-xs">
+          <span className="text-fg-tertiary pl-0.25 font-mono text-xs">
             {concatedKeyMask}
           </span>
         </TableCell>
-        <TableCell className="text-fg-500 max-w-36 truncate overflow-hidden">
+        <TableCell className="text-fg-tertiary max-w-36 truncate overflow-hidden">
           <span className="max-w-full truncate">{apiKey.createdBy?.email}</span>
         </TableCell>
-        <TableCell className="text-fg-300 text-right">
+        <TableCell className="text-fg-secondary text-right">
           {apiKey.createdAt
             ? new Date(apiKey.createdAt).toLocaleDateString()
             : '-'}

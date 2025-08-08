@@ -6,7 +6,7 @@ export const cardVariants = cva('', {
   variants: {
     variant: {
       default: 'bg-bg text-fg',
-      layer: 'bg-bg-200/60 backdrop-blur-lg border border-border',
+      layer: 'bg-bg-hover/60 backdrop-blur-lg border border-stroke',
       slate: '',
     },
   },
@@ -25,11 +25,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, hideUnderline = false, variant = 'slate', ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        cardVariants({ variant: variant }),
-        'rounded-sm',
-        className
-      )}
+      className={cn(cardVariants({ variant: variant }), '', className)}
       {...props}
     />
   )
@@ -54,11 +50,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn(
-      'tracking-wider',
-      'text-md font-sans font-bold uppercase',
-      className
-    )}
+    className={cn('prose-headline-small uppercase', className)}
     {...props}
   />
 ))
@@ -68,11 +60,7 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn('text-fg-300 text-sm', 'tracking-wide', className)}
-    {...props}
-  />
+  <p ref={ref} className={cn('text-fg-tertiary ', className)} {...props} />
 ))
 CardDescription.displayName = 'CardDescription'
 
@@ -80,11 +68,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn('p-6 pt-3', 'text-sm tracking-wide', className)}
-    {...props}
-  />
+  <div ref={ref} className={cn('p-6 pt-3', className)} {...props} />
 ))
 CardContent.displayName = 'CardContent'
 

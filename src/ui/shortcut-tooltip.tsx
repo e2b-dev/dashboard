@@ -22,7 +22,7 @@ export default function ShortcutTooltip({
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent
         className={cn(
-          'text-fg-300 flex max-w-[200px] items-center gap-1 p-0 font-sans text-xs font-normal normal-case',
+          'text-fg-secondary flex max-w-[200px] items-center gap-1 p-0 font-sans text-xs  normal-case',
           {
             'pr-2': label,
           }

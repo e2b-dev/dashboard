@@ -209,14 +209,12 @@ describe('Auth Actions - Integration Tests', () => {
      * shows appropriate error message
      */
     it('should show error when passwords do not match', async () => {
-      // Setup: Create form data with mismatched passwords
-      const formData = new FormData()
-      formData.append('email', 'newuser@example.com')
-      formData.append('password', 'Password123!')
-      formData.append('confirmPassword', 'DifferentPassword!')
-
       // Execute: Call the sign-up action
-      const result = await signUpAction(formData)
+      const result = await signUpAction({
+        email: 'newuser@example.com',
+        password: 'Password123!',
+        confirmPassword: 'DifferentPassword!',
+      })
 
       // Verify: Check that encodedRedirect was called with error message
       expect(result).toBeDefined()
@@ -229,12 +227,13 @@ describe('Auth Actions - Integration Tests', () => {
      */
     it('should show error when required fields are missing', async () => {
       // Setup: Create form data with missing fields
-      const formData = new FormData()
-      formData.append('email', 'newuser@example.com')
       // Missing password and confirmPassword
 
       // Execute: Call the sign-up action
-      const result = await signUpAction(formData)
+      // @ts-expect-error - we want to test the validation errors
+      const result = await signUpAction({
+        email: 'newuser@example.com',
+      })
 
       // Verify: Check that the result contains validation errors
       expect(result).toBeDefined()
@@ -309,11 +308,10 @@ describe('Auth Actions - Integration Tests', () => {
      * shows appropriate error message
      */
     it('should show error when email is missing for forgot password', async () => {
-      // Setup: Create form data with missing email
-      const formData = new FormData()
-
       // Execute: Call the forgot password action
-      const result = await forgotPasswordAction(formData)
+      const result = await forgotPasswordAction({
+        email: '',
+      })
 
       expect(result).toBeDefined()
       expect(result).toHaveProperty('validationErrors')

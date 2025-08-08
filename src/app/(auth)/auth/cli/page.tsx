@@ -51,14 +51,14 @@ async function handleCLIAuth(
 // UI Components
 function CLIIcons() {
   return (
-    <p className="flex items-center justify-center gap-4 text-3xl font-bold tracking-tight sm:text-4xl">
-      <span className="text-fg-500">
+    <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
+      <span className="text-fg-tertiary">
         <LaptopIcon size={50} />
       </span>
-      <span className="text-fg-300">
+      <span className="text-fg-secondary">
         <Link2Icon size={30} />
       </span>
-      <span className="text-fg-500">
+      <span className="text-fg-tertiary">
         <CloudIcon size={50} />
       </span>
     </p>
@@ -77,7 +77,7 @@ function ErrorAlert({ message }: { message: string }) {
 function SuccessState() {
   return (
     <>
-      <h2 className="text-brand-400 font-bold">Successfully linked</h2>
+      <h2 className="text-brand-400 ">Successfully linked</h2>
       <div>You can close this page and start using CLI.</div>
     </>
   )
@@ -165,7 +165,7 @@ export default async function CLIAuthPage({
       <h2 className="mt-6 text-base leading-7">
         Linking CLI with your account
       </h2>
-      <div className="text-fg-500 mt-12 leading-8">
+      <div className="text-fg-tertiary mt-12 leading-8">
         <Suspense fallback={<div>Loading...</div>}>
           {error ? (
             <ErrorAlert message={decodeURIComponent(error)} />

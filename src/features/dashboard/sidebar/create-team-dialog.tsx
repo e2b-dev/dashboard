@@ -84,7 +84,7 @@ export function CreateTeamDialog({
 
         <Form {...form}>
           <form onSubmit={handleSubmitWithAction}>
-            <div className="flex flex-col gap-3 px-2 py-6">
+            <div className="flex flex-col gap-3 pb-6">
               <FormField
                 control={form.control}
                 name="name"
