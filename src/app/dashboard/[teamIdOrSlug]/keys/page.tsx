@@ -3,7 +3,13 @@ import ApiKeysTable from '@/features/dashboard/keys/table'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import Frame from '@/ui/frame'
 import { Button } from '@/ui/primitives/button'
-import { CardDescription, CardTitle } from '@/ui/primitives/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/ui/primitives/card'
 import { Plus } from 'lucide-react'
 import { Suspense } from 'react'
 
@@ -19,8 +25,8 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
 
   return (
     <Frame classNames={{ wrapper: 'w-full' }}>
-      <div className="grid w-full gap-6 p-4 sm:gap-8 sm:p-6">
-        <section className="grid gap-4">
+      <Card className="w-full">
+        <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="flex flex-col gap-1">
               <CardTitle>Manage Team Keys</CardTitle>
@@ -38,12 +44,14 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
               </CreateApiKeyDialog>
             </Suspense>
           </div>
+        </CardHeader>
 
-          <div className="-mx-4 w-full overflow-x-auto sm:mx-0">
+        <CardContent>
+          <div className="w-full overflow-x-auto">
             <ApiKeysTable teamId={teamId} className="min-w-[800px]" />
           </div>
-        </section>
-      </div>
+        </CardContent>
+      </Card>
     </Frame>
   )
 }

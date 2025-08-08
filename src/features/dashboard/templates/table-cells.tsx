@@ -186,7 +186,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="overflow-x-hidden whitespace-nowrap font-mono text-fg-tertiary">
+    <div className="overflow-x-hidden whitespace-nowrap text-fg-tertiary">
       {row.getValue('templateID')}
     </div>
   )
@@ -241,11 +241,7 @@ export function CreatedAtCell({
   }, [dateTimeString])
 
   return (
-    <div
-      className={cn(
-        'h-full overflow-x-hidden whitespace-nowrap font-mono text-xs'
-      )}
-    >
+    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono')}>
       <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
       <span className="text-fg-tertiary">{timezone}</span>
@@ -267,7 +263,7 @@ export function UpdatedAtCell({
   }, [dateTimeString])
 
   return (
-    <div className={cn('h-full truncate font-mono text-xs')}>
+    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono')}>
       <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
       <span className="text-fg-tertiary">{timezone}</span>
@@ -280,7 +276,7 @@ export function VisibilityCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
     <span
-      className={cn('text-fg-tertiary font-mono whitespace-nowrap', {
+      className={cn('text-fg-tertiary whitespace-nowrap font-mono', {
         'text-accent-positive-highlight': getValue(),
       })}
     >
