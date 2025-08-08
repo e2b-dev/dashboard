@@ -1,7 +1,6 @@
 'use client'
 
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
-import { l } from '@/lib/clients/logger'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
@@ -34,17 +33,11 @@ export function useSandboxesMetrics({
   )
   const [debouncedSandboxIds] = useDebounceValue(sandboxIds, 1000)
 
-  useEffect(() => {
-    l.info('debouncedSandboxIds', { debouncedSandboxIds })
-  }, [debouncedSandboxIds])
-
   const { data, error, isLoading } = useSWR<MetricsResponse>(
     debouncedSandboxIds.length > 0
       ? [`/api/teams/${teamId}/sandboxes/metrics`, debouncedSandboxIds]
       : null,
     async ([url, ids]: [string, string[]]) => {
-      l.info('fetching metrics', { url, ids })
-
       if (ids.length === 0) {
         return {
           metrics: initialMetrics ?? {},
