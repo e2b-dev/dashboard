@@ -4,7 +4,13 @@ import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
 import BillingTierCard from '@/features/dashboard/billing/tier-card'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import Frame from '@/ui/frame'
-import { CardDescription, CardTitle } from '@/ui/primitives/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/ui/primitives/card'
 import { Suspense } from 'react'
 
 export default async function BillingPage({
@@ -16,48 +22,47 @@ export default async function BillingPage({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <Frame
-      classNames={{
-        frame: 'grid h-full w-full gap-4 self-start p-4 sm:gap-6 sm:p-6',
-        wrapper: 'w-full',
-      }}
-    >
-      <section className="col-span-1 grid gap-4 xl:col-span-12">
-        <div className="flex flex-col gap-1">
+    <Frame classNames={{ wrapper: 'w-full' }}>
+      <Card className="w-full">
+        <CardHeader>
           <CardTitle>Plan</CardTitle>
           <CardDescription>
             Manage your current plan and subscription details.
           </CardDescription>
-        </div>
+        </CardHeader>
 
-        <Suspense fallback={null}>
-          <CustomerPortalLink className="bg-bg mt-2 w-fit" />
-        </Suspense>
+        <CardContent>
+          <Suspense fallback={null}>
+            <CustomerPortalLink className="bg-bg w-fit" />
+          </Suspense>
 
-        <div className="mt-3 flex flex-col gap-12 overflow-x-auto max-lg:mb-6 lg:flex-row">
-          {TIERS.map((tier) => (
-            <BillingTierCard
-              key={tier.id}
-              tier={tier}
-              isHighlighted={tier.id === 'pro_v1'}
-              className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0"
-            />
-          ))}
-        </div>
-      </section>
+          <div className="mt-3 flex flex-col gap-12 overflow-x-auto max-lg:mb-6 lg:flex-row">
+            {TIERS.map((tier) => (
+              <BillingTierCard
+                key={tier.id}
+                tier={tier}
+                isHighlighted={tier.id === 'pro_v1'}
+                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0"
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      <section className="col-span-1 mt-8 grid gap-4 xl:col-span-12">
-        <div className="flex flex-col gap-1">
+      <Card className="w-full mt-6">
+        <CardHeader>
           <CardTitle>Billing History</CardTitle>
           <CardDescription>
             View your team's billing history and invoices.
           </CardDescription>
-        </div>
+        </CardHeader>
 
-        <div className="w-full overflow-x-auto">
-          <BillingInvoicesTable teamId={teamId} />
-        </div>
-      </section>
+        <CardContent>
+          <div className="w-full overflow-x-auto">
+            <BillingInvoicesTable teamId={teamId} />
+          </div>
+        </CardContent>
+      </Card>
     </Frame>
   )
 }
