@@ -201,7 +201,7 @@ export default function SandboxesTable({
 
   const visualRowsKey = useMemo(
     () => visualRows.map((r) => r.original.sandboxID).join(),
-    [visualRows.map((r) => r.original.sandboxID).join()]
+    [visualRows]
   )
 
   const memoizedVisualRows = useMemo(
