@@ -18,12 +18,14 @@ interface UseSandboxesMetricsProps {
   sandboxes: Sandboxes
   initialMetrics?: ClientSandboxesMetrics | null
   pollingInterval?: number
+  debounceDelay?: number
 }
 
 export function useSandboxesMetrics({
   sandboxes,
   initialMetrics = null,
   pollingInterval,
+  debounceDelay = 1000,
 }: UseSandboxesMetricsProps) {
   const teamId = useSelectedTeam()?.id
 
@@ -32,7 +34,7 @@ export function useSandboxesMetrics({
     [sandboxes]
   )
 
-  const [debouncedSandboxIds] = useDebounceValue(sandboxIds, 1000)
+  const [debouncedSandboxIds] = useDebounceValue(sandboxIds, debounceDelay)
 
   const { data, error, isLoading } = useSWR<MetricsResponse>(
     debouncedSandboxIds.length > 0
