@@ -1,6 +1,7 @@
 'use client'
 
 import { getDashboardPageConfig } from '@/configs/layout'
+import { CatchErrorBoundary } from '@/ui/error'
 import { usePathname } from 'next/navigation'
 
 export default function DashboardLayoutWrapper({
@@ -15,7 +16,14 @@ export default function DashboardLayoutWrapper({
     return (
       <div className="flex-1 overflow-y-auto">
         <div className="container mx-auto p-0 md:p-8 2xl:p-24 h-min w-full">
-          {children}
+          <CatchErrorBoundary
+            classNames={{
+              wrapper: 'h-full w-full',
+              errorBoundary: 'h-full w-full',
+            }}
+          >
+            {children}
+          </CatchErrorBoundary>
         </div>
       </div>
     )
@@ -23,7 +31,14 @@ export default function DashboardLayoutWrapper({
 
   return (
     <div className="flex-1 min-h-0 max-h-[calc(100dvh-var(--protected-nav-height))] w-full max-w-full overflow-hidden">
-      {children}
+      <CatchErrorBoundary
+        classNames={{
+          wrapper: 'h-full w-full',
+          errorBoundary: 'h-full w-full',
+        }}
+      >
+        {children}
+      </CatchErrorBoundary>
     </div>
   )
 }
