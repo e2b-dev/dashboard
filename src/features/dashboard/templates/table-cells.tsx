@@ -13,6 +13,8 @@ import {
 } from '@/server/templates/templates-actions'
 import { DefaultTemplate, Template } from '@/types/api'
 import { AlertDialog } from '@/ui/alert-dialog'
+import { E2BBadge } from '@/ui/brand'
+import HelpTooltip from '@/ui/help-tooltip'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -29,6 +31,17 @@ import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../common/resource-usage'
+
+function E2BTemplateBadge() {
+  return (
+    <HelpTooltip trigger={<E2BBadge />}>
+      <p className="text-fg-secondary font-sans text-xs whitespace-break-spaces">
+        This template was created by E2B. It is one of the default templates
+        every user has access to.
+      </p>
+    </HelpTooltip>
+  )
+}
 
 export function ActionsCell({
   row,
