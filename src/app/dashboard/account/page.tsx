@@ -14,7 +14,7 @@ export default async function AccountPage({
   searchParams: Promise<AccountPageSearchParams>
 }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col md:gap-6">
       <Suspense fallback={null}>
         <NameSettings />
       </Suspense>

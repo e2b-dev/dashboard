@@ -206,7 +206,7 @@ export default function SandboxesTable({
   })
 
   return (
-    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] px-6 pt-4 pb-6">
+    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
       <SandboxesHeader
         searchInputRef={searchInputRef}
         templates={templates}

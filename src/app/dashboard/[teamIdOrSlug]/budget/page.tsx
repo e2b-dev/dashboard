@@ -12,7 +12,12 @@ export default async function BudgetPage({ params }: BudgetPageProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <Frame classNames={{ frame: 'flex flex-col gap-4', wrapper: 'w-full' }}>
+    <Frame
+      classNames={{
+        frame: 'flex flex-col gap-4 max-md:border-none',
+        wrapper: 'w-full max-md:p-0',
+      }}
+    >
       <CreditsCard teamId={teamId} />
       <UsageLimits teamId={teamId} />
     </Frame>

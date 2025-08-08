@@ -129,7 +129,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
         )}
         className="w-full"
       >
-        <Card className={cn('overflow-hidden  border', className)}>
+        <Card className={cn('overflow-hidden border-b md:border', className)}>
           <CardHeader>
             <CardTitle>E-Mail</CardTitle>
             <CardDescription>Update your e-mail address.</CardDescription>

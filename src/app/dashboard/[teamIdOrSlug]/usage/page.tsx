@@ -18,8 +18,8 @@ export default async function UsagePage({
     <Frame
       classNames={{
         frame:
-          'relative grid max-h-full w-full grid-cols-1 self-start lg:grid-cols-12',
-        wrapper: 'w-full',
+          'relative grid max-h-full w-full grid-cols-1 self-start lg:grid-cols-12 max-md:border-none',
+        wrapper: 'w-full max-md:p-0',
       }}
     >
       <SandboxesCard

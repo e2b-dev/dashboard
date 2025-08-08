@@ -21,15 +21,15 @@ export default function DashboardLayoutHeader({
   return (
     <div
       className={cn(
-        'sticky top-0 z-50 bg-bg/40 backdrop-blur-md p-6 flex items-center gap-3',
+        'sticky top-0 z-50 bg-bg/40 backdrop-blur-md min-h-13 flex items-center md:items-end gap-2',
         {
-          'border-b': config?.type === 'default',
-          'pb-0 h-12': config?.type === 'custom',
+          'border-b p-3 md:p-6': config?.type === 'default',
+          'pb-0 px-3 md:px-6': config?.type === 'custom',
         },
         className
       )}
     >
-      <SidebarTrigger className="h-full w-8 my-3 md:hidden" />
+      <SidebarTrigger className="w-8 my-3 md:hidden" />
       <h1 className="mr-auto">{config?.title}</h1>
       <ClientOnly>
         <ThemeSwitcher />
