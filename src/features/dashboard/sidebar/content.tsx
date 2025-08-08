@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 
 import {
+  SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarContent,
   SidebarGroup,
   SidebarGroupLabel,
@@ -88,6 +89,7 @@ export default function DashboardSidebarContent() {
                       <item.icon
                         className={cn(
                           'group-data-[collapsible=icon]:size-5 transition-[size,color]',
+                          SIDEBAR_TRANSITION_CLASSNAMES,
                           isActive(href) && 'text-accent-main-highlight'
                         )}
                       />

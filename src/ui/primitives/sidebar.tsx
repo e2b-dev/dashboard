@@ -29,7 +29,7 @@ const SIDEBAR_WIDTH = '14.5rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
 const SIDEBAR_WIDTH_ICON = '3.25rem' // 52px
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
-const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-200 ease-in-out'
+const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-300 ease-out'
 
 export { SIDEBAR_TRANSITION_CLASSNAMES }
 
@@ -427,8 +427,9 @@ function SidebarGroupLabel({
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        'text-fg-tertiary prose-label-highlight ring-ring flex h-8 shrink-0 items-center px-2 font-mono text-xs uppercase outline-hidden transition-[height,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-        'group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:h-0',
+        'text-fg-tertiary prose-label-highlight ring-ring flex h-8 shrink-0 items-center px-2 font-mono text-xs uppercase outline-hidden focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        SIDEBAR_TRANSITION_CLASSNAMES,
+        'group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:h-0 duration-150',
         className
       )}
       {...props}
