@@ -29,8 +29,9 @@ export function useSandboxesMetrics({
 
   const sandboxIds = useMemo(
     () => sandboxes.map((sbx) => sbx.sandboxID),
-    [sandboxes.length]
+    [sandboxes]
   )
+
   const [debouncedSandboxIds] = useDebounceValue(sandboxIds, 1000)
 
   const { data, error, isLoading } = useSWR<MetricsResponse>(
