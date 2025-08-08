@@ -81,8 +81,8 @@ export default function SandboxInspectIncompatible({
                   </div>
                 </li>
 
-                <li className="text-fg flex-col space-y-3 marker:font-semibold">
-                  <p className="font-semibold">Rebuild the template</p>
+                <li className="text-fg flex-col space-y-3 marker:">
+                  <p className="">Rebuild the template</p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
                     <Badge className={codeClassNames} variant="code">
@@ -103,10 +103,8 @@ export default function SandboxInspectIncompatible({
                   </div>
                 </li>
 
-                <li className="text-fg flex-col space-y-3 marker:font-semibold">
-                  <p className="font-semibold">
-                    New sandboxes have filesystem inspector
-                  </p>
+                <li className="text-fg flex-col space-y-3 marker:">
+                  <p className="">New sandboxes have filesystem inspector</p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Any new sandbox you launch will have filesystem inspector
                     enabled.{' '}

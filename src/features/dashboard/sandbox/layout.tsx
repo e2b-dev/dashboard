@@ -41,7 +41,7 @@ export default function SandboxLayout({
         <div className="flex w-full items-center gap-2">
           <SidebarTrigger className="text-fg-secondary h-full w-11 rounded-none border-r px-3 md:hidden" />
 
-          <h2 className="mr-auto">Sandbox</h2>
+          <h2 className="mr-auto text-lg ">Sandbox</h2>
 
           <Suspense fallback={null}>
             <ThemeSwitcher />

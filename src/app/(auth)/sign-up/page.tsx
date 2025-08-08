@@ -85,7 +85,7 @@ export default function SignUp() {
 
   return (
     <div className="flex w-full flex-col">
-      <h1>Sign up</h1>
+      <h1 className="text-2xl ">Sign up</h1>
 
       <Suspense>
         <OAuthProviders />

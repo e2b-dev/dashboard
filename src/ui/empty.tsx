@@ -24,8 +24,10 @@ export function EmptyIndicator({
   return (
     <Card variant="slate" className={cn('w-full max-w-md', className)}>
       <CardHeader className="text-center">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription className="mt-2">{description}</CardDescription>
+        <CardTitle className="text-xl ">{title}</CardTitle>
+        <CardDescription className="text-md mt-2 font-thin">
+          {description}
+        </CardDescription>
       </CardHeader>
       {message && (
         <CardContent className="mx-auto max-w-md text-center text-fg-tertiary">
