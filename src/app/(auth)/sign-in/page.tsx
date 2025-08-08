@@ -86,7 +86,7 @@ export default function Login() {
 
   return (
     <div className="flex w-full flex-col">
-      <h1>Sign in</h1>
+      <h1 className="text-2xl ">Sign in</h1>
 
       <Suspense>
         <OAuthProviders />

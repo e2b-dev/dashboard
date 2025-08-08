@@ -496,7 +496,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button cursor-pointer whitespace-nowrap prose-body-highlight flex w-full hover:bg-bg-hover items-center gap-2 overflow-hidden p-2 text-left outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:font-medium data-[active=true]:text-accent-main-highlight  data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight  group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+  'peer/menu-button cursor-pointer whitespace-nowrap prose-body-highlight flex w-full hover:bg-bg-hover items-center gap-2 overflow-hidden p-2 text-left outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight  data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight  group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -630,7 +630,7 @@ function SidebarMenuBadge({
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
       className={cn(
-        'text-fg pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center px-1 text-xs font-medium tabular-nums select-none',
+        'text-fg pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center px-1 text-xs  tabular-nums select-none',
         'peer-hover/menu-button:text-accent-main-highlight  peer-data-[active=true]/menu-button:text-accent-main-highlight ',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',

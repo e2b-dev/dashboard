@@ -61,7 +61,7 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
         )}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h5 className="text-lg font-semibold">{tier.name}</h5>
+          <h5 className="text-lg ">{tier.name}</h5>
           {isSelected && (
             <Badge size="lg" className="uppercase" variant="info">
               Your Plan {'<<'}

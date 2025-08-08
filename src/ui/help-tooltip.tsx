@@ -18,7 +18,7 @@ export default function HelpTooltip({ children, trigger }: HelpTooltipProps) {
         <TooltipTrigger tabIndex={-1} type="button">
           {trigger || <InfoIcon className="text-fg-tertiary size-4" />}
         </TooltipTrigger>
-        <TooltipContent className="text-fg-secondary max-w-[200px] p-2 font-sans text-xs font-normal normal-case">
+        <TooltipContent className="text-fg-secondary max-w-[200px] p-2 font-sans text-xs  normal-case">
           <InfoIcon className="text-fg-tertiary mb-2 size-4" />
           {children}
         </TooltipContent>
