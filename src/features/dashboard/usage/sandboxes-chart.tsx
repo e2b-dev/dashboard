@@ -232,9 +232,9 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <div className="flex items-baseline gap-2">
-          <p className="text-accent-main-highlight  font-mono text-2xl">
+          <p className="text-accent-main-highlight font-mono prose-value-big">
             {totalSandboxes.toLocaleString()}
           </p>
           <div className="flex items-baseline gap-2">
@@ -266,7 +266,7 @@ export function SandboxesChart({ data, classNames }: SandboxesChartProps) {
           </div>
         </div>
         <div className="flex items-baseline gap-2">
-          <p className="font-mono text-2xl">
+          <p className="font-mono prose-value-big">
             {totalThisMonth.toLocaleString()}
           </p>
           <p className="text-fg-tertiary text-xs whitespace-nowrap">

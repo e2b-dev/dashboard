@@ -152,9 +152,7 @@ export function ChartPlaceholder({
       <div className="absolute inset-0 z-30 flex items-center justify-center">
         {!isLoading && (
           <Card variant="layer" className={cn('p-3', classNames?.card)}>
-            {emptyContent ?? (
-              <p className="text-fg text-sm">No data available</p>
-            )}
+            {emptyContent ?? <p className="text-fg ">No data available</p>}
           </Card>
         )}
       </div>

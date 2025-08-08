@@ -18,10 +18,8 @@ export default function NotFound() {
     <div className="flex min-h-[80vh] items-center justify-center">
       <Card className="w-full max-w-md border border-stroke bg-bg-1/40 backdrop-blur-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-4xl ">404</CardTitle>
-          <CardDescription className="mt-2 text-lg">
-            Page Not Found
-          </CardDescription>
+          <CardTitle>404</CardTitle>
+          <CardDescription>Page Not Found</CardDescription>
         </CardHeader>
         <CardContent className="text-center text-fg-tertiary">
           <p>

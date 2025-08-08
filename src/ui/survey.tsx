@@ -162,7 +162,7 @@ export function SurveyContent({
   return (
     <div>
       <CardHeader>
-        <CardTitle className="font-sans text-xl normal-case">
+        <CardTitle className="normal-case">
           {currentQuestion?.question}
         </CardTitle>
         {currentQuestion?.description && (

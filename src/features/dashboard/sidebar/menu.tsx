@@ -102,7 +102,7 @@ export default function DashboardSidebarMenu({
                   {selectedTeam?.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left  leading-tight">
                 <span className="text-fg-tertiary font-mono truncate prose-label">
                   TEAM
                 </span>
@@ -143,7 +143,7 @@ export default function DashboardSidebarMenu({
                         {team.name?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="flex-1 truncate font-sans">
+                    <span className="flex-1 truncate font-sans prose-label-highlight">
                       {team.transformed_default_name || team.name}
                     </span>
                   </DropdownMenuRadioItem>
@@ -154,7 +154,7 @@ export default function DashboardSidebarMenu({
             </DropdownMenuRadioGroup>
 
             <DropdownMenuItem
-              className="text-accent-main-highlight mt-1 font-sans"
+              className="text-accent-main-highlight mt-1 font-sans prose-label-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
               <Plus className="ml-0.5 size-5" /> Create New Team
@@ -163,7 +163,10 @@ export default function DashboardSidebarMenu({
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup className="gap-1 pt-0 pb-2">
-              <DropdownMenuItem className="font-sans" asChild>
+              <DropdownMenuItem
+                className="font-sans prose-label-highlight"
+                asChild
+              >
                 <Link href={PROTECTED_URLS.ACCOUNT_SETTINGS}>
                   <UserRoundCog className="size-4" /> Account Settings
                 </Link>
@@ -171,7 +174,7 @@ export default function DashboardSidebarMenu({
 
               <DropdownMenuItem
                 variant="error"
-                className="font-sans"
+                className="font-sans prose-label-highlight"
                 onSelect={handleLogout}
               >
                 <LogOut className="size-4" /> Log Out

@@ -467,7 +467,7 @@ function SidebarGroupContent({
     <div
       data-slot="sidebar-group-content"
       data-sidebar="group-content"
-      className={cn('w-full text-sm', className)}
+      className={cn('w-full ', className)}
       {...props}
     />
   )
@@ -527,9 +527,9 @@ const sidebarMenuButtonVariants = cva(
         ].join(' '),
       },
       size: {
-        default: 'h-8 text-sm',
+        default: 'h-8 ',
         sm: 'h-7 text-xs',
-        lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0!',
+        lg: 'h-12  group-data-[collapsible=icon]:p-0!',
       },
     },
     defaultVariants: {
@@ -730,7 +730,7 @@ function SidebarMenuSubButton({
         'text-fg ring-ring hover:bg-bg-highlight hover:text-accent-main-highlight  [&>svg]:text-accent-main-highlight  flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-5 [&>svg]:shrink-0',
         'data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight ',
         size === 'sm' && 'text-xs',
-        size === 'md' && 'text-sm',
+        size === 'md' && '',
         'group-data-[collapsible=icon]:hidden',
         className
       )}

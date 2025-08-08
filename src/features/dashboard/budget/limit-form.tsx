@@ -199,9 +199,9 @@ export default function LimitForm({
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="text-accent-main-highlight mx-2 font-mono text-xs">
+      <div className="text-accent-main-highlight mx-2 prose-value-small">
         {'$ '}
-        <span className="text-fg text-lg ">
+        <span className="text-fg prose-value-big">
           {originalValue?.toLocaleString()}
         </span>
       </div>

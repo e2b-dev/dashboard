@@ -57,7 +57,7 @@ export default function TeamBlockageAlert({
             >
               <AlertOctagonIcon className="size-6" />
               <div className="flex flex-col gap-0 overflow-hidden">
-                <h6 className="text-sm">Team is Blocked</h6>
+                <h6 className="">Team is Blocked</h6>
                 {team?.blocked_reason && (
                   <span className="text-accent-error-highlight/80 ml-0.25 truncate text-xs">
                     {team?.blocked_reason}

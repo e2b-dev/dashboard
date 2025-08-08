@@ -30,7 +30,7 @@ export function SidebarItem({ label, href, icon }: SidebarItemProps) {
           'group-hover/item:-translate-y-[4px] group-hover/item:scale-[1.005] group-hover/item:shadow-sm group-hover/item:ring-1 dark:group-hover/item:shadow-md'
         )}
       >
-        <div className="bg-bg flex w-full items-center font-mono text-sm">
+        <div className="bg-bg flex w-full items-center font-mono ">
           <div
             className={cn(
               'flex w-full items-center gap-1 px-2 py-1',

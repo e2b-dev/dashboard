@@ -157,7 +157,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
         className={cn(
           // Base table styles from table.tsx
           'w-full caption-bottom border-t',
-          'font-mono text-sm',
+          'font-mono ',
           // Div table styles
           'w-fit',
           className

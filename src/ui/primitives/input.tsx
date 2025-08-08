@@ -22,7 +22,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           'disabled:cursor-not-allowed disabled:opacity-50',
 
           'file:border-0 file:bg-transparent',
-          'file:font-mono file:text-sm file:uppercase',
+          'file:font-mono file: file:uppercase',
           'file:mr-4 file:px-2 file:py-1',
           'file:border-2 file:border-dashed',
           'file:hover:bg-bg-1',

@@ -133,7 +133,7 @@ function HeaderItem({ label, value }: HeaderItemProps) {
   return (
     <div className="flex flex-col gap-2">
       <span className="text-fg-tertiary text-xs uppercase">{label}</span>
-      {typeof value === 'string' ? <p className="text-sm">{value}</p> : value}
+      {typeof value === 'string' ? <p className="">{value}</p> : value}
     </div>
   )
 }

@@ -47,7 +47,7 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
   return (
     <>
       <div className="flex items-baseline gap-2">
-        <p className="font-mono text-2xl">
+        <p className="font-mono prose-value-big">
           {new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,

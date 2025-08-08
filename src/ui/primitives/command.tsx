@@ -45,7 +45,7 @@ const CommandInput = React.forwardRef<
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        'placeholder:text-fg-tertiary flex h-8 w-full  bg-transparent py-3 font-mono text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        'placeholder:text-fg-tertiary flex h-8 w-full  bg-transparent py-3 font-mono  outline-none disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
       {...props}
@@ -72,11 +72,7 @@ const CommandEmpty = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Empty>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
 >((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className="py-6 text-center text-sm"
-    {...props}
-  />
+  <CommandPrimitive.Empty ref={ref} className="py-6 text-center " {...props} />
 ))
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
