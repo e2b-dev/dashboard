@@ -18,7 +18,12 @@ export default async function GeneralPage({ params }: GeneralPageProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <Frame classNames={{ wrapper: 'w-full' }}>
+    <Frame
+      classNames={{
+        wrapper: 'w-full max-md:p-0',
+        frame: 'max-md:border-none',
+      }}
+    >
       <div className="grid w-full grid-cols-12">
         <Suspense>
           <>

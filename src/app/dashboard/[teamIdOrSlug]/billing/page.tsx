@@ -22,7 +22,12 @@ export default async function BillingPage({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <Frame classNames={{ wrapper: 'w-full' }}>
+    <Frame
+      classNames={{
+        wrapper: 'w-full max-md:p-0',
+        frame: 'max-md:border-none',
+      }}
+    >
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Plan</CardTitle>

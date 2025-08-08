@@ -14,7 +14,7 @@ export default function DashboardLayoutWrapper({
   if (config?.type === 'default') {
     return (
       <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-4 md:p-8 2xl:p-24 h-min w-full">
+        <div className="container mx-auto p-0 md:p-8 2xl:p-24 h-min w-full">
           {children}
         </div>
       </div>

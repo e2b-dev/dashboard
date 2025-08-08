@@ -24,7 +24,12 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <Frame classNames={{ wrapper: 'w-full' }}>
+    <Frame
+      classNames={{
+        wrapper: 'w-full max-md:p-0',
+        frame: 'max-md:border-none',
+      }}
+    >
       <Card className="w-full">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
