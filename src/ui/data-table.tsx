@@ -198,13 +198,18 @@ interface DataTableBodyProps extends React.HTMLAttributes<HTMLDivElement> {
   virtualizedTotalHeight?: number
 }
 
-function DataTableBody({ className, children, ...props }: DataTableBodyProps) {
+function DataTableBody({
+  className,
+  children,
+  virtualizedTotalHeight,
+  ...props
+}: DataTableBodyProps) {
   return (
     <div
       style={
-        props.virtualizedTotalHeight
+        virtualizedTotalHeight
           ? {
-              height: `${props.virtualizedTotalHeight}px`,
+              height: `${virtualizedTotalHeight}px`,
               position: 'relative',
               overflow: 'visible',
             }

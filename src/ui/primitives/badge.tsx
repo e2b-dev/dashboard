@@ -30,11 +30,6 @@ const badgeVariants = cva(
       size: 'default',
       can: 'none',
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-      can: 'none',
-    },
   }
 )
 

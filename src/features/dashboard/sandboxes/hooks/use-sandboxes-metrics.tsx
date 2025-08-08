@@ -29,9 +29,7 @@ export function useSandboxesMetrics({
   const sandboxIds = sandboxes.map((sbx) => sbx.sandboxID)
 
   const { data, error, isLoading } = useSWR<MetricsResponse>(
-    sandboxIds.length > 0
-      ? [`/api/teams/${teamId}/sandboxes/metrics`, sandboxIds]
-      : null,
+    sandboxIds.length > 0 ? [`/api/teams/${teamId}/sandboxes/metrics`] : null,
     async ([url]) => {
       if (sandboxIds.length === 0) {
         return {

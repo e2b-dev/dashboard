@@ -13,12 +13,18 @@ interface TableBodyProps {
   sandboxes: Sandbox[] | undefined
   table: SandboxesTable
   visualRows: Row<SandboxWithMetrics>[]
+  virtualizedTotalHeight?: number
+  virtualPaddingTop?: number
+  virtualPaddingBottom?: number
 }
 
 export const TableBody = memo(function TableBody({
   sandboxes,
   table,
   visualRows,
+  virtualizedTotalHeight,
+  virtualPaddingTop = 0,
+  virtualPaddingBottom = 0,
 }: TableBodyProps) {
   const resetFilters = useSandboxTableStore((state) => state.resetFilters)
 
@@ -66,10 +72,14 @@ export const TableBody = memo(function TableBody({
   }
 
   return (
-    <DataTableBody>
+    <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
+      {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
       {visualRows.map((row) => (
         <TableRow key={row.id} row={row} />
       ))}
+      {virtualPaddingBottom > 0 && (
+        <div style={{ height: virtualPaddingBottom }} />
+      )}
     </DataTableBody>
   )
 })

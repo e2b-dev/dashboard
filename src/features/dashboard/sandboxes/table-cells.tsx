@@ -8,7 +8,7 @@ import { Button } from '@/ui/primitives/button'
 import { CellContext } from '@tanstack/react-table'
 import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import ResourceUsage from '../common/resource-usage'
 import { useTemplateTableStore } from '../templates/stores/table-store'
 import { useSandboxMetricsStore } from './stores/metrics-store'
@@ -20,41 +20,63 @@ declare module '@tanstack/react-table' {
   }
 }
 
-export function CpuUsageCell({
+type CpuUsageProps = { sandboxId: string; totalCpu?: number }
+export const CpuUsageCellView = React.memo(function CpuUsageCellView({
+  sandboxId,
+  totalCpu,
+}: CpuUsageProps) {
+  const cpuUsedPct = useSandboxMetricsStore(
+    (s) => s.metrics?.[sandboxId]?.cpuUsedPct
+  )
+  return <ResourceUsage type="cpu" metrics={cpuUsedPct} total={totalCpu} />
+})
+
+type RamUsageProps = { sandboxId: string; totalMem?: number }
+export const RamUsageCellView = React.memo(function RamUsageCellView({
+  sandboxId,
+  totalMem,
+}: RamUsageProps) {
+  const memUsedMb = useSandboxMetricsStore(
+    (s) => s.metrics?.[sandboxId]?.memUsedMb
+  )
+  return <ResourceUsage type="mem" metrics={memUsedMb} total={totalMem} />
+})
+
+type DiskUsageProps = { sandboxId: string }
+export const DiskUsageCellView = React.memo(function DiskUsageCellView({
+  sandboxId,
+}: DiskUsageProps) {
+  const diskUsedGb = useSandboxMetricsStore(
+    (s) => s.metrics?.[sandboxId]?.diskUsedGb
+  )
+  const diskTotalGb = useSandboxMetricsStore(
+    (s) => s.metrics?.[sandboxId]?.diskTotalGb
+  )
+  return <ResourceUsage type="disk" metrics={diskUsedGb} total={diskTotalGb} />
+})
+
+// Backward compatible cells using table cell context
+export const CpuUsageCell = ({
   row,
-}: CellContext<SandboxWithMetrics, unknown>) {
-  const metrics = useSandboxMetricsStore(
-    (s) => s.metrics?.[row.original.sandboxID]
-  )
+}: CellContext<SandboxWithMetrics, unknown>) => (
+  <CpuUsageCellView
+    sandboxId={row.original.sandboxID}
+    totalCpu={row.original.cpuCount}
+  />
+)
 
-  return (
-    <ResourceUsage
-      type="cpu"
-      metrics={metrics?.cpuUsedPct}
-      total={row.original.cpuCount}
-    />
-  )
-}
-
-export function RamUsageCell({
+export const RamUsageCell = ({
   row,
-}: CellContext<SandboxWithMetrics, unknown>) {
-  const metrics = useSandboxMetricsStore(
-    (s) => s.metrics?.[row.original.sandboxID]
-  )
+}: CellContext<SandboxWithMetrics, unknown>) => (
+  <RamUsageCellView
+    sandboxId={row.original.sandboxID}
+    totalMem={row.original.memoryMB}
+  />
+)
 
-  return (
-    <ResourceUsage
-      type="mem"
-      metrics={metrics?.memUsedMb}
-      total={row.original.memoryMB}
-    />
-  )
-}
-
-export function DiskUsageCell({
+export const DiskUsageCell = ({
   row,
-}: CellContext<SandboxWithMetrics, unknown>) {
+}: CellContext<SandboxWithMetrics, unknown>) => {
   const metrics = useSandboxMetricsStore(
     (s) => s.metrics?.[row.original.sandboxID]
   )

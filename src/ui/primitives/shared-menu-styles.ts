@@ -45,8 +45,6 @@ export const menuLabelStyles = cn(
 
 export const menuSeparatorStyles = cn('-mx-2 my-2', 'border-t border-dashed')
 
-export const menuSeparatorStyles = cn('-mx-2 my-2', 'border-t border-dashed')
-
 export const menuViewportStyles = cn('p-1')
 
 export const menuGroupStyles = cn('flex flex-col gap-0.5 pt-2 first:pt-0')

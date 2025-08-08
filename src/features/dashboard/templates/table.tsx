@@ -1,6 +1,7 @@
 'use client'
 
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
+import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { DefaultTemplate, Template } from '@/types/api'
 import ClientOnly from '@/ui/client-only'
@@ -23,22 +24,20 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
-import { TableBody } from './table-body'
+import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
 interface TemplatesTableProps {
   templates: (Template | DefaultTemplate)[]
 }
 
-const INITIAL_VISUAL_ROWS_COUNT = 50
+const ROW_HEIGHT_PX = 32
+const VIRTUAL_OVERSCAN = 8
 
 export default function TemplatesTable({ templates }: TemplatesTableProps) {
   'use no memo'
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [visualRowsCount, setVisualRowsCount] = useState(
-    INITIAL_VISUAL_ROWS_COUNT
-  )
 
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
@@ -112,7 +111,6 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
     }
-    setVisualRowsCount(INITIAL_VISUAL_ROWS_COUNT)
   }
 
   // Add effect hook for scrolling to top when sorting or global filter changes
@@ -120,12 +118,14 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
     resetScroll()
   }, [sorting, globalFilter])
 
-  const handleBottomReached = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    if (scrollTop + clientHeight >= scrollHeight) {
-      setVisualRowsCount((state) => state + INITIAL_VISUAL_ROWS_COUNT)
-    }
-  }
+  const centerRows = table.getCenterRows()
+  const { virtualRows, totalHeight, paddingTop, paddingBottom } =
+    useVirtualRows<Template>({
+      rows: centerRows,
+      scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
+      estimateSizePx: ROW_HEIGHT_PX,
+      overscan: VIRTUAL_OVERSCAN,
+    })
 
   return (
     <ClientOnly className="flex h-full flex-col p-6">
@@ -143,10 +143,9 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
           style={{ ...columnSizeVars }}
-          onScroll={handleBottomReached}
           ref={scrollRef}
         >
-          <DataTableHeader className="sticky top-0 shadow-sm">
+          <DataTableHeader className="sticky top-0 shadow-sm bg-bg z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow key={headerGroup.id} className="border-b-0">
                 {headerGroup.headers.map((header) => (
@@ -180,7 +179,10 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
           <TableBody
             templates={templates}
             table={table}
-            visualRowsCount={visualRowsCount}
+            virtualizedTotalHeight={totalHeight}
+            virtualPaddingTop={paddingTop}
+            virtualPaddingBottom={paddingBottom}
+            virtualRows={virtualRows}
           />
         </DataTable>
       </div>
