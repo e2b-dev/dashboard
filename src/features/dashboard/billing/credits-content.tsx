@@ -1,4 +1,6 @@
 import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import ErrorTooltip from '@/ui/error-tooltip'
+import { AlertTriangle } from 'lucide-react'
 
 export default async function BillingCreditsContent({
   teamId,
@@ -8,9 +10,21 @@ export default async function BillingCreditsContent({
   const res = await getUsageThroughReactCache({
     teamId,
   })
-
   if (!res?.data || res.serverError) {
-    throw new Error(res?.serverError || 'Failed to load credits')
+    return (
+      <ErrorTooltip
+        trigger={
+          <span className="ml-2 inline-flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
+            <span className="prose-body-highlight text-accent-error-highlight">
+              Failed to load credits
+            </span>
+          </span>
+        }
+      >
+        {res?.serverError || 'Failed to load credits'}
+      </ErrorTooltip>
+    )
   }
 
   const usage = res.data

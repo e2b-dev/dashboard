@@ -47,7 +47,7 @@ export default async function BillingPage({
                 key={tier.id}
                 tier={tier}
                 isHighlighted={tier.id === 'pro_v1'}
-                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0"
+                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
               />
             ))}
           </div>
