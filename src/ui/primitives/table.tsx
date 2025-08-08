@@ -8,7 +8,7 @@ const Table = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <table
     ref={ref}
-    className={cn('w-full caption-bottom', 'font-mono text-sm', className)}
+    className={cn('w-full caption-bottom', 'font-mono ', className)}
     {...props}
   />
 ))
@@ -30,7 +30,7 @@ const TableBody = React.forwardRef<
     ref={ref}
     className={cn(
       '[&_tr:last-child]:border-0',
-      '[&_tr]:border-b [&_tr]:border-border/80',
+      '[&_tr]:border-b [&_tr]:border-stroke/80',
       className
     )}
     {...props}
@@ -45,8 +45,8 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      'border-t border-dashed border-fg-300/20',
-      'bg-bg-300/50 font-mono',
+      'border-t border-dashed',
+      'bg-bg-1 font-mono',
       '[&>tr]:last:border-b-0',
       className
     )}
@@ -63,7 +63,8 @@ const TableRow = React.forwardRef<
     ref={ref}
     className={cn(
       'transition-colors',
-      'data-[state=selected]:bg-bg-300',
+      'data-[state=selected]:bg-bg-hover',
+      'bg-bg',
       className
     )}
     {...props}
@@ -79,8 +80,8 @@ const TableHead = React.forwardRef<
     ref={ref}
     className={cn(
       'h-10 px-4 text-left align-middle',
-      'font-mono uppercase tracking-wider',
-      'font-medium text-fg-300',
+      'font-mono prose-label-highlight uppercase',
+      'text-fg-secondary',
       '[&:has([role=checkbox])]:pr-0',
       className
     )}
@@ -99,7 +100,8 @@ const TableCell = React.forwardRef<
     ref={ref}
     className={cn(
       'p-4 align-middle',
-      'font-sans',
+      'font-sans text-xs',
+      'text-fg-secondary prose-table',
       '[&:has([role=checkbox])]:pr-0',
       className
     )}
@@ -116,7 +118,7 @@ const TableCaption = React.forwardRef<
     ref={ref}
     className={cn(
       'mt-4',
-      'font-mono text-sm text-fg-300',
+      'font-mono  text-fg-secondary',
       'opacity-70',
       className
     )}

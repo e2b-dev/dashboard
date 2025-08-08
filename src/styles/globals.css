@@ -1,35 +1,4 @@
-@import 'tailwindcss';
-
-@import 'fumadocs-ui/css/preset.css';
-
-/* path of `fumadocs-ui` relative to the CSS file */
-@source '../../node_modules/fumadocs-ui/dist/**/*.js';
-
-@import './variables.css';
 @import './theme.css';
-
-@custom-variant dark (&:is(.dark *));
-
-@layer theme, base, components, utilities;
-
-@layer base {
-  * {
-    @apply border-border ring-ring;
-  }
-
-  body {
-    @apply bg-bg text-fg tracking-wide antialiased;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-mono font-light uppercase;
-  }
-}
 
 ::-webkit-scrollbar {
   width: 4px;
@@ -37,11 +6,11 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--accent-200);
+  background-color: var(--fg-tertiary);
 }
 
 *::selection {
-  background-color: hsl(from var(--accent) h s l / 0.3);
+  background-color: var(--accent-main-bg);
 }
 
 .lucide {

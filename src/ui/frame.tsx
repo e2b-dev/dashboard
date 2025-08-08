@@ -14,12 +14,12 @@ export default function Frame({ children, classNames }: FrameProps) {
     <div
       className={cn('relative flex h-fit w-fit pb-1.5', classNames?.wrapper)}
     >
-      <div className="absolute inset-x-[3px] top-1 bottom-0 h-auto w-auto rounded-xs border">
+      <div className="absolute inset-x-[3px] top-1 bottom-0 h-auto w-auto  border">
         <Scanline />
       </div>
       <div
         className={cn(
-          'bg-bg relative w-full rounded-xs border shadow-md',
+          'bg-bg relative w-full  border shadow-md',
           classNames?.frame
         )}
       >

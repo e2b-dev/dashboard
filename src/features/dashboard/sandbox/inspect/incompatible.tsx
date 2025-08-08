@@ -42,7 +42,7 @@ export default function SandboxInspectIncompatible({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
-      <div className="text-border-300 pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
+      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
       </div>
@@ -55,40 +55,37 @@ export default function SandboxInspectIncompatible({
         <Card className="bg-bg flex h-full min-h-160 w-full max-w-150 flex-col justify-between border p-7">
           <CardHeader className="px-0 pt-0 pb-7">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-warning h-5 w-5" />
-              <CardTitle className="text-lg">Incompatible template</CardTitle>
+              <AlertTriangle className="text-accent-warning-highlight h-5 w-5" />
+              <CardTitle>Incompatible template</CardTitle>
             </div>
-            <CardDescription className="text-fg-300 leading-5">
+            <CardDescription className="text-fg-secondary leading-5">
               This sandbox used a template that is incompatible with the
               filesystem inspector. To use the inspector in any new sandbox you
-              launch,{' '}
-              <span className="text-fg font-medium">rebuild the template</span>.
+              launch, <span className="text-fg ">rebuild the template</span>.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-auto flex-1 p-0">
             {templateNameOrId && (
               <ol className="ml-4 list-decimal space-y-6 font-sans leading-5">
-                <li className="text-fg flex-col space-y-3 marker:font-semibold">
-                  <p className="font-semibold">
-                    Navigate to your template's folder
-                  </p>
+                <li className="text-fg flex-col space-y-3 marker:">
+                  <p className="">Navigate to your template's folder</p>
                   <CodeBlock className="-ml-4" lang="bash">
                     {`cd path/to/your/template`}
                   </CodeBlock>
-                  <div className="text-fg-300 -ml-4 inline-block">
+                  <div className="text-fg-secondary -ml-4 inline-block">
                     The folder should contain an{' '}
-                    <Badge className={codeClassNames} variant="outline">
+                    <Badge className={codeClassNames} variant="code">
                       e2b.toml
                     </Badge>{' '}
                     file.
                   </div>
                 </li>
 
-                <li className="text-fg flex-col space-y-3 marker:font-semibold">
-                  <p className="font-semibold">Rebuild the template</p>
-                  <div className="text-fg-300 -ml-4 inline-block leading-6">
+                <li className="text-fg flex-col space-y-3 marker:">
+                  <p className="">Rebuild the template</p>
+                  <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
-                    <Badge className={codeClassNames} variant="outline">
+                    <Badge className={codeClassNames} variant="code">
                       e2b template build
                     </Badge>{' '}
                     along with custom{' '}
@@ -100,17 +97,15 @@ export default function SandboxInspectIncompatible({
                       start commands
                     </Link>{' '}
                     and any other arguments to rebuild. For example:
-                    <Badge className={codeClassNames} variant="outline">
+                    <Badge className={codeClassNames} variant="code">
                       -c "start.sh"
                     </Badge>
                   </div>
                 </li>
 
-                <li className="text-fg flex-col space-y-3 marker:font-semibold">
-                  <p className="font-semibold">
-                    New sandboxes have filesystem inspector
-                  </p>
-                  <div className="text-fg-300 -ml-4 inline-block leading-6">
+                <li className="text-fg flex-col space-y-3 marker:">
+                  <p className="">New sandboxes have filesystem inspector</p>
+                  <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Any new sandbox you launch will have filesystem inspector
                     enabled.{' '}
                     <b>This won&apos;t affect already started sandboxes.</b>
@@ -123,7 +118,7 @@ export default function SandboxInspectIncompatible({
             <Button
               variant="ghost"
               size="slate"
-              className="text-fg-500 hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
+              className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
               <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>
@@ -139,7 +134,7 @@ export default function SandboxInspectIncompatible({
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
                 Documentation{' '}
-                <ArrowUpRight className="text-border-500 size-5 !stroke-[1px]" />
+                <ArrowUpRight className="text-fill-highlight size-5 !stroke-[1px]" />
               </Link>
             </Button>
           </CardFooter>

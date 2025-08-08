@@ -59,18 +59,12 @@ export function SandboxesHeader({
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge
-              variant="success"
-              className="h-min w-fit gap-2 font-bold uppercase"
-            >
+            <Badge size="lg" variant="positive" className="uppercase">
               {table.getCoreRowModel().rows.length} running
               <Circle className="size-2 fill-current" />
             </Badge>
             {showFilteredRowCount && (
-              <Badge
-                variant="contrast-1"
-                className="h-min w-fit gap-2 font-bold uppercase"
-              >
+              <Badge size="lg" variant="info" className="uppercase">
                 {table.getFilteredRowModel().rows.length} filtered
                 <ListFilter className="size-3 !stroke-[3px]" />
               </Badge>

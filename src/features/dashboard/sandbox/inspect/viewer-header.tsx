@@ -1,7 +1,7 @@
-import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
-import { Button } from '@/ui/primitives/button'
-import { motion } from 'motion/react'
 import CopyButton from '@/ui/copy-button'
+import { Button } from '@/ui/primitives/button'
+import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
+import { motion } from 'motion/react'
 import { FileContentState } from './filesystem/store'
 
 interface SandboxInspectViewerHeaderProps {
@@ -24,7 +24,7 @@ export default function SandboxInspectViewerHeader({
   return (
     <div className="flex h-full flex-1 items-center gap-2 p-1 px-2 max-md:px-4">
       <FileIcon className="size-3.5" />
-      <span className="mr-auto text-sm">{name}</span>
+      <span className="mr-auto ">{name}</span>
 
       {fileContentState?.type === 'text' && (
         <CopyButton

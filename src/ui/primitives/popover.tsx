@@ -34,7 +34,7 @@ const PopoverContent = React.forwardRef<
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         className={cn(
-          'z-50 w-72 rounded-sm',
+          'z-50 w-72 ',
           cardVariants({ variant: 'layer' }),
           'shadow-sm focus:outline-none',
           'animate-fade-slide-in',

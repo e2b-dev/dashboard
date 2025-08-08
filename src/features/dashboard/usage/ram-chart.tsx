@@ -65,7 +65,7 @@ export function RAMChart({ data }: RAMChartProps) {
               <ChartTooltipContent
                 labelFormatter={() => label}
                 formatter={(value, name, item) => [
-                  <span key="value" className="text-accent">
+                  <span key="value" className="text-accent-main-highlight ">
                     {Number(value).toLocaleString()}
                   </span>,
                   `RAM Hours`,

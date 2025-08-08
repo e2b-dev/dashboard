@@ -48,13 +48,13 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
   return (
     <>
       <div className="flex items-baseline gap-2">
-        <p className="font-mono text-2xl">
+        <p className="font-mono prose-value-big">
           {new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           }).format(latestRAM || 0)}
         </p>
-        <span className="text-fg-500 text-xs">GB-hours this month</span>
+        <span className="text-fg-tertiary text-xs">GB-hours this month</span>
       </div>
       <RAMChart data={result.data.compute} />
     </>

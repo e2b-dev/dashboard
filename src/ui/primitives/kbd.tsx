@@ -59,17 +59,19 @@ export function Kbd({
       className={cn('pointer-events-none', className)}
       {...clientOnlyProps}
     >
-      <Badge variant="muted" {...badgeProps}>
+      <Badge
+        {...badgeProps}
+        className={cn(
+          badgeProps?.className,
+          'px-1 h-5 text-fg-tertiary bg-bg-highlight'
+        )}
+      >
         {keys.map((key, index) => {
           const formattedKey = formatKey(key)
           return (
             <React.Fragment key={key}>
               {index > 0 && '+'}
-              {isMac && isSymbolKey(key) ? (
-                <span className="scale-[1.4]">{formattedKey}</span>
-              ) : (
-                formattedKey
-              )}
+              {formattedKey}
             </React.Fragment>
           )
         })}

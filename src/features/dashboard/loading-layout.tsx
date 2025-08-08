@@ -1,4 +1,4 @@
-import { Loader } from '@/ui/loader'
+import { Loader } from '@/ui/primitives/loader'
 
 export default function LoadingLayout() {
   return (

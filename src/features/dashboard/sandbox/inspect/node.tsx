@@ -1,6 +1,6 @@
 import SandboxInspectDir from './dir'
-import { useFilesystemNode } from './hooks/use-node'
 import SandboxInspectFile from './file'
+import { useFilesystemNode } from './hooks/use-node'
 
 interface SandboxInspectDirProps {
   path: string

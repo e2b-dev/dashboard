@@ -3,8 +3,8 @@
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { redirectToCustomerPortal } from '@/server/billing/billing-actions'
 import ExternalIcon from '@/ui/external-icon'
-import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
+import { Loader } from '@/ui/primitives/loader'
 import { useAction } from 'next-safe-action/hooks'
 
 interface CustomerPortalLinkProps {
@@ -30,7 +30,7 @@ export default function CustomerPortalLink({
     >
       Manage Subscription
       {isTransitioning ? (
-        <Loader className="text-accent" />
+        <Loader className="text-accent-main-highlight " />
       ) : (
         <ExternalIcon className="translate-x-1" />
       )}

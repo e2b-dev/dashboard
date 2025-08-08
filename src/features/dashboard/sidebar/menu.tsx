@@ -73,43 +73,48 @@ export default function DashboardSidebarMenu({
 
   return (
     <>
-      <SidebarMenuItem>
+      <SidebarMenuItem className="px-3 pb-2 group-data-[collapsible=icon]:p-2">
         <DropdownMenu onOpenChange={handleMenuOpenChange}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               variant="outline"
               size="lg"
               className={cn(
-                'hover:bg-bg-100 group-data-[collapsible=icon]:pl-0!',
+                'h-14 flex',
+                'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:!px-0',
                 className
               )}
             >
               <Avatar
-                className={cn('size-8 shrink-0 transition-all duration-300', {
-                  'border-0 drop-shadow-lg filter':
-                    selectedTeam?.profile_picture_url,
-                })}
+                className={cn(
+                  'shrink-0 transition-all duration-100 ease-in-out',
+                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
+                  {
+                    'drop-shadow-sm filter': selectedTeam?.profile_picture_url,
+                  }
+                )}
               >
                 <AvatarImage
                   src={selectedTeam?.profile_picture_url || undefined}
+                  className="group-data-[collapsible=icon]:size-full object-cover object-center"
                 />
-                <AvatarFallback className="bg-bg-200 border-0">
+                <AvatarFallback className="bg-bg-hover border-0">
                   {selectedTeam?.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="text-fg-500 text-mono truncate text-[0.75rem]">
+              <div className="grid flex-1 text-left  leading-tight">
+                <span className="text-fg-tertiary font-mono truncate prose-label">
                   TEAM
                 </span>
                 {selectedTeam ? (
-                  <span className="text-fg truncate font-sans text-sm normal-case">
+                  <span className="text-fg truncate prose-body-highlight normal-case">
                     {selectedTeam.transformed_default_name || selectedTeam.name}
                   </span>
                 ) : (
                   <Skeleton className="h-4 w-full" />
                 )}
               </div>
-              <ChevronsUpDown className="text-fg-500 ml-auto size-4" />
+              <ChevronsUpDown className="text-fg-tertiary ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -134,11 +139,11 @@ export default function DashboardSidebarMenu({
                       <AvatarImage
                         src={team.profile_picture_url || undefined}
                       />
-                      <AvatarFallback className="bg-bg-400 group-focus:text-accent text-fg-500 text-xs">
+                      <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
                         {team.name?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="flex-1 truncate font-sans">
+                    <span className="flex-1 truncate font-sans prose-label-highlight">
                       {team.transformed_default_name || team.name}
                     </span>
                   </DropdownMenuRadioItem>
@@ -149,7 +154,7 @@ export default function DashboardSidebarMenu({
             </DropdownMenuRadioGroup>
 
             <DropdownMenuItem
-              className="text-accent mt-1 font-sans"
+              className="text-accent-main-highlight mt-1 font-sans prose-label-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
               <Plus className="ml-0.5 size-5" /> Create New Team
@@ -158,7 +163,10 @@ export default function DashboardSidebarMenu({
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup className="gap-1 pt-0 pb-2">
-              <DropdownMenuItem className="font-sans" asChild>
+              <DropdownMenuItem
+                className="font-sans prose-label-highlight"
+                asChild
+              >
                 <Link href={PROTECTED_URLS.ACCOUNT_SETTINGS}>
                   <UserRoundCog className="size-4" /> Account Settings
                 </Link>
@@ -166,7 +174,7 @@ export default function DashboardSidebarMenu({
 
               <DropdownMenuItem
                 variant="error"
-                className="font-sans"
+                className="font-sans prose-label-highlight"
                 onSelect={handleLogout}
               >
                 <LogOut className="size-4" /> Log Out

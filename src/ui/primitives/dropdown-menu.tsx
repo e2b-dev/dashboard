@@ -42,8 +42,8 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       menuItemVariants({ variant }),
-      'data-[state=open]:bg-accent/10 data-[state=open]:text-accent',
-      'focus:bg-accent/10 focus:text-accent',
+      'data-[state=open]:bg-accent-main-bg data-[state=open]:text-accent-main-highlight ',
+      'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
       inset && 'pl-4',
       className
     )}
@@ -118,7 +118,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
       'py-1.5 pr-2 pl-8',
       'font-mono text-xs',
       'outline-none',
-      'focus:bg-accent/10 focus:text-accent',
+      'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       className
@@ -154,7 +154,7 @@ const DropdownMenuRadioItem = React.forwardRef<
     {children}
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="text-accent size-4" />
+        <Check className="text-accent-main-highlight size-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
   </DropdownMenuPrimitive.RadioItem>
@@ -199,7 +199,10 @@ const DropdownMenuShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
-      className={cn('text-fg-500 ml-auto text-xs tracking-widest', className)}
+      className={cn(
+        'text-fg-tertiary ml-auto text-xs tracking-widest',
+        className
+      )}
       {...props}
     />
   )

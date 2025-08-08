@@ -1,10 +1,10 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 import SandboxInspectIncompatible from './inspect/incompatible'
-import { cn } from '@/lib/utils'
 
 interface SandboxDetailsTabsProps {
   tabs: string[]

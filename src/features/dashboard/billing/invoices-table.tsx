@@ -1,8 +1,8 @@
 import { getInvoices } from '@/server/billing/get-invoices'
 import { ErrorIndicator } from '@/ui/error-indicator'
-import { Loader } from '@/ui/loader'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
+import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
   TableBody,
@@ -22,7 +22,7 @@ function LoadingFallback() {
   return (
     <TableRow>
       <TableCell colSpan={4} className="text-left">
-        <Alert className="w-full text-left" variant="contrast2">
+        <Alert className="w-full text-left" variant="info">
           <AlertTitle className="flex items-center gap-2">
             <Loader />
             Loading invoices...
@@ -57,8 +57,8 @@ async function InvoicesTableContent({ teamId }: { teamId: string }) {
     return (
       <TableRow>
         <TableCell colSpan={4} className="text-left">
-          <Alert className="w-full text-left" variant="contrast1">
-            <AlertTitle>No invoices found.</AlertTitle>
+          <Alert className="w-full text-left" variant="info">
+            <AlertTitle>No invoices found</AlertTitle>
             <AlertDescription>Your team has no invoices yet.</AlertDescription>
           </Alert>
         </TableCell>

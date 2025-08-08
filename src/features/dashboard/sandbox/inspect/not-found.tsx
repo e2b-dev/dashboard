@@ -66,19 +66,19 @@ export default function SandboxInspectNotFound() {
 
   return (
     <>
-      <div className="text-border-200 pointer-events-none absolute -top-30 -right-100 flex overflow-hidden">
+      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
       </div>
 
       <div className="animate-fade-slide-in flex w-full items-center justify-center pt-24 max-sm:p-4">
-        <Card className="border-border bg-bg-100/40 w-full max-w-md border backdrop-blur-lg">
+        <Card className="border-stroke bg-bg-1/40 w-full max-w-md border backdrop-blur-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-light">
+            <CardTitle>
               {isRunning ? 'Empty Directory' : 'Not Connected'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-fg-500 text-center">
+          <CardContent className="text-fg-tertiary text-center">
             <p>
               {isRunning
                 ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
@@ -95,7 +95,7 @@ export default function SandboxInspectNotFound() {
                     onClick={() => setRootPath('')}
                     disabled={isPending && pendingPath === ''}
                   >
-                    <Home className="text-fg-500 h-4 w-4" />
+                    <Home className="text-fg-tertiary h-4 w-4" />
                     Reset
                   </Button>
                   <Button
@@ -104,7 +104,7 @@ export default function SandboxInspectNotFound() {
                     onClick={() => setRootPath('/')}
                     disabled={isPending && pendingPath === '/'}
                   >
-                    <ArrowUp className="text-fg-500 h-4 w-4" />
+                    <ArrowUp className="text-fg-tertiary h-4 w-4" />
                     To Root
                   </Button>
                 </div>
@@ -119,9 +119,12 @@ export default function SandboxInspectNotFound() {
                   disabled={isResetPending}
                 >
                   <RefreshCw
-                    className={cn('text-fg-500 h-4 w-4 transition-transform', {
-                      'animate-spin': isResetPending,
-                    })}
+                    className={cn(
+                      'text-fg-tertiary h-4 w-4 transition-transform',
+                      {
+                        'animate-spin': isResetPending,
+                      }
+                    )}
                   />
                   Refresh
                 </Button>
@@ -134,7 +137,7 @@ export default function SandboxInspectNotFound() {
                 }
                 className="w-full gap-2"
               >
-                <ArrowLeft className="text-fg-500 h-4 w-4" />
+                <ArrowLeft className="text-fg-tertiary h-4 w-4" />
                 Back to Sandboxes
               </Button>
             )}

@@ -27,7 +27,7 @@ export default async function MemberTableBody({
       return (
         <TableRow>
           <TableCell colSpan={5}>
-            <Alert className="text-left" variant="contrast2">
+            <Alert className="text-left" variant="info">
               <AlertTitle>No Members</AlertTitle>
               <AlertDescription>No team members found.</AlertDescription>
             </Alert>

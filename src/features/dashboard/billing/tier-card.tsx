@@ -61,13 +61,17 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
         )}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h5 className="text-lg font-semibold">{tier.name}</h5>
-          {isSelected && <Badge variant="accent"> Your Plan {'<<'} </Badge>}
+          <h5>{tier.name}</h5>
+          {isSelected && (
+            <Badge size="lg" className="uppercase" variant="info">
+              Your Plan {'<<'}
+            </Badge>
+          )}
         </div>
         <ul className="mb-4 space-y-1 pl-4">
           {tier.prose.map((prose, i) => (
             <li
-              className="text-fg-500 marker:text-accent-200 pl-2 font-sans text-xs marker:content-['▪']"
+              className="text-fg-tertiary marker:text-fg pl-2 font-sans text-xs marker:content-['▪']"
               key={`tier-${tier.id}-prose-${i}`}
             >
               {prose}

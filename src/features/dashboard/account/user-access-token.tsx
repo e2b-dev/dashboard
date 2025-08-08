@@ -3,9 +3,9 @@
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { getUserAccessTokenAction } from '@/server/user/user-actions'
 import CopyButton from '@/ui/copy-button'
-import { Loader } from '@/ui/loader'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
+import { Loader } from '@/ui/primitives/loader'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
@@ -41,7 +41,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           type={isVisible ? 'text' : 'password'}
           value={token ?? '••••••••••••••••'}
           readOnly
-          className="bg-bg-100 font-mono"
+          className="bg-bg-1 font-mono"
         />
         <Button
           type="button"

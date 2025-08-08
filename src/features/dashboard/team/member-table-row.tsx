@@ -83,8 +83,8 @@ export default function MemberTableRow({
           ? 'You'
           : (member.info.name ?? 'Anonymous')}
       </TableCell>
-      <TableCell className="text-fg-500">{member.info.email}</TableCell>
-      <TableCell className="text-fg-300">
+      <TableCell className="text-fg-tertiary">{member.info.email}</TableCell>
+      <TableCell className="text-fg-secondary">
         {member.relation.added_by === user?.id ? 'You' : (addedByEmail ?? '')}
       </TableCell>
       <TableCell className="text-end">

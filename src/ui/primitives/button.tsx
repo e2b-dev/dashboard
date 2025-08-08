@@ -2,12 +2,12 @@ import { cn } from '@/lib/utils'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
-import { Loader } from '../loader'
+import { Loader } from './loader'
 
 const buttonVariants = cva(
   [
-    'inline-flex items-center cursor-pointer rounded-sm justify-center whitespace-nowrap',
-    'font-mono uppercase tracking-wider text-sm',
+    'inline-flex items-center cursor-pointer  justify-center whitespace-nowrap',
+    'font-mono uppercase tracking-wider ',
     'transition-colors duration-150',
     'focus-visible:outline-none ',
     'disabled:pointer-events-none disabled:opacity-50',
@@ -16,13 +16,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: [
-          'bg-fg text-bg',
-          'hover:bg-fg-100 focus:bg-fg-100',
+          'bg-bg-inverted text-fg-inverted',
+          'hover:bg-bg-inverted-hover focus:bg-bg-inverted-hover',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         accent: [
-          'bg-accent/10 text-accent',
-          'hover:bg-accent/20 focus:bg-accent/20',
+          'bg-accent-main-bg text-accent-main-highlight ',
+          'hover:bg-accent-main-bg/80 focus:bg-accent-main-bg/80',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         ghost: [
@@ -31,27 +31,27 @@ const buttonVariants = cva(
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         muted: [
-          'border border-border-200 bg-bg-200 text-fg-300 hover:text-fg',
-          'hover:bg-bg-200/90 focus:bg-bg-200/90',
+          'border bg-bg-hover text-fg-secondary hover:text-fg',
+          'hover:bg-bg-hover/90 focus:bg-bg-hover/90',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         error: [
-          'bg-error/10 text-error',
-          'hover:bg-error/20 focus:bg-error/20',
+          'bg-accent-error-bg text-accent-error-highlight',
+          'hover:bg-accent-error-bg focus:bg-accent-error-bg',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         warning: [
-          'bg-warning/10 text-warning',
-          'hover:bg-warning/20 focus:bg-warning/20',
+          'bg-accent-warning-bg text-accent-warning-highlight',
+          'hover:bg-accent-warning-bg focus:bg-accent-warning-bg',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         outline: [
-          'border border-border-100 bg-transparent',
-          'hover:bg-bg-300/80 focus:bg-bg-300/80',
+          'border border-stroke bg-transparent',
+          'hover:bg-bg-1 focus:bg-bg-1',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         link: [
-          'text-accent underline-offset-4',
+          'text-accent-main-highlight underline-offset-4',
           'hover:underline hover:bg-transparent',
           'focus:ring-0 focus:underline focus:bg-transparent',
           'shadow-none',

@@ -67,7 +67,7 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-accent text-xs">
+            <span className="text-accent-main-highlight text-xs">
               {localValues.cpu === 0
                 ? 'Unfiltered'
                 : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
@@ -98,7 +98,7 @@ const ResourcesFilter = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-accent text-xs">
+            <span className="text-accent-main-highlight text-xs">
               {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>
@@ -161,7 +161,7 @@ const TemplatesTableFilters = React.forwardRef<
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-xs normal-case">
-            <ListFilter className="text-fg-500 size-4" /> Filters{' '}
+            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -180,7 +180,11 @@ const TemplatesTableFilters = React.forwardRef<
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    className={isPublic === true ? 'text-accent' : undefined}
+                    className={
+                      isPublic === true
+                        ? 'text-accent-main-highlight '
+                        : undefined
+                    }
                     onClick={(e) => {
                       e.preventDefault()
                       setIsPublic(isPublic === true ? undefined : true)
@@ -189,7 +193,11 @@ const TemplatesTableFilters = React.forwardRef<
                     Public
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className={isPublic === false ? 'text-accent' : undefined}
+                    className={
+                      isPublic === false
+                        ? 'text-accent-main-highlight '
+                        : undefined
+                    }
                     onClick={(e) => {
                       e.preventDefault()
                       setIsPublic(isPublic === false ? undefined : false)

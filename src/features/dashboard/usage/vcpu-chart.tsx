@@ -51,7 +51,7 @@ export function VCPUChart({ data }: VCPUChartProps) {
               <ChartTooltipContent
                 labelFormatter={() => label}
                 formatter={(value, name, item) => [
-                  <span key="value" className="text-accent">
+                  <span key="value" className="text-accent-main-highlight ">
                     {Number(value).toLocaleString()}
                   </span>,
                   `vCPU Hours`,

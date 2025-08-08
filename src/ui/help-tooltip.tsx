@@ -16,10 +16,10 @@ export default function HelpTooltip({ children, trigger }: HelpTooltipProps) {
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger tabIndex={-1} type="button">
-          {trigger || <InfoIcon className="text-fg-500 size-4" />}
+          {trigger || <InfoIcon className="text-fg-tertiary size-4" />}
         </TooltipTrigger>
-        <TooltipContent className="text-fg-300 max-w-[200px] p-2 font-sans text-xs font-normal normal-case">
-          <InfoIcon className="text-fg-500 mb-2 size-4" />
+        <TooltipContent className="text-fg-secondary max-w-[200px] p-2 font-sans text-xs  normal-case">
+          <InfoIcon className="text-fg-tertiary mb-2 size-4" />
           {children}
         </TooltipContent>
       </Tooltip>

@@ -1,4 +1,3 @@
-import { Loader } from '@/ui/loader'
 import {
   Card,
   CardContent,
@@ -6,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
+import { Loader } from '@/ui/primitives/loader'
 import { Suspense } from 'react'
 import BillingCreditsContent from '../billing/credits-content'
 

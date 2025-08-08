@@ -44,7 +44,7 @@ export default function RemainingTime() {
 
   if (!isRunning) {
     return (
-      <Badge variant="muted">
+      <Badge>
         <StopCircle className="size-3" /> Stopped
       </Badge>
     )

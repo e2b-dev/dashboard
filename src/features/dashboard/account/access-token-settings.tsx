@@ -22,7 +22,7 @@ export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
   if (!user) return null
 
   return (
-    <Card className={cn('overflow-hidden rounded-xs border', className)}>
+    <Card className={cn('overflow-hidden border', className)}>
       <CardHeader>
         <CardTitle>Access Token</CardTitle>
         <CardDescription>Manage your personal access token.</CardDescription>
@@ -32,8 +32,8 @@ export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
         <UserAccessToken className="max-w-lg" />
       </CardContent>
 
-      <CardFooter className="bg-bg-100 justify-between gap-6">
-        <p className="text-fg-500 text-sm">
+      <CardFooter className="bg-bg-1 justify-between gap-6">
+        <p className="text-fg-tertiary ">
           Keep it safe, as it can be used to authenticate with E2B services.
         </p>
       </CardFooter>

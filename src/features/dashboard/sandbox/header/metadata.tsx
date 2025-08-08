@@ -1,18 +1,17 @@
 'use client'
 
-import { Button } from '@/ui/primitives/button'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
-import { useSandboxContext } from '../context'
+import { Button } from '@/ui/primitives/button'
 import { CircleSlash } from 'lucide-react'
+import { useSandboxContext } from '../context'
 
 export default function Metadata() {
   const { sandboxInfo } = useSandboxContext()
-  const className = 'h-6'
 
   if (!sandboxInfo?.metadata) {
     return (
-      <Badge variant="muted" className={className}>
+      <Badge>
         <CircleSlash className="size-3" /> Empty
       </Badge>
     )
@@ -20,9 +19,7 @@ export default function Metadata() {
 
   return (
     <JsonPopover json={sandboxInfo.metadata}>
-      <Button variant="accent" size="sm" className={className}>
-        Show Metadata
-      </Button>
+      <Button variant="accent">Show Metadata</Button>
     </JsonPopover>
   )
 }

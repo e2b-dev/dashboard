@@ -5,9 +5,9 @@ import { cn } from '@/lib/utils'
 import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
+import { serializeError } from 'serialize-error'
 import { ErrorIndicator } from './error-indicator'
 import Frame from './frame'
-import { serializeError } from 'serialize-error'
 
 export default function ErrorBoundary({
   error,
@@ -29,7 +29,11 @@ export default function ErrorBoundary({
         },
       })
     } else {
-      l.error({ key: 'error_boundary', message: error.message, sanitizedError: serializeError(error) })
+      l.error({
+        key: 'error_boundary',
+        message: error.message,
+        sanitizedError: serializeError(error),
+      })
     }
   }, [error])
 

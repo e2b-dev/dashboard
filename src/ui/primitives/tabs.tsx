@@ -66,8 +66,8 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-8.25 flex-1 cursor-pointer items-center justify-center gap-1.5 pb-1.5 whitespace-nowrap !text-[hsl(var(--color-accent))] text-[hsl(var(--color-fg-300))] transition-[color,box-shadow] hover:text-[hsl(var(--color-fg-200))] focus-visible:ring-1 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-[hsl(var(--color-fg))] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        'focus-visible:border-[hsl(var(--color-ring))] focus-visible:ring-[hsl(var(--color-ring)/0.5)] focus-visible:outline-[hsl(var(--color-ring))]',
+        "relative inline-flex h-8.25 flex-1 cursor-pointer items-center justify-center gap-1.5 pb-1.5 whitespace-nowrap text-fg-tertiary transition-[color,box-shadow] hover:text-fg-secondary focus-visible:ring-1 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-fg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        'focus-visible:border-ring focus-visible:ring-ring focus-visible:outline-ring',
         className
       )}
       {...props}
@@ -76,7 +76,7 @@ function TabsTrigger({
       {isSelected && (
         <motion.div
           layoutId="tabs-indicator"
-          className="border-accent absolute inset-0 -bottom-0.5 border-b"
+          className="border-accent-main-highlight  absolute inset-0 -bottom-0.5 border-b"
           initial={false}
           transition={{
             duration: 0.4,

@@ -1,42 +1,53 @@
+import { cn } from '@/lib/utils/index'
+import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
-import { cn } from '@/lib/utils'
-
 const badgeVariants = cva(
-  'inline-flex gap-1 items-center px-2 rounded-sm py-1 text-xs font-mono font-light transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center cursor-default justify-center prose-label-highlight focus-visible:ring-1 w-fit whitespace-nowrap shrink-0 [&>svg]:size-3  [&>svg]:pointer-events-none ![&>svg]:pl-0.75 aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight transition-[color,box-shadow] overflow-hidden',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-fg text-bg hover:bg-fg-200',
-        muted: 'bg-bg-200 text-fg-500',
-        success: 'bg-success/20 text-success',
-        warning: 'bg-warning/20 text-warning',
-        error: 'bg-error/20 text-error',
-        accent: 'bg-accent/15 text-accent',
-        'contrast-1': 'bg-contrast-1/20 text-contrast-1',
-        'contrast-2': 'bg-contrast-2/20 text-contrast-2',
-        outline: 'border border-border-200 bg-bg-200',
+        default: 'bg-bg-highlight text-fg-secondary',
+        positive: 'bg-accent-positive-bg text-accent-positive-highlight',
+        warning: 'bg-accent-warning-bg text-accent-warning-highlight',
+        info: 'bg-accent-info-bg text-accent-info-highlight',
+        error: 'bg-accent-error-bg text-accent-error-highlight',
+        code: 'bg-fill ring-1 ring-stroke text-fg-secondary',
+      },
+      can: {
+        none: '',
+        hover: 'hover:ring-1 ring-[currentColor]',
       },
       size: {
-        default: 'px-2 py-1 text-xs',
-        sm: 'px-1 py-0.5 text-xs',
-        lg: 'px-3 py-1.5 text-sm',
+        default: 'h-5 px-1 gap-1',
+        sm: 'h-4.5 px-1 text-xs gap-0.5',
+        lg: 'h-7 px-2.5 gap-1.5',
       },
-      defaultVariants: {
-        variant: 'default',
-      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+      can: 'none',
     },
   }
 )
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+  extends React.ComponentProps<'span'>,
+    VariantProps<typeof badgeVariants> {
+  asChild?: boolean
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, asChild = false, ...props }: BadgeProps) {
+  const Comp = asChild ? Slot : 'span'
+
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <Comp
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
   )
 }
 

@@ -23,13 +23,15 @@ export default function Header() {
             className="group flex w-full items-center justify-start gap-2"
           >
             <Avatar className="size-9">
-              <AvatarFallback className="bg-bg-100 text-fg">
+              <AvatarFallback className="text-fg">
                 <tab.icon className="size-4" />
               </AvatarFallback>
             </Avatar>
             <div>
-              <span className="text-fg-100 font-mono">{tab.title}</span>
-              <p className="text-fg-500 text-[0.65rem]">{tab.description}</p>
+              <span className="">{tab.title}</span>
+              <p className="text-fg-tertiary text-[0.65rem]">
+                {tab.description}
+              </p>
             </div>
           </Link>
         </Button>

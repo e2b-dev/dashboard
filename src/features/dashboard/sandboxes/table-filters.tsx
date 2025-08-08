@@ -49,7 +49,9 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
   return (
     <div>
       <DropdownMenuItem
-        className={cn(startedAtFilter === '1h ago' && 'text-accent')}
+        className={cn(
+          startedAtFilter === '1h ago' && 'text-accent-main-highlight '
+        )}
         onClick={(e) => {
           e.preventDefault()
           handleRunningSince('1h ago')
@@ -58,7 +60,9 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
         1 hour ago
       </DropdownMenuItem>
       <DropdownMenuItem
-        className={cn(startedAtFilter === '6h ago' && 'text-accent')}
+        className={cn(
+          startedAtFilter === '6h ago' && 'text-accent-main-highlight '
+        )}
         onClick={(e) => {
           e.preventDefault()
           handleRunningSince('6h ago')
@@ -67,7 +71,9 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
         6 hours ago
       </DropdownMenuItem>
       <DropdownMenuItem
-        className={cn(startedAtFilter === '12h ago' && 'text-accent')}
+        className={cn(
+          startedAtFilter === '12h ago' && 'text-accent-main-highlight '
+        )}
         onClick={(e) => {
           e.preventDefault()
           handleRunningSince('12h ago')
@@ -108,7 +114,8 @@ const TemplateFilter = memo(function TemplateFilter({
             key={template.templateID}
             onSelect={() => handleSelect(template.templateID)}
             className={cn(
-              templateIds.includes(template.templateID) && 'text-accent'
+              templateIds.includes(template.templateID) &&
+                'text-accent-main-highlight '
             )}
           >
             {template.templateID}
@@ -162,7 +169,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>CPU Cores</Label>
-            <span className="text-accent text-xs">
+            <span className="text-accent-main-highlight text-xs">
               {localValues.cpu === 0
                 ? 'Unfiltered'
                 : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
@@ -193,7 +200,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Memory</Label>
-            <span className="text-accent text-xs">
+            <span className="text-accent-main-highlight text-xs">
               {formatMemoryDisplay(localValues.memory)}
             </span>
           </div>
@@ -262,7 +269,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-xs normal-case">
-            <ListFilter className="text-fg-500 size-4" /> Filters{' '}
+            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

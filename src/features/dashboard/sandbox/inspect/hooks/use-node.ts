@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useStore } from 'zustand'
 import { useSandboxInspectContext } from '../context'
 import type { FilesystemNode } from '../filesystem/types'
-import { useStore } from 'zustand'
 
 /**
  * Hook for accessing a specific filesystem node

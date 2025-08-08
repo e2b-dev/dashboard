@@ -20,7 +20,7 @@ export default function AlertCard({ className, value }: AlertCardProps) {
       <CardHeader>
         <CardTitle className="font-mono">Set a Budget Alert</CardTitle>
       </CardHeader>
-      <CardContent className="text-fg-300 max-w-[500px]">
+      <CardContent className="text-fg-secondary max-w-[500px]">
         <LimitForm
           className="mb-4"
           teamId={team.id}

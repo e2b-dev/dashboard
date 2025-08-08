@@ -5,8 +5,8 @@ export const chartConfig = {
   cost: {
     label: 'Cost',
     theme: {
-      light: 'var(--accent)',
-      dark: 'var(--accent)',
+      light: 'var(--accent-main-highlight )',
+      dark: 'var(--accent-main-highlight )',
     },
   },
   vcpu: {

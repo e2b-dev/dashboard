@@ -101,13 +101,13 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
               onSubmit={form.handleSubmit((values) =>
                 createApiKey({ teamId, name: values.name })
               )}
-              className="mt-6 flex flex-col gap-6"
+              className="flex flex-col gap-6"
             >
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="px-2">
+                  <FormItem>
                     <Label htmlFor={field.name}>Name</Label>
                     <FormControl>
                       <Input
@@ -133,7 +133,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
           </Form>
         ) : (
           <>
-            <div className="animate-in fade-in slide-in-from-right-5 flex flex-col gap-3 px-2 py-6 duration-200">
+            <div className="animate-in fade-in slide-in-from-right-5 flex flex-col gap-3 duration-200">
               <Label>Your API Key</Label>
               <div className="flex items-center gap-2">
                 <Input readOnly value={createdApiKey} className="font-mono" />

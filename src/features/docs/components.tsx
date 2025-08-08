@@ -17,7 +17,7 @@ const Callout = forwardRef<
   ComponentProps<(typeof defaultMdxComponents)['Callout']>
 >(({ title, type, icon, children, ...props }, ref) => {
   const variant =
-    type !== 'info' ? (type === 'warn' ? 'warning' : 'contrast1') : 'contrast1'
+    type !== 'info' ? (type === 'warn' ? 'warning' : 'info') : 'info'
 
   return (
     <Alert ref={ref} variant={variant} className="ml-4 p-4">
@@ -37,7 +37,7 @@ const Blockquote = forwardRef<HTMLQuoteElement, ComponentProps<'blockquote'>>(
     return (
       <blockquote
         ref={ref}
-        className="border-contrast-2 ml-4 border-l-[3px]"
+        className="border-accent-info-highlight ml-4 border-l-[3px]"
         {...props}
       >
         {children}

@@ -56,7 +56,7 @@ const ChartContainer = React.forwardRef<
           [
             'flex aspect-video justify-center text-xs',
             // Axis and grid styles
-            '[&_.recharts-cartesian-axis-tick_text]:fill-fg-500',
+            '[&_.recharts-cartesian-axis-tick_text]:fill-fg-tertiary',
             "[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50",
             '[&_.recharts-curve.recharts-tooltip-cursor]:stroke-border',
             // Dot and stroke styles
@@ -64,9 +64,9 @@ const ChartContainer = React.forwardRef<
             '[&_.recharts-layer]:outline-none',
             // Grid and background styles
             "[&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border",
-            '[&_.recharts-radial-bar-background-sector]:fill-bg-100',
+            '[&_.recharts-radial-bar-background-sector]:fill-bg-1',
             // Tooltip and cursor styles
-            '[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-bg-100',
+            '[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-bg-1',
             "[&_.recharts-reference-line_[stroke='#ccc']]:stroke-border",
             // Sector styles
             "[&_.recharts-sector[stroke='#fff']]:stroke-transparent",
@@ -168,9 +168,7 @@ const ChartTooltipContent = React.forwardRef<
 
       if (labelFormatter) {
         return (
-          <div className={cn(['font-medium', labelClassName].join(' '))}>
-            {labelFormatter(value, payload)}
-          </div>
+          <div className={labelClassName}>{labelFormatter(value, payload)}</div>
         )
       }
 
@@ -178,11 +176,7 @@ const ChartTooltipContent = React.forwardRef<
         return null
       }
 
-      return (
-        <div className={cn(['font-medium', labelClassName].join(' '))}>
-          {value}
-        </div>
-      )
+      return <div className={labelClassName}>{value}</div>
     }, [
       label,
       labelFormatter,
@@ -207,7 +201,7 @@ const ChartTooltipContent = React.forwardRef<
           [
             // Base styles
             'grid min-w-[6rem] items-start gap-1.5',
-            'rounded-md px-2.5 py-1.5 text-xs shadow-xl',
+            'px-2.5 py-1.5 text-xs shadow-xl',
           ].join(' '),
           className
         )}
@@ -227,7 +221,7 @@ const ChartTooltipContent = React.forwardRef<
                     // Layout and spacing
                     'flex w-full flex-wrap items-stretch gap-2',
                     // Icon styles
-                    '[&>svg]:text-fg-500 [&>svg]:h-2.5 [&>svg]:w-2.5',
+                    '[&>svg]:text-fg-tertiary [&>svg]:h-2.5 [&>svg]:w-2.5',
                     // Conditional alignment
                     indicator === 'dot' && 'items-center',
                   ].join(' ')
@@ -285,7 +279,7 @@ const ChartTooltipContent = React.forwardRef<
                       {item.value && (
                         <span
                           className={[
-                            'font-mono font-medium',
+                            'font-mono ',
                             'text-fg tabular-nums',
                           ].join(' ')}
                         >

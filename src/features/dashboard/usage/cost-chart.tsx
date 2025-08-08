@@ -47,7 +47,7 @@ export function CostChart({ data }: { data: UsageData['compute'] }) {
               <ChartTooltipContent
                 labelFormatter={() => label}
                 formatter={(value, name, item) => [
-                  <span key="value" className="text-accent">
+                  <span key="value" className="text-accent-main-highlight ">
                     {Number(value).toFixed(2).toLocaleString()}
                   </span>,
                   `$`,

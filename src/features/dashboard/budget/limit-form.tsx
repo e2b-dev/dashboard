@@ -134,8 +134,8 @@ export default function LimitForm({
               name="value"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel className="text-accent text-xs">
-                    $ <span className="text-fg-500">[USD]</span>
+                  <FormLabel className="text-accent-main-highlight text-xs">
+                    $ <span className="text-fg-tertiary">[USD]</span>
                   </FormLabel>
                   <FormControl>
                     <NumberInput
@@ -199,9 +199,9 @@ export default function LimitForm({
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="text-accent mx-2 font-mono text-xs">
+      <div className="text-accent-main-highlight mx-2 prose-value-small">
         {'$ '}
-        <span className="text-fg text-lg font-semibold">
+        <span className="text-fg prose-value-big">
           {originalValue?.toLocaleString()}
         </span>
       </div>
