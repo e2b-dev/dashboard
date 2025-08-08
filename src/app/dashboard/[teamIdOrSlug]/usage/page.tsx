@@ -1,10 +1,10 @@
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { CostCard } from '@/features/dashboard/usage/cost-card'
 import { RAMCard } from '@/features/dashboard/usage/ram-card'
 import { SandboxesCard } from '@/features/dashboard/usage/sandboxes-card'
 import { VCPUCard } from '@/features/dashboard/usage/vcpu-card'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { CatchErrorBoundary } from '@/ui/error'
+import Frame from '@/ui/frame'
 
 export default async function UsagePage({
   params,
@@ -15,16 +15,19 @@ export default async function UsagePage({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <DashboardPageLayout
-      title="Usage"
-      className="relative grid max-h-full w-full grid-cols-1 self-start lg:grid-cols-12"
+    <Frame
+      classNames={{
+        frame:
+          'relative grid max-h-full w-full grid-cols-1 self-start lg:grid-cols-12 max-md:border-none',
+        wrapper: 'w-full max-md:p-0',
+      }}
     >
       <SandboxesCard
         teamId={teamId}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12"
       />
       <UsagePageContent teamId={teamId} />
-    </DashboardPageLayout>
+    </Frame>
   )
 }
 
@@ -43,11 +46,11 @@ function UsagePageContent({ teamId }: { teamId: string }) {
       />
       <VCPUCard
         teamId={teamId}
-        className="col-span-1 min-h-[320px] border-b lg:col-span-6 lg:border-r lg:border-b-0"
+        className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-r"
       />
       <RAMCard
         teamId={teamId}
-        className="col-span-1 min-h-[320px] border-b lg:col-span-6 lg:border-b-0"
+        className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-b-0"
       />
     </CatchErrorBoundary>
   )

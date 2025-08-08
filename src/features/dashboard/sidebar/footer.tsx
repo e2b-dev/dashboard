@@ -1,6 +1,8 @@
 import { GITHUB_URL } from '@/configs/urls'
+import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'
 import {
+  SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarFooter,
   SidebarGroup,
   SidebarMenu,
@@ -20,7 +22,12 @@ export default function DashboardSidebarFooter() {
           <SidebarMenuItem key="github">
             <SidebarMenuButton asChild tooltip="GitHub">
               <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-                <Github className="size-4 group-data-[collapsible=icon]:!size-5" />
+                <Github
+                  className={cn(
+                    'size-4 group-data-[collapsible=icon]:!size-5',
+                    SIDEBAR_TRANSITION_CLASSNAMES
+                  )}
+                />
                 GitHub
                 <ExternalIcon className="ml-auto size-4" />
               </Link>
@@ -29,7 +36,12 @@ export default function DashboardSidebarFooter() {
           <SidebarMenuItem key="docs">
             <SidebarMenuButton asChild tooltip="Documentation">
               <Link href="/docs" target="_blank" rel="noopener noreferrer">
-                <Book className="size-4 group-data-[collapsible=icon]:!size-5" />
+                <Book
+                  className={cn(
+                    'size-4 group-data-[collapsible=icon]:!size-5',
+                    SIDEBAR_TRANSITION_CLASSNAMES
+                  )}
+                />
                 Documentation
                 <ExternalIcon className="ml-auto size-4" />
               </Link>

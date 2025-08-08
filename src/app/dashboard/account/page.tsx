@@ -2,7 +2,6 @@ import { AccessTokenSettings } from '@/features/dashboard/account/access-token-s
 import { EmailSettings } from '@/features/dashboard/account/email-settings'
 import { NameSettings } from '@/features/dashboard/account/name-settings'
 import { PasswordSettingsServer } from '@/features/dashboard/account/password-settings-server'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { Suspense } from 'react'
 
 export interface AccountPageSearchParams {
@@ -15,11 +14,7 @@ export default async function AccountPage({
   searchParams: Promise<AccountPageSearchParams>
 }) {
   return (
-    <DashboardPageLayout
-      hideFrame
-      title="Account"
-      className="flex flex-col gap-6"
-    >
+    <div className="flex flex-col md:gap-6">
       <Suspense fallback={null}>
         <NameSettings />
       </Suspense>
@@ -35,6 +30,6 @@ export default async function AccountPage({
       <Suspense fallback={null}>
         <PasswordSettingsServer searchParams={await searchParams} />
       </Suspense>
-    </DashboardPageLayout>
+    </div>
   )
 }

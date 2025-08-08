@@ -14,9 +14,9 @@ if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
 const SPAWN_COUNT = 10 // total sandboxes to spawn
 const BATCH_SIZE = 2 // how many sandboxes to spawn concurrently
 
-const SBX_TIMEOUT_MS = 120_000
-const STRESS_TIMEOUT_MS = 120_000
-const TEMPLATE = process.env.TEST_METRICS_TEMPLATE ?? 'base'
+const SBX_TIMEOUT_MS = 40_000
+const STRESS_TIMEOUT_MS = 40_000
+const TEMPLATE = process.env.TEST_E2B_TEMPLATE ?? 'base'
 
 const MEMORY_MB = 1024 // allocate this much memory inside sandbox in MB
 const CPU_OPS = 100_000_000 // iterations of CPU intensive math

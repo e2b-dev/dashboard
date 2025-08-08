@@ -81,7 +81,7 @@ export function NameSettings({ className }: NameSettingsProps) {
         className="w-full"
       >
         <Card
-          className={cn('overflow-hidden  border', className)}
+          className={cn('overflow-hidden border-b md:border', className)}
           hideUnderline
         >
           <CardHeader>

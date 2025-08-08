@@ -180,6 +180,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     enableGlobalFilter: true,
     size: 200,
     minSize: 160,
+    enableSorting: false,
   },
   {
     id: 'startedAt',

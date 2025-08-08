@@ -27,7 +27,7 @@ export const TableRow = memo(function TableRow({ row }: TableRowProps) {
     >
       <DataTableRow
         key={row.id}
-        className="hover:bg-bg-1 h-8 cursor-pointer border-b"
+        className="hover:bg-bg-1 h-8 cursor-pointer "
         isSelected={row.getIsSelected()}
       >
         {row.getVisibleCells().map((cell) => (

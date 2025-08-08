@@ -124,7 +124,7 @@ export function PasswordSettings({
 
   return (
     <>
-      <Card className={cn('overflow-hidden  border', className)}>
+      <Card className={cn('overflow-hidden md:border', className)}>
         <CardHeader>
           <CardTitle>Password</CardTitle>
           <CardDescription>Change your account password.</CardDescription>
