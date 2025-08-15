@@ -3,7 +3,10 @@ import { ReactNode } from 'react'
 
 // NOTE: local object of public tiers present in the database
 // TODO: add is_public to tiers table and fetch only public tiers instead of hardcoding
-export type Tier = Database['public']['Tables']['tiers']['Row'] & {
+export type Tier = Pick<
+  Database['public']['Tables']['tiers']['Row'],
+  'id' | 'name' | 'concurrent_instances' | 'disk_mb' | 'max_length_hours'
+> & {
   prose: ReactNode[]
 }
 
