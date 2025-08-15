@@ -100,7 +100,13 @@ export const DiskUsageCell = ({
 
 export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
   return (
-    <div className="text-fg-tertiary overflow-x-hidden prose-table">
+    <div
+      className="text-fg-tertiary overflow-x-hidden prose-table select-all"
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
+    >
       {getValue() as string}
     </div>
   )
@@ -173,7 +179,13 @@ export function StartedAtCell({
   )
 
   return (
-    <div className="h-full whitespace-nowrap overflow-x-hidden font-mono text-xs">
+    <div
+      className="whitespace-nowrap overflow-x-hidden font-mono prose-table-numeric select-all"
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+      }}
+    >
       <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
       <span className="text-fg">{time}</span>{' '}
       <span className="text-fg-tertiary">{timezone}</span>
