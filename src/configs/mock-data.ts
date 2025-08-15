@@ -979,14 +979,11 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
     const diskVolatilityVal = diskVolatility[pattern.memoryProfile]!
     const diskNoise = (Math.random() - 0.5) * 0.1
     const diskPct = diskBaseline + baseLoad * diskVolatilityVal + diskNoise
-    let diskUsedGb = 0
-    let diskTotalGb = 0
-    if (pattern.diskGb > 0) {
-      diskUsedGb = Number(
-        (pattern.diskGb * Math.min(1, Math.max(0, diskPct))).toFixed(2)
-      )
-      diskTotalGb = pattern.diskGb
-    }
+    // Use sandbox's declared disk size (in MB) as the total capacity
+    const sandboxDiskTotalGb = (sandbox.diskSizeMB ?? 0) / 1024
+    const clampedDiskPct = Math.min(1, Math.max(0, diskPct))
+    const diskUsedGb = Number((sandboxDiskTotalGb * clampedDiskPct).toFixed(2))
+    const diskTotalGb = Number(sandboxDiskTotalGb.toFixed(2))
 
     metrics[sandbox.sandboxID] = {
       cpuCount: sandbox.cpuCount,
