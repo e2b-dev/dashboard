@@ -13,7 +13,7 @@ const badgeVariants = cva(
         warning: 'bg-accent-warning-bg text-accent-warning-highlight',
         info: 'bg-accent-info-bg text-accent-info-highlight',
         error: 'bg-accent-error-bg text-accent-error-highlight',
-        code: 'bg-fill ring-1 ring-stroke text-fg-secondary',
+        code: 'bg-bg-1 ring-1 ring-stroke text-fg-secondary font-mono',
       },
       can: {
         none: '',

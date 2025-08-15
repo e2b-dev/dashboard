@@ -58,7 +58,7 @@ export default function SandboxInspectIncompatible({
               <AlertTriangle className="text-accent-warning-highlight h-5 w-5" />
               <CardTitle>Incompatible template</CardTitle>
             </div>
-            <CardDescription className="text-fg-secondary leading-5">
+            <CardDescription className="text-fg-secondary">
               This sandbox used a template that is incompatible with the
               filesystem inspector. To use the inspector in any new sandbox you
               launch, <span className="text-fg ">rebuild the template</span>.
@@ -66,9 +66,11 @@ export default function SandboxInspectIncompatible({
           </CardHeader>
           <CardContent className="pb-auto flex-1 p-0">
             {templateNameOrId && (
-              <ol className="ml-4 list-decimal space-y-6 font-sans leading-5">
-                <li className="text-fg flex-col space-y-3 marker:">
-                  <p className="">Navigate to your template's folder</p>
+              <ol className="ml-4 list-decimal space-y-6 font-sans marker:prose-body-highlight">
+                <li className="text-fg flex-col space-y-3">
+                  <p className="prose-body-highlight">
+                    Navigate to your template's folder
+                  </p>
                   <CodeBlock className="-ml-4" lang="bash">
                     {`cd path/to/your/template`}
                   </CodeBlock>
@@ -81,8 +83,8 @@ export default function SandboxInspectIncompatible({
                   </div>
                 </li>
 
-                <li className="text-fg flex-col space-y-3 marker:">
-                  <p className="">Rebuild the template</p>
+                <li className="text-fg flex-col space-y-3">
+                  <p className="prose-body-highlight">Rebuild the template</p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
                     <Badge className={codeClassNames} variant="code">
@@ -103,8 +105,10 @@ export default function SandboxInspectIncompatible({
                   </div>
                 </li>
 
-                <li className="text-fg flex-col space-y-3 marker:">
-                  <p className="">New sandboxes have filesystem inspector</p>
+                <li className="text-fg flex-col space-y-3">
+                  <p className="prose-body-highlight">
+                    New sandboxes have filesystem inspector
+                  </p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Any new sandbox you launch will have filesystem inspector
                     enabled.{' '}
@@ -123,7 +127,7 @@ export default function SandboxInspectIncompatible({
             >
               <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>
                 <ChevronLeft className="size-5" />
-                Back to Sandboxes
+                Back to sandboxes
               </Link>
             </Button>
             <Button
