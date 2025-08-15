@@ -18,7 +18,7 @@ interface TableHeaderProps {
 const TableHeader = ({ topRows, headerGroups, state }: TableHeaderProps) => (
   <DataTableHeader
     className={cn(
-      'sticky top-0 z-10 bg-bg shadow-sm',
+      'sticky top-0 z-10 bg-bg shadow-xs',
       topRows?.length > 0 && 'mb-3'
     )}
   >

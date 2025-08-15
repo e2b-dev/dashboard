@@ -145,7 +145,7 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
           style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
-          <DataTableHeader className="sticky top-0 shadow-sm bg-bg z-10">
+          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow key={headerGroup.id} className="border-b-0">
                 {headerGroup.headers.map((header) => (
