@@ -77,6 +77,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/teams/{teamID}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get metrics for the team */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
+                    start?: number;
+                    end?: number;
+                };
+                header?: never;
+                path: {
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamMetric"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes": {
         parameters: {
             query?: never;
@@ -357,7 +403,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Starting timestamp of the metrics that should be returned in milliseconds */
+                    /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
                     start?: number;
                     end?: number;
                 };
@@ -1297,9 +1343,16 @@ export interface components {
         CPUCount: number;
         /**
          * Format: int32
-         * @description Memory for the sandbox in MB
+         * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
+        /**
+         * Format: int32
+         * @description Disk size for the sandbox in MiB
+         */
+        DiskSizeMB: number;
+        /** @description Version of the envd running in the sandbox */
+        EnvdVersion: string;
         SandboxMetadata: {
             [key: string]: string;
         };
@@ -1321,9 +1374,24 @@ export interface components {
             /** @description Log line content */
             line: string;
         };
+        SandboxLogEntry: {
+            /**
+             * Format: date-time
+             * @description Timestamp of the log entry
+             */
+            timestamp: string;
+            /** @description Log message content */
+            message: string;
+            level: components["schemas"]["LogLevel"];
+            fields: {
+                [key: string]: string;
+            };
+        };
         SandboxLogs: {
             /** @description Logs of the sandbox */
             logs: components["schemas"]["SandboxLog"][];
+            /** @description Structured logs of the sandbox */
+            logEntries: components["schemas"]["SandboxLogEntry"][];
         };
         /** @description Metric entry with timestamp and line */
         SandboxMetric: {
@@ -1375,8 +1443,7 @@ export interface components {
              * @description Identifier of the client
              */
             clientID: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion: string;
+            envdVersion: components["schemas"]["EnvdVersion"];
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             /** @description Base domain where the sandbox traffic is accessible */
@@ -1404,14 +1471,14 @@ export interface components {
              * @description Time when the sandbox will expire
              */
             endAt: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion?: string;
+            envdVersion: components["schemas"]["EnvdVersion"];
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             /** @description Base domain where the sandbox traffic is accessible */
             domain?: string | null;
             cpuCount: components["schemas"]["CPUCount"];
             memoryMB: components["schemas"]["MemoryMB"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             state: components["schemas"]["SandboxState"];
         };
@@ -1439,8 +1506,10 @@ export interface components {
             endAt: string;
             cpuCount: components["schemas"]["CPUCount"];
             memoryMB: components["schemas"]["MemoryMB"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             state: components["schemas"]["SandboxState"];
+            envdVersion: components["schemas"]["EnvdVersion"];
         };
         SandboxesWithMetrics: {
             sandboxes: {
@@ -1481,6 +1550,24 @@ export interface components {
              */
             autoPause: boolean;
         };
+        /** @description Team metric with timestamp */
+        TeamMetric: {
+            /**
+             * Format: date-time
+             * @description Timestamp of the metric entry
+             */
+            timestamp: string;
+            /**
+             * Format: int32
+             * @description The number of concurrent sandboxes for the team
+             */
+            concurrentSandboxes: number;
+            /**
+             * Format: float
+             * @description Number of sandboxes started per second
+             */
+            sandboxStartRate: number;
+        };
         Template: {
             /** @description Identifier of the template */
             templateID: string;
@@ -1488,6 +1575,7 @@ export interface components {
             buildID: string;
             cpuCount: components["schemas"]["CPUCount"];
             memoryMB: components["schemas"]["MemoryMB"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
             /** @description Aliases of the template */
@@ -1518,6 +1606,7 @@ export interface components {
              * @description Number of times the template was built
              */
             buildCount: number;
+            envdVersion: components["schemas"]["EnvdVersion"];
         };
         TemplateBuildRequest: {
             /** @description Alias of the template */
@@ -1597,7 +1686,6 @@ export interface components {
             timestamp: string;
             /** @description Log message content */
             message: string;
-            /** @description Log level of the entry */
             level: components["schemas"]["LogLevel"];
         };
         TemplateBuild: {
@@ -1631,6 +1719,59 @@ export interface components {
         NodeStatusChange: {
             status: components["schemas"]["NodeStatus"];
         };
+        DiskMetrics: {
+            /** @description Mount point of the disk */
+            mountPoint: string;
+            /** @description Device name */
+            device: string;
+            /** @description Filesystem type (e.g., ext4, xfs) */
+            filesystemType: string;
+            /**
+             * Format: uint64
+             * @description Used space in bytes
+             */
+            usedBytes: number;
+            /**
+             * Format: uint64
+             * @description Total space in bytes
+             */
+            totalBytes: number;
+        };
+        /** @description Node metrics */
+        NodeMetrics: {
+            /**
+             * Format: uint32
+             * @description Number of allocated CPU cores
+             */
+            allocatedCPU: number;
+            /**
+             * Format: uint32
+             * @description Node CPU usage percentage
+             */
+            cpuPercent: number;
+            /**
+             * Format: uint32
+             * @description Total number of CPU cores on the node
+             */
+            cpuCount: number;
+            /**
+             * Format: uint64
+             * @description Amount of allocated memory in bytes
+             */
+            allocatedMemoryBytes: number;
+            /**
+             * Format: uint64
+             * @description Node memory used in bytes
+             */
+            memoryUsedBytes: number;
+            /**
+             * Format: uint64
+             * @description Total node memory in bytes
+             */
+            memoryTotalBytes: number;
+            /** @description Detailed metrics for each disk/mount point */
+            disks: components["schemas"]["DiskMetrics"][];
+        };
         Node: {
             /** @description Version of the orchestrator */
             version: string;
@@ -1639,23 +1780,14 @@ export interface components {
             /** @description Identifier of the node */
             nodeID: string;
             /** @description Identifier of the cluster */
-            clusterID?: string | null;
+            clusterID: string;
             status: components["schemas"]["NodeStatus"];
             /**
-             * Format: int32
+             * Format: uint32
              * @description Number of sandboxes running on the node
              */
             sandboxCount: number;
-            /**
-             * Format: int32
-             * @description Number of allocated CPU cores
-             */
-            allocatedCPU: number;
-            /**
-             * Format: int32
-             * @description Amount of allocated memory in MiB
-             */
-            allocatedMemoryMiB: number;
+            metrics: components["schemas"]["NodeMetrics"];
             /**
              * Format: uint64
              * @description Number of sandbox create successes
@@ -1674,7 +1806,7 @@ export interface components {
         };
         NodeDetail: {
             /** @description Identifier of the cluster */
-            clusterID?: string | null;
+            clusterID: string;
             /** @description Version of the orchestrator */
             version: string;
             /** @description Commit of the orchestrator */
@@ -1684,6 +1816,7 @@ export interface components {
             status: components["schemas"]["NodeStatus"];
             /** @description List of sandboxes running on the node */
             sandboxes: components["schemas"]["ListedSandbox"][];
+            metrics: components["schemas"]["NodeMetrics"];
             /** @description List of cached builds id on the node */
             cachedBuilds: string[];
             /**
@@ -1809,6 +1942,15 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Forbidden */
+        403: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Not found */
         404: {
             headers: {
@@ -1841,6 +1983,7 @@ export interface components {
         templateID: string;
         buildID: string;
         sandboxID: string;
+        teamID: string;
         nodeID: string;
         apiKeyID: string;
         accessTokenID: string;
