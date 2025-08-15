@@ -10,7 +10,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from './primitives/card'
 
 export default function NotFound() {
@@ -18,10 +17,10 @@ export default function NotFound() {
     <div className="flex min-h-[80vh] items-center justify-center">
       <Card className="w-full max-w-md border border-stroke bg-bg-1/40 backdrop-blur-lg">
         <CardHeader className="text-center">
-          <CardTitle>404</CardTitle>
-          <CardDescription>Page Not Found</CardDescription>
+          <span className="prose-value-big">404</span>
+          <CardDescription>Page not found.</CardDescription>
         </CardHeader>
-        <CardContent className="text-center text-fg-tertiary">
+        <CardContent className="text-center text-fg-secondary">
           <p>
             The page you are looking for might have been removed, had its name
             changed, or is temporarily unavailable.

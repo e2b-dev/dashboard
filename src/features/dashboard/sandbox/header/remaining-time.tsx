@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { RefreshCw, StopCircle } from 'lucide-react'
+import { RefreshCw, Square } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSandboxContext } from '../context'
@@ -45,7 +45,7 @@ export default function RemainingTime() {
   if (!isRunning) {
     return (
       <Badge>
-        <StopCircle className="size-3" /> Stopped
+        <Square className="size-2 fill-current" /> Stopped
       </Badge>
     )
   }
