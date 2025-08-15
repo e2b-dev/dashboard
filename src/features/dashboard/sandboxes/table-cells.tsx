@@ -60,9 +60,10 @@ export function DiskUsageCell({
   )
 
   const diskSizeGB = useMemo(() => {
-    const diskSizeMB = row.original?.diskSizeMB
-    return diskSizeMB ? diskSizeMB / 1024 : undefined
-  }, [row.original?.diskSizeMB])
+    const diskSizeMB = row.original.diskSizeMB
+
+    return diskSizeMB / 1024
+  }, [row.original.diskSizeMB])
 
   return (
     <ResourceUsage
