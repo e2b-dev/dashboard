@@ -114,7 +114,7 @@ export const getDefaultTemplates = actionClient
     for (const env of envs) {
       const { data: latestBuild, error: buildError } = await supabaseAdmin
         .from('env_builds')
-        .select('id, ram_mb, vcpu')
+        .select('id, ram_mb, vcpu, total_disk_size_mb, envd_version')
         .eq('env_id', env.id)
         .eq('status', 'uploaded')
         .order('created_at', { ascending: false })
@@ -144,11 +144,22 @@ export const getDefaultTemplates = actionClient
         continue
       }
 
+      // these values should never be null/undefined at this point, especially for default templates
+      if (!latestBuild.total_disk_size_mb || !latestBuild.envd_version) {
+        l.error({
+          key: 'get_default_templates:env_builds_missing_values',
+          template_id: env.id,
+        })
+        continue
+      }
+
       templates.push({
         templateID: env.id,
         buildID: latestBuild.id,
         cpuCount: latestBuild.vcpu,
         memoryMB: latestBuild.ram_mb,
+        diskSizeMB: latestBuild.total_disk_size_mb,
+        envdVersion: latestBuild.envd_version,
         public: env.public,
         aliases: aliases.map((a) => a.alias),
         createdAt: env.created_at,

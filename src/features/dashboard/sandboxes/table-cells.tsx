@@ -59,11 +59,16 @@ export function DiskUsageCell({
     (s) => s.metrics?.[row.original.sandboxID]
   )
 
+  const diskSizeGB = useMemo(() => {
+    const diskSizeMB = row.original?.diskSizeMB
+    return diskSizeMB ? diskSizeMB / 1024 : undefined
+  }, [row.original?.diskSizeMB])
+
   return (
     <ResourceUsage
       type="disk"
       metrics={metrics?.diskUsedGb}
-      total={metrics?.diskTotalGb}
+      total={diskSizeGB}
     />
   )
 }
