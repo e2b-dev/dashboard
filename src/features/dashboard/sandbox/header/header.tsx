@@ -54,39 +54,15 @@ export default async function SandboxDetailsHeader({
     },
     cpuCount: {
       label: 'CPU Usage',
-      value: (
-        <ResourceUsageClient
-          type="cpu"
-          mode="usage"
-          classNames={{
-            dot: 'mx-1',
-          }}
-        />
-      ),
+      value: <ResourceUsageClient type="cpu" mode="usage" />,
     },
     memoryMB: {
       label: 'Memory Usage',
-      value: (
-        <ResourceUsageClient
-          type="mem"
-          mode="usage"
-          classNames={{
-            dot: 'mx-1',
-          }}
-        />
-      ),
+      value: <ResourceUsageClient type="mem" mode="usage" />,
     },
     diskGB: {
       label: 'Disk Usage',
-      value: (
-        <ResourceUsageClient
-          type="disk"
-          mode="usage"
-          classNames={{
-            dot: 'mx-1',
-          }}
-        />
-      ),
+      value: <ResourceUsageClient type="disk" mode="usage" />,
     },
   }
 
