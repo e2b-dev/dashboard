@@ -100,7 +100,7 @@ export const DiskUsageCell = ({
 
 export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
   return (
-    <div className="text-fg-tertiary overflow-x-hidden font-mono text-xs">
+    <div className="text-fg-tertiary overflow-x-hidden prose-table">
       {getValue() as string}
     </div>
   )
@@ -122,7 +122,7 @@ export function TemplateCell({
   return (
     <Button
       variant="link"
-      className="text-fg h-auto p-0 text-xs normal-case"
+      className="text-fg h-auto p-0 font-sans prose-table normal-case"
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
