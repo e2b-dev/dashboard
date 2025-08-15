@@ -55,7 +55,6 @@ export const DiskUsageCellView = React.memo(function DiskUsageCellView({
   return <ResourceUsage type="disk" metrics={diskUsedGb} total={diskTotalGb} />
 })
 
-// Backward compatible cells using table cell context
 export const CpuUsageCell = ({
   row,
 }: CellContext<SandboxWithMetrics, unknown>) => (
