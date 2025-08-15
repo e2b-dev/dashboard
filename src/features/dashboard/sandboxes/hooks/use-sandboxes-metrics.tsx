@@ -56,7 +56,7 @@ export function useSandboxesMetrics({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ids }),
+        body: JSON.stringify({ sandboxIds: ids }),
         cache: 'no-store',
       })
 
@@ -70,8 +70,9 @@ export function useSandboxesMetrics({
     },
     {
       refreshInterval: pollingInterval,
-      errorRetryInterval: 2000,
-      errorRetryCount: 3,
+      shouldRetryOnError: true,
+      errorRetryCount: 100,
+      errorRetryInterval: pollingInterval,
       revalidateOnMount: true,
       revalidateIfStale: true,
       revalidateOnFocus: false,

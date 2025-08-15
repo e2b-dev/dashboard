@@ -10,7 +10,7 @@ export const AsciiBackgroundPattern = ({
   return (
     <p
       className={cn(
-        'relative w-full font-mono text-xs leading-3 tracking-widest text-current',
+        'relative w-full font-mono text-xs leading-3 tracking-widest text-current select-none',
         'before:absolute before:inset-0 before:bg-[radial-gradient(at_25%_25%,_var(--bg)_0%,_transparent_75%)] max-md:before:hidden',
         className
       )}
