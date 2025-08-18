@@ -20,6 +20,7 @@ const initialState: SandboxMetricsState = {
 export const useSandboxMetricsStore = create<Store>()((set) => ({
   ...initialState,
   setMetrics: (metrics) => {
-    set({ metrics })
+    // we want to merge the new metrics with the existing ones, to keep latest data points in memory, as long as they are shown as running ( in local state )
+    set((state) => ({ metrics: { ...state.metrics, ...metrics } }))
   },
 }))
