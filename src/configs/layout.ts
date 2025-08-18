@@ -7,7 +7,7 @@ interface DashboardPageConfig {
 }
 
 const DASHBOARD_PAGE_CONFIGS: Record<string, DashboardPageConfig> = {
-  '/dashboard/*/sandboxes': {
+  '/dashboard/*/sandboxes/(monitoring|list)': {
     title: 'Sandboxes',
     description: "Manage your team's sandboxes",
     type: 'custom',

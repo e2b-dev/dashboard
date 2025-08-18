@@ -55,7 +55,7 @@ export function CreateTeamDialog({
         toast(defaultSuccessToast('Team was created.'))
 
         if (result.data && result.data.slug) {
-          router.push(PROTECTED_URLS.SANDBOXES(result.data.slug))
+          router.push(PROTECTED_URLS.SANDBOXES_MONITORING(result.data.slug))
           router.refresh()
         }
 

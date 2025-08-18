@@ -82,7 +82,7 @@ export async function resolveTeamForDashboard(
         redirect:
           teamIdOrSlug === 'account'
             ? undefined
-            : PROTECTED_URLS.SANDBOXES(teamSlug || currentTeamId),
+            : PROTECTED_URLS.SANDBOXES_MONITORING(teamSlug || currentTeamId),
       }
     }
   }
@@ -125,7 +125,7 @@ export async function resolveTeamForDashboard(
     redirect:
       teamIdOrSlug === 'account'
         ? undefined
-        : PROTECTED_URLS.SANDBOXES(
+        : PROTECTED_URLS.SANDBOXES_MONITORING(
             defaultTeam.team?.slug || defaultTeam.team_id
           ),
   }

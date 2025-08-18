@@ -5,6 +5,7 @@ import { useSelectedTeam, useTeams } from '@/lib/hooks/use-teams'
 import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { signOutAction } from '@/server/auth/auth-actions'
+import { ClientTeam } from '@/types/dashboard.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,
@@ -23,7 +24,7 @@ import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
 import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { CreateTeamDialog } from './create-team-dialog'
 
 interface DashboardSidebarMenuProps {
@@ -40,6 +41,14 @@ export default function DashboardSidebarMenu({
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   const pathname = usePathname()
 
+  const getNextUrl = (team: ClientTeam) => {
+    if (!selectedTeam) return PROTECTED_URLS.DASHBOARD
+
+    return pathname
+      .replace(selectedTeam.slug, team.slug)
+      .replace(selectedTeam.id, team.id)
+  }
+
   const handleTeamChange = async (teamId: string) => {
     const team = teams.find((t) => t.id === teamId)
 
@@ -50,11 +59,7 @@ export default function DashboardSidebarMenu({
       body: JSON.stringify({ teamId: team.id, teamSlug: team.slug }),
     })
 
-    router.push(
-      pathname
-        .replace(selectedTeam.slug, team.slug)
-        .replace(selectedTeam.id, team.id)
-    )
+    router.push(getNextUrl(team))
     router.refresh()
   }
 
@@ -62,14 +67,17 @@ export default function DashboardSidebarMenu({
     signOutAction()
   }
 
-  const handleMenuOpenChange = (open: boolean) => {
-    if (open && teams.length > 0) {
-      teams.forEach((team) => {
-        const url = PROTECTED_URLS.SANDBOXES(team.slug || team.id)
-        router.prefetch(url, { kind: PrefetchKind.FULL })
-      })
-    }
-  }
+  const handleMenuOpenChange = useCallback(
+    (open: boolean) => {
+      if (open && teams.length > 0) {
+        teams.forEach((team) => {
+          const url = getNextUrl(team)
+          router.prefetch(url, { kind: PrefetchKind.FULL })
+        })
+      }
+    },
+    [teams, getNextUrl, router]
+  )
 
   return (
     <>
