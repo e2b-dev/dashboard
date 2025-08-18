@@ -1,4 +1,4 @@
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
+import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
 import { DebouncedInput } from '@/ui/primitives/input'

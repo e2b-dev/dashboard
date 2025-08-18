@@ -1,4 +1,4 @@
-import SandboxesTable from '@/features/dashboard/sandboxes/table'
+import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'

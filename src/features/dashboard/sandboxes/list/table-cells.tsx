@@ -1,7 +1,9 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import ResourceUsage from '@/features/dashboard/common/resource-usage'
 import { useServerContext } from '@/features/dashboard/server-context'
+import { useTemplateTableStore } from '@/features/dashboard/templates/stores/table-store'
 import { Template } from '@/types/api'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
@@ -9,8 +11,6 @@ import { CellContext } from '@tanstack/react-table'
 import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
-import ResourceUsage from '../common/resource-usage'
-import { useTemplateTableStore } from '../templates/stores/table-store'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import { SandboxWithMetrics } from './table-config'
 

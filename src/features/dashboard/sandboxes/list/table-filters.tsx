@@ -1,4 +1,4 @@
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
+import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { Template } from '@/types/api'
 import { NumberInput } from '@/ui/number-input'
