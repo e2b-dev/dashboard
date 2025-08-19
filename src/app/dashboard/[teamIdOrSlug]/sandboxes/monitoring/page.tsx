@@ -2,7 +2,7 @@ import SandboxesMonitoringHeader from '@/features/dashboard/sandboxes/monitoring
 
 export default function SandboxesMonitoringPage() {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <SandboxesMonitoringHeader />
     </div>
   )

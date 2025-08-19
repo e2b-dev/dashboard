@@ -19,6 +19,7 @@ interface ChartPlaceholderProps {
     card?: string
   }
   placeholderBg?: string
+  shimmerBg?: string
   emptyContent?: React.ReactNode
   isLoading?: boolean
 }
@@ -28,6 +29,7 @@ export function ChartPlaceholder({
   emptyContent,
   isLoading,
   placeholderBg = 'var(--bg)',
+  shimmerBg = 'var(--bg-highlight)',
 }: ChartPlaceholderProps) {
   const mockData = Array.from({ length: 20 }, (_, i) => {
     const date = new Date(2024, 0, i + 1)
@@ -43,7 +45,7 @@ export function ChartPlaceholder({
 
   return (
     <div
-      className="relative aspect-auto"
+      className="relative aspect-auto flex h-full w-full"
       style={
         {
           '--placeholder-bg': placeholderBg,
@@ -72,21 +74,9 @@ export function ChartPlaceholder({
                 y2="0"
               >
                 <stop offset="0%" stopColor="var(--placeholder-bg)" />
-                <stop
-                  offset="45%"
-                  stopColor="var(--color-bg-highlight)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="50%"
-                  stopColor="var(--color-bg-highlight)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="55%"
-                  stopColor="var(--color-bg-highlight)"
-                  stopOpacity={0.8}
-                />
+                <stop offset="45%" stopColor={shimmerBg} stopOpacity={1} />
+                <stop offset="50%" stopColor={shimmerBg} stopOpacity={1} />
+                <stop offset="55%" stopColor={shimmerBg} stopOpacity={1} />
                 <stop offset="100%" stopColor="var(--placeholder-bg)" />
                 <animateTransform
                   attributeName="gradientTransform"
@@ -133,12 +123,12 @@ export function ChartPlaceholder({
             }}
           />
           <Area
-            type="monotone"
+            type="step"
             dataKey="y"
-            stroke={'var(--color-fg-tertiary)'}
-            strokeWidth={2}
-            strokeOpacity={0.15} // More subtle for background
-            fillOpacity={1} // Opacity handled by gradient stops
+            stroke={'var(--stroke)'}
+            strokeWidth={1}
+            strokeOpacity={0.8}
+            fillOpacity={1}
             fill={
               isLoading
                 ? 'url(#animatedLoadingFill)'
