@@ -44,8 +44,8 @@ export default function TeamBlockageAlert({
                 'bg-accent-error-bg text-accent-error-highlight border-accent-error-bg',
             }}
             onClick={handleClick}
-            className={cn('h-12', {
-              'hover:bg-accent-error-bg cursor-default': !handleClick,
+            className={cn('h-12 bg-accent-error-bg', {
+              'cursor-default': !handleClick,
             })}
             asChild
           >
@@ -55,9 +55,11 @@ export default function TeamBlockageAlert({
               exit={{ opacity: 0, filter: 'blur(8px)' }}
               transition={{ duration: 0.4, ease: exponentialSmoothing(4) }}
             >
-              <AlertOctagonIcon className="size-6" />
+              <AlertOctagonIcon className="size-4 group-data-[collapsible=icon]:!size-5 transition-[size]" />
               <div className="flex flex-col gap-0 overflow-hidden">
-                <h6 className="">Team is Blocked</h6>
+                <span className="prose-headline-small uppercase">
+                  Team is Blocked
+                </span>
                 {team?.blocked_reason && (
                   <span className="text-accent-error-highlight/80 ml-0.25 truncate text-xs">
                     {team?.blocked_reason}
