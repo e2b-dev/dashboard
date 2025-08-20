@@ -119,13 +119,12 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
   }, [sorting, globalFilter])
 
   const centerRows = table.getCenterRows()
-  const { virtualRows, totalHeight, paddingTop, paddingBottom } =
-    useVirtualRows<Template>({
-      rows: centerRows,
-      scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
-      estimateSizePx: ROW_HEIGHT_PX,
-      overscan: VIRTUAL_OVERSCAN,
-    })
+  const { virtualRows, totalHeight, paddingTop } = useVirtualRows<Template>({
+    rows: centerRows,
+    scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
+    estimateSizePx: ROW_HEIGHT_PX,
+    overscan: VIRTUAL_OVERSCAN,
+  })
 
   return (
     <ClientOnly className="flex h-full flex-col p-3 md:p-6">
@@ -181,7 +180,6 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
             table={table}
             virtualizedTotalHeight={totalHeight}
             virtualPaddingTop={paddingTop}
-            virtualPaddingBottom={paddingBottom}
             virtualRows={virtualRows}
           />
         </DataTable>

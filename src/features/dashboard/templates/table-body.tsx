@@ -12,7 +12,6 @@ interface TemplatesTableBodyProps {
   table: Table<Template>
   virtualizedTotalHeight?: number
   virtualPaddingTop?: number
-  virtualPaddingBottom?: number
   virtualRows?: Row<Template>[]
 }
 
@@ -21,7 +20,6 @@ export function TemplatesTableBody({
   table,
   virtualizedTotalHeight,
   virtualPaddingTop = 0,
-  virtualPaddingBottom = 0,
   virtualRows,
 }: TemplatesTableBodyProps) {
   'use no memo'
@@ -89,9 +87,6 @@ export function TemplatesTableBody({
           ))}
         </DataTableRow>
       ))}
-      {virtualPaddingBottom > 0 && (
-        <div style={{ height: virtualPaddingBottom }} />
-      )}
     </DataTableBody>
   )
 }
