@@ -187,7 +187,6 @@ export default function SandboxesTable({
     virtualRows: visualRows,
     totalHeight,
     paddingTop,
-    paddingBottom,
   } = useVirtualRows<SandboxWithMetrics>({
     rows: centerRows,
     scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
@@ -197,7 +196,6 @@ export default function SandboxesTable({
 
   const virtualizedTotalHeight = totalHeight
   const virtualPaddingTop = paddingTop
-  const virtualPaddingBottom = paddingBottom
 
   const visualRowsKey = useMemo(
     () => visualRows.map((r) => r.original.sandboxID).join(),
@@ -249,7 +247,6 @@ export default function SandboxesTable({
               visualRows={visualRows}
               virtualizedTotalHeight={virtualizedTotalHeight}
               virtualPaddingTop={virtualPaddingTop}
-              virtualPaddingBottom={virtualPaddingBottom}
             />
           </DataTable>
         )}

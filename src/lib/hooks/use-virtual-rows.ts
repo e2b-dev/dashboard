@@ -16,7 +16,6 @@ interface UseVirtualRowsResult<TData> {
   virtualizer: Virtualizer<HTMLElement, Element>
   totalHeight: number
   paddingTop: number
-  paddingBottom: number
 }
 
 export function useVirtualRows<TData>({
@@ -35,7 +34,6 @@ export function useVirtualRows<TData>({
   const virtualItems = rowVirtualizer.getVirtualItems()
   const totalHeight = rowVirtualizer.getTotalSize()
   const paddingTop = virtualItems.length > 0 ? virtualItems[0]!.start : 0
-  const paddingBottom = totalHeight - (virtualItems.at(-1)?.end ?? 0)
 
   const virtualRows = useMemo(
     () => virtualItems.map((vi) => rows[vi.index]!).filter(Boolean),
@@ -47,6 +45,5 @@ export function useVirtualRows<TData>({
     virtualizer: rowVirtualizer,
     totalHeight,
     paddingTop,
-    paddingBottom,
   }
 }
