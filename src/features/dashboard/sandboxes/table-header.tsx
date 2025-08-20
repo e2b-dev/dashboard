@@ -17,10 +17,13 @@ interface TableHeaderProps {
 
 const TableHeader = ({ topRows, headerGroups, state }: TableHeaderProps) => (
   <DataTableHeader
-    className={cn('sticky top-0 shadow-sm', topRows?.length > 0 && 'mb-3')}
+    className={cn(
+      'sticky top-0 z-10 bg-bg shadow-xs',
+      topRows?.length > 0 && 'mb-3'
+    )}
   >
     {headerGroups.map((headerGroup) => (
-      <DataTableRow key={headerGroup.id} className="hover:bg-bg">
+      <DataTableRow key={headerGroup.id} className="border-b-0">
         {headerGroup.headers.map((header) => (
           <DataTableHead
             key={header.id}
@@ -30,7 +33,7 @@ const TableHeader = ({ topRows, headerGroups, state }: TableHeaderProps) => (
             }}
             sorting={state.sorting.find((s) => s.id === header.id)?.desc}
           >
-            <span className="truncate">
+            <span className="overflow-x-hidden whitespace-nowrap">
               {header.isPlaceholder
                 ? null
                 : flexRender(

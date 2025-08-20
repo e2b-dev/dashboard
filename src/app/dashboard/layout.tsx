@@ -1,5 +1,6 @@
 import { COOKIE_KEYS } from '@/configs/keys'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
+import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import { ServerContextProvider } from '@/features/dashboard/server-context'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import {
@@ -63,7 +64,9 @@ export default async function DashboardLayout({
         <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />
-            <SidebarInset>{children}</SidebarInset>
+            <SidebarInset>
+              <DashboardLayoutView>{children}</DashboardLayoutView>
+            </SidebarInset>
           </div>
         </div>
       </SidebarProvider>

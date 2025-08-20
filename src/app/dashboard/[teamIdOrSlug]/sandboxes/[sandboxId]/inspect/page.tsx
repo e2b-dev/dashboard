@@ -42,7 +42,7 @@ export default async function SandboxInspectPage({
     >
       <ClientOnly
         className={cn(
-          'sticky top-0 flex flex-1 gap-4 overflow-hidden p-4 max-md:min-h-[calc(100vh-var(--protected-nav-height))]',
+          'sticky top-0 flex flex-1 gap-4 overflow-hidden p-3 md:p-6 max-md:min-h-[calc(100vh-var(--protected-nav-height))]',
           'md:relative md:!max-h-[100%]'
         )}
       >

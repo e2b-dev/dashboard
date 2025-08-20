@@ -4,6 +4,7 @@ import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
+import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { Sandbox, Template } from '@/types/api'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
@@ -17,11 +18,10 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  Row,
   useReactTable,
 } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
@@ -35,7 +35,10 @@ import {
 } from './table-config'
 import TableHeader from './table-header'
 
-const INITIAL_VISUAL_ROWS_COUNT = 50
+const ROW_HEIGHT_PX = 32
+const VIRTUAL_OVERSCAN = 8
+
+// metrics fetched via useSandboxesMetrics
 
 interface SandboxesTableProps {
   sandboxes: Sandbox[]
@@ -80,15 +83,10 @@ export default function SandboxesTable({
     []
   )
 
-  const [visualRowsCount, setVisualRowsCount] = React.useState(
-    INITIAL_VISUAL_ROWS_COUNT
-  )
-
   const resetScroll = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
     }
-    setVisualRowsCount(INITIAL_VISUAL_ROWS_COUNT)
   }
 
   // Effect hooks for filters
@@ -142,26 +140,15 @@ export default function SandboxesTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startedAtFilter, templateIds, cpuCount, memoryMB])
 
-  // effect hook for scrolling to top when sorting or global filter changes
   React.useEffect(() => {
     resetScroll()
   }, [sorting, globalFilter])
 
-  const [visualRows, setVisualRows] = React.useState<Row<SandboxWithMetrics>[]>(
-    []
-  )
-
-  useSandboxesMetrics({
-    initialMetrics,
-    sandboxes: visualRows.map((row) => row.original),
-    pollingInterval: SANDBOXES_METRICS_POLLING_MS,
-  })
-
-  const data = useMemo(() => sandboxes, [sandboxes])
+  const tableData = useMemo(() => sandboxes, [sandboxes])
 
   const table = useReactTable({
     columns: COLUMNS,
-    data,
+    data: tableData,
     state: {
       globalFilter,
       sorting,
@@ -196,19 +183,38 @@ export default function SandboxesTable({
 
   const centerRows = table.getCenterRows()
 
-  useEffect(() => {
-    setVisualRows(centerRows.slice(0, visualRowsCount))
-  }, [centerRows, visualRowsCount])
+  const {
+    virtualRows: visualRows,
+    totalHeight,
+    paddingTop,
+  } = useVirtualRows<SandboxWithMetrics>({
+    rows: centerRows,
+    scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
+    estimateSizePx: ROW_HEIGHT_PX,
+    overscan: VIRTUAL_OVERSCAN,
+  })
 
-  const handleBottomReached = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    if (scrollTop + clientHeight >= scrollHeight) {
-      setVisualRowsCount((state) => state + INITIAL_VISUAL_ROWS_COUNT)
-    }
-  }
+  const virtualizedTotalHeight = totalHeight
+  const virtualPaddingTop = paddingTop
+
+  const visualRowsKey = useMemo(
+    () => visualRows.map((r) => r.original.sandboxID).join(),
+    [visualRows]
+  )
+
+  const memoizedVisualRows = useMemo(
+    () => visualRows.map((r) => r.original),
+    [visualRowsKey]
+  )
+
+  useSandboxesMetrics({
+    sandboxes: memoizedVisualRows,
+    initialMetrics,
+    pollingInterval: SANDBOXES_METRICS_POLLING_MS,
+  })
 
   return (
-    <ClientOnly className="flex h-full flex-col pt-3">
+    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
       <SandboxesHeader
         searchInputRef={searchInputRef}
         templates={templates}
@@ -217,17 +223,16 @@ export default function SandboxesTable({
 
       <div
         className={cn(
-          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
+          'bg-bg flex-1 mt-4 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         {isMounted && (
           <DataTable
             className={cn(
-              'h-full overflow-y-auto md:min-w-[calc(100svw-var(--sidebar-width-active))]',
+              'h-full overflow-y-auto md:min-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
               SIDEBAR_TRANSITION_CLASSNAMES
             )}
-            onScroll={handleBottomReached}
             style={{ ...columnSizeVars }}
             ref={scrollRef}
           >
@@ -240,6 +245,8 @@ export default function SandboxesTable({
               sandboxes={sandboxes}
               table={table}
               visualRows={visualRows}
+              virtualizedTotalHeight={virtualizedTotalHeight}
+              virtualPaddingTop={virtualPaddingTop}
             />
           </DataTable>
         )}

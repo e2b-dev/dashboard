@@ -2,31 +2,34 @@ import { Template } from '@/types/api'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { flexRender, Table } from '@tanstack/react-table'
+import { flexRender, Row, Table } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
 
-interface TableBodyProps {
+interface TemplatesTableBodyProps {
   templates: Template[] | undefined
   table: Table<Template>
-  visualRowsCount: number
+  virtualizedTotalHeight?: number
+  virtualPaddingTop?: number
+  virtualRows?: Row<Template>[]
 }
 
-export function TableBody({
+export function TemplatesTableBody({
   templates,
   table,
-  visualRowsCount,
-}: TableBodyProps) {
+  virtualizedTotalHeight,
+  virtualPaddingTop = 0,
+  virtualRows,
+}: TemplatesTableBodyProps) {
   'use no memo'
 
   const resetFilters = useTemplateTableStore((state) => state.resetFilters)
 
   const centerRows = table.getCenterRows()
-
   const visualRows = useMemo(() => {
-    return centerRows.slice(0, visualRowsCount)
-  }, [centerRows, visualRowsCount])
+    return virtualRows ?? centerRows
+  }, [centerRows, virtualRows])
 
   const isEmpty = templates && visualRows?.length === 0
 
@@ -69,7 +72,8 @@ export function TableBody({
   }
 
   return (
-    <DataTableBody>
+    <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
+      {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
       {visualRows.map((row) => (
         <DataTableRow
           key={row.id}

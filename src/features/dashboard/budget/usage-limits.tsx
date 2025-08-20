@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { getBillingLimits } from '@/server/billing/get-billing-limits'
+import ErrorBoundary from '@/ui/error'
 import AlertCard from './alert-card'
 import LimitCard from './limit-card'
 
@@ -15,7 +16,17 @@ export default async function UsageLimits({
   const res = await getBillingLimits({ teamId })
 
   if (!res?.data || res.serverError || res.validationErrors) {
-    throw new Error(res?.serverError || 'Failed to load usage limits')
+    return (
+      <ErrorBoundary
+        error={
+          {
+            name: 'Usage Limits Error',
+            message: res?.serverError || 'Failed to load usage limits',
+          } satisfies Error
+        }
+        hideFrame
+      />
+    )
   }
 
   const limits = res.data

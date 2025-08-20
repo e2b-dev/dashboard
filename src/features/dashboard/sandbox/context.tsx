@@ -1,7 +1,7 @@
 'use client'
 
 import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
-import { SANDBOXE_DETAILS_LATEST_METRICS_POLLING_MS } from '@/configs/intervals'
+import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
 import { SandboxInfo } from '@/types/api'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import {
@@ -131,7 +131,7 @@ export function SandboxProvider({
       return data.metrics[serverSandboxInfo.sandboxID]
     },
     {
-      refreshInterval: SANDBOXE_DETAILS_LATEST_METRICS_POLLING_MS,
+      refreshInterval: SANDBOXES_DETAILS_METRICS_POLLING_MS,
       errorRetryInterval: 1000,
       errorRetryCount: 3,
       revalidateIfStale: true,

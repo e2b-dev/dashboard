@@ -9,7 +9,6 @@ export interface ResourceUsageProps {
   mode?: 'usage' | 'simple'
   classNames?: {
     wrapper?: string
-    dot?: string
   }
 }
 
@@ -57,14 +56,14 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   return (
     <span
       className={cn(
-        'text-fg-tertiary inline w-full truncate font-mono whitespace-nowrap',
+        'text-fg-tertiary inline w-full overflow-x-hidden whitespace-nowrap',
         classNames?.wrapper
       )}
     >
       {hasMetrics ? (
         <>
           <span className={textClassName}>{roundedPercentage}% </span>
-          <span className={cn('text-fg-tertiary', classNames?.dot)}>·</span>
+          <span className="text-fg-tertiary mx-1">·</span>
           {!isCpu && (
             <>
               <span className={textClassName}> {displayValue}</span> /
@@ -74,7 +73,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
       ) : (
         <>
           <span className="text-fg-tertiary">n/a </span>
-          <span className={cn('text-fg-tertiary', classNames?.dot)}>·</span>
+          <span className="text-fg-tertiary mx-1">·</span>
         </>
       )}
       <span className="text-accent-info-highlight"> {totalValue} </span> {unit}

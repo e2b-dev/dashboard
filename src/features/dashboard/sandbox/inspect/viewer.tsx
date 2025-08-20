@@ -27,12 +27,23 @@ export default function SandboxInspectViewer() {
     if (path && !errorPaths.has(path)) {
       setOpen(true)
     }
+
+    if (!path) {
+      setOpen(false)
+    }
   }, [path, errorPaths])
+
+  const handleClose = () => {
+    setOpen(false)
+  }
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerContent className="mt-4 h-[90svh] overflow-hidden p-0">
+      <Drawer dismissible={false} open={open} onOpenChange={handleClose}>
+        <DrawerContent
+          className="mt-4 h-[90svh] overflow-hidden p-0"
+          showDragHandle={false}
+        >
           <AnimatePresence mode="wait">
             {path && <SandboxInspectViewerContent key="viewer" path={path} />}
           </AnimatePresence>
@@ -48,7 +59,13 @@ export default function SandboxInspectViewer() {
   )
 }
 
-function SandboxInspectViewerContent({ path }: { path: string }) {
+function SandboxInspectViewerContent({
+  path,
+  onClose,
+}: {
+  path: string
+  onClose?: () => void
+}) {
   const { name, isLoading, refresh, toggle, download } = useFile(path)
   const { state } = useContent(path)
   const shikiTheme = useShikiTheme()
@@ -82,7 +99,10 @@ function SandboxInspectViewerContent({ path }: { path: string }) {
           fileContentState={state}
           isLoading={isLoading}
           onRefresh={refresh}
-          onClose={toggle}
+          onClose={() => {
+            onClose?.()
+            toggle()
+          }}
           onDownload={download}
         />
       }

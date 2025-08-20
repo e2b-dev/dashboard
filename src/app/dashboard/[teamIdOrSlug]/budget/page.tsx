@@ -1,7 +1,7 @@
 import CreditsCard from '@/features/dashboard/budget/credits-card'
 import UsageLimits from '@/features/dashboard/budget/usage-limits'
-import DashboardPageLayout from '@/features/dashboard/page-layout'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import Frame from '@/ui/frame'
 
 interface BudgetPageProps {
   params: Promise<{ teamIdOrSlug: string }>
@@ -12,9 +12,14 @@ export default async function BudgetPage({ params }: BudgetPageProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   return (
-    <DashboardPageLayout title="Budget" className="flex flex-col gap-4">
+    <Frame
+      classNames={{
+        frame: 'flex flex-col gap-4 max-md:border-none',
+        wrapper: 'w-full max-md:p-0',
+      }}
+    >
       <CreditsCard teamId={teamId} />
       <UsageLimits teamId={teamId} />
-    </DashboardPageLayout>
+    </Frame>
   )
 }
