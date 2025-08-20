@@ -32,7 +32,7 @@ export default function SandboxesMonitoringHeader({
         <BaseSubtitle>Concurrent Sandboxes</BaseSubtitle>
       </BaseCard>
       <BaseCard>
-        <SandboxesStartRateShell />
+        <SandboxesStartRateShell params={params} />
         <BaseSubtitle>Created Sandboxes Per Second</BaseSubtitle>
       </BaseCard>
     </div>
@@ -79,6 +79,39 @@ export const ConcurrentSandboxesShell = async ({
   return <ConcurrentSandboxesClient concurrentSandboxes={concurrentSandboxes} />
 }
 
-export const SandboxesStartRateShell = () => {
-  return <SandboxesStartRateClient sandboxesStartRate={0.2} />
+export const SandboxesStartRateShell = async ({
+  params,
+}: {
+  params: Promise<SandboxesMonitoringPageParams>
+}) => {
+  const { teamIdOrSlug } = await params
+  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+
+  const teamMetricsResult = await getTeamMetrics({
+    teamId,
+    startDate: Date.now() - 10000,
+    endDate: Date.now(),
+  })
+
+  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
+    return (
+      <ErrorTooltip
+        trigger={
+          <span className="ml-2 inline-flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
+            <span className="prose-body-highlight text-accent-error-highlight">
+              Failed
+            </span>
+          </span>
+        }
+      >
+        {teamMetricsResult?.serverError ||
+          'Failed to load concurrent sandboxes'}
+      </ErrorTooltip>
+    )
+  }
+
+  const sandboxesStartRate = teamMetricsResult.data[0]?.sandboxStartRate ?? 0
+
+  return <SandboxesStartRateClient sandboxesStartRate={sandboxesStartRate} />
 }
