@@ -1,8 +1,11 @@
+import 'server-only'
+
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { cache } from 'react'
 import { z } from 'zod'
 
 export const GetTeamMetricsSchema = z.object({
@@ -24,24 +27,18 @@ export const getTeamMetrics = authActionClient
   .metadata({ serverFunctionName: 'getTeamMetrics' })
   .action(async ({ parsedInput, ctx }) => {
     const { session } = ctx
-    const { teamId, startDate, endDate } = parsedInput
+    let { teamId, startDate, endDate } = parsedInput
 
-    const res = await infra.GET('/teams/{teamID}/metrics', {
-      params: {
-        path: {
-          teamID: teamId,
-        },
-        query: {
-          start: startDate,
-          end: endDate,
-        },
-      },
+    // Convert milliseconds to seconds
+    startDate = Math.floor(startDate / 1000)
+    endDate = Math.floor(endDate / 1000)
 
-      headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
-      },
-      cache: 'no-store',
-    })
+    const res = await getTeamMetricsMemoized(
+      session.access_token,
+      teamId,
+      startDate,
+      endDate
+    )
 
     if (res.error) {
       const status = res.response.status
@@ -64,3 +61,28 @@ export const getTeamMetrics = authActionClient
 
     return res.data
   })
+
+const getTeamMetricsMemoized = cache(
+  async (
+    accessToken: string,
+    teamId: string,
+    startDate: number,
+    endDate: number
+  ) => {
+    return await infra.GET('/teams/{teamID}/metrics', {
+      params: {
+        path: {
+          teamID: teamId,
+        },
+        query: {
+          start: startDate,
+          end: endDate,
+        },
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+      cache: 'no-store',
+    })
+  }
+)
