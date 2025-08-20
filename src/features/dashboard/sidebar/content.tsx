@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { useMemo } from 'react'
 
+import { useIsMobile } from '@/lib/hooks/use-mobile'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarContent,
@@ -17,6 +18,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/ui/primitives/sidebar'
 import { usePathname } from 'next/navigation'
 
@@ -39,6 +41,8 @@ export default function DashboardSidebarContent() {
   const selectedTeam = useSelectedTeam()
   const selectedTeamIdentifier = selectedTeam?.slug ?? selectedTeam?.id
   const pathname = usePathname()
+  const isMobile = useIsMobile()
+  const { setOpenMobile } = useSidebar()
 
   const groupedNavLinks = useMemo(
     () => createGroupedLinks(MAIN_DASHBOARD_LINKS),
@@ -85,7 +89,18 @@ export default function DashboardSidebarContent() {
                     asChild
                     tooltip={item.label}
                   >
-                    <Link suppressHydrationWarning href={href} prefetch>
+                    <Link
+                      suppressHydrationWarning
+                      href={href}
+                      prefetch
+                      onClick={
+                        isMobile
+                          ? () => {
+                              setOpenMobile(false)
+                            }
+                          : undefined
+                      }
+                    >
                       <item.icon
                         className={cn(
                           'group-data-[collapsible=icon]:size-5 transition-[size,color]',
