@@ -67,8 +67,8 @@ export default async function SandboxDetailsHeader({
   }
 
   return (
-    <header className="bg-bg relative z-30 flex w-full flex-col gap-6 p-6 max-md:py-2">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <header className="bg-bg relative z-30 flex w-full flex-col gap-6 p-3 md:p-6 max-md:pt-0">
+      <div className="flex flex-col sm:gap-2 md:gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
           <Link
             href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}
