@@ -50,10 +50,10 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
-  hideDragHandle,
+  showDragHandle = true,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content> & {
-  hideDragHandle?: boolean
+  showDragHandle?: boolean
 }) {
   return (
     <DrawerPortal>
@@ -78,7 +78,7 @@ function DrawerContent({
         )}
         {...props}
       >
-        {!hideDragHandle && (
+        {showDragHandle && (
           <div className="bg-bg-inverted-hover mx-auto mt-2 hidden h-1 w-[100px] shrink-0 group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         )}
         {children}

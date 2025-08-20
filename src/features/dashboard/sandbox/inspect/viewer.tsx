@@ -42,7 +42,7 @@ export default function SandboxInspectViewer() {
       <Drawer dismissible={false} open={open} onOpenChange={handleClose}>
         <DrawerContent
           className="mt-4 h-[90svh] overflow-hidden p-0"
-          hideDragHandle
+          showDragHandle={false}
         >
           <AnimatePresence mode="wait">
             {path && <SandboxInspectViewerContent key="viewer" path={path} />}
