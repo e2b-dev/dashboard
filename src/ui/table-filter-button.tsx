@@ -22,7 +22,7 @@ export const TableFilterButton = React.forwardRef<
       suppressHydrationWarning
       {...props}
     >
-      <X className={'size-3.5'} />
+      <X className={'size-3.5 min-w-3.5'} />
       {label}
       {value && (
         <>
