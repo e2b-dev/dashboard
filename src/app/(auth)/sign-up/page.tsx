@@ -39,7 +39,7 @@ export default function SignUp() {
     return undefined
   })
 
-  const returnTo = searchParams.get('returnTo')
+  const returnTo = searchParams.get('returnTo') || undefined
 
   const {
     form,
@@ -59,8 +59,6 @@ export default function SignUp() {
   })
 
   useEffect(() => {
-    if (!returnTo) return
-
     form.setValue('returnTo', returnTo)
   }, [returnTo, form])
 
