@@ -2,7 +2,6 @@
 
 import { l } from '@/lib/clients/logger'
 import { cn } from '@/lib/utils'
-import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
 import { serializeError } from 'serialize-error'
@@ -21,20 +20,11 @@ export default function ErrorBoundary({
   hideFrame?: boolean
 }) {
   useEffect(() => {
-    if (Sentry.isInitialized()) {
-      Sentry.captureException(error, {
-        level: 'fatal',
-        tags: {
-          component: 'ErrorBoundary',
-        },
-      })
-    } else {
-      l.error({
-        key: 'error_boundary',
-        message: error.message,
-        sanitizedError: serializeError(error),
-      })
-    }
+    l.error({
+      key: 'error_boundary',
+      message: error.message,
+      sanitizedError: serializeError(error),
+    })
   }, [error])
 
   return (
