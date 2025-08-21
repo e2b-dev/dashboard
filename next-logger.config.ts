@@ -82,6 +82,7 @@ const createLogger = () => {
             target: 'pino-loki',
             level: VERBOSE ? 'debug' : 'info',
             options: {
+              batching: true,
               interval: 1,
               timeout: 25000,
               labels: {
