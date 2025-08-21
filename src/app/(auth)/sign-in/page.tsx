@@ -57,9 +57,11 @@ export default function Login() {
     },
   })
 
-  const returnTo = searchParams.get('returnTo') || ''
+  const returnTo = searchParams.get('returnTo')
 
   useEffect(() => {
+    if (!returnTo) return
+
     form.setValue('returnTo', returnTo)
   }, [returnTo, form])
 

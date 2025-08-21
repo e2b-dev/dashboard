@@ -5,10 +5,6 @@ export const relativeUrlSchema = z
   .trim()
   .refine(
     (url) => {
-      if (url.length === 0) {
-        return true
-      }
-
       if (!url.startsWith('/')) {
         return false
       }

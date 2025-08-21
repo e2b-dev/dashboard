@@ -109,32 +109,50 @@ describe('Auth Actions - Integration Tests', () => {
       expect(redirect).toHaveBeenCalledWith(PROTECTED_URLS.DASHBOARD)
     })
 
-    /**
-     * AUTHENTICATION TEST: Verifies that sign-in with valid credentials and returnTo
-     * redirects to the specified URL
-     */
     it('should redirect to returnTo URL if provided', async () => {
-      // Setup: Mock Supabase client to return successful auth
       mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
         data: { user: { id: 'user-123' } },
         error: null,
       })
 
-      // Setup: Create form data with valid credentials and returnTo
-      const formData = new FormData()
-      formData.append('email', 'test@example.com')
-      formData.append('password', 'password123')
-      formData.append('returnTo', '/dashboard/team-123/sandboxes')
-
-      // Execute: Call the sign-in action
       await signInAction({
         email: 'test@example.com',
         password: 'password123',
         returnTo: '/dashboard/team-123/sandboxes',
       })
 
-      // Verify: Check that redirect was called with returnTo URL
       expect(redirect).toHaveBeenCalledWith('/dashboard/team-123/sandboxes')
+    })
+
+    it('should throw validation error if returnTo is not a relative path', async () => {
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'user-123' } },
+        error: null,
+      })
+
+      const result = await signInAction({
+        email: 'test@example.com',
+        password: 'password123',
+        returnTo: 'https://app.e2b.dev/dashboard/team-123/sandboxes',
+      })
+
+      expect(result?.validationErrors?.fieldErrors.returnTo).toBeDefined()
+    })
+
+
+    it('should throw validation error if returnTo is a malicious URL', async () => {
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'user-123' } },
+        error: null,
+      })
+
+      const result = await signInAction({
+        email: 'test@example.com',
+        password: 'password123',
+        returnTo: 'javascript:alert(document.cookie)',
+      })
+
+      expect(result?.validationErrors?.fieldErrors.returnTo).toBeDefined()
     })
 
     /**
@@ -147,11 +165,6 @@ describe('Auth Actions - Integration Tests', () => {
         data: null,
         error: { message: 'Invalid login credentials' },
       })
-
-      // Setup: Create form data with invalid credentials
-      const formData = new FormData()
-      formData.append('email', 'test@example.com')
-      formData.append('password', 'wrongpassword')
 
       // Execute: Call the sign-in action
       const result = await signInAction({
