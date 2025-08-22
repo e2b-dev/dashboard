@@ -6,7 +6,6 @@ import ClientOnly from '@/ui/client-only'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
 import { usePathname } from 'next/navigation'
-import { DashboardSurveyPopover } from '../navbar/dashboard-survey-popover'
 
 interface DashboardLayoutHeaderProps {
   className?: string
@@ -34,7 +33,6 @@ export default function DashboardLayoutHeader({
       <ClientOnly>
         <ThemeSwitcher />
       </ClientOnly>
-      {process.env.NEXT_PUBLIC_POSTHOG_KEY && <DashboardSurveyPopover />}
     </div>
   )
 }
