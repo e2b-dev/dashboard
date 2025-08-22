@@ -1,3 +1,4 @@
+import { relativeUrlSchema } from '@/lib/schemas/url'
 import { z } from 'zod'
 
 export const signUpSchema = z
@@ -5,7 +6,7 @@ export const signUpSchema = z
     email: z.string().email('Valid email is required'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
-    returnTo: z.string().optional(),
+    returnTo: relativeUrlSchema.optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],
@@ -15,7 +16,7 @@ export const signUpSchema = z
 export const signInSchema = z.object({
   email: z.string().email('Valid email is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  returnTo: z.string().optional(),
+  returnTo: relativeUrlSchema.optional(),
 })
 
 export const forgotPasswordSchema = z.object({

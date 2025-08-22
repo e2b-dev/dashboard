@@ -1,6 +1,8 @@
 import { VERBOSE } from '@/configs/flags'
 import { trace } from '@opentelemetry/api'
-import { LoggerOptions, pino } from 'pino'
+import { pino } from 'pino'
+import type { LokiOptions } from 'pino-loki'
+
 
 const REDACTION_PATHS = [
   'password',
@@ -25,15 +27,17 @@ const REDACTION_PATHS = [
   '*.*.apiKey',
   '*.*.key',
 ]
+
 const createLogger = () => {
-  const baseConfig = (additionalTargets?: any[]): LoggerOptions => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const baseConfig = (additionalTargets?: any[]) => {
     return {
       redact: {
         paths: REDACTION_PATHS,
         censor: '[Redacted]',
       },
       formatters: {
-        log: (logObject: any) => {
+        log: (logObject: object) => {
           const s = trace.getActiveSpan()
           return {
             ...logObject,
@@ -62,6 +66,15 @@ const createLogger = () => {
   }
 
   if (process.env.LOKI_HOST) {
+
+    const lokiNeedsBasicAuth = process.env.LOKI_USERNAME && process.env.LOKI_PASSWORD
+    const lokiVercelLabels = process.env.VERCEL_ENV ? {
+      vercel_env: process.env.VERCEL_ENV,
+      vercel_url: process.env.VERCEL_URL,
+      vercel_branch_url: process.env.VERCEL_BRANCH_URL,
+      vercel_project_production_url: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    } as Record<string, string> : {}
+
     try {
       const logger = pino(
         baseConfig([
@@ -70,23 +83,20 @@ const createLogger = () => {
             level: VERBOSE ? 'debug' : 'info',
             options: {
               batching: true,
-              interval: 5,
+              interval: 1,
+              timeout: 25000,
               labels: {
                 service_name: process.env.LOKI_SERVICE_NAME || 'e2b-dashboard',
                 env: process.env.NODE_ENV || 'development',
-                vercel_env: process.env.VERCEL_ENV || undefined,
-                vercel_url: process.env.VERCEL_URL || undefined,
-                vercel_branch_url: process.env.VERCEL_BRANCH_URL || undefined,
-                vercel_project_production_url:
-                  process.env.VERCEL_PROJECT_PRODUCTION_URL || undefined,
+                ...lokiVercelLabels,
               },
               host: process.env.LOKI_HOST,
-              basicAuth: {
-                username: process.env.LOKI_USERNAME,
-                password: process.env.LOKI_PASSWORD,
-              },
+              basicAuth: lokiNeedsBasicAuth ? {
+                username: process.env.LOKI_USERNAME!,
+                password: process.env.LOKI_PASSWORD!,
+              } : undefined,
               convertArrays: true,
-            },
+            } satisfies LokiOptions,
           },
         ])
       )

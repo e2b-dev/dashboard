@@ -5,6 +5,7 @@ import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger'
 import { createClient } from '@/lib/clients/supabase/server'
+import { relativeUrlSchema } from '@/lib/schemas/url'
 import { returnServerError } from '@/lib/utils/action'
 import { encodedRedirect } from '@/lib/utils/auth'
 import {
@@ -21,7 +22,7 @@ export const signInWithOAuthAction = actionClient
   .schema(
     z.object({
       provider: z.string() as unknown as z.ZodType<Provider>,
-      returnTo: z.string().optional(),
+      returnTo: relativeUrlSchema.optional(),
     })
   )
   .metadata({ actionName: 'signInWithOAuth' })

@@ -35,11 +35,11 @@ export default function SignUp() {
     const success = searchParams.get('success')
     if (error) return { error: decodeURIComponent(error) }
     if (success) return { success: decodeURIComponent(success) }
+
     return undefined
   })
 
-  // Get returnTo URL from search params
-  const returnTo = searchParams.get('returnTo') || ''
+  const returnTo = searchParams.get('returnTo') || undefined
 
   const {
     form,
