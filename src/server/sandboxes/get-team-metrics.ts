@@ -27,7 +27,9 @@ export const getTeamMetrics = authActionClient
   .metadata({ serverFunctionName: 'getTeamMetrics' })
   .action(async ({ parsedInput, ctx }) => {
     const { session } = ctx
-    let { teamId, startDate, endDate } = parsedInput
+
+    const teamId = parsedInput.teamId
+    let { startDate, endDate } = parsedInput
 
     // Convert milliseconds to seconds
     startDate = Math.floor(startDate / 1000)
@@ -59,7 +61,10 @@ export const getTeamMetrics = authActionClient
       return handleDefaultInfraError(status)
     }
 
-    return res.data
+    return res.data.map(d => ({
+      ...d,
+      timestamp: new Date(d.timestamp).getTime(),
+    }))
   })
 
 const getTeamMetricsMemoized = cache(

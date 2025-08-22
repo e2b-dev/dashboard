@@ -50,7 +50,7 @@ interface LayoutControls {
 export interface LineChartProps extends AxisControls, LayoutControls {
   data: LineSeries[]
   curve?: CurveKind
-  xType?: 'category' | 'time' | 'value'
+  xType?: 'category' | 'time' | 'value' | 'log'
   format?: AxisFormatters
   className?: string
   style?: React.CSSProperties
@@ -85,7 +85,9 @@ function toXValue(x: XYValue): number | string {
 
 // deepmerge default concatenates arrays; configure to replace instead to preserve previous behavior
 const mergeReplaceArrays = <T,>(target: T, source: Partial<T>): T =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deepmerge(target as any, source as any, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arrayMerge: (_destinationArray, sourceArray) => sourceArray as any,
   }) as T
 
@@ -206,48 +208,48 @@ export function LineChart({
         formatter: tooltipFormatter
           ? tooltipFormatter
           : (params: echarts.TooltipComponentFormatterCallbackParams) => {
-              // normalize params to an array
-              params = params instanceof Array ? params : [params]
-              const first = params[0]!
+            // normalize params to an array
+            params = params instanceof Array ? params : [params]
+            const first = params[0]!
 
-              const label = (() => {
-                const xValue = (first.value as Array<any>)?.[
-                  first.encode!.x![0]!
-                ]
-                if (!xValue) return 'n/a'
+            const label = (() => {
+              const xValue = (first.value as Array<unknown>)?.[
+                first.encode!.x![0]!
+              ]
+              if (!xValue) return 'n/a'
 
-                if (xType === 'time') {
-                  const date = new Date(xValue)
-                  const day = date.getDate()
-                  const month = date.toLocaleDateString('en-US', {
-                    month: 'short',
-                  })
-                  const time = date.toLocaleTimeString('en-US', {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                  return `${day} ${month} - ${time}`
-                }
+              if (xType === 'time') {
+                const date = new Date(xValue as number)
+                const day = date.getDate()
+                const month = date.toLocaleDateString('en-US', {
+                  month: 'short',
+                })
+                const time = date.toLocaleTimeString('en-US', {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+                return `${day} ${month} - ${time}`
+              }
 
-                return xValue.toLocaleString()
-              })()
+              return xValue.toLocaleString()
+            })()
 
-              const items = params.map((p) => ({
-                label: (
-                  <Badge variant="info" className="uppercase">
-                    {p.seriesName ?? 'n/a'}
-                  </Badge>
-                ),
-                value: (p.value as Array<any>)?.[
-                  p.encode!.y![0]!
-                ]?.toLocaleString(),
-              }))
+            const items = params.map((p) => ({
+              label: (
+                <Badge variant="info" className="uppercase">
+                  {p.seriesName ?? 'n/a'}
+                </Badge>
+              ),
+              value: (p.value as Array<any>)?.[
+                p.encode!.y![0]!
+              ]?.toLocaleString(),
+            }))
 
-              return renderToString(
-                <DefaultTooltip label={label} items={items} />
-              )
-            },
+            return renderToString(
+              <DefaultTooltip label={label} items={items} />
+            )
+          },
       },
       xAxis: {
         type: xType as any,
@@ -317,6 +319,9 @@ export function LineChart({
     showAxisYTicks,
     cssVars,
     xType,
+    tooltipFormatter,
+    showGridX,
+    showGridY,
   ])
 
   return (
