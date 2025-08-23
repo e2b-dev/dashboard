@@ -1,14 +1,16 @@
 "use client"
 
-import { TEAM_METRICS_INITIAL_RANGES } from '@/configs/intervals'
-import { createContext, useContext, ReactNode, useMemo, useState } from 'react'
+import { TEAM_METRICS_INITIAL_RANGE_MS, TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 
 interface TeamMetricsState {
-  concurrentSandboxesStart: number
-  concurrentSandboxesEnd: number
+  chartsStart: number
+  chartsEnd: number
+  realtimeSyncRange: number | null
 
-  startedSandboxesStart: number
-  startedSandboxesEnd: number
+  setChartsStart: React.Dispatch<React.SetStateAction<number>>
+  setChartsEnd: React.Dispatch<React.SetStateAction<number>>
+  setRealtimeSyncRange: React.Dispatch<React.SetStateAction<number | null>>
 }
 
 const TeamMetricsContext = createContext<TeamMetricsState | null>(null)
@@ -18,29 +20,34 @@ interface TeamMetricsProviderProps {
 }
 
 export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
+  const [chartsStart, setChartsStart] = useState<number>(Date.now() - TEAM_METRICS_INITIAL_RANGE_MS)
+  const [chartsEnd, setChartsEnd] = useState<number>(Date.now())
+  const [realtimeSyncRange, setRealtimeSyncRange] = useState<number | null>(TEAM_METRICS_INITIAL_RANGE_MS)
 
-  const [concurrentSandboxesStart, setConcurrentSandboxesStart] = useState<number>(Date.now() - TEAM_METRICS_INITIAL_RANGES.concurrent)
-  const [concurrentSandboxesEnd, setConcurrentSandboxesEnd] = useState<number>(Date.now())
+  // whether to sync charts in realtime or keep an explicit range 
+  useEffect(() => {
+    if (!realtimeSyncRange) return
 
-  const [startedSandboxesStart, setStartedSandboxesStart] = useState<number>(Date.now() - TEAM_METRICS_INITIAL_RANGES.started)
-  const [startedSandboxesEnd, setStartedSandboxesEnd] = useState<number>(Date.now())
+    const interval = setInterval(() => {
+      setChartsStart(Date.now() - realtimeSyncRange)
+      setChartsEnd(Date.now())
 
-  const value = useMemo(() => ({
-    concurrentSandboxesStart,
-    concurrentSandboxesEnd,
+      // we want to have it shorter than the polling, to take affect on the next poll
+    }, TEAM_METRICS_POLLING_INTERVAL_MS)
 
-    startedSandboxesStart,
-    startedSandboxesEnd,
-
-    setConcurrentSandboxesStart,
-    setConcurrentSandboxesEnd,
-
-    setStartedSandboxesStart,
-    setStartedSandboxesEnd,
-  }), [concurrentSandboxesStart, concurrentSandboxesEnd, startedSandboxesStart, startedSandboxesEnd])
+    return () => clearInterval(interval)
+  }, [realtimeSyncRange])
 
   return (
-    <TeamMetricsContext.Provider value={value}>
+    <TeamMetricsContext.Provider value={{
+      chartsStart,
+      chartsEnd,
+      realtimeSyncRange,
+
+      setRealtimeSyncRange,
+      setChartsStart,
+      setChartsEnd,
+    }}>
       {children}
     </TeamMetricsContext.Provider>
   )
@@ -57,3 +64,4 @@ export const useTeamMetrics = () => {
 
   return context
 }
+

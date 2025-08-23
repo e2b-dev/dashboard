@@ -11,6 +11,8 @@ type SandboxMetric = InfraComponents['schemas']['SandboxMetric']
 type SandboxesMetricsRecord =
   InfraComponents['schemas']['SandboxesWithMetrics']['sandboxes']
 
+type TeamMetric = InfraComponents['schemas']['TeamMetric']
+
 type Template = InfraComponents['schemas']['Template']
 
 type DefaultTemplate = Template & {
@@ -45,4 +47,5 @@ export type {
   TeamAPIKey,
   TeamUser,
   Template,
+  TeamMetric,
 }

@@ -3,12 +3,9 @@ import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { AlertTriangle } from 'lucide-react'
-import {
-  ConcurrentSandboxesClient,
-  SandboxesStartRateClient,
-} from './header.client'
+import { ConcurrentSandboxesClient } from './header.client'
 
-const BaseCard = ({ children }: { children: React.ReactNode }) => {
+function BaseCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="p-3 md:p-6 max-md:not-last:border-b md:not-last:border-r h-full flex-1 w-full flex flex-col justify-center items-center gap-3 relative">
       {children}
@@ -16,8 +13,25 @@ const BaseCard = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-const BaseSubtitle = ({ children }: { children: React.ReactNode }) => {
-  return <span className="label-tertiary">{children}</span>
+function BaseSubtitle({ children }: { children: React.ReactNode }) {
+  return <span className="label-tertiary text-center">{children}</span>
+}
+
+function BaseErrorTooltip({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorTooltip
+      trigger={
+        <span className="inline-flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
+          <span className="prose-body-highlight text-accent-error-highlight">
+            Failed
+          </span>
+        </span>
+      }
+    >
+      {children}
+    </ErrorTooltip>
+  )
 }
 
 export default function SandboxesMonitoringHeader({
@@ -28,58 +42,32 @@ export default function SandboxesMonitoringHeader({
   return (
     <div className="flex md:flex-row flex-col items-center border-b w-full min-h-52">
       <BaseCard>
-        <ConcurrentSandboxesShell params={params} />
+        <ConcurrentSandboxes params={params} />
         <BaseSubtitle>Concurrent Sandboxes</BaseSubtitle>
       </BaseCard>
       <BaseCard>
-        <SandboxesStartRateShell params={params} />
-        <BaseSubtitle>Created Sandboxes Per Second</BaseSubtitle>
+        <MaxConcurrentSandboxes params={params} />
+        <BaseSubtitle>Max. Concurrent Sandboxes<br />(Last 30 Days)</BaseSubtitle>
+      </BaseCard>
+      <BaseCard>
+        <MaxSandboxesStartRate params={params} />
+        <BaseSubtitle>Max. Sandbox Start Rate<br />(Last 30 Days)</BaseSubtitle>
       </BaseCard>
     </div>
   )
 }
 
-// SHELLS
-
-export const ConcurrentSandboxesShell = async ({
-  params,
-}: {
-  params: Promise<SandboxesMonitoringPageParams>
-}) => {
-  const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
-  const teamMetricsResult = await getTeamMetrics({
+function getTeamMetricsLast30Days(teamId: string) {
+  return getTeamMetrics({
     teamId,
-    startDate: Date.now() - 10000,
+    startDate: Date.now() - 1000 * 60 * 60 * 24 * 30,
     endDate: Date.now(),
   })
-
-  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
-    return (
-      <ErrorTooltip
-        trigger={
-          <span className="ml-2 inline-flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
-            <span className="prose-body-highlight text-accent-error-highlight">
-              Failed
-            </span>
-          </span>
-        }
-      >
-        {teamMetricsResult?.serverError ||
-          'Failed to load concurrent sandboxes'}
-      </ErrorTooltip>
-    )
-  }
-
-  const concurrentSandboxes =
-    teamMetricsResult.data[0]?.concurrentSandboxes ?? 0
-
-  return <ConcurrentSandboxesClient concurrentSandboxes={concurrentSandboxes} />
 }
 
-export const SandboxesStartRateShell = async ({
+// Components
+
+export const ConcurrentSandboxes = async ({
   params,
 }: {
   params: Promise<SandboxesMonitoringPageParams>
@@ -87,31 +75,67 @@ export const SandboxesStartRateShell = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const teamMetricsResult = await getTeamMetrics({
-    teamId,
-    startDate: Date.now() - 10000,
-    endDate: Date.now(),
-  })
+  const start = Date.now() - 1000 * 60 * 15
+  const end = Date.now()
+
+  const teamMetricsResult = await getTeamMetrics({ teamId, startDate: start, endDate: end })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
-      <ErrorTooltip
-        trigger={
-          <span className="ml-2 inline-flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
-            <span className="prose-body-highlight text-accent-error-highlight">
-              Failed
-            </span>
-          </span>
-        }
-      >
+      <BaseErrorTooltip>
         {teamMetricsResult?.serverError ||
           'Failed to load concurrent sandboxes'}
-      </ErrorTooltip>
+      </BaseErrorTooltip>
     )
   }
 
-  const sandboxesStartRate = teamMetricsResult.data[0]?.sandboxStartRate ?? 0
+  return <ConcurrentSandboxesClient initialData={teamMetricsResult.data} />
+}
 
-  return <SandboxesStartRateClient sandboxesStartRate={sandboxesStartRate} />
+export const MaxSandboxesStartRate = async ({
+  params,
+}: {
+  params: Promise<SandboxesMonitoringPageParams>
+}) => {
+  const { teamIdOrSlug } = await params
+  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+
+  const teamMetricsResult = await getTeamMetricsLast30Days(teamId)
+
+  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
+    return (
+      <BaseErrorTooltip>
+        {teamMetricsResult?.serverError ||
+          'Failed to load max sandbox start rate'}
+      </BaseErrorTooltip>
+    )
+  }
+
+  const sandboxesStartRate = Math.max(...teamMetricsResult.data.map(item => item.sandboxStartRate ?? 0))
+
+  return <span className="prose-value-big">{sandboxesStartRate}</span>
+}
+
+export const MaxConcurrentSandboxes = async ({
+  params,
+}: {
+  params: Promise<SandboxesMonitoringPageParams>
+}) => {
+  const { teamIdOrSlug } = await params
+  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+
+  const teamMetricsResult = await getTeamMetricsLast30Days(teamId)
+
+  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
+    return (
+      <BaseErrorTooltip>
+        {teamMetricsResult?.serverError ||
+          'Failed to load max concurrent sandboxes'}
+      </BaseErrorTooltip>
+    )
+  }
+
+  const concurrentSandboxes = Math.max(...teamMetricsResult.data.map(item => item.concurrentSandboxes ?? 0))
+
+  return <span className="prose-value-big">{concurrentSandboxes}</span>
 }

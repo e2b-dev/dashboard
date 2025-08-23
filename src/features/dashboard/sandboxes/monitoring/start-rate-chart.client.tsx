@@ -8,15 +8,15 @@ import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
-interface ConcurrentChartProps {
+interface StartRateChartProps {
   initialData: InferSafeActionFnResult<typeof getTeamMetrics>['data']
 }
 
-export default function ConcurrentChartClient({ initialData }: ConcurrentChartProps) {
-  const { chartsStart: start, chartsEnd: end } = useTeamMetrics()
-  const { data } = useTeamMetricsSWR(initialData, { start, end })
+export default function StartRateChartClient({ initialData }: StartRateChartProps) {
+  const { chartsStart, chartsEnd } = useTeamMetrics()
+  const { data } = useTeamMetricsSWR(initialData, { start: chartsStart, end: chartsEnd })
 
-  const lineData: LinePoint[] | undefined = data?.map(d => ({ x: d.timestamp, y: d.concurrentSandboxes }))
+  const lineData: LinePoint[] | undefined = data?.map((point) => ({ x: point.timestamp, y: point.sandboxStartRate }))
 
   const average = useMemo(() => {
     if (!lineData?.length) return 0
@@ -26,7 +26,7 @@ export default function ConcurrentChartClient({ initialData }: ConcurrentChartPr
 
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
-      <span className="prose-label-highlight uppercase">Concurrent</span>
+      <span className="prose-label-highlight uppercase">Start Rate</span>
       <div className="inline-flex items-end gap-3 mt-2">
         <span className="prose-value-big">{average.toFixed(1)}</span>
         <span className="label-tertiary">AVG</span>
@@ -45,17 +45,15 @@ export default function ConcurrentChartClient({ initialData }: ConcurrentChartPr
               splitNumber: 2,
             },
             xAxis: {
-              min: start,
-              max: end,
-
-
+              min: chartsStart,
+              max: chartsEnd,
               type: 'time'
             }
           }}
           data={[
             {
-              id: 'sandboxes',
-              name: 'Sandboxes',
+              id: 'rate',
+              name: 'Rate',
               data: lineData,
             },
           ]}

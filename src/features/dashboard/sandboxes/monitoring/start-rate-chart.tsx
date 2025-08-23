@@ -2,23 +2,23 @@ import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sa
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import ConcurrentChartClient from './concurrent-chart.client'
 import { Suspense } from 'react'
 import ChartFallback from './chart-fallback'
+import StartRateChartClient from './start-rate-chart.client'
 
-interface ConcurrentChartProps {
+interface StartedChartProps {
   params: Promise<SandboxesMonitoringPageParams>
 }
 
-export function ConcurrentChart({ params }: ConcurrentChartProps) {
+export function StartRateChart({ params }: StartedChartProps) {
   return (
-    <Suspense fallback={<ChartFallback title='Concurrent' subtitle='AVG' />}>
-      <ConcurrentChartResolver params={params} />
+    <Suspense fallback={<ChartFallback title='Start Rate' subtitle='PER SECOND' />}>
+      <StartRateChartResolver params={params} />
     </Suspense>
   )
 }
 
-async function ConcurrentChartResolver({ params }: ConcurrentChartProps) {
+async function StartRateChartResolver({ params }: StartedChartProps) {
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
@@ -33,5 +33,5 @@ async function ConcurrentChartResolver({ params }: ConcurrentChartProps) {
 
   const data = teamMetricsResult?.data ?? []
 
-  return <ConcurrentChartClient initialData={data} />
+  return <StartRateChartClient initialData={data} />
 }

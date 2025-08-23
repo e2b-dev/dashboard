@@ -1,21 +1,17 @@
-'use client'
+"use client"
+
+import useTeamMetricsSWR from "./hooks/use-team-metrics-swr"
+import { InferSafeActionFnResult } from "next-safe-action"
+import { getTeamMetrics } from "@/server/sandboxes/get-team-metrics"
 
 interface ConcurrentSandboxesClientProps {
-  concurrentSandboxes: number
+  initialData: InferSafeActionFnResult<typeof getTeamMetrics>['data']
 }
 
-export const ConcurrentSandboxesClient = ({
-  concurrentSandboxes,
-}: ConcurrentSandboxesClientProps) => {
-  return <span className="prose-value-big">{concurrentSandboxes}</span>
-}
+export function ConcurrentSandboxesClient({ initialData }: ConcurrentSandboxesClientProps) {
+  const { data } = useTeamMetricsSWR(initialData, { realtimeSyncRange: 15_000 })
 
-interface SandboxesStartRateClientProps {
-  sandboxesStartRate: number
-}
+  const lastConcurrentSandboxes = data?.[data.length - 1]?.concurrentSandboxes ?? 0
 
-export const SandboxesStartRateClient = ({
-  sandboxesStartRate,
-}: SandboxesStartRateClientProps) => {
-  return <span className="prose-value-big">{sandboxesStartRate}</span>
+  return <span className="prose-value-big">{lastConcurrentSandboxes}</span>
 }
