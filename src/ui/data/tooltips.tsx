@@ -21,7 +21,7 @@ export default function DefaultTooltip({ label, items }: DefaultTooltipProps) {
     >
       <div className="flex flex-col gap-1 w-full">
         {items?.map((item, index) => (
-          <div key={index} className="flex justify-between">
+          <div key={index} className="flex justify-between gap-3">
             <div>{item.label}</div>
             <div>{item.value}</div>
           </div>

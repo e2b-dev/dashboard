@@ -1,4 +1,5 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/monitoring/page'
+import { TEAM_METRICS_LIVE_CONCURRENT_SANDBOXES_RANGE } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import ErrorTooltip from '@/ui/error-tooltip'
@@ -47,11 +48,19 @@ export default function SandboxesMonitoringHeader({
       </BaseCard>
       <BaseCard>
         <MaxConcurrentSandboxes params={params} />
-        <BaseSubtitle>Max. Concurrent Sandboxes<br />(Last 30 Days)</BaseSubtitle>
+        <BaseSubtitle>
+          Max. Concurrent Sandboxes
+          <br />
+          (Last 30 Days)
+        </BaseSubtitle>
       </BaseCard>
       <BaseCard>
         <MaxSandboxesStartRate params={params} />
-        <BaseSubtitle>Max. Sandbox Start Rate<br />(Last 30 Days)</BaseSubtitle>
+        <BaseSubtitle>
+          Max. Sandbox Start Rate
+          <br />
+          (Last 30 Days)
+        </BaseSubtitle>
       </BaseCard>
     </div>
   )
@@ -75,10 +84,14 @@ export const ConcurrentSandboxes = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const start = Date.now() - 1000 * 60 * 15
+  const start = Date.now() - TEAM_METRICS_LIVE_CONCURRENT_SANDBOXES_RANGE
   const end = Date.now()
 
-  const teamMetricsResult = await getTeamMetrics({ teamId, startDate: start, endDate: end })
+  const teamMetricsResult = await getTeamMetrics({
+    teamId,
+    startDate: start,
+    endDate: end,
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -111,7 +124,9 @@ export const MaxSandboxesStartRate = async ({
     )
   }
 
-  const sandboxesStartRate = Math.max(...teamMetricsResult.data.map(item => item.sandboxStartRate ?? 0))
+  const sandboxesStartRate = Math.max(
+    ...teamMetricsResult.data.map((item) => item.sandboxStartRate ?? 0)
+  )
 
   return <span className="prose-value-big">{sandboxesStartRate}</span>
 }
@@ -135,7 +150,9 @@ export const MaxConcurrentSandboxes = async ({
     )
   }
 
-  const concurrentSandboxes = Math.max(...teamMetricsResult.data.map(item => item.concurrentSandboxes ?? 0))
+  const concurrentSandboxes = Math.max(
+    ...teamMetricsResult.data.map((item) => item.concurrentSandboxes ?? 0)
+  )
 
   return <span className="prose-value-big">{concurrentSandboxes}</span>
 }

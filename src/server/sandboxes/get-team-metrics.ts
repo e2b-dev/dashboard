@@ -61,7 +61,7 @@ export const getTeamMetrics = authActionClient
       return handleDefaultInfraError(status)
     }
 
-    return res.data.map(d => ({
+    return res.data.map((d) => ({
       ...d,
       timestamp: new Date(d.timestamp).getTime(),
     }))

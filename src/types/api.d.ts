@@ -45,7 +45,7 @@ export type {
   SandboxInfo,
   SandboxMetric,
   TeamAPIKey,
+  TeamMetric,
   TeamUser,
   Template,
-  TeamMetric,
 }

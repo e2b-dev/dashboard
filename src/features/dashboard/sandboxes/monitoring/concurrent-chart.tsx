@@ -1,10 +1,10 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/monitoring/page'
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import ConcurrentChartClient from './concurrent-chart.client'
 import { Suspense } from 'react'
 import ChartFallback from './chart-fallback'
+import ConcurrentChartClient from './concurrent-chart.client'
 
 interface ConcurrentChartProps {
   params: Promise<SandboxesMonitoringPageParams>
@@ -12,7 +12,7 @@ interface ConcurrentChartProps {
 
 export function ConcurrentChart({ params }: ConcurrentChartProps) {
   return (
-    <Suspense fallback={<ChartFallback title='Concurrent' subtitle='AVG' />}>
+    <Suspense fallback={<ChartFallback title="Concurrent" subtitle="AVG" />}>
       <ConcurrentChartResolver params={params} />
     </Suspense>
   )

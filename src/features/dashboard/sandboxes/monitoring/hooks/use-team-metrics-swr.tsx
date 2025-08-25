@@ -1,13 +1,12 @@
-"use client"
+'use client'
 
-import useSWR from 'swr'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { InferSafeActionFnResult } from 'next-safe-action'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
-import { fillMetricsWithZeros } from '@/lib/utils/sandboxes'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
+import useSWR from 'swr'
 
 type ExplicitTimeRange = {
   start: number
@@ -20,8 +19,9 @@ type DynamicTimeRange = {
 
 export type TimeRangeParams = ExplicitTimeRange | DynamicTimeRange
 
-
-function isExplicitTimeRange(params: TimeRangeParams): params is ExplicitTimeRange {
+function isExplicitTimeRange(
+  params: TimeRangeParams
+): params is ExplicitTimeRange {
   return 'start' in params && 'end' in params
 }
 
@@ -72,20 +72,13 @@ export default function useTeamMetricsSWR(
       }
 
       const data = (await response.json()) as TeamMetricsResponse
-      
+
       // Handle case where metrics might be undefined or empty
       if (!data.metrics || data.metrics.length === 0) {
         return []
       }
-      
-      // Fill missing timestamps with zero values using the step calculation
-      const filledMetrics = fillMetricsWithZeros(
-        data.metrics,
-        currentTimeRange.start,
-        currentTimeRange.end
-      )
-      
-      return filledMetrics
+
+      return data.metrics
     },
     {
       fallbackData: initialData,

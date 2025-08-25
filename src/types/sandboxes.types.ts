@@ -1,3 +1,5 @@
+import { TeamMetric } from './api'
+
 export type ClientSandboxMetric = {
   cpuCount: number
   cpuUsedPct: number
@@ -9,3 +11,9 @@ export type ClientSandboxMetric = {
 }
 
 export type ClientSandboxesMetrics = Record<string, ClientSandboxMetric>
+
+export type ClientTeamMetric = Omit<TeamMetric, 'timestamp'> & {
+  timestamp: number // unix timestamp in milliseconds
+}
+
+export type ClientTeamMetrics = Array<ClientTeamMetric>

@@ -1,8 +1,9 @@
 import { SandboxesMetricsRecord } from '@/types/api'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
-import { components } from '@/types/infra-api'
-
-type TeamMetric = components['schemas']['TeamMetric']
+import {
+  ClientSandboxesMetrics,
+  ClientTeamMetric,
+  ClientTeamMetrics,
+} from '@/types/sandboxes.types'
 
 export function transformMetricsToClientMetrics(
   metrics: SandboxesMetricsRecord
@@ -23,13 +24,10 @@ export function transformMetricsToClientMetrics(
   )
 }
 
-// calculateStep determines the step size for metrics based on the time range.
-// The result should always contain less than 1000 points.
-//
 // This function replicates the back-end step calculation logic from e2b-dev/infra.
 //
 // https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
-export function calculateStep(start: Date, end: Date): number {
+export function calculateTeamMetricsStep(start: Date, end: Date): number {
   const duration = end.getTime() - start.getTime()
   const hour = 60 * 60 * 1000
   const minute = 60 * 1000
@@ -51,53 +49,45 @@ export function calculateStep(start: Date, end: Date): number {
   }
 }
 
-// Processed team metrics data structure (after timestamp conversion to milliseconds)
-type ProcessedTeamMetric = {
-  timestamp: number // Unix timestamp in milliseconds
-  concurrentSandboxes: number
-  sandboxStartRate: number
-}
-
 /**
  * Fills missing timestamps in team metrics data with zero values.
  * The backend only sends non-zero deltas, so we need to fill gaps with zeros
  * according to the calculated step interval.
- * 
+ *
  * @param data - Sparse metrics data from backend (only non-zero points)
  * @param start - Start timestamp in milliseconds
  * @param end - End timestamp in milliseconds
  * @returns Complete dataset with zero-filled gaps at regular intervals
  */
-export function fillMetricsWithZeros(
-  data: ProcessedTeamMetric[],
+export function fillTeamMetricsWithZeros(
+  data: ClientTeamMetrics,
   start: number,
   end: number
-): ProcessedTeamMetric[] {
-  if (!data || data.length === 0) {
-    // If no data, return empty array
-    return []
-  }
-
+): ClientTeamMetrics {
   // Calculate the step interval in milliseconds
-  const step = calculateStep(new Date(start), new Date(end))
+  const step = calculateTeamMetricsStep(new Date(start), new Date(end))
 
   // Create a map of existing data points for quick lookup
-  const dataMap = new Map<number, ProcessedTeamMetric>()
-  data.forEach(point => {
+  const dataMap = new Map<number, ClientTeamMetric>()
+  data.forEach((point) => {
     // Round timestamp to nearest step to handle slight timing variations
     const roundedTimestamp = Math.floor(point.timestamp / step) * step
     dataMap.set(roundedTimestamp, point)
   })
 
   // Generate complete time series with zeros for missing points
-  const filledData: ProcessedTeamMetric[] = []
+  const filledData: ClientTeamMetrics = []
 
   // Start from the first step-aligned timestamp >= start
   const startAligned = Math.ceil(start / step) * step
   // End at the last step-aligned timestamp <= end
   const endAligned = Math.floor(end / step) * step
 
-  for (let timestamp = startAligned; timestamp <= endAligned; timestamp += step) {
+  for (
+    let timestamp = startAligned;
+    timestamp <= endAligned;
+    timestamp += step
+  ) {
     const existingPoint = dataMap.get(timestamp)
 
     if (existingPoint) {

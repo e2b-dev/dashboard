@@ -11,8 +11,8 @@ if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
   )
 }
 
-const SPAWN_COUNT = 10 // total sandboxes to spawn
-const BATCH_SIZE = 2 // how many sandboxes to spawn concurrently
+const SPAWN_COUNT = 40 // total sandboxes to spawn
+const BATCH_SIZE = 5 // how many sandboxes to spawn concurrently
 
 const SBX_TIMEOUT_MS = 40_000
 const STRESS_TIMEOUT_MS = 40_000
@@ -94,65 +94,65 @@ class StressTestRunner:
         self.chunk_mb = chunk_mb
         self.progress_interval = progress_interval
         self.start_time = time.time()
-        
+
     def log_progress(self, phase, progress, total, extra_info=""):
         elapsed = time.time() - self.start_time
         percent = (progress / total * 100) if total > 0 else 0
         print(f"STRESS_PROGRESS phase={phase} progress={progress}/{total} percent={percent:.1f} elapsed={elapsed:.2f}s {extra_info}")
-        
+
     def memory_stress_test(self):
         """Chunked memory allocation with pattern testing"""
         if not ${enableMemoryTest}:
             print("STRESS_SKIP phase=memory reason=disabled")
             return
-            
+
         print("STRESS_PHASE_START phase=memory target_mb=${memoryMb}")
         chunks = []
         chunk_size = self.chunk_mb * 1024 * 1024
         total_chunks = self.mem_mb // self.chunk_mb
-        
+
         try:
             # Phase 1: Chunked allocation
             for i in range(total_chunks):
                 chunk = bytearray(chunk_size)
                 chunks.append(chunk)
                 self.log_progress("memory_alloc", i + 1, total_chunks, f"allocated_mb={(i+1)*self.chunk_mb}")
-                
+
             # Phase 2: Memory pattern testing
             print("STRESS_PHASE_START phase=memory_patterns")
             for i, chunk in enumerate(chunks):
                 # Sequential write pattern
                 for j in range(0, len(chunk), 4096):
                     chunk[j] = (i + j) % 256
-                    
+
                 # Random access pattern
                 for _ in range(1000):
                     idx = random.randint(0, len(chunk) - 1)
                     chunk[idx] = random.randint(0, 255)
-                    
+
                 if (i + 1) % 10 == 0:
                     self.log_progress("memory_patterns", i + 1, len(chunks))
-                    
+
             print(f"STRESS_PHASE_COMPLETE phase=memory allocated_chunks={len(chunks)} total_mb={len(chunks) * self.chunk_mb}")
-            
+
         except MemoryError as e:
             print(f"STRESS_ERROR phase=memory error=MemoryError chunks_allocated={len(chunks)} details={str(e)}")
-            
+
         return chunks
-        
+
     def cpu_stress_test(self):
         """Multi-threaded CPU stress with various operation types"""
         if not ${enableCpuTest}:
             print("STRESS_SKIP phase=cpu reason=disabled")
             return 0.0
-            
+
         print("STRESS_PHASE_START phase=cpu target_ops=${cpuOps}")
-        
+
         def worker_thread(thread_id, ops_per_thread):
             """Worker function for CPU stress testing"""
             local_total = 0.0
             ops_completed = 0
-            
+
             for i in range(ops_per_thread):
                 # Mix of different CPU operations
                 if i % 4 == 0:
@@ -169,41 +169,41 @@ class StressTestRunner:
                     # List operations
                     temp_list = [random.randint(1, 100) for _ in range(10)]
                     local_total += sum(temp_list) % 1000
-                    
+
                 ops_completed += 1
                 if ops_completed % self.progress_interval == 0:
                     self.log_progress(f"cpu_thread_{thread_id}", ops_completed, ops_per_thread)
-                    
+
             return local_total
-            
+
         # Use multiple threads for CPU stress
         num_threads = min(4, os.cpu_count() or 1)
         ops_per_thread = self.cpu_ops // num_threads
         total_result = 0.0
-        
+
         print(f"STRESS_INFO phase=cpu threads={num_threads} ops_per_thread={ops_per_thread}")
-        
+
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             futures = [executor.submit(worker_thread, i, ops_per_thread) for i in range(num_threads)]
-            
+
             for future in as_completed(futures):
                 try:
                     result = future.result()
                     total_result += result
                 except Exception as e:
                     print(f"STRESS_ERROR phase=cpu_thread error={str(e)}")
-                    
+
         print(f"STRESS_PHASE_COMPLETE phase=cpu threads={num_threads} total_result={total_result}")
         return total_result
-        
+
     def io_stress_test(self):
         """File I/O stress testing"""
         if not ${enableIoTest}:
             print("STRESS_SKIP phase=io reason=disabled")
             return
-            
+
         print("STRESS_PHASE_START phase=io")
-        
+
         try:
             # Create multiple test files
             for i in range(10):
@@ -212,9 +212,9 @@ class StressTestRunner:
                     # Write substantial data
                     for j in range(1000):
                         f.write(f"Line {j} in file {i} with timestamp {time.time()}\\n")
-                        
+
                 self.log_progress("io_write", i + 1, 10)
-                
+
             # Read files back
             total_bytes = 0
             for i in range(10):
@@ -222,36 +222,36 @@ class StressTestRunner:
                 with open(filename, 'r') as f:
                     content = f.read()
                     total_bytes += len(content)
-                    
+
                 self.log_progress("io_read", i + 1, 10)
-                
+
             # JSON operations
             test_data = {"iteration": i, "data": list(range(100)), "timestamp": time.time()}
             for i in range(100):
                 with open(f"temp/json_test_{i}.json", 'w') as f:
                     json.dump(test_data, f)
-                    
+
                 if (i + 1) % 20 == 0:
                     self.log_progress("io_json", i + 1, 100)
-                    
+
             print(f"STRESS_PHASE_COMPLETE phase=io total_bytes={total_bytes}")
-            
+
         except Exception as e:
             print(f"STRESS_ERROR phase=io error={str(e)}")
-            
+
     def run_all_tests(self):
         """Run all stress tests in sequence"""
         print(f"STRESS_CONFIG mem_mb={self.mem_mb} cpu_ops={self.cpu_ops} chunk_mb={self.chunk_mb}")
-        
+
         # Run tests
         chunks = self.memory_stress_test()
         cpu_result = self.cpu_stress_test()
         self.io_stress_test()
-        
+
         # Cleanup
         if chunks:
             del chunks
-            
+
         total_duration = time.time() - self.start_time
         print(f"STRESS_COMPLETE duration={total_duration:.2f}s cpu_result={cpu_result}")
 
