@@ -34,7 +34,9 @@
     "test:watch": "bun scripts:check-all-env && vitest",
     "test:ui": "bun scripts:check-all-env && vitest --ui",
     "test:ui:integration": "bun scripts:check-app-env && vitest --ui src/__test__/integration/",
-    "test:development:metrics": "vitest run src/__test__/development/metrics.test.ts"
+
+    "test:development:burst": "vitest run src/__test__/development/burst.test.ts",
+    "test:development:traffic": "vitest run src/__test__/development/traffic.test.ts"
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.2.0",
