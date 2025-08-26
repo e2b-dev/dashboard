@@ -75,10 +75,11 @@ export function useSandboxesMetrics({
       shouldRetryOnError: true,
       errorRetryCount: 100,
       errorRetryInterval: pollingInterval,
-      revalidateOnMount: true,
+      revalidateOnMount: false,
       revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      keepPreviousData: true,
 
       fallbackData: initialMetrics ? { metrics: initialMetrics } : undefined,
       onSuccess: (data) => {

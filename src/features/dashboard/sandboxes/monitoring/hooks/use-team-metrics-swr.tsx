@@ -73,8 +73,7 @@ export default function useTeamMetricsSWR(
 
       const data = (await response.json()) as TeamMetricsResponse
 
-      // Handle case where metrics might be undefined or empty
-      if (!data.metrics || data.metrics.length === 0) {
+      if (!data.metrics) {
         return []
       }
 
@@ -82,8 +81,13 @@ export default function useTeamMetricsSWR(
     },
     {
       fallbackData: initialData,
+      shouldRetryOnError: false,
       refreshInterval: TEAM_METRICS_POLLING_INTERVAL_MS,
       keepPreviousData: true,
+      revalidateOnMount: false,
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
     }
   )
 }

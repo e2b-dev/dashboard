@@ -151,7 +151,6 @@ export function LineChart({
           symbolSize: 8,
           // renders the symbol only on hover, not always
           showSymbol: false,
-          emphasis: { focus: 'series' as const },
           lineStyle: {
             width: series.lineStyle?.width ?? 1,
             type: series.lineStyle?.type ?? 'solid',

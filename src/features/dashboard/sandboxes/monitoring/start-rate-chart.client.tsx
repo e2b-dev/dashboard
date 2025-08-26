@@ -56,6 +56,7 @@ export default function StartRateChartClient({
       <LineChart
         xType="time"
         className="mt-4 h-full"
+        curve="step"
         optionOverrides={{
           yAxis: {
             splitNumber: 2,

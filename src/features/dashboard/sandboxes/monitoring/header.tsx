@@ -1,10 +1,14 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/monitoring/page'
-import { TEAM_METRICS_LIVE_CONCURRENT_SANDBOXES_RANGE } from '@/configs/intervals'
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import ErrorTooltip from '@/ui/error-tooltip'
+import { LiveBadge } from '@/ui/live'
 import { AlertTriangle } from 'lucide-react'
-import { ConcurrentSandboxesClient } from './header.client'
+import {
+  ConcurrentSandboxesClient,
+  SandboxesStartRateClient,
+} from './header.client'
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
@@ -43,9 +47,11 @@ export default function SandboxesMonitoringHeader({
   return (
     <div className="flex md:flex-row flex-col items-center border-b w-full min-h-52">
       <BaseCard>
+        <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
         <ConcurrentSandboxes params={params} />
         <BaseSubtitle>Concurrent Sandboxes</BaseSubtitle>
       </BaseCard>
+
       <BaseCard>
         <MaxConcurrentSandboxes params={params} />
         <BaseSubtitle>
@@ -54,13 +60,12 @@ export default function SandboxesMonitoringHeader({
           (Last 30 Days)
         </BaseSubtitle>
       </BaseCard>
+
       <BaseCard>
-        <MaxSandboxesStartRate params={params} />
-        <BaseSubtitle>
-          Max. Sandbox Start Rate
-          <br />
-          (Last 30 Days)
-        </BaseSubtitle>
+        <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
+
+        <SandboxesStartRate params={params} />
+        <BaseSubtitle>Sandboxes Start Rate</BaseSubtitle>
       </BaseCard>
     </div>
   )
@@ -84,8 +89,8 @@ export const ConcurrentSandboxes = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const start = Date.now() - TEAM_METRICS_LIVE_CONCURRENT_SANDBOXES_RANGE
   const end = Date.now()
+  const start = end - TEAM_METRICS_INITIAL_RANGE_MS
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,
@@ -105,7 +110,7 @@ export const ConcurrentSandboxes = async ({
   return <ConcurrentSandboxesClient initialData={teamMetricsResult.data} />
 }
 
-export const MaxSandboxesStartRate = async ({
+export const SandboxesStartRate = async ({
   params,
 }: {
   params: Promise<SandboxesMonitoringPageParams>
@@ -113,7 +118,14 @@ export const MaxSandboxesStartRate = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const teamMetricsResult = await getTeamMetricsLast30Days(teamId)
+  const end = Date.now()
+  const start = end - TEAM_METRICS_INITIAL_RANGE_MS // get the last entry only
+
+  const teamMetricsResult = await getTeamMetrics({
+    teamId,
+    startDate: start,
+    endDate: end,
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -124,11 +136,7 @@ export const MaxSandboxesStartRate = async ({
     )
   }
 
-  const sandboxesStartRate = Math.max(
-    ...teamMetricsResult.data.map((item) => item.sandboxStartRate ?? 0)
-  )
-
-  return <span className="prose-value-big">{sandboxesStartRate}</span>
+  return <SandboxesStartRateClient initialData={teamMetricsResult.data} />
 }
 
 export const MaxConcurrentSandboxes = async ({
