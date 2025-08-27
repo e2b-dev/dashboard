@@ -1,10 +1,9 @@
-
 import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
-import { createClient } from '@/lib/clients/supabase/server'
 import { l } from '@/lib/clients/logger'
+import { createClient } from '@/lib/clients/supabase/server'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { TeamMetricsRequestSchema, TeamMetricsResponse } from './types'
 
@@ -17,7 +16,7 @@ export async function POST(
 
     const { start, end } = TeamMetricsRequestSchema.parse(await request.json())
 
-    // Convert milliseconds to seconds
+    // convert milliseconds to seconds
     const startSeconds = Math.floor(start / 1000)
     const endSeconds = Math.floor(end / 1000)
 
@@ -69,7 +68,7 @@ export async function POST(
       )
     }
 
-    const metrics = infraRes.data.map(d => ({
+    const metrics = infraRes.data.map((d) => ({
       ...d,
       timestamp: new Date(d.timestamp).getTime(),
     }))

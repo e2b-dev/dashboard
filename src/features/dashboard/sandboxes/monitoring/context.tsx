@@ -1,7 +1,16 @@
-"use client"
+'use client'
 
-import { TEAM_METRICS_INITIAL_RANGE_MS, TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
+import {
+  TEAM_METRICS_INITIAL_RANGE_MS,
+  TEAM_METRICS_POLLING_INTERVAL_MS,
+} from '@/configs/intervals'
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 
 interface TeamMetricsState {
   chartsStart: number
@@ -20,34 +29,41 @@ interface TeamMetricsProviderProps {
 }
 
 export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
-  const [chartsStart, setChartsStart] = useState<number>(Date.now() - TEAM_METRICS_INITIAL_RANGE_MS)
+  const [chartsStart, setChartsStart] = useState<number>(
+    Date.now() - TEAM_METRICS_INITIAL_RANGE_MS
+  )
   const [chartsEnd, setChartsEnd] = useState<number>(Date.now())
-  const [realtimeSyncRange, setRealtimeSyncRange] = useState<number | null>(TEAM_METRICS_INITIAL_RANGE_MS)
+  const [realtimeSyncRange, setRealtimeSyncRange] = useState<number | null>(
+    TEAM_METRICS_INITIAL_RANGE_MS
+  )
 
-  // whether to sync charts in realtime or keep an explicit range 
+  // whether to sync charts in realtime or keep an explicit range
   useEffect(() => {
     if (!realtimeSyncRange) return
+
+    setChartsStart(Date.now() - realtimeSyncRange)
+    setChartsEnd(Date.now())
 
     const interval = setInterval(() => {
       setChartsStart(Date.now() - realtimeSyncRange)
       setChartsEnd(Date.now())
-
-      // we want to have it shorter than the polling, to take affect on the next poll
     }, TEAM_METRICS_POLLING_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [realtimeSyncRange])
 
   return (
-    <TeamMetricsContext.Provider value={{
-      chartsStart,
-      chartsEnd,
-      realtimeSyncRange,
+    <TeamMetricsContext.Provider
+      value={{
+        chartsStart,
+        chartsEnd,
+        realtimeSyncRange,
 
-      setRealtimeSyncRange,
-      setChartsStart,
-      setChartsEnd,
-    }}>
+        setRealtimeSyncRange,
+        setChartsStart,
+        setChartsEnd,
+      }}
+    >
       {children}
     </TeamMetricsContext.Provider>
   )
@@ -64,4 +80,3 @@ export const useTeamMetrics = () => {
 
   return context
 }
-

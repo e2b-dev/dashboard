@@ -5,6 +5,7 @@ import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import { cache } from 'react'
 import { z } from 'zod'
 
@@ -31,7 +32,7 @@ export const getTeamMetrics = authActionClient
     const teamId = parsedInput.teamId
     let { startDate, endDate } = parsedInput
 
-    // Convert milliseconds to seconds
+    // convert milliseconds to seconds
     startDate = Math.floor(startDate / 1000)
     endDate = Math.floor(endDate / 1000)
 
@@ -61,10 +62,18 @@ export const getTeamMetrics = authActionClient
       return handleDefaultInfraError(status)
     }
 
-    return res.data.map((d) => ({
+    const processedData = res.data.map((d) => ({
       ...d,
       timestamp: new Date(d.timestamp).getTime(),
     }))
+
+    const filledData = fillTeamMetricsWithZeros(
+      processedData,
+      startDate,
+      endDate
+    )
+
+    return filledData
   })
 
 const getTeamMetricsMemoized = cache(

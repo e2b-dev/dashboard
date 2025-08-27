@@ -1,20 +1,28 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { cn } from '@/lib/utils/ui'
+import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { LineChart } from '@/ui/data/line-chart'
 import DefaultTooltip from '@/ui/data/tooltips'
 import { Badge } from '@/ui/primitives/badge'
-import { InferSafeActionFnResult } from 'next-safe-action'
+import { Button } from '@/ui/primitives/button'
 import { useTheme } from 'next-themes'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
-import { useFillTeamMetricsData } from './hooks/use-fill-team-metrics-data'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
+const CHART_RANGE_MAP = {
+  '1h': 1000 * 60 * 60,
+  '12H': 1000 * 60 * 60 * 12,
+  '1D': 1000 * 60 * 60 * 24,
+}
+
+const CHART_RANGE_MAP_KEYS = Object.keys(CHART_RANGE_MAP)
+
 interface ConcurrentChartProps {
-  initialData: InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  initialData: ClientTeamMetrics
 }
 
 export default function ConcurrentChartClient({
@@ -22,21 +30,23 @@ export default function ConcurrentChartClient({
 }: ConcurrentChartProps) {
   const { resolvedTheme } = useTheme()
 
-  const { chartsStart: start, chartsEnd: end } = useTeamMetrics()
+  const {
+    chartsStart: start,
+    chartsEnd: end,
+    setRealtimeSyncRange,
+  } = useTeamMetrics()
   const { data } = useTeamMetricsSWR(initialData, { start, end })
 
-  const filledData = useFillTeamMetricsData(data || [], start, end)
-
   const { chartStart, chartEnd } = useMemo(() => {
-    if (!filledData.length) return { chartStart: start, chartEnd: end }
+    if (!data.length) return { chartStart: start, chartEnd: end }
 
-    const firstTimestamp = filledData[0]?.timestamp || start
-    const lastTimestamp = filledData[filledData.length - 1]?.timestamp || end
+    const firstTimestamp = data[0]?.timestamp || start
+    const lastTimestamp = data[data.length - 1]?.timestamp || end
 
     return { chartStart: firstTimestamp, chartEnd: lastTimestamp }
-  }, [filledData, start, end])
+  }, [data, start, end])
 
-  const lineData = filledData.map((d) => ({
+  const lineData = data.map((d) => ({
     x: d.timestamp,
     y: d.concurrentSandboxes,
   }))
@@ -58,12 +68,52 @@ export default function ConcurrentChartClient({
     [resolvedTheme]
   )
 
+  const [range, setRange] = useState(CHART_RANGE_MAP_KEYS[0])
+
+  const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
+    switch (range) {
+      case '1h':
+        setRealtimeSyncRange(CHART_RANGE_MAP[range])
+        break
+      case '12H':
+        setRealtimeSyncRange(CHART_RANGE_MAP[range])
+        break
+      case '1D':
+        setRealtimeSyncRange(CHART_RANGE_MAP[range])
+        break
+    }
+
+    setRange(range)
+  }
+
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
-      <span className="prose-label-highlight uppercase">Concurrent</span>
-      <div className="inline-flex items-end gap-3 mt-2">
-        <span className="prose-value-big">{average.toFixed(1)}</span>
-        <span className="label-tertiary">AVG</span>
+      <div className="flex justify-between gap-6">
+        <div className="flex flex-col">
+          <span className="prose-label-highlight uppercase">Concurrent</span>
+          <div className="inline-flex items-end gap-3 mt-2">
+            <span className="prose-value-big">{average.toFixed(1)}</span>
+            <span className="label-tertiary">AVG</span>
+          </div>
+        </div>
+
+        <div className="flex items-end gap-3 h-full">
+          {CHART_RANGE_MAP_KEYS.map((key) => (
+            <Button
+              key={key}
+              variant="ghost"
+              size="iconSm"
+              className={cn('text-fg-tertiary hover:text-fg-secondary', {
+                'text-fg': range === key,
+              })}
+              onClick={() =>
+                handleRangeChange(key as keyof typeof CHART_RANGE_MAP)
+              }
+            >
+              {key}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <LineChart

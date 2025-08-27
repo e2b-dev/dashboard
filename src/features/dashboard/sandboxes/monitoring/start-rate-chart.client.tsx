@@ -1,18 +1,16 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { LineChart } from '@/ui/data/line-chart'
 import * as echarts from 'echarts'
-import { InferSafeActionFnResult } from 'next-safe-action'
 import { useTheme } from 'next-themes'
 import { useMemo } from 'react'
 import { useTeamMetrics } from './context'
-import { useFillTeamMetricsData } from './hooks/use-fill-team-metrics-data'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
 interface StartRateChartProps {
-  initialData: InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  initialData: ClientTeamMetrics
 }
 
 export default function StartRateChartClient({
@@ -24,18 +22,16 @@ export default function StartRateChartClient({
     end,
   })
 
-  const filledData = useFillTeamMetricsData(data || [], start, end)
-
   const { chartStart, chartEnd } = useMemo(() => {
-    if (!filledData.length) return { chartStart: start, chartEnd: end }
+    if (!data?.length) return { chartStart: start, chartEnd: end }
 
-    const firstTimestamp = filledData[0]?.timestamp || start
-    const lastTimestamp = filledData[filledData.length - 1]?.timestamp || end
+    const firstTimestamp = data[0]?.timestamp || start
+    const lastTimestamp = data[data.length - 1]?.timestamp || end
 
     return { chartStart: firstTimestamp, chartEnd: lastTimestamp }
-  }, [filledData, start, end])
+  }, [data, start, end])
 
-  const lineData = filledData.map((d) => ({
+  const lineData = data?.map((d) => ({
     x: d.timestamp,
     y: d.sandboxStartRate,
   }))
@@ -76,7 +72,7 @@ export default function StartRateChartClient({
           },
         }}
         data={
-          cssVars['--fg']
+          cssVars['--fg'] && lineData
             ? [
                 {
                   id: 'rate',

@@ -3,8 +3,8 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { InferSafeActionFnResult } from 'next-safe-action'
+import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
+import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { useMemo } from 'react'
 import useSWR from 'swr'
 
@@ -33,7 +33,7 @@ function calculateTimeFromRange(range: number): { start: number; end: number } {
 }
 
 export default function useTeamMetricsSWR(
-  initialData: InferSafeActionFnResult<typeof getTeamMetrics>['data'],
+  initialData: ClientTeamMetrics,
   timeParams: TimeRangeParams
 ) {
   const selectedTeam = useSelectedTeam()
@@ -77,7 +77,11 @@ export default function useTeamMetricsSWR(
         return []
       }
 
-      return data.metrics
+      return fillTeamMetricsWithZeros(
+        data.metrics,
+        currentTimeRange.start,
+        currentTimeRange.end
+      )
     },
     {
       fallbackData: initialData,
