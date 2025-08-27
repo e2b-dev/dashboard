@@ -6,6 +6,7 @@ import { LineChart } from '@/ui/data/line-chart'
 import DefaultTooltip from '@/ui/data/tooltips'
 import { Badge } from '@/ui/primitives/badge'
 import { InferSafeActionFnResult } from 'next-safe-action'
+import { useTheme } from 'next-themes'
 import { useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
@@ -19,6 +20,8 @@ interface ConcurrentChartProps {
 export default function ConcurrentChartClient({
   initialData,
 }: ConcurrentChartProps) {
+  const { resolvedTheme } = useTheme()
+
   const { chartsStart: start, chartsEnd: end } = useTeamMetrics()
   const { data } = useTeamMetricsSWR(initialData, { start, end })
 
@@ -47,8 +50,12 @@ export default function ConcurrentChartClient({
   }, [lineData])
 
   const cssVars = useCssVars(
-    ['--accent-main-highlight', '--accent-main-bg'],
-    []
+    [
+      '--accent-main-highlight',
+      '--graph-area-accent-main-from',
+      '--graph-area-accent-main-to',
+    ] as const,
+    [resolvedTheme]
   )
 
   return (
@@ -111,19 +118,39 @@ export default function ConcurrentChartClient({
 
           return renderToString(<DefaultTooltip label={label} items={items} />)
         }}
-        data={[
-          {
-            id: 'concurrent-sandboxes',
-            name: 'Running Sandboxes',
-            data: lineData,
-            lineStyle: {
-              color: cssVars['--accent-main-highlight'],
-            },
-            areaStyle: {
-              color: cssVars['--accent-main-bg'],
-            },
-          },
-        ]}
+        data={
+          cssVars['--accent-main-highlight']
+            ? [
+                {
+                  id: 'concurrent-sandboxes',
+                  name: 'Running Sandboxes',
+                  data: lineData,
+                  lineStyle: {
+                    color: cssVars['--accent-main-highlight'],
+                  },
+                  areaStyle: {
+                    color: {
+                      type: 'linear',
+                      x: 0,
+                      y: 0,
+                      x2: 0,
+                      y2: 1,
+                      colorStops: [
+                        {
+                          offset: 0,
+                          color: cssVars['--graph-area-accent-main-from'],
+                        },
+                        {
+                          offset: 1,
+                          color: cssVars['--graph-area-accent-main-to'],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ]
+            : []
+        }
       />
     </div>
   )

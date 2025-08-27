@@ -1,8 +1,11 @@
 'use client'
 
+import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { LineChart } from '@/ui/data/line-chart'
+import * as echarts from 'echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
+import { useTheme } from 'next-themes'
 import { useMemo } from 'react'
 import { useTeamMetrics } from './context'
 import { useFillTeamMetricsData } from './hooks/use-fill-team-metrics-data'
@@ -45,6 +48,13 @@ export default function StartRateChartClient({
     )
   }, [lineData])
 
+  const { resolvedTheme } = useTheme()
+
+  const cssVars = useCssVars(
+    ['--fg', '--graph-area-fg-from', '--graph-area-fg-to'] as const,
+    [resolvedTheme]
+  )
+
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
       <span className="prose-label-highlight uppercase">Start Rate</span>
@@ -56,7 +66,6 @@ export default function StartRateChartClient({
       <LineChart
         xType="time"
         className="mt-4 h-full"
-        curve="step"
         optionOverrides={{
           yAxis: {
             splitNumber: 2,
@@ -66,13 +75,32 @@ export default function StartRateChartClient({
             max: chartEnd,
           },
         }}
-        data={[
-          {
-            id: 'rate',
-            name: 'Rate',
-            data: lineData,
-          },
-        ]}
+        data={
+          cssVars['--fg']
+            ? [
+                {
+                  id: 'rate',
+                  name: 'Rate',
+                  data: lineData,
+                  lineStyle: {
+                    color: cssVars['--fg'],
+                  },
+                  areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                      {
+                        offset: 0,
+                        color: cssVars['--graph-area-fg-from'],
+                      },
+                      {
+                        offset: 1,
+                        color: cssVars['--graph-area-fg-to'],
+                      },
+                    ]),
+                  },
+                },
+              ]
+            : []
+        }
       />
     </div>
   )

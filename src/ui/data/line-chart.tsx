@@ -18,11 +18,10 @@ export interface LinePoint {
   y: number
 }
 
-export interface LineSeries {
+export interface LineSeries
+  extends Partial<Omit<echarts.LineSeriesOption, 'data'>> {
   id: string
   data: LinePoint[]
-  lineStyle?: echarts.LineSeriesOption['lineStyle']
-  areaStyle?: echarts.LineSeriesOption['areaStyle']
   name?: string
   curve?: CurveKind
 }

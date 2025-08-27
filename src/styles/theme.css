@@ -111,6 +111,12 @@
 
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
+
+  --graph-area-accent-main-from: rgba(108, 60, 6, 0.30);
+  --graph-area-accent-main-to: rgba(10, 10, 10, 0.30);
+
+  --graph-area-fg-from: rgba(108, 108, 108, 0.20);
+  --graph-area-fg-to: rgba(10, 10, 10, 0.20);
 }
 
 .dark {
@@ -165,6 +171,12 @@
 
   --shadow: hsl(0 0% 3%);
   --shadow-strength: 0.2;
+
+  --graph-area-accent-main-from: rgba(108, 60, 6, 0.30);
+  --graph-area-accent-main-to: rgba(10, 10, 10, 0.30);
+
+  --graph-area-fg-from: rgba(108, 108, 108, 0.20);
+  --graph-area-fg-to: rgba(10, 10, 10, 0.20);
 }
 
 @theme {
