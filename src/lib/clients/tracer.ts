@@ -1,3 +1,4 @@
-import { trace } from '@opentelemetry/api'
+import { api } from '@opentelemetry/sdk-node'
 
-export const getTracer = () => trace.getTracer('dashboard')
+export const getTracer = () =>
+  api.trace.getTracer(process.env.OTEL_SERVICE_NAME || 'e2b-dashboard')
