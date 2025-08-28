@@ -500,7 +500,6 @@ describe('E2B Sandbox metrics', () => {
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
-                  errorPhase: 'file_check',
                   error: fileCheck.stderr,
                 })
                 return
@@ -536,7 +535,6 @@ describe('E2B Sandbox metrics', () => {
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
-                  errorPhase: 'chmod',
                   error: chmodResult.stderr,
                 })
                 return
@@ -583,7 +581,6 @@ describe('E2B Sandbox metrics', () => {
                 results.push({
                   sandboxId: sbx.sandboxId,
                   success: false,
-                  errorPhase: 'command_execution',
                   error: errorMessage,
                 })
 
