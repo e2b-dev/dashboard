@@ -26,6 +26,14 @@ export const serverSchema = z.object({
   VERCEL_URL: z.string().optional(),
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   VERCEL_BRANCH_URL: z.string().optional(),
+  VERCEL_REGION: z.string().optional(),
+  VERCEL_DEPLOYMENT_ID: z.string().optional(),
+  VERCEL_GIT_COMMIT_SHA: z.string().optional(),
+  VERCEL_GIT_COMMIT_MESSAGE: z.string().optional(),
+  VERCEL_GIT_COMMIT_AUTHOR_NAME: z.string().optional(),
+  VERCEL_GIT_REPO_SLUG: z.string().optional(),
+  VERCEL_GIT_REPO_OWNER: z.string().optional(),
+  VERCEL_GIT_PROVIDER: z.string().optional(),
 })
 
 export const clientSchema = z.object({
