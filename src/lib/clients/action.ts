@@ -54,7 +54,7 @@ export const actionClient = createSafeActionClient({
   const type = metadata?.serverFunctionName ? 'function' : 'action'
   const name = actionOrFunctionName
 
-  const s = t?.startSpan(`${type}:${name}`)
+  const s = t.startSpan(`${type}:${name}`)
 
   const startTime = performance.now()
 
@@ -73,28 +73,28 @@ export const actionClient = createSafeActionClient({
     user_id: flattenClientInputValue(clientInput, 'userId'),
   }
 
-  s?.setAttribute('action_type', type)
-  s?.setAttribute('action_name', name)
-  s?.setAttribute('duration_ms', baseLogPayload.server_function_duration_ms)
+  s.setAttribute('action_type', type)
+  s.setAttribute('action_name', name)
+  s.setAttribute('duration_ms', baseLogPayload.server_function_duration_ms)
   if (baseLogPayload.team_id) {
-    s?.setAttribute('team_id', baseLogPayload.team_id)
+    s.setAttribute('team_id', baseLogPayload.team_id)
   }
   if (baseLogPayload.template_id) {
-    s?.setAttribute('template_id', baseLogPayload.template_id)
+    s.setAttribute('template_id', baseLogPayload.template_id)
   }
   if (baseLogPayload.sandbox_id) {
-    s?.setAttribute('sandbox_id', baseLogPayload.sandbox_id)
+    s.setAttribute('sandbox_id', baseLogPayload.sandbox_id)
   }
   if (baseLogPayload.user_id) {
-    s?.setAttribute('user_id', baseLogPayload.user_id)
+    s.setAttribute('user_id', baseLogPayload.user_id)
   }
 
   const error =
     result.serverError || result.validationErrors || result.success === false
 
   if (error) {
-    s?.setStatus({ code: SpanStatusCode.ERROR })
-    s?.recordException(error)
+    s.setStatus({ code: SpanStatusCode.ERROR })
+    s.recordException(error)
 
     const sE = serializeError(error)
 
@@ -107,7 +107,7 @@ export const actionClient = createSafeActionClient({
       `${type} ${name} failed in ${baseLogPayload.server_function_duration_ms}ms: ${typeof sE === 'string' ? sE : ((sE.name || sE.code) && `${sE.name || sE.code}: ` + sE.message) || 'Unknown error'}`
     )
   } else {
-    s?.setStatus({ code: SpanStatusCode.OK })
+    s.setStatus({ code: SpanStatusCode.OK })
 
     l.info(
       {
@@ -118,7 +118,7 @@ export const actionClient = createSafeActionClient({
     )
   }
 
-  s?.end()
+  s.end()
 
   return result
 })
