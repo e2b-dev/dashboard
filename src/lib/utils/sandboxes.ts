@@ -1,3 +1,4 @@
+import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { SandboxesMetricsRecord } from '@/types/api'
 import {
   ClientSandboxesMetrics,
@@ -64,23 +65,18 @@ export function fillTeamMetricsWithZeros(
   start: number,
   end: number
 ): ClientTeamMetrics {
-  // Calculate the step interval in milliseconds
   const step = calculateTeamMetricsStep(new Date(start), new Date(end))
 
-  // Create a map of existing data points for quick lookup
   const dataMap = new Map<number, ClientTeamMetric>()
   data.forEach((point) => {
-    // Round timestamp to nearest step to handle slight timing variations
+    // round timestamp to nearest step to handle slight timing variations
     const roundedTimestamp = Math.floor(point.timestamp / step) * step
     dataMap.set(roundedTimestamp, point)
   })
 
-  // Generate complete time series with zeros for missing points
   const filledData: ClientTeamMetrics = []
 
-  // Start from the first step-aligned timestamp >= start
   const startAligned = Math.ceil(start / step) * step
-  // End at the last step-aligned timestamp <= end
   const endAligned = Math.floor(end / step) * step
 
   for (
@@ -91,16 +87,25 @@ export function fillTeamMetricsWithZeros(
     const existingPoint = dataMap.get(timestamp)
 
     if (existingPoint) {
-      // Use existing data point
       filledData.push(existingPoint)
     } else {
-      // Fill with zeros for missing timestamp
       filledData.push({
         timestamp,
         concurrentSandboxes: 0,
         sandboxStartRate: 0,
       })
     }
+  }
+
+  // under 30 seconds can never have a data point of zero, for the case that the user wants to see realtime data (which is 30 seconds in the past)
+  if (
+    filledData.length > 0 &&
+    filledData[filledData.length - 1]!.timestamp +
+      TEAM_METRICS_POLLING_INTERVAL_MS >
+      Date.now() &&
+    filledData[filledData.length - 1]!.concurrentSandboxes === 0
+  ) {
+    filledData.pop()
   }
 
   return filledData

@@ -27,9 +27,7 @@ export default function DefaultTooltip({ label, items }: DefaultTooltipProps) {
           </div>
         ))}
         {label && (
-          <span className="text-fg-tertiary font-mono prose-label mt-1">
-            {label}
-          </span>
+          <span className="text-fg-tertiary prose-label mt-1">{label}</span>
         )}
       </div>
     </div>

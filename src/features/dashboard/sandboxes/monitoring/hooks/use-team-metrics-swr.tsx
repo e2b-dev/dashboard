@@ -53,7 +53,9 @@ export default function useTeamMetricsSWR(
     async ([url, teamId]) => {
       if (!url || !teamId) return []
 
-      const currentTimeRange = isExplicitTimeRange(timeParams)
+      const isExplicit = isExplicitTimeRange(timeParams)
+
+      const currentTimeRange = isExplicit
         ? { start: timeParams.start, end: timeParams.end }
         : calculateTimeFromRange(timeParams.realtimeSyncRange)
 

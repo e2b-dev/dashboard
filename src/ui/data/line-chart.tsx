@@ -1,13 +1,17 @@
 'use client'
 
+import { useTeamMetrics } from '@/features/dashboard/sandboxes/monitoring/context'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import DefaultTooltip from '@/ui/data/tooltips'
 import deepmerge from 'deepmerge'
 import * as echarts from 'echarts'
 import { EChartsOption } from 'echarts'
-import ReactECharts from 'echarts-for-react'
+import {
+  default as EChartsReact,
+  default as ReactECharts,
+} from 'echarts-for-react'
 import { useTheme } from 'next-themes'
-import * as React from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { renderToString } from 'react-dom/server'
 import { Badge } from '../primitives/badge'
 
@@ -58,6 +62,7 @@ export interface LineChartProps extends AxisControls, LayoutControls {
     params: echarts.TooltipComponentFormatterCallbackParams
   ) => string
   optionOverrides?: EChartsOption
+  enableDragZoom?: boolean
 }
 
 function mapCurveToSeriesOptions(curve?: CurveKind): {
@@ -107,7 +112,11 @@ export function LineChart({
   showAxisXTicks,
   showAxisYTicks,
   grid,
+  enableDragZoom = false,
 }: LineChartProps) {
+  const ref = useRef<EChartsReact>(null)
+  const { setChartsStart, setChartsEnd } = useTeamMetrics()
+
   const { resolvedTheme } = useTheme()
 
   const cssVars = useCssVars(
@@ -122,17 +131,14 @@ export function LineChart({
     [resolvedTheme]
   )
 
-  const resolvedFormat: AxisFormatters = React.useMemo(
+  const resolvedFormat: AxisFormatters = useMemo(
     () => ({ x: format?.x, y: format?.y }),
     [format?.x, format?.y]
   )
 
-  const curveOptions = React.useMemo(
-    () => mapCurveToSeriesOptions(curve),
-    [curve]
-  )
+  const curveOptions = useMemo(() => mapCurveToSeriesOptions(curve), [curve])
 
-  const resolvedSeries = React.useMemo(() => {
+  const resolvedSeries = useMemo(() => {
     return data.map(
       (series) =>
         ({
@@ -167,7 +173,7 @@ export function LineChart({
     )
   }, [curveOptions, data, cssVars])
 
-  const option = React.useMemo<EChartsOption>(() => {
+  const option = useMemo<EChartsOption>(() => {
     const axisPointerStyle = {
       type: 'line' as const,
       lineStyle: {
@@ -185,6 +191,14 @@ export function LineChart({
         left: 0,
         ...(grid ?? {}),
       },
+      dataZoom: enableDragZoom
+        ? [
+            {
+              type: 'inside',
+              throttle: 100,
+            },
+          ]
+        : undefined,
       animation: false,
       tooltip: {
         show: true,
@@ -324,11 +338,32 @@ export function LineChart({
     tooltipFormatter,
     showGridX,
     showGridY,
+    enableDragZoom,
   ])
+
+  useEffect(() => {
+    const echartsInstance = ref.current?.getEchartsInstance?.()
+    if (!echartsInstance) return
+
+    if (enableDragZoom) {
+      echartsInstance.dispatchAction({
+        type: 'takeGlobalCursor',
+        key: 'dataZoomSelect',
+        dataZoomSelectActive: true,
+      })
+    } else {
+      echartsInstance.dispatchAction({
+        type: 'takeGlobalCursor',
+        key: 'dataZoomSelect',
+        dataZoomSelectActive: false,
+      })
+    }
+  }, [enableDragZoom])
 
   return (
     <div className={className ?? 'w-full h-full'} style={style}>
       <ReactECharts
+        ref={ref}
         key={resolvedTheme}
         option={option}
         notMerge={true}
@@ -347,13 +382,13 @@ function TimeSeriesLineChart({
   minimumVisualRangeMs = 0,
   ...rest
 }: TimeSeriesLineChartProps) {
-  const now = React.useMemo(() => Date.now(), [])
-  const min = React.useMemo(
+  const now = useMemo(() => Date.now(), [])
+  const min = useMemo(
     () => now - Math.max(0, minimumVisualRangeMs),
     [now, minimumVisualRangeMs]
   )
 
-  const optionOverrides = React.useMemo<EChartsOption>(
+  const optionOverrides = useMemo<EChartsOption>(
     () => ({
       xAxis: { min, max: now },
     }),

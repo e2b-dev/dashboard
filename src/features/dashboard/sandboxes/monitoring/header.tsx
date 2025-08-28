@@ -119,7 +119,7 @@ export const SandboxesStartRate = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = Date.now()
-  const start = end - TEAM_METRICS_INITIAL_RANGE_MS // get the last entry only
+  const start = end - 1000 * 60 * 60 * 6 + 1 // get the last hour entry only
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,

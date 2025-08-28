@@ -11,6 +11,7 @@ export function LiveDot() {
 
 interface LiveBadgeProps {
   className?: string
+  tooltip?: string
 }
 
 export function LiveBadge({ className }: LiveBadgeProps) {

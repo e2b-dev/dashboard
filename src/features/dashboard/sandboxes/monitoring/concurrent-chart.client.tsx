@@ -15,8 +15,11 @@ import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
 const CHART_RANGE_MAP = {
   '1h': 1000 * 60 * 60,
+  '6h': 1000 * 60 * 60 * 6,
   '12H': 1000 * 60 * 60 * 12,
   '1D': 1000 * 60 * 60 * 24,
+  '7D': 1000 * 60 * 60 * 24 * 7,
+  '30D': 1000 * 60 * 60 * 24 * 30,
 }
 
 const CHART_RANGE_MAP_KEYS = Object.keys(CHART_RANGE_MAP)
@@ -38,7 +41,7 @@ export default function ConcurrentChartClient({
   const { data } = useTeamMetricsSWR(initialData, { start, end })
 
   const { chartStart, chartEnd } = useMemo(() => {
-    if (!data.length) return { chartStart: start, chartEnd: end }
+    if (!data?.length) return { chartStart: start, chartEnd: end }
 
     const firstTimestamp = data[0]?.timestamp || start
     const lastTimestamp = data[data.length - 1]?.timestamp || end
@@ -46,13 +49,17 @@ export default function ConcurrentChartClient({
     return { chartStart: firstTimestamp, chartEnd: lastTimestamp }
   }, [data, start, end])
 
-  const lineData = data.map((d) => ({
-    x: d.timestamp,
-    y: d.concurrentSandboxes,
-  }))
+  const lineData = useMemo(
+    () =>
+      data?.map((d) => ({
+        x: d.timestamp,
+        y: d.concurrentSandboxes,
+      })) || [],
+    [data]
+  )
 
   const average = useMemo(() => {
-    if (!lineData?.length) return 0
+    if (!lineData.length) return 0
 
     return (
       lineData.reduce((acc, cur) => acc + (cur.y || 0), 0) / lineData.length
@@ -71,18 +78,7 @@ export default function ConcurrentChartClient({
   const [range, setRange] = useState(CHART_RANGE_MAP_KEYS[0])
 
   const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
-    switch (range) {
-      case '1h':
-        setRealtimeSyncRange(CHART_RANGE_MAP[range])
-        break
-      case '12H':
-        setRealtimeSyncRange(CHART_RANGE_MAP[range])
-        break
-      case '1D':
-        setRealtimeSyncRange(CHART_RANGE_MAP[range])
-        break
-    }
-
+    setRealtimeSyncRange(CHART_RANGE_MAP[range])
     setRange(range)
   }
 
@@ -119,7 +115,7 @@ export default function ConcurrentChartClient({
       <LineChart
         xType="time"
         className="mt-4 h-full"
-        curve="step"
+        enableDragZoom
         optionOverrides={{
           yAxis: {
             splitNumber: 2,
@@ -151,6 +147,7 @@ export default function ConcurrentChartClient({
               hour12: false,
               hour: '2-digit',
               minute: '2-digit',
+              second: '2-digit',
             })
             return `${day} ${month} - ${time}`
           })()
