@@ -22,7 +22,10 @@ export const actionClient = createSafeActionClient({
     const sE = serializeError(e)
 
     l.error(
-      { key: 'action_client:unexpected_server_error', error: sE },
+      {
+        key: 'action_client:unexpected_server_error',
+        error: sE,
+      },
       `${sE.name && `${sE.name}: `} ${sE.message || 'Unknown error'}`
     )
 

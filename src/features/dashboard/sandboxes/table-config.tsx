@@ -57,15 +57,18 @@ export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
       return stringifiedMetadata.includes(value)
     }
   } catch (error) {
-    l.error({
-      key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
-      error: serializeError(error),
-      context: {
-        row,
-        columnId,
-        value,
+    l.error(
+      {
+        key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
+        error: serializeError(error),
+        context: {
+          row,
+          columnId,
+          value,
+        },
       },
-    })
+      `Fuzzy filter failed with error: ${error instanceof Error ? error.message : String(error)}`
+    )
     return false
   }
 

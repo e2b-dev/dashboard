@@ -20,11 +20,13 @@ export default function ErrorBoundary({
   hideFrame?: boolean
 }) {
   useEffect(() => {
-    l.error({
-      key: 'error_boundary',
-      message: error.message,
-      sanitizedError: serializeError(error),
-    })
+    l.error(
+      {
+        key: 'error_boundary',
+        sanitizedError: serializeError(error),
+      },
+      `${error.message}`
+    )
   }, [error])
 
   return (

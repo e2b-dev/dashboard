@@ -104,13 +104,16 @@ export default async function CLIAuthPage({
 
   // Validate redirect URL
   if (!next?.startsWith('http://localhost')) {
-    l.error({
-      key: 'cli_auth:invalid_redirect_url',
-      user_id: user?.id,
-      context: {
-        next,
+    l.error(
+      {
+        key: 'cli_auth:invalid_redirect_url',
+        user_id: user?.id,
+        context: {
+          next,
+        },
       },
-    })
+      `Invalid redirect URL: ${next}`
+    )
     redirect(PROTECTED_URLS.DASHBOARD)
   }
 
@@ -144,14 +147,17 @@ export default async function CLIAuthPage({
         throw err
       }
 
-      l.error({
-        key: 'cli_auth:unexpected_error',
-        error: serializeError(err),
-        user_id: user?.id,
-        context: {
-          next,
+      l.error(
+        {
+          key: 'cli_auth:unexpected_error',
+          error: serializeError(err),
+          user_id: user?.id,
+          context: {
+            next,
+          },
         },
-      })
+        `Unexpected error during CLI authentication: ${err instanceof Error ? err.message : String(err)}`
+      )
 
       return encodedRedirect('error', '/auth/cli', (err as Error).message, {
         next,

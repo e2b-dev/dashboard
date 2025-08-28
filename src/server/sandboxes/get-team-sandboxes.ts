@@ -36,6 +36,7 @@ export const getTeamSandboxes = authActionClient
         }
       }
 
+      const includeTerminated = false
       const sandboxesRes = await infra.GET('/sandboxes', {
         headers: {
           ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
@@ -46,32 +47,36 @@ export const getTeamSandboxes = authActionClient
       if (sandboxesRes.error) {
         const status = sandboxesRes.response.status
 
-        l.error({
-          key: 'get_team_sandboxes:infra_error',
-          message: sandboxesRes.error.message,
-          error: sandboxesRes.error,
-          team_id: teamId,
-          user_id: session.user.id,
-          context: {
-            status,
-            path: '/sandboxes',
+        l.error(
+          {
+            key: 'get_team_sandboxes:infra_error',
+            error: sandboxesRes.error,
+            team_id: teamId,
+            user_id: session.user.id,
+            context: {
+              status,
+              includeTerminated,
+            },
           },
-        })
+          `Failed to get team sandboxes: ${sandboxesRes.error.message}`
+        )
 
         return handleDefaultInfraError(status)
       }
 
-      l.info({
-        key: 'get_team_sandboxes:success',
-        message: 'Successfully fetched team sandboxes',
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          status: sandboxesRes.response.status,
-          path: '/sandboxes',
-          sandbox_count: sandboxesRes.data.length,
+      l.info(
+        {
+          key: 'get_team_sandboxes:success',
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status: sandboxesRes.response.status,
+            path: '/sandboxes',
+            sandbox_count: sandboxesRes.data.length,
+          },
         },
-      })
+        `Successfully fetched team sandboxes`
+      )
 
       return {
         sandboxes: sandboxesRes.data,
