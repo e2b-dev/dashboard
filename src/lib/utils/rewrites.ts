@@ -6,7 +6,7 @@ import {
 import { RewriteConfig } from '@/types/rewrites.types'
 import * as cheerio from 'cheerio'
 import { serializeError } from 'serialize-error'
-import { l } from '../clients/logger/logger'
+import { l } from '../clients/logger'
 
 function getRewriteForPath(
   path: string,

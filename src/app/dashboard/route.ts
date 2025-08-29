@@ -2,6 +2,7 @@ import { COOKIE_KEYS } from '@/configs/keys'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
+import { checkAuthenticated } from '@/lib/utils/server'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -30,9 +31,9 @@ export async function GET(request: NextRequest) {
   // 2. Create Supabase client and get user
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.getUser()
+  const { user } = await checkAuthenticated()
 
-  if (error || !data.user) {
+  if (!user) {
     // Redirect to sign-in if not authenticated
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
         team:teams(*)
       `
       )
-      .eq('user_id', data.user.id)
+      .eq('user_id', user.id)
 
     if (!teamsData?.length) {
       // No teams, redirect to new team creation

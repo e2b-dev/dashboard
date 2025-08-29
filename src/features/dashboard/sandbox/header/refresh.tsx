@@ -1,6 +1,6 @@
 'use client'
 
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { PollingButton } from '@/ui/polling-button'
 import { useCallback, useState } from 'react'
 import { serializeError } from 'serialize-error'

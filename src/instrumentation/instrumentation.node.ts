@@ -7,14 +7,17 @@ import {
   hostDetector,
   resourceFromAttributes,
 } from '@opentelemetry/resources'
-import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
+import { SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs'
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions'
 import { FetchInstrumentation } from '@vercel/otel'
+import { CompositeSpanProcessor } from './span-processor'
+import { VercelRuntimeSpanExporter } from './vercel/exporter'
 
 function parseResourceAttributes(
   resourceAttrs?: string
@@ -44,12 +47,11 @@ const {
   VERCEL_REGION,
   VERCEL_DEPLOYMENT_ID,
   VERCEL_GIT_COMMIT_SHA,
-  VERCEL_GIT_COMMIT_MESSAGE,
-  VERCEL_GIT_COMMIT_AUTHOR_NAME,
-  VERCEL_GIT_REPO_SLUG,
-  VERCEL_GIT_REPO_OWNER,
-  VERCEL_GIT_PROVIDER,
 } = process.env
+
+const traceExporter = new OTLPTraceExporter({
+  url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,
+})
 
 const sdk = new NodeSDK({
   resource: resourceFromAttributes({
@@ -58,6 +60,7 @@ const sdk = new NodeSDK({
     // Parse additional resource attributes from environment
     ...parseResourceAttributes(OTEL_RESOURCE_ATTRIBUTES),
     // Vercel context
+    'vercel.runtime': process.env.NEXT_RUNTIME || 'nodejs',
     ...(VERCEL_ENV && { 'vercel.env': VERCEL_ENV }),
     ...(VERCEL_URL && { 'vercel.url': VERCEL_URL }),
     ...(VERCEL_PROJECT_PRODUCTION_URL && {
@@ -71,30 +74,23 @@ const sdk = new NodeSDK({
     ...(VERCEL_GIT_COMMIT_SHA && {
       'vercel.git.commit_sha': VERCEL_GIT_COMMIT_SHA,
     }),
-    ...(VERCEL_GIT_COMMIT_MESSAGE && {
-      'vercel.git.commit_message': VERCEL_GIT_COMMIT_MESSAGE,
-    }),
-    ...(VERCEL_GIT_COMMIT_AUTHOR_NAME && {
-      'vercel.git.commit_author': VERCEL_GIT_COMMIT_AUTHOR_NAME,
-    }),
-    ...(VERCEL_GIT_REPO_SLUG && {
-      'vercel.git.repo_slug': VERCEL_GIT_REPO_SLUG,
-    }),
-    ...(VERCEL_GIT_REPO_OWNER && {
-      'vercel.git.repo_owner': VERCEL_GIT_REPO_OWNER,
-    }),
-    ...(VERCEL_GIT_PROVIDER && { 'vercel.git.provider': VERCEL_GIT_PROVIDER }),
   }),
-  traceExporter: new OTLPTraceExporter({
-    url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,
-  }),
+  spanProcessors: [
+    new CompositeSpanProcessor(
+      [
+        new BatchSpanProcessor(new VercelRuntimeSpanExporter()),
+        new BatchSpanProcessor(traceExporter),
+      ],
+      undefined
+    ),
+  ],
   metricReader: new PeriodicExportingMetricReader({
     exporter: new OTLPMetricExporter({
       url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/metrics`,
     }),
   }),
   logRecordProcessors: [
-    new BatchLogRecordProcessor(
+    new SimpleLogRecordProcessor(
       new OTLPLogExporter({
         url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs`,
       })
@@ -104,6 +100,9 @@ const sdk = new NodeSDK({
     getNodeAutoInstrumentations({
       // disable `instrumentation-fs` because it's bloating the traces
       '@opentelemetry/instrumentation-fs': {
+        enabled: false,
+      },
+      '@opentelemetry/instrumentation-http': {
         enabled: false,
       },
     }),

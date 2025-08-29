@@ -7,7 +7,7 @@ import {
 } from '@/configs/mock-data'
 import { actionClient, authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { DefaultTemplate } from '@/types/api'

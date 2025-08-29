@@ -1,4 +1,4 @@
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { getUsageThroughReactCache } from '@/server/usage/get-usage'
 import { ChartPlaceholder } from '@/ui/chart-placeholder'
 import {

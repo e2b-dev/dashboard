@@ -5,7 +5,7 @@ import { infra } from '@/lib/clients/api'
 import { createClient } from '@/lib/clients/supabase/server'
 import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
 
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { MetricsRequestSchema, MetricsResponse } from './types'
 

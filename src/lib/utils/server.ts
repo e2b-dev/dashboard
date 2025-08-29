@@ -11,7 +11,7 @@ import { cookies } from 'next/headers'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { infra } from '../clients/api'
-import { l } from '../clients/logger/logger'
+import { l } from '../clients/logger'
 import { returnServerError } from './action'
 
 /*
@@ -21,6 +21,8 @@ import { returnServerError } from './action'
  *  @params request - an optional NextRequest object to create a supabase client for route handlers
  */
 export async function checkAuthenticated() {
+  l.debug({ key: 'check_authenticated:called' }, 'Checking authentication')
+
   const supabase = await createClient()
 
   // retrieve session from storage medium (cookies)
@@ -33,16 +35,27 @@ export async function checkAuthenticated() {
     throw UnauthenticatedError()
   }
 
-  // now retrieve user from supabase to use further
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data } = await getUserMemo(supabase)
 
-  if (!user) {
+  if (!data.user) {
     throw UnauthenticatedError()
   }
 
-  return { user, session, supabase }
+  return { user: data.user, session, supabase }
+}
+
+export const getUserMemo = async (
+  supabase: Awaited<ReturnType<typeof createClient>>
+) => {
+  if (process.env.NODE_ENV === 'test') {
+    return await supabase.auth.getUser()
+  }
+
+  const cache = async (supabase: Awaited<ReturnType<typeof createClient>>) => {
+    return await supabase.auth.getUser()
+  }
+
+  return cache(supabase)
 }
 
 /*

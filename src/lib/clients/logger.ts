@@ -1,12 +1,4 @@
-/**
- * Universal logger that picks the correct implementation for the current runtime
- * (Node, Edge, Browser) and exposes an API compatible with `pino`.
- *
- * In Node & Browser we return the real pino instance.
- * In Edge we fall back to the minimal JSON logger implemented in `logger.edge.ts`.
- */
-
-import pino, { Logger } from 'pino'
+import pino, { Logger, LoggerOptions } from 'pino'
 import { ErrorObject } from 'serialize-error'
 
 /**
@@ -33,7 +25,7 @@ interface ILoggerContext extends Record<string, unknown>, PlatformContextKeys {
   /** Key to help identify log entry in-code */
   key: string
 
-  /** Should contain Error */
+  /** Should contain serialized Error */
   error?: ErrorObject | unknown
 
   /** Should contain context around the log */
@@ -76,7 +68,8 @@ const REDACTION_PATHS = [
 ]
 
 const createLogger = () => {
-  const baseConfig = {
+  const baseConfig: LoggerOptions = {
+    level: 'debug',
     redact: {
       paths: REDACTION_PATHS,
       censor: '[Redacted]',

@@ -1,6 +1,6 @@
 'use client'
 
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'

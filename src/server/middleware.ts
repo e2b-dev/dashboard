@@ -2,7 +2,11 @@ import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { checkUserTeamAuthorization, resolveTeamId } from '@/lib/utils/server'
+import {
+  checkUserTeamAuthorization,
+  getUserMemo,
+  resolveTeamId,
+} from '@/lib/utils/server'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -172,7 +176,7 @@ export function buildRedirectUrl(path: string, request: NextRequest): URL {
 export async function getUserSession(
   supabase: ReturnType<typeof createServerClient>
 ) {
-  return await supabase.auth.getUser()
+  return await getUserMemo(supabase)
 }
 
 export function getAuthRedirect(

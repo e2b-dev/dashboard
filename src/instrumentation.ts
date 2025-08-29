@@ -4,7 +4,7 @@ export async function register() {
   if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT) return
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('./instrumentation.node')
+    await import('./instrumentation/instrumentation.node')
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
@@ -16,11 +16,6 @@ export async function register() {
       VERCEL_REGION,
       VERCEL_DEPLOYMENT_ID,
       VERCEL_GIT_COMMIT_SHA,
-      VERCEL_GIT_COMMIT_MESSAGE,
-      VERCEL_GIT_COMMIT_AUTHOR_NAME,
-      VERCEL_GIT_REPO_SLUG,
-      VERCEL_GIT_REPO_OWNER,
-      VERCEL_GIT_PROVIDER,
     } = process.env
 
     registerOTel({
@@ -39,21 +34,6 @@ export async function register() {
         }),
         ...(VERCEL_GIT_COMMIT_SHA && {
           'vercel.git.commit_sha': VERCEL_GIT_COMMIT_SHA,
-        }),
-        ...(VERCEL_GIT_COMMIT_MESSAGE && {
-          'vercel.git.commit_message': VERCEL_GIT_COMMIT_MESSAGE,
-        }),
-        ...(VERCEL_GIT_COMMIT_AUTHOR_NAME && {
-          'vercel.git.commit_author': VERCEL_GIT_COMMIT_AUTHOR_NAME,
-        }),
-        ...(VERCEL_GIT_REPO_SLUG && {
-          'vercel.git.repo_slug': VERCEL_GIT_REPO_SLUG,
-        }),
-        ...(VERCEL_GIT_REPO_OWNER && {
-          'vercel.git.repo_owner': VERCEL_GIT_REPO_OWNER,
-        }),
-        ...(VERCEL_GIT_PROVIDER && {
-          'vercel.git.provider': VERCEL_GIT_PROVIDER,
         }),
       },
     })

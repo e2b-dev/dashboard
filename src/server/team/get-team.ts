@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { authActionClient } from '@/lib/clients/action'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { returnServerError } from '@/lib/utils/action'
 import { ClientTeam } from '@/types/dashboard.types'

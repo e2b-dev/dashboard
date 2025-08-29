@@ -6,7 +6,7 @@ import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'
 import { DateRange } from 'react-day-picker'
 
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import posthog from 'posthog-js'
 import { serializeError } from 'serialize-error'

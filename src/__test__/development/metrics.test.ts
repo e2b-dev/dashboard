@@ -1,4 +1,4 @@
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { Sandbox } from 'e2b'
 import { describe, expect, it } from 'vitest'
 

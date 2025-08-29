@@ -3,7 +3,7 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/lib/clients/logger'
 import { returnServerError } from '@/lib/utils/action'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'

@@ -11,6 +11,7 @@ const config = {
       dynamic: 180,
       static: 180,
     },
+    nodeMiddleware: true,
     serverActions: {
       bodySizeLimit: '5mb',
     },
@@ -20,7 +21,6 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['pino', 'pino-loki'],
   trailingSlash: false,
   webpack: (config) => {
     config.module.rules.push({

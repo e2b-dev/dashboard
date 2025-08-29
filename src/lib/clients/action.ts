@@ -5,7 +5,7 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { ActionError, flattenClientInputValue } from '../utils/action'
 import { checkAuthenticated } from '../utils/server'
-import { l } from './logger/logger'
+import { l } from './logger'
 import { getTracer } from './tracer'
 
 export const actionClient = createSafeActionClient({
