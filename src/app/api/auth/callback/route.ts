@@ -1,5 +1,5 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'

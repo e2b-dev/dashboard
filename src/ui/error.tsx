@@ -1,6 +1,6 @@
 'use client'
 
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
@@ -23,7 +23,7 @@ export default function ErrorBoundary({
     l.error(
       {
         key: 'error_boundary',
-        sanitizedError: serializeError(error),
+        error: serializeError(error),
       },
       `${error.message}`
     )

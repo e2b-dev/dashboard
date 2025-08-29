@@ -1,6 +1,6 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { returnServerError } from '@/lib/utils/action'
 import Sandbox, { NotFoundError } from 'e2b'
 import { z } from 'zod'

@@ -11,7 +11,7 @@ import { cookies } from 'next/headers'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { infra } from '../clients/api'
-import { l } from '../clients/logger'
+import { l } from '../clients/logger/logger'
 import { returnServerError } from './action'
 
 /*

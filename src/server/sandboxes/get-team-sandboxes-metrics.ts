@@ -1,7 +1,7 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'

@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
-import { l } from './lib/clients/logger'
+import { l } from './lib/clients/logger/logger'
 import { getRewriteForPath } from './lib/utils/rewrites'
 import {
   getAuthRedirect,
