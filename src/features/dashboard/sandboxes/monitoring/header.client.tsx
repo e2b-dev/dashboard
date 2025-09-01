@@ -28,16 +28,11 @@ export function ConcurrentSandboxesClient({
 export function SandboxesStartRateClient({
   initialData,
 }: TeamMonitoringHeaderClientProps) {
-  const { start, end } = useMemo(() => {
-    const end = Date.now()
-    const start = end - 7 * 60 * 60 * 1000
-
-    return { start, end }
-  }, [])
+  const { chartsStart, chartsEnd } = useTeamMetrics()
 
   const { data } = useTeamMetricsSWR(initialData, {
-    start,
-    end,
+    start: chartsStart,
+    end: chartsEnd,
   })
 
   const lastSandboxesStartRate = useMemo(() => {

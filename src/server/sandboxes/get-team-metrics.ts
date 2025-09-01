@@ -46,18 +46,21 @@ export const getTeamMetrics = authActionClient
     if (res.error) {
       const status = res.response.status
 
-      l.error({
-        key: 'get_team_metrics:infra_error',
-        message: res.error.message,
-        error: res.error,
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          status,
-          startDate,
-          endDate,
+      l.error(
+        {
+          key: 'get_team_metrics:infra_error',
+          message: res.error.message,
+          error: res.error,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status,
+            startDate,
+            endDate,
+          },
         },
-      })
+        `Failed to get team metrics: ${res.error.message}`
+      )
 
       return handleDefaultInfraError(status)
     }

@@ -1,5 +1,6 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/monitoring/page'
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
+import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import ErrorTooltip from '@/ui/error-tooltip'
@@ -81,6 +82,8 @@ function getTeamMetricsLast30Days(teamId: string) {
 
 // Components
 
+const now = Date.now()
+
 export const ConcurrentSandboxes = async ({
   params,
 }: {
@@ -89,7 +92,7 @@ export const ConcurrentSandboxes = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const end = Date.now()
+  const end = now
   const start = end - TEAM_METRICS_INITIAL_RANGE_MS
 
   const teamMetricsResult = await getTeamMetrics({
@@ -118,8 +121,8 @@ export const SandboxesStartRate = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const end = Date.now()
-  const start = end - 1000 * 60 * 60 * 6 + 1 // get the last hour entry only
+  const end = now
+  const start = end - TEAM_METRICS_INITIAL_RANGE_MS
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,
@@ -148,6 +151,14 @@ export const MaxConcurrentSandboxes = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const teamMetricsResult = await getTeamMetricsLast30Days(teamId)
+
+  l.debug({
+    key: 'max_concurrent_sandboxes:debug',
+    context: {
+      teamId,
+      teamMetricsResult,
+    },
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
