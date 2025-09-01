@@ -5,7 +5,7 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { ActionError, flattenClientInputValue } from '../utils/action'
 import { checkAuthenticated } from '../utils/server'
-import { l } from './logger'
+import { l } from './logger/logger'
 import { getTracer } from './tracer'
 
 export const actionClient = createSafeActionClient({
@@ -15,6 +15,7 @@ export const actionClient = createSafeActionClient({
     s?.setStatus({ code: SpanStatusCode.ERROR })
     s?.recordException(e)
 
+    // part of our strategy how to leak errors to a user
     if (e instanceof ActionError) {
       return e.message
     }
@@ -22,7 +23,10 @@ export const actionClient = createSafeActionClient({
     const sE = serializeError(e)
 
     l.error(
-      { key: 'action_client:unexpected_server_error', error: sE },
+      {
+        key: 'action_client:unexpected_server_error',
+        error: sE,
+      },
       `${sE.name && `${sE.name}: `} ${sE.message || 'Unknown error'}`
     )
 
@@ -64,15 +68,19 @@ export const actionClient = createSafeActionClient({
     server_function_name: name,
     server_function_input: clientInput,
     server_function_duration_ms: duration.toFixed(3),
+
     team_id: flattenClientInputValue(clientInput, 'teamId'),
     template_id: flattenClientInputValue(clientInput, 'templateId'),
     sandbox_id: flattenClientInputValue(clientInput, 'sandboxId'),
     user_id: flattenClientInputValue(clientInput, 'userId'),
   }
 
-  s.setAttribute('action_type', type)
-  s.setAttribute('action_name', name)
-  s.setAttribute('duration_ms', baseLogPayload.server_function_duration_ms)
+  s.setAttribute('server_function_type', type)
+  s.setAttribute('server_function_name', name)
+  s.setAttribute(
+    'server_function_duration_ms',
+    baseLogPayload.server_function_duration_ms
+  )
   if (baseLogPayload.team_id) {
     s.setAttribute('team_id', baseLogPayload.team_id)
   }

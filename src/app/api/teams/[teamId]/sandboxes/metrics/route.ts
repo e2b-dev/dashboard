@@ -5,7 +5,7 @@ import { infra } from '@/lib/clients/api'
 import { createClient } from '@/lib/clients/supabase/server'
 import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
 
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { MetricsRequestSchema, MetricsResponse } from './types'
 
@@ -42,18 +42,19 @@ export async function POST(
     if (infraRes.error) {
       const status = infraRes.response.status
 
-      l.error({
-        key: 'get_team_sandboxes_metrics',
-        message: infraRes.error.message,
-        error: infraRes.error,
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          path: '/sandboxes/metrics',
-          status,
-          sandboxIds,
+      l.error(
+        {
+          key: 'get_team_sandboxes_metrics',
+          error: infraRes.error,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            path: '/sandboxes/metrics',
+            status,
+          },
         },
-      })
+        `Failed to get team sandbox metrics: ${infraRes.error.message}`
+      )
 
       return Response.json(
         { error: handleDefaultInfraError(status) },

@@ -5,7 +5,8 @@ import {
 } from '@/configs/rewrites'
 import { RewriteConfig } from '@/types/rewrites.types'
 import * as cheerio from 'cheerio'
-import { l } from '../clients/logger'
+import { serializeError } from 'serialize-error'
+import { l } from '../clients/logger/logger'
 
 function getRewriteForPath(
   path: string,
@@ -77,10 +78,13 @@ function rewriteSeoTags($: cheerio.CheerioAPI, options: SeoTagOptions): void {
     return
   }
 
-  l.warn({
-    key: 'cheerio_seo_rewriter:head_tag_not_found',
-    context: { pathname, allowIndexing },
-  })
+  l.warn(
+    {
+      key: 'cheerio_seo_rewriter:head_tag_not_found',
+      context: { pathname, allowIndexing },
+    },
+    `Head tag not found for pathname ${pathname}`
+  )
 }
 
 /**
@@ -108,7 +112,14 @@ function rewriteAbsoluteHrefsInDoc(
       const relativePath = url.pathname + url.search + url.hash
       $element.attr('href', relativePath)
     } catch (e) {
-      l.warn(`CHEERIO_HREF_REWRITER: Failed to parse or set href="${href}"`, e)
+      l.warn(
+        {
+          key: 'cheerio_href_rewriter:failed',
+          error: serializeError(e),
+          context: { href },
+        },
+        `Failed to parse or set href="${href}"`
+      )
     }
   })
 }

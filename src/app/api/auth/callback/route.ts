@@ -1,5 +1,5 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
@@ -16,50 +16,62 @@ export async function GET(request: Request) {
   const returnTo = requestUrl.searchParams.get('returnTo')?.toString()
   const redirectTo = requestUrl.searchParams.get('redirect_to')?.toString()
 
-  l.info({
-    key: 'auth_callback:request',
-    context: {
-      code: !!code,
-      origin,
-      returnTo,
-      redirectTo,
+  l.info(
+    {
+      key: 'auth_callback:request',
+      context: {
+        code: !!code,
+        origin,
+        returnTo,
+        redirectTo,
+      },
     },
-  })
+    `Auth callback request received`
+  )
 
   if (code) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      l.error({
-        key: 'auth_callback:supabase_error',
-        error: serializeError(error),
-        context: {
-          code,
-          origin,
-          returnTo,
-          redirectTo,
+      l.error(
+        {
+          key: 'auth_callback:supabase_error',
+          error: serializeError(error),
+          context: {
+            code,
+            origin,
+            returnTo,
+            redirectTo,
+          },
         },
-      })
+        `Auth callback supabase error: ${error.message}`
+      )
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
-      l.info({
-        key: 'auth_callback:otp_exchanged',
-        user_id: data.user.id,
-      })
+      l.info(
+        {
+          key: 'auth_callback:otp_exchanged',
+          user_id: data.user.id,
+        },
+        `OTP successfully exchanged for user session`
+      )
     }
   }
 
   if (redirectTo) {
     const returnToUrl = new URL(redirectTo, origin)
     if (returnToUrl.origin === origin) {
-      l.info({
-        key: 'auth_callback:redirecting_to',
-        context: {
-          redirectTo,
+      l.info(
+        {
+          key: 'auth_callback:redirecting_to',
+          context: {
+            redirectTo,
+          },
         },
-      })
+        `Redirecting to ${redirectTo}`
+      )
       return redirect(redirectTo)
     }
   }
@@ -75,22 +87,28 @@ export async function GET(request: Request) {
     }
 
     if (returnToUrl.origin === origin) {
-      l.info({
-        key: 'auth_callback:returning_to',
-        context: {
-          returnTo,
+      l.info(
+        {
+          key: 'auth_callback:returning_to',
+          context: {
+            returnTo,
+          },
         },
-      })
+        `Returning to ${returnTo}`
+      )
       return redirect(returnTo)
     }
   }
 
   // Default redirect to dashboard
-  l.info({
-    key: 'auth_callback:redirecting_to_dashboard',
-    context: {
-      returnTo,
+  l.info(
+    {
+      key: 'auth_callback:redirecting_to_dashboard',
+      context: {
+        returnTo,
+      },
     },
-  })
+    `Redirecting to dashboard`
+  )
   return redirect(PROTECTED_URLS.DASHBOARD)
 }

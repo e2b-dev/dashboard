@@ -6,7 +6,7 @@ import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'
 import { DateRange } from 'react-day-picker'
 
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import posthog from 'posthog-js'
 import { serializeError } from 'serialize-error'
@@ -57,15 +57,18 @@ export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
       return stringifiedMetadata.includes(value)
     }
   } catch (error) {
-    l.error({
-      key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
-      error: serializeError(error),
-      context: {
-        row,
-        columnId,
-        value,
+    l.error(
+      {
+        key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
+        error: serializeError(error),
+        context: {
+          row,
+          columnId,
+          value,
+        },
       },
-    })
+      `Fuzzy filter failed with error: ${error instanceof Error ? error.message : String(error)}`
+    )
     return false
   }
 

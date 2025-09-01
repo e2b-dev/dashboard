@@ -3,7 +3,7 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -32,16 +32,18 @@ export const deleteTemplateAction = authActionClient
     if (res.error) {
       const status = res.response.status
 
-      l.error({
-        key: 'DELETE_TEMPLATE_ACTION:INFRA_ERROR',
-        message: res.error.message,
-        error: res.error,
-        user_id: ctx.session.user.id,
-        template_id: templateId,
-        context: {
-          status,
+      l.error(
+        {
+          key: 'DELETE_TEMPLATE_ACTION:INFRA_ERROR',
+          error: res.error,
+          user_id: ctx.session.user.id,
+          template_id: templateId,
+          context: {
+            status,
+          },
         },
-      })
+        `Failed to delete template: ${res.error.message}`
+      )
 
       if (status === 404) {
         return returnServerError('Template not found')
@@ -97,16 +99,18 @@ export const updateTemplateAction = authActionClient
     if (res.error) {
       const status = res.response.status
 
-      l.error({
-        key: 'update_template_action:infra_error',
-        message: res.error.message,
-        error: res.error,
-        user_id: ctx.session.user.id,
-        template_id: templateId,
-        context: {
-          status,
+      l.error(
+        {
+          key: 'update_template_action:infra_error',
+          error: res.error,
+          user_id: ctx.session.user.id,
+          template_id: templateId,
+          context: {
+            status,
+          },
         },
-      })
+        `Failed to update template: ${res.error.message}`
+      )
 
       if (status === 404) {
         return returnServerError('Template not found')

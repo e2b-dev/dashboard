@@ -1,7 +1,7 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { AsciiBackgroundPattern } from '@/ui/patterns'
@@ -38,12 +38,13 @@ export default function SandboxInspectNotFound() {
         body: JSON.stringify({ path: newPath }),
       })
     } catch (error) {
-      l.error({
-        key: 'sandbox_inspect_not_found:save_root_path_failed',
-        message:
-          error instanceof Error ? error.message : 'Failed to save root path',
-        error: serializeError(error),
-      })
+      l.error(
+        {
+          key: 'sandbox_inspect_not_found:save_root_path_failed',
+          error: serializeError(error),
+        },
+        `${error instanceof Error ? error.message : 'Failed to save root path'}`
+      )
     }
   }
 

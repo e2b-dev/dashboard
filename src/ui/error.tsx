@@ -1,6 +1,6 @@
 'use client'
 
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
@@ -20,11 +20,13 @@ export default function ErrorBoundary({
   hideFrame?: boolean
 }) {
   useEffect(() => {
-    l.error({
-      key: 'error_boundary',
-      message: error.message,
-      sanitizedError: serializeError(error),
-    })
+    l.error(
+      {
+        key: 'error_boundary',
+        error: serializeError(error),
+      },
+      `${error.message}`
+    )
   }, [error])
 
   return (

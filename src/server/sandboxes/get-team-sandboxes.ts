@@ -4,7 +4,7 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
 import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { Sandbox } from '@/types/api'
 import { z } from 'zod'
@@ -46,32 +46,35 @@ export const getTeamSandboxes = authActionClient
       if (sandboxesRes.error) {
         const status = sandboxesRes.response.status
 
-        l.error({
-          key: 'get_team_sandboxes:infra_error',
-          message: sandboxesRes.error.message,
-          error: sandboxesRes.error,
-          team_id: teamId,
-          user_id: session.user.id,
-          context: {
-            status,
-            path: '/sandboxes',
+        l.error(
+          {
+            key: 'get_team_sandboxes:infra_error',
+            error: sandboxesRes.error,
+            team_id: teamId,
+            user_id: session.user.id,
+            context: {
+              status,
+            },
           },
-        })
+          `Failed to get team sandboxes: ${sandboxesRes.error.message}`
+        )
 
         return handleDefaultInfraError(status)
       }
 
-      l.info({
-        key: 'get_team_sandboxes:success',
-        message: 'Successfully fetched team sandboxes',
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          status: sandboxesRes.response.status,
-          path: '/sandboxes',
-          sandbox_count: sandboxesRes.data.length,
+      l.info(
+        {
+          key: 'get_team_sandboxes:success',
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status: sandboxesRes.response.status,
+            path: '/sandboxes',
+            sandbox_count: sandboxesRes.data.length,
+          },
         },
-      })
+        `Successfully fetched team sandboxes`
+      )
 
       return {
         sandboxes: sandboxesRes.data,

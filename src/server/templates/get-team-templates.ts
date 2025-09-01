@@ -7,7 +7,7 @@ import {
 } from '@/configs/mock-data'
 import { actionClient, authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { DefaultTemplate } from '@/types/api'
@@ -44,16 +44,18 @@ export const getTeamTemplates = authActionClient
 
     if (res.error) {
       const status = res.response.status
-      l.error({
-        key: 'get_team_templates:infra_error',
-        message: res.error.message,
-        error: res.error,
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          status,
+      l.error(
+        {
+          key: 'get_team_templates:infra_error',
+          error: res.error,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status,
+          },
         },
-      })
+        `Failed to get team templates: ${res.error.message}`
+      )
 
       return handleDefaultInfraError(status)
     }
@@ -122,11 +124,14 @@ export const getDefaultTemplates = actionClient
         .single()
 
       if (buildError) {
-        l.error({
-          key: 'get_default_templates:env_builds_supabase_error',
-          error: buildError,
-          template_id: env.id,
-        })
+        l.error(
+          {
+            key: 'get_default_templates:env_builds_supabase_error',
+            error: buildError,
+            template_id: env.id,
+          },
+          `Failed to get template builds: ${buildError.message || 'Unknown error'}`
+        )
         continue
       }
 
@@ -136,20 +141,26 @@ export const getDefaultTemplates = actionClient
         .eq('env_id', env.id)
 
       if (aliasesError) {
-        l.error({
-          key: 'get_default_templates:env_aliases_supabase_error',
-          error: aliasesError,
-          template_id: env.id,
-        })
+        l.error(
+          {
+            key: 'get_default_templates:env_aliases_supabase_error',
+            error: aliasesError,
+            template_id: env.id,
+          },
+          `Failed to get template aliases: ${aliasesError.message || 'Unknown error'}`
+        )
         continue
       }
 
       // these values should never be null/undefined at this point, especially for default templates
       if (!latestBuild.total_disk_size_mb || !latestBuild.envd_version) {
-        l.error({
-          key: 'get_default_templates:env_builds_missing_values',
-          template_id: env.id,
-        })
+        l.error(
+          {
+            key: 'get_default_templates:env_builds_missing_values',
+            template_id: env.id,
+          },
+          `Template build missing required values: total_disk_size_mb or envd_version`
+        )
         continue
       }
 

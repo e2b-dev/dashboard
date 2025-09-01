@@ -1,6 +1,6 @@
 import 'server-cli-only'
 
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { serializeError } from 'serialize-error'
 

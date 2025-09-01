@@ -10,11 +10,6 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.string().url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
 
-  LOKI_SERVICE_NAME: z.string().optional(),
-  LOKI_HOST: z.string().url().optional(),
-  LOKI_USERNAME: z.string().optional(),
-  LOKI_PASSWORD: z.string().optional(),
-
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z
@@ -31,6 +26,14 @@ export const serverSchema = z.object({
   VERCEL_URL: z.string().optional(),
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   VERCEL_BRANCH_URL: z.string().optional(),
+  VERCEL_REGION: z.string().optional(),
+  VERCEL_DEPLOYMENT_ID: z.string().optional(),
+  VERCEL_GIT_COMMIT_SHA: z.string().optional(),
+  VERCEL_GIT_COMMIT_MESSAGE: z.string().optional(),
+  VERCEL_GIT_COMMIT_AUTHOR_NAME: z.string().optional(),
+  VERCEL_GIT_REPO_SLUG: z.string().optional(),
+  VERCEL_GIT_REPO_OWNER: z.string().optional(),
+  VERCEL_GIT_PROVIDER: z.string().optional(),
 })
 
 export const clientSchema = z.object({
@@ -42,7 +45,6 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
-
 })
 
 export const testEnvSchema = z.object({

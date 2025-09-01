@@ -3,7 +3,7 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { relativeUrlSchema } from '@/lib/schemas/url'
 import { returnServerError } from '@/lib/utils/action'
@@ -33,12 +33,14 @@ export const signInWithOAuthAction = actionClient
 
     const origin = (await headers()).get('origin')
 
-    l.info({
-      key: 'sign_in_with_oauth_action:init',
-      provider,
-      returnTo,
-      origin,
-    })
+    l.info(
+      {
+        key: 'sign_in_with_oauth_action:init',
+        provider,
+        returnTo,
+      },
+      `Initializing OAuth sign-in with provider ${provider}`
+    )
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider,
@@ -165,7 +167,13 @@ export const forgotPasswordAction = actionClient
     const { error } = await supabase.auth.resetPasswordForEmail(email)
 
     if (error) {
-      l.error({ key: 'forgot_password_action:supabase_error', error })
+      l.error(
+        {
+          key: 'forgot_password_action:supabase_error',
+          error,
+        },
+        `Password reset failed: ${error.message || 'Unknown error'}`
+      )
 
       if (error.message.includes('security purposes')) {
         return returnServerError(

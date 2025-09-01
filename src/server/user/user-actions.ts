@@ -47,6 +47,11 @@ export const updateUserAction = authActionClient
     )
 
     if (!error) {
+      // ensure other sessions are logged out if password was changed
+      if (parsedInput.password) {
+        await supabase.auth.signOut({ scope: 'others' })
+      }
+
       revalidatePath('/dashboard', 'layout')
 
       return {
