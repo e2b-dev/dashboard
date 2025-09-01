@@ -2,7 +2,7 @@ import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger'
+import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { TeamMetricsRequestSchema, TeamMetricsResponse } from './types'
@@ -48,19 +48,22 @@ export async function POST(
     if (infraRes.error) {
       const status = infraRes.response.status
 
-      l.error({
-        key: 'get_team_sandboxes_metrics',
-        message: infraRes.error.message,
-        error: infraRes.error,
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          path: '/sandboxes/metrics',
-          status,
-          start,
-          end,
+      l.error(
+        {
+          key: 'get_team_sandboxes_metrics',
+          message: infraRes.error.message,
+          error: infraRes.error,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            path: '/sandboxes/metrics',
+            status,
+            start,
+            end,
+          },
         },
-      })
+        `Failed to get team metrics: ${infraRes.error.message}`
+      )
 
       return Response.json(
         { error: handleDefaultInfraError(status) },
