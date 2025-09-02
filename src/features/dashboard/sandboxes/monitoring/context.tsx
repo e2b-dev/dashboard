@@ -11,12 +11,13 @@ import {
   TimeRangeKey,
 } from '@/lib/utils/timeframe'
 import * as echarts from 'echarts'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import {
   createContext,
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from 'react'
 
@@ -37,7 +38,6 @@ interface TeamMetricsProviderProps {
 }
 
 export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [timeframeState, setTimeframeState] = useState<TimeframeState>(() => {
@@ -48,6 +48,15 @@ export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
   })
 
   const timeframe = resolveTimeframe(timeframeState)
+
+  useEffect(() => {
+    setTimeframeState(
+      parseTimeframeFromSearchParams({
+        charts_start: searchParams.get('charts_start') || undefined,
+        charts_end: searchParams.get('charts_end') || undefined,
+      })
+    )
+  }, [searchParams])
 
   const { registerChart } = useConnectedCharts('sandboxes-monitoring')
 
@@ -64,9 +73,10 @@ export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
       })
 
       const newUrl = `${window.location.pathname}?${newSearchParams.toString()}`
-      router.replace(newUrl, { scroll: false })
+
+      window.history.pushState(null, '', newUrl)
     },
-    [router, searchParams]
+    [searchParams]
   )
 
   const setLiveMode = useCallback(

@@ -22,7 +22,7 @@ interface StartRateChartProps {
 export default function StartRateChartClient({
   initialData,
 }: StartRateChartProps) {
-  const { timeframe, setStaticMode, registerChart } = useTeamMetrics()
+  const { timeframe, registerChart } = useTeamMetrics()
 
   let { data } = useTeamMetricsSWR(initialData)
 
@@ -100,7 +100,7 @@ export default function StartRateChartClient({
       <LineChart
         className="mt-3 md:mt-4 flex-1 max-md:min-h-[30dvh]"
         onZoomEnd={(from, end) => {
-          setStaticMode(from, end)
+          // no need to do anything here, since concurrent chart will handle this already
         }}
         group="sandboxes-monitoring"
         onChartReady={registerChart}
