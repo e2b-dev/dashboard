@@ -23,31 +23,6 @@ export function transformMetricsToClientMetrics(
   )
 }
 
-// This function replicates the back-end step calculation logic from e2b-dev/infra.
-//
-// https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
-export function calculateTeamMetricsStep(start: Date, end: Date): number {
-  const duration = end.getTime() - start.getTime()
-  const hour = 60 * 60 * 1000
-  const minute = 60 * 1000
-  const second = 1000
-
-  switch (true) {
-    case duration < hour:
-      return 5 * second
-    case duration < 6 * hour:
-      return 30 * second
-    case duration < 12 * hour:
-      return minute
-    case duration < 24 * hour:
-      return 2 * minute
-    case duration < 7 * 24 * hour:
-      return 5 * minute
-    default:
-      return 15 * minute
-  }
-}
-
 /**
  * detects anomalies in team metrics data and fills exactly one zero between "waves" of data.
  * calculates step from the first two data points and detects gaps in sequences.
