@@ -1,9 +1,22 @@
-import SandboxesTabs from '@/features/dashboard/sandboxes/tabs'
+import SandboxesTabs from './tabs'
 
-export default function SandboxesLayout({
-  children,
-}: {
+interface SandboxesLayoutProps {
   children: React.ReactNode
-}) {
-  return <SandboxesTabs>{children}</SandboxesTabs>
+  monitoring: React.ReactNode
+  list: React.ReactNode
+  params: Promise<{ teamIdOrSlug: string }>
+}
+
+export default async function SandboxesLayout({
+  children,
+  monitoring,
+  list,
+}: SandboxesLayoutProps) {
+  return (
+    <SandboxesTabs>
+      {monitoring}
+      {list}
+      {children}
+    </SandboxesTabs>
+  )
 }

@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
-  sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES_MONITORING(teamId),
+  sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES(teamId),
   templates: (teamId) => PROTECTED_URLS.TEMPLATES(teamId),
   usage: (teamId) => PROTECTED_URLS.USAGE(teamId),
   billing: (teamId) => PROTECTED_URLS.BILLING(teamId),

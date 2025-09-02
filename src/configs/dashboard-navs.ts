@@ -30,7 +30,7 @@ export type DashboardNavLink = {
 export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
   {
     label: 'Sandboxes',
-    href: (args) => PROTECTED_URLS.SANDBOXES_MONITORING(args.teamIdOrSlug!),
+    href: (args) => PROTECTED_URLS.SANDBOXES(args.teamIdOrSlug!),
     icon: Box,
     activeMatch: `/dashboard/*/sandboxes/**`,
   },

@@ -1,7 +1,7 @@
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
-} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/monitoring/page'
+} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import {
   parseTimeframeFromSearchParams,

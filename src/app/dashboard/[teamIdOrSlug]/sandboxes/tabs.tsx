@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { ActivityIcon, LayoutListIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import { ReactNode } from 'react'
 
 const TABS = [
@@ -24,16 +24,22 @@ const TABS = [
 ]
 
 interface SandboxesTabsProps {
-  children: ReactNode
+  children: ReactNode[]
 }
 
 export default function SandboxesTabs({ children }: SandboxesTabsProps) {
   const searchParams = useSearchParams()
   const urlTab = searchParams.get('tab') || TABS[0]?.value
 
+  const pathname = usePathname()
+
   const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
 
   const activeTab = TABS.find((tab) => tab.value === urlTab)
+
+  if (pathname.includes('/sandboxes/')) {
+    return children[children.length - 1]
+  }
 
   return (
     <Tabs
@@ -55,13 +61,13 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
           </Link>
         ))}
       </TabsList>
-      {TABS.map((tab) => (
+      {TABS.map((tab, ix) => (
         <TabsContent
           key={tab.value}
           value={tab.value}
           className={cn('flex flex-1 flex-col md:overflow-hidden')}
         >
-          {children}
+          {children?.[ix]}
         </TabsContent>
       ))}
     </Tabs>

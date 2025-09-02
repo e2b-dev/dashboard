@@ -73,10 +73,12 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
   ]
 
   return (
-    <SandboxesTable
-      sandboxes={sandboxes}
-      templates={templates}
-      initialMetrics={metricsRes?.data?.metrics || null}
-    />
+    <div className="flex flex-1 flex-col md:overflow-hidden">
+      <SandboxesTable
+        sandboxes={sandboxes}
+        templates={templates}
+        initialMetrics={metricsRes?.data?.metrics || null}
+      />
+    </div>
   )
 }

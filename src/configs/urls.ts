@@ -13,10 +13,8 @@ export const PROTECTED_URLS = {
   TEAMS: '/dashboard/teams',
   TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
 
-  SANDBOXES_LIST: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/list`,
-  SANDBOXES_MONITORING: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/monitoring`,
+  SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=${tab ?? 'monitoring'}`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,

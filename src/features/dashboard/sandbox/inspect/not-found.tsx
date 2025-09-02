@@ -134,9 +134,7 @@ export default function SandboxInspectNotFound() {
               <Button
                 variant="outline"
                 onClick={() =>
-                  router.push(
-                    PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug as string)
-                  )
+                  router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
                 }
                 className="w-full gap-2"
               >
