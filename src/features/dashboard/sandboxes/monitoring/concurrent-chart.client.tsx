@@ -64,7 +64,7 @@ export default function ConcurrentChartClient({
   }, [lineData])
 
   const cssVars = useCssVars([
-    '--accent-main-highlight',
+    '--graph-1',
     '--graph-area-accent-main-from',
     '--graph-area-accent-main-to',
   ] as const)
@@ -209,7 +209,7 @@ export default function ConcurrentChartClient({
             name: 'Running Sandboxes',
             data: lineData,
             lineStyle: {
-              color: cssVars['--accent-main-highlight'],
+              color: cssVars['--graph-1'],
             },
             areaStyle: {
               color: {

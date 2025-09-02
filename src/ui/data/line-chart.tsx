@@ -13,7 +13,7 @@ import 'echarts/lib/component/dataZoomInside'
 import 'echarts/lib/component/title'
 
 import { useTheme } from 'next-themes'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { defaultLineChartOption } from './line-chart.defaults'
 import {
   LineSeries,
@@ -52,6 +52,25 @@ export default function LineChart({
   const ref = useRef<ReactECharts | null>(null)
   const { resolvedTheme } = useTheme()
 
+  // track window dimensions for responsive config
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+    height: typeof window !== 'undefined' ? window.innerHeight : 768,
+  })
+
+  // update on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const cssVars = useCssVars([
     '--stroke',
     '--stroke-active',
@@ -66,26 +85,25 @@ export default function LineChart({
     '--accent-error-bg',
   ] as const)
 
-  // Responsive axis configuration based on container size
+  // responsive axis config based on viewport size
   const getResponsiveAxisConfig = useCallback(() => {
-    // Get container dimensions (fallback to reasonable defaults)
-    const containerWidth = ref.current?.getEchartsInstance()?.getWidth() || 800
-    const containerHeight =
-      ref.current?.getEchartsInstance()?.getHeight() || 400
+    // use window dimensions to avoid safari timing issues
 
-    const isSmallViewport = containerWidth < 600 || containerHeight < 300
-    const isMediumViewport = containerWidth < 900 || containerHeight < 450
+    const isSmallViewport =
+      windowDimensions.width < 600 || windowDimensions.height < 400
+    const isMediumViewport =
+      windowDimensions.width < 900 || windowDimensions.height < 600
 
     return {
-      // Reduce tick density on smaller viewports
+      // reduce tick density on smaller viewports
       xAxisSplitNumber: isSmallViewport ? 3 : isMediumViewport ? 5 : 8,
       yAxisSplitNumber: isSmallViewport ? 3 : isMediumViewport ? 5 : 6,
-      // Hide labels on very small viewports
-      showAxisLabels: !isSmallViewport,
-      // Reduce font sizes
+      // always show labels - fixes safari issue
+      showAxisLabels: true,
+      // smaller fonts on small viewports
       fontSize: isSmallViewport ? 10 : 12,
     }
-  }, [])
+  }, [windowDimensions])
 
   const createSplitLineInterval = useCallback((limit: number) => {
     return (value: string | number) => {
@@ -264,7 +282,7 @@ export default function LineChart({
   ])
 
   const onChartReadyCallback = (chart: echarts.ECharts) => {
-    // activate datazoom permanently
+    // activate datazoom
     chart.dispatchAction(
       {
         type: 'takeGlobalCursor',
@@ -289,8 +307,12 @@ export default function LineChart({
         lazyUpdate={true}
         onChartReady={onChartReadyCallback}
         onEvents={{
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          datazoom: (params: any) => {
+          datazoom: (params: {
+            batch?: Array<{
+              startValue?: number
+              endValue?: number
+            }>
+          }) => {
             if (onZoomEnd && params.batch && params.batch[0]) {
               const { startValue, endValue } = params.batch[0]
 
