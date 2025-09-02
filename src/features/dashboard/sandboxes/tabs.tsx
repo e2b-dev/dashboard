@@ -4,7 +4,8 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { ActivityIcon, LayoutListIcon } from 'lucide-react'
-import { useParams, usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 
 const TABS = [
@@ -26,8 +27,6 @@ interface SandboxesTabsProps {
 }
 
 export default function SandboxesTabs({ children }: SandboxesTabsProps) {
-  const router = useRouter()
-
   const pathname = usePathname()
   const urlTab = pathname.split('/').pop() || TABS[0]?.value
 
@@ -42,21 +41,17 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
         const newTab = TABS.find((tab) => tab.value === value)
 
         if (newTab?.value === activeTab?.value) return
-
-        router.push(newTab?.url(teamIdOrSlug) || '')
       }}
       className="min-h-0 w-full flex-1 pt-3.5 h-full"
     >
       <TabsList className="bg-bg z-30 w-full justify-start pl-6">
         {TABS.map((tab) => (
-          <TabsTrigger
-            key={tab.value}
-            value={tab.value}
-            className="w-fit flex-none"
-          >
-            <tab.icon className="size-3.5" />
-            {tab.value.charAt(0).toUpperCase() + tab.value.slice(1)}
-          </TabsTrigger>
+          <Link key={tab.value} href={tab.url(teamIdOrSlug)} prefetch>
+            <TabsTrigger value={tab.value} className="w-fit flex-none">
+              <tab.icon className="size-3.5" />
+              {tab.value.charAt(0).toUpperCase() + tab.value.slice(1)}
+            </TabsTrigger>
+          </Link>
         ))}
       </TabsList>
       {TABS.map((tab) => (

@@ -7,19 +7,26 @@ export interface SandboxesMonitoringPageParams {
   teamIdOrSlug: string
 }
 
+export interface SandboxesMonitoringPageSearchParams {
+  charts_start?: string
+  charts_end?: string
+}
+
 interface SandboxesMonitoringPageProps {
   params: Promise<SandboxesMonitoringPageParams>
+  searchParams: Promise<SandboxesMonitoringPageSearchParams>
 }
 
 export default async function SandboxesMonitoringPage({
   params,
+  searchParams,
 }: SandboxesMonitoringPageProps) {
   return (
     <TeamMetricsProvider>
       <div className="flex flex-col h-full">
         <SandboxesMonitoringHeader params={params} />
-        <ConcurrentChart params={params} />
-        <StartRateChart params={params} />
+        <ConcurrentChart params={params} searchParams={searchParams} />
+        <StartRateChart params={params} searchParams={searchParams} />
       </div>
     </TeamMetricsProvider>
   )

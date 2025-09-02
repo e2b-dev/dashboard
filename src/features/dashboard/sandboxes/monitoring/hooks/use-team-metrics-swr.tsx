@@ -4,67 +4,36 @@ import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
+import { ResolvedTimeframe } from '@/lib/utils/timeframe'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
-import { useMemo } from 'react'
 import useSWR from 'swr'
+import { useTeamMetrics } from '../context'
 
-type ExplicitTimeRange = {
-  start: number
-  end: number
-}
-
-type DynamicTimeRange = {
-  realtimeSyncRange: number // milliseconds to subtract from Date.now()
-}
-
-export type TimeRangeParams = ExplicitTimeRange | DynamicTimeRange
-
-function isExplicitTimeRange(
-  params: TimeRangeParams
-): params is ExplicitTimeRange {
-  return 'start' in params && 'end' in params
-}
-
-function calculateTimeFromRange(range: number): { start: number; end: number } {
-  const end = Date.now()
-  const start = end - range
-
-  return { start, end }
-}
-
-export default function useTeamMetricsSWR(
-  initialData: ClientTeamMetrics,
-  timeParams: TimeRangeParams
-) {
+export default function useTeamMetricsSWR(initialData: ClientTeamMetrics) {
   const selectedTeam = useSelectedTeam()
-
-  const swrKey = useMemo(() => {
-    const baseKey = [`/api/teams/${selectedTeam?.id}/metrics`, selectedTeam?.id]
-
-    if (isExplicitTimeRange(timeParams)) {
-      return [...baseKey, timeParams.start, timeParams.end]
-    } else {
-      return [...baseKey, timeParams.realtimeSyncRange]
-    }
-  }, [selectedTeam?.id, timeParams])
+  const { timeframe } = useTeamMetrics()
 
   return useSWR<typeof initialData>(
-    swrKey,
-    async ([url, teamId]) => {
-      if (!url || !teamId) return []
+    selectedTeam
+      ? [`/api/teams/${selectedTeam?.id}/metrics`, selectedTeam?.id, timeframe]
+      : null,
+    async ([url, teamId, timeframe]: [string, string, ResolvedTimeframe]) => {
+      if (!url || !teamId) return initialData
 
-      const isExplicit = isExplicitTimeRange(timeParams)
-
-      const currentTimeRange = isExplicit
-        ? { start: timeParams.start, end: timeParams.end }
-        : calculateTimeFromRange(timeParams.realtimeSyncRange)
+      const end = timeframe.isLive ? Date.now() : timeframe.end
+      const start = timeframe.isLive
+        ? end - (timeframe.end - timeframe.start)
+        : timeframe.start
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(currentTimeRange),
+        body: JSON.stringify({
+          start,
+          end,
+        }),
         cache: 'no-store',
       })
 
@@ -76,23 +45,19 @@ export default function useTeamMetricsSWR(
       const data = (await response.json()) as TeamMetricsResponse
 
       if (!data.metrics) {
-        return []
+        return initialData
       }
 
-      return fillTeamMetricsWithZeros(
-        data.metrics,
-        currentTimeRange.start,
-        currentTimeRange.end
-      )
+      return fillTeamMetricsWithZeros(data.metrics, start, end)
     },
     {
       fallbackData: initialData,
       shouldRetryOnError: false,
-      refreshInterval: TEAM_METRICS_POLLING_INTERVAL_MS,
+      refreshInterval: timeframe.isLive ? TEAM_METRICS_POLLING_INTERVAL_MS : 0,
       keepPreviousData: true,
-      revalidateOnMount: false,
+      revalidateOnMount: true,
       revalidateIfStale: true,
-      revalidateOnFocus: false,
+      revalidateOnFocus: true,
       revalidateOnReconnect: true,
     }
   )

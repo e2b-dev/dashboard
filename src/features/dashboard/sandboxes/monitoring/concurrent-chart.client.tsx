@@ -3,26 +3,28 @@
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils/ui'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
-import { LineChart } from '@/ui/data/line-chart'
-import DefaultTooltip from '@/ui/data/tooltips'
-import { Badge } from '@/ui/primitives/badge'
+import { SingleValueTooltip } from '@/ui/data/tooltips'
 import { Button } from '@/ui/primitives/button'
-import { useTheme } from 'next-themes'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
-const CHART_RANGE_MAP = {
-  '1h': 1000 * 60 * 60,
-  '6h': 1000 * 60 * 60 * 6,
-  '12H': 1000 * 60 * 60 * 12,
-  '1D': 1000 * 60 * 60 * 24,
-  '7D': 1000 * 60 * 60 * 24 * 7,
-  '30D': 1000 * 60 * 60 * 24 * 30,
-}
+import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
+import dynamic from 'next/dynamic'
 
-const CHART_RANGE_MAP_KEYS = Object.keys(CHART_RANGE_MAP)
+const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
+  ssr: false,
+})
+
+const CHART_RANGE_MAP = {
+  custom: null,
+  ...TIME_RANGES,
+} as const
+
+const CHART_RANGE_MAP_KEYS = Object.keys(CHART_RANGE_MAP) as Array<
+  keyof typeof CHART_RANGE_MAP
+>
 
 interface ConcurrentChartProps {
   initialData: ClientTeamMetrics
@@ -31,23 +33,13 @@ interface ConcurrentChartProps {
 export default function ConcurrentChartClient({
   initialData,
 }: ConcurrentChartProps) {
-  const { resolvedTheme } = useTheme()
+  const { timeframe, setStaticMode, setTimeRange } = useTeamMetrics()
 
-  const {
-    chartsStart: start,
-    chartsEnd: end,
-    setRealtimeSyncRange,
-  } = useTeamMetrics()
-  const { data } = useTeamMetricsSWR(initialData, { start, end })
+  let { data } = useTeamMetricsSWR(initialData)
 
-  const { chartStart, chartEnd } = useMemo(() => {
-    if (!data?.length) return { chartStart: start, chartEnd: end }
-
-    const firstTimestamp = data[0]?.timestamp || start
-    const lastTimestamp = data[data.length - 1]?.timestamp || end
-
-    return { chartStart: firstTimestamp, chartEnd: lastTimestamp }
-  }, [data, start, end])
+  if (!data) {
+    data = initialData
+  }
 
   const lineData = useMemo(
     () =>
@@ -66,26 +58,60 @@ export default function ConcurrentChartClient({
     )
   }, [lineData])
 
-  const cssVars = useCssVars(
-    [
-      '--accent-main-highlight',
-      '--graph-area-accent-main-from',
-      '--graph-area-accent-main-to',
-    ] as const,
-    [resolvedTheme]
-  )
+  const cssVars = useCssVars([
+    '--accent-main-highlight',
+    '--graph-area-accent-main-from',
+    '--graph-area-accent-main-to',
+  ] as const)
 
-  const [range, setRange] = useState(CHART_RANGE_MAP_KEYS[0])
+  const currentRange = useMemo(() => {
+    if (!timeframe.isLive) return 'custom'
+    const entry = Object.entries(TIME_RANGES).find(
+      ([_, value]) => value === timeframe.end - timeframe.start
+    )
+    return entry ? entry[0] : CHART_RANGE_MAP_KEYS[0]
+  }, [timeframe])
+
+  const customRangeLabel = useMemo(() => {
+    if (currentRange !== 'custom') return null
+    const formatDate = (timestamp: number) => {
+      const date = new Date(timestamp)
+      const now = new Date()
+
+      // if same year, omit year
+      if (date.getFullYear() === now.getFullYear()) {
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZoneName: 'short',
+        })
+      }
+
+      // otherwise show full date
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      })
+    }
+
+    return `${formatDate(timeframe.start)} - ${formatDate(timeframe.end)}`
+  }, [currentRange, timeframe.start, timeframe.end])
 
   const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
-    setRealtimeSyncRange(CHART_RANGE_MAP[range])
-    setRange(range)
+    if (range === 'custom') return // Custom range is set via zoom
+    setTimeRange(range as TimeRangeKey)
   }
 
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
-      <div className="flex justify-between gap-6">
-        <div className="flex flex-col">
+      <div className="flex justify-between gap-6 min-h-[60px]">
+        <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase">Concurrent</span>
           <div className="inline-flex items-end gap-3 mt-2">
             <span className="prose-value-big">{average.toFixed(1)}</span>
@@ -93,15 +119,23 @@ export default function ConcurrentChartClient({
           </div>
         </div>
 
-        <div className="flex items-end gap-3 h-full">
+        <div className="flex items-end gap-3 flex-shrink-0">
+          {currentRange === 'custom' && customRangeLabel && (
+            <span className="text-fg py-0.5" style={{ letterSpacing: '0%' }}>
+              {customRangeLabel}
+            </span>
+          )}
           {CHART_RANGE_MAP_KEYS.map((key) => (
             <Button
               key={key}
               variant="ghost"
-              size="iconSm"
-              className={cn('text-fg-tertiary hover:text-fg-secondary', {
-                'text-fg': range === key,
-              })}
+              size="slate"
+              className={cn(
+                'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5',
+                {
+                  'text-fg': currentRange === key,
+                }
+              )}
               onClick={() =>
                 handleRangeChange(key as keyof typeof CHART_RANGE_MAP)
               }
@@ -113,91 +147,78 @@ export default function ConcurrentChartClient({
       </div>
 
       <LineChart
-        xType="time"
         className="mt-4 h-full"
-        enableDragZoom
-        optionOverrides={{
+        onZoomEnd={(from, end) => {
+          setStaticMode(from, end)
+        }}
+        yAxisLimit={100}
+        option={{
+          xAxis: {
+            type: 'time',
+            min: timeframe.start,
+            max: timeframe.end,
+          },
           yAxis: {
             splitNumber: 2,
           },
-          xAxis: {
-            min: chartStart,
-            max: chartEnd,
+          tooltip: {
+            show: true,
+            formatter: (
+              params: echarts.TooltipComponentFormatterCallbackParams
+            ) => {
+              const data = Array.isArray(params) ? params[0] : params
+              if (!data?.value) return ''
+
+              const value = Array.isArray(data.value)
+                ? data.value[1]
+                : data.value
+              const timestamp = Array.isArray(data.value)
+                ? (data.value[0] as string)
+                : (data.value as string)
+
+              return renderToString(
+                <SingleValueTooltip
+                  value={typeof value === 'number' ? value : 'n/a'}
+                  label={
+                    typeof value === 'number' && value === 1
+                      ? 'concurrent sandbox'
+                      : 'concurrent sandboxes'
+                  }
+                  timestamp={timestamp}
+                />
+              )
+            },
           },
         }}
-        tooltipFormatter={(
-          params: echarts.TooltipComponentFormatterCallbackParams
-        ) => {
-          // normalize params to an array
-          params = params instanceof Array ? params : [params]
-          const first = params[0]!
-
-          const label = (() => {
-            const xValue = (first.value as Array<unknown>)?.[
-              first.encode!.x![0]!
-            ]
-            if (!xValue) return 'n/a'
-
-            const date = new Date(xValue as number)
-            const day = date.getDate()
-            const month = date.toLocaleDateString('en-US', {
-              month: 'short',
-            })
-            const time = date.toLocaleTimeString('en-US', {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })
-            return `${day} ${month} - ${time}`
-          })()
-
-          const items = params.map((p) => ({
-            label: (
-              <Badge variant="main" className="uppercase">
-                {p.seriesName ?? 'n/a'}
-              </Badge>
-            ),
-            value: (p.value as Array<number>)?.[
-              p.encode!.y![0]!
-            ]?.toLocaleString(),
-          }))
-
-          return renderToString(<DefaultTooltip label={label} items={items} />)
-        }}
-        data={
-          cssVars['--accent-main-highlight']
-            ? [
-                {
-                  id: 'concurrent-sandboxes',
-                  name: 'Running Sandboxes',
-                  data: lineData,
-                  lineStyle: {
-                    color: cssVars['--accent-main-highlight'],
+        data={[
+          {
+            id: 'concurrent-sandboxes',
+            name: 'Running Sandboxes',
+            data: lineData,
+            lineStyle: {
+              color: cssVars['--accent-main-highlight'],
+            },
+            areaStyle: {
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [
+                  {
+                    offset: 0,
+                    color: cssVars['--graph-area-accent-main-from'],
                   },
-                  areaStyle: {
-                    color: {
-                      type: 'linear',
-                      x: 0,
-                      y: 0,
-                      x2: 0,
-                      y2: 1,
-                      colorStops: [
-                        {
-                          offset: 0,
-                          color: cssVars['--graph-area-accent-main-from'],
-                        },
-                        {
-                          offset: 1,
-                          color: cssVars['--graph-area-accent-main-to'],
-                        },
-                      ],
-                    },
+                  {
+                    offset: 1,
+                    color: cssVars['--graph-area-accent-main-to'],
                   },
-                },
-              ]
-            : []
-        }
+                ],
+              },
+            },
+          },
+        ]}
       />
     </div>
   )

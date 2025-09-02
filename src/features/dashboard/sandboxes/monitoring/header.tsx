@@ -5,7 +5,9 @@ import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { LiveBadge } from '@/ui/live'
+import { Skeleton } from '@/ui/primitives/skeleton'
 import { AlertTriangle } from 'lucide-react'
+import { Suspense } from 'react'
 import {
   ConcurrentSandboxesClient,
   SandboxesStartRateClient,
@@ -49,12 +51,16 @@ export default function SandboxesMonitoringHeader({
     <div className="flex md:flex-row flex-col items-center border-b w-full min-h-52">
       <BaseCard>
         <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
-        <ConcurrentSandboxes params={params} />
+        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
+          <ConcurrentSandboxes params={params} />
+        </Suspense>
         <BaseSubtitle>Concurrent Sandboxes</BaseSubtitle>
       </BaseCard>
 
       <BaseCard>
-        <MaxConcurrentSandboxes params={params} />
+        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
+          <MaxConcurrentSandboxes params={params} />
+        </Suspense>
         <BaseSubtitle>
           Max. Concurrent Sandboxes
           <br />
@@ -65,7 +71,9 @@ export default function SandboxesMonitoringHeader({
       <BaseCard>
         <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
 
-        <SandboxesStartRate params={params} />
+        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
+          <SandboxesStartRate params={params} />
+        </Suspense>
         <BaseSubtitle>Sandboxes Start Rate</BaseSubtitle>
       </BaseCard>
     </div>
@@ -156,7 +164,6 @@ export const MaxConcurrentSandboxes = async ({
     key: 'max_concurrent_sandboxes:debug',
     context: {
       teamId,
-      teamMetricsResult,
     },
   })
 

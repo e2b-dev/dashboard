@@ -1040,7 +1040,10 @@ export interface paths {
         /** @description Get node info */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Identifier of the cluster */
+                    clusterID?: string;
+                };
                 header?: never;
                 path: {
                     nodeID: components["parameters"]["nodeID"];
@@ -1545,10 +1548,10 @@ export interface components {
              */
             timeout: number;
             /**
+             * @deprecated
              * @description Automatically pauses the sandbox after the timeout
-             * @default false
              */
-            autoPause: boolean;
+            autoPause?: boolean;
         };
         /** @description Team metric with timestamp */
         TeamMetric: {
@@ -1647,11 +1650,46 @@ export interface components {
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
         };
+        FromImageRegistry: components["schemas"]["AWSRegistry"] | components["schemas"]["GCPRegistry"] | components["schemas"]["GeneralRegistry"];
+        AWSRegistry: {
+            /**
+             * @description Type of registry authentication (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "aws";
+            /** @description AWS Access Key ID for ECR authentication */
+            awsAccessKeyId: string;
+            /** @description AWS Secret Access Key for ECR authentication */
+            awsSecretAccessKey: string;
+            /** @description AWS Region where the ECR registry is located */
+            awsRegion: string;
+        };
+        GCPRegistry: {
+            /**
+             * @description Type of registry authentication (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "gcp";
+            /** @description Service Account JSON for GCP authentication */
+            serviceAccountJson: string;
+        };
+        GeneralRegistry: {
+            /**
+             * @description Type of registry authentication (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "registry";
+            /** @description Username to use for the registry */
+            username: string;
+            /** @description Password to use for the registry */
+            password: string;
+        };
         TemplateBuildStartV2: {
             /** @description Image to use as a base for the template build */
             fromImage?: string;
             /** @description Template to use as a base for the template build */
             fromTemplate?: string;
+            fromImageRegistry?: components["schemas"]["FromImageRegistry"];
             /**
              * @description Whether the whole build should be forced to run regardless of the cache
              * @default false
@@ -1688,6 +1726,12 @@ export interface components {
             message: string;
             level: components["schemas"]["LogLevel"];
         };
+        BuildStatusReason: {
+            /** @description Message with the status reason, currently reporting only for error status */
+            message: string;
+            /** @description Step that failed */
+            step?: string;
+        };
         TemplateBuild: {
             /**
              * @description Build logs
@@ -1708,8 +1752,7 @@ export interface components {
              * @enum {string}
              */
             status: "building" | "waiting" | "ready" | "error";
-            /** @description Message with the status reason, currently reporting only for error status */
-            reason?: string;
+            reason?: components["schemas"]["BuildStatusReason"];
         };
         /**
          * @description Status of the node
@@ -1777,8 +1820,15 @@ export interface components {
             version: string;
             /** @description Commit of the orchestrator */
             commit: string;
-            /** @description Identifier of the node */
+            /**
+             * @deprecated
+             * @description Identifier of the nomad node
+             */
             nodeID: string;
+            /** @description Identifier of the node */
+            id: string;
+            /** @description Service instance identifier of the node */
+            serviceInstanceID: string;
             /** @description Identifier of the cluster */
             clusterID: string;
             status: components["schemas"]["NodeStatus"];
@@ -1812,6 +1862,13 @@ export interface components {
             /** @description Commit of the orchestrator */
             commit: string;
             /** @description Identifier of the node */
+            id: string;
+            /** @description Service instance identifier of the node */
+            serviceInstanceID: string;
+            /**
+             * @deprecated
+             * @description Identifier of the nomad node
+             */
             nodeID: string;
             status: components["schemas"]["NodeStatus"];
             /** @description List of sandboxes running on the node */

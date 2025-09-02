@@ -1,43 +1,64 @@
-// Read CSS variables after theme class has been applied
-// This hook ensures we get the correct CSS variable values after theme changes
-
 import React from 'react'
 
-/**
- * Hook that resolves CSS custom properties (CSS variables) to their computed JavaScript values.
- * This is useful for accessing theme colors and other CSS variables in JavaScript/React components.
- *
- * @param varNames - Array of CSS variable names to resolve. Pass as a const array for proper type inference.
- *                   Example: ['--color-primary', '--spacing-md'] as const
- * @param deps - React dependency list that triggers re-evaluation of CSS variables
- * @returns Record mapping each CSS variable name to its resolved string value
- */
-export function useCssVars<T extends readonly string[]>(
-  varNames: T,
-  deps: React.DependencyList
-) {
-  const [values, setValues] = React.useState<Record<T[number], string>>(
-    {} as Record<T[number], string>
+// reads css variables synchronously for immediate availability
+function readCssVarsSync<T extends readonly string[]>(
+  varNames: T
+): Record<T[number], string> {
+  if (typeof window === 'undefined') {
+    return {} as Record<T[number], string>
+  }
+
+  const style = getComputedStyle(document.documentElement)
+  const result: Record<T[number], string> = {} as Record<T[number], string>
+
+  for (const name of varNames) {
+    result[name as T[number]] = style.getPropertyValue(name).trim()
+  }
+
+  return result
+}
+
+// hook that resolves css custom properties to their computed values
+export function useCssVars<T extends readonly string[]>(varNames: T) {
+  const initialValues = React.useMemo(
+    () => readCssVarsSync(varNames),
+    [varNames]
   )
 
+  const [values, setValues] = React.useState(initialValues)
+
+  // listen for theme changes and update css variables
   React.useEffect(() => {
     let raf = 0
 
     const read = () => {
-      const style = getComputedStyle(document.documentElement)
-      const next: Record<T[number], string> = {} as Record<T[number], string>
+      const newValues = readCssVarsSync(varNames)
 
-      for (const name of varNames) {
-        next[name as T[number]] = style.getPropertyValue(name).trim()
+      // only update if values actually changed
+      const hasChanged = varNames.some(
+        (name) => newValues[name as T[number]] !== values[name as T[number]]
+      )
+
+      if (hasChanged) {
+        setValues(newValues)
       }
-
-      setValues(next)
     }
 
-    raf = window.requestAnimationFrame(read)
+    const observer = new MutationObserver(() => {
+      raf = window.requestAnimationFrame(read)
+    })
 
-    return () => window.cancelAnimationFrame(raf)
-  }, deps)
+    // watch for class changes on document element (theme changes)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    })
+
+    return () => {
+      observer.disconnect()
+      window.cancelAnimationFrame(raf)
+    }
+  }, [varNames, values])
 
   return values
 }

@@ -1,11 +1,13 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateTeamMetricsStep } from '@/lib/utils/sandboxes'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
-import { LineChart } from '@/ui/data/line-chart'
+import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
-import { useTheme } from 'next-themes'
+import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
+import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
@@ -13,23 +15,20 @@ interface StartRateChartProps {
   initialData: ClientTeamMetrics
 }
 
+const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
+  ssr: false,
+})
+
 export default function StartRateChartClient({
   initialData,
 }: StartRateChartProps) {
-  const { chartsStart: start, chartsEnd: end } = useTeamMetrics()
-  const { data } = useTeamMetricsSWR(initialData, {
-    start,
-    end,
-  })
+  const { timeframe, setStaticMode } = useTeamMetrics()
 
-  const { chartStart, chartEnd } = useMemo(() => {
-    if (!data?.length) return { chartStart: start, chartEnd: end }
+  let { data } = useTeamMetricsSWR(initialData)
 
-    const firstTimestamp = data[0]?.timestamp || start
-    const lastTimestamp = data[data.length - 1]?.timestamp || end
-
-    return { chartStart: firstTimestamp, chartEnd: lastTimestamp }
-  }, [data, start, end])
+  if (!data) {
+    data = initialData
+  }
 
   const lineData = data?.map((d) => ({
     x: d.timestamp,
@@ -44,59 +43,108 @@ export default function StartRateChartClient({
     )
   }, [lineData])
 
-  const { resolvedTheme } = useTheme()
+  // Calculate the averaging period for the tooltip
+  const getAveragingPeriodText = (timestamp: number) => {
+    const step = calculateTeamMetricsStep(
+      new Date(timeframe.start),
+      new Date(timeframe.end)
+    )
 
-  const cssVars = useCssVars(
-    ['--fg', '--graph-area-fg-from', '--graph-area-fg-to'] as const,
-    [resolvedTheme]
-  )
+    const seconds = Math.floor(step / 1000)
+    if (seconds < 60) {
+      return `${seconds} second average`
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60)
+      return `${minutes} minute average`
+    } else {
+      const hours = Math.floor(seconds / 3600)
+      return `${hours} hour average`
+    }
+  }
+
+  const cssVars = useCssVars([
+    '--fg',
+    '--graph-area-fg-from',
+    '--graph-area-fg-to',
+  ] as const)
 
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
-      <span className="prose-label-highlight uppercase">Start Rate</span>
-      <div className="inline-flex items-end gap-3 mt-2">
-        <span className="prose-value-big">{average.toFixed(1)}</span>
-        <span className="label-tertiary">AVG</span>
+      <div className="min-h-[60px] flex flex-col justify-end">
+        <span className="prose-label-highlight uppercase">Start Rate</span>
+        <div className="inline-flex items-end gap-3 mt-2">
+          <span className="prose-value-big">{average.toFixed(1)}</span>
+          <span className="label-tertiary">AVG</span>
+        </div>
       </div>
 
       <LineChart
-        xType="time"
         className="mt-4 h-full"
-        optionOverrides={{
+        onZoomEnd={(from, end) => {
+          setStaticMode(from, end)
+        }}
+        option={{
+          xAxis: {
+            type: 'time',
+            min: timeframe.start,
+            max: timeframe.end,
+          },
           yAxis: {
             splitNumber: 2,
           },
-          xAxis: {
-            min: chartStart,
-            max: chartEnd,
+          tooltip: {
+            show: true,
+            formatter: (
+              params: echarts.TooltipComponentFormatterCallbackParams
+            ) => {
+              const data = Array.isArray(params) ? params[0] : params
+              if (!data?.value) return ''
+
+              const value = Array.isArray(data.value)
+                ? data.value[1]
+                : data.value
+              const timestamp = Array.isArray(data.value)
+                ? (data.value[0] as string)
+                : (data.value as string)
+
+              return renderToString(
+                <SingleValueTooltip
+                  value={typeof value === 'number' ? value.toFixed(2) : 'n/a'}
+                  label="sandboxes/s"
+                  timestamp={timestamp}
+                  description={getAveragingPeriodText(Number(timestamp))}
+                  classNames={{
+                    value: 'text-fg',
+                    description: 'text-fg-tertiary opacity-75',
+                    timestamp: 'text-fg-tertiary',
+                  }}
+                />
+              )
+            },
           },
         }}
-        data={
-          cssVars['--fg'] && lineData
-            ? [
+        data={[
+          {
+            id: 'rate',
+            name: 'Rate',
+            data: lineData,
+            lineStyle: {
+              color: cssVars['--fg'],
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                 {
-                  id: 'rate',
-                  name: 'Rate',
-                  data: lineData,
-                  lineStyle: {
-                    color: cssVars['--fg'],
-                  },
-                  areaStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                      {
-                        offset: 0,
-                        color: cssVars['--graph-area-fg-from'],
-                      },
-                      {
-                        offset: 1,
-                        color: cssVars['--graph-area-fg-to'],
-                      },
-                    ]),
-                  },
+                  offset: 0,
+                  color: cssVars['--graph-area-fg-from'],
                 },
-              ]
-            : []
-        }
+                {
+                  offset: 1,
+                  color: cssVars['--graph-area-fg-to'],
+                },
+              ]),
+            },
+          },
+        ]}
       />
     </div>
   )

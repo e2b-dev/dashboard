@@ -34,7 +34,6 @@
     "test:watch": "bun scripts:check-all-env && vitest",
     "test:ui": "bun scripts:check-all-env && vitest --ui",
     "test:ui:integration": "bun scripts:check-app-env && vitest --ui src/__test__/integration/",
-
     "test:development:burst": "vitest run src/__test__/development/burst.test.ts",
     "test:development:traffic": "vitest run src/__test__/development/traffic.test.ts"
   },
@@ -91,7 +90,7 @@
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
     "deepmerge": "^4.3.1",
-    "e2b": "^1.10.0",
+    "e2b": "1.10.0",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "fast-xml-parser": "^4.5.1",

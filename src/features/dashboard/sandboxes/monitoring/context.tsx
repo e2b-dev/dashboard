@@ -1,25 +1,29 @@
 'use client'
 
 import {
-  TEAM_METRICS_INITIAL_RANGE_MS,
-  TEAM_METRICS_POLLING_INTERVAL_MS,
-} from '@/configs/intervals'
+  parseTimeframeFromSearchParams,
+  ResolvedTimeframe,
+  resolveTimeframe,
+  TIME_RANGES,
+  TimeframeState,
+  timeframeToSearchParams,
+  TimeRangeKey,
+} from '@/lib/utils/timeframe'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
-  useEffect,
   useState,
 } from 'react'
 
 interface TeamMetricsState {
-  chartsStart: number
-  chartsEnd: number
-  realtimeSyncRange: number | null
+  timeframe: ResolvedTimeframe
 
-  setChartsStart: React.Dispatch<React.SetStateAction<number>>
-  setChartsEnd: React.Dispatch<React.SetStateAction<number>>
-  setRealtimeSyncRange: React.Dispatch<React.SetStateAction<number | null>>
+  setLiveMode: (range: number) => void
+  setStaticMode: (start: number, end: number) => void
+  setTimeRange: (range: TimeRangeKey) => void
 }
 
 const TeamMetricsContext = createContext<TeamMetricsState | null>(null)
@@ -29,39 +33,72 @@ interface TeamMetricsProviderProps {
 }
 
 export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
-  const [chartsStart, setChartsStart] = useState<number>(
-    Date.now() - TEAM_METRICS_INITIAL_RANGE_MS
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [timeframeState, setTimeframeState] = useState<TimeframeState>(() => {
+    return parseTimeframeFromSearchParams({
+      charts_start: searchParams.get('charts_start') || undefined,
+      charts_end: searchParams.get('charts_end') || undefined,
+    })
+  })
+
+  const timeframe = resolveTimeframe(timeframeState)
+
+  const updateUrl = useCallback(
+    (newState: TimeframeState) => {
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+      const timeframeParams = timeframeToSearchParams(newState)
+
+      newSearchParams.delete('charts_start')
+      newSearchParams.delete('charts_end')
+
+      Object.entries(timeframeParams).forEach(([key, value]) => {
+        newSearchParams.set(key, value)
+      })
+
+      const newUrl = `${window.location.pathname}?${newSearchParams.toString()}`
+      router.replace(newUrl, { scroll: false })
+    },
+    [router, searchParams]
   )
-  const [chartsEnd, setChartsEnd] = useState<number>(Date.now())
-  const [realtimeSyncRange, setRealtimeSyncRange] = useState<number | null>(
-    TEAM_METRICS_INITIAL_RANGE_MS
+
+  const setLiveMode = useCallback(
+    (range: number) => {
+      const newState: TimeframeState = { mode: 'live', range }
+      setTimeframeState(newState)
+      updateUrl(newState)
+    },
+    [updateUrl]
   )
 
-  // whether to sync charts in realtime or keep an explicit range
-  useEffect(() => {
-    if (!realtimeSyncRange) return
+  const setStaticMode = useCallback(
+    (start: number, end: number) => {
+      const newState: TimeframeState = {
+        mode: 'static',
+        start: Math.floor(start),
+        end: Math.floor(end),
+      }
+      setTimeframeState(newState)
+      updateUrl(newState)
+    },
+    [updateUrl]
+  )
 
-    setChartsStart(Date.now() - realtimeSyncRange)
-    setChartsEnd(Date.now())
-
-    const interval = setInterval(() => {
-      setChartsStart(Date.now() - realtimeSyncRange)
-      setChartsEnd(Date.now())
-    }, TEAM_METRICS_POLLING_INTERVAL_MS)
-
-    return () => clearInterval(interval)
-  }, [realtimeSyncRange])
+  const setTimeRange = useCallback(
+    (range: TimeRangeKey) => {
+      setLiveMode(TIME_RANGES[range])
+    },
+    [setLiveMode]
+  )
 
   return (
     <TeamMetricsContext.Provider
       value={{
-        chartsStart,
-        chartsEnd,
-        realtimeSyncRange,
-
-        setRealtimeSyncRange,
-        setChartsStart,
-        setChartsEnd,
+        timeframe,
+        setLiveMode,
+        setStaticMode,
+        setTimeRange,
       }}
     >
       {children}

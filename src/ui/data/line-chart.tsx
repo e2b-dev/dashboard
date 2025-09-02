@@ -1,411 +1,306 @@
 'use client'
 
-import { useTeamMetrics } from '@/features/dashboard/sandboxes/monitoring/context'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import DefaultTooltip from '@/ui/data/tooltips'
-import deepmerge from 'deepmerge'
+import { cn } from '@/lib/utils/ui'
 import * as echarts from 'echarts'
 import { EChartsOption } from 'echarts'
-import {
-  default as EChartsReact,
-  default as ReactECharts,
-} from 'echarts-for-react'
+import ReactECharts from 'echarts-for-react'
+
+import 'echarts/lib/chart/line'
+import 'echarts/lib/component/brush'
+import 'echarts/lib/component/dataZoom'
+import 'echarts/lib/component/dataZoomInside'
+import 'echarts/lib/component/title'
+
 import { useTheme } from 'next-themes'
-import { useEffect, useMemo, useRef } from 'react'
-import { renderToString } from 'react-dom/server'
-import { Badge } from '../primitives/badge'
+import { useCallback, useMemo, useRef } from 'react'
+import { defaultLineChartOption } from './line-chart.defaults'
+import {
+  LineSeries,
+  makeSeriesFromData,
+  mergeReplaceArrays,
+} from './line-chart.utils'
 
-type XYValue = string | number | Date
-
-export interface LinePoint {
-  x: XYValue
-  y: number
-}
-
-export interface LineSeries
-  extends Partial<Omit<echarts.LineSeriesOption, 'data'>> {
-  id: string
-  data: LinePoint[]
-  name?: string
-  curve?: CurveKind
-}
-
-type CurveKind = 'linear' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter'
-
-interface AxisFormatters {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  x?: (value: any) => string
-  y?: (value: number) => string
-}
-
-interface AxisControls {
-  showGridX?: boolean
-  showGridY?: boolean
-  showAxisXLine?: boolean
-  showAxisYLine?: boolean
-  showAxisXTicks?: boolean
-  showAxisYTicks?: boolean
-}
-
-interface LayoutControls {
-  grid?: { top?: number; right?: number; bottom?: number; left?: number }
-}
-
-export interface LineChartProps extends AxisControls, LayoutControls {
+export interface LineChartProps {
+  /** Chart data series */
   data: LineSeries[]
-  curve?: CurveKind
-  xType?: 'category' | 'time' | 'value' | 'log'
-  format?: AxisFormatters
+
+  /** Full ECharts option that will be merged with defaults */
+  option?: EChartsOption
+
+  /** Custom handler for zoom end – receives from/to timestamps */
+  onZoomEnd?: (from: number, to: number) => void
+
+  /** Y-axis limit value to highlight with error styling */
+  yAxisLimit?: number
+
+  /** CSS class name */
   className?: string
+
+  /** Inline styles */
   style?: React.CSSProperties
-  tooltipFormatter?: (
-    params: echarts.TooltipComponentFormatterCallbackParams
-  ) => string
-  optionOverrides?: EChartsOption
-  enableDragZoom?: boolean
 }
 
-function mapCurveToSeriesOptions(curve?: CurveKind): {
-  smooth?: boolean
-  step?: false | 'start' | 'end' | 'middle'
-} {
-  switch (curve) {
-    case 'monotone':
-      return { smooth: true }
-    case 'stepBefore':
-      return { smooth: false, step: 'start' }
-    case 'stepAfter':
-      return { smooth: false, step: 'end' }
-    case 'step':
-      return { smooth: false, step: 'middle' }
-    case 'linear':
-    default:
-      return { smooth: false }
-  }
-}
-
-function toXValue(x: XYValue): number | string {
-  return x instanceof Date ? x.getTime() : x
-}
-
-// deepmerge default concatenates arrays; configure to replace instead to preserve previous behavior
-const mergeReplaceArrays = <T,>(target: T, source: Partial<T>): T =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deepmerge(target as any, source as any, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    arrayMerge: (_destinationArray, sourceArray) => sourceArray as any,
-  }) as T
-
-export function LineChart({
+export default function LineChart({
   data,
-  curve,
-  xType = 'category',
-  format,
+  option: userOption,
+  onZoomEnd,
+  yAxisLimit,
   className,
   style,
-  optionOverrides,
-  tooltipFormatter,
-  showGridX,
-  showGridY,
-  showAxisXLine,
-  showAxisYLine,
-  showAxisXTicks,
-  showAxisYTicks,
-  grid,
-  enableDragZoom = false,
 }: LineChartProps) {
-  const ref = useRef<EChartsReact>(null)
-  const { setChartsStart, setChartsEnd } = useTeamMetrics()
-
+  const ref = useRef<ReactECharts | null>(null)
   const { resolvedTheme } = useTheme()
 
-  const cssVars = useCssVars(
-    [
-      '--stroke',
-      '--stroke-active',
-      '--fg',
-      '--fg-tertiary',
-      '--bg-hover',
-      '--font-mono',
-    ] as const,
-    [resolvedTheme]
-  )
+  const cssVars = useCssVars([
+    '--stroke',
+    '--stroke-active',
+    '--fg',
+    '--fg-tertiary',
+    '--bg-1',
+    '--bg-hover',
+    '--bg-highlight',
+    '--bg-inverted',
+    '--font-mono',
+    '--accent-error-highlight',
+    '--accent-error-bg',
+  ] as const)
 
-  const resolvedFormat: AxisFormatters = useMemo(
-    () => ({ x: format?.x, y: format?.y }),
-    [format?.x, format?.y]
-  )
+  // Responsive axis configuration based on container size
+  const getResponsiveAxisConfig = useCallback(() => {
+    // Get container dimensions (fallback to reasonable defaults)
+    const containerWidth = ref.current?.getEchartsInstance()?.getWidth() || 800
+    const containerHeight =
+      ref.current?.getEchartsInstance()?.getHeight() || 400
 
-  const curveOptions = useMemo(() => mapCurveToSeriesOptions(curve), [curve])
+    const isSmallViewport = containerWidth < 600 || containerHeight < 300
+    const isMediumViewport = containerWidth < 900 || containerHeight < 450
 
-  const resolvedSeries = useMemo(() => {
-    return data.map(
-      (series) =>
-        ({
-          id: series.id,
-          name: series.name ?? series.id,
-          type: 'line' as const,
-          symbol: () => {
-            const svg = `<svg width="9" height="9" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="4.5" cy="4.5" r="3" fill="${cssVars['--fg']}" stroke="${cssVars['--stroke']}" stroke-width="0.5" />
-            </svg>`
-            const dataUrl = `data:image/svg+xml;base64,${btoa(svg)}`
+    return {
+      // Reduce tick density on smaller viewports
+      xAxisSplitNumber: isSmallViewport ? 3 : isMediumViewport ? 5 : 8,
+      yAxisSplitNumber: isSmallViewport ? 3 : isMediumViewport ? 5 : 6,
+      // Hide labels on very small viewports
+      showAxisLabels: !isSmallViewport,
+      // Reduce font sizes
+      fontSize: isSmallViewport ? 10 : 12,
+    }
+  }, [])
 
-            return `image://${dataUrl}`
-          },
-          symbolSize: 8,
-          // renders the symbol only on hover, not always
-          showSymbol: false,
-          lineStyle: {
-            width: series.lineStyle?.width ?? 1,
-            type: series.lineStyle?.type ?? 'solid',
-            color: series.lineStyle?.color ?? cssVars['--fg'],
-          },
-          areaStyle: series.areaStyle ?? {
-            color: cssVars['--fg'],
-            opacity: 0.08,
-          },
-          ...(series.curve
-            ? mapCurveToSeriesOptions(series.curve)
-            : curveOptions),
-          data: series.data.map((p) => [toXValue(p.x), p.y]),
-        }) satisfies echarts.LineSeriesOption
-    )
-  }, [curveOptions, data, cssVars])
+  const createSplitLineInterval = useCallback((limit: number) => {
+    return (value: string | number) => {
+      if (typeof value === 'string') {
+        value = parseFloat(value)
+      }
+
+      return value === limit ? '' : value.toString()
+    }
+  }, [])
 
   const option = useMemo<EChartsOption>(() => {
-    const axisPointerStyle = {
-      type: 'line' as const,
-      lineStyle: {
-        color: cssVars['--stroke'],
-        type: 'dashed' as const,
-      },
-    }
+    const series = makeSeriesFromData(data, cssVars)
+    const responsiveConfig = getResponsiveAxisConfig()
 
-    const base: EChartsOption = {
-      backgroundColor: 'transparent',
-      grid: {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        ...(grid ?? {}),
-      },
-      dataZoom: enableDragZoom
-        ? [
-            {
-              type: 'inside',
-              throttle: 100,
+    const limitLineConfig =
+      yAxisLimit !== undefined
+        ? {
+            markLine: {
+              silent: true,
+              symbol: 'none',
+              label: {
+                show: true,
+                fontFamily: cssVars['--font-mono'],
+              },
+              lineStyle: {
+                type: 'solid' as const,
+                width: 1,
+              },
+              z: 1000,
+              data: [
+                {
+                  yAxis: yAxisLimit * 0.8,
+                  label: {
+                    formatter: `${Math.round(yAxisLimit * 0.8)}`,
+                    position: 'start' as const,
+                    backgroundColor: cssVars['--accent-error-bg'],
+                    color: cssVars['--accent-error-highlight'],
+                    fontFamily: cssVars['--font-mono'],
+                    borderRadius: 0,
+                    padding: [4, 8],
+                  },
+                  lineStyle: {
+                    color: cssVars['--accent-error-highlight'],
+                    opacity: 0.3,
+                    type: 'dashed' as const,
+                    width: 2,
+                  },
+                },
+                {
+                  yAxis: yAxisLimit,
+                  label: {
+                    formatter: `${yAxisLimit}`,
+                    position: 'start' as const,
+                    backgroundColor: cssVars['--bg-1'],
+                    color: cssVars['--accent-error-highlight'],
+                    fontFamily: cssVars['--font-mono'],
+                    borderRadius: 0,
+                    padding: [4, 8],
+                    style: {
+                      borderWidth: 0,
+                      borderColor: cssVars['--accent-error-highlight'],
+                      backgroundColor: cssVars['--accent-error-bg'],
+                    },
+                  },
+                  lineStyle: {
+                    color: cssVars['--accent-error-highlight'],
+                    opacity: 0.6,
+                    type: 'solid' as const,
+                    width: 2,
+                  },
+                },
+              ],
             },
-          ]
-        : undefined,
-      animation: false,
+          }
+        : {}
+
+    const seriesWithLimit = Array.isArray(series)
+      ? series.map((s, index) =>
+          index === 0 ? { ...s, ...limitLineConfig } : s
+        )
+      : series
+        ? { ...series, ...limitLineConfig }
+        : series
+
+    const themedDefaults = mergeReplaceArrays(defaultLineChartOption, {
       tooltip: {
-        show: true,
-        trigger: 'axis',
-        confine: true,
-        borderColor: 'transparent',
         backgroundColor: 'transparent',
-        borderRadius: 0,
         padding: 0,
+        borderWidth: 0,
         shadowBlur: 0,
         shadowOffsetX: 0,
         shadowOffsetY: 0,
         shadowColor: 'transparent',
-        textStyle: {
-          color: cssVars['--fg'],
-          fontSize: 14,
-          fontWeight: 400,
-          lineHeight: 20,
-        },
-        formatter: tooltipFormatter
-          ? tooltipFormatter
-          : (params: echarts.TooltipComponentFormatterCallbackParams) => {
-              // normalize params to an array
-              params = params instanceof Array ? params : [params]
-              const first = params[0]!
-
-              const label = (() => {
-                const xValue = (first.value as Array<unknown>)?.[
-                  first.encode!.x![0]!
-                ]
-                if (!xValue) return 'n/a'
-
-                if (xType === 'time') {
-                  const date = new Date(xValue as number)
-                  const day = date.getDate()
-                  const month = date.toLocaleDateString('en-US', {
-                    month: 'short',
-                  })
-                  const time = date.toLocaleTimeString('en-US', {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                  return `${day} ${month} - ${time}`
-                }
-
-                return xValue.toLocaleString()
-              })()
-
-              const items = params.map((p) => ({
-                label: (
-                  <Badge variant="info" className="uppercase">
-                    {p.seriesName ?? 'n/a'}
-                  </Badge>
-                ),
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                value: (p.value as Array<any>)?.[
-                  p.encode!.y![0]!
-                ]?.toLocaleString(),
-              }))
-
-              return renderToString(
-                <DefaultTooltip label={label} items={items} />
-              )
-            },
       },
       xAxis: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        type: xType as any,
-        boundaryGap: xType === 'time' ? [0, 0] : undefined,
-        axisLine: {
-          show: showAxisXLine ?? true,
-          lineStyle: { color: cssVars['--stroke'] },
-        },
-        axisTick: { show: showAxisXTicks ?? false },
+        axisLine: { lineStyle: { color: cssVars['--stroke'] } },
         axisLabel: {
+          show: responsiveConfig.showAxisLabels,
           color: cssVars['--fg-tertiary'],
-          formatter: resolvedFormat.x
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (value: any) => resolvedFormat.x!(value)
-            : undefined,
-          fontSize: 12,
           fontFamily: cssVars['--font-mono'],
-          fontWeight: 400,
-          lineHeight: 17,
+          fontSize: responsiveConfig.fontSize,
+        },
+        axisPointer: {
+          lineStyle: { color: cssVars['--stroke-active'] },
+          label: {
+            backgroundColor: cssVars['--bg-highlight'],
+            color: cssVars['--fg'],
+            fontFamily: cssVars['--font-mono'],
+            position: 'top',
+            borderRadius: 0,
+            fontSize: responsiveConfig.fontSize,
+          },
+          snap: true,
         },
         splitLine: {
-          show: showGridX ?? false,
-          lineStyle: {
-            type: 'dashed',
-            color: cssVars['--stroke'],
-          },
+          lineStyle: { color: cssVars['--stroke'] },
         },
+        splitNumber: responsiveConfig.xAxisSplitNumber,
       },
       yAxis: {
-        type: 'value',
+        axisLine: { lineStyle: { color: cssVars['--stroke'] } },
         axisLabel: {
+          show: responsiveConfig.showAxisLabels,
           color: cssVars['--fg-tertiary'],
-          formatter: resolvedFormat.y
-            ? (value: number) => resolvedFormat.y!(value)
-            : undefined,
-          fontSize: 12,
           fontFamily: cssVars['--font-mono'],
-          fontWeight: 400,
-          lineHeight: 17,
+          fontSize: responsiveConfig.fontSize,
+          formatter: createSplitLineInterval(yAxisLimit ?? 0),
         },
-        axisPointer: axisPointerStyle,
-        axisLine: {
-          show: showAxisYLine ?? false,
+        axisPointer: {
+          lineStyle: { color: cssVars['--stroke-active'] },
+          label: {
+            backgroundColor: cssVars['--bg-highlight'],
+            color: cssVars['--fg'],
+            fontFamily: cssVars['--font-mono'],
+            position: 'top',
+            borderRadius: 0,
+            fontSize: responsiveConfig.fontSize,
+          },
+          snap: true,
+        },
+        splitLine: {
           lineStyle: { color: cssVars['--stroke'] },
         },
-        axisTick: { show: showAxisYTicks ?? false },
-        splitLine: {
-          show: showGridY ?? true,
-          lineStyle: {
-            type: 'dashed',
-            color: cssVars['--stroke'],
+        splitNumber: responsiveConfig.yAxisSplitNumber,
+        max: function (value: { max: number }) {
+          return Math.ceil(yAxisLimit ? yAxisLimit : value.max * 1.3)
+        },
+      },
+      toolbox: {
+        feature: {
+          dataZoom: {
+            brushStyle: {
+              borderWidth: 1,
+              color: resolvedTheme === 'dark' ? '#f2f2f244' : '#1f1f1f44',
+              borderColor: cssVars['--bg-inverted'],
+              opacity: 0.6,
+            },
           },
         },
       },
-      series: resolvedSeries,
-    }
+      series: seriesWithLimit,
+    })
 
-    return optionOverrides ? mergeReplaceArrays(base, optionOverrides) : base
+    return userOption
+      ? mergeReplaceArrays(themedDefaults, userOption)
+      : themedDefaults
   }, [
-    grid,
-    optionOverrides,
-    resolvedSeries,
-    resolvedFormat.x,
-    resolvedFormat.y,
-    showAxisXLine,
-    showAxisXTicks,
-    showAxisYLine,
-    showAxisYTicks,
+    data,
     cssVars,
-    xType,
-    tooltipFormatter,
-    showGridX,
-    showGridY,
-    enableDragZoom,
+    userOption,
+    yAxisLimit,
+    resolvedTheme,
+    getResponsiveAxisConfig,
+    createSplitLineInterval,
   ])
 
-  useEffect(() => {
-    const echartsInstance = ref.current?.getEchartsInstance?.()
-    if (!echartsInstance) return
-
-    if (enableDragZoom) {
-      echartsInstance.dispatchAction({
+  const onChartReadyCallback = (chart: echarts.ECharts) => {
+    // activate datazoom permanently
+    chart.dispatchAction(
+      {
         type: 'takeGlobalCursor',
         key: 'dataZoomSelect',
         dataZoomSelectActive: true,
-      })
-    } else {
-      echartsInstance.dispatchAction({
-        type: 'takeGlobalCursor',
-        key: 'dataZoomSelect',
-        dataZoomSelectActive: false,
-      })
-    }
-  }, [enableDragZoom])
+      },
+      {
+        flush: true,
+      }
+    )
+  }
 
   return (
-    <div className={className ?? 'w-full h-full'} style={style}>
+    <div className={cn('w-full h-full', className)} style={style}>
       <ReactECharts
         ref={ref}
+        echarts={echarts}
         key={resolvedTheme}
         option={option}
         notMerge={true}
         style={{ width: '100%', height: '100%' }}
+        lazyUpdate={true}
+        onChartReady={onChartReadyCallback}
+        onEvents={{
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          datazoom: (params: any) => {
+            if (onZoomEnd && params.batch && params.batch[0]) {
+              const { startValue, endValue } = params.batch[0]
+
+              if (startValue !== undefined && endValue !== undefined) {
+                onZoomEnd(Math.round(startValue), Math.round(endValue))
+              }
+            }
+          },
+        }}
       />
     </div>
   )
 }
-
-export interface TimeSeriesLineChartProps
-  extends Omit<LineChartProps, 'xType'> {
-  minimumVisualRangeMs?: number
-}
-
-function TimeSeriesLineChart({
-  minimumVisualRangeMs = 0,
-  ...rest
-}: TimeSeriesLineChartProps) {
-  const now = useMemo(() => Date.now(), [])
-  const min = useMemo(
-    () => now - Math.max(0, minimumVisualRangeMs),
-    [now, minimumVisualRangeMs]
-  )
-
-  const optionOverrides = useMemo<EChartsOption>(
-    () => ({
-      xAxis: { min, max: now },
-    }),
-    [min, now]
-  )
-
-  return (
-    <LineChart
-      {...rest}
-      xType="time"
-      optionOverrides={
-        rest.optionOverrides
-          ? mergeReplaceArrays(optionOverrides, rest.optionOverrides)
-          : optionOverrides
-      }
-    />
-  )
-}
-
-export default TimeSeriesLineChart
