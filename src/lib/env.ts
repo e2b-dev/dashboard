@@ -45,6 +45,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
+  NEXT_PUBLIC_ENABLE_CONCURRENT_CHART_WARNING_LINE: z.string().optional(),
 })
 
 export const testEnvSchema = z.object({

@@ -1,5 +1,6 @@
 'use client'
 
+import { ENABLE_CONCURRENT_CHART_WARNING_LINE } from '@/configs/flags'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
   formatChartTimestamp,
@@ -192,25 +193,29 @@ export default function LineChart({
                 },
               },
               data: [
-                {
-                  yAxis: yAxisLimit * 0.8,
-                  name: '80% Warning',
-                  label: {
-                    formatter: `${formatNumber(Math.round(yAxisLimit * 0.8))}`,
-                    position: 'start' as const,
-                    backgroundColor: cssVars['--accent-warning-bg'],
-                    color: cssVars['--accent-warning-highlight'],
-                    fontFamily: cssVars['--font-mono'],
-                    borderRadius: 0,
-                    padding: [4, 8],
-                  },
-                  lineStyle: {
-                    color: cssVars['--accent-warning-highlight'],
-                    opacity: 0.8,
-                    type: 'dashed' as const,
-                    width: 1,
-                  },
-                },
+                ...(ENABLE_CONCURRENT_CHART_WARNING_LINE
+                  ? [
+                      {
+                        yAxis: yAxisLimit * 0.8,
+                        name: '80% Warning',
+                        label: {
+                          formatter: `${formatNumber(Math.round(yAxisLimit * 0.8))}`,
+                          position: 'start' as const,
+                          backgroundColor: cssVars['--accent-warning-bg'],
+                          color: cssVars['--accent-warning-highlight'],
+                          fontFamily: cssVars['--font-mono'],
+                          borderRadius: 0,
+                          padding: [4, 8],
+                        },
+                        lineStyle: {
+                          color: cssVars['--accent-warning-highlight'],
+                          opacity: 0.8,
+                          type: 'dashed' as const,
+                          width: 1,
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   yAxis: yAxisLimit,
                   name: 'Limit',
