@@ -14,6 +14,8 @@ import 'echarts/lib/component/title'
 
 import { useTheme } from 'next-themes'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { renderToString } from 'react-dom/server'
+import { LimitLineTooltip } from './limit-line-tooltip'
 import { defaultLineChartOption } from './line-chart.defaults'
 import {
   LineSeries,
@@ -83,6 +85,7 @@ export default function LineChart({
     '--stroke',
     '--stroke-active',
     '--fg',
+    '--fg-secondary',
     '--fg-tertiary',
     '--bg-1',
     '--bg-hover',
@@ -91,6 +94,7 @@ export default function LineChart({
     '--font-mono',
     '--accent-error-highlight',
     '--accent-error-bg',
+    '--accent-warning-highlight',
   ] as const)
 
   // responsive axis config based on viewport size
@@ -131,7 +135,6 @@ export default function LineChart({
       yAxisLimit !== undefined
         ? {
             markLine: {
-              silent: true,
               symbol: 'none',
               label: {
                 show: true,
@@ -142,9 +145,30 @@ export default function LineChart({
                 width: 1,
               },
               z: 1000,
+              tooltip: {
+                trigger: 'item' as const,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter: (params: any) => {
+                  const value = params.data?.yAxis
+                  if (value === undefined) return ''
+                  return renderToString(
+                    <LimitLineTooltip value={value} limit={yAxisLimit} />
+                  )
+                },
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                padding: 0,
+              },
+              emphasis: {
+                disabled: true,
+                tooltip: {
+                  show: false,
+                },
+              },
               data: [
                 {
                   yAxis: yAxisLimit * 0.8,
+                  name: '80% Warning',
                   label: {
                     formatter: `${Math.round(yAxisLimit * 0.8)}`,
                     position: 'start' as const,
@@ -163,6 +187,7 @@ export default function LineChart({
                 },
                 {
                   yAxis: yAxisLimit,
+                  name: 'Limit',
                   label: {
                     formatter: `${yAxisLimit}`,
                     position: 'start' as const,
@@ -191,10 +216,12 @@ export default function LineChart({
 
     const seriesWithLimit = Array.isArray(series)
       ? series.map((s, index) =>
-          index === 0 ? { ...s, ...limitLineConfig } : s
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          index === 0 ? ({ ...s, ...limitLineConfig } as any) : s
         )
       : series
-        ? { ...series, ...limitLineConfig }
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ({ ...series, ...limitLineConfig } as any)
         : series
 
     const themedDefaults = mergeReplaceArrays(defaultLineChartOption, {
@@ -224,6 +251,7 @@ export default function LineChart({
               const hour = date.toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
+                second: '2-digit',
                 hour12: true,
               })
               const day = date.toLocaleDateString('en-US', {
@@ -258,6 +286,7 @@ export default function LineChart({
                   day: 'numeric',
                   hour: 'numeric',
                   minute: '2-digit',
+                  second: '2-digit',
                   hour12: true,
                 })
               }
