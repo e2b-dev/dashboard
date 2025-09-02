@@ -64,9 +64,9 @@ export default function ConcurrentChartClient({
   }, [lineData])
 
   const cssVars = useCssVars([
-    '--graph-1',
-    '--graph-area-accent-main-from',
-    '--graph-area-accent-main-to',
+    '--accent-positive-highlight',
+    '--graph-area-accent-positive-from',
+    '--graph-area-accent-positive-to',
   ] as const)
 
   const currentRange = useMemo(() => {
@@ -136,6 +136,7 @@ export default function ConcurrentChartClient({
           timestamp={timestamp}
           description={getAveragingPeriodText(data.step)}
           classNames={{
+            value: 'text-accent-positive-highlight',
             description: 'text-fg-tertiary opacity-75',
             timestamp: 'text-fg-tertiary',
           }}
@@ -149,10 +150,14 @@ export default function ConcurrentChartClient({
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
       <div className="flex justify-between gap-6 min-h-[60px]">
         <div className="flex flex-col justify-end">
-          <span className="prose-label-highlight uppercase">Concurrent</span>
+          <span className="prose-label-highlight uppercase">
+            Concurrent Sandboxes
+          </span>
           <div className="inline-flex items-end gap-3 mt-2">
             <span className="prose-value-big">{average.toFixed(1)}</span>
-            <span className="label-tertiary">AVG</span>
+            <span className="label-tertiary">
+              over {getAveragingPeriodText(data.step)}
+            </span>
           </div>
         </div>
 
@@ -209,7 +214,7 @@ export default function ConcurrentChartClient({
             name: 'Running Sandboxes',
             data: lineData,
             lineStyle: {
-              color: cssVars['--graph-1'],
+              color: cssVars['--accent-positive-highlight'],
             },
             areaStyle: {
               color: {
@@ -221,11 +226,11 @@ export default function ConcurrentChartClient({
                 colorStops: [
                   {
                     offset: 0,
-                    color: cssVars['--graph-area-accent-main-from'],
+                    color: cssVars['--graph-area-accent-positive-from'],
                   },
                   {
                     offset: 1,
-                    color: cssVars['--graph-area-accent-main-to'],
+                    color: cssVars['--graph-area-accent-positive-to'],
                   },
                 ],
               },

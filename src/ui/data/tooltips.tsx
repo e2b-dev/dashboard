@@ -57,7 +57,7 @@ export function SingleValueTooltip({
   classNames = {},
 }: SingleValueTooltipProps) {
   const formattedValue =
-    typeof value === 'number' ? value.toLocaleString() : value
+    typeof value === 'number' ? value.toLocaleString('en-US') : value
 
   return (
     <div
@@ -70,7 +70,7 @@ export function SingleValueTooltip({
       <div
         className={cn(
           'font-medium',
-          classNames.value || 'text-accent-main-highlight'
+          classNames.value || 'text-accent-info-highlight'
         )}
       >
         {formattedValue} {unit} {label}
@@ -92,7 +92,13 @@ export function SingleValueTooltip({
             classNames.timestamp || 'text-fg-tertiary'
           )}
         >
-          {new Date(timestamp).toLocaleString()}
+          {new Date(timestamp).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          })}
         </div>
       )}
     </div>

@@ -1,6 +1,5 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
-import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import ErrorTooltip from '@/ui/error-tooltip'
@@ -51,6 +50,18 @@ export default function SandboxesMonitoringHeader({
     <div className="flex md:flex-row flex-col items-center border-b w-full min-h-52">
       <BaseCard>
         <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
+
+        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
+          <SandboxesStartRate params={params} />
+        </Suspense>
+        <BaseSubtitle>
+          Sandboxes/Sec. <br />
+          (5 sec average)
+        </BaseSubtitle>
+      </BaseCard>
+
+      <BaseCard>
+        <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <ConcurrentSandboxes params={params} />
         </Suspense>
@@ -68,18 +79,6 @@ export default function SandboxesMonitoringHeader({
           Max. Concurrent Sandboxes
           <br />
           (Last 30 Days)
-        </BaseSubtitle>
-      </BaseCard>
-
-      <BaseCard>
-        <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
-
-        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
-          <SandboxesStartRate params={params} />
-        </Suspense>
-        <BaseSubtitle>
-          Sandboxes Start Rate <br />
-          (5 sec average)
         </BaseSubtitle>
       </BaseCard>
     </div>
@@ -165,13 +164,6 @@ export const MaxConcurrentSandboxes = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const teamMetricsResult = await getTeamMetricsLast30Days(teamId)
-
-  l.debug({
-    key: 'max_concurrent_sandboxes:debug',
-    context: {
-      teamId,
-    },
-  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (

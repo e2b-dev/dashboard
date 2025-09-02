@@ -206,6 +206,28 @@ export default function LineChart({
           color: cssVars['--fg-tertiary'],
           fontFamily: cssVars['--font-mono'],
           fontSize: responsiveConfig.fontSize,
+          formatter: (value: string | number): string => {
+            // If this is a time axis, format using US locale
+            if (
+              userOption?.xAxis &&
+              (userOption.xAxis as { type?: string }).type === 'time'
+            ) {
+              const date = new Date(value)
+              const hour = date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+              })
+              const day = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })
+              // Show date if it's the first label of a new day
+              const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
+              return isNewDay ? day : hour
+            }
+            return String(value)
+          },
         },
         axisPointer: {
           lineStyle: { color: cssVars['--stroke-active'] },
@@ -216,6 +238,23 @@ export default function LineChart({
             position: 'top',
             borderRadius: 0,
             fontSize: responsiveConfig.fontSize,
+            formatter: ((params: { value: unknown }): string => {
+              // If this is a time axis, format using US locale
+              if (
+                userOption?.xAxis &&
+                (userOption.xAxis as { type?: string }).type === 'time'
+              ) {
+                const date = new Date(params.value as string | number)
+                return date.toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                })
+              }
+              return String(params.value)
+            }) as unknown as string | ((params: unknown) => string),
           },
           snap: true,
         },

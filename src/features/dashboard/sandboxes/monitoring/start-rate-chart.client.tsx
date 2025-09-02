@@ -48,9 +48,9 @@ export default function StartRateChartClient({
   }, [lineData])
 
   const cssVars = useCssVars([
-    '--fg',
-    '--graph-area-fg-from',
-    '--graph-area-fg-to',
+    '--graph-6',
+    '--graph-area-6-from',
+    '--graph-area-6-to',
   ] as const)
 
   const tooltipFormatter = useCallback(
@@ -72,7 +72,7 @@ export default function StartRateChartClient({
           timestamp={timestamp}
           description={getAveragingPeriodText(data.step)}
           classNames={{
-            value: 'text-fg',
+            value: 'text-graph-6',
             description: 'text-fg-tertiary opacity-75',
             timestamp: 'text-fg-tertiary',
           }}
@@ -85,11 +85,11 @@ export default function StartRateChartClient({
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
       <div className="min-h-[60px] flex flex-col justify-end">
-        <span className="prose-label-highlight uppercase">Start Rate</span>
+        <span className="prose-label-highlight uppercase">Sandboxes/Sec.</span>
         <div className="inline-flex items-end gap-3 mt-2">
           <span className="prose-value-big">{average.toFixed(1)}</span>
           <span className="label-tertiary">
-            AVG over {getAveragingPeriodText(data.step)}
+            over {getAveragingPeriodText(data.step)}
           </span>
         </div>
       </div>
@@ -104,9 +104,11 @@ export default function StartRateChartClient({
             type: 'time',
             min: timeframe.start,
             max: timeframe.end,
+            jitterMargin: 10,
           },
           yAxis: {
             splitNumber: 2,
+            max: 5,
           },
           tooltip: {
             show: true,
@@ -119,17 +121,17 @@ export default function StartRateChartClient({
             name: 'Rate',
             data: lineData,
             lineStyle: {
-              color: cssVars['--fg'],
+              color: cssVars['--graph-6'],
             },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                 {
                   offset: 0,
-                  color: cssVars['--graph-area-fg-from'],
+                  color: cssVars['--graph-area-6-from'],
                 },
                 {
                   offset: 1,
-                  color: cssVars['--graph-area-fg-to'],
+                  color: cssVars['--graph-area-6-to'],
                 },
               ]),
             },

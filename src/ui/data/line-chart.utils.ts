@@ -24,12 +24,23 @@ export interface LineSeries {
   id: string
   name?: string
   data: LinePoint[]
+  type?: 'line'
+  coordinateSystem?: 'cartesian2d' | 'polar'
+  clip?: boolean
   // styling overrides
   // @ts-expect-error - this is a workaround to allow for type safety
   lineStyle?: EChartsOption['series'][number]['lineStyle']
   // @ts-expect-error - this is a workaround to allow for type safety
   areaStyle?: EChartsOption['series'][number]['areaStyle']
+  step?: false | 'start' | 'end' | 'middle'
+  smooth?: boolean | number
+  smoothMonotone?: 'x' | 'y' | 'none'
+  connectNulls?: boolean
+  showSymbol?: boolean
+  showAllSymbol?: 'auto' | boolean
+  triggerLineEvent?: boolean
 }
+
 /**
  * Turns a list of series definitions into ECharts series option ready to merge
  * with defaultLineChartOption.
@@ -49,7 +60,7 @@ export const makeSeriesFromData = (
     type: 'line',
     symbol: 'none',
     lineStyle: {
-      width: 1.5,
+      width: 1,
       color: s.lineStyle?.color ?? colors['--fg'],
       ...(s.lineStyle ?? {}),
     },
@@ -57,6 +68,13 @@ export const makeSeriesFromData = (
       color: colors['--fg'],
       opacity: 0.08,
     },
+    step: s.step,
+    smooth: s.smooth,
+    smoothMonotone: s.smoothMonotone,
+    connectNulls: s.connectNulls,
+    showSymbol: s.showSymbol,
+    showAllSymbol: s.showAllSymbol,
+    triggerLineEvent: s.triggerLineEvent,
     data: s.data.map((p) => [p.x instanceof Date ? p.x.getTime() : p.x, p.y]),
   }))
 }
