@@ -1,6 +1,8 @@
 import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { USE_MOCK_DATA } from '@/configs/flags'
+import { MOCK_TEAM_METRICS_DATA } from '@/configs/mock-data'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -15,6 +17,17 @@ export async function POST(
     const { teamId } = await params
 
     const { start, end } = TeamMetricsRequestSchema.parse(await request.json())
+
+    // Use mock data if flag is enabled
+    if (USE_MOCK_DATA) {
+      // Determine team size based on teamId hash for consistency
+      const teamSizes = ['small', 'medium', 'large'] as const
+      const teamSizeIndex = teamId.charCodeAt(0) % 3
+      const teamSize = teamSizes[teamSizeIndex]!
+      
+      const mockData = MOCK_TEAM_METRICS_DATA(start, end, teamSize)
+      return Response.json(mockData satisfies TeamMetricsResponse)
+    }
 
     // convert milliseconds to seconds
     const startSeconds = Math.floor(start / 1000)

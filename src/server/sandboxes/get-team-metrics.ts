@@ -1,6 +1,8 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { USE_MOCK_DATA } from '@/configs/flags'
+import { MOCK_TEAM_METRICS_DATA } from '@/configs/mock-data'
 import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
@@ -31,6 +33,14 @@ export const getTeamMetrics = authActionClient
 
     const teamId = parsedInput.teamId
     const { startDate: startDateMs, endDate: endDateMs } = parsedInput
+
+    if (USE_MOCK_DATA) {
+      const teamSizes = ['small', 'medium', 'large'] as const
+      const teamSizeIndex = teamId.charCodeAt(0) % 3
+      const teamSize = teamSizes[teamSizeIndex]!
+
+      return MOCK_TEAM_METRICS_DATA(startDateMs, endDateMs, teamSize)
+    }
 
     // convert milliseconds to seconds
     const startDate = Math.floor(startDateMs / 1000)

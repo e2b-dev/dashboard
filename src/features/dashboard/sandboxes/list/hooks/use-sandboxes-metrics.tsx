@@ -49,7 +49,7 @@ export function useSandboxesMetrics({
         }
       }
 
-      if (process.env.NEXT_PUBLIC_MOCK_DATA === '1') {
+      if (USE_MOCK_DATA) {
         return MOCK_METRICS_DATA(sandboxes)
       }
 

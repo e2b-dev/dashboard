@@ -205,6 +205,7 @@ export default function ConcurrentChartClient({
           },
           yAxis: {
             splitNumber: 2,
+            max: Math.max(...lineData.map((d) => (d.y || 0) * 1.25), 100),
           },
           tooltip: {
             show: true,

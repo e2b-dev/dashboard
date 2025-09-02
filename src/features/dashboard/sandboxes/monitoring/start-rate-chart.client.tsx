@@ -110,7 +110,7 @@ export default function StartRateChartClient({
           },
           yAxis: {
             splitNumber: 2,
-            max: 5,
+            max: Math.round(Math.max(...lineData.map((d) => d.y || 0)) * 1.25),
           },
           tooltip: {
             show: true,
