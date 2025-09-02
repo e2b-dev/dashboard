@@ -4,6 +4,7 @@
  */
 
 import { format, isThisYear } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 
 // ============================================================================
 // Date & Time Formatting
@@ -18,7 +19,8 @@ export function formatChartTimestamp(
   timestamp: number | string | Date
 ): string {
   const date = new Date(timestamp)
-  return format(date, 'MMM d, h:mm:ss a')
+  // Use UTC formatting to ensure consistent display across timezones
+  return formatInTimeZone(date, 'UTC', 'MMM d, h:mm:ss a')
 }
 
 /**
@@ -100,11 +102,12 @@ export function formatTimeAxisLabel(
 ): string {
   const date = new Date(value)
 
-  if (showDate || (date.getHours() === 0 && date.getMinutes() === 0)) {
-    return format(date, 'MMM d')
+  // Check for midnight in UTC
+  if (showDate || (date.getUTCHours() === 0 && date.getUTCMinutes() === 0)) {
+    return formatInTimeZone(date, 'UTC', 'MMM d')
   }
 
-  return format(date, 'h:mm:ss a')
+  return formatInTimeZone(date, 'UTC', 'h:mm:ss a')
 }
 
 /**

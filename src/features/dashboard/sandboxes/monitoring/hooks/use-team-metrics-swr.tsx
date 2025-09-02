@@ -66,7 +66,14 @@ export default function useTeamMetricsSWR(
       const step = data.step
 
       return {
-        metrics: fillTeamMetricsWithZeros(data.metrics, start, end, step),
+        metrics: fillTeamMetricsWithZeros(
+          data.metrics,
+          start,
+          timeframe.isLive
+            ? Date.now() - TEAM_METRICS_POLLING_INTERVAL_MS
+            : end,
+          step
+        ),
         step,
       }
     },

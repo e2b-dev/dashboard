@@ -3,10 +3,10 @@
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { formatAveragingPeriod, formatDecimal } from '@/lib/utils/formatting'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import LineChart from '@/ui/data/line-chart'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
-import dynamic from 'next/dynamic'
 import { useCallback, useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
 import { NonUndefined } from 'react-hook-form'
@@ -18,10 +18,6 @@ interface StartRateChartProps {
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
   >
 }
-
-const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
-  ssr: false,
-})
 
 export default function StartRateChartClient({
   initialData,

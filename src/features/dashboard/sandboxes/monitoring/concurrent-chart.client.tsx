@@ -6,23 +6,18 @@ import {
   formatCompactDate,
   formatDecimal,
 } from '@/lib/utils/formatting'
+import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
 import { cn } from '@/lib/utils/ui'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import LineChart from '@/ui/data/line-chart'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import { Button } from '@/ui/primitives/button'
+import { InferSafeActionFnResult } from 'next-safe-action'
 import { useCallback, useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
+import { NonUndefined } from 'react-hook-form'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
-
-import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { InferSafeActionFnResult } from 'next-safe-action'
-import dynamic from 'next/dynamic'
-import { NonUndefined } from 'react-hook-form'
-
-const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
-  ssr: false,
-})
 
 const CHART_RANGE_MAP = {
   custom: null,
