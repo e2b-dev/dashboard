@@ -1,12 +1,16 @@
 'use client'
 
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
+import { NonUndefined } from 'react-hook-form'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
 interface TeamMonitoringHeaderClientProps {
-  initialData: ClientTeamMetrics
+  initialData: NonUndefined<
+    InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  >
 }
 
 export function ConcurrentSandboxesClient({
@@ -18,7 +22,7 @@ export function ConcurrentSandboxesClient({
   })
 
   const lastConcurrentSandboxes =
-    data?.[data.length - 1]?.concurrentSandboxes ?? 0
+    data?.metrics[data.metrics.length - 1]?.concurrentSandboxes ?? 0
 
   return <span className="prose-value-big">{lastConcurrentSandboxes}</span>
 }
@@ -32,7 +36,7 @@ export function SandboxesStartRateClient({
   })
 
   const lastSandboxesStartRate = useMemo(() => {
-    const rate = data?.[data.length - 1]?.sandboxStartRate ?? 0
+    const rate = data?.metrics[data.metrics.length - 1]?.sandboxStartRate ?? 0
     return Math.round(rate * 100) / 100
   }, [data])
 

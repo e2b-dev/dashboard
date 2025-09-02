@@ -70,13 +70,19 @@ export const getTeamMetrics = authActionClient
       timestamp: new Date(d.timestamp).getTime(),
     }))
 
+    const step =
+      processedData[1]?.timestamp && processedData[0]?.timestamp
+        ? processedData[1]?.timestamp - processedData[0]?.timestamp
+        : 0
+
     const filledData = fillTeamMetricsWithZeros(
       processedData,
       startDateMs,
-      endDateMs
+      endDateMs,
+      step
     )
 
-    return filledData
+    return { metrics: filledData, step }
   })
 
 const getTeamMetricsMemoized = cache(

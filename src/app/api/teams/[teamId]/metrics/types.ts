@@ -1,5 +1,4 @@
-import { InferSafeActionFnResult } from 'next-safe-action'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { z } from 'zod'
 
 export const TeamMetricsRequestSchema = z.object({
@@ -10,5 +9,6 @@ export const TeamMetricsRequestSchema = z.object({
 export type TeamMetricsRequest = z.infer<typeof TeamMetricsRequestSchema>
 
 export type TeamMetricsResponse = {
-  metrics: InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  metrics: ClientTeamMetrics
+  step: number
 }

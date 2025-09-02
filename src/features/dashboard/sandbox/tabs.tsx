@@ -32,7 +32,7 @@ export default function SandboxDetailsTabs({
       <TabsList className="bg-bg z-30 w-full justify-start pl-3 md:pl-6">
         {tabs.map((tab) => (
           <TabsTrigger
-            layoutKey="tabs-indicator-sandbox"
+            layoutkey="tabs-indicator-sandbox"
             key={tab}
             value={tab}
             className="w-fit flex-none"

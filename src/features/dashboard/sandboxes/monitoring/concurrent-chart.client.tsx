@@ -2,7 +2,6 @@
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils/ui'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import { Button } from '@/ui/primitives/button'
 import { useCallback, useMemo } from 'react'
@@ -10,12 +9,12 @@ import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
-import {
-  calculateTeamMetricsStep,
-  getAveragingPeriodText,
-} from '@/lib/utils/sandboxes'
+import { getAveragingPeriodText } from '@/lib/utils/sandboxes'
 import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { InferSafeActionFnResult } from 'next-safe-action'
 import dynamic from 'next/dynamic'
+import { NonUndefined } from 'react-hook-form'
 
 const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
   ssr: false,
@@ -31,7 +30,9 @@ const CHART_RANGE_MAP_KEYS = Object.keys(CHART_RANGE_MAP) as Array<
 >
 
 interface ConcurrentChartProps {
-  initialData: ClientTeamMetrics
+  initialData: NonUndefined<
+    InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  >
 }
 
 export default function ConcurrentChartClient({
@@ -47,10 +48,10 @@ export default function ConcurrentChartClient({
 
   const lineData = useMemo(
     () =>
-      data?.map((d) => ({
+      data.metrics.map((d) => ({
         x: d.timestamp,
         y: d.concurrentSandboxes,
-      })) || [],
+      })),
     [data]
   )
 
@@ -61,20 +62,6 @@ export default function ConcurrentChartClient({
       lineData.reduce((acc, cur) => acc + (cur.y || 0), 0) / lineData.length
     )
   }, [lineData])
-
-  const step = useMemo(() => {
-    if (!lineData?.length || lineData.length < 2) return null
-
-    const nonZeroPoints = lineData.filter((point) => point.y !== 0)
-    if (nonZeroPoints.length >= 2) {
-      return nonZeroPoints[1]!.x - nonZeroPoints[0]!.x
-    }
-
-    return calculateTeamMetricsStep(
-      new Date(timeframe.start),
-      new Date(timeframe.end)
-    )
-  }, [lineData, timeframe.start, timeframe.end])
 
   const cssVars = useCssVars([
     '--accent-main-highlight',
@@ -128,13 +115,15 @@ export default function ConcurrentChartClient({
 
   const tooltipFormatter = useCallback(
     (params: echarts.TooltipComponentFormatterCallbackParams) => {
-      const data = Array.isArray(params) ? params[0] : params
-      if (!data?.value) return ''
+      const paramsData = Array.isArray(params) ? params[0] : params
+      if (!paramsData?.value) return ''
 
-      const value = Array.isArray(data.value) ? data.value[1] : data.value
-      const timestamp = Array.isArray(data.value)
-        ? (data.value[0] as string)
-        : (data.value as string)
+      const value = Array.isArray(paramsData.value)
+        ? paramsData.value[1]
+        : paramsData.value
+      const timestamp = Array.isArray(paramsData.value)
+        ? (paramsData.value[0] as string)
+        : (paramsData.value as string)
 
       return renderToString(
         <SingleValueTooltip
@@ -145,7 +134,7 @@ export default function ConcurrentChartClient({
               : 'concurrent sandboxes'
           }
           timestamp={timestamp}
-          description={getAveragingPeriodText(step ?? 0)}
+          description={getAveragingPeriodText(data.step)}
           classNames={{
             description: 'text-fg-tertiary opacity-75',
             timestamp: 'text-fg-tertiary',
@@ -153,7 +142,7 @@ export default function ConcurrentChartClient({
         />
       )
     },
-    [step]
+    [data.step]
   )
 
   return (

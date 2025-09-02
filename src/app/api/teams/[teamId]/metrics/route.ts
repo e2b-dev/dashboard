@@ -76,7 +76,12 @@ export async function POST(
       timestamp: new Date(d.timestamp).getTime(),
     }))
 
-    return Response.json({ metrics } satisfies TeamMetricsResponse)
+    const step =
+      metrics[1]?.timestamp && metrics[0]?.timestamp
+        ? metrics[1]?.timestamp - metrics[0]?.timestamp
+        : 0
+
+    return Response.json({ metrics, step } satisfies TeamMetricsResponse)
   } catch (error) {
     return Response.json({ error: 'Invalid request' }, { status: 400 })
   }

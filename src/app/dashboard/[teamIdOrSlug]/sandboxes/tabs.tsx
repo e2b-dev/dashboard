@@ -55,7 +55,7 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
         {TABS.map((tab) => (
           <Link key={tab.value} href={tab.url(teamIdOrSlug)} prefetch>
             <TabsTrigger
-              layoutKey="tabs-indicator-sandboxes"
+              layoutkey="tabs-indicator-sandboxes"
               value={tab.value}
               className="w-fit flex-none"
             >

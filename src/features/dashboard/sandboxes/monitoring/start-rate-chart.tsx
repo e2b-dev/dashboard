@@ -52,7 +52,7 @@ async function StartRateChartResolver({
     endDate: end,
   })
 
-  const data = teamMetricsResult?.data ?? []
+  const data = teamMetricsResult?.data ?? { metrics: [], step: 0 }
 
   return <StartRateChartClient initialData={data} />
 }

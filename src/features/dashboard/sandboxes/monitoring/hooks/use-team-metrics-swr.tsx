@@ -9,12 +9,16 @@ import {
   resolveTimeframe,
   TimeframeState,
 } from '@/lib/utils/timeframe'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { InferSafeActionFnResult } from 'next-safe-action'
+import { NonUndefined } from 'react-hook-form'
 import useSWR from 'swr'
 import { useTeamMetrics } from '../context'
 
 export default function useTeamMetricsSWR(
-  initialData: ClientTeamMetrics,
+  initialData: NonUndefined<
+    InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  >,
   timeframeState?: TimeframeState
 ) {
   const selectedTeam = useSelectedTeam()
@@ -59,7 +63,12 @@ export default function useTeamMetricsSWR(
         return initialData
       }
 
-      return fillTeamMetricsWithZeros(data.metrics, start, end)
+      const step = data.step
+
+      return {
+        metrics: fillTeamMetricsWithZeros(data.metrics, start, end, step),
+        step,
+      }
     },
     {
       fallbackData: initialData,

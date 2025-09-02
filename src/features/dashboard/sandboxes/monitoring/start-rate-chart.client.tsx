@@ -1,21 +1,22 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import {
-  calculateTeamMetricsStep,
-  getAveragingPeriodText,
-} from '@/lib/utils/sandboxes'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
+import { getAveragingPeriodText } from '@/lib/utils/sandboxes'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
+import { InferSafeActionFnResult } from 'next-safe-action'
 import dynamic from 'next/dynamic'
 import { useCallback, useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
+import { NonUndefined } from 'react-hook-form'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
 interface StartRateChartProps {
-  initialData: ClientTeamMetrics
+  initialData: NonUndefined<
+    InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  >
 }
 
 const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
@@ -33,32 +34,18 @@ export default function StartRateChartClient({
     data = initialData
   }
 
-  const lineData = data?.map((d) => ({
+  const lineData = data.metrics.map((d) => ({
     x: d.timestamp,
     y: d.sandboxStartRate,
   }))
 
   const average = useMemo(() => {
-    if (!lineData?.length) return 0
+    if (!lineData.length) return 0
 
     return (
       lineData.reduce((acc, cur) => acc + (cur.y || 0), 0) / lineData.length
     )
   }, [lineData])
-
-  const step = useMemo(() => {
-    if (!lineData?.length || lineData.length < 2) return null
-
-    const nonZeroPoints = lineData.filter((point) => point.y !== 0)
-    if (nonZeroPoints.length >= 2) {
-      return nonZeroPoints[1]!.x - nonZeroPoints[0]!.x
-    }
-
-    return calculateTeamMetricsStep(
-      new Date(timeframe.start),
-      new Date(timeframe.end)
-    )
-  }, [lineData, timeframe.start, timeframe.end])
 
   const cssVars = useCssVars([
     '--fg',
@@ -68,20 +55,22 @@ export default function StartRateChartClient({
 
   const tooltipFormatter = useCallback(
     (params: echarts.TooltipComponentFormatterCallbackParams) => {
-      const data = Array.isArray(params) ? params[0] : params
-      if (!data?.value) return ''
+      const paramsData = Array.isArray(params) ? params[0] : params
+      if (!paramsData?.value) return ''
 
-      const value = Array.isArray(data.value) ? data.value[1] : data.value
-      const timestamp = Array.isArray(data.value)
-        ? (data.value[0] as string)
-        : (data.value as string)
+      const value = Array.isArray(paramsData.value)
+        ? paramsData.value[1]
+        : paramsData.value
+      const timestamp = Array.isArray(paramsData.value)
+        ? (paramsData.value[0] as string)
+        : (paramsData.value as string)
 
       return renderToString(
         <SingleValueTooltip
           value={typeof value === 'number' ? value : 'n/a'}
           label="sandboxes/s"
           timestamp={timestamp}
-          description={getAveragingPeriodText(step ?? 0)}
+          description={getAveragingPeriodText(data.step)}
           classNames={{
             value: 'text-fg',
             description: 'text-fg-tertiary opacity-75',
@@ -90,7 +79,7 @@ export default function StartRateChartClient({
         />
       )
     },
-    [step]
+    [data.step]
   )
 
   return (
@@ -100,7 +89,7 @@ export default function StartRateChartClient({
         <div className="inline-flex items-end gap-3 mt-2">
           <span className="prose-value-big">{average.toFixed(1)}</span>
           <span className="label-tertiary">
-            AVG over {getAveragingPeriodText(step ?? 0)}
+            AVG over {getAveragingPeriodText(data.step)}
           </span>
         </div>
       </div>

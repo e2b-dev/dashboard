@@ -59,7 +59,7 @@ async function ConcurrentChartResolver({
     endDate: end,
   })
 
-  const data = teamMetricsResult?.data ?? []
+  const data = teamMetricsResult?.data ?? { metrics: [], step: 0 }
 
   return <ConcurrentChartClient initialData={data} />
 }

@@ -183,7 +183,9 @@ export const MaxConcurrentSandboxes = async ({
   }
 
   const concurrentSandboxes = Math.max(
-    ...teamMetricsResult.data.map((item) => item.concurrentSandboxes ?? 0)
+    ...teamMetricsResult.data.metrics.map(
+      (item) => item.concurrentSandboxes ?? 0
+    )
   )
 
   return <span className="prose-value-big">{concurrentSandboxes}</span>

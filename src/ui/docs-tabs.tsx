@@ -148,7 +148,7 @@ export function Tabs({
           const Icon = IconsMap[v] || null
           return (
             <Primitive.TabsTrigger
-              layoutKey="tabs-indicator-docs"
+              layoutkey="tabs-indicator-docs"
               key={v}
               value={v}
               className="flex items-center gap-2"
