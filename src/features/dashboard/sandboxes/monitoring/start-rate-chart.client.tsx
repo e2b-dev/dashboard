@@ -79,10 +79,10 @@ export default function StartRateChartClient({
   )
 
   return (
-    <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 max-md:min-h-[400px] md:min-h-0">
+    <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
       <div className="md:min-h-[60px] flex flex-col justify-end">
         <span className="prose-label-highlight uppercase max-md:text-sm">
-          Sandboxes/Sec.
+          Sandboxes/S
         </span>
         <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
           <span className="prose-value-big max-md:text-2xl">
@@ -98,7 +98,7 @@ export default function StartRateChartClient({
       </div>
 
       <LineChart
-        className="mt-3 md:mt-4 flex-1 min-h-[250px] md:min-h-[300px]"
+        className="mt-3 md:mt-4 flex-1 max-md:min-h-[30dvh]"
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}

@@ -7,7 +7,6 @@ import {
   formatNumber,
   formatTimeAxisLabel,
 } from '@/lib/utils/formatting'
-import { cn } from '@/lib/utils/ui'
 import * as echarts from 'echarts'
 import { EChartsOption } from 'echarts'
 import ReactECharts from 'echarts-for-react'
@@ -495,33 +494,32 @@ export default function LineChart({
   }
 
   return (
-    <div className={cn('w-full h-full', className)} style={style}>
-      <ReactECharts
-        ref={ref}
-        echarts={echarts}
-        key={resolvedTheme}
-        option={option}
-        notMerge={true}
-        style={{ width: '100%', height: '100%' }}
-        lazyUpdate={true}
-        onChartReady={onChartReadyCallback}
-        onEvents={{
-          datazoom: (params: {
-            batch?: Array<{
-              startValue?: number
-              endValue?: number
-            }>
-          }) => {
-            if (onZoomEnd && params.batch && params.batch[0]) {
-              const { startValue, endValue } = params.batch[0]
+    <ReactECharts
+      ref={ref}
+      echarts={echarts}
+      key={resolvedTheme}
+      option={option}
+      notMerge={true}
+      style={{ width: '100%', height: '100%' }}
+      lazyUpdate={true}
+      onChartReady={onChartReadyCallback}
+      className={className}
+      onEvents={{
+        datazoom: (params: {
+          batch?: Array<{
+            startValue?: number
+            endValue?: number
+          }>
+        }) => {
+          if (onZoomEnd && params.batch && params.batch[0]) {
+            const { startValue, endValue } = params.batch[0]
 
-              if (startValue !== undefined && endValue !== undefined) {
-                onZoomEnd(Math.round(startValue), Math.round(endValue))
-              }
+            if (startValue !== undefined && endValue !== undefined) {
+              onZoomEnd(Math.round(startValue), Math.round(endValue))
             }
-          },
-        }}
-      />
-    </div>
+          }
+        },
+      }}
+    />
   )
 }

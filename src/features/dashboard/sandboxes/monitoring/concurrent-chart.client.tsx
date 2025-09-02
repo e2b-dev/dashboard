@@ -121,7 +121,7 @@ export default function ConcurrentChartClient({
   )
 
   return (
-    <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 max-md:min-h-[400px] md:min-h-0">
+    <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 md:min-h-0">
       <div className="flex max-md:flex-col md:justify-between gap-3 md:gap-6 md:min-h-[60px]">
         <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase max-md:text-sm">
@@ -171,7 +171,7 @@ export default function ConcurrentChartClient({
       </div>
 
       <LineChart
-        className="mt-3 md:mt-4 flex-1 min-h-[250px] md:min-h-[300px]"
+        className="mt-3 md:mt-4 flex-1 max-md:min-h-[30dvh]"
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}

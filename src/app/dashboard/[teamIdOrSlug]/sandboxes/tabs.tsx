@@ -69,7 +69,7 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
         <TabsContent
           key={tab.value}
           value={tab.value}
-          className={cn('flex flex-1 flex-col md:overflow-hidden')}
+          className={cn('flex flex-1 flex-col overflow-hidden')}
         >
           {children?.[ix]}
         </TabsContent>

@@ -22,16 +22,14 @@ export default async function SandboxesMonitoringPage({
   searchParams,
 }: SandboxesMonitoringPageProps) {
   return (
-    <div className="flex flex-1 flex-col md:overflow-hidden max-md:overflow-auto">
-      <TeamMetricsProvider>
-        <div className="flex flex-col h-full">
-          <SandboxesMonitoringHeader params={params} />
-          <div className="flex flex-col flex-1 md:overflow-hidden">
-            <ConcurrentChart params={params} searchParams={searchParams} />
-            <StartRateChart params={params} searchParams={searchParams} />
-          </div>
+    <TeamMetricsProvider>
+      <div className="flex flex-col h-full relative min-h-0 max-md:overflow-y-auto">
+        <SandboxesMonitoringHeader params={params} />
+        <div className="flex flex-col flex-1 max-md:min-h-[calc(100vh-3.5rem)] min-h-0">
+          <ConcurrentChart params={params} searchParams={searchParams} />
+          <StartRateChart params={params} searchParams={searchParams} />
         </div>
-      </TeamMetricsProvider>
-    </div>
+      </div>
+    </TeamMetricsProvider>
   )
 }
