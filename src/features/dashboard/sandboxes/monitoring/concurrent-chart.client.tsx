@@ -33,10 +33,12 @@ interface ConcurrentChartProps {
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
   >
+  concurrentInstancesLimit?: number
 }
 
 export default function ConcurrentChartClient({
   initialData,
+  concurrentInstancesLimit,
 }: ConcurrentChartProps) {
   const { timeframe, setStaticMode, setTimeRange, registerChart } =
     useTeamMetrics()
@@ -110,7 +112,7 @@ export default function ConcurrentChartClient({
   }, [currentRange, timeframe.start, timeframe.end])
 
   const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
-    if (range === 'custom') return // Custom range is set via zoom
+    if (range === 'custom') return
     setTimeRange(range as TimeRangeKey)
   }
 
@@ -138,8 +140,6 @@ export default function ConcurrentChartClient({
           description={getAveragingPeriodText(data.step)}
           classNames={{
             value: 'text-accent-positive-highlight',
-            description: 'text-fg-tertiary opacity-75',
-            timestamp: 'text-fg-tertiary',
           }}
         />
       )
@@ -194,7 +194,7 @@ export default function ConcurrentChartClient({
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}
-        yAxisLimit={100}
+        yAxisLimit={concurrentInstancesLimit}
         group="sandboxes-monitoring"
         onChartReady={registerChart}
         option={{
@@ -205,7 +205,10 @@ export default function ConcurrentChartClient({
           },
           yAxis: {
             splitNumber: 2,
-            max: Math.max(...lineData.map((d) => (d.y || 0) * 1.25), 100),
+            max: Math.max(
+              ...lineData.map((d) => (d.y || 0) * 1.25),
+              concurrentInstancesLimit || 100
+            ),
           },
           tooltip: {
             show: true,

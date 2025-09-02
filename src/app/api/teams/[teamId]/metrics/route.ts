@@ -24,7 +24,7 @@ export async function POST(
       const teamSizes = ['small', 'medium', 'large'] as const
       const teamSizeIndex = teamId.charCodeAt(0) % 3
       const teamSize = teamSizes[teamSizeIndex]!
-      
+
       const mockData = MOCK_TEAM_METRICS_DATA(start, end, teamSize)
       return Response.json(mockData satisfies TeamMetricsResponse)
     }

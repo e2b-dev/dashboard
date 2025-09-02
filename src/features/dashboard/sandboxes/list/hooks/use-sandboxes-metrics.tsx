@@ -1,5 +1,6 @@
 'use client'
 
+import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'

@@ -15,13 +15,13 @@ import 'echarts/lib/component/title'
 import { useTheme } from 'next-themes'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { renderToString } from 'react-dom/server'
-import { LimitLineTooltip } from './limit-line-tooltip'
 import { defaultLineChartOption } from './line-chart.defaults'
 import {
   LineSeries,
   makeSeriesFromData,
   mergeReplaceArrays,
 } from './line-chart.utils'
+import { LimitLineTooltip } from './tooltips'
 
 export interface LineChartProps {
   /** Chart data series */

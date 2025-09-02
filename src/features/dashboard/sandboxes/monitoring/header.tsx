@@ -2,6 +2,7 @@ import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sa
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { LiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -108,11 +109,14 @@ export const ConcurrentSandboxes = async ({
   const end = now
   const start = end - TEAM_METRICS_POLLING_INTERVAL_MS
 
-  const teamMetricsResult = await getTeamMetrics({
-    teamId,
-    startDate: start,
-    endDate: end,
-  })
+  const [teamMetricsResult, tierLimits] = await Promise.all([
+    getTeamMetrics({
+      teamId,
+      startDate: start,
+      endDate: end,
+    }),
+    getTeamTierLimits({ teamId }),
+  ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -123,7 +127,12 @@ export const ConcurrentSandboxes = async ({
     )
   }
 
-  return <ConcurrentSandboxesClient initialData={teamMetricsResult.data} />
+  return (
+    <ConcurrentSandboxesClient
+      initialData={teamMetricsResult.data}
+      limit={tierLimits?.data?.concurrentInstances}
+    />
+  )
 }
 
 export const SandboxesStartRate = async ({
@@ -163,7 +172,10 @@ export const MaxConcurrentSandboxes = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const teamMetricsResult = await getTeamMetricsLast30Days(teamId)
+  const [teamMetricsResult, tierLimits] = await Promise.all([
+    getTeamMetricsLast30Days(teamId),
+    getTeamTierLimits({ teamId }),
+  ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -174,11 +186,25 @@ export const MaxConcurrentSandboxes = async ({
     )
   }
 
+  const limit = tierLimits?.data?.concurrentInstances
+
   const concurrentSandboxes = Math.max(
     ...teamMetricsResult.data.metrics.map(
       (item) => item.concurrentSandboxes ?? 0
     )
   )
 
-  return <span className="prose-value-big">{concurrentSandboxes}</span>
+  return (
+    <>
+      <span className="prose-value-big">{concurrentSandboxes}</span>
+      {limit && (
+        <span className="absolute right-3 bottom-3 text-fg-tertiary ">
+          LIMIT:{' '}
+          <span className=" text-accent-error-highlight">
+            {limit.toLocaleString()}
+          </span>
+        </span>
+      )}
+    </>
+  )
 }

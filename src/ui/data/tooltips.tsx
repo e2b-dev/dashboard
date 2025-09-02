@@ -16,7 +16,7 @@ export default function DefaultTooltip({ label, items }: DefaultTooltipProps) {
     <div
       className={cn(
         cardVariants({ variant: 'layer' }),
-        'border shadow-xs p-3 min-w-36'
+        'px-2 py-1 prose-label'
       )}
     >
       <div className="flex flex-col gap-1 w-full">
@@ -69,17 +69,17 @@ export function SingleValueTooltip({
     >
       <div
         className={cn(
-          'font-medium',
+          'prose-label-highlight font-mono uppercase text-xs ',
           classNames.value || 'text-accent-info-highlight'
         )}
       >
-        {formattedValue} {unit} {label}
+        <span className="font-sans">{formattedValue}</span> {unit} {label}
       </div>
       {description && (
         <div
           className={cn(
             'text-xs mt-0.5',
-            classNames.description || 'text-fg-tertiary'
+            classNames.description || 'text-fg-tertiary/60'
           )}
         >
           {description}
@@ -104,4 +104,45 @@ export function SingleValueTooltip({
       )}
     </div>
   )
+}
+
+interface LimitLineTooltipProps {
+  value: number
+  limit: number
+}
+
+export function LimitLineTooltip({ value, limit }: LimitLineTooltipProps) {
+  const isLimit = value === limit
+
+  if (isLimit) {
+    return (
+      <div
+        className={cn(
+          cardVariants({ variant: 'layer' }),
+          'px-2 py-1 prose-label max-w-xs truncate overflow-hidden whitespace-break-spaces'
+        )}
+      >
+        <div className={cn('font-mono', 'text-accent-error-highlight')}>
+          CONCURRENT SANDBOX LIMIT
+        </div>
+        <div className={cn('text-xs mt-0.5', 'text-fg-tertiary')}>
+          Your plan currently allows for {limit} concurrent sandboxes. New
+          sandbox creation will be blocked when this limit is reached.
+        </div>
+      </div>
+
+      // <SingleValueTooltip
+      //   value={limit}
+      //   label="concurrent sandboxes limit"
+      //   description={`Your plan currently allows for ${limit} concurrent sandboxes. New sandbox creation will be blocked when this limit is reached.`}
+      //   classNames={{
+      //     container: 'max-w-xs truncate overflow-hidden',
+      //     value: 'text-accent-error-highlight whitespace-break-spaces',
+      //     description: 'text-fg-tertiary whitespace-break-spaces',
+      //   }}
+      // />
+    )
+  }
+
+  return null
 }

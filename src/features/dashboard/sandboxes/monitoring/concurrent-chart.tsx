@@ -9,6 +9,7 @@ import {
   resolveTimeframe,
 } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 import { Suspense } from 'react'
 import ChartFallback from './chart-fallback'
 import ConcurrentChartClient from './concurrent-chart.client'
@@ -53,13 +54,38 @@ async function ConcurrentChartResolver({
     },
   })
 
-  const teamMetricsResult = await getTeamMetrics({
-    teamId,
-    startDate: start,
-    endDate: end,
-  })
+  const [teamMetricsResult, tierLimits] = await Promise.all([
+    getTeamMetrics({
+      teamId,
+      startDate: start,
+      endDate: end,
+    }),
+    getTeamTierLimits({ teamId }),
+  ])
 
   const data = teamMetricsResult?.data ?? { metrics: [], step: 0 }
 
-  return <ConcurrentChartClient initialData={data} />
+  if (!tierLimits?.data) {
+    l.error(
+      {
+        key: 'concurrent_chart:error',
+        team_id: teamId,
+        context: {
+          timeframe: { start, end, isLive },
+          serverError: tierLimits?.serverError,
+        },
+      },
+      'No tier limits found for team:',
+      teamId
+    )
+  }
+
+  const concurrentInstancesLimit = tierLimits?.data?.concurrentInstances
+
+  return (
+    <ConcurrentChartClient
+      initialData={data}
+      concurrentInstancesLimit={concurrentInstancesLimit}
+    />
+  )
 }

@@ -11,10 +11,12 @@ interface TeamMonitoringHeaderClientProps {
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
   >
+  limit?: number
 }
 
 export function ConcurrentSandboxesClient({
   initialData,
+  limit,
 }: TeamMonitoringHeaderClientProps) {
   const { data } = useTeamMetricsSWR(initialData, {
     mode: 'live',
@@ -24,7 +26,19 @@ export function ConcurrentSandboxesClient({
   const lastConcurrentSandboxes =
     data?.metrics[data.metrics.length - 1]?.concurrentSandboxes ?? 0
 
-  return <span className="prose-value-big">{lastConcurrentSandboxes}</span>
+  return (
+    <>
+      <span className="prose-value-big">{lastConcurrentSandboxes}</span>
+      {limit && (
+        <span className="absolute right-3 bottom-3 text-fg-tertiary ">
+          LIMIT:{' '}
+          <span className=" text-accent-error-highlight">
+            {limit.toLocaleString()}
+          </span>
+        </span>
+      )}
+    </>
+  )
 }
 
 export function SandboxesStartRateClient({
