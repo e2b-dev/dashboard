@@ -1,6 +1,7 @@
 'use client'
 
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
+import { formatNumber } from '@/lib/utils/formatting'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
@@ -28,13 +29,12 @@ export function ConcurrentSandboxesClient({
 
   return (
     <>
-      <span className="prose-value-big">{lastConcurrentSandboxes}</span>
+      <span className="prose-value-big">
+        {formatNumber(lastConcurrentSandboxes)}
+      </span>
       {limit && (
         <span className="absolute right-3 bottom-3 text-fg-tertiary ">
-          LIMIT:{' '}
-          <span className=" text-accent-error-highlight">
-            {limit.toLocaleString()}
-          </span>
+          LIMIT: <span className=" text-fg">{formatNumber(limit)}</span>
         </span>
       )}
     </>

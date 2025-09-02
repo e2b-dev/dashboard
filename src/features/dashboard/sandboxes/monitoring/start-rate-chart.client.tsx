@@ -1,7 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { getAveragingPeriodText } from '@/lib/utils/sandboxes'
+import { formatAveragingPeriod, formatDecimal } from '@/lib/utils/formatting'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
@@ -70,7 +70,7 @@ export default function StartRateChartClient({
           value={typeof value === 'number' ? value : 'n/a'}
           label="sandboxes/s"
           timestamp={timestamp}
-          description={getAveragingPeriodText(data.step)}
+          description={formatAveragingPeriod(data.step)}
           classNames={{
             value: 'text-graph-6',
             description: 'text-fg-tertiary opacity-75',
@@ -90,11 +90,11 @@ export default function StartRateChartClient({
         </span>
         <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
           <span className="prose-value-big max-md:text-2xl">
-            {average.toFixed(1)}
+            {formatDecimal(average, 1)}
           </span>
           <span className="label-tertiary max-md:text-xs">
             <span className="max-md:hidden">
-              over {getAveragingPeriodText(data.step)}
+              over {formatAveragingPeriod(data.step)}
             </span>
             <span className="md:hidden">avg</span>
           </span>

@@ -1,6 +1,11 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import {
+  formatChartTimestamp,
+  formatNumber,
+  formatTimeAxisLabel,
+} from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import * as echarts from 'echarts'
 import { EChartsOption } from 'echarts'
@@ -96,6 +101,7 @@ export default function LineChart({
     '--accent-error-bg',
     '--accent-warning-highlight',
     '--accent-warning-bg',
+    '--accent-positive-highlight',
   ] as const)
 
   // responsive axis config based on viewport size
@@ -122,13 +128,34 @@ export default function LineChart({
         value = parseFloat(value)
       }
 
-      return value === limit || value === limit * 0.8 ? '' : value.toString()
+      return value === limit || value === limit * 0.8
+        ? ''
+        : formatNumber(value).toString()
     }
   }, [])
 
   const option = useMemo<EChartsOption>(() => {
     const series = makeSeriesFromData(data, cssVars)
     const responsiveConfig = getResponsiveAxisConfig()
+
+    // Check if data is "live" (last point less than 1 minute old)
+    const isLiveData = (seriesData: LineSeries) => {
+      if (!seriesData.data.length) return false
+      const lastPoint = seriesData.data[seriesData.data.length - 1]
+      if (!lastPoint) return false
+
+      const lastTimestamp =
+        lastPoint.x instanceof Date
+          ? lastPoint.x.getTime()
+          : typeof lastPoint.x === 'number'
+            ? lastPoint.x
+            : new Date(lastPoint.x).getTime()
+
+      const now = Date.now()
+      const oneMinuteAgo = now - 60 * 1000
+
+      return lastTimestamp > oneMinuteAgo && lastTimestamp <= now
+    }
 
     const limitLineConfig =
       yAxisLimit !== undefined
@@ -169,7 +196,7 @@ export default function LineChart({
                   yAxis: yAxisLimit * 0.8,
                   name: '80% Warning',
                   label: {
-                    formatter: `${Math.round(yAxisLimit * 0.8)}`,
+                    formatter: `${formatNumber(Math.round(yAxisLimit * 0.8))}`,
                     position: 'start' as const,
                     backgroundColor: cssVars['--accent-warning-bg'],
                     color: cssVars['--accent-warning-highlight'],
@@ -188,7 +215,7 @@ export default function LineChart({
                   yAxis: yAxisLimit,
                   name: 'Limit',
                   label: {
-                    formatter: `${yAxisLimit}`,
+                    formatter: `${formatNumber(yAxisLimit)}`,
                     position: 'start' as const,
                     backgroundColor: cssVars['--bg-1'],
                     color: cssVars['--accent-error-highlight'],
@@ -213,15 +240,112 @@ export default function LineChart({
           }
         : {}
 
-    const seriesWithLimit = Array.isArray(series)
-      ? series.map((s, index) =>
+    const seriesWithLiveIndicator = Array.isArray(series)
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        series.map((s: any, idx: number) => {
+          const originalData = data[idx]
+          if (!originalData || !isLiveData(originalData)) return s
+
+          const lastPoint = originalData.data[originalData.data.length - 1]
+          if (!lastPoint) return s
+
+          // Add markPoint for live indicator
+          const lineColor =
+            s.lineStyle?.color || cssVars['--accent-positive-highlight']
+
+          return {
+            ...s,
+            markPoint: {
+              silent: true,
+              animation: false,
+              data: [
+                // Outer pulsing ring
+                {
+                  coord: [
+                    lastPoint.x instanceof Date
+                      ? lastPoint.x.getTime()
+                      : lastPoint.x,
+                    lastPoint.y,
+                  ],
+                  symbol: 'circle',
+                  symbolSize: 16,
+                  itemStyle: {
+                    color: 'transparent',
+                    borderColor: lineColor,
+                    borderWidth: 1,
+                    shadowBlur: 8,
+                    shadowColor: lineColor,
+                    opacity: 0.4,
+                  },
+                  emphasis: {
+                    disabled: true,
+                  },
+                  label: {
+                    show: false,
+                  },
+                },
+                // Middle ring
+                {
+                  coord: [
+                    lastPoint.x instanceof Date
+                      ? lastPoint.x.getTime()
+                      : lastPoint.x,
+                    lastPoint.y,
+                  ],
+                  symbol: 'circle',
+                  symbolSize: 10,
+                  itemStyle: {
+                    color: lineColor,
+                    opacity: 0.3,
+                    borderWidth: 0,
+                  },
+                  emphasis: {
+                    disabled: true,
+                  },
+                  label: {
+                    show: false,
+                  },
+                },
+                // Inner solid dot
+                {
+                  coord: [
+                    lastPoint.x instanceof Date
+                      ? lastPoint.x.getTime()
+                      : lastPoint.x,
+                    lastPoint.y,
+                  ],
+                  symbol: 'circle',
+                  symbolSize: 6,
+                  itemStyle: {
+                    color: lineColor,
+                    borderWidth: 0,
+                    shadowBlur: 4,
+                    shadowColor: lineColor,
+                  },
+                  emphasis: {
+                    disabled: true,
+                  },
+                  label: {
+                    show: false,
+                  },
+                },
+              ],
+            },
+            showSymbol: false,
+            symbol: 'none',
+          }
+        })
+      : series
+
+    const seriesWithLimit = Array.isArray(seriesWithLiveIndicator)
+      ? seriesWithLiveIndicator.map((s, index) =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           index === 0 ? ({ ...s, ...limitLineConfig } as any) : s
         )
-      : series
+      : seriesWithLiveIndicator
         ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ({ ...series, ...limitLineConfig } as any)
-        : series
+          ({ ...seriesWithLiveIndicator, ...limitLineConfig } as any)
+        : seriesWithLiveIndicator
 
     const themedDefaults = mergeReplaceArrays(defaultLineChartOption, {
       tooltip: {
@@ -235,6 +359,7 @@ export default function LineChart({
       },
       grid: {
         left: '4%',
+        right: 8,
       },
       xAxis: {
         axisLine: { lineStyle: { color: cssVars['--stroke'] } },
@@ -244,25 +369,14 @@ export default function LineChart({
           fontFamily: cssVars['--font-mono'],
           fontSize: responsiveConfig.fontSize,
           formatter: (value: string | number): string => {
-            // If this is a time axis, format using US locale
+            // If this is a time axis, format using our utility
             if (
               userOption?.xAxis &&
               (userOption.xAxis as { type?: string }).type === 'time'
             ) {
               const date = new Date(value)
-              const hour = date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true,
-              })
-              const day = date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              })
-              // Show date if it's the first label of a new day
               const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
-              return isNewDay ? day : hour
+              return formatTimeAxisLabel(value, isNewDay)
             }
             return String(value)
           },
@@ -277,20 +391,12 @@ export default function LineChart({
             borderRadius: 0,
             fontSize: responsiveConfig.fontSize,
             formatter: ((params: { value: unknown }): string => {
-              // If this is a time axis, format using US locale
+              // If this is a time axis, format using our utility
               if (
                 userOption?.xAxis &&
                 (userOption.xAxis as { type?: string }).type === 'time'
               ) {
-                const date = new Date(params.value as string | number)
-                return date.toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: true,
-                })
+                return formatChartTimestamp(params.value as string | number)
               }
               return String(params.value)
             }) as unknown as string | ((params: unknown) => string),

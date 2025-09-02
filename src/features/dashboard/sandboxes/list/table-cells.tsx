@@ -4,6 +4,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
 import { useServerContext } from '@/features/dashboard/server-context'
 import { useTemplateTableStore } from '@/features/dashboard/templates/stores/table-store'
+import { parseUTCDateComponents } from '@/lib/utils/formatting'
 import { Template } from '@/types/api'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
@@ -162,20 +163,16 @@ export function StartedAtCell({
   getValue,
 }: CellContext<SandboxWithMetrics, unknown>) {
   const dateValue = getValue() as string
-  const dateTimeString = useMemo(
-    () => new Date(dateValue).toUTCString(),
+  const dateComponents = useMemo(
+    () => parseUTCDateComponents(dateValue),
     [dateValue]
-  )
-  const [day, date, month, year, time, timezone] = useMemo(
-    () => dateTimeString.split(' '),
-    [dateTimeString]
   )
 
   return (
     <div className="whitespace-nowrap overflow-x-hidden font-mono prose-table-numeric select-all">
-      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
-      <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-tertiary">{timezone}</span>
+      <span className="text-fg-tertiary">{`${dateComponents.day} ${dateComponents.date} ${dateComponents.month} ${dateComponents.year}`}</span>{' '}
+      <span className="text-fg">{dateComponents.time}</span>{' '}
+      <span className="text-fg-tertiary">{dateComponents.timezone}</span>
     </div>
   )
 }

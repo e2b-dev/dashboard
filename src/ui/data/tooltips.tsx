@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { formatChartTimestamp, formatNumber } from '@/lib/utils/formatting'
 import { cardVariants } from '../primitives/card'
 
 export interface TooltipItem {
@@ -56,8 +57,7 @@ export function SingleValueTooltip({
   description,
   classNames = {},
 }: SingleValueTooltipProps) {
-  const formattedValue =
-    typeof value === 'number' ? value.toLocaleString('en-US') : value
+  const formattedValue = typeof value === 'number' ? formatNumber(value) : value
 
   return (
     <div
@@ -92,14 +92,7 @@ export function SingleValueTooltip({
             classNames.timestamp || 'text-fg-tertiary'
           )}
         >
-          {new Date(timestamp).toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-          })}
+          {formatChartTimestamp(timestamp)}
         </div>
       )}
     </div>
@@ -126,8 +119,9 @@ export function LimitLineTooltip({ value, limit }: LimitLineTooltipProps) {
           CONCURRENT SANDBOX LIMIT
         </div>
         <div className={cn('text-xs mt-0.5', 'text-fg-tertiary')}>
-          Your plan currently allows for {limit} concurrent sandboxes. New
-          sandbox creation will be blocked when this limit is reached.
+          Your plan currently allows for {formatNumber(limit)} concurrent
+          sandboxes. New sandbox creation will be blocked when this limit is
+          reached.
         </div>
       </div>
 

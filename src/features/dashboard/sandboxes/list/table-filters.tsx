@@ -1,5 +1,6 @@
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
+import { formatCPUCores, formatMemory } from '@/lib/utils/formatting'
 import { Template } from '@/types/api'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
@@ -160,7 +161,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
 
   const formatMemoryDisplay = (memoryValue: number) => {
     if (memoryValue === 0) return 'Unfiltered'
-    return memoryValue < 1024 ? `${memoryValue} MB` : `${memoryValue / 1024} GB`
+    return formatMemory(memoryValue)
   }
 
   return (
@@ -172,7 +173,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
             <span className="text-accent-main-highlight text-xs">
               {localValues.cpu === 0
                 ? 'Unfiltered'
-                : `${localValues.cpu} core${localValues.cpu === 1 ? '' : 's'}`}
+                : formatCPUCores(localValues.cpu)}
             </span>
           </div>
           <div className="flex items-center gap-2">

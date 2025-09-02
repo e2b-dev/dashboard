@@ -1,6 +1,11 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import {
+  formatAveragingPeriod,
+  formatCompactDate,
+  formatDecimal,
+} from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import { Button } from '@/ui/primitives/button'
@@ -9,7 +14,6 @@ import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
-import { getAveragingPeriodText } from '@/lib/utils/sandboxes'
 import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
@@ -82,33 +86,7 @@ export default function ConcurrentChartClient({
 
   const customRangeLabel = useMemo(() => {
     if (currentRange !== 'custom') return null
-    const formatDate = (timestamp: number) => {
-      const date = new Date(timestamp)
-      const now = new Date()
-
-      // if same year, omit year
-      if (date.getFullYear() === now.getFullYear()) {
-        return date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          timeZoneName: 'short',
-        })
-      }
-
-      // otherwise show full date
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short',
-      })
-    }
-
-    return `${formatDate(timeframe.start)} - ${formatDate(timeframe.end)}`
+    return `${formatCompactDate(timeframe.start)} - ${formatCompactDate(timeframe.end)}`
   }, [currentRange, timeframe.start, timeframe.end])
 
   const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
@@ -137,7 +115,7 @@ export default function ConcurrentChartClient({
               : 'concurrent sandboxes'
           }
           timestamp={timestamp}
-          description={getAveragingPeriodText(data.step)}
+          description={formatAveragingPeriod(data.step)}
           classNames={{
             value: 'text-accent-positive-highlight',
           }}
@@ -156,11 +134,11 @@ export default function ConcurrentChartClient({
           </span>
           <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
             <span className="prose-value-big max-md:text-2xl">
-              {average.toFixed(1)}
+              {formatDecimal(average, 1)}
             </span>
             <span className="label-tertiary max-md:text-xs">
               <span className="max-md:hidden">
-                over {getAveragingPeriodText(data.step)}
+                over {formatAveragingPeriod(data.step)}
               </span>
               <span className="md:hidden">avg</span>
             </span>
@@ -213,8 +191,8 @@ export default function ConcurrentChartClient({
           },
           yAxis: {
             splitNumber: 3,
-            max: Math.max(
-              ...lineData.map((d) => (d.y || 0) * 1.25),
+            max: Math.min(
+              Math.max(...lineData.map((d) => d.y || 0)) * 1.25,
               concurrentInstancesLimit || 100
             ),
           },

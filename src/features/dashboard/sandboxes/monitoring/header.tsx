@@ -1,5 +1,6 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
+import { formatNumber } from '@/lib/utils/formatting'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
@@ -199,13 +200,12 @@ export const MaxConcurrentSandboxes = async ({
 
   return (
     <>
-      <span className="prose-value-big">{concurrentSandboxes}</span>
+      <span className="prose-value-big">
+        {formatNumber(concurrentSandboxes)}
+      </span>
       {limit && (
         <span className="absolute right-3 bottom-3 text-fg-tertiary ">
-          LIMIT:{' '}
-          <span className=" text-accent-error-highlight">
-            {limit.toLocaleString()}
-          </span>
+          LIMIT: <span className=" text-fg">{formatNumber(limit)}</span>
         </span>
       )}
     </>
