@@ -1,7 +1,10 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { calculateTeamMetricsStep } from '@/lib/utils/sandboxes'
+import {
+  calculateTeamMetricsStep,
+  getAveragingPeriodText,
+} from '@/lib/utils/sandboxes'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
@@ -43,24 +46,19 @@ export default function StartRateChartClient({
     )
   }, [lineData])
 
-  // Calculate the averaging period for the tooltip
-  const getAveragingPeriodText = (timestamp: number) => {
-    const step = calculateTeamMetricsStep(
+  const step = useMemo(() => {
+    if (!lineData?.length || lineData.length < 2) return null
+
+    const nonZeroPoints = lineData.filter((point) => point.y !== 0)
+    if (nonZeroPoints.length >= 2) {
+      return nonZeroPoints[1]!.x - nonZeroPoints[0]!.x
+    }
+
+    return calculateTeamMetricsStep(
       new Date(timeframe.start),
       new Date(timeframe.end)
     )
-
-    const seconds = Math.floor(step / 1000)
-    if (seconds < 60) {
-      return `${seconds} second average`
-    } else if (seconds < 3600) {
-      const minutes = Math.floor(seconds / 60)
-      return `${minutes} minute average`
-    } else {
-      const hours = Math.floor(seconds / 3600)
-      return `${hours} hour average`
-    }
-  }
+  }, [lineData, timeframe.start, timeframe.end])
 
   const cssVars = useCssVars([
     '--fg',
@@ -109,10 +107,10 @@ export default function StartRateChartClient({
 
               return renderToString(
                 <SingleValueTooltip
-                  value={typeof value === 'number' ? value.toFixed(2) : 'n/a'}
+                  value={typeof value === 'number' ? value : 'n/a'}
                   label="sandboxes/s"
                   timestamp={timestamp}
-                  description={getAveragingPeriodText(Number(timestamp))}
+                  description={getAveragingPeriodText(step ?? 0)}
                   classNames={{
                     value: 'text-fg',
                     description: 'text-fg-tertiary opacity-75',

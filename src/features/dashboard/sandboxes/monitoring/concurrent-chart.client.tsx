@@ -10,6 +10,10 @@ import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
+import {
+  calculateTeamMetricsStep,
+  getAveragingPeriodText,
+} from '@/lib/utils/sandboxes'
 import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
 import dynamic from 'next/dynamic'
 
@@ -57,6 +61,20 @@ export default function ConcurrentChartClient({
       lineData.reduce((acc, cur) => acc + (cur.y || 0), 0) / lineData.length
     )
   }, [lineData])
+
+  const step = useMemo(() => {
+    if (!lineData?.length || lineData.length < 2) return null
+
+    const nonZeroPoints = lineData.filter((point) => point.y !== 0)
+    if (nonZeroPoints.length >= 2) {
+      return nonZeroPoints[1]!.x - nonZeroPoints[0]!.x
+    }
+
+    return calculateTeamMetricsStep(
+      new Date(timeframe.start),
+      new Date(timeframe.end)
+    )
+  }, [lineData, timeframe.start, timeframe.end])
 
   const cssVars = useCssVars([
     '--accent-main-highlight',
@@ -178,13 +196,18 @@ export default function ConcurrentChartClient({
 
               return renderToString(
                 <SingleValueTooltip
-                  value={typeof value === 'number' ? value : 'n/a'}
+                  value={typeof value === 'number' ? value.toFixed(2) : 'n/a'}
                   label={
                     typeof value === 'number' && value === 1
                       ? 'concurrent sandbox'
                       : 'concurrent sandboxes'
                   }
                   timestamp={timestamp}
+                  description={getAveragingPeriodText(step ?? 0)}
+                  classNames={{
+                    description: 'text-fg-tertiary opacity-75',
+                    timestamp: 'text-fg-tertiary',
+                  }}
                 />
               )
             },

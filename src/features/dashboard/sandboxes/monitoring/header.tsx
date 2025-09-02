@@ -1,5 +1,5 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
-import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
+import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -54,7 +54,10 @@ export default function SandboxesMonitoringHeader({
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <ConcurrentSandboxes params={params} />
         </Suspense>
-        <BaseSubtitle>Concurrent Sandboxes</BaseSubtitle>
+        <BaseSubtitle>
+          Concurrent Sandboxes <br />
+          (5 sec average)
+        </BaseSubtitle>
       </BaseCard>
 
       <BaseCard>
@@ -74,7 +77,10 @@ export default function SandboxesMonitoringHeader({
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <SandboxesStartRate params={params} />
         </Suspense>
-        <BaseSubtitle>Sandboxes Start Rate</BaseSubtitle>
+        <BaseSubtitle>
+          Sandboxes Start Rate <br />
+          (5 sec average)
+        </BaseSubtitle>
       </BaseCard>
     </div>
   )
@@ -101,7 +107,7 @@ export const ConcurrentSandboxes = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = now
-  const start = end - TEAM_METRICS_INITIAL_RANGE_MS
+  const start = end - TEAM_METRICS_POLLING_INTERVAL_MS
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,
@@ -130,7 +136,7 @@ export const SandboxesStartRate = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = now
-  const start = end - TEAM_METRICS_INITIAL_RANGE_MS
+  const start = end - TEAM_METRICS_POLLING_INTERVAL_MS
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,

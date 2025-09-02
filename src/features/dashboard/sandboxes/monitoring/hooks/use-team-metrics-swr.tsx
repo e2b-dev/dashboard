@@ -4,14 +4,25 @@ import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
-import { ResolvedTimeframe } from '@/lib/utils/timeframe'
+import {
+  ResolvedTimeframe,
+  resolveTimeframe,
+  TimeframeState,
+} from '@/lib/utils/timeframe'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import useSWR from 'swr'
 import { useTeamMetrics } from '../context'
 
-export default function useTeamMetricsSWR(initialData: ClientTeamMetrics) {
+export default function useTeamMetricsSWR(
+  initialData: ClientTeamMetrics,
+  timeframeState?: TimeframeState
+) {
   const selectedTeam = useSelectedTeam()
-  const { timeframe } = useTeamMetrics()
+  let { timeframe } = useTeamMetrics()
+
+  if (timeframeState) {
+    timeframe = resolveTimeframe(timeframeState)
+  }
 
   return useSWR<typeof initialData>(
     selectedTeam

@@ -49,6 +49,8 @@ export function calculateTeamMetricsStep(start: Date, end: Date): number {
   }
 }
 
+const ANOMALOUS_GAP_TOLERANCE = 0.3
+
 /**
  * detects anomalies in team metrics data and fills exactly one zero between "waves" of data.
  * calculates step from the first two data points and detects gaps in sequences.
@@ -56,8 +58,7 @@ export function calculateTeamMetricsStep(start: Date, end: Date): number {
 export function fillTeamMetricsWithZeros(
   data: ClientTeamMetrics,
   start: number,
-  end: number,
-  recentDataThresholdMs: number = TEAM_METRICS_POLLING_INTERVAL_MS
+  end: number
 ): ClientTeamMetrics {
   if (!data.length) {
     return [
@@ -74,8 +75,6 @@ export function fillTeamMetricsWithZeros(
     ]
   }
 
-  const now = Date.now()
-
   if (data.length < 2) {
     return data.sort((a, b) => a.timestamp - b.timestamp)
   }
@@ -87,7 +86,8 @@ export function fillTeamMetricsWithZeros(
   // check if we should add zeros at the start
   const firstDataPoint = sortedData[0]!
   const gapFromStart = firstDataPoint.timestamp - start
-  const isStartAnomalous = gapFromStart > recentDataThresholdMs * 1.5
+  const isStartAnomalous =
+    gapFromStart > dynamicStep * (1 + ANOMALOUS_GAP_TOLERANCE)
 
   if (isStartAnomalous) {
     result.push({
@@ -122,7 +122,7 @@ export function fillTeamMetricsWithZeros(
     const expectedStep = dynamicStep
 
     // allow some tolerance for step variations (±20%)
-    const tolerance = expectedStep * 0.2
+    const tolerance = expectedStep * ANOMALOUS_GAP_TOLERANCE
     const isAnomalousGap = actualGap > expectedStep + tolerance
 
     if (isAnomalousGap) {
@@ -159,9 +159,12 @@ export function fillTeamMetricsWithZeros(
   // check if we should add zeros at the end
   const lastDataPoint = sortedData[sortedData.length - 1]!
   const gapToEnd = end - lastDataPoint.timestamp
-  const isEndAnomalous = gapToEnd > recentDataThresholdMs * 1.5
+  const isEndAnomalous = gapToEnd > dynamicStep * (1 + ANOMALOUS_GAP_TOLERANCE)
 
-  if (isEndAnomalous) {
+  // we can add zeros at the end if the current time is more than the polling interval after the last data point
+  const canBeZero = Date.now() - TEAM_METRICS_POLLING_INTERVAL_MS > end
+
+  if (isEndAnomalous && canBeZero) {
     const suffixZeroTimestamp = lastDataPoint.timestamp + dynamicStep
     if (suffixZeroTimestamp < end) {
       result.push({
@@ -179,4 +182,18 @@ export function fillTeamMetricsWithZeros(
   }
 
   return result.sort((a, b) => a.timestamp - b.timestamp)
+}
+
+// calculate the averaging period for the tooltip
+export const getAveragingPeriodText = (stepMs: number) => {
+  const seconds = Math.floor(stepMs / 1000)
+  if (seconds < 60) {
+    return `${seconds} second average`
+  } else if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes} minute average`
+  } else {
+    const hours = Math.floor(seconds / 3600)
+    return `${hours} hour average`
+  }
 }

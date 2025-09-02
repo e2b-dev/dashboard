@@ -30,11 +30,11 @@ export const getTeamMetrics = authActionClient
     const { session } = ctx
 
     const teamId = parsedInput.teamId
-    let { startDate, endDate } = parsedInput
+    const { startDate: startDateMs, endDate: endDateMs } = parsedInput
 
     // convert milliseconds to seconds
-    startDate = Math.floor(startDate / 1000)
-    endDate = Math.floor(endDate / 1000)
+    const startDate = Math.floor(startDateMs / 1000)
+    const endDate = Math.floor(endDateMs / 1000)
 
     const res = await getTeamMetricsMemoized(
       session.access_token,
@@ -72,8 +72,8 @@ export const getTeamMetrics = authActionClient
 
     const filledData = fillTeamMetricsWithZeros(
       processedData,
-      startDate,
-      endDate
+      startDateMs,
+      endDateMs
     )
 
     return filledData

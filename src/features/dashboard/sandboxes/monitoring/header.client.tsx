@@ -1,5 +1,6 @@
 'use client'
 
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { useMemo } from 'react'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
@@ -11,7 +12,10 @@ interface TeamMonitoringHeaderClientProps {
 export function ConcurrentSandboxesClient({
   initialData,
 }: TeamMonitoringHeaderClientProps) {
-  const { data } = useTeamMetricsSWR(initialData)
+  const { data } = useTeamMetricsSWR(initialData, {
+    mode: 'live',
+    range: TEAM_METRICS_INITIAL_RANGE_MS,
+  })
 
   const lastConcurrentSandboxes =
     data?.[data.length - 1]?.concurrentSandboxes ?? 0
@@ -22,7 +26,10 @@ export function ConcurrentSandboxesClient({
 export function SandboxesStartRateClient({
   initialData,
 }: TeamMonitoringHeaderClientProps) {
-  const { data } = useTeamMetricsSWR(initialData)
+  const { data } = useTeamMetricsSWR(initialData, {
+    mode: 'live',
+    range: TEAM_METRICS_INITIAL_RANGE_MS,
+  })
 
   const lastSandboxesStartRate = useMemo(() => {
     const rate = data?.[data.length - 1]?.sandboxStartRate ?? 0
