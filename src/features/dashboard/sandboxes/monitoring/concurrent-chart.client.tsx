@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils/ui'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import { Button } from '@/ui/primitives/button'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
@@ -126,6 +126,36 @@ export default function ConcurrentChartClient({
     setTimeRange(range as TimeRangeKey)
   }
 
+  const tooltipFormatter = useCallback(
+    (params: echarts.TooltipComponentFormatterCallbackParams) => {
+      const data = Array.isArray(params) ? params[0] : params
+      if (!data?.value) return ''
+
+      const value = Array.isArray(data.value) ? data.value[1] : data.value
+      const timestamp = Array.isArray(data.value)
+        ? (data.value[0] as string)
+        : (data.value as string)
+
+      return renderToString(
+        <SingleValueTooltip
+          value={typeof value === 'number' ? value : 'n/a'}
+          label={
+            typeof value === 'number' && value === 1
+              ? 'concurrent sandbox'
+              : 'concurrent sandboxes'
+          }
+          timestamp={timestamp}
+          description={getAveragingPeriodText(step ?? 0)}
+          classNames={{
+            description: 'text-fg-tertiary opacity-75',
+            timestamp: 'text-fg-tertiary',
+          }}
+        />
+      )
+    },
+    [step]
+  )
+
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
       <div className="flex justify-between gap-6 min-h-[60px]">
@@ -181,36 +211,7 @@ export default function ConcurrentChartClient({
           },
           tooltip: {
             show: true,
-            formatter: (
-              params: echarts.TooltipComponentFormatterCallbackParams
-            ) => {
-              const data = Array.isArray(params) ? params[0] : params
-              if (!data?.value) return ''
-
-              const value = Array.isArray(data.value)
-                ? data.value[1]
-                : data.value
-              const timestamp = Array.isArray(data.value)
-                ? (data.value[0] as string)
-                : (data.value as string)
-
-              return renderToString(
-                <SingleValueTooltip
-                  value={typeof value === 'number' ? value.toFixed(2) : 'n/a'}
-                  label={
-                    typeof value === 'number' && value === 1
-                      ? 'concurrent sandbox'
-                      : 'concurrent sandboxes'
-                  }
-                  timestamp={timestamp}
-                  description={getAveragingPeriodText(step ?? 0)}
-                  classNames={{
-                    description: 'text-fg-tertiary opacity-75',
-                    timestamp: 'text-fg-tertiary',
-                  }}
-                />
-              )
-            },
+            formatter: tooltipFormatter,
           },
         }}
         data={[

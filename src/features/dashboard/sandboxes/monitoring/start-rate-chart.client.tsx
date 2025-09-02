@@ -9,7 +9,7 @@ import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
 import dynamic from 'next/dynamic'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { renderToString } from 'react-dom/server'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
@@ -66,13 +66,42 @@ export default function StartRateChartClient({
     '--graph-area-fg-to',
   ] as const)
 
+  const tooltipFormatter = useCallback(
+    (params: echarts.TooltipComponentFormatterCallbackParams) => {
+      const data = Array.isArray(params) ? params[0] : params
+      if (!data?.value) return ''
+
+      const value = Array.isArray(data.value) ? data.value[1] : data.value
+      const timestamp = Array.isArray(data.value)
+        ? (data.value[0] as string)
+        : (data.value as string)
+
+      return renderToString(
+        <SingleValueTooltip
+          value={typeof value === 'number' ? value : 'n/a'}
+          label="sandboxes/s"
+          timestamp={timestamp}
+          description={getAveragingPeriodText(step ?? 0)}
+          classNames={{
+            value: 'text-fg',
+            description: 'text-fg-tertiary opacity-75',
+            timestamp: 'text-fg-tertiary',
+          }}
+        />
+      )
+    },
+    [step]
+  )
+
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
       <div className="min-h-[60px] flex flex-col justify-end">
         <span className="prose-label-highlight uppercase">Start Rate</span>
         <div className="inline-flex items-end gap-3 mt-2">
           <span className="prose-value-big">{average.toFixed(1)}</span>
-          <span className="label-tertiary">AVG</span>
+          <span className="label-tertiary">
+            AVG over {getAveragingPeriodText(step ?? 0)}
+          </span>
         </div>
       </div>
 
@@ -92,33 +121,7 @@ export default function StartRateChartClient({
           },
           tooltip: {
             show: true,
-            formatter: (
-              params: echarts.TooltipComponentFormatterCallbackParams
-            ) => {
-              const data = Array.isArray(params) ? params[0] : params
-              if (!data?.value) return ''
-
-              const value = Array.isArray(data.value)
-                ? data.value[1]
-                : data.value
-              const timestamp = Array.isArray(data.value)
-                ? (data.value[0] as string)
-                : (data.value as string)
-
-              return renderToString(
-                <SingleValueTooltip
-                  value={typeof value === 'number' ? value : 'n/a'}
-                  label="sandboxes/s"
-                  timestamp={timestamp}
-                  description={getAveragingPeriodText(step ?? 0)}
-                  classNames={{
-                    value: 'text-fg',
-                    description: 'text-fg-tertiary opacity-75',
-                    timestamp: 'text-fg-tertiary',
-                  }}
-                />
-              )
-            },
+            formatter: tooltipFormatter,
           },
         }}
         data={[
