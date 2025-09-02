@@ -16,12 +16,12 @@ export interface TeamTierLimits {
 }
 
 const MOCK_TIER_LIMITS: TeamTierLimits = {
-  concurrentInstances: 100,
-  diskMb: 10240,
+  concurrentInstances: 100_000,
+  diskMb: 102400,
   maxLengthHours: 24,
-  maxRamMb: 8192,
-  maxVcpu: 4,
-  tierName: 'Pro',
+  maxRamMb: 65536,
+  maxVcpu: 32,
+  tierName: 'Enterprise',
 }
 
 const GetTeamTierLimitsSchema = z.object({

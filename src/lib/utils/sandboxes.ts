@@ -158,12 +158,12 @@ export const getAveragingPeriodText = (stepMs: number) => {
   const seconds = Math.floor(stepMs / 1000)
 
   if (seconds < 60) {
-    return `${seconds} second average`
+    return `${seconds} second${seconds > 1 ? 's' : ''} average`
   } else if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60)
-    return `${minutes} minute average`
+    return `${minutes} minute${minutes > 1 ? 's' : ''} average`
   } else {
     const hours = Math.floor(seconds / 3600)
-    return `${hours} hour average`
+    return `${hours} hour${hours > 1 ? 's' : ''} average`
   }
 }

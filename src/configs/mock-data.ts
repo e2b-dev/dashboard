@@ -1037,8 +1037,7 @@ function calculateTeamMetricsStep(startMs: number, endMs: number): number {
  */
 export function generateMockTeamMetrics(
   startMs: number,
-  endMs: number,
-  teamSize: 'small' | 'medium' | 'large' = 'medium'
+  endMs: number
 ): { metrics: ClientTeamMetrics; step: number } {
   const now = Date.now()
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
@@ -1076,7 +1075,7 @@ export function generateMockTeamMetrics(
     },
   }
 
-  const profile = profiles[teamSize]
+  const profile = profiles.large
   const metrics: ClientTeamMetrics = []
 
   // Use the backend's step calculation logic

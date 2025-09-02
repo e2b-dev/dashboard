@@ -148,23 +148,31 @@ export default function ConcurrentChartClient({
   )
 
   return (
-    <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1">
-      <div className="flex justify-between gap-6 min-h-[60px]">
+    <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 max-md:min-h-[400px] md:min-h-0">
+      <div className="flex max-md:flex-col md:justify-between gap-3 md:gap-6 md:min-h-[60px]">
         <div className="flex flex-col justify-end">
-          <span className="prose-label-highlight uppercase">
+          <span className="prose-label-highlight uppercase max-md:text-sm">
             Concurrent Sandboxes
           </span>
-          <div className="inline-flex items-end gap-3 mt-2">
-            <span className="prose-value-big">{average.toFixed(1)}</span>
-            <span className="label-tertiary">
-              over {getAveragingPeriodText(data.step)}
+          <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
+            <span className="prose-value-big max-md:text-2xl">
+              {average.toFixed(1)}
+            </span>
+            <span className="label-tertiary max-md:text-xs">
+              <span className="max-md:hidden">
+                over {getAveragingPeriodText(data.step)}
+              </span>
+              <span className="md:hidden">avg</span>
             </span>
           </div>
         </div>
 
-        <div className="flex items-end gap-3 flex-shrink-0">
+        <div className="flex items-end gap-1 md:gap-3 flex-shrink-0 max-md:flex-wrap max-md:justify-start">
           {currentRange === 'custom' && customRangeLabel && (
-            <span className="text-fg py-0.5" style={{ letterSpacing: '0%' }}>
+            <span
+              className="text-fg py-0.5 max-md:text-xs max-md:w-full max-md:mb-1"
+              style={{ letterSpacing: '0%' }}
+            >
               {customRangeLabel}
             </span>
           )}
@@ -174,7 +182,7 @@ export default function ConcurrentChartClient({
               variant="ghost"
               size="slate"
               className={cn(
-                'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5',
+                'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-xs max-md:px-2',
                 {
                   'text-fg': currentRange === key,
                 }
@@ -190,7 +198,7 @@ export default function ConcurrentChartClient({
       </div>
 
       <LineChart
-        className="mt-4 h-full"
+        className="mt-3 md:mt-4 flex-1 min-h-[250px] md:min-h-[300px]"
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}
@@ -204,7 +212,7 @@ export default function ConcurrentChartClient({
             max: timeframe.end,
           },
           yAxis: {
-            splitNumber: 2,
+            splitNumber: 3,
             max: Math.max(
               ...lineData.map((d) => (d.y || 0) * 1.25),
               concurrentInstancesLimit || 100

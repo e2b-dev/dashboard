@@ -95,12 +95,11 @@ export default function LineChart({
     '--accent-error-highlight',
     '--accent-error-bg',
     '--accent-warning-highlight',
+    '--accent-warning-bg',
   ] as const)
 
   // responsive axis config based on viewport size
   const getResponsiveAxisConfig = useCallback(() => {
-    // use window dimensions to avoid safari timing issues
-
     const isSmallViewport =
       windowDimensions.width < 600 || windowDimensions.height < 400
     const isMediumViewport =
@@ -123,7 +122,7 @@ export default function LineChart({
         value = parseFloat(value)
       }
 
-      return value === limit ? '' : value.toString()
+      return value === limit || value === limit * 0.8 ? '' : value.toString()
     }
   }, [])
 
@@ -144,7 +143,7 @@ export default function LineChart({
                 type: 'solid' as const,
                 width: 1,
               },
-              z: 1000,
+              z: 10,
               tooltip: {
                 trigger: 'item' as const,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -172,17 +171,17 @@ export default function LineChart({
                   label: {
                     formatter: `${Math.round(yAxisLimit * 0.8)}`,
                     position: 'start' as const,
-                    backgroundColor: cssVars['--accent-error-bg'],
-                    color: cssVars['--accent-error-highlight'],
+                    backgroundColor: cssVars['--accent-warning-bg'],
+                    color: cssVars['--accent-warning-highlight'],
                     fontFamily: cssVars['--font-mono'],
                     borderRadius: 0,
                     padding: [4, 8],
                   },
                   lineStyle: {
-                    color: cssVars['--accent-error-highlight'],
-                    opacity: 0.3,
+                    color: cssVars['--accent-warning-highlight'],
+                    opacity: 0.8,
                     type: 'dashed' as const,
-                    width: 2,
+                    width: 1,
                   },
                 },
                 {
@@ -204,7 +203,7 @@ export default function LineChart({
                   },
                   lineStyle: {
                     color: cssVars['--accent-error-highlight'],
-                    opacity: 0.6,
+                    opacity: 1,
                     type: 'solid' as const,
                     width: 2,
                   },
@@ -233,6 +232,9 @@ export default function LineChart({
         shadowOffsetX: 0,
         shadowOffsetY: 0,
         shadowColor: 'transparent',
+      },
+      grid: {
+        left: '4%',
       },
       xAxis: {
         axisLine: { lineStyle: { color: cssVars['--stroke'] } },

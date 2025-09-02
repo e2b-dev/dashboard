@@ -18,14 +18,8 @@ export async function POST(
 
     const { start, end } = TeamMetricsRequestSchema.parse(await request.json())
 
-    // Use mock data if flag is enabled
     if (USE_MOCK_DATA) {
-      // Determine team size based on teamId hash for consistency
-      const teamSizes = ['small', 'medium', 'large'] as const
-      const teamSizeIndex = teamId.charCodeAt(0) % 3
-      const teamSize = teamSizes[teamSizeIndex]!
-
-      const mockData = MOCK_TEAM_METRICS_DATA(start, end, teamSize)
+      const mockData = MOCK_TEAM_METRICS_DATA(start, end)
       return Response.json(mockData satisfies TeamMetricsResponse)
     }
 
@@ -64,7 +58,6 @@ export async function POST(
       l.error(
         {
           key: 'get_team_sandboxes_metrics',
-          message: infraRes.error.message,
           error: infraRes.error,
           team_id: teamId,
           user_id: session.user.id,
@@ -73,6 +66,7 @@ export async function POST(
             status,
             start,
             end,
+            message: infraRes.error.message,
           },
         },
         `Failed to get team metrics: ${infraRes.error.message}`

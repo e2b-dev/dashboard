@@ -15,7 +15,7 @@ import {
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-3 md:p-6 max-md:not-last:border-b md:not-last:border-r h-full flex-1 w-full flex flex-col justify-center items-center gap-3 relative">
+    <div className="p-4 md:p-6 max-md:not-last:border-b md:not-last:border-r h-full flex-1 w-full flex flex-col justify-center items-center gap-2 md:gap-3 relative max-md:min-h-[100px] md:min-h-[200px]">
       {children}
     </div>
   )
@@ -48,7 +48,7 @@ export default function SandboxesMonitoringHeader({
   params: Promise<SandboxesMonitoringPageParams>
 }) {
   return (
-    <div className="flex md:flex-row flex-col items-center border-b w-full min-h-52">
+    <div className="flex md:flex-row flex-col items-center border-b w-full md:min-h-52 max-md:py-2">
       <BaseCard>
         <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
 
@@ -56,8 +56,9 @@ export default function SandboxesMonitoringHeader({
           <SandboxesStartRate params={params} />
         </Suspense>
         <BaseSubtitle>
-          Sandboxes/Sec. <br />
-          (5 sec average)
+          Sandboxes/S <br className="max-md:hidden" />
+          <span className="md:hidden">per sec</span>
+          <span className="max-md:hidden">(5 sec average)</span>
         </BaseSubtitle>
       </BaseCard>
 
@@ -67,8 +68,9 @@ export default function SandboxesMonitoringHeader({
           <ConcurrentSandboxes params={params} />
         </Suspense>
         <BaseSubtitle>
-          Concurrent Sandboxes <br />
-          (5 sec average)
+          Concurrent <span className="max-md:hidden">Sandboxes</span>{' '}
+          <br className="max-md:hidden" />
+          <span className="max-md:hidden">(5 sec average)</span>
         </BaseSubtitle>
       </BaseCard>
 
@@ -77,9 +79,10 @@ export default function SandboxesMonitoringHeader({
           <MaxConcurrentSandboxes params={params} />
         </Suspense>
         <BaseSubtitle>
-          Max. Concurrent Sandboxes
-          <br />
-          (Last 30 Days)
+          Max<span className="max-md:hidden">. Concurrent Sandboxes</span>
+          <span className="md:hidden"> Concurrent</span>
+          <br className="max-md:hidden" />
+          <span className="max-md:hidden">(Last 30 Days)</span>
         </BaseSubtitle>
       </BaseCard>
     </div>

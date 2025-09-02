@@ -61,7 +61,7 @@ export default async function DashboardLayout({
       <SidebarProvider
         defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
       >
-        <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+        <div className="min-h-dvh min-w-dvw flex max-h-full w-full flex-col overflow-hidden">
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />
             <SidebarInset>

@@ -35,11 +35,7 @@ export const getTeamMetrics = authActionClient
     const { startDate: startDateMs, endDate: endDateMs } = parsedInput
 
     if (USE_MOCK_DATA) {
-      const teamSizes = ['small', 'medium', 'large'] as const
-      const teamSizeIndex = teamId.charCodeAt(0) % 3
-      const teamSize = teamSizes[teamSizeIndex]!
-
-      return MOCK_TEAM_METRICS_DATA(startDateMs, endDateMs, teamSize)
+      return MOCK_TEAM_METRICS_DATA(startDateMs, endDateMs)
     }
 
     // convert milliseconds to seconds
