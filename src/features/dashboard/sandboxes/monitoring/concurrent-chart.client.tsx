@@ -38,7 +38,8 @@ interface ConcurrentChartProps {
 export default function ConcurrentChartClient({
   initialData,
 }: ConcurrentChartProps) {
-  const { timeframe, setStaticMode, setTimeRange } = useTeamMetrics()
+  const { timeframe, setStaticMode, setTimeRange, registerChart } =
+    useTeamMetrics()
 
   let { data } = useTeamMetricsSWR(initialData)
 
@@ -194,6 +195,8 @@ export default function ConcurrentChartClient({
           setStaticMode(from, end)
         }}
         yAxisLimit={100}
+        group="sandboxes-monitoring"
+        onChartReady={registerChart}
         option={{
           xAxis: {
             type: 'time',
@@ -205,6 +208,10 @@ export default function ConcurrentChartClient({
           },
           tooltip: {
             show: true,
+            trigger: 'axis',
+            axisPointer: {
+              type: 'line',
+            },
             formatter: tooltipFormatter,
           },
         }}

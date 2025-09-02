@@ -26,7 +26,7 @@ const LineChart = dynamic(() => import('@/ui/data/line-chart'), {
 export default function StartRateChartClient({
   initialData,
 }: StartRateChartProps) {
-  const { timeframe, setStaticMode } = useTeamMetrics()
+  const { timeframe, setStaticMode, registerChart } = useTeamMetrics()
 
   let { data } = useTeamMetricsSWR(initialData)
 
@@ -99,6 +99,8 @@ export default function StartRateChartClient({
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}
+        group="sandboxes-monitoring"
+        onChartReady={registerChart}
         option={{
           xAxis: {
             type: 'time',
@@ -112,6 +114,10 @@ export default function StartRateChartClient({
           },
           tooltip: {
             show: true,
+            trigger: 'axis',
+            axisPointer: {
+              type: 'line',
+            },
             formatter: tooltipFormatter,
           },
         }}

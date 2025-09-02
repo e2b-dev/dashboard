@@ -39,6 +39,12 @@ export interface LineChartProps {
 
   /** Inline styles */
   style?: React.CSSProperties
+
+  /** Callback to receive the chart instance for external control */
+  onChartReady?: (chart: echarts.ECharts) => void
+
+  /** Group name for connecting multiple charts */
+  group?: string
 }
 
 export default function LineChart({
@@ -48,6 +54,8 @@ export default function LineChart({
   yAxisLimit,
   className,
   style,
+  onChartReady,
+  group,
 }: LineChartProps) {
   const ref = useRef<ReactECharts | null>(null)
   const { resolvedTheme } = useTheme()
@@ -332,6 +340,16 @@ export default function LineChart({
         flush: true,
       }
     )
+
+    // Set the group if provided for chart connection
+    if (group) {
+      chart.group = group
+    }
+
+    // Call the external callback if provided
+    if (onChartReady) {
+      onChartReady(chart)
+    }
   }
 
   return (

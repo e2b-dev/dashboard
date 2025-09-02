@@ -1,5 +1,6 @@
 'use client'
 
+import { useConnectedCharts } from '@/lib/hooks/use-connected-charts'
 import {
   parseTimeframeFromSearchParams,
   ResolvedTimeframe,
@@ -9,6 +10,7 @@ import {
   timeframeToSearchParams,
   TimeRangeKey,
 } from '@/lib/utils/timeframe'
+import * as echarts from 'echarts'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   createContext,
@@ -24,6 +26,8 @@ interface TeamMetricsState {
   setLiveMode: (range: number) => void
   setStaticMode: (start: number, end: number) => void
   setTimeRange: (range: TimeRangeKey) => void
+
+  registerChart: (chart: echarts.ECharts) => void
 }
 
 const TeamMetricsContext = createContext<TeamMetricsState | null>(null)
@@ -44,6 +48,8 @@ export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
   })
 
   const timeframe = resolveTimeframe(timeframeState)
+
+  const { registerChart } = useConnectedCharts('sandboxes-monitoring')
 
   const updateUrl = useCallback(
     (newState: TimeframeState) => {
@@ -99,6 +105,7 @@ export const TeamMetricsProvider = ({ children }: TeamMetricsProviderProps) => {
         setLiveMode,
         setStaticMode,
         setTimeRange,
+        registerChart,
       }}
     >
       {children}
