@@ -65,7 +65,7 @@ function TabsTrigger({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+}: React.ComponentProps<typeof TabsPrimitive.Trigger> & { layoutKey: string }) {
   const { value } = React.useContext(TabsContext)
   const isSelected = value === props.value
 
@@ -82,7 +82,7 @@ function TabsTrigger({
       {children}
       {isSelected && (
         <motion.div
-          layoutId="tabs-indicator"
+          layoutId={props.layoutKey}
           className="border-accent-main-highlight absolute inset-0 -bottom-0.5 border-b"
           initial={false}
           transition={{

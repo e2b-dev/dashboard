@@ -54,7 +54,11 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
       <TabsList className="bg-bg z-30 w-full justify-start pl-6">
         {TABS.map((tab) => (
           <Link key={tab.value} href={tab.url(teamIdOrSlug)} prefetch>
-            <TabsTrigger value={tab.value} className="w-fit flex-none">
+            <TabsTrigger
+              layoutKey="tabs-indicator-sandboxes"
+              value={tab.value}
+              className="w-fit flex-none"
+            >
               <tab.icon className="size-3.5" />
               {tab.value.charAt(0).toUpperCase() + tab.value.slice(1)}
             </TabsTrigger>
