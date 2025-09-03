@@ -1,5 +1,6 @@
-import { cn } from '@/lib/utils'
-import { Badge } from './primitives/badge'
+import { cn, exponentialSmoothing } from '@/lib/utils'
+import { AnimatePresence, motion } from 'motion/react'
+import { Badge, BadgeProps } from './primitives/badge'
 
 interface LiveDotProps {
   classNames?: {
@@ -26,16 +27,60 @@ export function LiveDot({ classNames }: LiveDotProps) {
   )
 }
 
-interface LiveBadgeProps {
+interface LiveBadgeProps extends BadgeProps {
   className?: string
   tooltip?: string
 }
 
-export function LiveBadge({ className }: LiveBadgeProps) {
+export function LiveBadge({ className, ...props }: LiveBadgeProps) {
   return (
-    <Badge variant="positive" className={cn('prose-label', className)}>
+    <Badge
+      variant="positive"
+      className={cn('prose-label', className)}
+      {...props}
+    >
       <LiveDot />
       LIVE
     </Badge>
+  )
+}
+
+interface ReactiveLiveBadgeProps extends LiveBadgeProps {
+  show: boolean
+}
+
+export function ReactiveLiveBadge({
+  className,
+  show,
+  ...props
+}: ReactiveLiveBadgeProps) {
+  return (
+    <AnimatePresence mode="wait">
+      {show && (
+        <motion.span
+          key="live-badge-start-rate"
+          variants={{
+            hidden: {
+              opacity: 0,
+              filter: 'blur(4px)',
+            },
+            visible: {
+              opacity: 1,
+              filter: 'blur(0px)',
+            },
+          }}
+          transition={{
+            duration: 0.3,
+            ease: exponentialSmoothing(5),
+          }}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          className="ml-3"
+        >
+          <LiveBadge size="sm" />
+        </motion.span>
+      )}
+    </AnimatePresence>
   )
 }
