@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils/ui'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import LineChart from '@/ui/data/line-chart'
 import { Button } from '@/ui/primitives/button'
+import { TimePicker } from '@/ui/time-picker'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
 import { NonUndefined } from 'react-hook-form'
@@ -45,7 +46,7 @@ export default function ConcurrentChartClient({
   initialData,
   concurrentInstancesLimit,
 }: ConcurrentChartProps) {
-  const { timeframe, setStaticMode, setTimeRange, registerChart } =
+  const { timeframe, setStaticMode, setTimeRange, setLiveMode, registerChart } =
     useTeamMetrics()
 
   let { data } = useTeamMetricsSWR(initialData)
@@ -130,7 +131,27 @@ export default function ConcurrentChartClient({
               {customRangeLabel}
             </span>
           )}
-          {CHART_RANGE_MAP_KEYS.map((key) => (
+          <TimePicker
+            value={{
+              mode: 'static',
+              start: timeframe.start,
+              end: timeframe.end,
+            }}
+            onValueChange={(value) => {
+              if (!value.range) return
+
+              setLiveMode(value.range)
+            }}
+          >
+            <Button
+              variant="ghost"
+              size="slate"
+              className="text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-xs max-md:px-2"
+            >
+              custom
+            </Button>
+          </TimePicker>
+          {CHART_RANGE_MAP_KEYS.filter((key) => key !== 'custom').map((key) => (
             <Button
               key={key}
               variant="ghost"
