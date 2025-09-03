@@ -1,3 +1,4 @@
+import { calculateTeamMetricsStep } from '@/configs/mock-data'
 import { formatAveragingPeriod } from '@/lib/utils/formatting'
 import { LineSeries } from '@/ui/data/line-chart.utils'
 import { SingleValueTooltip } from '@/ui/data/tooltips'
@@ -85,16 +86,20 @@ export function calculateYAxisMax(
  */
 export function createMonitoringChartOptions({
   timeframe,
-  splitNumber = 3,
+  splitNumber = 2,
 }: {
-  timeframe: { start: number; end: number }
+  timeframe: { start: number; end: number; isLive: boolean }
   splitNumber?: number
 }) {
   return {
     xAxis: {
       type: 'time' as const,
       min: timeframe.start,
-      max: timeframe.end + 30_000, // add 30 seconds to the end to avoid data zoom issues
+      max:
+        timeframe.end +
+        (timeframe.isLive
+          ? calculateTeamMetricsStep(timeframe.start, timeframe.end)
+          : 0),
     },
     yAxis: {
       splitNumber,

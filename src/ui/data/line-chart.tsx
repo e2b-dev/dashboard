@@ -3,7 +3,7 @@
 import { ENABLE_CONCURRENT_CHART_WARNING_LINE } from '@/configs/flags'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
-  formatChartTimestamp,
+  formatChartTimestampLocal,
   formatNumber,
   formatTimeAxisLabel,
 } from '@/lib/utils/formatting'
@@ -162,7 +162,7 @@ export default function LineChart({
       return Math.max(35, Math.min(padding, 120))
     }
 
-    // Check if data is "live" (last point less than 1 minute old)
+    // Check if data is "live" (last point less than 2 min old)
     const isLiveData = (seriesData: LineSeries) => {
       if (!seriesData.data.length) return false
       const lastPoint = seriesData.data[seriesData.data.length - 1]
@@ -176,9 +176,11 @@ export default function LineChart({
             : new Date(lastPoint.x).getTime()
 
       const now = Date.now()
-      const oneMinuteAgo = now - 60 * 1000
 
-      return lastTimestamp > oneMinuteAgo && lastTimestamp <= now
+      // 2 minutes in milliseconds
+      const twoMinutesMs = 2 * 60 * 1000
+
+      return lastTimestamp > now - twoMinutesMs && lastTimestamp <= now
     }
 
     const limitLineConfig =
@@ -387,7 +389,6 @@ export default function LineChart({
       },
       grid: {
         left: calculateGridLeft(),
-        right: 8,
       },
       xAxis: {
         axisLine: { lineStyle: { color: cssVars['--stroke'] } },
@@ -404,6 +405,7 @@ export default function LineChart({
             ) {
               const date = new Date(value)
               const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
+
               return formatTimeAxisLabel(value, isNewDay)
             }
             return String(value)
@@ -424,7 +426,9 @@ export default function LineChart({
                 userOption?.xAxis &&
                 (userOption.xAxis as { type?: string }).type === 'time'
               ) {
-                return formatChartTimestamp(params.value as string | number)
+                return formatChartTimestampLocal(
+                  params.value as string | number
+                )
               }
               return String(params.value)
             }) as unknown as string | ((params: unknown) => string),

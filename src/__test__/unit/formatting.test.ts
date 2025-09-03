@@ -1,7 +1,8 @@
 import {
   formatAveragingPeriod,
   formatBytes,
-  formatChartTimestamp,
+  formatChartTimestampLocal,
+  formatChartTimestampUTC,
   formatCompactDate,
   formatCompactNumber,
   formatCPUCores,
@@ -30,20 +31,39 @@ describe('Date & Time Formatting', () => {
     vi.useRealTimers()
   })
 
-  describe('formatChartTimestamp', () => {
-    it('formats timestamp as expected', () => {
+  describe('formatChartTimestampUTC', () => {
+    it('formats timestamp as expected in UTC', () => {
       const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
-      expect(formatChartTimestamp(timestamp)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatChartTimestampUTC(timestamp)).toBe('Jan 5, 2:30:45 PM')
     })
 
     it('handles Date object input', () => {
       const date = new Date('2024-01-05T14:30:45Z')
-      expect(formatChartTimestamp(date)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatChartTimestampUTC(date)).toBe('Jan 5, 2:30:45 PM')
     })
 
     it('handles string input', () => {
       const dateString = '2024-01-05T14:30:45Z'
-      expect(formatChartTimestamp(dateString)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatChartTimestampUTC(dateString)).toBe('Jan 5, 2:30:45 PM')
+    })
+
+    it('formats with date when showDate is true', () => {
+      const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
+      expect(formatChartTimestampUTC(timestamp, true)).toBe('Jan 5')
+    })
+  })
+
+  describe('formatChartTimestampLocal', () => {
+    it('formats timestamp in local timezone', () => {
+      const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
+      // result will depend on local timezone
+      const result = formatChartTimestampLocal(timestamp)
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2} [AP]M/)
+    })
+
+    it('formats with date when showDate is true', () => {
+      const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
+      expect(formatChartTimestampLocal(timestamp, true)).toBe('Jan 5')
     })
   })
 
@@ -110,19 +130,28 @@ describe('Date & Time Formatting', () => {
   })
 
   describe('formatTimeAxisLabel', () => {
-    it('formats time without date by default', () => {
+    it('formats time in local timezone by default', () => {
       const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
-      expect(formatTimeAxisLabel(timestamp)).toBe('2:30:45 PM')
+      // default is useLocal=true, so result depends on local timezone
+      const result = formatTimeAxisLabel(timestamp)
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2} [AP]M/)
+    })
+
+    it('formats time in UTC when useLocal is false', () => {
+      const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
+      expect(formatTimeAxisLabel(timestamp, false, false)).toBe('Jan 5, 2:30:45 PM')
     })
 
     it('formats with date when showDate is true', () => {
       const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
-      expect(formatTimeAxisLabel(timestamp, true)).toBe('Jan 5')
+      expect(formatTimeAxisLabel(timestamp, true, true)).toBe('Jan 5')
     })
 
-    it('formats with date at midnight', () => {
+    it('handles midnight formatting with date', () => {
       const timestamp = new Date('2024-01-05T00:00:00Z').getTime()
-      expect(formatTimeAxisLabel(timestamp)).toBe('Jan 5')
+      // when showDate is false, should show time even at midnight
+      const result = formatTimeAxisLabel(timestamp, false, true)
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2} [AP]M/)
     })
   })
 

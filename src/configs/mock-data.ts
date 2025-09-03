@@ -1008,7 +1008,10 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
  * This function replicates the back-end step calculation logic from e2b-dev/infra.
  * https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
  */
-function calculateTeamMetricsStep(startMs: number, endMs: number): number {
+export function calculateTeamMetricsStep(
+  startMs: number,
+  endMs: number
+): number {
   const duration = endMs - startMs
   const hour = 60 * 60 * 1000
   const minute = 60 * 1000

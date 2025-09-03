@@ -1,18 +1,5 @@
 'use client'
 
-import {
-  endOfDay,
-  endOfMonth,
-  endOfWeek,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  subDays,
-  subHours,
-  subMinutes,
-  subMonths,
-  subWeeks,
-} from 'date-fns'
 import { ReactNode, useEffect, useState } from 'react'
 
 import { cn } from '@/lib/utils'
@@ -163,154 +150,156 @@ export function TimePicker({
         mode: 'live',
         range: option.rangeMs,
       })
+      setOpen(false) // close dropdown after selection
     }
   }
 
   // handle custom date input
-  const handleCustomInputSubmit = (
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (e.key === 'Enter' && customInput) {
-      // try to parse as date range
-      if (customInput.includes(' to ') || customInput.includes(' - ')) {
-        const separator = customInput.includes(' to ') ? ' to ' : ' - '
-        const parts = customInput.split(separator)
-        if (parts.length === 2 && parts[0] && parts[1]) {
-          // try humanized parsing for each part
-          const startHumanized = parseHumanizedDate(parts[0].trim())
-          const endHumanized = parseHumanizedDate(parts[1].trim())
+  // TODO: let llm do it
+  //   const handleCustomInputSubmit = (
+  //     e: React.KeyboardEvent<HTMLInputElement>
+  //   ) => {
+  //     if (e.key === 'Enter' && customInput) {
+  //       // try to parse as date range
+  //       if (customInput.includes(' to ') || customInput.includes(' - ')) {
+  //         const separator = customInput.includes(' to ') ? ' to ' : ' - '
+  //         const parts = customInput.split(separator)
+  //         if (parts.length === 2 && parts[0] && parts[1]) {
+  //           // try humanized parsing for each part
+  //           const startHumanized = parseHumanizedDate(parts[0].trim())
+  //           const endHumanized = parseHumanizedDate(parts[1].trim())
 
-          const startDate = startHumanized
-            ? new Date(startHumanized.start)
-            : new Date(parts[0].trim())
-          const endDate = endHumanized
-            ? new Date(endHumanized.end)
-            : new Date(parts[1].trim())
+  //           const startDate = startHumanized
+  //             ? new Date(startHumanized.start)
+  //             : new Date(parts[0].trim())
+  //           const endDate = endHumanized
+  //             ? new Date(endHumanized.end)
+  //             : new Date(parts[1].trim())
 
-          if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-            onValueChange?.({
-              mode: 'static',
-              start: startDate.getTime(),
-              end: endDate.getTime(),
-            })
-            setCustomInput('')
-            setSelectedValue('custom')
-            setOpen(false)
-            return
-          }
-        }
-      }
+  //           if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+  //             onValueChange?.({
+  //               mode: 'static',
+  //               start: startDate.getTime(),
+  //               end: endDate.getTime(),
+  //             })
+  //             setCustomInput('')
+  //             setSelectedValue('custom')
+  //             setOpen(false)
+  //             return
+  //           }
+  //         }
+  //       }
 
-      // try to parse as humanized date
-      const humanized = parseHumanizedDate(customInput)
-      if (humanized) {
-        onValueChange?.({
-          mode: 'static',
-          start: humanized.start,
-          end: humanized.end,
-        })
-        setCustomInput('')
-        setSelectedValue('custom')
-        setOpen(false)
-        return
-      }
+  //       // try to parse as humanized date
+  //       const humanized = parseHumanizedDate(customInput)
+  //       if (humanized) {
+  //         onValueChange?.({
+  //           mode: 'static',
+  //           start: humanized.start,
+  //           end: humanized.end,
+  //         })
+  //         setCustomInput('')
+  //         setSelectedValue('custom')
+  //         setOpen(false)
+  //         return
+  //       }
 
-      // try to parse as single date
-      const parsedDate = new Date(customInput)
-      if (!isNaN(parsedDate.getTime())) {
-        const timestamp = parsedDate.getTime()
-        const now = Date.now()
-        const start = timestamp < now ? timestamp : now
-        const end = timestamp < now ? now : timestamp
+  //       // try to parse as single date
+  //       const parsedDate = new Date(customInput)
+  //       if (!isNaN(parsedDate.getTime())) {
+  //         const timestamp = parsedDate.getTime()
+  //         const now = Date.now()
+  //         const start = timestamp < now ? timestamp : now
+  //         const end = timestamp < now ? now : timestamp
 
-        onValueChange?.({
-          mode: 'static',
-          start,
-          end,
-        })
-        setCustomInput('')
-        setSelectedValue('custom')
-        setOpen(false)
-      }
-    }
-  }
+  //         onValueChange?.({
+  //           mode: 'static',
+  //           start,
+  //           end,
+  //         })
+  //         setCustomInput('')
+  //         setSelectedValue('custom')
+  //         setOpen(false)
+  //       }
+  //     }
+  // }
 
   // parse humanized date strings
-  const parseHumanizedDate = (
-    input: string
-  ): { start: number; end: number } | null => {
-    const now = new Date()
-    const lowercased = input.toLowerCase().trim()
+  //   const parseHumanizedDate = (
+  //     input: string
+  //   ): { start: number; end: number } | null => {
+  //     const now = new Date()
+  //     const lowercased = input.toLowerCase().trim()
 
-    // relative past dates
-    if (lowercased === 'today') {
-      return { start: startOfDay(now).getTime(), end: endOfDay(now).getTime() }
-    }
-    if (lowercased === 'yesterday') {
-      const yesterday = subDays(now, 1)
-      return {
-        start: startOfDay(yesterday).getTime(),
-        end: endOfDay(yesterday).getTime(),
-      }
-    }
-    if (lowercased === 'this week') {
-      return { start: startOfWeek(now).getTime(), end: now.getTime() }
-    }
-    if (lowercased === 'last week') {
-      const lastWeek = subWeeks(now, 1)
-      return {
-        start: startOfWeek(lastWeek).getTime(),
-        end: endOfWeek(lastWeek).getTime(),
-      }
-    }
-    if (lowercased === 'this month') {
-      return { start: startOfMonth(now).getTime(), end: now.getTime() }
-    }
-    if (lowercased === 'last month') {
-      const lastMonth = subMonths(now, 1)
-      return {
-        start: startOfMonth(lastMonth).getTime(),
-        end: endOfMonth(lastMonth).getTime(),
-      }
-    }
+  //     // relative past dates
+  //     if (lowercased === 'today') {
+  //       return { start: startOfDay(now).getTime(), end: endOfDay(now).getTime() }
+  //     }
+  //     if (lowercased === 'yesterday') {
+  //       const yesterday = subDays(now, 1)
+  //       return {
+  //         start: startOfDay(yesterday).getTime(),
+  //         end: endOfDay(yesterday).getTime(),
+  //       }
+  //     }
+  //     if (lowercased === 'this week') {
+  //       return { start: startOfWeek(now).getTime(), end: now.getTime() }
+  //     }
+  //     if (lowercased === 'last week') {
+  //       const lastWeek = subWeeks(now, 1)
+  //       return {
+  //         start: startOfWeek(lastWeek).getTime(),
+  //         end: endOfWeek(lastWeek).getTime(),
+  //       }
+  //     }
+  //     if (lowercased === 'this month') {
+  //       return { start: startOfMonth(now).getTime(), end: now.getTime() }
+  //     }
+  //     if (lowercased === 'last month') {
+  //       const lastMonth = subMonths(now, 1)
+  //       return {
+  //         start: startOfMonth(lastMonth).getTime(),
+  //         end: endOfMonth(lastMonth).getTime(),
+  //       }
+  //     }
 
-    // relative time patterns (e.g., "2 hours ago", "last 3 days")
-    const agoPattern = /(\d+)\s*(second|minute|hour|day|week|month)s?\s*ago/i
-    const lastPattern = /last\s+(\d+)\s*(second|minute|hour|day|week|month)s?/i
+  //     // relative time patterns (e.g., "2 hours ago", "last 3 days")
+  //     const agoPattern = /(\d+)\s*(second|minute|hour|day|week|month)s?\s*ago/i
+  //     const lastPattern = /last\s+(\d+)\s*(second|minute|hour|day|week|month)s?/i
 
-    const match = lowercased.match(agoPattern) || lowercased.match(lastPattern)
-    if (match && match[1] && match[2]) {
-      const amount = match[1]
-      const unit = match[2]
-      const value = parseInt(amount)
-      let start = now
+  //     const match = lowercased.match(agoPattern) || lowercased.match(lastPattern)
+  //     if (match && match[1] && match[2]) {
+  //       const amount = match[1]
+  //       const unit = match[2]
+  //       const value = parseInt(amount)
+  //       let start = now
 
-      switch (unit.toLowerCase()) {
-        case 'second':
-          start = subMinutes(now, Math.floor(value / 60))
-          break
-        case 'minute':
-          start = subMinutes(now, value)
-          break
-        case 'hour':
-          start = subHours(now, value)
-          break
-        case 'day':
-          start = subDays(now, value)
-          break
-        case 'week':
-          start = subWeeks(now, value)
-          break
-        case 'month':
-          start = subMonths(now, value)
-          break
-      }
+  //       switch (unit.toLowerCase()) {
+  //         case 'second':
+  //           start = subMinutes(now, Math.floor(value / 60))
+  //           break
+  //         case 'minute':
+  //           start = subMinutes(now, value)
+  //           break
+  //         case 'hour':
+  //           start = subHours(now, value)
+  //           break
+  //         case 'day':
+  //           start = subDays(now, value)
+  //           break
+  //         case 'week':
+  //           start = subWeeks(now, value)
+  //           break
+  //         case 'month':
+  //           start = subMonths(now, value)
+  //           break
+  //       }
 
-      return { start: start.getTime(), end: now.getTime() }
-    }
+  //       return { start: start.getTime(), end: now.getTime() }
+  //     }
 
-    return null
-  }
+  //     return null
+  //   }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>

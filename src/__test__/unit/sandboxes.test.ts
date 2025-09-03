@@ -4,20 +4,37 @@ import { describe, expect, it } from 'vitest'
 
 describe('fillTeamMetricsWithZeros', () => {
   describe('Empty data handling', () => {
-    it('should create two zero points when data is empty', () => {
+    it('should fill entire range with zeros at calculated step intervals when data is empty', () => {
+      // passing step=100000 (100 seconds) which is what the function will use
       const result = fillTeamMetricsWithZeros([], 1000000, 2000000, 100000)
 
-      expect(result).toHaveLength(2)
+      // should create points at step intervals through the range
+      expect(result.length).toBeGreaterThan(2)
+      
+      // first point should be at start
       expect(result[0]).toEqual({
         timestamp: 1000000,
         concurrentSandboxes: 0,
         sandboxStartRate: 0,
       })
-      expect(result[1]).toEqual({
-        timestamp: 1999000, // end - 1000
-        concurrentSandboxes: 0,
-        sandboxStartRate: 0,
-      })
+
+      // with step=100000, points should be at 1000000, 1100000, 1200000, etc.
+      const expectedTimestamps = []
+      for (let t = 1000000; t < 2000000; t += 100000) {
+        expectedTimestamps.push(t)
+      }
+      
+      // check that we have points at regular intervals
+      const hasRegularIntervals = expectedTimestamps.every(
+        ts => result.some(p => p.timestamp === ts)
+      )
+      expect(hasRegularIntervals).toBe(true)
+
+      // last point should be near the end
+      const lastPoint = result[result.length - 1]
+      expect(lastPoint?.timestamp).toBe(1999000) // end - 1000
+      expect(lastPoint?.concurrentSandboxes).toBe(0)
+      expect(lastPoint?.sandboxStartRate).toBe(0)
     })
   })
 

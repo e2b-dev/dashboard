@@ -6,9 +6,14 @@ import {
   formatCompactDate,
   formatDecimal,
 } from '@/lib/utils/formatting'
-import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
+import {
+  ParsedTimeframe,
+  TIME_RANGES,
+  TimeRangeKey,
+} from '@/lib/utils/timeframe'
 import { cn } from '@/lib/utils/ui'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { ClientTeamMetric } from '@/types/sandboxes.types'
 import LineChart from '@/ui/data/line-chart'
 import { Button } from '@/ui/primitives/button'
 import { TimePicker } from '@/ui/time-picker'
@@ -23,7 +28,7 @@ import {
   createSingleValueTooltipFormatter,
   transformMetricsToLineData,
 } from './chart-utils'
-import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
+import { useSyncedMetrics } from './hooks/use-synced-metrics'
 import { useTeamMetrics } from './store'
 
 const CHART_RANGE_MAP = {
@@ -36,14 +41,18 @@ const CHART_RANGE_MAP_KEYS = Object.keys(CHART_RANGE_MAP) as Array<
 >
 
 interface ConcurrentChartProps {
+  teamId: string
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
   >
+  initialTimeframe: ParsedTimeframe
   concurrentInstancesLimit?: number
 }
 
 export default function ConcurrentChartClient({
+  teamId,
   initialData,
+  initialTimeframe,
   concurrentInstancesLimit,
 }: ConcurrentChartProps) {
   const {
@@ -54,20 +63,32 @@ export default function ConcurrentChartClient({
     registerChart,
   } = useTeamMetrics()
 
-  let { data } = useTeamMetricsSWR(initialData)
+  // create a complete timeframe object for the hook
+  // always use store timeframe as it's the source of truth
+  const syncedTimeframe = useMemo(() => {
+    return {
+      start: timeframe.start,
+      end: timeframe.end,
+      isLive: timeframe.isLive,
+      duration: timeframe.end - timeframe.start,
+    }
+  }, [timeframe.start, timeframe.end, timeframe.isLive])
 
-  if (!data) {
-    data = initialData
-  }
+  // use synced metrics hook for consistent fetching
+  const { data, isPolling, isLoading } = useSyncedMetrics({
+    teamId,
+    timeframe: syncedTimeframe,
+    initialData,
+  })
 
   const lineData = useMemo(
     () =>
-      transformMetricsToLineData(
-        data.metrics,
+      transformMetricsToLineData<ClientTeamMetric>(
+        data?.metrics ?? [],
         (d) => d.timestamp,
         (d) => d.concurrentSandboxes
       ),
-    [data.metrics]
+    [data?.metrics]
   )
 
   const average = useMemo(() => calculateAverage(lineData), [lineData])
@@ -79,11 +100,11 @@ export default function ConcurrentChartClient({
   ] as const)
 
   const currentRange = useMemo(() => {
-    if (!timeframe.isLive) {
+    if (!syncedTimeframe.isLive) {
       return 'custom'
     }
 
-    const currentSpan = timeframe.end - timeframe.start
+    const currentSpan = syncedTimeframe.duration
 
     // find exact match first
     const exactMatch = Object.entries(TIME_RANGES).find(
@@ -108,12 +129,12 @@ export default function ConcurrentChartClient({
 
     // never return 'custom' when in live mode - default to closest range
     return closestRange || '1h'
-  }, [timeframe])
+  }, [syncedTimeframe])
 
   const customRangeLabel = useMemo(() => {
     if (currentRange !== 'custom') return null
-    return `${formatCompactDate(timeframe.start)} - ${formatCompactDate(timeframe.end)}`
-  }, [currentRange, timeframe.start, timeframe.end])
+    return `${formatCompactDate(syncedTimeframe.start)} - ${formatCompactDate(syncedTimeframe.end)}`
+  }, [currentRange, syncedTimeframe.start, syncedTimeframe.end])
 
   const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
     if (range === 'custom') return
@@ -123,13 +144,31 @@ export default function ConcurrentChartClient({
   const tooltipFormatter = useMemo(
     () =>
       createSingleValueTooltipFormatter({
-        step: data.step,
+        step: data?.step || 0,
         label: (value: number) =>
           value === 1 ? 'concurrent sandbox' : 'concurrent sandboxes',
         valueClassName: 'text-accent-positive-highlight',
       }),
-    [data.step]
+    [data?.step]
   )
+
+  // visualTimeframe represents the actual data range
+  // but we should use the requested timeframe for the chart axis
+  const visualTimeframe = useMemo(() => {
+    if (lineData.length === 0) {
+      return syncedTimeframe
+    }
+
+    const dataStart = lineData[0]?.x as number
+    const dataEnd = lineData[lineData.length - 1]?.x as number
+
+    // use the requested timeframe for axis, not the data range
+    return {
+      start: dataStart || syncedTimeframe.start,
+      end: dataEnd || syncedTimeframe.end,
+      isLive: syncedTimeframe.isLive,
+    }
+  }, [lineData, syncedTimeframe])
 
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 md:min-h-0">
@@ -137,6 +176,9 @@ export default function ConcurrentChartClient({
         <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase max-md:text-sm">
             Concurrent Sandboxes
+            {isPolling && (
+              <span className="ml-2 text-xs text-fg-tertiary">(live)</span>
+            )}
           </span>
           <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
             <span className="prose-value-big max-md:text-2xl">
@@ -144,7 +186,7 @@ export default function ConcurrentChartClient({
             </span>
             <span className="label-tertiary max-md:text-xs">
               <span className="max-md:hidden">
-                over {formatAveragingPeriod(data.step)}
+                over {formatAveragingPeriod(data?.step || 0)}
               </span>
               <span className="md:hidden">avg</span>
             </span>
@@ -163,8 +205,8 @@ export default function ConcurrentChartClient({
           <TimePicker
             value={{
               mode: 'static',
-              start: timeframe.start,
-              end: timeframe.end,
+              start: syncedTimeframe.start,
+              end: syncedTimeframe.end,
             }}
             onValueChange={(value) => {
               if (!value.range) return
@@ -213,8 +255,7 @@ export default function ConcurrentChartClient({
         onChartReady={registerChart}
         option={{
           ...createMonitoringChartOptions({
-            timeframe,
-            splitNumber: 3,
+            timeframe: visualTimeframe,
           }),
           yAxis: {
             splitNumber: 3,

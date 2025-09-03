@@ -11,15 +11,38 @@ import { formatInTimeZone } from 'date-fns-tz'
 // ============================================================================
 
 /**
- * Format a timestamp for display in charts and tooltips
+ * Format a timestamp for display in charts and tooltips in user's local timezone
  * @param timestamp - Unix timestamp in milliseconds or Date object
- * @returns Formatted date string (e.g., "Jan 5, 2:30:45 PM")
+ * @returns Formatted date string in user's local timezone (e.g., "Jan 5, 2:30:45 PM")
  */
-export function formatChartTimestamp(
-  timestamp: number | string | Date
+export function formatChartTimestampLocal(
+  timestamp: number | string | Date,
+  showDate: boolean = false
 ): string {
   const date = new Date(timestamp)
-  // Use UTC formatting to ensure consistent display across timezones
+
+  if (showDate) {
+    return format(date, 'MMM d')
+  }
+  // format in user's local timezone instead of UTC
+  return format(date, 'h:mm:ss a')
+}
+
+/**
+ * Format a timestamp for display in charts and tooltips
+ * @param timestamp - Unix timestamp in milliseconds or Date object
+ * @returns Formatted date string in UTC timezone (e.g., "Jan 5, 2:30:45 PM")
+ */
+export function formatChartTimestampUTC(
+  timestamp: number | string | Date,
+  showDate: boolean = false
+): string {
+  const date = new Date(timestamp)
+
+  if (showDate) {
+    return formatInTimeZone(date, 'UTC', 'MMM d')
+  }
+
   return formatInTimeZone(date, 'UTC', 'MMM d, h:mm:ss a')
 }
 
@@ -94,22 +117,22 @@ export function parseUTCDateComponents(date: string | Date) {
  * Format time axis labels for charts
  * @param value - Timestamp or date value
  * @param showDate - Whether to show the date (for day boundaries)
+ * @param useLocal - Whether to use local timezone instead of UTC
  * @returns Formatted label
  */
 export function formatTimeAxisLabel(
   value: string | number,
-  showDate: boolean = false
+  showDate: boolean = false,
+  useLocal: boolean = true
 ): string {
   const date = new Date(value)
 
-  // Check for midnight in UTC
-  if (showDate || (date.getUTCHours() === 0 && date.getUTCMinutes() === 0)) {
-    return formatInTimeZone(date, 'UTC', 'MMM d')
+  if (useLocal) {
+    return formatChartTimestampLocal(date, showDate)
   }
 
-  return formatInTimeZone(date, 'UTC', 'h:mm:ss a')
+  return formatChartTimestampUTC(date, showDate)
 }
-
 /**
  * Format a duration in milliseconds to human-readable text
  * @param durationMs - Duration in milliseconds

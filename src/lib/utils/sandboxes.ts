@@ -50,12 +50,15 @@ function calculateStepForRange(startMs: number, endMs: number): number {
   }
 }
 
+import type { OverfetchMetadata } from '@/server/sandboxes/get-team-metrics'
+
 export function fillTeamMetricsWithZeros(
   data: ClientTeamMetrics,
   start: number,
   end: number,
   step: number,
-  anomalousGapTolerance: number = 0.1
+  anomalousGapTolerance: number = 0.1,
+  overfetchMetadata?: OverfetchMetadata
 ): ClientTeamMetrics {
   if (!data.length) {
     // calculate appropriate step for empty data
@@ -170,14 +173,50 @@ export function fillTeamMetricsWithZeros(
   const gapToEnd = end - lastDataPoint.timestamp
   const isEndAnomalous = gapToEnd > step * (1 + anomalousGapTolerance)
 
-  // add zeros at end if:
-  // 1. there's an anomalous gap (existing logic)
-  // 2. OR the gap is more than 3x the step (ensures zeros for stale data)
-  // 3. OR the gap is more than 5 minutes (300 seconds) regardless of step
-  const shouldAddEndZeros =
-    isEndAnomalous ||
-    (step > 0 && gapToEnd >= step * 3) ||
-    gapToEnd >= 5 * 60 * 1000
+  // intelligent zero-filling decision based on overfetch metadata
+  let shouldAddEndZeros: boolean
+
+  if (overfetchMetadata) {
+    // we have overfetch metadata, use it for intelligent decisions
+
+    if (overfetchMetadata.hasDataInBuffer) {
+      // data exists beyond our requested range, don't add zeros
+      shouldAddEndZeros = false
+    } else if (overfetchMetadata.confidence === 'high') {
+      // high confidence that zeros are real (large gap or definitely no data)
+      shouldAddEndZeros = gapToEnd > step * 2 // still require some gap
+    } else if (overfetchMetadata.confidence === 'medium') {
+      // medium confidence, be more conservative
+      shouldAddEndZeros = gapToEnd > step * 5 || gapToEnd > 10 * 60 * 1000
+    } else {
+      // low confidence, avoid adding zeros unless very large gap
+      shouldAddEndZeros = gapToEnd > 30 * 60 * 1000 // 30 minutes
+    }
+
+    // log decision for debugging
+    if (
+      typeof console !== 'undefined' &&
+      process.env.NODE_ENV === 'development'
+    ) {
+      console.log('fillTeamMetricsWithZeros decision:', {
+        shouldAddEndZeros,
+        hasDataInBuffer: overfetchMetadata.hasDataInBuffer,
+        confidence: overfetchMetadata.confidence,
+        gapToEnd,
+        step,
+      })
+    }
+  } else {
+    // fallback to original logic if no overfetch metadata
+    // add zeros at end if:
+    // 1. there's an anomalous gap (existing logic)
+    // 2. OR the gap is more than 3x the step (ensures zeros for stale data)
+    // 3. OR the gap is more than 5 minutes (300 seconds) regardless of step
+    shouldAddEndZeros =
+      isEndAnomalous ||
+      (step > 0 && gapToEnd >= step * 3) ||
+      gapToEnd >= 5 * 60 * 1000
+  }
 
   if (shouldAddEndZeros) {
     const suffixZeroTimestamp = lastDataPoint.timestamp + step

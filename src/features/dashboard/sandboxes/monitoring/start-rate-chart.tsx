@@ -4,8 +4,8 @@ import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
-import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 
 import ChartFallback from './chart-fallback'
@@ -38,30 +38,21 @@ async function StartRateChartResolver({
 
   const { plot } = await searchParams
 
-  // parse timeframe from zustand store in url
-  const defaultNow = Date.now()
-  let start = defaultNow - TEAM_METRICS_INITIAL_RANGE_MS
-  let end = defaultNow
-
-  if (plot) {
-    try {
-      const parsed = JSON.parse(plot)
-      if (parsed.state?.start && parsed.state?.end) {
-        start = parsed.state.start
-        end = parsed.state.end
-      }
-    } catch (e) {
-      // use default
-    }
-  }
+  const timeframe = parseAndCreateTimeframe(plot)
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,
-    startDate: start,
-    endDate: end,
+    startDate: timeframe.start,
+    endDate: timeframe.end,
   })
 
   const data = teamMetricsResult?.data ?? { metrics: [], step: 0 }
 
-  return <StartRateChartClient initialData={data} />
+  return (
+    <StartRateChartClient
+      teamId={teamId}
+      initialData={data}
+      initialTimeframe={timeframe}
+    />
+  )
 }

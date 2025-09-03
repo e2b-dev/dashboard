@@ -3,10 +3,10 @@ import { EChartsOption } from 'echarts'
 export const defaultLineChartOption: EChartsOption = {
   backgroundColor: 'transparent',
   grid: {
-    top: 10,
+    top: 0,
     right: 0,
     bottom: 0,
-    left: 40,
+    left: 0,
   },
   // toolbox has to be enabled for programmatic data zoom to work -
   // we render it invisible and keep the feature enabled

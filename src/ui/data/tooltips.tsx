@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { formatChartTimestamp, formatNumber } from '@/lib/utils/formatting'
+import { formatChartTimestampLocal, formatNumber } from '@/lib/utils/formatting'
 import { cardVariants } from '../primitives/card'
 
 export interface TooltipItem {
@@ -92,7 +92,7 @@ export function SingleValueTooltip({
             classNames.timestamp || 'text-fg-tertiary'
           )}
         >
-          {formatChartTimestamp(timestamp)}
+          {formatChartTimestampLocal(timestamp)}
         </div>
       )}
     </div>

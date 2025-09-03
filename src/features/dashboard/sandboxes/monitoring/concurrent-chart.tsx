@@ -4,9 +4,9 @@ import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
-import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 
@@ -38,41 +38,21 @@ async function ConcurrentChartResolver({
 
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  // parse timeframe from zustand store in url
-  const defaultNow = Date.now()
-  let start = defaultNow - TEAM_METRICS_INITIAL_RANGE_MS
-  let end = defaultNow
-
-  if (plot) {
-    try {
-      const parsed = JSON.parse(plot)
-      if (parsed.state?.start && parsed.state?.end) {
-        start = parsed.state.start
-        end = parsed.state.end
-      }
-    } catch (e) {
-      // use default
-    }
-  }
-
-  // determine if it's "live" based on how close end is to now
-  const duration = end - start
-  const threshold = Math.max(duration * 0.02, 60 * 1000) // 2% or 1 minute
-  const isLive = defaultNow - end < threshold
+  const timeframe = parseAndCreateTimeframe(plot)
 
   l.debug({
     key: 'concurrent_chart:debug',
     context: {
       teamId,
-      timeframe: { start, end, isLive },
+      timeframe,
     },
   })
 
   const [teamMetricsResult, tierLimits] = await Promise.all([
     getTeamMetrics({
       teamId,
-      startDate: start,
-      endDate: end,
+      startDate: timeframe.start,
+      endDate: timeframe.end,
     }),
     getTeamTierLimits({ teamId }),
   ])
@@ -85,7 +65,7 @@ async function ConcurrentChartResolver({
         key: 'concurrent_chart:error',
         team_id: teamId,
         context: {
-          timeframe: { start, end, isLive },
+          timeframe,
           serverError: tierLimits?.serverError,
         },
       },
@@ -98,7 +78,9 @@ async function ConcurrentChartResolver({
 
   return (
     <ConcurrentChartClient
+      teamId={teamId}
       initialData={data}
+      initialTimeframe={timeframe}
       concurrentInstancesLimit={concurrentInstancesLimit}
     />
   )
