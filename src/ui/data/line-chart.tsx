@@ -138,6 +138,30 @@ export default function LineChart({
     const series = makeSeriesFromData(data, cssVars)
     const responsiveConfig = getResponsiveAxisConfig()
 
+    const calculateMaxYValue = () => {
+      let maxValue = 0
+      data.forEach((seriesData) => {
+        seriesData.data.forEach((point) => {
+          if (point.y > maxValue) {
+            maxValue = point.y
+          }
+        })
+      })
+      return Math.ceil(yAxisLimit ? yAxisLimit : maxValue * 1.3)
+    }
+
+    const calculateGridLeft = () => {
+      const maxY = calculateMaxYValue()
+      const formattedMaxY = formatNumber(maxY)
+      const charLength = formattedMaxY.length
+
+      const basePadding = 20
+      const charWidth = responsiveConfig.fontSize * 0.65
+      const padding = basePadding + charLength * charWidth
+
+      return Math.max(35, Math.min(padding, 120))
+    }
+
     // Check if data is "live" (last point less than 1 minute old)
     const isLiveData = (seriesData: LineSeries) => {
       if (!seriesData.data.length) return false
@@ -362,7 +386,7 @@ export default function LineChart({
         shadowColor: 'transparent',
       },
       grid: {
-        left: '4%',
+        left: calculateGridLeft(),
         right: 8,
       },
       xAxis: {

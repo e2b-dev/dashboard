@@ -4,12 +4,17 @@ import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { formatAveragingPeriod, formatDecimal } from '@/lib/utils/formatting'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import LineChart from '@/ui/data/line-chart'
-import { SingleValueTooltip } from '@/ui/data/tooltips'
-import * as echarts from 'echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
-import { useCallback, useMemo } from 'react'
-import { renderToString } from 'react-dom/server'
+import { useMemo } from 'react'
 import { NonUndefined } from 'react-hook-form'
+import {
+  calculateAverage,
+  calculateYAxisMax,
+  createChartSeries,
+  createMonitoringChartOptions,
+  createSingleValueTooltipFormatter,
+  transformMetricsToLineData,
+} from './chart-utils'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
@@ -30,18 +35,17 @@ export default function StartRateChartClient({
     data = initialData
   }
 
-  const lineData = data.metrics.map((d) => ({
-    x: d.timestamp,
-    y: d.sandboxStartRate,
-  }))
+  const lineData = useMemo(
+    () =>
+      transformMetricsToLineData(
+        data.metrics,
+        (d) => d.timestamp,
+        (d) => d.sandboxStartRate
+      ),
+    [data.metrics]
+  )
 
-  const average = useMemo(() => {
-    if (!lineData.length) return 0
-
-    return (
-      lineData.reduce((acc, cur) => acc + (cur.y || 0), 0) / lineData.length
-    )
-  }, [lineData])
+  const average = useMemo(() => calculateAverage(lineData), [lineData])
 
   const cssVars = useCssVars([
     '--graph-6',
@@ -49,32 +53,13 @@ export default function StartRateChartClient({
     '--graph-area-6-to',
   ] as const)
 
-  const tooltipFormatter = useCallback(
-    (params: echarts.TooltipComponentFormatterCallbackParams) => {
-      const paramsData = Array.isArray(params) ? params[0] : params
-      if (!paramsData?.value) return ''
-
-      const value = Array.isArray(paramsData.value)
-        ? paramsData.value[1]
-        : paramsData.value
-      const timestamp = Array.isArray(paramsData.value)
-        ? (paramsData.value[0] as string)
-        : (paramsData.value as string)
-
-      return renderToString(
-        <SingleValueTooltip
-          value={typeof value === 'number' ? value : 'n/a'}
-          label="sandboxes/s"
-          timestamp={timestamp}
-          description={formatAveragingPeriod(data.step)}
-          classNames={{
-            value: 'text-graph-6',
-            description: 'text-fg-tertiary opacity-75',
-            timestamp: 'text-fg-tertiary',
-          }}
-        />
-      )
-    },
+  const tooltipFormatter = useMemo(
+    () =>
+      createSingleValueTooltipFormatter({
+        step: data.step,
+        label: 'sandboxes/s',
+        valueClassName: 'text-graph-6',
+      }),
     [data.step]
   )
 
@@ -105,46 +90,31 @@ export default function StartRateChartClient({
         group="sandboxes-monitoring"
         onChartReady={registerChart}
         option={{
-          xAxis: {
-            type: 'time',
-            min: timeframe.start,
-            max: timeframe.end,
-            jitterMargin: 10,
-          },
+          ...createMonitoringChartOptions({
+            timeframe,
+            splitNumber: 2,
+          }),
           yAxis: {
             splitNumber: 2,
-            max: Math.round(Math.max(...lineData.map((d) => d.y || 0)) * 1.25),
+            max: calculateYAxisMax(lineData),
           },
           tooltip: {
             show: true,
             trigger: 'axis',
-            axisPointer: {
-              type: 'line',
-            },
             formatter: tooltipFormatter,
           },
         }}
         data={[
-          {
+          createChartSeries({
             id: 'rate',
             name: 'Rate',
             data: lineData,
-            lineStyle: {
-              color: cssVars['--graph-6'],
+            lineColor: cssVars['--graph-6'],
+            areaColors: {
+              from: cssVars['--graph-area-6-from'],
+              to: cssVars['--graph-area-6-to'],
             },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                {
-                  offset: 0,
-                  color: cssVars['--graph-area-6-from'],
-                },
-                {
-                  offset: 1,
-                  color: cssVars['--graph-area-6-to'],
-                },
-              ]),
-            },
-          },
+          }),
         ]}
       />
     </div>

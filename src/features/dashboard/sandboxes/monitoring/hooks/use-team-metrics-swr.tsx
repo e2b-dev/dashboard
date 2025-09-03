@@ -3,7 +3,6 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import {
   ResolvedTimeframe,
   resolveTimeframe,
@@ -28,12 +27,12 @@ export default function useTeamMetricsSWR(
     timeframe = resolveTimeframe(timeframeState)
   }
 
-  return useSWR<typeof initialData>(
+  return useSWR<typeof initialData | undefined>(
     selectedTeam
       ? [`/api/teams/${selectedTeam?.id}/metrics`, selectedTeam?.id, timeframe]
       : null,
     async ([url, teamId, timeframe]: [string, string, ResolvedTimeframe]) => {
-      if (!url || !teamId) return initialData
+      if (!url || !teamId) return
 
       const end = timeframe.isLive ? Date.now() : timeframe.end
       const start = timeframe.isLive
@@ -60,22 +59,10 @@ export default function useTeamMetricsSWR(
       const data = (await response.json()) as TeamMetricsResponse
 
       if (!data.metrics) {
-        return initialData
+        return
       }
 
-      const step = data.step
-
-      return {
-        metrics: fillTeamMetricsWithZeros(
-          data.metrics,
-          start,
-          timeframe.isLive
-            ? Date.now() - TEAM_METRICS_POLLING_INTERVAL_MS
-            : end,
-          step
-        ),
-        step,
-      }
+      return data
     },
     {
       fallbackData: initialData,

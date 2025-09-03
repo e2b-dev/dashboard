@@ -7,6 +7,7 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import { TeamMetricsRequestSchema, TeamMetricsResponse } from './types'
 
 export async function POST(
@@ -88,7 +89,10 @@ export async function POST(
         ? metrics[1]?.timestamp - metrics[0]?.timestamp
         : 0
 
-    return Response.json({ metrics, step } satisfies TeamMetricsResponse)
+    return Response.json({
+      metrics: fillTeamMetricsWithZeros(metrics, start, end, step),
+      step,
+    } satisfies TeamMetricsResponse)
   } catch (error) {
     return Response.json({ error: 'Invalid request' }, { status: 400 })
   }

@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { TeamMetricsRequestSchema } from '@/app/api/teams/[teamId]/metrics/types'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_TEAM_METRICS_DATA } from '@/configs/mock-data'
@@ -11,19 +12,19 @@ import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import { cache } from 'react'
 import { z } from 'zod'
 
-export const GetTeamMetricsSchema = z.object({
-  teamId: z.string().uuid(),
-  startDate: z
-    .number()
-    .int()
-    .positive()
-    .describe('Unix timestamp in milliseconds'),
-  endDate: z
-    .number()
-    .int()
-    .positive()
-    .describe('Unix timestamp in milliseconds'),
-})
+export const GetTeamMetricsSchema = z
+  .object({
+    teamId: z.string().uuid(),
+    startDate: TeamMetricsRequestSchema._def.schema.shape.start,
+    endDate: TeamMetricsRequestSchema._def.schema.shape.end,
+  })
+  .refine(
+    (data) => {
+      const maxSpanMs = 35 * 24 * 60 * 60 * 1000 // 35 days in ms
+      return data.endDate - data.startDate <= maxSpanMs
+    },
+    { message: 'Date range cannot exceed 35 days' }
+  )
 
 export const getTeamMetrics = authActionClient
   .schema(GetTeamMetricsSchema)

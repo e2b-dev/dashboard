@@ -10,12 +10,18 @@ import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
 import { cn } from '@/lib/utils/ui'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import LineChart from '@/ui/data/line-chart'
-import { SingleValueTooltip } from '@/ui/data/tooltips'
 import { Button } from '@/ui/primitives/button'
 import { InferSafeActionFnResult } from 'next-safe-action'
-import { useCallback, useMemo } from 'react'
-import { renderToString } from 'react-dom/server'
+import { useMemo } from 'react'
 import { NonUndefined } from 'react-hook-form'
+import {
+  calculateAverage,
+  calculateYAxisMax,
+  createChartSeries,
+  createMonitoringChartOptions,
+  createSingleValueTooltipFormatter,
+  transformMetricsToLineData,
+} from './chart-utils'
 import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
 
@@ -50,20 +56,15 @@ export default function ConcurrentChartClient({
 
   const lineData = useMemo(
     () =>
-      data.metrics.map((d) => ({
-        x: d.timestamp,
-        y: d.concurrentSandboxes,
-      })),
-    [data]
+      transformMetricsToLineData(
+        data.metrics,
+        (d) => d.timestamp,
+        (d) => d.concurrentSandboxes
+      ),
+    [data.metrics]
   )
 
-  const average = useMemo(() => {
-    if (!lineData.length) return 0
-
-    return (
-      lineData.reduce((acc, cur) => acc + (cur.y || 0), 0) / lineData.length
-    )
-  }, [lineData])
+  const average = useMemo(() => calculateAverage(lineData), [lineData])
 
   const cssVars = useCssVars([
     '--accent-positive-highlight',
@@ -89,34 +90,14 @@ export default function ConcurrentChartClient({
     setTimeRange(range as TimeRangeKey)
   }
 
-  const tooltipFormatter = useCallback(
-    (params: echarts.TooltipComponentFormatterCallbackParams) => {
-      const paramsData = Array.isArray(params) ? params[0] : params
-      if (!paramsData?.value) return ''
-
-      const value = Array.isArray(paramsData.value)
-        ? paramsData.value[1]
-        : paramsData.value
-      const timestamp = Array.isArray(paramsData.value)
-        ? (paramsData.value[0] as string)
-        : (paramsData.value as string)
-
-      return renderToString(
-        <SingleValueTooltip
-          value={typeof value === 'number' ? value : 'n/a'}
-          label={
-            typeof value === 'number' && value === 1
-              ? 'concurrent sandbox'
-              : 'concurrent sandboxes'
-          }
-          timestamp={timestamp}
-          description={formatAveragingPeriod(data.step)}
-          classNames={{
-            value: 'text-accent-positive-highlight',
-          }}
-        />
-      )
-    },
+  const tooltipFormatter = useMemo(
+    () =>
+      createSingleValueTooltipFormatter({
+        step: data.step,
+        label: (value: number) =>
+          value === 1 ? 'concurrent sandbox' : 'concurrent sandboxes',
+        valueClassName: 'text-accent-positive-highlight',
+      }),
     [data.step]
   )
 
@@ -179,55 +160,31 @@ export default function ConcurrentChartClient({
         group="sandboxes-monitoring"
         onChartReady={registerChart}
         option={{
-          xAxis: {
-            type: 'time',
-            min: timeframe.start,
-            max: timeframe.end,
-          },
+          ...createMonitoringChartOptions({
+            timeframe,
+            splitNumber: 3,
+          }),
           yAxis: {
             splitNumber: 3,
-            max: Math.min(
-              Math.max(...lineData.map((d) => d.y || 0)) * 1.25,
-              concurrentInstancesLimit || 100
-            ),
+            max: calculateYAxisMax(lineData, concurrentInstancesLimit || 100),
           },
           tooltip: {
             show: true,
             trigger: 'axis',
-            axisPointer: {
-              type: 'line',
-            },
             formatter: tooltipFormatter,
           },
         }}
         data={[
-          {
+          createChartSeries({
             id: 'concurrent-sandboxes',
             name: 'Running Sandboxes',
             data: lineData,
-            lineStyle: {
-              color: cssVars['--accent-positive-highlight'],
+            lineColor: cssVars['--accent-positive-highlight'],
+            areaColors: {
+              from: cssVars['--graph-area-accent-positive-from'],
+              to: cssVars['--graph-area-accent-positive-to'],
             },
-            areaStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  {
-                    offset: 0,
-                    color: cssVars['--graph-area-accent-positive-from'],
-                  },
-                  {
-                    offset: 1,
-                    color: cssVars['--graph-area-accent-positive-to'],
-                  },
-                ],
-              },
-            },
-          },
+          }),
         ]}
       />
     </div>
