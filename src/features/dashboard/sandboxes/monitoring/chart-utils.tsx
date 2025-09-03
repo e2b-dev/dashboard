@@ -94,7 +94,7 @@ export function createMonitoringChartOptions({
     xAxis: {
       type: 'time' as const,
       min: timeframe.start,
-      max: timeframe.end,
+      max: timeframe.end + 30_000, // add 30 seconds to the end to avoid data zoom issues
     },
     yAxis: {
       splitNumber,

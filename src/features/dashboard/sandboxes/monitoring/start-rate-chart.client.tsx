@@ -15,8 +15,8 @@ import {
   createSingleValueTooltipFormatter,
   transformMetricsToLineData,
 } from './chart-utils'
-import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
+import { useTeamMetrics } from './store'
 
 interface StartRateChartProps {
   initialData: NonUndefined<

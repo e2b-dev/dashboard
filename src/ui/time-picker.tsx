@@ -86,7 +86,7 @@ const timeOptions: TimeOption[] = [
   {
     label: `Last ${formatDuration(12 * 60 * 60 * 1000)}`,
     value: '12h',
-    shortcut: '12H',
+    shortcut: '12h',
     rangeMs: 12 * 60 * 60 * 1000,
   },
   {
@@ -98,7 +98,7 @@ const timeOptions: TimeOption[] = [
   {
     label: `Last 7 days`,
     value: '7d',
-    shortcut: '7D',
+    shortcut: '7d',
     rangeMs: 7 * 24 * 60 * 60 * 1000,
   },
   {

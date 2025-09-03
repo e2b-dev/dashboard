@@ -3,41 +3,45 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
-import {
-  ResolvedTimeframe,
-  resolveTimeframe,
-  TimeframeState,
-} from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { NonUndefined } from 'react-hook-form'
 import useSWR from 'swr'
-import { useTeamMetrics } from '../context'
+import { useTeamMetrics } from '../store'
 
 export default function useTeamMetricsSWR(
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >,
-  timeframeState?: TimeframeState
+  >
 ) {
   const selectedTeam = useSelectedTeam()
-  let { timeframe } = useTeamMetrics()
+  const { timeframe } = useTeamMetrics()
 
-  if (timeframeState) {
-    timeframe = resolveTimeframe(timeframeState)
-  }
+  // create a stable key that changes when timeframe values change
+  const swrKey = selectedTeam
+    ? [
+        `/api/teams/${selectedTeam?.id}/metrics`,
+        selectedTeam?.id,
+        timeframe.start,
+        timeframe.end,
+        timeframe.isLive,
+      ]
+    : null
 
   return useSWR<typeof initialData | undefined>(
-    selectedTeam
-      ? [`/api/teams/${selectedTeam?.id}/metrics`, selectedTeam?.id, timeframe]
-      : null,
-    async ([url, teamId, timeframe]: [string, string, ResolvedTimeframe]) => {
+    swrKey,
+    async ([url, teamId, startTime, endTime, isLive]: [
+      string,
+      string,
+      number,
+      number,
+      boolean,
+    ]) => {
       if (!url || !teamId) return
 
-      const end = timeframe.isLive ? Date.now() : timeframe.end
-      const start = timeframe.isLive
-        ? end - (timeframe.end - timeframe.start)
-        : timeframe.start
+      // for live mode, use current time for the actual fetch
+      const fetchEnd = isLive ? Date.now() : endTime
+      const fetchStart = isLive ? fetchEnd - (endTime - startTime) : startTime
 
       const response = await fetch(url, {
         method: 'POST',
@@ -45,8 +49,8 @@ export default function useTeamMetricsSWR(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          start,
-          end,
+          start: fetchStart,
+          end: fetchEnd,
         }),
         cache: 'no-store',
       })

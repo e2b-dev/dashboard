@@ -27,6 +27,29 @@ export function transformMetricsToClientMetrics(
  * detects anomalies in team metrics data and fills exactly one zero between "waves" of data.
  * calculates step from the first two data points and detects gaps in sequences.
  */
+// calculate step based on time range duration
+function calculateStepForRange(startMs: number, endMs: number): number {
+  const duration = endMs - startMs
+  const hour = 60 * 60 * 1000
+  const minute = 60 * 1000
+  const second = 1000
+
+  switch (true) {
+    case duration < hour:
+      return 5 * second
+    case duration < 6 * hour:
+      return 30 * second
+    case duration < 12 * hour:
+      return minute
+    case duration < 24 * hour:
+      return 2 * minute
+    case duration < 7 * 24 * hour:
+      return 5 * minute
+    default:
+      return 15 * minute
+  }
+}
+
 export function fillTeamMetricsWithZeros(
   data: ClientTeamMetrics,
   start: number,
@@ -35,18 +58,32 @@ export function fillTeamMetricsWithZeros(
   anomalousGapTolerance: number = 0.1
 ): ClientTeamMetrics {
   if (!data.length) {
-    return [
-      {
-        timestamp: start,
+    // calculate appropriate step for empty data
+    const calculatedStep = step > 0 ? step : calculateStepForRange(start, end)
+    const result: ClientTeamMetrics = []
+
+    // fill entire range with zeros at calculated step
+    for (let timestamp = start; timestamp < end; timestamp += calculatedStep) {
+      result.push({
+        timestamp,
         concurrentSandboxes: 0,
         sandboxStartRate: 0,
-      },
-      {
+      })
+    }
+
+    // ensure we have a point at the end
+    if (
+      result.length === 0 ||
+      result[result.length - 1]!.timestamp < end - 1000
+    ) {
+      result.push({
         timestamp: end - 1000,
         concurrentSandboxes: 0,
         sandboxStartRate: 0,
-      },
-    ]
+      })
+    }
+
+    return result
   }
 
   if (data.length < 2) {
@@ -133,7 +170,16 @@ export function fillTeamMetricsWithZeros(
   const gapToEnd = end - lastDataPoint.timestamp
   const isEndAnomalous = gapToEnd > step * (1 + anomalousGapTolerance)
 
-  if (isEndAnomalous) {
+  // add zeros at end if:
+  // 1. there's an anomalous gap (existing logic)
+  // 2. OR the gap is more than 3x the step (ensures zeros for stale data)
+  // 3. OR the gap is more than 5 minutes (300 seconds) regardless of step
+  const shouldAddEndZeros =
+    isEndAnomalous ||
+    (step > 0 && gapToEnd >= step * 3) ||
+    gapToEnd >= 5 * 60 * 1000
+
+  if (shouldAddEndZeros) {
     const suffixZeroTimestamp = lastDataPoint.timestamp + step
     if (suffixZeroTimestamp < end) {
       result.push({

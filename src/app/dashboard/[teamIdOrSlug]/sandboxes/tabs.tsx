@@ -4,7 +4,6 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { ActivityIcon, LayoutListIcon } from 'lucide-react'
-import Link from 'next/link'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import { ReactNode } from 'react'
 
@@ -48,21 +47,26 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
         const newTab = TABS.find((tab) => tab.value === value)
 
         if (newTab?.value === activeTab?.value) return
+
+        window.history.pushState(
+          null,
+          '',
+          `${PROTECTED_URLS.SANDBOXES(teamIdOrSlug, newTab?.value as 'list' | 'monitoring')}`
+        )
       }}
       className="min-h-0 w-full flex-1 pt-3.5 h-full"
     >
       <TabsList className="bg-bg z-30 w-full justify-start pl-6">
         {TABS.map((tab) => (
-          <Link key={tab.value} href={tab.url(teamIdOrSlug)} prefetch>
-            <TabsTrigger
-              layoutkey="tabs-indicator-sandboxes"
-              value={tab.value}
-              className="w-fit flex-none"
-            >
-              <tab.icon className="size-3.5" />
-              {tab.value.charAt(0).toUpperCase() + tab.value.slice(1)}
-            </TabsTrigger>
-          </Link>
+          <TabsTrigger
+            key={tab.value}
+            layoutkey="tabs-indicator-sandboxes"
+            value={tab.value}
+            className="w-fit flex-none"
+          >
+            <tab.icon className="size-3.5" />
+            {tab.value.charAt(0).toUpperCase() + tab.value.slice(1)}
+          </TabsTrigger>
         ))}
       </TabsList>
       {TABS.map((tab, ix) => (

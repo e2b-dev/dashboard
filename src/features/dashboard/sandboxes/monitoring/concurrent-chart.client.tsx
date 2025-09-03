@@ -23,8 +23,8 @@ import {
   createSingleValueTooltipFormatter,
   transformMetricsToLineData,
 } from './chart-utils'
-import { useTeamMetrics } from './context'
 import useTeamMetricsSWR from './hooks/use-team-metrics-swr'
+import { useTeamMetrics } from './store'
 
 const CHART_RANGE_MAP = {
   custom: null,
@@ -46,8 +46,13 @@ export default function ConcurrentChartClient({
   initialData,
   concurrentInstancesLimit,
 }: ConcurrentChartProps) {
-  const { timeframe, setStaticMode, setTimeRange, setLiveMode, registerChart } =
-    useTeamMetrics()
+  const {
+    timeframe,
+    setStaticMode,
+    setTimeRange,
+    setCustomRange,
+    registerChart,
+  } = useTeamMetrics()
 
   let { data } = useTeamMetricsSWR(initialData)
 
@@ -74,11 +79,35 @@ export default function ConcurrentChartClient({
   ] as const)
 
   const currentRange = useMemo(() => {
-    if (!timeframe.isLive) return 'custom'
-    const entry = Object.entries(TIME_RANGES).find(
-      ([_, value]) => value === timeframe.end - timeframe.start
+    if (!timeframe.isLive) {
+      return 'custom'
+    }
+
+    const currentSpan = timeframe.end - timeframe.start
+
+    // find exact match first
+    const exactMatch = Object.entries(TIME_RANGES).find(
+      ([_, value]) => Math.abs(value - currentSpan) < 1000 // allow 1 second tolerance
     )
-    return entry ? entry[0] : CHART_RANGE_MAP_KEYS[0]
+
+    if (exactMatch) {
+      return exactMatch[0]
+    }
+
+    // if no exact match, find closest range
+    let closestRange: string | null = null
+    let closestDiff = Infinity
+
+    for (const [key, value] of Object.entries(TIME_RANGES)) {
+      const diff = Math.abs(value - currentSpan)
+      if (diff < closestDiff) {
+        closestDiff = diff
+        closestRange = key
+      }
+    }
+
+    // never return 'custom' when in live mode - default to closest range
+    return closestRange || '1h'
   }, [timeframe])
 
   const customRangeLabel = useMemo(() => {
@@ -140,7 +169,9 @@ export default function ConcurrentChartClient({
             onValueChange={(value) => {
               if (!value.range) return
 
-              setLiveMode(value.range)
+              // for custom time picker, we're setting a static range
+              const now = Date.now()
+              setCustomRange(now - value.range, now)
             }}
           >
             <Button

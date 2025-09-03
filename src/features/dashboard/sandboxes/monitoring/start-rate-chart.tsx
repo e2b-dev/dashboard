@@ -1,14 +1,13 @@
+import { Suspense } from 'react'
+
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import {
-  parseTimeframeFromSearchParams,
-  resolveTimeframe,
-} from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { Suspense } from 'react'
+
 import ChartFallback from './chart-fallback'
 import StartRateChartClient from './start-rate-chart.client'
 
@@ -37,14 +36,24 @@ async function StartRateChartResolver({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const resolvedSearchParams = await searchParams
+  const { plot } = await searchParams
 
-  const timeframeState = parseTimeframeFromSearchParams({
-    charts_start: resolvedSearchParams.charts_start,
-    charts_end: resolvedSearchParams.charts_end,
-  })
+  // parse timeframe from zustand store in url
+  const defaultNow = Date.now()
+  let start = defaultNow - TEAM_METRICS_INITIAL_RANGE_MS
+  let end = defaultNow
 
-  const { start, end } = resolveTimeframe(timeframeState)
+  if (plot) {
+    try {
+      const parsed = JSON.parse(plot)
+      if (parsed.state?.start && parsed.state?.end) {
+        start = parsed.state.start
+        end = parsed.state.end
+      }
+    } catch (e) {
+      // use default
+    }
+  }
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,

@@ -1,16 +1,15 @@
+import { Suspense } from 'react'
+
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import {
-  parseTimeframeFromSearchParams,
-  resolveTimeframe,
-} from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
-import { Suspense } from 'react'
+
 import ChartFallback from './chart-fallback'
 import ConcurrentChartClient from './concurrent-chart.client'
 
@@ -35,16 +34,31 @@ async function ConcurrentChartResolver({
   searchParams,
 }: ConcurrentChartProps) {
   const { teamIdOrSlug } = await params
-  const { charts_start, charts_end } = await searchParams
+  const { plot } = await searchParams
 
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const timeframeState = parseTimeframeFromSearchParams({
-    charts_start,
-    charts_end,
-  })
+  // parse timeframe from zustand store in url
+  const defaultNow = Date.now()
+  let start = defaultNow - TEAM_METRICS_INITIAL_RANGE_MS
+  let end = defaultNow
 
-  const { start, end, isLive } = resolveTimeframe(timeframeState)
+  if (plot) {
+    try {
+      const parsed = JSON.parse(plot)
+      if (parsed.state?.start && parsed.state?.end) {
+        start = parsed.state.start
+        end = parsed.state.end
+      }
+    } catch (e) {
+      // use default
+    }
+  }
+
+  // determine if it's "live" based on how close end is to now
+  const duration = end - start
+  const threshold = Math.max(duration * 0.02, 60 * 1000) // 2% or 1 minute
+  const isLive = defaultNow - end < threshold
 
   l.debug({
     key: 'concurrent_chart:debug',
