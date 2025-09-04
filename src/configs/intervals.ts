@@ -10,4 +10,5 @@ export const TEAM_METRICS_POLLING_INTERVAL_MS = 10_000
 // this prevents constant URL updates from Date.now() changing
 export const TEAM_METRICS_TIMEFRAME_UPDATE_MS = 10_000
 
-export const TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS = 60_000
+// backend metrics collection interval
+export const TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS = 30_000

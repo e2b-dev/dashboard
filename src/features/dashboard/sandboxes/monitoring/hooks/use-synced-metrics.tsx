@@ -6,6 +6,7 @@ import { ParsedTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { NonUndefined } from 'react-hook-form'
+import { toast } from 'sonner'
 import useSWR, { SWRConfiguration } from 'swr'
 
 interface UseSyncedMetricsOptions {
@@ -64,8 +65,15 @@ export function useSyncedMetrics({
         })
 
         if (!response.ok) {
-          const { error } = await response.json()
-          throw new Error(error || 'Failed to fetch metrics')
+          const errorData = await response.json()
+
+          if (response.status === 400) {
+            toast.error(
+              'These timestamps seem wrong. Please check your input values.'
+            )
+          }
+
+          throw new Error(errorData.error || 'Failed to fetch metrics')
         }
 
         return response.json()

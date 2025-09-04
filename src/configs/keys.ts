@@ -11,6 +11,13 @@ export const COOKIE_KEYS = {
 }
 
 /*
+ * localStorage keys in use
+ */
+export const STORAGE_KEYS = {
+  TIME_PICKER_CUSTOM_PANEL: 'e2b-time-picker-custom-panel',
+}
+
+/*
  * kv keys in use
  */
 export const KV_KEYS = {

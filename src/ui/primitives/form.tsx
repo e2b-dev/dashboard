@@ -164,7 +164,7 @@ const FormMessage = React.forwardRef<
       id={formMessageId}
       className={cn(
         badgeVariants({ variant: 'error' }),
-        'font-regular w-fit',
+        'prose-label whitespace-break-spaces w-fit h-auto',
         className
       )}
       {...props}

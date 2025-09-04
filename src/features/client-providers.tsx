@@ -1,5 +1,6 @@
 'use client'
 
+import { Toaster } from '@/ui/primitives/sonner'
 import { ToastProvider } from '@/ui/primitives/toast'
 import { TooltipProvider } from '@/ui/primitives/tooltip'
 import { ThemeProvider } from 'next-themes'
@@ -22,6 +23,7 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
       >
         <TooltipProvider>
           <ToastProvider>{children}</ToastProvider>
+          <Toaster />
         </TooltipProvider>
       </ThemeProvider>
     </PostHogProvider>

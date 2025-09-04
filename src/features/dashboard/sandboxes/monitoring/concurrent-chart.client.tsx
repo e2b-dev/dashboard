@@ -115,41 +115,56 @@ export default function ConcurrentChartClient({
   ] as const)
 
   const currentRange = useMemo(() => {
+    // if in static mode, always show custom
     if (!syncedTimeframe.isLive) {
       return 'custom'
     }
 
     const currentSpan = syncedTimeframe.duration
+    const now = Date.now()
 
-    // find exact match first
+    // for live mode, check if this matches a standard "last X" pattern
+    // this means the end should be "now" and start should be "now - duration"
+    const endIsNow = Math.abs(syncedTimeframe.end - now) < 10000 // within 10 seconds
+
+    if (!endIsNow) {
+      // if end is not "now", it's a custom range
+      return 'custom'
+    }
+
+    // check if the duration matches a predefined range
     const exactMatch = Object.entries(TIME_RANGES).find(
       ([_, value]) => Math.abs(value - currentSpan) < 1000 // allow 1 second tolerance
     )
 
     if (exactMatch) {
-      return exactMatch[0]
-    }
+      // verify the start time is what we'd expect for this range
+      const expectedStart = now - exactMatch[1]
+      const startMatches =
+        Math.abs(syncedTimeframe.start - expectedStart) < 10000 // within 10 seconds
 
-    // if no exact match, find closest range
-    let closestRange: string | null = null
-    let closestDiff = Infinity
-
-    for (const [key, value] of Object.entries(TIME_RANGES)) {
-      const diff = Math.abs(value - currentSpan)
-      if (diff < closestDiff) {
-        closestDiff = diff
-        closestRange = key
+      if (startMatches) {
+        return exactMatch[0]
       }
     }
 
-    // never return 'custom' when in live mode - default to closest range
-    return closestRange || '1h'
+    // doesn't match a standard pattern, so it's custom
+    return 'custom'
   }, [syncedTimeframe])
 
   const customRangeLabel = useMemo(() => {
-    if (currentRange !== 'custom') return null
-    return `${formatCompactDate(syncedTimeframe.start)} - ${formatCompactDate(syncedTimeframe.end)}`
-  }, [currentRange, syncedTimeframe.start, syncedTimeframe.end])
+    // always show the date range when not in a standard time range
+    // or when in static mode (custom time selection)
+    if (!syncedTimeframe.isLive || currentRange === 'custom') {
+      return `${formatCompactDate(syncedTimeframe.start)} - ${formatCompactDate(syncedTimeframe.end)}`
+    }
+    return null
+  }, [
+    currentRange,
+    syncedTimeframe.start,
+    syncedTimeframe.end,
+    syncedTimeframe.isLive,
+  ])
 
   const handleRangeChange = (range: keyof typeof CHART_RANGE_MAP) => {
     if (range === 'custom') return
@@ -195,7 +210,7 @@ export default function ConcurrentChartClient({
         </div>
 
         <div className="flex items-end gap-1 md:gap-3 flex-shrink-0 max-md:flex-wrap max-md:justify-start">
-          {currentRange === 'custom' && customRangeLabel && (
+          {customRangeLabel && (
             <span
               className="text-fg py-0.5 max-md:text-xs max-md:w-full max-md:mb-1"
               style={{ letterSpacing: '0%' }}
@@ -211,20 +226,24 @@ export default function ConcurrentChartClient({
               end: syncedTimeframe.end,
             }}
             onValueChange={(value) => {
-              if (!value.range) return
+              if (value.mode === 'static' && value.start && value.end) {
+                // handle static mode (custom start/end times)
+                setStaticMode(value.start, value.end)
+              } else if (value.mode === 'live' && value.range) {
+                // handle live mode
+                // check if this range matches a predefined time range
+                const matchingRange = Object.entries(TIME_RANGES).find(
+                  ([_, rangeMs]) => rangeMs === value.range
+                )
 
-              // check if this range matches a predefined time range
-              const matchingRange = Object.entries(TIME_RANGES).find(
-                ([_, rangeMs]) => rangeMs === value.range
-              )
-
-              if (matchingRange) {
-                // use the predefined range
-                setTimeRange(matchingRange[0] as TimeRangeKey)
-              } else {
-                // use custom range for non-standard selections
-                const now = Date.now()
-                setCustomRange(now - value.range, now)
+                if (matchingRange) {
+                  // use the predefined range
+                  setTimeRange(matchingRange[0] as TimeRangeKey)
+                } else {
+                  // use custom range for non-standard selections
+                  const now = Date.now()
+                  setCustomRange(now - value.range, now)
+                }
               }
             }}
           >

@@ -134,8 +134,9 @@ export function timeframeToSearchParams(
  */
 export const TIME_RANGES = {
   '1h': 1000 * 60 * 60,
+  '6h': 1000 * 60 * 60 * 6,
   '12h': 1000 * 60 * 60 * 12,
-  '7d': 1000 * 60 * 60 * 24 * 7,
+  '24h': 1000 * 60 * 60 * 24,
 } as const
 
 export type TimeRangeKey = keyof typeof TIME_RANGES
