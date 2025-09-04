@@ -560,8 +560,10 @@ export const TimePicker = memo(function TimePicker({
   // custom datetime state - store as ISO strings or raw input
   const [startDateTime, setStartDateTime] = useState(() => {
     if (value.mode === 'live' && value.range) {
+      // use the actual start value if provided, otherwise calculate from range
       const now = new Date()
-      const start = new Date(now.getTime() - value.range)
+      const startTime = value.start || now.getTime() - value.range
+      const start = new Date(startTime)
       return formatDatetimeInput(start)
     } else if (value.mode === 'static' && value.start) {
       return formatDatetimeInput(new Date(value.start))
@@ -572,7 +574,8 @@ export const TimePicker = memo(function TimePicker({
   const [startTimestamp, setStartTimestamp] = useState<number | undefined>(
     () => {
       if (value.mode === 'live' && value.range) {
-        return Date.now() - value.range
+        // use the actual start value if provided, otherwise calculate from range
+        return value.start || Date.now() - value.range
       } else if (value.mode === 'static' && value.start) {
         return value.start
       }
@@ -584,11 +587,17 @@ export const TimePicker = memo(function TimePicker({
     const now = new Date()
     if (value.mode === 'static' && value.end) {
       return formatDatetimeInput(new Date(value.end))
+    } else if (value.mode === 'live' && value.end) {
+      // use the actual end value if provided in live mode
+      return formatDatetimeInput(new Date(value.end))
     }
     return formatDatetimeInput(now)
   })
   const [endTimestamp, setEndTimestamp] = useState<number | undefined>(() => {
     if (value.mode === 'static' && value.end) {
+      return value.end
+    } else if (value.mode === 'live' && value.end) {
+      // use the actual end value if provided in live mode
       return value.end
     }
     return Date.now()
@@ -701,12 +710,17 @@ export const TimePicker = memo(function TimePicker({
       setEndEnabled(false) // live mode = end is disabled (rolling window)
 
       // update custom panel times for live mode
+      // use the actual start value if provided, otherwise calculate from range
       const now = new Date()
-      const start = new Date(now.getTime() - value.range)
+      const startTime = value.start || now.getTime() - value.range
+      const start = new Date(startTime)
+      const endTime = value.end || now.getTime()
+      const end = new Date(endTime)
+
       setStartDateTime(formatDatetimeInput(start))
       setStartTimestamp(start.getTime())
-      setEndDateTime(formatDatetimeInput(now))
-      setEndTimestamp(now.getTime())
+      setEndDateTime(formatDatetimeInput(end))
+      setEndTimestamp(end.getTime())
     } else if (value.mode === 'static' && value.start && value.end) {
       setTimeOptionsValue('')
       setIsCustomSelected(true)
@@ -755,18 +769,22 @@ export const TimePicker = memo(function TimePicker({
 
   // handle endEnabled toggle - pre-fill end date when enabling
   useEffect(() => {
-    if (endEnabled && !endDateTime && showCustomPanel) {
-      // when enabling end time, pre-fill with current time
-      const now = new Date()
-      const localString = formatDatetimeInput(now)
-      setEndDateTime(localString)
-      setEndTimestamp(now.getTime())
-    } else if (!endEnabled && endDateTime && showCustomPanel) {
-      // when disabling end time (switching to live mode), clear the end time
-      setEndDateTime('')
-      setEndTimestamp(undefined)
+    if (endEnabled && showCustomPanel) {
+      // when enabling end time, ensure we have a valid end time
+      // if we had a timestamp but no datetime string (from live mode), populate it
+      if (endTimestamp && !endDateTime) {
+        setEndDateTime(formatDatetimeInput(new Date(endTimestamp)))
+      } else if (!endDateTime && !endTimestamp) {
+        // if we have neither, use current time
+        const now = new Date()
+        const localString = formatDatetimeInput(now)
+        setEndDateTime(localString)
+        setEndTimestamp(now.getTime())
+      }
     }
-  }, [endEnabled, endDateTime, showCustomPanel])
+    // note: we don't clear endDateTime when disabling anymore
+    // this preserves the value for when user re-enables
+  }, [endEnabled, showCustomPanel, endTimestamp, endDateTime])
 
   // initialize custom date fields when panel opens
   useEffect(() => {
@@ -774,14 +792,18 @@ export const TimePicker = memo(function TimePicker({
       const now = new Date()
 
       if (value.mode === 'live' && value.range) {
-        // for live mode, calculate start from current time minus range
-        const start = new Date(now.getTime() - value.range)
+        // for live mode, use actual start/end if provided, otherwise calculate
+        const startTime = value.start || now.getTime() - value.range
+        const start = new Date(startTime)
+        const endTime = value.end || now.getTime()
+        const end = new Date(endTime)
+
         setStartDateTime(formatDatetimeInput(start))
         setStartTimestamp(start.getTime())
         // don't set end time for live mode - it will show 'now' placeholder
         if (endEnabled) {
-          setEndDateTime(formatDatetimeInput(now))
-          setEndTimestamp(now.getTime())
+          setEndDateTime(formatDatetimeInput(end))
+          setEndTimestamp(end.getTime())
         }
       } else if (value.mode === 'static' && value.start && value.end) {
         // for static mode, use the existing values
