@@ -1,3 +1,4 @@
+import { TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS } from '@/configs/intervals'
 import { SandboxesMetricsRecord } from '@/types/api'
 import {
   ClientSandboxesMetrics,
@@ -72,16 +73,16 @@ export function fillTeamMetricsWithZeros(
     }
 
     // ensure we have a point at the end
-    // if (
-    //   result.length === 0 ||
-    //   result[result.length - 1]!.timestamp < end - 1000
-    // ) {
-    //   result.push({
-    //     timestamp: end - 1000,
-    //     concurrentSandboxes: 0,
-    //     sandboxStartRate: 0,
-    //   })
-    // }
+    if (
+      result.length === 0 ||
+      result[result.length - 1]!.timestamp < end - 1000
+    ) {
+      result.push({
+        timestamp: end - 1000,
+        concurrentSandboxes: 0,
+        sandboxStartRate: 0,
+      })
+    }
 
     return result
   }
@@ -141,7 +142,10 @@ export function fillTeamMetricsWithZeros(
       if (hasSequenceBefore && hasDataAfter) {
         // fill zero after the current wave (suffix)
         const suffixZeroTimestamp = currentPoint.timestamp + expectedStep
-        if (suffixZeroTimestamp < nextPoint.timestamp) {
+        if (
+          suffixZeroTimestamp < nextPoint.timestamp &&
+          suffixZeroTimestamp > TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
+        ) {
           result.push({
             timestamp: suffixZeroTimestamp,
             concurrentSandboxes: 0,
@@ -171,12 +175,15 @@ export function fillTeamMetricsWithZeros(
   const isEndAnomalous = gapToEnd > step * (1 + anomalousGapTolerance)
 
   // add zeros at end if:
-  // 1. there's an anomalous gap
-  // 2. OR the gap is more than 3x the step (ensures zeros for stale data)
+  // 1. there's an anomalous gap AND the gap is larger than backend collection interval
+  // 2. OR the gap is more than 3x the step AND larger than backend collection interval (ensures zeros for stale data)
   // 3. OR the gap is more than 5 minutes regardless of step
   const shouldAddEndZeros =
-    isEndAnomalous ||
-    (step > 0 && gapToEnd >= step * 3) ||
+    (isEndAnomalous &&
+      gapToEnd > TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS) ||
+    (step > 0 &&
+      gapToEnd >= step * 3 &&
+      gapToEnd > TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS) ||
     gapToEnd >= 5 * 60 * 1000
 
   if (shouldAddEndZeros) {

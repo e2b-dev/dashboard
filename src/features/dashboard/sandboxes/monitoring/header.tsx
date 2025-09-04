@@ -1,5 +1,4 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
-import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { formatNumber } from '@/lib/utils/formatting'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -111,7 +110,7 @@ export const ConcurrentSandboxes = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = now
-  const start = end - TEAM_METRICS_POLLING_INTERVAL_MS
+  const start = end - 60_000
 
   const [teamMetricsResult, tierLimits] = await Promise.all([
     getTeamMetrics({
@@ -148,7 +147,7 @@ export const SandboxesStartRate = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = now
-  const start = end - TEAM_METRICS_POLLING_INTERVAL_MS
+  const start = end - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,

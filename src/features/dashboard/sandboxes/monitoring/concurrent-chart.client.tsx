@@ -205,22 +205,38 @@ export default function ConcurrentChartClient({
           )}
           <TimePicker
             value={{
-              mode: 'static',
+              mode: syncedTimeframe.isLive ? 'live' : 'static',
+              range: syncedTimeframe.duration,
               start: syncedTimeframe.start,
               end: syncedTimeframe.end,
             }}
             onValueChange={(value) => {
               if (!value.range) return
 
-              // for custom time picker, we're setting a static range
-              const now = Date.now()
-              setCustomRange(now - value.range, now)
+              // check if this range matches a predefined time range
+              const matchingRange = Object.entries(TIME_RANGES).find(
+                ([_, rangeMs]) => rangeMs === value.range
+              )
+
+              if (matchingRange) {
+                // use the predefined range
+                setTimeRange(matchingRange[0] as TimeRangeKey)
+              } else {
+                // use custom range for non-standard selections
+                const now = Date.now()
+                setCustomRange(now - value.range, now)
+              }
             }}
           >
             <Button
               variant="ghost"
               size="slate"
-              className="text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-xs max-md:px-2"
+              className={cn(
+                'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-xs max-md:px-2',
+                {
+                  'text-fg': currentRange === 'custom',
+                }
+              )}
             >
               custom
             </Button>
