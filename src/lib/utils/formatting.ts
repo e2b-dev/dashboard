@@ -3,7 +3,7 @@
  * Uses date-fns for date/time formatting and toLocaleString for numbers
  */
 
-import { format, isThisYear } from 'date-fns'
+import { format, isThisYear, isValid, parse, parseISO } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
 // ============================================================================
@@ -292,6 +292,87 @@ export function formatCompactNumber(
     maximumFractionDigits: decimals,
   })
   return formatter.format(value)
+}
+
+// ============================================================================
+// Date Parsing
+// ============================================================================
+
+/**
+ * Try to parse a datetime string into a Date object
+ * Supports multiple formats including ISO, timestamps, relative times, and common formats
+ * @param input - Date string to parse
+ * @returns Date object if parsing succeeds, null otherwise
+ */
+export function tryParseDatetime(input: string): Date | null {
+  if (!input.trim()) return null
+
+  // common date formats to try parsing
+  const dateFormats = [
+    "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
+    "yyyy-MM-dd'T'HH:mm:ssxxx",
+    "yyyy-MM-dd'T'HH:mm:ss",
+    'yyyy-MM-dd HH:mm:ss',
+    'yyyy-MM-dd',
+    'MM/dd/yyyy HH:mm:ss',
+    'MM/dd/yyyy',
+    'dd/MM/yyyy HH:mm:ss',
+    'dd/MM/yyyy',
+  ]
+
+  // try parsing as ISO first
+  try {
+    const isoDate = parseISO(input)
+    if (isValid(isoDate)) return isoDate
+  } catch {}
+
+  // try parsing as timestamp
+  const timestamp = Number(input)
+  if (!isNaN(timestamp)) {
+    const date = new Date(
+      timestamp < 10000000000 ? timestamp * 1000 : timestamp
+    )
+    if (isValid(date)) return date
+  }
+
+  // try relative times
+  const now = new Date()
+  const relativeMap: Record<string, () => Date> = {
+    now: () => now,
+    today: () => new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+    yesterday: () => new Date(now.getTime() - 24 * 60 * 60 * 1000),
+    tomorrow: () => new Date(now.getTime() + 24 * 60 * 60 * 1000),
+  }
+
+  const lowerInput = input.toLowerCase().trim()
+  if (relativeMap[lowerInput]) {
+    return relativeMap[lowerInput]()
+  }
+
+  // try common formats
+  for (const fmt of dateFormats) {
+    try {
+      const date = parse(input, fmt, new Date())
+      if (isValid(date)) return date
+    } catch {}
+  }
+
+  // try native Date parsing
+  try {
+    const date = new Date(input)
+    if (isValid(date) && !isNaN(date.getTime())) return date
+  } catch {}
+
+  return null
+}
+
+/**
+ * Format a datetime to a standard format for display in inputs
+ * @param date - Date to format
+ * @returns Formatted datetime string (yyyy-MM-dd HH:mm:ss)
+ */
+export function formatDatetimeInput(date: Date): string {
+  return format(date, 'yyyy-MM-dd HH:mm:ss')
 }
 
 // ============================================================================

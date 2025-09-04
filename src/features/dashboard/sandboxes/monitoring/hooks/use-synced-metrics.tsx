@@ -3,18 +3,13 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { ParsedTimeframe } from '@/lib/utils/timeframe'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { InferSafeActionFnResult } from 'next-safe-action'
-import { NonUndefined } from 'react-hook-form'
 import { toast } from 'sonner'
 import useSWR, { SWRConfiguration } from 'swr'
 
 interface UseSyncedMetricsOptions {
   teamId: string
   timeframe: ParsedTimeframe
-  initialData?: NonUndefined<
-    InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >
+  initialData?: TeamMetricsResponse
   pollingEnabled?: boolean
   swrOptions?: SWRConfiguration
 }
@@ -45,13 +40,21 @@ export function useSyncedMetrics({
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<TeamMetricsResponse>(
       swrKey,
-      async ([url, teamId, start, end]: [
+      async ([url, teamId, start, end, isLive]: [
         string,
         string,
         number,
         number,
         boolean,
       ]) => {
+        // log the fetch request
+        console.debug('[useSyncedMetrics] Fetching data', {
+          start: new Date(start).toISOString(),
+          end: new Date(end).toISOString(),
+          duration: `${((end - start) / 60000).toFixed(1)} minutes`,
+          isLive,
+        })
+
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -76,7 +79,25 @@ export function useSyncedMetrics({
           throw new Error(errorData.error || 'Failed to fetch metrics')
         }
 
-        return response.json()
+        const result = await response.json()
+
+        // log the response
+        if (result?.metrics?.length > 0) {
+          const firstMetric = result.metrics[0]
+          const lastMetric = result.metrics[result.metrics.length - 1]
+          console.debug('[useSyncedMetrics] Received data', {
+            dataPoints: result.metrics.length,
+            step: result.step,
+            dataStart: new Date(firstMetric.timestamp).toISOString(),
+            dataEnd: new Date(lastMetric.timestamp).toISOString(),
+            dataDuration: `${((lastMetric.timestamp - firstMetric.timestamp) / 60000).toFixed(1)} minutes`,
+            requestedDuration: `${((end - start) / 60000).toFixed(1)} minutes`,
+          })
+        } else {
+          console.debug('[useSyncedMetrics] Received empty data')
+        }
+
+        return result
       },
       {
         fallbackData: initialData,
@@ -85,7 +106,8 @@ export function useSyncedMetrics({
         revalidateOnFocus: shouldPoll,
         revalidateOnReconnect: shouldPoll,
         revalidateIfStale: true, // always revalidate stale data
-        revalidateOnMount: true, // always fetch on mount
+        revalidateOnMount: true, // always fetch fresh data on mount
+        dedupingInterval: 0, // disable deduping to ensure fresh fetches when key changes
         errorRetryInterval: 5000,
         errorRetryCount: 3,
         ...swrOptions,

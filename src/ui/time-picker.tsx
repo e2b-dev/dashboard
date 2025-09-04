@@ -1,19 +1,30 @@
 'use client'
 
-import { isValid, parse, parseISO } from 'date-fns'
-import { format } from 'date-fns-tz/format'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Calendar, CheckCircle2, ChevronRight, XCircle } from 'lucide-react'
-import { ReactNode, useEffect, useRef, useState } from 'react'
+import {
+  memo,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { z } from 'zod'
 
 import { STORAGE_KEYS } from '@/configs/keys'
 import { cn } from '@/lib/utils'
-import { formatDuration } from '@/lib/utils/formatting'
+import {
+  formatDatetimeInput,
+  formatDuration,
+  tryParseDatetime,
+} from '@/lib/utils/formatting'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import CopyButton from './copy-button'
+import { LiveDot } from './live'
 import { Button } from './primitives/button'
 import { cardVariants } from './primitives/card'
 import { Checkbox } from './primitives/checkbox'
@@ -107,96 +118,109 @@ const customTimeFormSchema = z
     endDateTime: z.string().optional(),
     endEnabled: z.boolean().default(false),
   })
-  .refine(
-    (data) => {
-      // start time is required and must be valid
-      if (!data.startDateTime || !data.startDateTime.trim()) {
-        return false
-      }
-
-      const startDate = tryParseDatetimeStatic(data.startDateTime)
-      if (!startDate) return false
-
-      // if end is enabled, validate end time
-      if (data.endEnabled && data.endDateTime) {
-        const endDate = tryParseDatetimeStatic(data.endDateTime)
-        if (!endDate) return false
-        // ensure end is after start
-        return endDate.getTime() > startDate.getTime()
-      }
-
-      return true
-    },
-    {
-      message: 'Invalid date/time format or end time must be after start time',
-      path: ['startDateTime'],
+  .superRefine((data, ctx) => {
+    // start time is required and must be valid
+    if (!data.startDateTime || !data.startDateTime.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start time is required',
+        path: ['startDateTime'],
+      })
+      return
     }
-  )
+
+    const startDate = tryParseDatetime(data.startDateTime)
+    if (!startDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid date/time format',
+        path: ['startDateTime'],
+      })
+      return
+    }
+
+    const now = Date.now()
+    const maxDaysAgo = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
+    const startTimestamp = startDate.getTime()
+
+    // validate start date is not more than 31 days ago
+    if (startTimestamp < now - maxDaysAgo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date cannot be more than 31 days ago',
+        path: ['startDateTime'],
+      })
+      return
+    }
+
+    // validate start date is not in the future (with 60s tolerance for clock skew)
+    if (startTimestamp > now + 60 * 1000) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date cannot be in the future',
+        path: ['startDateTime'],
+      })
+      return
+    }
+
+    // if end is enabled, validate end time
+    if (data.endEnabled && data.endDateTime) {
+      const endDate = tryParseDatetime(data.endDateTime)
+      if (!endDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Invalid end date/time format',
+          path: ['endDateTime'],
+        })
+        return
+      }
+
+      const endTimestamp = endDate.getTime()
+      const minRange = 1.5 * 60 * 1000 // 1.5 minutes minimum
+
+      // ensure end is after start
+      if (endTimestamp <= startTimestamp) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End time must be after start time',
+          path: ['endDateTime'],
+        })
+        return
+      }
+
+      // ensure minimum range of 1.5 minutes
+      if (endTimestamp - startTimestamp < minRange) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Time range must be at least 1.5 minutes',
+          path: ['endDateTime'],
+        })
+        return
+      }
+
+      // ensure end is not in the future (with 60s tolerance for clock skew)
+      if (endTimestamp > now + 60 * 1000) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End date cannot be in the future',
+          path: ['endDateTime'],
+        })
+        return
+      }
+
+      // ensure range doesn't exceed 31 days
+      if (endTimestamp - startTimestamp > maxDaysAgo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Date range cannot exceed 31 days',
+          path: ['endDateTime'],
+        })
+        return
+      }
+    }
+  })
 
 type CustomTimeFormValues = z.infer<typeof customTimeFormSchema>
-
-// Helper function to parse datetime (static, outside component)
-function tryParseDatetimeStatic(input: string): Date | null {
-  if (!input.trim()) return null
-
-  // common date formats to try parsing
-  const dateFormats = [
-    "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-    "yyyy-MM-dd'T'HH:mm:ssxxx",
-    "yyyy-MM-dd'T'HH:mm:ss",
-    'yyyy-MM-dd HH:mm:ss',
-    'yyyy-MM-dd',
-    'MM/dd/yyyy HH:mm:ss',
-    'MM/dd/yyyy',
-    'dd/MM/yyyy HH:mm:ss',
-    'dd/MM/yyyy',
-  ]
-
-  // try parsing as ISO first
-  try {
-    const isoDate = parseISO(input)
-    if (isValid(isoDate)) return isoDate
-  } catch {}
-
-  // try parsing as timestamp
-  const timestamp = Number(input)
-  if (!isNaN(timestamp)) {
-    const date = new Date(
-      timestamp < 10000000000 ? timestamp * 1000 : timestamp
-    )
-    if (isValid(date)) return date
-  }
-
-  // try relative times
-  const now = new Date()
-  const relativeMap: Record<string, () => Date> = {
-    now: () => now,
-    today: () => new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-    yesterday: () => new Date(now.getTime() - 24 * 60 * 60 * 1000),
-    tomorrow: () => new Date(now.getTime() + 24 * 60 * 60 * 1000),
-  }
-
-  const lowerInput = input.toLowerCase().trim()
-  if (relativeMap[lowerInput]) {
-    return relativeMap[lowerInput]()
-  }
-
-  // try common formats
-  for (const fmt of dateFormats) {
-    try {
-      const date = parse(input, fmt, new Date())
-      if (isValid(date)) return date
-    } catch {}
-  }
-
-  // try native Date parsing
-  try {
-    const date = new Date(input)
-    if (isValid(date) && !isNaN(date.getTime())) return date
-  } catch {}
-
-  return null
-}
 
 // Custom Time Panel with react-hook-form
 interface CustomTimePanelProps {
@@ -208,7 +232,7 @@ interface CustomTimePanelProps {
   onValuesChange: (values: CustomTimeFormValues) => void
 }
 
-function CustomTimePanel({
+const CustomTimePanel = memo(function CustomTimePanel({
   startDateTime,
   endDateTime,
   endEnabled,
@@ -216,8 +240,6 @@ function CustomTimePanel({
   onSubmit,
   onValuesChange,
 }: CustomTimePanelProps) {
-  'use no memo'
-
   const form = useForm<CustomTimeFormValues>({
     resolver: zodResolver(customTimeFormSchema),
     defaultValues: {
@@ -250,10 +272,10 @@ function CustomTimePanel({
     // parse timestamps to compare actual values, not just string formatting
     const currentFormStart = form.getValues('startDateTime')
     const currentFormStartTime = currentFormStart
-      ? tryParseDatetimeStatic(currentFormStart)?.getTime()
+      ? tryParseDatetime(currentFormStart)?.getTime()
       : undefined
     const propStartTime = startDateTime
-      ? tryParseDatetimeStatic(startDateTime)?.getTime()
+      ? tryParseDatetime(startDateTime)?.getTime()
       : undefined
 
     // if timestamps are significantly different (> 1 second), this is an external change
@@ -328,8 +350,16 @@ function CustomTimePanel({
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center justify-between">
-                <FormLabel className="prose-label uppercase text-fg-tertiary">
+                <FormLabel className="prose-label uppercase text-fg-tertiary flex items-center gap-2">
                   End Time
+                  {!field.value && (
+                    <span className="text-xs text-fg-tertiary flex items-center gap-1">
+                      <LiveDot
+                        classNames={{ circle: 'size-2', dot: 'size-1' }}
+                      />
+                      live
+                    </span>
+                  )}
                 </FormLabel>
                 <FormControl>
                   <Checkbox
@@ -349,6 +379,8 @@ function CustomTimePanel({
                         onChange={endField.onChange}
                         disabled={!field.value}
                         placeholder="e.g '2024-01-15 14:30:00' or 'now'"
+                        isLive={!field.value}
+                        showLiveIndicator={!field.value}
                       />
                     </div>
                   </FormControl>
@@ -363,13 +395,14 @@ function CustomTimePanel({
           type="submit"
           disabled={!form.formState.isValid}
           className="w-fit self-end"
+          variant="outline"
         >
           Apply
         </Button>
       </form>
     </Form>
   )
-}
+})
 
 // DateTimeInput field component for forms
 interface DateTimeInputFieldProps {
@@ -377,50 +410,67 @@ interface DateTimeInputFieldProps {
   onChange: (value: string) => void
   disabled?: boolean
   placeholder?: string
+  isLive?: boolean
+  showLiveIndicator?: boolean
 }
 
-function DateTimeInputField({
+const DateTimeInputField = memo(function DateTimeInputField({
   value,
   onChange,
   disabled,
   placeholder,
+  isLive = false,
+  showLiveIndicator = false,
 }: DateTimeInputFieldProps) {
-  'use no memo'
-
   const [inputValue, setInputValue] = useState(value || '')
   const [isValidDate, setIsValidDate] = useState(() => {
     // validate initial value
-    return !!value && !!tryParseDatetimeStatic(value)
+    return !!value && !!tryParseDatetime(value)
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    setInputValue(newValue)
-    onChange(newValue)
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      setInputValue(newValue)
+      onChange(newValue)
 
-    // validate
-    const date = tryParseDatetimeStatic(newValue)
-    setIsValidDate(!!date)
-  }
+      // validate
+      const date = tryParseDatetime(newValue)
+      setIsValidDate(!!date)
+    },
+    [onChange]
+  )
 
-  // sync external value
+  // sync external value - but only when it's a meaningful change
   useEffect(() => {
-    if (value !== inputValue) {
+    if (value !== inputValue && value !== '') {
       setInputValue(value)
-      setIsValidDate(!!tryParseDatetimeStatic(value))
+      setIsValidDate(!!tryParseDatetime(value))
     }
   }, [value, inputValue])
+
+  const date = tryParseDatetime(inputValue)
+  const isoTimestamp = date?.toISOString() || ''
+
+  // determine display value - show 'now' for live mode when empty
+  const displayValue = isLive && !inputValue ? 'now' : inputValue
 
   return (
     <div className="relative">
       <Input
         type="text"
-        value={inputValue}
+        value={displayValue}
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.stopPropagation()
+            // Allow default behavior for form submission
+          }
+        }}
         className={cn(
-          'pr-10 font-mono text-xs h-10',
+          'pr-20 h-10',
           'border-border-subtle',
           'placeholder:prose-label placeholder:leading-[0%]',
           isValidDate && inputValue && 'border-accent-success-highlight',
@@ -430,20 +480,36 @@ function DateTimeInputField({
             'border-accent-error-highlight'
         )}
       />
-      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
         {inputValue && inputValue.trim() ? (
           isValidDate ? (
-            <CheckCircle2 className="size-4 text-accent-success-highlight" />
+            <>
+              <CopyButton
+                value={isoTimestamp}
+                variant="ghost"
+                size="iconSm"
+                className="h-7 w-7 hover:bg-transparent"
+                title="Copy ISO UTC timestamp"
+                tabIndex={-1}
+              />
+              <CheckCircle2 className="size-4 text-accent-success-highlight" />
+            </>
           ) : (
             <XCircle className="size-4 text-accent-error-highlight" />
           )
         ) : (
-          <Calendar className="size-4 text-fg-tertiary" />
+          <>
+            {showLiveIndicator && isLive ? (
+              <LiveDot classNames={{ circle: 'size-3', dot: 'size-1.5' }} />
+            ) : (
+              <Calendar className="size-4 text-fg-tertiary" />
+            )}
+          </>
         )}
       </div>
     </div>
   )
-}
+})
 
 interface TimePickerProps {
   value?: TimeframeState
@@ -454,7 +520,7 @@ interface TimePickerProps {
   children: ReactNode
 }
 
-export function TimePicker({
+export const TimePicker = memo(function TimePicker({
   value = { mode: 'live', range: 60 * 60 * 1000 }, // default 1 hour
   onValueChange,
   placeholder = 'Select period',
@@ -496,12 +562,12 @@ export function TimePicker({
     if (value.mode === 'live' && value.range) {
       const now = new Date()
       const start = new Date(now.getTime() - value.range)
-      return format(start, 'yyyy-MM-dd HH:mm:ss')
+      return formatDatetimeInput(start)
     } else if (value.mode === 'static' && value.start) {
-      return format(new Date(value.start), 'yyyy-MM-dd HH:mm:ss')
+      return formatDatetimeInput(new Date(value.start))
     }
     // default to 1 hour ago
-    return format(new Date(Date.now() - 60 * 60 * 1000), 'yyyy-MM-dd HH:mm:ss')
+    return formatDatetimeInput(new Date(Date.now() - 60 * 60 * 1000))
   })
   const [startTimestamp, setStartTimestamp] = useState<number | undefined>(
     () => {
@@ -517,9 +583,9 @@ export function TimePicker({
   const [endDateTime, setEndDateTime] = useState(() => {
     const now = new Date()
     if (value.mode === 'static' && value.end) {
-      return format(new Date(value.end), 'yyyy-MM-dd HH:mm:ss')
+      return formatDatetimeInput(new Date(value.end))
     }
-    return format(now, 'yyyy-MM-dd HH:mm:ss')
+    return formatDatetimeInput(now)
   })
   const [endTimestamp, setEndTimestamp] = useState<number | undefined>(() => {
     if (value.mode === 'static' && value.end) {
@@ -532,6 +598,9 @@ export function TimePicker({
     // initialize based on current value mode
     return value.mode === 'static'
   })
+
+  // track if we're in live mode for UI indicators
+  const isLiveMode = !endEnabled
 
   // initialize showCustomPanel state on mount
   useEffect(() => {
@@ -634,17 +703,17 @@ export function TimePicker({
       // update custom panel times for live mode
       const now = new Date()
       const start = new Date(now.getTime() - value.range)
-      setStartDateTime(format(start, 'yyyy-MM-dd HH:mm:ss'))
+      setStartDateTime(formatDatetimeInput(start))
       setStartTimestamp(start.getTime())
-      setEndDateTime(format(now, 'yyyy-MM-dd HH:mm:ss'))
+      setEndDateTime(formatDatetimeInput(now))
       setEndTimestamp(now.getTime())
     } else if (value.mode === 'static' && value.start && value.end) {
       setTimeOptionsValue('')
       setIsCustomSelected(true)
       setEndEnabled(true) // static mode = end is enabled (fixed time)
       // initialize custom inputs with current values as local datetime strings
-      const startLocal = format(new Date(value.start), 'yyyy-MM-dd HH:mm:ss')
-      const endLocal = format(new Date(value.end), 'yyyy-MM-dd HH:mm:ss')
+      const startLocal = formatDatetimeInput(new Date(value.start))
+      const endLocal = formatDatetimeInput(new Date(value.end))
       setStartDateTime(startLocal)
       setStartTimestamp(value.start)
       setEndDateTime(endLocal)
@@ -652,121 +721,173 @@ export function TimePicker({
     }
   }, [value])
 
-  const handleTimeOptionSelect = (newValue: string) => {
-    isUserInteractionRef.current = true // mark as user interaction
-    setTimeOptionsValue(newValue)
-    setIsCustomSelected(false) // deselect custom when time option is selected
-    setShowCustomPanel(false) // close custom panel when time option is selected
-    localStorage.setItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL, 'false')
+  const handleTimeOptionSelect = useCallback(
+    (newValue: string) => {
+      isUserInteractionRef.current = true // mark as user interaction
+      setTimeOptionsValue(newValue)
+      setIsCustomSelected(false) // deselect custom when time option is selected
+      setShowCustomPanel(false) // close custom panel when time option is selected
+      localStorage.setItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL, 'false')
 
-    // find the option and create TimeframeState
-    const option = timeOptions.find((opt) => opt.value === newValue)
-    if (option) {
-      onValueChange?.({
-        mode: 'live',
-        range: option.rangeMs,
-      })
-      // close dropdown after time option selection
-      setOpen(false)
-      isUserInteractionRef.current = false // reset flag
-    }
-  }
+      // find the option and create TimeframeState
+      const option = timeOptions.find((opt) => opt.value === newValue)
+      if (option) {
+        onValueChange?.({
+          mode: 'live',
+          range: option.rangeMs,
+        })
+        // close dropdown after time option selection
+        setOpen(false)
+        isUserInteractionRef.current = false // reset flag
+      }
+    },
+    [onValueChange]
+  )
 
-  const handleCustomSelect = () => {
+  const handleCustomSelect = useCallback(() => {
     isUserInteractionRef.current = true // mark as user interaction
     setIsCustomSelected(true)
     setTimeOptionsValue('') // clear time options when custom is selected
     setShowCustomPanel(true)
     localStorage.setItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL, 'true')
     isUserInteractionRef.current = false // reset flag
-  }
-
-  const handleApplyCustom = () => {
-    // require valid start timestamp
-    if (!startTimestamp) return
-
-    isUserInteractionRef.current = true // mark as user interaction
-
-    try {
-      if (endEnabled) {
-        // static mode - fixed end time
-        if (endTimestamp && endTimestamp > startTimestamp) {
-          onValueChange?.({
-            mode: 'static',
-            start: startTimestamp,
-            end: endTimestamp,
-          })
-          setOpen(false)
-        }
-      } else {
-        // live mode - rolling window from start time
-        const now = new Date().getTime()
-        if (startTimestamp < now) {
-          // calculate duration from start to now
-          const range = now - startTimestamp
-          onValueChange?.({
-            mode: 'live',
-            range,
-          })
-          setOpen(false)
-        }
-      }
-    } finally {
-      setTimeout(() => {
-        isUserInteractionRef.current = false
-      }, 100)
-    }
-  }
+  }, [])
 
   // handle endEnabled toggle - pre-fill end date when enabling
   useEffect(() => {
     if (endEnabled && !endDateTime && showCustomPanel) {
       // when enabling end time, pre-fill with current time
       const now = new Date()
-      const localString = format(now, 'yyyy-MM-dd HH:mm:ss')
+      const localString = formatDatetimeInput(now)
       setEndDateTime(localString)
       setEndTimestamp(now.getTime())
+    } else if (!endEnabled && endDateTime && showCustomPanel) {
+      // when disabling end time (switching to live mode), clear the end time
+      setEndDateTime('')
+      setEndTimestamp(undefined)
     }
   }, [endEnabled, endDateTime, showCustomPanel])
 
   // initialize custom date fields when panel opens
   useEffect(() => {
-    if (showCustomPanel && (!startDateTime || !endDateTime)) {
+    if (showCustomPanel && (!startDateTime || (!endDateTime && endEnabled))) {
       const now = new Date()
 
       if (value.mode === 'live' && value.range) {
         // for live mode, calculate start from current time minus range
         const start = new Date(now.getTime() - value.range)
-        setStartDateTime(format(start, 'yyyy-MM-dd HH:mm:ss'))
+        setStartDateTime(formatDatetimeInput(start))
         setStartTimestamp(start.getTime())
-        setEndDateTime(format(now, 'yyyy-MM-dd HH:mm:ss'))
-        setEndTimestamp(now.getTime())
+        // don't set end time for live mode - it will show 'now' placeholder
+        if (endEnabled) {
+          setEndDateTime(formatDatetimeInput(now))
+          setEndTimestamp(now.getTime())
+        }
       } else if (value.mode === 'static' && value.start && value.end) {
         // for static mode, use the existing values
-        setStartDateTime(format(new Date(value.start), 'yyyy-MM-dd HH:mm:ss'))
+        setStartDateTime(formatDatetimeInput(new Date(value.start)))
         setStartTimestamp(value.start)
-        setEndDateTime(format(new Date(value.end), 'yyyy-MM-dd HH:mm:ss'))
+        setEndDateTime(formatDatetimeInput(new Date(value.end)))
         setEndTimestamp(value.end)
       } else {
         // default to last hour
         const hourAgo = new Date(now.getTime() - 60 * 60 * 1000)
-        setStartDateTime(format(hourAgo, 'yyyy-MM-dd HH:mm:ss'))
+        setStartDateTime(formatDatetimeInput(hourAgo))
         setStartTimestamp(hourAgo.getTime())
-        setEndDateTime(format(now, 'yyyy-MM-dd HH:mm:ss'))
-        setEndTimestamp(now.getTime())
+        // only set end time if end is enabled
+        if (endEnabled) {
+          setEndDateTime(formatDatetimeInput(now))
+          setEndTimestamp(now.getTime())
+        }
       }
     }
-  }, [showCustomPanel, startDateTime, endDateTime, value])
+  }, [showCustomPanel, startDateTime, endDateTime, endEnabled, value])
 
   // handle dropdown open state changes
-  const handleOpenChange = (newOpen: boolean) => {
-    // prevent closing if custom panel is open and it's not a user-initiated close
-    if (!newOpen && showCustomPanel && !isUserInteractionRef.current) {
-      // keep dropdown open when custom panel is shown and change is external
-      return
-    }
-    setOpen(newOpen)
-  }
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      // prevent closing if custom panel is open and it's not a user-initiated close
+      if (!newOpen && showCustomPanel && !isUserInteractionRef.current) {
+        // keep dropdown open when custom panel is shown and change is external
+        return
+      }
+      setOpen(newOpen)
+    },
+    [showCustomPanel]
+  )
+
+  // memoized callbacks for CustomTimePanel
+  const handleCustomSubmit = useCallback(
+    (values: CustomTimeFormValues) => {
+      // parse the dates
+      const startDate = tryParseDatetime(values.startDateTime)
+      const endDate =
+        values.endEnabled && values.endDateTime
+          ? tryParseDatetime(values.endDateTime)
+          : null
+
+      if (!startDate) return
+
+      isUserInteractionRef.current = true
+
+      // update parent state with the final values
+      setStartDateTime(values.startDateTime || '')
+      setEndDateTime(values.endDateTime || '')
+      setEndEnabled(values.endEnabled || false)
+
+      if (values.endEnabled && endDate) {
+        // static mode
+        onValueChange?.({
+          mode: 'static',
+          start: startDate.getTime(),
+          end: endDate.getTime(),
+        })
+      } else {
+        // live mode - calculate range from start to now
+        const now = new Date().getTime()
+        const range = now - startDate.getTime()
+
+        // allow any valid range within the 31-day window
+        // even if it's 0 (start time = now) or slightly negative due to clock differences
+        const maxDaysAgo = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
+        if (range >= -60000 && range <= maxDaysAgo) {
+          // allow 1 minute tolerance for "future" times
+          // ensure we pass a positive range
+          const validRange = Math.max(0, range)
+          onValueChange?.({
+            mode: 'live',
+            range: validRange || 60000, // default to 1 minute if exactly now
+          })
+        }
+      }
+
+      setOpen(false)
+      setTimeout(() => {
+        isUserInteractionRef.current = false
+      }, 100)
+    },
+    [onValueChange]
+  )
+
+  const handleCustomValuesChange = useCallback(
+    (values: CustomTimeFormValues) => {
+      // only update timestamps for validation, don't update the actual string values
+      // to avoid feedback loops when user is typing
+      const startDate = values.startDateTime
+        ? tryParseDatetime(values.startDateTime)
+        : null
+      setStartTimestamp(startDate?.getTime())
+
+      const endDate = values.endDateTime
+        ? tryParseDatetime(values.endDateTime)
+        : null
+      setEndTimestamp(endDate?.getTime())
+
+      // only update endEnabled since it's a checkbox and won't cause typing issues
+      setEndEnabled(values.endEnabled || false)
+    },
+    []
+  )
 
   return (
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
@@ -923,65 +1044,8 @@ export function TimePicker({
                   endDateTime={endDateTime}
                   endEnabled={endEnabled}
                   isOpen={showCustomPanel}
-                  onSubmit={(values) => {
-                    // parse the dates
-                    const startDate = tryParseDatetimeStatic(
-                      values.startDateTime
-                    )
-                    const endDate =
-                      values.endEnabled && values.endDateTime
-                        ? tryParseDatetimeStatic(values.endDateTime)
-                        : null
-
-                    if (!startDate) return
-
-                    isUserInteractionRef.current = true
-
-                    // update parent state with the final values
-                    setStartDateTime(values.startDateTime || '')
-                    setEndDateTime(values.endDateTime || '')
-                    setEndEnabled(values.endEnabled || false)
-
-                    if (values.endEnabled && endDate) {
-                      // static mode
-                      onValueChange?.({
-                        mode: 'static',
-                        start: startDate.getTime(),
-                        end: endDate.getTime(),
-                      })
-                    } else {
-                      // live mode - calculate range from start to now
-                      const now = new Date().getTime()
-                      const range = now - startDate.getTime()
-                      if (range > 0) {
-                        onValueChange?.({
-                          mode: 'live',
-                          range,
-                        })
-                      }
-                    }
-
-                    setOpen(false)
-                    setTimeout(() => {
-                      isUserInteractionRef.current = false
-                    }, 100)
-                  }}
-                  onValuesChange={(values) => {
-                    // only update timestamps for validation, don't update the actual string values
-                    // to avoid feedback loops when user is typing
-                    const startDate = values.startDateTime
-                      ? tryParseDatetimeStatic(values.startDateTime)
-                      : null
-                    setStartTimestamp(startDate?.getTime())
-
-                    const endDate = values.endDateTime
-                      ? tryParseDatetimeStatic(values.endDateTime)
-                      : null
-                    setEndTimestamp(endDate?.getTime())
-
-                    // only update endEnabled since it's a checkbox and won't cause typing issues
-                    setEndEnabled(values.endEnabled || false)
-                  }}
+                  onSubmit={handleCustomSubmit}
+                  onValuesChange={handleCustomValuesChange}
                 />
               </motion.div>
             )}
@@ -990,6 +1054,6 @@ export function TimePicker({
       </DropdownMenuContent>
     </DropdownMenu>
   )
-}
+})
 
 export default TimePicker

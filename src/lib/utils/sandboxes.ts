@@ -29,7 +29,7 @@ export function transformMetricsToClientMetrics(
  * calculates step from the first two data points and detects gaps in sequences.
  */
 // calculate step based on time range duration
-function calculateStepForRange(startMs: number, endMs: number): number {
+export function calculateStepForRange(startMs: number, endMs: number): number {
   const duration = endMs - startMs
   const hour = 60 * 60 * 1000
   const minute = 60 * 1000

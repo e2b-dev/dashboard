@@ -142,9 +142,46 @@ export const useTeamMetricsStore = create<Store>()(
         },
 
         setCustomRange: (start: number, end: number) => {
+          const now = getStableNow()
+          const maxDaysAgo = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
+          const minRange = 1.5 * 60 * 1000 // 1.5 minutes minimum range
+
+          // validate and adjust boundaries
+          let validStart = Math.floor(start)
+          let validEnd = Math.floor(end)
+
+          // ensure start is not more than 31 days ago
+          if (validStart < now - maxDaysAgo) {
+            validStart = now - maxDaysAgo
+          }
+
+          // ensure end is not in the future
+          if (validEnd > now) {
+            validEnd = now
+          }
+
+          // ensure minimum range of 1.5 minutes
+          const range = validEnd - validStart
+          if (range < minRange) {
+            // adjust to maintain minimum range, preferring to extend backward
+            const midpoint = (validStart + validEnd) / 2
+            validStart = Math.floor(midpoint - minRange / 2)
+            validEnd = Math.floor(midpoint + minRange / 2)
+
+            // re-check boundaries after adjustment
+            if (validEnd > now) {
+              validEnd = now
+              validStart = validEnd - minRange
+            }
+            if (validStart < now - maxDaysAgo) {
+              validStart = now - maxDaysAgo
+              validEnd = validStart + minRange
+            }
+          }
+
           set({
-            start: Math.floor(start),
-            end: Math.floor(end),
+            start: validStart,
+            end: validEnd,
           })
         },
 

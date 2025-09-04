@@ -77,6 +77,7 @@ export default function useTeamMetricsSWR(
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
+      dedupingInterval: 0, // disable deduping for fresh fetches
     }
   )
 }
