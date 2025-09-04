@@ -1,12 +1,14 @@
 'use client'
 
 import { ENABLE_CONCURRENT_CHART_WARNING_LINE } from '@/configs/flags'
+import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
   formatChartTimestampLocal,
   formatNumber,
   formatTimeAxisLabel,
 } from '@/lib/utils/formatting'
+import { format } from 'date-fns'
 import * as echarts from 'echarts'
 import { EChartsOption } from 'echarts'
 import ReactECharts from 'echarts-for-react'
@@ -18,7 +20,7 @@ import 'echarts/lib/component/dataZoomInside'
 import 'echarts/lib/component/title'
 
 import { useTheme } from 'next-themes'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { renderToString } from 'react-dom/server'
 import { defaultLineChartOption } from './line-chart.defaults'
 import {
@@ -52,6 +54,9 @@ export interface LineChartProps {
 
   /** Group name for connecting multiple charts */
   group?: string
+
+  /** Timeframe duration in milliseconds (for smart time formatting) */
+  duration?: number
 }
 
 export default function LineChart({
@@ -63,28 +68,11 @@ export default function LineChart({
   style,
   onChartReady,
   group,
+  duration,
 }: LineChartProps) {
   const ref = useRef<ReactECharts | null>(null)
   const { resolvedTheme } = useTheme()
-
-  // track window dimensions for responsive config
-  const [windowDimensions, setWindowDimensions] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    height: typeof window !== 'undefined' ? window.innerHeight : 768,
-  })
-
-  // update on resize
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  const breakpoint = useBreakpoint()
 
   const cssVars = useCssVars([
     '--stroke',
@@ -106,21 +94,41 @@ export default function LineChart({
 
   // responsive axis config based on viewport size
   const getResponsiveAxisConfig = useCallback(() => {
-    const isSmallViewport =
-      windowDimensions.width < 600 || windowDimensions.height < 400
-    const isMediumViewport =
-      windowDimensions.width < 900 || windowDimensions.height < 600
+    // hide seconds when timespan is 30 minutes or more
+    const thirtyMinutesMs = 30 * 60 * 1000 // 30 minutes in milliseconds
+    const shouldHideSeconds = duration ? duration >= thirtyMinutesMs : false
 
     return {
       // reduce tick density on smaller viewports
-      xAxisSplitNumber: isSmallViewport ? 3 : isMediumViewport ? 5 : 8,
-      yAxisSplitNumber: isSmallViewport ? 3 : isMediumViewport ? 5 : 6,
+      xAxisSplitNumber: breakpoint.isXs
+        ? 3
+        : breakpoint.isSm
+          ? 4
+          : breakpoint.isMd
+            ? 5
+            : 8,
+      yAxisSplitNumber: breakpoint.isXs ? 3 : breakpoint.isSmDown ? 5 : 6,
       // always show labels - fixes safari issue
       showAxisLabels: true,
       // smaller fonts on small viewports
-      fontSize: isSmallViewport ? 10 : 12,
+      fontSize: breakpoint.isSmDown ? 10 : 12,
+      // no rotation - removed as requested
+      xAxisRotate: 0,
+      // skip labels on viewports under lg (1024px) to prevent overlap
+      xAxisInterval: breakpoint.isXs
+        ? 2
+        : breakpoint.isSm
+          ? 1
+          : !breakpoint.isLgUp
+            ? 'auto'
+            : 0,
+      // compact time format for small viewports
+      isCompactTimeFormat: breakpoint.isSmDown,
+      isVeryCompactTimeFormat: breakpoint.isXs,
+      // smart seconds display based on timeframe duration
+      shouldHideSeconds,
     }
-  }, [windowDimensions])
+  }, [breakpoint, duration])
 
   const createSplitLineInterval = useCallback((limit: number) => {
     return (value: string | number) => {
@@ -397,6 +405,8 @@ export default function LineChart({
           color: cssVars['--fg-tertiary'],
           fontFamily: cssVars['--font-mono'],
           fontSize: responsiveConfig.fontSize,
+          rotate: responsiveConfig.xAxisRotate,
+          interval: responsiveConfig.xAxisInterval,
           formatter: (value: string | number): string => {
             // If this is a time axis, format using our utility
             if (
@@ -406,6 +416,28 @@ export default function LineChart({
               const date = new Date(value)
               const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
 
+              // use compact formats for small viewports
+              if (responsiveConfig.isVeryCompactTimeFormat) {
+                // very compact: just time without seconds or period (e.g., "12:45")
+                if (isNewDay) {
+                  return format(date, 'MMM d')
+                }
+                return format(date, 'HH:mm')
+              } else if (responsiveConfig.isCompactTimeFormat) {
+                // compact: time with period but no seconds (e.g., "12:45 PM")
+                if (isNewDay) {
+                  return format(date, 'MMM d')
+                }
+                return format(date, 'h:mm a')
+              } else if (responsiveConfig.shouldHideSeconds) {
+                // hide seconds for long timespans (30 minutes or more)
+                if (isNewDay) {
+                  return format(date, 'MMM d')
+                }
+                return format(date, 'h:mm a')
+              }
+
+              // default format with seconds
               return formatTimeAxisLabel(value, isNewDay)
             }
             return String(value)

@@ -254,6 +254,7 @@ export default function ConcurrentChartClient({
         yAxisLimit={concurrentInstancesLimit}
         group="sandboxes-monitoring"
         onChartReady={registerChart}
+        duration={syncedTimeframe.duration}
         option={{
           ...createMonitoringChartOptions({
             timeframe: {

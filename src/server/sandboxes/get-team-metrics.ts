@@ -45,11 +45,11 @@ export const getTeamMetrics = authActionClient
     try {
       const startSeconds = Math.floor(startDateMs / 1000)
       const endSeconds = Math.floor(endDateMs / 1000)
-      
+
       // calculate step to determine overfetch amount
       const step = calculateTeamMetricsStep(startDateMs, endDateMs)
       const overfetchSeconds = Math.ceil(step / 1000) // overfetch by one step
-      
+
       // fetch with overfetch to capture boundary points
       const res = await getTeamMetricsMemoized(
         session.access_token,
@@ -70,7 +70,10 @@ export const getTeamMetrics = authActionClient
           ...d,
           timestamp: new Date(d.timestamp).getTime(),
         }))
-        .filter((d) => d.timestamp >= startDateMs && d.timestamp <= endDateMs + tolerance)
+        .filter(
+          (d) =>
+            d.timestamp >= startDateMs && d.timestamp <= endDateMs + tolerance
+        )
 
       l.info(
         {

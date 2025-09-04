@@ -129,6 +129,7 @@ export default function StartRateChartClient({
         }}
         group="sandboxes-monitoring"
         onChartReady={registerChart}
+        duration={syncedTimeframe.duration}
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
