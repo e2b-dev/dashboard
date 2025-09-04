@@ -1,3 +1,5 @@
+'use client'
+
 import { cn, exponentialSmoothing } from '@/lib/utils'
 import { AnimatePresence, motion } from 'motion/react'
 import { Badge, BadgeProps } from './primitives/badge'
@@ -78,7 +80,7 @@ export function ReactiveLiveBadge({
           exit="hidden"
           className="ml-3"
         >
-          <LiveBadge size="sm" />
+          <LiveBadge size="sm" {...props} />
         </motion.span>
       )}
     </AnimatePresence>
