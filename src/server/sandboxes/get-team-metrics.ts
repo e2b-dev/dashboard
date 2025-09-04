@@ -45,28 +45,32 @@ export const getTeamMetrics = authActionClient
     try {
       const startSeconds = Math.floor(startDateMs / 1000)
       const endSeconds = Math.floor(endDateMs / 1000)
-
+      
+      // calculate step to determine overfetch amount
+      const step = calculateTeamMetricsStep(startDateMs, endDateMs)
+      const overfetchSeconds = Math.ceil(step / 1000) // overfetch by one step
+      
+      // fetch with overfetch to capture boundary points
       const res = await getTeamMetricsMemoized(
         session.access_token,
         teamId,
         startSeconds,
-        endSeconds
+        endSeconds + overfetchSeconds
       )
 
       if (res.error) {
         throw res.error
       }
 
-      // transform timestamps to milliseconds
-      const metrics = res.data.map((d) => ({
-        ...d,
-        timestamp: new Date(d.timestamp).getTime(),
-      }))
-
-      // always use our calculated step for display purposes
-      // the api may return data at different granularities (e.g. 1 hour for 24h range)
-      // but we want consistent display based on our step calculation
-      const step = calculateTeamMetricsStep(startDateMs, endDateMs)
+      // transform timestamps and filter to requested range (with tolerance)
+      // allow data points up to half a step beyond the end for boundary cases
+      const tolerance = step * 0.5
+      const metrics = res.data
+        .map((d) => ({
+          ...d,
+          timestamp: new Date(d.timestamp).getTime(),
+        }))
+        .filter((d) => d.timestamp >= startDateMs && d.timestamp <= endDateMs + tolerance)
 
       l.info(
         {
@@ -75,8 +79,9 @@ export const getTeamMetrics = authActionClient
           user_id: session.user.id,
           data_points: metrics.length,
           step,
+          overfetch_seconds: overfetchSeconds,
         },
-        'Team metrics fetched'
+        'Team metrics fetched with overfetch'
       )
 
       return {

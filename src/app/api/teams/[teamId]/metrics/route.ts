@@ -38,6 +38,11 @@ export async function POST(
     const startSeconds = Math.floor(start / 1000)
     const endSeconds = Math.floor(end / 1000)
 
+    // calculate step to determine overfetch amount
+    const step = calculateTeamMetricsStep(start, end)
+
+    const overfetchSeconds = Math.ceil(step / 1000) // overfetch by one step
+
     try {
       const res = await infra.GET('/teams/{teamID}/metrics', {
         params: {
@@ -46,7 +51,7 @@ export async function POST(
           },
           query: {
             start: startSeconds,
-            end: endSeconds,
+            end: endSeconds + overfetchSeconds, // overfetch to capture boundary points
           },
         },
         headers: {
@@ -59,16 +64,15 @@ export async function POST(
         throw res.error
       }
 
-      // transform timestamps to milliseconds
-      const metrics = res.data.map((d) => ({
-        ...d,
-        timestamp: new Date(d.timestamp).getTime(),
-      }))
-
-      // always use our calculated step for display purposes
-      // the api may return data at different granularities (e.g. 1 hour for 24h range)
-      // but we want consistent display based on our step calculation
-      const step = calculateTeamMetricsStep(start, end)
+      // transform timestamps and filter to requested range (with tolerance)
+      // allow data points up to half a step beyond the end for boundary cases
+      const tolerance = step * 0.5
+      const metrics = res.data
+        .map((d) => ({
+          ...d,
+          timestamp: new Date(d.timestamp).getTime(),
+        }))
+        .filter((d) => d.timestamp >= start && d.timestamp <= end + tolerance)
 
       l.info(
         {
@@ -80,6 +84,7 @@ export async function POST(
             requested_range: { start, end },
             data_points: metrics.length,
             step,
+            overfetch_seconds: overfetchSeconds,
           },
         },
         'Team metrics API response'

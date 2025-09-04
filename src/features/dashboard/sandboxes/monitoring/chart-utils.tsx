@@ -187,6 +187,9 @@ export function createChartSeries({
  * Detects anomalous gaps and adds zeros at start/end and between data waves
  * The step parameter is the expected/display step - we detect when actual data
  * intervals are larger than this and fill the gaps
+ * 
+ * Note: Backend overfetches by one step to capture boundary points,
+ * so if the last point is close to the end, it likely means activity continued
  */
 export function fillMetricsWithZeros(
   data: ClientTeamMetrics,
@@ -310,16 +313,20 @@ export function fillMetricsWithZeros(
   // check if we should add zeros at the end
   const lastDataPoint = sortedData[sortedData.length - 1]!
   const gapToEnd = end - lastDataPoint.timestamp
-
-  // add zeros at end if:
-  // 1. there's an anomalous gap based on EXPECTED step
-  // 2. OR the gap is more than 3x the expected step (ensures zeros for stale data)
-  // 3. OR the gap is more than 5 minutes regardless of step
-  const isEndAnomalous = gapToEnd > step * (1 + anomalousGapTolerance)
-  const shouldAddEndZeros =
-    isEndAnomalous ||
-    (step > 0 && gapToEnd >= step * 3) ||
+  
+  // check if last data point is beyond or very close to the end
+  // this indicates the backend overfetched and activity likely continued
+  const isLastPointBeyondEnd = lastDataPoint.timestamp >= end
+  const isLastPointNearBoundary = gapToEnd <= step * 0.5 // within half a step
+  
+  // be conservative about adding end zeros when data is near boundary
+  // only add if there's a significant gap or we're certain activity stopped
+  const shouldAddEndZeros = !isLastPointBeyondEnd && !isLastPointNearBoundary && (
+    // significant gap (more than 2 steps)
+    (step > 0 && gapToEnd >= step * 2) ||
+    // or very large gap (more than 5 minutes)
     gapToEnd >= 5 * 60 * 1000
+  )
 
   if (shouldAddEndZeros) {
     const suffixZeroTimestamp = lastDataPoint.timestamp + step
