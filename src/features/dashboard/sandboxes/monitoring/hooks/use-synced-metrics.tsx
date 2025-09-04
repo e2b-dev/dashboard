@@ -1,5 +1,6 @@
 'use client'
 
+import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { ParsedTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -40,47 +41,48 @@ export function useSyncedMetrics({
     timeframe.isLive,
   ]
 
-  const { data, error, isLoading, isValidating, mutate } = useSWR(
-    swrKey,
-    async ([url, teamId, start, end]: [
-      string,
-      string,
-      number,
-      number,
-      boolean,
-    ]) => {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          start,
-          end,
-        }),
-        cache: 'no-store',
-      })
+  const { data, error, isLoading, isValidating, mutate } =
+    useSWR<TeamMetricsResponse>(
+      swrKey,
+      async ([url, teamId, start, end]: [
+        string,
+        string,
+        number,
+        number,
+        boolean,
+      ]) => {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            start,
+            end,
+          }),
+          cache: 'no-store',
+        })
 
-      if (!response.ok) {
-        const { error } = await response.json()
-        throw new Error(error || 'Failed to fetch metrics')
+        if (!response.ok) {
+          const { error } = await response.json()
+          throw new Error(error || 'Failed to fetch metrics')
+        }
+
+        return response.json()
+      },
+      {
+        fallbackData: initialData,
+        keepPreviousData: true,
+        refreshInterval: shouldPoll ? TEAM_METRICS_POLLING_INTERVAL_MS : 0,
+        revalidateOnFocus: shouldPoll,
+        revalidateOnReconnect: shouldPoll,
+        revalidateIfStale: true, // always revalidate stale data
+        revalidateOnMount: true, // always fetch on mount
+        errorRetryInterval: 5000,
+        errorRetryCount: 3,
+        ...swrOptions,
       }
-
-      return response.json()
-    },
-    {
-      fallbackData: initialData,
-      keepPreviousData: true,
-      refreshInterval: shouldPoll ? TEAM_METRICS_POLLING_INTERVAL_MS : 0,
-      revalidateOnFocus: shouldPoll,
-      revalidateOnReconnect: shouldPoll,
-      revalidateIfStale: true, // always revalidate stale data
-      revalidateOnMount: true, // always fetch on mount
-      errorRetryInterval: 5000,
-      errorRetryCount: 3,
-      ...swrOptions,
-    }
-  )
+    )
 
   return {
     data: data || initialData,

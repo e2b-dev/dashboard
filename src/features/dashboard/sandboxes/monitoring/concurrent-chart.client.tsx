@@ -1,5 +1,6 @@
 'use client'
 
+import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
   formatAveragingPeriod,
@@ -15,6 +16,8 @@ import { cn } from '@/lib/utils/ui'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
 import LineChart from '@/ui/data/line-chart'
+import HelpTooltip from '@/ui/help-tooltip'
+import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
 import { TimePicker } from '@/ui/time-picker'
 import { InferSafeActionFnResult } from 'next-safe-action'
@@ -26,6 +29,7 @@ import {
   createChartSeries,
   createMonitoringChartOptions,
   createSingleValueTooltipFormatter,
+  fillMetricsWithZeros,
   transformMetricsToLineData,
 } from './chart-utils'
 import { useSyncedMetrics } from './hooks/use-synced-metrics'
@@ -75,21 +79,32 @@ export default function ConcurrentChartClient({
   }, [timeframe.start, timeframe.end, timeframe.isLive])
 
   // use synced metrics hook for consistent fetching
-  const { data, isPolling, isLoading } = useSyncedMetrics({
+  const { data, isPolling } = useSyncedMetrics({
     teamId,
     timeframe: syncedTimeframe,
     initialData,
   })
 
-  const lineData = useMemo(
-    () =>
-      transformMetricsToLineData<ClientTeamMetric>(
-        data?.metrics ?? [],
-        (d) => d.timestamp,
-        (d) => d.concurrentSandboxes
-      ),
-    [data?.metrics]
-  )
+  const lineData = useMemo(() => {
+    if (!data?.metrics || !data?.step) {
+      return []
+    }
+
+    // fill zeros before transforming to line data
+    const filledMetrics = fillMetricsWithZeros(
+      data.metrics,
+      timeframe.start,
+      timeframe.end,
+      data.step
+    )
+
+    return transformMetricsToLineData<ClientTeamMetric>(
+      filledMetrics,
+      (d) => d.timestamp,
+      (d) => d.concurrentSandboxes
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.metrics, data?.step])
 
   const average = useMemo(() => calculateAverage(lineData), [lineData])
 
@@ -152,33 +167,19 @@ export default function ConcurrentChartClient({
     [data?.step]
   )
 
-  // visualTimeframe represents the actual data range
-  // but we should use the requested timeframe for the chart axis
-  const visualTimeframe = useMemo(() => {
-    if (lineData.length === 0) {
-      return syncedTimeframe
-    }
-
-    const dataStart = lineData[0]?.x as number
-    const dataEnd = lineData[lineData.length - 1]?.x as number
-
-    // use the requested timeframe for axis, not the data range
-    return {
-      start: dataStart || syncedTimeframe.start,
-      end: dataEnd || syncedTimeframe.end,
-      isLive: syncedTimeframe.isLive,
-    }
-  }, [lineData, syncedTimeframe])
-
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 md:min-h-0">
       <div className="flex max-md:flex-col md:justify-between gap-3 md:gap-6 md:min-h-[60px]">
         <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase max-md:text-sm">
             Concurrent Sandboxes
-            {isPolling && (
-              <span className="ml-2 text-xs text-fg-tertiary">(live)</span>
-            )}
+            <HelpTooltip
+              classNames={{ icon: 'text-accent-positive-highlight' }}
+              trigger={<ReactiveLiveBadge show={isPolling} />}
+            >
+              This data is updated every{' '}
+              {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
+            </HelpTooltip>
           </span>
           <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
             <span className="prose-value-big max-md:text-2xl">
@@ -255,7 +256,11 @@ export default function ConcurrentChartClient({
         onChartReady={registerChart}
         option={{
           ...createMonitoringChartOptions({
-            timeframe: visualTimeframe,
+            timeframe: {
+              start: lineData[0]?.x as number,
+              end: lineData[lineData.length - 1]?.x as number,
+              isLive: syncedTimeframe.isLive,
+            },
           }),
           yAxis: {
             splitNumber: 3,
