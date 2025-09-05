@@ -108,7 +108,7 @@ export function InlineLiveSandboxCounter({
       ]
     : null
 
-  const { data, isLoading } = useSWR<TeamMetricsResponse | undefined>(
+  const { data } = useSWR<TeamMetricsResponse | undefined>(
     swrKey,
     async ([url, teamId]: [string, string, string]) => {
       if (!url || !teamId) return
@@ -153,23 +153,10 @@ export function InlineLiveSandboxCounter({
 
   const count = data?.metrics[data.metrics.length - 1]?.concurrentSandboxes ?? 0
 
-  if (isLoading) {
-    return (
-      <div
-        className={cn(
-          'inline-flex items-center gap-2 rounded-md bg-bg-1 px-3 py-1.5',
-          className
-        )}
-      >
-        <div className="h-4 w-16 animate-pulse rounded bg-bg-highlight" />
-      </div>
-    )
-  }
-
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2.5 rounded-md bg-bg border px-3 py-1.5',
+        'inline-flex items-center gap-2.5 rounded-md bg-bg border px-3 pb-1.5 pt-1.25',
         className
       )}
     >

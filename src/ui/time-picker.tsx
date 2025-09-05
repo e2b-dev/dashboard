@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Calendar, CheckCircle2, ChevronRight, XCircle } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import {
   memo,
   ReactNode,
@@ -12,7 +12,6 @@ import {
 } from 'react'
 import { z } from 'zod'
 
-import { STORAGE_KEYS } from '@/configs/keys'
 import { cn } from '@/lib/utils'
 import {
   formatDatetimeInput,
@@ -23,7 +22,7 @@ import type { TimeframeState } from '@/lib/utils/timeframe'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import CopyButton from './copy-button'
+import DateTimeInput from './datetime-input'
 import { LiveDot } from './live'
 import { Button } from './primitives/button'
 import { cardVariants } from './primitives/card'
@@ -42,7 +41,6 @@ import {
   FormLabel,
   FormMessage,
 } from './primitives/form'
-import { Input } from './primitives/input'
 import { RadioGroup, RadioGroupItem } from './primitives/radio-group'
 
 interface TimeOption {
@@ -333,7 +331,7 @@ const CustomTimePanel = memo(function CustomTimePanel({
                 Start Time
               </FormLabel>
               <FormControl>
-                <DateTimeInputField
+                <DateTimeInput
                   value={field.value}
                   onChange={field.onChange}
                   placeholder="e.g '2024-01-15 14:30:00' or 'now'"
@@ -374,7 +372,7 @@ const CustomTimePanel = memo(function CustomTimePanel({
                 render={({ field: endField }) => (
                   <FormControl>
                     <div className={cn(!field.value && 'opacity-50')}>
-                      <DateTimeInputField
+                      <DateTimeInput
                         value={endField.value || ''}
                         onChange={endField.onChange}
                         disabled={!field.value}
@@ -401,113 +399,6 @@ const CustomTimePanel = memo(function CustomTimePanel({
         </Button>
       </form>
     </Form>
-  )
-})
-
-// DateTimeInput field component for forms
-interface DateTimeInputFieldProps {
-  value: string
-  onChange: (value: string) => void
-  disabled?: boolean
-  placeholder?: string
-  isLive?: boolean
-  showLiveIndicator?: boolean
-}
-
-const DateTimeInputField = memo(function DateTimeInputField({
-  value,
-  onChange,
-  disabled,
-  placeholder,
-  isLive = false,
-  showLiveIndicator = false,
-}: DateTimeInputFieldProps) {
-  const [inputValue, setInputValue] = useState(value || '')
-  const [isValidDate, setIsValidDate] = useState(() => {
-    // validate initial value
-    return !!value && !!tryParseDatetime(value)
-  })
-
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value
-      setInputValue(newValue)
-      onChange(newValue)
-
-      // validate
-      const date = tryParseDatetime(newValue)
-      setIsValidDate(!!date)
-    },
-    [onChange]
-  )
-
-  // sync external value - but only when it's a meaningful change
-  useEffect(() => {
-    if (value !== inputValue && value !== '') {
-      setInputValue(value)
-      setIsValidDate(!!tryParseDatetime(value))
-    }
-  }, [value, inputValue])
-
-  const date = tryParseDatetime(inputValue)
-  const isoTimestamp = date?.toISOString() || ''
-
-  // determine display value - show 'now' for live mode when empty
-  const displayValue = isLive && !inputValue ? 'now' : inputValue
-
-  return (
-    <div className="relative">
-      <Input
-        type="text"
-        value={displayValue}
-        onChange={handleChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.stopPropagation()
-            // Allow default behavior for form submission
-          }
-        }}
-        className={cn(
-          'pr-20 h-10',
-          'border-border-subtle',
-          'placeholder:prose-label placeholder:leading-[0%]',
-          isValidDate && inputValue && 'border-accent-success-highlight',
-          !isValidDate &&
-            inputValue &&
-            inputValue.trim() &&
-            'border-accent-error-highlight'
-        )}
-      />
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-        {inputValue && inputValue.trim() ? (
-          isValidDate ? (
-            <>
-              <CopyButton
-                value={isoTimestamp}
-                variant="ghost"
-                size="iconSm"
-                className="h-7 w-7 hover:bg-transparent"
-                title="Copy ISO UTC timestamp"
-                tabIndex={-1}
-              />
-              <CheckCircle2 className="size-4 text-accent-success-highlight" />
-            </>
-          ) : (
-            <XCircle className="size-4 text-accent-error-highlight" />
-          )
-        ) : (
-          <>
-            {showLiveIndicator && isLive ? (
-              <LiveDot classNames={{ circle: 'size-3', dot: 'size-1.5' }} />
-            ) : (
-              <Calendar className="size-4 text-fg-tertiary" />
-            )}
-          </>
-        )}
-      </div>
-    </div>
   )
 })
 
@@ -613,21 +504,18 @@ export const TimePicker = memo(function TimePicker({
 
   // initialize showCustomPanel state on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL)
-      const isCustom =
-        value.mode === 'static' ||
-        (value.mode === 'live' &&
-          value.range &&
-          !timeOptions.find((opt) => opt.rangeMs === value.range))
+    const isCustom =
+      value.mode === 'static' ||
+      (value.mode === 'live' &&
+        value.range &&
+        !timeOptions.find((opt) => opt.rangeMs === value.range))
 
-      if (stored === 'true' || isCustom) {
-        setShowCustomPanel(true)
-        setIsCustomSelected(true)
-        setTimeOptionsValue('') // clear time options when custom is selected
-        // sync endEnabled with mode
-        setEndEnabled(value.mode === 'static')
-      }
+    if (isCustom) {
+      setShowCustomPanel(true)
+      setIsCustomSelected(true)
+      setTimeOptionsValue('') // clear time options when custom is selected
+      // sync endEnabled with mode
+      setEndEnabled(value.mode === 'static')
     }
     // only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -685,7 +573,6 @@ export const TimePicker = memo(function TimePicker({
   // persist custom panel state
   useEffect(() => {
     if (isCustomSelected) {
-      localStorage.setItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL, 'true')
       setShowCustomPanel(true)
     }
     // don't automatically close custom panel when time option changes from external
@@ -741,7 +628,6 @@ export const TimePicker = memo(function TimePicker({
       setTimeOptionsValue(newValue)
       setIsCustomSelected(false) // deselect custom when time option is selected
       setShowCustomPanel(false) // close custom panel when time option is selected
-      localStorage.setItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL, 'false')
 
       // find the option and create TimeframeState
       const option = timeOptions.find((opt) => opt.value === newValue)
@@ -763,7 +649,6 @@ export const TimePicker = memo(function TimePicker({
     setIsCustomSelected(true)
     setTimeOptionsValue('') // clear time options when custom is selected
     setShowCustomPanel(true)
-    localStorage.setItem(STORAGE_KEYS.TIME_PICKER_CUSTOM_PANEL, 'true')
     isUserInteractionRef.current = false // reset flag
   }, [])
 

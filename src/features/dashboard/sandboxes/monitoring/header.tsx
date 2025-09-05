@@ -59,7 +59,7 @@ export default function SandboxesMonitoringHeader({
         <BaseSubtitle>
           Sandboxes/S <br className="max-md:hidden" />
           <span className="md:hidden">per sec</span>
-          <span className="max-md:hidden">(30 sec average)</span>
+          <span className="max-md:hidden">(5 sec average)</span>
         </BaseSubtitle>
       </BaseCard>
 
@@ -71,7 +71,7 @@ export default function SandboxesMonitoringHeader({
         <BaseSubtitle>
           Concurrent <span className="max-md:hidden">Sandboxes</span>{' '}
           <br className="max-md:hidden" />
-          <span className="max-md:hidden">(30 sec average)</span>
+          <span className="max-md:hidden">(5 sec average)</span>
         </BaseSubtitle>
       </BaseCard>
 
@@ -80,7 +80,7 @@ export default function SandboxesMonitoringHeader({
           <MaxConcurrentSandboxes params={params} />
         </Suspense>
         <BaseSubtitle>
-          Max<span className="max-md:hidden">. Concurrent Sandboxes</span>
+          Max<span className="max-md:hidden"> Concurrent Sandboxes</span>
           <span className="md:hidden"> Concurrent</span>
           <br className="max-md:hidden" />
           <span className="max-md:hidden">(Last 30 Days)</span>

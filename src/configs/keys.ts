@@ -11,13 +11,6 @@ export const COOKIE_KEYS = {
 }
 
 /*
- * localStorage keys in use
- */
-export const STORAGE_KEYS = {
-  TIME_PICKER_CUSTOM_PANEL: 'e2b-time-picker-custom-panel',
-}
-
-/*
  * kv keys in use
  */
 export const KV_KEYS = {
@@ -33,13 +26,13 @@ export const KV_KEYS = {
  */
 export const SWR_KEYS = {
   // team metrics keys - all components using the same key share the same cache
-  TEAM_METRICS_RECENT: (teamId: string) => 
+  TEAM_METRICS_RECENT: (teamId: string) =>
     [`/api/teams/${teamId}/metrics`, teamId, 'recent'] as const,
-  TEAM_METRICS_MONITORING: (teamId: string, start: number, end: number) => 
+  TEAM_METRICS_MONITORING: (teamId: string, start: number, end: number) =>
     [`/api/teams/${teamId}/metrics`, teamId, 'monitoring', start, end] as const,
-  TEAM_METRICS_HISTORICAL: (teamId: string, days: number) => 
+  TEAM_METRICS_HISTORICAL: (teamId: string, days: number) =>
     [`/api/teams/${teamId}/metrics`, teamId, 'historical', days] as const,
-  
+
   // sandbox metrics keys
   SANDBOX_METRICS: (teamId: string, sandboxIds: string[]) =>
     [`/api/teams/${teamId}/sandboxes/metrics`, sandboxIds] as const,

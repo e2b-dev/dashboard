@@ -1,8 +1,7 @@
 'use client'
 
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
-import { cn, exponentialSmoothing } from '@/lib/utils'
-import { AnimatePresence, motion } from 'motion/react'
+import { cn } from '@/lib/utils'
 import HelpTooltip from './help-tooltip'
 import { Badge, BadgeProps } from './primitives/badge'
 
@@ -11,19 +10,26 @@ interface LiveDotProps {
     circle?: string
     dot?: string
   }
+  paused?: boolean
 }
 
-export function LiveDot({ classNames }: LiveDotProps) {
+export function LiveDot({ classNames, paused = false }: LiveDotProps) {
   return (
     <div
       className={cn(
-        'rounded-full size-3 bg-accent-positive-highlight/30 flex items-center justify-content p-0.75',
+        'rounded-full transition-all duration-200 size-3 bg-accent-positive-highlight/30 flex items-center justify-content p-0.75',
+        {
+          'bg-black/00': paused,
+        },
         classNames?.circle
       )}
     >
       <div
         className={cn(
-          'size-full rounded-full bg-accent-positive-highlight',
+          'size-full rounded-full bg-accent-positive-highlight transition-all duration-200',
+          {
+            'bg-icon-secondary': paused,
+          },
           classNames?.dot
         )}
       />
@@ -34,17 +40,28 @@ export function LiveDot({ classNames }: LiveDotProps) {
 interface LiveBadgeProps extends BadgeProps {
   className?: string
   tooltip?: string
+  paused?: boolean
 }
 
-export function LiveBadge({ className, ...props }: LiveBadgeProps) {
+export function LiveBadge({
+  className,
+  paused = false,
+  ...props
+}: LiveBadgeProps) {
   return (
     <Badge
       variant="positive"
-      className={cn('prose-label', className)}
+      className={cn(
+        'prose-label transition-all duration-200',
+        {
+          'text-fg-secondary bg-fill': paused,
+        },
+        className
+      )}
       {...props}
     >
-      <LiveDot />
-      LIVE
+      <LiveDot paused={paused} />
+      {paused ? 'PAUSED' : 'LIVE'}
     </Badge>
   )
 }
@@ -71,38 +88,17 @@ export function ReactiveLiveBadge({
   ...props
 }: ReactiveLiveBadgeProps) {
   return (
-    <AnimatePresence mode="wait">
-      {show && (
-        <motion.span
-          key="live-badge-start-rate"
-          variants={{
-            hidden: {
-              opacity: 0,
-              filter: 'blur(4px)',
-            },
-            visible: {
-              opacity: 1,
-              filter: 'blur(0px)',
-            },
-          }}
-          transition={{
-            duration: 0.3,
-            ease: exponentialSmoothing(5),
-          }}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          className="ml-3"
-        >
-          <HelpTooltip
-            classNames={{ icon: 'text-accent-positive-highlight' }}
-            trigger={<LiveBadge size="sm" {...props} />}
-          >
-            This data tends to be 30 seconds in the past, but is requested every{' '}
-            {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
-          </HelpTooltip>
-        </motion.span>
-      )}
-    </AnimatePresence>
+    <HelpTooltip
+      classNames={{
+        icon: show ? 'text-accent-positive-highlight' : 'text-icon-secondary',
+      }}
+      trigger={
+        <LiveBadge size="sm" paused={!show} className={className} {...props} />
+      }
+    >
+      {show
+        ? `This data tends to be 30 seconds in the past, but is requested every ${TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.`
+        : 'Live updates are currently paused.'}
+    </HelpTooltip>
   )
 }

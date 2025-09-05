@@ -10,7 +10,7 @@ export default function SandboxesHeaderInjectableCatchAllDefault({
   return (
     <LiveSandboxCounterServer
       params={params}
-      className="top-5 absolute right-15"
+      className="top-5 absolute right-17 max-md:hidden"
     />
   )
 }
