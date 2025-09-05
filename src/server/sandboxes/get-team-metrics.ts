@@ -1,19 +1,16 @@
 import 'server-only'
 
 import { TeamMetricsRequestSchema } from '@/app/api/teams/[teamId]/metrics/types'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   calculateTeamMetricsStep,
   MOCK_TEAM_METRICS_DATA,
 } from '@/configs/mock-data'
 import { authActionClient } from '@/lib/clients/action'
-import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-
-import { cache } from 'react'
 import { z } from 'zod'
+import getTeamMetricsMemoized from './get-team-metrics-memo'
 
 export const GetTeamMetricsSchema = z
   .object({
@@ -112,28 +109,3 @@ export const getTeamMetrics = authActionClient
       return handleDefaultInfraError(status)
     }
   })
-
-const getTeamMetricsMemoized = cache(
-  async (
-    accessToken: string,
-    teamId: string,
-    startDate: number,
-    endDate: number
-  ) => {
-    return await infra.GET('/teams/{teamID}/metrics', {
-      params: {
-        path: {
-          teamID: teamId,
-        },
-        query: {
-          start: startDate,
-          end: endDate,
-        },
-      },
-      headers: {
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-      },
-      cache: 'no-store',
-    })
-  }
-)

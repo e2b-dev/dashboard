@@ -2,13 +2,14 @@
 
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
+import { SWR_KEYS } from '@/configs/keys'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { NonUndefined } from 'react-hook-form'
 import useSWR from 'swr'
 
-// header metrics always show last 30 seconds regardless of selected time range
+// header metrics always show last 60 seconds regardless of selected time range
 export default function useHeaderMetricsSWR(
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
@@ -16,23 +17,20 @@ export default function useHeaderMetricsSWR(
 ) {
   const selectedTeam = useSelectedTeam()
 
+  // use shared key for recent metrics - all components will share the cache
   const swrKey = selectedTeam
-    ? [
-        `/api/teams/${selectedTeam?.id}/metrics/header`,
-        selectedTeam?.id,
-        'header-metrics',
-      ]
+    ? SWR_KEYS.TEAM_METRICS_RECENT(selectedTeam.id)
     : null
 
   return useSWR<typeof initialData | undefined>(
     swrKey,
-    async ([url, teamId]: [string, string, string]) => {
+    async ([url, teamId, type]: readonly unknown[]) => {
       if (!url || !teamId) return
 
       const fetchEnd = Date.now()
       const fetchStart = fetchEnd - 60_000
 
-      const response = await fetch(url.replace('/header', ''), {
+      const response = await fetch(url as string, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,6 +59,7 @@ export default function useHeaderMetricsSWR(
       fallbackData: initialData,
       shouldRetryOnError: false,
       refreshInterval: TEAM_METRICS_POLLING_INTERVAL_MS,
+      dedupingInterval: 10000, // dedupe requests within 10s
       keepPreviousData: true,
       revalidateOnMount: true,
       revalidateIfStale: true,

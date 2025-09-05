@@ -1,5 +1,5 @@
 import { l } from '@/lib/clients/logger/logger'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { Suspense } from 'react'
@@ -31,14 +31,14 @@ async function LiveSandboxCounterResolver({
 
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const now = Date.now()
-  const end = now
-  const start = end - 60_000 // last 60 seconds
+  // use request-consistent timestamp for cache deduplication
+  const now = getNowMemo()
+  const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,
     startDate: start,
-    endDate: end,
+    endDate: now,
   })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {

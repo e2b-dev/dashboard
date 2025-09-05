@@ -1,8 +1,9 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
 import { formatNumber } from '@/lib/utils/formatting'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
+import { ClientTeamMetric } from '@/types/sandboxes.types'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -99,8 +100,6 @@ function getTeamMetricsLast30Days(teamId: string) {
 
 // Components
 
-const now = Date.now()
-
 export const ConcurrentSandboxes = async ({
   params,
 }: {
@@ -109,14 +108,15 @@ export const ConcurrentSandboxes = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const end = now
-  const start = end - 60_000
+  // use request-consistent timestamp for cache deduplication
+  const now = getNowMemo()
+  const start = now - 60_000
 
   const [teamMetricsResult, tierLimits] = await Promise.all([
     getTeamMetrics({
       teamId,
       startDate: start,
-      endDate: end,
+      endDate: now,
     }),
     getTeamTierLimits({ teamId }),
   ])
@@ -146,13 +146,14 @@ export const SandboxesStartRate = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const end = now
-  const start = end - 60_000
+  // use same request-consistent timestamp as ConcurrentSandboxes
+  const now = getNowMemo()
+  const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
     teamId,
     startDate: start,
-    endDate: end,
+    endDate: now,
   })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -193,7 +194,7 @@ export const MaxConcurrentSandboxes = async ({
 
   const concurrentSandboxes = Math.max(
     ...teamMetricsResult.data.metrics.map(
-      (item) => item.concurrentSandboxes ?? 0
+      (item: ClientTeamMetric) => item.concurrentSandboxes ?? 0
     )
   )
 

@@ -2,6 +2,7 @@
 
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
+import { SWR_KEYS } from '@/configs/keys'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { formatNumber } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
@@ -27,23 +28,20 @@ export function LiveSandboxCounterClient({
 }: LiveSandboxCounterClientProps) {
   const selectedTeam = useSelectedTeam()
 
+  // use shared key - will share cache with header metrics
   const swrKey = selectedTeam
-    ? [
-        `/api/teams/${selectedTeam?.id}/metrics/live-counter`,
-        selectedTeam?.id,
-        'live-counter',
-      ]
+    ? SWR_KEYS.TEAM_METRICS_RECENT(selectedTeam.id)
     : null
 
   const { data } = useSWR<typeof initialData | undefined>(
     swrKey,
-    async ([url, teamId]: [string, string, string]) => {
+    async ([url, teamId, type]: readonly unknown[]) => {
       if (!url || !teamId) return
 
       const fetchEnd = Date.now()
       const fetchStart = fetchEnd - 60_000
 
-      const response = await fetch(url.replace('/live-counter', ''), {
+      const response = await fetch(url as string, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,6 +70,7 @@ export function LiveSandboxCounterClient({
       fallbackData: initialData,
       shouldRetryOnError: false,
       refreshInterval: polling ? TEAM_METRICS_POLLING_INTERVAL_MS : 0,
+      dedupingInterval: 10000, // dedupe requests within 10s
       keepPreviousData: true,
       revalidateOnMount: true,
       revalidateIfStale: true,
