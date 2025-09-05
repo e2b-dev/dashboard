@@ -144,7 +144,7 @@ export function fillTeamMetricsWithZeros(
         const suffixZeroTimestamp = currentPoint.timestamp + expectedStep
         if (
           suffixZeroTimestamp < nextPoint.timestamp &&
-          suffixZeroTimestamp > TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
+          suffixZeroTimestamp - currentPoint.timestamp > TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
         ) {
           result.push({
             timestamp: suffixZeroTimestamp,
