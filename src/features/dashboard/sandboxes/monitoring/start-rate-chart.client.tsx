@@ -133,8 +133,8 @@ export default function StartRateChartClient({
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
-              start: lineData[0]?.x as number,
-              end: lineData[lineData.length - 1]?.x as number,
+              start: lineData.length > 0 ? (lineData[0]?.x as number) : timeframe.start,
+              end: lineData.length > 0 ? (lineData[lineData.length - 1]?.x as number) : timeframe.end,
               isLive: syncedTimeframe.isLive,
             },
           }),

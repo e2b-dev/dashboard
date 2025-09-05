@@ -72,6 +72,10 @@ export function calculateYAxisMax(
   limit?: number,
   scaleFactor: number = 1.25
 ): number {
+  if (data.length === 0) {
+    return limit !== undefined ? limit : 10 // Default y-axis max for empty data
+  }
+  
   const maxDataValue = Math.max(...data.map((d) => d.y || 0))
   const scaledValue = maxDataValue * scaleFactor
 
