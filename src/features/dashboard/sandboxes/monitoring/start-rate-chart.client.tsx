@@ -81,9 +81,9 @@ export default function StartRateChartClient({
   const average = useMemo(() => calculateAverage(lineData), [lineData])
 
   const cssVars = useCssVars([
-    '--graph-6',
-    '--graph-area-6-from',
-    '--graph-area-6-to',
+    '--bg-inverted',
+    '--graph-area-fg-from',
+    '--graph-area-fg-to',
   ] as const)
 
   const tooltipFormatter = useMemo(
@@ -91,7 +91,7 @@ export default function StartRateChartClient({
       createSingleValueTooltipFormatter({
         step: data?.step || 0,
         label: 'sandboxes/s',
-        valueClassName: 'text-graph-6',
+        valueClassName: 'text-accent-positive-highlight',
       }),
     [data?.step]
   )
@@ -153,10 +153,10 @@ export default function StartRateChartClient({
             id: 'rate',
             name: 'Rate',
             data: lineData,
-            lineColor: cssVars['--graph-6'],
+            lineColor: cssVars['--bg-inverted'],
             areaColors: {
-              from: cssVars['--graph-area-6-from'],
-              to: cssVars['--graph-area-6-to'],
+              from: cssVars['--graph-area-fg-from'],
+              to: cssVars['--graph-area-fg-to'],
             },
           }),
         ]}
