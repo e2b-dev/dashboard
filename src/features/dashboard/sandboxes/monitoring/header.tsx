@@ -4,7 +4,7 @@ import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
-import { LiveBadge } from '@/ui/live'
+import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { AlertTriangle } from 'lucide-react'
 import { Suspense } from 'react'
@@ -50,7 +50,7 @@ export default function SandboxesMonitoringHeader({
   return (
     <div className="flex md:flex-row flex-col items-center border-b w-full md:min-h-52 max-md:py-2">
       <BaseCard>
-        <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
+        <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
 
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <SandboxesStartRate params={params} />
@@ -63,7 +63,7 @@ export default function SandboxesMonitoringHeader({
       </BaseCard>
 
       <BaseCard>
-        <LiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
+        <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <ConcurrentSandboxes params={params} />
         </Suspense>

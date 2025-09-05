@@ -1,0 +1,184 @@
+'use client'
+
+import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
+import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { formatNumber } from '@/lib/utils/formatting'
+import { cn } from '@/lib/utils/ui'
+import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { SemiLiveBadge } from '@/ui/live'
+import { InferSafeActionFnResult } from 'next-safe-action'
+import { NonUndefined } from 'react-hook-form'
+import useSWR from 'swr'
+import { LiveSandboxCounter } from './live-counter'
+
+interface LiveSandboxCounterClientProps {
+  initialData: NonUndefined<
+    InferSafeActionFnResult<typeof getTeamMetrics>['data']
+  >
+  className?: string
+  polling?: boolean
+}
+
+export function LiveSandboxCounterClient({
+  initialData,
+  className,
+  polling = true,
+}: LiveSandboxCounterClientProps) {
+  const selectedTeam = useSelectedTeam()
+
+  const swrKey = selectedTeam
+    ? [
+        `/api/teams/${selectedTeam?.id}/metrics/live-counter`,
+        selectedTeam?.id,
+        'live-counter',
+      ]
+    : null
+
+  const { data } = useSWR<typeof initialData | undefined>(
+    swrKey,
+    async ([url, teamId]: [string, string, string]) => {
+      if (!url || !teamId) return
+
+      const fetchEnd = Date.now()
+      const fetchStart = fetchEnd - 60_000
+
+      const response = await fetch(url.replace('/live-counter', ''), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          start: fetchStart,
+          end: fetchEnd,
+        }),
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const { error } = await response.json()
+        throw new Error(error || 'Failed to fetch metrics')
+      }
+
+      const responseData = (await response.json()) as TeamMetricsResponse
+
+      if (!responseData.metrics) {
+        return
+      }
+
+      return responseData
+    },
+    {
+      fallbackData: initialData,
+      shouldRetryOnError: false,
+      refreshInterval: polling ? TEAM_METRICS_POLLING_INTERVAL_MS : 0,
+      keepPreviousData: true,
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    }
+  )
+
+  const lastConcurrentSandboxes =
+    data?.metrics[data.metrics.length - 1]?.concurrentSandboxes ?? 0
+
+  return (
+    <LiveSandboxCounter count={lastConcurrentSandboxes} className={className} />
+  )
+}
+
+// inline version that can be embedded in existing layouts
+interface InlineLiveSandboxCounterProps {
+  teamIdOrSlug?: string
+  className?: string
+}
+
+export function InlineLiveSandboxCounter({
+  teamIdOrSlug,
+  className,
+}: InlineLiveSandboxCounterProps) {
+  const selectedTeam = useSelectedTeam()
+  const teamId = teamIdOrSlug || selectedTeam?.id
+
+  const swrKey = teamId
+    ? [
+        `/api/teams/${teamId}/metrics/inline-live`,
+        teamId,
+        'inline-live-counter',
+      ]
+    : null
+
+  const { data, isLoading } = useSWR<TeamMetricsResponse | undefined>(
+    swrKey,
+    async ([url, teamId]: [string, string, string]) => {
+      if (!url || !teamId) return
+
+      const fetchEnd = Date.now()
+      const fetchStart = fetchEnd - 60_000
+
+      const response = await fetch(url.replace('/inline-live', ''), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          start: fetchStart,
+          end: fetchEnd,
+        }),
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        return undefined
+      }
+
+      const responseData = (await response.json()) as TeamMetricsResponse
+
+      if (!responseData.metrics) {
+        return undefined
+      }
+
+      return responseData
+    },
+    {
+      shouldRetryOnError: false,
+      refreshInterval: TEAM_METRICS_POLLING_INTERVAL_MS,
+      keepPreviousData: true,
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    }
+  )
+
+  const count = data?.metrics[data.metrics.length - 1]?.concurrentSandboxes ?? 0
+
+  if (isLoading) {
+    return (
+      <div
+        className={cn(
+          'inline-flex items-center gap-2 rounded-md bg-bg-1 px-3 py-1.5',
+          className
+        )}
+      >
+        <div className="h-4 w-16 animate-pulse rounded bg-bg-highlight" />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        'inline-flex items-center gap-2.5 rounded-md bg-bg border px-3 py-1.5',
+        className
+      )}
+    >
+      <SemiLiveBadge />
+      <span className="prose-body-highlight">{formatNumber(count)}</span>
+      <span className="prose-label text-fg-tertiary uppercase">
+        concurrent sandboxes
+      </span>
+    </div>
+  )
+}

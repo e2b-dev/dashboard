@@ -1,7 +1,9 @@
 'use client'
 
+import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { cn, exponentialSmoothing } from '@/lib/utils'
 import { AnimatePresence, motion } from 'motion/react'
+import HelpTooltip from './help-tooltip'
 import { Badge, BadgeProps } from './primitives/badge'
 
 interface LiveDotProps {
@@ -47,6 +49,18 @@ export function LiveBadge({ className, ...props }: LiveBadgeProps) {
   )
 }
 
+export function SemiLiveBadge({ className, ...props }: LiveBadgeProps) {
+  return (
+    <HelpTooltip
+      classNames={{ icon: 'text-accent-positive-highlight' }}
+      trigger={<LiveBadge size="sm" className={className} {...props} />}
+    >
+      This data tends to be 30 seconds in the past, but is requested every{' '}
+      {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
+    </HelpTooltip>
+  )
+}
+
 interface ReactiveLiveBadgeProps extends LiveBadgeProps {
   show: boolean
 }
@@ -80,7 +94,13 @@ export function ReactiveLiveBadge({
           exit="hidden"
           className="ml-3"
         >
-          <LiveBadge size="sm" {...props} />
+          <HelpTooltip
+            classNames={{ icon: 'text-accent-positive-highlight' }}
+            trigger={<LiveBadge size="sm" {...props} />}
+          >
+            This data tends to be 30 seconds in the past, but is requested every{' '}
+            {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
+          </HelpTooltip>
         </motion.span>
       )}
     </AnimatePresence>

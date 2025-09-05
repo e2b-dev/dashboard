@@ -11,6 +11,7 @@ export default async function SandboxesLayout({
   children,
   monitoring,
   list,
+  params,
 }: SandboxesLayoutProps) {
   return (
     <SandboxesTabs>

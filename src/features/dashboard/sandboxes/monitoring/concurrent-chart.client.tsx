@@ -1,6 +1,5 @@
 'use client'
 
-import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
   formatAveragingPeriod,
@@ -16,7 +15,6 @@ import { cn } from '@/lib/utils/ui'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
 import LineChart from '@/ui/data/line-chart'
-import HelpTooltip from '@/ui/help-tooltip'
 import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
 import { TimePicker } from '@/ui/time-picker'
@@ -188,13 +186,7 @@ export default function ConcurrentChartClient({
         <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase max-md:text-sm">
             Concurrent Sandboxes
-            <HelpTooltip
-              classNames={{ icon: 'text-accent-positive-highlight' }}
-              trigger={<ReactiveLiveBadge show={isPolling} />}
-            >
-              This data is updated every{' '}
-              {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
-            </HelpTooltip>
+            <ReactiveLiveBadge show={isPolling} />
           </span>
           <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
             <span className="prose-value-big max-md:text-2xl">
@@ -293,8 +285,14 @@ export default function ConcurrentChartClient({
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
-              start: lineData.length > 0 ? (lineData[0]?.x as number) : timeframe.start,
-              end: lineData.length > 0 ? (lineData[lineData.length - 1]?.x as number) : timeframe.end,
+              start:
+                lineData.length > 0
+                  ? (lineData[0]?.x as number)
+                  : timeframe.start,
+              end:
+                lineData.length > 0
+                  ? (lineData[lineData.length - 1]?.x as number)
+                  : timeframe.end,
               isLive: syncedTimeframe.isLive,
             },
           }),
