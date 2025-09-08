@@ -57,7 +57,7 @@ export default function SandboxesMonitoringHeader({
           <SandboxesStartRate params={params} />
         </Suspense>
         <BaseSubtitle>
-          Sandboxes/S <br className="max-md:hidden" />
+          Start Rate per Second <br className="max-md:hidden" />
           <span className="md:hidden">per sec</span>
           <span className="max-md:hidden">(5 sec average)</span>
         </BaseSubtitle>

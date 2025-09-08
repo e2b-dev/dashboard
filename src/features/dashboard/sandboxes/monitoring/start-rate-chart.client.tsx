@@ -98,7 +98,7 @@ export default function StartRateChartClient({
     <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
       <div className="md:min-h-[60px] flex flex-col justify-end">
         <span className="prose-label-highlight uppercase max-md:text-sm">
-          Sandboxes/S
+          Start Rate per Second
           <ReactiveLiveBadge show={isPolling} className="ml-3" />
         </span>
         <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">

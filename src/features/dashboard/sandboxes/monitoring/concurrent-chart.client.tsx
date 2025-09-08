@@ -30,7 +30,6 @@ import {
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
-  createSingleValueTooltipFormatter,
   fillMetricsWithZeros,
   transformMetricsToLineData,
 } from './chart-utils'
@@ -161,23 +160,12 @@ export default function ConcurrentChartClient({
     setTimeRange(range as TimeRangeKey)
   }
 
-  const tooltipFormatter = useMemo(
-    () =>
-      createSingleValueTooltipFormatter({
-        step: data?.step || 0,
-        label: (value: number) =>
-          value === 1 ? 'concurrent sandbox' : 'concurrent sandboxes',
-        valueClassName: 'text-accent-positive-highlight',
-      }),
-    [data?.step]
-  )
-
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 md:min-h-0">
       <div className="flex max-md:flex-col md:justify-between gap-2 md:gap-6 md:min-h-[60px]">
         <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase max-md:text-sm">
-            Concurrent Sandboxes
+            Concurrent
             <ReactiveLiveBadge show={isPolling} className="ml-3" />
           </span>
           <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
