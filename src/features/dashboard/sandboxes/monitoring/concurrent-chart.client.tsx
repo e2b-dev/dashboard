@@ -294,6 +294,7 @@ export default function ConcurrentChartClient({
         group="sandboxes-monitoring"
         onChartReady={registerChart}
         duration={syncedTimeframe.duration}
+        syncAxisPointers={true}
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
@@ -313,9 +314,7 @@ export default function ConcurrentChartClient({
             max: calculateYAxisMax(lineData, concurrentInstancesLimit || 100),
           },
           tooltip: {
-            show: true,
-            trigger: 'axis',
-            formatter: tooltipFormatter,
+            show: false,
           },
         }}
         data={[

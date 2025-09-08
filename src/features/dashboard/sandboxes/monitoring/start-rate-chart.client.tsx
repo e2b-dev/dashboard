@@ -122,6 +122,7 @@ export default function StartRateChartClient({
         group="sandboxes-monitoring"
         onChartReady={registerChart}
         duration={syncedTimeframe.duration}
+        syncAxisPointers={true}
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
@@ -141,9 +142,7 @@ export default function StartRateChartClient({
             max: calculateYAxisMax(lineData),
           },
           tooltip: {
-            show: true,
-            trigger: 'axis',
-            formatter: tooltipFormatter,
+            show: false,
           },
         }}
         data={[

@@ -60,6 +60,9 @@ export interface LineChartProps {
 
   /** Custom handler for chart click – receives clicked data point */
   onChartClick?: (params: { timestamp: number; value: number }) => void
+
+  /** Synchronize y-axis pointer to x-axis pointer position */
+  syncAxisPointers?: boolean
 }
 
 export default function LineChart({
@@ -73,8 +76,10 @@ export default function LineChart({
   group,
   duration,
   onChartClick,
+  syncAxisPointers = false,
 }: LineChartProps) {
   const ref = useRef<ReactECharts | null>(null)
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const { resolvedTheme } = useTheme()
   const breakpoint = useBreakpoint()
 
@@ -499,7 +504,7 @@ export default function LineChart({
             borderRadius: 0,
             fontSize: responsiveConfig.fontSize,
           },
-          snap: true,
+          snap: !syncAxisPointers, // disable snap when syncing
         },
         splitLine: {
           lineStyle: { color: cssVars['--stroke'], type: 'dashed' },
@@ -535,9 +540,63 @@ export default function LineChart({
     resolvedTheme,
     getResponsiveAxisConfig,
     createSplitLineInterval,
+    syncAxisPointers,
   ])
 
+  // helper to find y-value for given x-value
+  const findYValueAtX = useCallback(
+    (xValue: number) => {
+      if (!data || data.length === 0) return null
+
+      // search in first data series
+      const series = data[0]
+      if (!series?.data) return null
+
+      // binary search for efficiency (assuming sorted data)
+      let left = 0
+      let right = series.data.length - 1
+      let closestIdx = 0
+      let minDiff = Infinity
+
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2)
+        const point = series.data[mid]
+        if (!point) continue
+
+        const pointX =
+          point.x instanceof Date
+            ? point.x.getTime()
+            : typeof point.x === 'number'
+              ? point.x
+              : parseFloat(String(point.x))
+
+        if (isNaN(pointX)) continue
+
+        const diff = Math.abs(pointX - xValue)
+
+        if (diff < minDiff) {
+          minDiff = diff
+          closestIdx = mid
+        }
+
+        if (pointX < xValue) {
+          left = mid + 1
+        } else if (pointX > xValue) {
+          right = mid - 1
+        } else {
+          // exact match
+          return point.y
+        }
+      }
+
+      return series.data[closestIdx]?.y ?? null
+    },
+    [data]
+  )
+
   const onChartReadyCallback = (chart: echarts.ECharts) => {
+    chartInstanceRef.current = chart
+
     chart.on('click', (params) => {
       console.log('params', params)
       if (params.type === 'click' && onChartClick) {
@@ -548,6 +607,50 @@ export default function LineChart({
         }
       }
     })
+
+    // sync y-axis pointer when x-axis pointer moves
+    if (syncAxisPointers) {
+      chart.on('updateAxisPointer', (event: unknown) => {
+        const axisEvent = event as {
+          axesInfo?: Array<{
+            axisDim?: string
+            value?: number
+          }>
+        }
+
+        // Look for x-axis info
+        if (axisEvent.axesInfo && axisEvent.axesInfo.length > 0) {
+          const xAxisInfo = axisEvent.axesInfo.find(
+            (info) => info.axisDim === 'x'
+          )
+
+          if (xAxisInfo && typeof xAxisInfo.value !== 'undefined') {
+            // find the corresponding y-value at this x position
+            const yValue = findYValueAtX(xAxisInfo.value)
+
+            if (yValue !== null) {
+              // update y-axis pointer to match x-axis data point
+              chart.setOption(
+                {
+                  yAxis: {
+                    axisPointer: {
+                      value: yValue,
+                      label: {
+                        formatter: formatNumber(yValue).toString(),
+                      },
+                    },
+                  },
+                },
+                {
+                  lazyUpdate: true,
+                  silent: true,
+                }
+              )
+            }
+          }
+        }
+      })
+    }
 
     // activate datazoom
     chart.dispatchAction(
