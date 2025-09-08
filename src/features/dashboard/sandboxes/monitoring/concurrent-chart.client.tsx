@@ -22,8 +22,9 @@ import CopyButton from '@/ui/copy-button'
 import LineChart from '@/ui/data/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
+import * as echarts from 'echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { NonUndefined } from 'react-hook-form'
 import {
   calculateAverage,
@@ -61,13 +62,28 @@ export default function ConcurrentChartClient({
   initialTimeframe,
   concurrentInstancesLimit,
 }: ConcurrentChartProps) {
+  const chartRef = useRef<echarts.ECharts | null>(null)
+  const isRegisteredRef = useRef(false)
+
   const {
     timeframe,
     setStaticMode,
     setTimeRange,
     setCustomRange,
     registerChart,
+    unregisterChart,
   } = useTeamMetrics()
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (chartRef.current && isRegisteredRef.current) {
+        unregisterChart(chartRef.current)
+        chartRef.current = null
+        isRegisteredRef.current = false
+      }
+    }
+  }, [unregisterChart])
 
   // create a complete timeframe object for the hook
   // always use store timeframe as it's the source of truth
@@ -280,7 +296,24 @@ export default function ConcurrentChartClient({
         }}
         yAxisLimit={concurrentInstancesLimit}
         group="sandboxes-monitoring"
-        onChartReady={registerChart}
+        onChartReady={(chart) => {
+          // if we have a previous chart instance that's different, unregister it
+          if (
+            chartRef.current &&
+            chartRef.current !== chart &&
+            isRegisteredRef.current
+          ) {
+            unregisterChart(chartRef.current)
+            isRegisteredRef.current = false
+          }
+
+          // only register if this is a new chart instance
+          if (!isRegisteredRef.current || chartRef.current !== chart) {
+            chartRef.current = chart
+            registerChart(chart)
+            isRegisteredRef.current = true
+          }
+        }}
         duration={syncedTimeframe.duration}
         syncAxisPointers={true}
         option={{
@@ -302,7 +335,10 @@ export default function ConcurrentChartClient({
             max: calculateYAxisMax(lineData, concurrentInstancesLimit || 100),
           },
           tooltip: {
-            show: false,
+            trigger: 'axis' as const,
+            axisPointer: {
+              type: 'line' as const,
+            },
           },
         }}
         data={[

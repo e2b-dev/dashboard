@@ -57,9 +57,6 @@ export interface LineChartProps {
   /** Timeframe duration in milliseconds (for smart time formatting) */
   duration?: number
 
-  /** Custom handler for chart click – receives clicked data point */
-  onChartClick?: (params: { timestamp: number; value: number }) => void
-
   /** Synchronize y-axis pointer to x-axis pointer position */
   syncAxisPointers?: boolean
 }
@@ -74,7 +71,6 @@ export default function LineChart({
   onChartReady,
   group,
   duration,
-  onChartClick,
   syncAxisPointers = false,
 }: LineChartProps) {
   const ref = useRef<ReactECharts | null>(null)
@@ -231,7 +227,7 @@ export default function LineChart({
               emphasis: {
                 disabled: true,
                 tooltip: {
-                  show: true,
+                  show: false,
                 },
               },
               data: [
@@ -379,6 +375,10 @@ export default function LineChart({
         shadowOffsetX: 0,
         shadowOffsetY: 0,
         shadowColor: 'transparent',
+        trigger: 'axis' as const,
+        axisPointer: {
+          type: 'line' as const,
+        },
       },
       grid: {
         left: calculateGridLeft(),
@@ -570,87 +570,78 @@ export default function LineChart({
     },
     [data]
   )
+  const onChartReadyCallback = useCallback(
+    (chart: echarts.ECharts) => {
+      chartInstanceRef.current = chart
 
-  const onChartReadyCallback = (chart: echarts.ECharts) => {
-    chartInstanceRef.current = chart
+      // sync y-axis pointer when x-axis pointer moves
+      if (syncAxisPointers) {
+        chart.on('updateAxisPointer', (event: unknown) => {
+          const axisEvent = event as {
+            axesInfo?: Array<{
+              axisDim?: string
+              value?: number
+            }>
+          }
 
-    chart.on('click', (params) => {
-      console.log('params', params)
-      if (params.type === 'click' && onChartClick) {
-        const timestamp = params.x
-        const value = params.y
-        if (timestamp && value) {
-          onChartClick({ timestamp, value })
-        }
-      }
-    })
+          // Look for x-axis info
+          if (axisEvent.axesInfo && axisEvent.axesInfo.length > 0) {
+            const xAxisInfo = axisEvent.axesInfo.find(
+              (info) => info.axisDim === 'x'
+            )
 
-    // sync y-axis pointer when x-axis pointer moves
-    if (syncAxisPointers) {
-      chart.on('updateAxisPointer', (event: unknown) => {
-        const axisEvent = event as {
-          axesInfo?: Array<{
-            axisDim?: string
-            value?: number
-          }>
-        }
+            if (xAxisInfo && typeof xAxisInfo.value !== 'undefined') {
+              // find the corresponding y-value at this x position
+              const yValue = findYValueAtX(xAxisInfo.value)
 
-        // Look for x-axis info
-        if (axisEvent.axesInfo && axisEvent.axesInfo.length > 0) {
-          const xAxisInfo = axisEvent.axesInfo.find(
-            (info) => info.axisDim === 'x'
-          )
-
-          if (xAxisInfo && typeof xAxisInfo.value !== 'undefined') {
-            // find the corresponding y-value at this x position
-            const yValue = findYValueAtX(xAxisInfo.value)
-
-            if (yValue !== null) {
-              // update y-axis pointer to match x-axis data point
-              chart.setOption(
-                {
-                  yAxis: {
-                    axisPointer: {
-                      value: yValue,
-                      label: {
-                        formatter: formatNumber(yValue).toString(),
+              if (yValue !== null) {
+                // update y-axis pointer to match x-axis data point
+                chart.setOption(
+                  {
+                    yAxis: {
+                      axisPointer: {
+                        value: yValue,
+                        label: {
+                          formatter: formatNumber(yValue).toString(),
+                        },
                       },
                     },
                   },
-                },
-                {
-                  lazyUpdate: true,
-                  silent: true,
-                }
-              )
+                  {
+                    lazyUpdate: true,
+                    silent: true,
+                  }
+                )
+              }
             }
           }
-        }
-      })
-    }
-
-    // activate datazoom
-    chart.dispatchAction(
-      {
-        type: 'takeGlobalCursor',
-        key: 'dataZoomSelect',
-        dataZoomSelectActive: true,
-      },
-      {
-        flush: true,
+        })
       }
-    )
 
-    // Set the group if provided for chart connection
-    if (group) {
-      chart.group = group
-    }
+      // activate datazoom
+      chart.dispatchAction(
+        {
+          type: 'takeGlobalCursor',
+          key: 'dataZoomSelect',
+          dataZoomSelectActive: true,
+        },
+        {
+          flush: true,
+        }
+      )
 
-    // Call the external callback if provided
-    if (onChartReady) {
-      onChartReady(chart)
-    }
-  }
+      // Set the group if provided for chart connection
+      if (group) {
+        chart.group = group
+      }
+
+      // Call the external callback if provided
+      if (onChartReady) {
+        onChartReady(chart)
+      }
+    },
+    [findYValueAtX, group, onChartReady, syncAxisPointers]
+  )
 
   return (
     <ReactECharts
@@ -675,36 +666,6 @@ export default function LineChart({
 
             if (startValue !== undefined && endValue !== undefined) {
               onZoomEnd(Math.round(startValue), Math.round(endValue))
-            }
-          }
-        },
-
-        click: (params: {
-          componentType: string
-          value: unknown
-          data: { x: unknown; y: unknown } & { [key: string]: unknown }
-        }) => {
-          // handle click on data points
-          if (
-            onChartClick &&
-            params.componentType === 'series' &&
-            params.value
-          ) {
-            const timestamp = Array.isArray(params.value)
-              ? params.value[0]
-              : params.data?.x || (params.data?.[0] as number)
-            const value = Array.isArray(params.value)
-              ? params.value[1]
-              : params.data?.y || (params.data?.[1] as number)
-
-            if (timestamp !== undefined && value !== undefined) {
-              onChartClick({
-                timestamp:
-                  typeof timestamp === 'number'
-                    ? timestamp
-                    : new Date(timestamp).getTime(),
-                value,
-              })
             }
           }
         },

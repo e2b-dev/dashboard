@@ -7,15 +7,15 @@ import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
 import LineChart from '@/ui/data/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
+import * as echarts from 'echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { NonUndefined } from 'react-hook-form'
 import {
   calculateAverage,
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
-  createSingleValueTooltipFormatter,
   fillMetricsWithZeros,
   transformMetricsToLineData,
 } from './chart-utils'
@@ -35,7 +35,20 @@ export default function StartRateChartClient({
   initialData,
   initialTimeframe,
 }: StartRateChartProps) {
-  const { timeframe, registerChart } = useTeamMetrics()
+  const chartRef = useRef<echarts.ECharts | null>(null)
+  const isRegisteredRef = useRef(false)
+  const { timeframe, registerChart, unregisterChart } = useTeamMetrics()
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (chartRef.current && isRegisteredRef.current) {
+        unregisterChart(chartRef.current)
+        chartRef.current = null
+        isRegisteredRef.current = false
+      }
+    }
+  }, [unregisterChart])
 
   // create a complete timeframe object for the hook
   // always use store timeframe as it's the source of truth
@@ -84,16 +97,6 @@ export default function StartRateChartClient({
     '--graph-area-fg-to',
   ] as const)
 
-  const tooltipFormatter = useMemo(
-    () =>
-      createSingleValueTooltipFormatter({
-        step: data?.step || 0,
-        label: 'sandboxes/s',
-        valueClassName: 'text-accent-positive-highlight',
-      }),
-    [data?.step]
-  )
-
   return (
     <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
       <div className="md:min-h-[60px] flex flex-col justify-end">
@@ -120,7 +123,24 @@ export default function StartRateChartClient({
           // no need to do anything here, since concurrent chart will handle this already
         }}
         group="sandboxes-monitoring"
-        onChartReady={registerChart}
+        onChartReady={(chart) => {
+          // if we have a previous chart instance that's different, unregister it
+          if (
+            chartRef.current &&
+            chartRef.current !== chart &&
+            isRegisteredRef.current
+          ) {
+            unregisterChart(chartRef.current)
+            isRegisteredRef.current = false
+          }
+
+          // only register if this is a new chart instance
+          if (!isRegisteredRef.current || chartRef.current !== chart) {
+            chartRef.current = chart
+            registerChart(chart)
+            isRegisteredRef.current = true
+          }
+        }}
         duration={syncedTimeframe.duration}
         syncAxisPointers={true}
         option={{
@@ -142,7 +162,10 @@ export default function StartRateChartClient({
             max: calculateYAxisMax(lineData),
           },
           tooltip: {
-            show: false,
+            trigger: 'axis' as const,
+            axisPointer: {
+              type: 'line' as const,
+            },
           },
         }}
         data={[

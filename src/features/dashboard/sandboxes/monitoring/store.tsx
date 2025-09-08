@@ -13,7 +13,7 @@ import {
   TEAM_METRICS_INITIAL_RANGE_MS,
   TEAM_METRICS_TIMEFRAME_UPDATE_MS,
 } from '@/configs/intervals'
-import { useConnectedCharts } from '@/lib/hooks/use-connected-charts'
+import { useChartRegistry } from '@/lib/hooks/use-connected-charts'
 import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
 
 interface TeamMetricsState {
@@ -218,9 +218,9 @@ export const useTeamMetricsStore = create<Store>()(
 )
 
 // hook for chart registration
-export const useRegisterChart = () => {
-  const { registerChart } = useConnectedCharts('sandboxes-monitoring')
-  return registerChart
+export const useChartActions = () => {
+  const { registerChart, unregisterChart } = useChartRegistry()
+  return { registerChart, unregisterChart }
 }
 
 // hook to handle browser navigation
@@ -243,7 +243,7 @@ export const useTeamMetrics = () => {
   const end = useTeamMetricsStore((state) => state.end)
   const setTimeRange = useTeamMetricsStore((state) => state.setTimeRange)
   const setCustomRange = useTeamMetricsStore((state) => state.setCustomRange)
-  const registerChart = useRegisterChart()
+  const { registerChart, unregisterChart } = useChartActions()
 
   // set up browser history listener
   useMetricsHistoryListener()
@@ -277,6 +277,7 @@ export const useTeamMetrics = () => {
     },
     setStaticMode: setCustomRange,
     registerChart,
+    unregisterChart,
   }
 }
 
