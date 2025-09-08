@@ -25,7 +25,7 @@
   }
 
   .font-mono {
-    @apply tracking-[0%];
+    @apply !tracking-[0%];
   }
 }
 

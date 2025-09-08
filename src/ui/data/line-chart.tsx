@@ -57,6 +57,9 @@ export interface LineChartProps {
 
   /** Timeframe duration in milliseconds (for smart time formatting) */
   duration?: number
+
+  /** Custom handler for chart click – receives clicked data point */
+  onChartClick?: (params: { timestamp: number; value: number }) => void
 }
 
 export default function LineChart({
@@ -69,6 +72,7 @@ export default function LineChart({
   onChartReady,
   group,
   duration,
+  onChartClick,
 }: LineChartProps) {
   const ref = useRef<ReactECharts | null>(null)
   const { resolvedTheme } = useTheme()
@@ -370,7 +374,6 @@ export default function LineChart({
               ],
             },
             showSymbol: false,
-            symbol: 'none',
           }
         })
       : series
@@ -444,12 +447,14 @@ export default function LineChart({
           },
         },
         axisPointer: {
-          lineStyle: { color: cssVars['--stroke-active'] },
+          lineStyle: {
+            color: cssVars['--bg-inverted'],
+            type: 'dashed',
+          },
           label: {
             backgroundColor: cssVars['--bg-highlight'],
             color: cssVars['--fg'],
             fontFamily: cssVars['--font-mono'],
-            position: 'top',
             borderRadius: 0,
             fontSize: responsiveConfig.fontSize,
             formatter: ((params: { value: unknown }): string => {
@@ -482,7 +487,10 @@ export default function LineChart({
           formatter: createSplitLineInterval(yAxisLimit ?? 0),
         },
         axisPointer: {
-          lineStyle: { color: cssVars['--stroke-active'] },
+          lineStyle: {
+            color: cssVars['--bg-inverted'],
+            type: 'dashed',
+          },
           label: {
             backgroundColor: cssVars['--bg-highlight'],
             color: cssVars['--fg'],
@@ -494,7 +502,7 @@ export default function LineChart({
           snap: true,
         },
         splitLine: {
-          lineStyle: { color: cssVars['--stroke'] },
+          lineStyle: { color: cssVars['--stroke'], type: 'dashed' },
         },
         splitNumber: responsiveConfig.yAxisSplitNumber,
         max: function (value: { max: number }) {
@@ -530,6 +538,17 @@ export default function LineChart({
   ])
 
   const onChartReadyCallback = (chart: echarts.ECharts) => {
+    chart.on('click', (params) => {
+      console.log('params', params)
+      if (params.type === 'click' && onChartClick) {
+        const timestamp = params.x
+        const value = params.y
+        if (timestamp && value) {
+          onChartClick({ timestamp, value })
+        }
+      }
+    })
+
     // activate datazoom
     chart.dispatchAction(
       {
@@ -576,6 +595,36 @@ export default function LineChart({
 
             if (startValue !== undefined && endValue !== undefined) {
               onZoomEnd(Math.round(startValue), Math.round(endValue))
+            }
+          }
+        },
+
+        click: (params: {
+          componentType: string
+          value: unknown
+          data: { x: unknown; y: unknown } & { [key: string]: unknown }
+        }) => {
+          // handle click on data points
+          if (
+            onChartClick &&
+            params.componentType === 'series' &&
+            params.value
+          ) {
+            const timestamp = Array.isArray(params.value)
+              ? params.value[0]
+              : params.data?.x || (params.data?.[0] as number)
+            const value = Array.isArray(params.value)
+              ? params.value[1]
+              : params.data?.y || (params.data?.[1] as number)
+
+            if (timestamp !== undefined && value !== undefined) {
+              onChartClick({
+                timestamp:
+                  typeof timestamp === 'number'
+                    ? timestamp
+                    : new Date(timestamp).getTime(),
+                value,
+              })
             }
           }
         },

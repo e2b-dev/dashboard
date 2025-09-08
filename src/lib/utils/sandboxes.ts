@@ -24,27 +24,30 @@ export function transformMetricsToClientMetrics(
   )
 }
 
-/**
- * detects anomalies in team metrics data and fills exactly one zero between "waves" of data.
- * calculates step from the first two data points and detects gaps in sequences.
- */
-// calculate step based on time range duration
+// tolerance multiplier for matching time ranges to preset options
+// accounts for timing variations and data granularity
+export const TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER = 1.5
+
 export function calculateStepForRange(startMs: number, endMs: number): number {
   const duration = endMs - startMs
+  return calculateStepForDuration(duration)
+}
+
+export function calculateStepForDuration(durationMs: number): number {
   const hour = 60 * 60 * 1000
   const minute = 60 * 1000
   const second = 1000
 
   switch (true) {
-    case duration < hour:
+    case durationMs < hour:
       return 5 * second
-    case duration < 6 * hour:
+    case durationMs < 6 * hour:
       return 30 * second
-    case duration < 12 * hour:
+    case durationMs < 12 * hour:
       return minute
-    case duration < 24 * hour:
+    case durationMs < 24 * hour:
       return 2 * minute
-    case duration < 7 * 24 * hour:
+    case durationMs < 7 * 24 * hour:
       return 5 * minute
     default:
       return 15 * minute
@@ -59,7 +62,6 @@ export function fillTeamMetricsWithZeros(
   anomalousGapTolerance: number = 0.25
 ): ClientTeamMetrics {
   if (!data.length) {
-    // calculate appropriate step for empty data
     const calculatedStep = step > 0 ? step : calculateStepForRange(start, end)
     const result: ClientTeamMetrics = []
 
@@ -144,7 +146,8 @@ export function fillTeamMetricsWithZeros(
         const suffixZeroTimestamp = currentPoint.timestamp + expectedStep
         if (
           suffixZeroTimestamp < nextPoint.timestamp &&
-          suffixZeroTimestamp - currentPoint.timestamp > TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
+          suffixZeroTimestamp - currentPoint.timestamp >
+            TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
         ) {
           result.push({
             timestamp: suffixZeroTimestamp,

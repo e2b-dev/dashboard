@@ -7,6 +7,10 @@ import {
   formatDecimal,
 } from '@/lib/utils/formatting'
 import {
+  TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER,
+  calculateStepForDuration,
+} from '@/lib/utils/sandboxes'
+import {
   ParsedTimeframe,
   TIME_RANGES,
   TimeRangeKey,
@@ -17,7 +21,6 @@ import { ClientTeamMetric } from '@/types/sandboxes.types'
 import LineChart from '@/ui/data/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
-import { TimePicker } from '@/ui/time-picker'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
 import { NonUndefined } from 'react-hook-form'
@@ -32,6 +35,7 @@ import {
 } from './chart-utils'
 import { useSyncedMetrics } from './hooks/use-synced-metrics'
 import { useTeamMetrics } from './store'
+import { TimePicker } from './time-picker'
 
 const CHART_RANGE_MAP = {
   custom: null,
@@ -113,46 +117,18 @@ export default function ConcurrentChartClient({
   ] as const)
 
   const currentRange = useMemo(() => {
-    // if in static mode, always show custom
-    if (!syncedTimeframe.isLive) {
-      return 'custom'
-    }
+    const currentDuration = syncedTimeframe.duration
+    const step = calculateStepForDuration(currentDuration)
+    const tolerance = step * TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER
 
-    const currentSpan = syncedTimeframe.duration
-    const now = Date.now()
-
-    // for live mode, check if this matches a standard "last X" pattern
-    // this means the end should be "now" and start should be "now - duration"
-    const endIsNow = Math.abs(syncedTimeframe.end - now) < 10000 // within 10 seconds
-
-    if (!endIsNow) {
-      // if end is not "now", it's a custom range
-      return 'custom'
-    }
-
-    // check if the duration matches a predefined range
-    const exactMatch = Object.entries(TIME_RANGES).find(
-      ([_, value]) => Math.abs(value - currentSpan) < 1000 // allow 1 second tolerance
+    const matchingRange = Object.entries(TIME_RANGES).find(
+      ([_, rangeMs]) => Math.abs(rangeMs - currentDuration) < tolerance
     )
 
-    if (exactMatch) {
-      // verify the start time is what we'd expect for this range
-      const expectedStart = now - exactMatch[1]
-      const startMatches =
-        Math.abs(syncedTimeframe.start - expectedStart) < 10000 // within 10 seconds
-
-      if (startMatches) {
-        return exactMatch[0]
-      }
-    }
-
-    // doesn't match a standard pattern, so it's custom
-    return 'custom'
-  }, [syncedTimeframe])
+    return matchingRange ? matchingRange[0] : 'custom'
+  }, [syncedTimeframe.duration])
 
   const customRangeLabel = useMemo(() => {
-    // always show the date range when not in a standard time range
-    // or when in static mode (custom time selection)
     if (!syncedTimeframe.isLive || currentRange === 'custom') {
       return `${formatCompactDate(syncedTimeframe.start)} - ${formatCompactDate(syncedTimeframe.end)}`
     }
@@ -219,20 +195,15 @@ export default function ConcurrentChartClient({
             }}
             onValueChange={(value) => {
               if (value.mode === 'static' && value.start && value.end) {
-                // handle static mode (custom start/end times)
                 setStaticMode(value.start, value.end)
               } else if (value.mode === 'live' && value.range) {
-                // handle live mode
-                // check if this range matches a predefined time range
                 const matchingRange = Object.entries(TIME_RANGES).find(
                   ([_, rangeMs]) => rangeMs === value.range
                 )
 
                 if (matchingRange) {
-                  // use the predefined range
                   setTimeRange(matchingRange[0] as TimeRangeKey)
                 } else {
-                  // use custom range for non-standard selections
                   const now = Date.now()
                   setCustomRange(now - value.range, now)
                 }

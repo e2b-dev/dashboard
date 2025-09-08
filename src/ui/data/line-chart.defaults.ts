@@ -35,7 +35,7 @@ export const defaultLineChartOption: EChartsOption = {
       show: true,
       type: 'line',
       label: {
-        show: false,
+        show: true,
       },
     },
   },

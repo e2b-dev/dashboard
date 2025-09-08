@@ -98,7 +98,7 @@ export function ReactiveLiveBadge({
     >
       {show
         ? `This data tends to be 30 seconds in the past, but is requested every ${TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.`
-        : 'Live updates are currently paused.'}
+        : 'Live updates are currently paused, because you selected a specific time range.'}
     </HelpTooltip>
   )
 }

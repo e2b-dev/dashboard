@@ -257,11 +257,6 @@ function CalendarDayButton({
         'hover:bg-bg-highlight transition-colors',
         'focus-visible:ring-1 focus-visible:ring-accent-main-highlight focus-visible:ring-offset-0',
 
-        // selected states
-        'data-[selected-single=true]:bg-accent-main-highlight',
-        'data-[selected-single=true]:text-fg-inverted',
-        'data-[selected-single=true]:hover:bg-accent-main-highlight/90',
-
         // range states
         'data-[range-middle=true]:bg-accent-main-bg',
         'data-[range-middle=true]:text-fg',
@@ -278,14 +273,14 @@ function CalendarDayButton({
         'data-[range-end=true]:rounded-l-none',
 
         // today indicator
-        'data-[today=true]:relative',
-        'data-[today=true]:after:absolute',
-        'data-[today=true]:after:-bottom-1.25',
-        'data-[today=true]:after:left-1/2',
-        'data-[today=true]:after:-translate-x-1/2',
-        'data-[today=true]:after:h-1.25',
-        'data-[today=true]:after:w-1.25',
-        'data-[today=true]:after:bg-accent-main-highlight',
+        'data-[selected-single=true]:relative',
+        'data-[selected-single=true]:after:absolute',
+        'data-[selected-single=true]:after:-bottom-1.25',
+        'data-[selected-single=true]:after:left-1/2',
+        'data-[selected-single=true]:after:-translate-x-1/2',
+        'data-[selected-single=true]:after:h-1.25',
+        'data-[selected-single=true]:after:w-1.25',
+        'data-[selected-single=true]:after:bg-accent-main-highlight',
 
         // outside month dates
         'data-[outside=true]:text-fg-tertiary/50',
