@@ -1,6 +1,5 @@
 'use client'
 
-import { ENABLE_CONCURRENT_CHART_WARNING_LINE } from '@/configs/flags'
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
@@ -218,6 +217,7 @@ export default function LineChart({
                 trigger: 'item' as const,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter: (params: any) => {
+                  console.log('params', params)
                   const value = params.data?.yAxis
                   if (value === undefined) return ''
                   return renderToString(
@@ -231,33 +231,10 @@ export default function LineChart({
               emphasis: {
                 disabled: true,
                 tooltip: {
-                  show: false,
+                  show: true,
                 },
               },
               data: [
-                ...(ENABLE_CONCURRENT_CHART_WARNING_LINE
-                  ? [
-                      {
-                        yAxis: yAxisLimit * 0.8,
-                        name: '80% Warning',
-                        label: {
-                          formatter: `${formatNumber(Math.round(yAxisLimit * 0.8))}`,
-                          position: 'start' as const,
-                          backgroundColor: cssVars['--accent-warning-bg'],
-                          color: cssVars['--accent-warning-highlight'],
-                          fontFamily: cssVars['--font-mono'],
-                          borderRadius: 0,
-                          padding: [4, 8],
-                        },
-                        lineStyle: {
-                          color: cssVars['--accent-warning-highlight'],
-                          opacity: 0.8,
-                          type: 'dashed' as const,
-                          width: 1,
-                        },
-                      },
-                    ]
-                  : []),
                 {
                   yAxis: yAxisLimit,
                   name: 'Limit',
@@ -277,8 +254,8 @@ export default function LineChart({
                   },
                   lineStyle: {
                     color: cssVars['--accent-error-highlight'],
-                    opacity: 1,
-                    type: 'solid' as const,
+                    opacity: 0.8,
+                    type: 'dashed' as const,
                     width: 2,
                   },
                 },

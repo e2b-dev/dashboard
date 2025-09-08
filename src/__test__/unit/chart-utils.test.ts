@@ -343,24 +343,54 @@ describe('chart-utils', () => {
   })
 
   describe('calculateYAxisMax', () => {
-    it('should calculate scaled maximum value', () => {
+    it('should round to nice numbers without limit', () => {
       const data = [{ y: 80 }, { y: 100 }, { y: 60 }]
-      expect(calculateYAxisMax(data)).toBe(125) // 100 * 1.25
+      expect(calculateYAxisMax(data)).toBe(150) // rounds to nearest 50
     })
 
-    it('should respect limit parameter', () => {
+    it('should show limit with padding when data reaches 80%', () => {
       const data = [{ y: 80 }, { y: 100 }, { y: 60 }]
-      expect(calculateYAxisMax(data, 90)).toBe(90) // capped at limit
+      expect(calculateYAxisMax(data, 125)).toBe(138) // 125 * 1.1
+    })
+
+    it('should apply padding when quarter snapping reaches limit', () => {
+      const data = [{ y: 70 }, { y: 75 }, { y: 60 }]
+      expect(calculateYAxisMax(data, 100)).toBe(110) // would snap to 100, applies padding
+    })
+
+    it('should show limit with padding at 80% threshold', () => {
+      const data = [{ y: 70 }, { y: 80 }, { y: 60 }]
+      expect(calculateYAxisMax(data, 100)).toBe(110)
     })
 
     it('should use custom scale factor', () => {
       const data = [{ y: 100 }]
-      expect(calculateYAxisMax(data, undefined, 1.5)).toBe(150) // 100 * 1.5
+      expect(calculateYAxisMax(data, undefined, 1.5)).toBe(150)
     })
 
     it('should handle null values', () => {
       const data = [{ y: null }, { y: 50 }, { y: null }]
-      expect(calculateYAxisMax(data)).toBe(63) // Math.round(50 * 1.25)
+      expect(calculateYAxisMax(data)).toBe(70)
+    })
+
+    it('should snap to 25% quarter', () => {
+      const data = [{ y: 10 }, { y: 15 }, { y: 12 }]
+      expect(calculateYAxisMax(data, 100)).toBe(25)
+    })
+
+    it('should snap to 50% quarter', () => {
+      const data = [{ y: 35 }, { y: 40 }, { y: 30 }]
+      expect(calculateYAxisMax(data, 100)).toBe(50)
+    })
+
+    it('should snap to 75% quarter', () => {
+      const data = [{ y: 55 }, { y: 60 }, { y: 50 }]
+      expect(calculateYAxisMax(data, 100)).toBe(75)
+    })
+
+    it('should apply padding for empty data with limit', () => {
+      const data: Array<{ y: number | null }> = []
+      expect(calculateYAxisMax(data, 100)).toBe(110)
     })
   })
 

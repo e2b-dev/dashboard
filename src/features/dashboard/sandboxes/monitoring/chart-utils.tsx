@@ -6,9 +6,6 @@ import { SingleValueTooltip } from '@/ui/data/tooltips'
 import * as echarts from 'echarts'
 import { renderToString } from 'react-dom/server'
 
-/**
- * Calculate average value from line chart data
- */
 export function calculateAverage(
   data: Array<{ x: unknown; y: number | null }>
 ) {
@@ -16,9 +13,6 @@ export function calculateAverage(
   return data.reduce((acc, cur) => acc + (cur.y || 0), 0) / data.length
 }
 
-/**
- * Create a tooltip formatter for single value charts
- */
 export function createSingleValueTooltipFormatter({
   step,
   label,
@@ -64,31 +58,55 @@ export function createSingleValueTooltipFormatter({
   }
 }
 
-/**
- * Calculate Y-axis max value for consistent scaling
- */
 export function calculateYAxisMax(
   data: Array<{ y: number | null }>,
   limit?: number,
-  scaleFactor: number = 1.25
+  scaleFactor: number = 1.25,
+  limitPadding: number = 1.1
 ): number {
   if (data.length === 0) {
-    return limit !== undefined ? limit : 10 // Default y-axis max for empty data
+    return limit !== undefined ? Math.round(limit * limitPadding) : 10
   }
-  
+
   const maxDataValue = Math.max(...data.map((d) => d.y || 0))
-  const scaledValue = maxDataValue * scaleFactor
 
   if (limit !== undefined) {
-    return Math.min(scaledValue, limit)
+    const limitVisibilityThreshold = limit * 0.8
+
+    if (maxDataValue >= limitVisibilityThreshold) {
+      return Math.round(limit * limitPadding)
+    }
+
+    // snap to quarters for clean axis values
+    const quarterValue = limit / 4
+    const scaledValue = maxDataValue * scaleFactor
+    const numberOfQuarters = Math.ceil(scaledValue / quarterValue)
+    const snappedValue = numberOfQuarters * quarterValue
+
+    // never snap exactly to limit - apply padding instead
+    if (snappedValue >= limit) {
+      return Math.round(limit * limitPadding)
+    }
+
+    return snappedValue
   }
 
-  return Math.round(scaledValue)
+  // round to nice numbers when no limit
+  const scaledValue = maxDataValue * scaleFactor
+
+  if (scaledValue < 10) {
+    return Math.ceil(scaledValue)
+  } else if (scaledValue < 100) {
+    return Math.ceil(scaledValue / 10) * 10
+  } else if (scaledValue < 1000) {
+    return Math.ceil(scaledValue / 50) * 50
+  } else if (scaledValue < 10000) {
+    return Math.ceil(scaledValue / 100) * 100
+  } else {
+    return Math.ceil(scaledValue / 1000) * 1000
+  }
 }
 
-/**
- * Common chart options for monitoring charts
- */
 export function createMonitoringChartOptions({
   timeframe,
   splitNumber = 2,
@@ -119,9 +137,6 @@ export function createMonitoringChartOptions({
   }
 }
 
-/**
- * Transform metrics data to line chart format
- */
 export function transformMetricsToLineData<T>(
   metrics: T[],
   getTimestamp: (item: T) => number | Date,
@@ -133,9 +148,6 @@ export function transformMetricsToLineData<T>(
   }))
 }
 
-/**
- * Create chart series configuration
- */
 export function createChartSeries({
   id,
   name,
