@@ -2,8 +2,9 @@
 
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button, ButtonProps } from '@/ui/primitives/button'
-import { CheckIcon, CopyIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 import { FC } from 'react'
+import { CopyIcon } from './primitives/icons'
 
 interface CopyButtonProps extends ButtonProps {
   value: string
