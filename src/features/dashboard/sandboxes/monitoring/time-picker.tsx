@@ -270,16 +270,15 @@ const CustomTimePanel = forwardRef<CustomTimePanelRef, CustomTimePanelProps>(
     })
 
     // track if form is dirty (being edited) to prevent external updates
-    const [isFormDirty, setIsFormDirty] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
     const lastPropsRef = useRef({ startDateTime, endDateTime, endEnabled })
 
     const handleFormSubmit = useCallback(
       (values: CustomTimeFormValues) => {
-        setIsFormDirty(false)
         onSubmit(values)
+        form.reset(values)
       },
-      [onSubmit]
+      [onSubmit, form]
     )
 
     useImperativeHandle(
@@ -287,20 +286,19 @@ const CustomTimePanel = forwardRef<CustomTimePanelRef, CustomTimePanelProps>(
       () => ({
         form,
         submit: () => form.handleSubmit(handleFormSubmit)(),
-        isDirty: isFormDirty,
+        isDirty: form.formState.isDirty,
       }),
-      [form, handleFormSubmit, isFormDirty]
+      [form, handleFormSubmit]
     )
 
     useEffect(() => {
       if (!isOpen) {
-        setIsFormDirty(false)
         setIsFocused(false)
       }
     }, [isOpen])
 
     useEffect(() => {
-      if (isFormDirty || isFocused) {
+      if (form.formState.isDirty || isFocused) {
         return
       }
 
@@ -337,13 +335,17 @@ const CustomTimePanel = forwardRef<CustomTimePanelRef, CustomTimePanelProps>(
       }
 
       lastPropsRef.current = { startDateTime, endDateTime, endEnabled }
-    }, [startDateTime, endDateTime, endEnabled, form, isFormDirty, isFocused])
+    }, [
+      startDateTime,
+      endDateTime,
+      endEnabled,
+      form,
+      form.formState.isDirty,
+      isFocused,
+    ])
 
     useEffect(() => {
-      const subscription = form.watch((values, { name, type }) => {
-        if (type === 'change' && name) {
-          setIsFormDirty(true)
-        }
+      const subscription = form.watch((values) => {
         onValuesChange(values as CustomTimeFormValues)
       })
       return () => subscription.unsubscribe()
@@ -360,38 +362,29 @@ const CustomTimePanel = forwardRef<CustomTimePanelRef, CustomTimePanelProps>(
               Start Time
             </FormLabel>
             <div className="flex gap-2">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <div
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => setIsFocused(false)}
-                      >
-                        <TimeInput
-                          dateValue={field.value}
-                          timeValue={form.getValues('startTime')}
-                          onDateChange={field.onChange}
-                          onTimeChange={(value) =>
-                            form.setValue('startTime', value)
-                          }
-                          disabled={false}
-                          showLiveIndicator={false}
-                        />
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={() => <></>} // handled by TimeInput above
-              />
+              <FormItem className="flex-1">
+                <FormControl>
+                  <div
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                  >
+                    <TimeInput
+                      dateValue={form.watch('startDate')}
+                      timeValue={form.watch('startTime')}
+                      onDateChange={(value) =>
+                        form.setValue('startDate', value, { shouldDirty: true })
+                      }
+                      onTimeChange={(value) =>
+                        form.setValue('startTime', value, { shouldDirty: true })
+                      }
+                      disabled={false}
+                      showLiveIndicator={false}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             </div>
-            <FormMessage />
           </div>
 
           <FormField
@@ -412,40 +405,35 @@ const CustomTimePanel = forwardRef<CustomTimePanelRef, CustomTimePanelProps>(
                 </div>
                 <div className={cn(!field.value && 'opacity-50')}>
                   <div className="flex gap-2">
-                    <FormField
-                      control={form.control}
-                      name="endDate"
-                      render={({ field: endField }) => (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                            <div
-                              onFocus={() => setIsFocused(true)}
-                              onBlur={() => setIsFocused(false)}
-                            >
-                              <TimeInput
-                                dateValue={endField.value || ''}
-                                timeValue={form.getValues('endTime') || ''}
-                                onDateChange={endField.onChange}
-                                onTimeChange={(value) =>
-                                  form.setValue('endTime', value)
-                                }
-                                disabled={!field.value}
-                                isLive={!field.value}
-                                showLiveIndicator={!field.value}
-                              />
-                            </div>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="endTime"
-                      render={() => <></>} // handled by TimeInput above
-                    />
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <div
+                          onFocus={() => setIsFocused(true)}
+                          onBlur={() => setIsFocused(false)}
+                        >
+                          <TimeInput
+                            dateValue={form.watch('endDate') || ''}
+                            timeValue={form.watch('endTime') || ''}
+                            onDateChange={(value) =>
+                              form.setValue('endDate', value, {
+                                shouldDirty: true,
+                              })
+                            }
+                            onTimeChange={(value) =>
+                              form.setValue('endTime', value, {
+                                shouldDirty: true,
+                              })
+                            }
+                            disabled={!field.value}
+                            isLive={!field.value}
+                            showLiveIndicator={!field.value}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   </div>
                 </div>
-                <FormMessage />
               </FormItem>
             )}
           />
