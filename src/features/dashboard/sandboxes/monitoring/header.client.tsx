@@ -29,8 +29,8 @@ export function ConcurrentSandboxesClient({
         {formatNumber(lastConcurrentSandboxes)}
       </span>
       {limit && (
-        <span className="absolute right-3 bottom-3 text-fg-tertiary ">
-          LIMIT: <span className=" text-fg">{formatNumber(limit)}</span>
+        <span className="absolute right-6 bottom-4 text-fg-tertiary prose-label">
+          LIMIT: {formatNumber(limit)}
         </span>
       )}
     </>
