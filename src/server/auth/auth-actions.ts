@@ -1,5 +1,6 @@
 'use server'
 
+import { ENABLE_SIGN_UP_RATE_LIMITING } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
@@ -8,6 +9,7 @@ import { createClient } from '@/lib/clients/supabase/server'
 import { relativeUrlSchema } from '@/lib/schemas/url'
 import { returnServerError } from '@/lib/utils/action'
 import { encodedRedirect } from '@/lib/utils/auth'
+import { extractClientIp, isDevelopmentIp } from '@/lib/utils/ip-extraction'
 import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
@@ -17,6 +19,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
+import { isSignUpAttemptRateLimited } from './rate-limiting'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -93,6 +96,32 @@ export const signUpAction = actionClient
       }
     }
 
+    const headersStore = await headers()
+    const ip = extractClientIp(headersStore)
+
+    // log error if no ip headers found
+    if (
+      isDevelopmentIp(ip) &&
+      ENABLE_SIGN_UP_RATE_LIMITING &&
+      process.env.NODE_ENV === 'production'
+    ) {
+      l.error({
+        key: 'sign_up_attempt:no_ip_headers',
+        context: {
+          message: 'no ip headers found in production',
+        },
+      })
+    }
+
+    if (
+      ENABLE_SIGN_UP_RATE_LIMITING &&
+      (await isSignUpAttemptRateLimited(ip))
+    ) {
+      return returnServerError(
+        'Too many sign-up attempts. Please try again later.'
+      )
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -112,6 +141,10 @@ export const signUpAction = actionClient
           return returnServerError(USER_MESSAGES.emailInUse.message)
         case 'weak_password':
           return returnServerError(USER_MESSAGES.passwordWeak.message)
+        case 'email_address_invalid':
+          return returnServerError(
+            USER_MESSAGES.signUpEmailValidationInvalid.message
+          )
         default:
           throw error
       }
