@@ -77,11 +77,13 @@ export function calculateYAxisMax(
       return Math.round(limit * limitPadding)
     }
 
-    // snap to quarters for clean axis values
-    const quarterValue = limit / 4
+    // snap to fine-grained divisions for clean axis values
     const scaledValue = maxDataValue * scaleFactor
-    const numberOfQuarters = Math.ceil(scaledValue / quarterValue)
-    const snappedValue = numberOfQuarters * quarterValue
+
+    // use 1/20th of limit for more granular steps
+    const divisionValue = limit / 20
+    const numberOfDivisions = Math.ceil(scaledValue / divisionValue)
+    const snappedValue = numberOfDivisions * divisionValue
 
     // never snap exactly to limit - apply padding instead
     if (snappedValue >= limit) {
