@@ -17,7 +17,7 @@ export function LiveDot({ classNames, paused = false }: LiveDotProps) {
   return (
     <div
       className={cn(
-        'rounded-full transition-all duration-200 size-3 bg-accent-positive-highlight/30 flex items-center justify-content p-0.75',
+        'rounded-full transition-all duration-200 size-3 bg-accent-positive-highlight/30 flex items-center justify-center p-0.75',
         {
           'bg-black/00': paused,
         },
@@ -26,7 +26,7 @@ export function LiveDot({ classNames, paused = false }: LiveDotProps) {
     >
       <div
         className={cn(
-          'size-full rounded-full bg-accent-positive-highlight transition-all duration-200',
+          'w-1.25 h-1.25 rounded-full bg-accent-positive-highlight transition-all duration-200',
           {
             'bg-icon-secondary': paused,
           },
@@ -51,8 +51,9 @@ export function LiveBadge({
   return (
     <Badge
       variant="positive"
+      typography="regular"
       className={cn(
-        'prose-label transition-all duration-200',
+        'transition-all duration-200',
         {
           'text-fg-secondary bg-fill': paused,
         },
