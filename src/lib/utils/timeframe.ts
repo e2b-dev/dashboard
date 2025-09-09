@@ -136,7 +136,7 @@ export const TIME_RANGES = {
   '1h': 1000 * 60 * 60,
   '6h': 1000 * 60 * 60 * 6,
   '24h': 1000 * 60 * 60 * 24,
-  '30d': 1000 * 60 * 60 * 24 * 3,
+  '30d': 1000 * 60 * 60 * 24 * 30,
 } as const
 
 export type TimeRangeKey = keyof typeof TIME_RANGES
