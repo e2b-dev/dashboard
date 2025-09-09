@@ -59,7 +59,7 @@ export default function useHeaderMetricsSWR(
       fallbackData: initialData,
       shouldRetryOnError: false,
       refreshInterval: TEAM_METRICS_POLLING_INTERVAL_MS,
-      dedupingInterval: 10000, // dedupe requests within 10s
+      dedupingInterval: 5000, // dedupe requests within 5s
       keepPreviousData: true,
       revalidateOnMount: true,
       revalidateIfStale: true,
