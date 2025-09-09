@@ -24,7 +24,7 @@ export default function HelpTooltip({
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
-        <TooltipTrigger tabIndex={-1} type="button">
+        <TooltipTrigger tabIndex={-1} type="button" asChild={!!trigger}>
           {trigger || <InfoIcon className="text-fg-tertiary size-4" />}
         </TooltipTrigger>
         <TooltipContent

@@ -17,11 +17,11 @@ export function LiveSandboxCounter({
   return (
     <div
       className={cn(
-        'relative flex items-center gap-2 border bg-bg p-2',
+        'relative inline-flex items-center gap-1.5 p-2.5 border bg-bg',
         className
       )}
     >
-      <SemiLiveBadge className="" />
+      <SemiLiveBadge className="mr-2.5" />
 
       <span className="prose-value-small">{formatNumber(count)}</span>
 
