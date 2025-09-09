@@ -18,6 +18,7 @@ import 'echarts/lib/component/dataZoom'
 import 'echarts/lib/component/dataZoomInside'
 import 'echarts/lib/component/title'
 
+import { createSingleValueTooltipFormatter } from '@/features/dashboard/sandboxes/monitoring/chart-utils'
 import { useTheme } from 'next-themes'
 import { useCallback, useMemo, useRef } from 'react'
 import { renderToString } from 'react-dom/server'
@@ -27,7 +28,12 @@ import {
   makeSeriesFromData,
   mergeReplaceArrays,
 } from './line-chart.utils'
-import { LimitLineTooltip } from './tooltips'
+import DefaultTooltip, { LimitLineTooltip } from './tooltips'
+
+type TooltipFormatterParams = echarts.TooltipComponentFormatterCallbackParams
+type TooltipFormatterParamsArray =
+  | TooltipFormatterParams
+  | TooltipFormatterParams[]
 
 export interface LineChartProps {
   /** Chart data series */
@@ -59,6 +65,12 @@ export interface LineChartProps {
 
   /** Synchronize y-axis pointer to x-axis pointer position */
   syncAxisPointers?: boolean
+
+  /** Show tooltip at data points instead of cursor position */
+  showTooltip?: boolean
+
+  /** Custom tooltip formatter function */
+  tooltipFormatter?: ReturnType<typeof createSingleValueTooltipFormatter>
 }
 
 export default function LineChart({
@@ -72,6 +84,8 @@ export default function LineChart({
   group,
   duration,
   syncAxisPointers = false,
+  showTooltip = false,
+  tooltipFormatter,
 }: LineChartProps) {
   const ref = useRef<ReactECharts | null>(null)
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
@@ -147,7 +161,7 @@ export default function LineChart({
   }, [])
 
   const option = useMemo<EChartsOption>(() => {
-    const series = makeSeriesFromData(data, cssVars)
+    const series = makeSeriesFromData(data, cssVars, showTooltip)
     const responsiveConfig = getResponsiveAxisConfig()
 
     const calculateMaxYValue = () => {
@@ -352,6 +366,18 @@ export default function LineChart({
               ],
             },
             showSymbol: false,
+            // show symbol on hover when tooltip is enabled
+            emphasis: showTooltip
+              ? {
+                  focus: 'series',
+                  itemStyle: {
+                    borderWidth: 2,
+                    borderColor: lineColor,
+                  },
+                  scale: true,
+                  symbolSize: 8,
+                }
+              : undefined,
           }
         })
       : series
@@ -366,20 +392,107 @@ export default function LineChart({
           ({ ...seriesWithLiveIndicator, ...limitLineConfig } as any)
         : seriesWithLiveIndicator
 
+    // Build the tooltip configuration
+    const tooltipConfig: EChartsOption['tooltip'] = showTooltip
+      ? {
+          show: true,
+          trigger: 'axis' as const,
+          triggerOn: 'mousemove|click' as const,
+          confine: true,
+          transitionDuration: 0.2,
+          enterable: false,
+          hideDelay: 0,
+          axisPointer: {
+            type: 'cross' as const,
+            snap: true,
+            animation: false,
+          },
+          backgroundColor: 'transparent',
+          padding: 0,
+          borderWidth: 0,
+          shadowBlur: 0,
+          shadowOffsetX: 0,
+          shadowOffsetY: 0,
+          shadowColor: 'transparent',
+          textStyle: {
+            color: cssVars['--fg'],
+            fontSize: responsiveConfig.fontSize,
+          },
+          formatter:
+            tooltipFormatter ||
+            ((params: TooltipFormatterParamsArray) => {
+              const paramArray = Array.isArray(params) ? params : [params]
+              const validParams = paramArray.filter(
+                (p) => typeof p !== 'string' && p !== null
+              )
+
+              if (validParams.length === 0) return ''
+
+              const firstParam = validParams[0]
+              if (!firstParam) return ''
+
+              const timestamp =
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (firstParam as any).axisValueLabel ||
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (firstParam as any).name ||
+                ''
+
+              const items = validParams
+                .filter((param) => {
+                  // Handle both array values (line/scatter) and single values (bar/pie)
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const paramValue = (param as any).value
+                  if (Array.isArray(paramValue)) {
+                    return paramValue[1] !== null && paramValue[1] !== undefined
+                  }
+                  return paramValue !== null && paramValue !== undefined
+                })
+                .map((param) => {
+                  // Extract the actual value from various data formats
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const paramValue = (param as any).value
+                  let actualValue: unknown
+                  if (Array.isArray(paramValue)) {
+                    actualValue = paramValue[1] // [x, y] format
+                  } else {
+                    actualValue = paramValue // single value format
+                  }
+
+                  // Format the value based on its type
+                  let formattedValue: string
+                  if (typeof actualValue === 'number') {
+                    formattedValue = formatNumber(actualValue)
+                  } else {
+                    formattedValue = String(actualValue)
+                  }
+
+                  return {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    label: (param as any).seriesName || 'Value',
+                    value: formattedValue,
+                  }
+                })
+
+              return renderToString(
+                <DefaultTooltip label={timestamp} items={items} />
+              )
+            }),
+        }
+      : {
+          backgroundColor: 'transparent',
+          padding: 0,
+          borderWidth: 0,
+          shadowBlur: 0,
+          shadowOffsetX: 0,
+          shadowOffsetY: 0,
+          shadowColor: 'transparent',
+          trigger: 'axis' as const,
+          showDelay: 0,
+        }
+
     const themedDefaults = mergeReplaceArrays(defaultLineChartOption, {
-      tooltip: {
-        backgroundColor: 'transparent',
-        padding: 0,
-        borderWidth: 0,
-        shadowBlur: 0,
-        shadowOffsetX: 0,
-        shadowOffsetY: 0,
-        shadowColor: 'transparent',
-        trigger: 'axis' as const,
-        axisPointer: {
-          type: 'line' as const,
-        },
-      },
+      tooltip: tooltipConfig,
       grid: {
         left: calculateGridLeft(),
       },
@@ -450,7 +563,8 @@ export default function LineChart({
                 )
               }
               return String(params.value)
-            }) as unknown as string | ((params: unknown) => string),
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }) as any,
           },
           snap: true,
         },
@@ -518,6 +632,8 @@ export default function LineChart({
     getResponsiveAxisConfig,
     createSplitLineInterval,
     syncAxisPointers,
+    showTooltip,
+    tooltipFormatter,
   ])
 
   // helper to find y-value for given x-value

@@ -31,6 +31,7 @@ import {
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
+  createSingleValueTooltipFormatter,
   fillMetricsWithZeros,
   transformMetricsToLineData,
 } from './chart-utils'
@@ -176,6 +177,17 @@ export default function ConcurrentChartClient({
     setTimeRange(range as TimeRangeKey)
   }
 
+  const tooltipFormatter = useMemo(
+    () =>
+      createSingleValueTooltipFormatter({
+        step: data?.step || 0,
+        label: (value: number) =>
+          value === 1 ? 'concurrent sandbox' : 'concurrent sandboxes',
+        valueClassName: 'text-accent-positive-highlight',
+      }),
+    [data?.step]
+  )
+
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 md:min-h-0">
       <div className="flex max-md:flex-col md:justify-between gap-2 md:gap-6 md:min-h-[60px]">
@@ -316,6 +328,8 @@ export default function ConcurrentChartClient({
         }}
         duration={syncedTimeframe.duration}
         syncAxisPointers={true}
+        showTooltip={true}
+        tooltipFormatter={tooltipFormatter}
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
@@ -333,12 +347,6 @@ export default function ConcurrentChartClient({
           yAxis: {
             splitNumber: 3,
             max: calculateYAxisMax(lineData, concurrentInstancesLimit || 100),
-          },
-          tooltip: {
-            trigger: 'axis' as const,
-            axisPointer: {
-              type: 'line' as const,
-            },
           },
         }}
         data={[

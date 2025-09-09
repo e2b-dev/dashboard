@@ -16,13 +16,13 @@ export function calculateAverage(
 export function createSingleValueTooltipFormatter({
   step,
   label,
-  valueClassName,
+  valueClassName = 'text-accent-info-highlight',
   descriptionClassName = 'text-fg-tertiary opacity-75',
   timestampClassName = 'text-fg-tertiary',
 }: {
   step: number
   label: string | ((value: number) => string)
-  valueClassName: string
+  valueClassName?: string
   descriptionClassName?: string
   timestampClassName?: string
 }) {
@@ -126,13 +126,6 @@ export function createMonitoringChartOptions({
     },
     yAxis: {
       splitNumber,
-    },
-    tooltip: {
-      show: true,
-      trigger: 'axis' as const,
-      axisPointer: {
-        type: 'line' as const,
-      },
     },
   }
 }

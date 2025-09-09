@@ -52,13 +52,15 @@ export const makeSeriesFromData = (
     '--fg': string
     '--stroke': string
     [key: string]: string
-  }
+  },
+  showTooltip = false
 ): EChartsOption['series'] => {
   return series.map((s) => ({
     id: s.id,
     name: s.name ?? s.id,
     type: 'line',
-    symbol: 'none',
+    symbol: showTooltip ? 'circle' : 'none',
+    symbolSize: 0, // don't show symbols by default
     lineStyle: {
       width: 1,
       color: s.lineStyle?.color ?? colors['--fg'],
@@ -72,9 +74,20 @@ export const makeSeriesFromData = (
     smooth: s.smooth,
     smoothMonotone: s.smoothMonotone,
     connectNulls: s.connectNulls,
-    showSymbol: s.showSymbol,
+    showSymbol: s.showSymbol ?? false,
     showAllSymbol: s.showAllSymbol,
     triggerLineEvent: s.triggerLineEvent,
+    // show symbols on hover when tooltip is enabled
+    emphasis: showTooltip
+      ? {
+          scale: 1.5,
+          symbolSize: 6,
+          itemStyle: {
+            borderWidth: 2,
+            borderColor: s.lineStyle?.color ?? colors['--fg'],
+          },
+        }
+      : undefined,
     data: s.data.map((p) => [p.x instanceof Date ? p.x.getTime() : p.x, p.y]),
   }))
 }

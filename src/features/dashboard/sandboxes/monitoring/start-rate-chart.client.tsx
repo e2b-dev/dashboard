@@ -16,6 +16,7 @@ import {
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
+  createSingleValueTooltipFormatter,
   fillMetricsWithZeros,
   transformMetricsToLineData,
 } from './chart-utils'
@@ -97,6 +98,16 @@ export default function StartRateChartClient({
     '--graph-area-fg-to',
   ] as const)
 
+  const tooltipFormatter = useMemo(
+    () =>
+      createSingleValueTooltipFormatter({
+        step: data?.step || 0,
+        label: 'sandboxes/s',
+        valueClassName: 'text-fg',
+      }),
+    [data?.step]
+  )
+
   return (
     <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
       <div className="md:min-h-[60px] flex flex-col justify-end">
@@ -143,6 +154,8 @@ export default function StartRateChartClient({
         }}
         duration={syncedTimeframe.duration}
         syncAxisPointers={true}
+        showTooltip={true}
+        tooltipFormatter={tooltipFormatter}
         option={{
           ...createMonitoringChartOptions({
             timeframe: {
@@ -160,12 +173,6 @@ export default function StartRateChartClient({
           yAxis: {
             splitNumber: 2,
             max: calculateYAxisMax(lineData),
-          },
-          tooltip: {
-            trigger: 'axis' as const,
-            axisPointer: {
-              type: 'line' as const,
-            },
           },
         }}
         data={[
