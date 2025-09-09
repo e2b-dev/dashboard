@@ -74,18 +74,6 @@ export function fillTeamMetricsWithZeros(
       })
     }
 
-    // ensure we have a point at the end
-    if (
-      result.length === 0 ||
-      result[result.length - 1]!.timestamp < end - 1000
-    ) {
-      result.push({
-        timestamp: end - 1000,
-        concurrentSandboxes: 0,
-        sandboxStartRate: 0,
-      })
-    }
-
     return result
   }
 

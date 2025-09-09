@@ -47,14 +47,6 @@ export function useSyncedMetrics({
         number,
         boolean,
       ]) => {
-        // log the fetch request
-        console.debug('[useSyncedMetrics] Fetching data', {
-          start: new Date(start).toISOString(),
-          end: new Date(end).toISOString(),
-          duration: `${((end - start) / 60000).toFixed(1)} minutes`,
-          isLive,
-        })
-
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -80,22 +72,6 @@ export function useSyncedMetrics({
         }
 
         const result = await response.json()
-
-        // log the response
-        if (result?.metrics?.length > 0) {
-          const firstMetric = result.metrics[0]
-          const lastMetric = result.metrics[result.metrics.length - 1]
-          console.debug('[useSyncedMetrics] Received data', {
-            dataPoints: result.metrics.length,
-            step: result.step,
-            dataStart: new Date(firstMetric.timestamp).toISOString(),
-            dataEnd: new Date(lastMetric.timestamp).toISOString(),
-            dataDuration: `${((lastMetric.timestamp - firstMetric.timestamp) / 60000).toFixed(1)} minutes`,
-            requestedDuration: `${((end - start) / 60000).toFixed(1)} minutes`,
-          })
-        } else {
-          console.debug('[useSyncedMetrics] Received empty data')
-        }
 
         return result
       },

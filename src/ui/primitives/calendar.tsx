@@ -173,14 +173,9 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }) => {
+        Root: ({ className, ...props }) => {
           return (
-            <div
-              data-slot="calendar"
-              ref={rootRef}
-              className={cn(className)}
-              {...props}
-            />
+            <div data-slot="calendar" className={cn(className)} {...props} />
           )
         },
         Chevron: ({ className, orientation, ...props }) => {

@@ -87,8 +87,7 @@ export default function StartRateChartClient({
       (d) => d.timestamp,
       (d) => d.sandboxStartRate
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.metrics, data?.step])
+  }, [data?.metrics, data?.step, timeframe.start, timeframe.end])
 
   const average = useMemo(() => calculateAverage(lineData), [lineData])
 
@@ -161,11 +160,14 @@ export default function StartRateChartClient({
             timeframe: {
               start:
                 lineData.length > 0
-                  ? (lineData[0]?.x as number)
+                  ? Math.min(lineData[0]?.x as number, timeframe.start)
                   : timeframe.start,
               end:
                 lineData.length > 0
-                  ? (lineData[lineData.length - 1]?.x as number)
+                  ? Math.max(
+                      lineData[lineData.length - 1]?.x as number,
+                      timeframe.end
+                    )
                   : timeframe.end,
               isLive: syncedTimeframe.isLive,
             },

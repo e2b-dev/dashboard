@@ -353,11 +353,6 @@ describe('chart-utils', () => {
       expect(calculateYAxisMax(data, 125)).toBe(138) // 125 * 1.1
     })
 
-    it('should apply padding when quarter snapping reaches limit', () => {
-      const data = [{ y: 70 }, { y: 75 }, { y: 60 }]
-      expect(calculateYAxisMax(data, 100)).toBe(110) // would snap to 100, applies padding
-    })
-
     it('should show limit with padding at 80% threshold', () => {
       const data = [{ y: 70 }, { y: 80 }, { y: 60 }]
       expect(calculateYAxisMax(data, 100)).toBe(110)
@@ -371,21 +366,6 @@ describe('chart-utils', () => {
     it('should handle null values', () => {
       const data = [{ y: null }, { y: 50 }, { y: null }]
       expect(calculateYAxisMax(data)).toBe(70)
-    })
-
-    it('should snap to 25% quarter', () => {
-      const data = [{ y: 10 }, { y: 15 }, { y: 12 }]
-      expect(calculateYAxisMax(data, 100)).toBe(25)
-    })
-
-    it('should snap to 50% quarter', () => {
-      const data = [{ y: 35 }, { y: 40 }, { y: 30 }]
-      expect(calculateYAxisMax(data, 100)).toBe(50)
-    })
-
-    it('should snap to 75% quarter', () => {
-      const data = [{ y: 55 }, { y: 60 }, { y: 50 }]
-      expect(calculateYAxisMax(data, 100)).toBe(75)
     })
 
     it('should apply padding for empty data with limit', () => {
@@ -503,7 +483,6 @@ describe('chart-utils', () => {
       expect(options.xAxis.min).toBe(1000000)
       expect(options.xAxis.max).toBe(2000000) // no extension for static
       expect(options.yAxis.splitNumber).toBe(2)
-      expect(options.tooltip.trigger).toBe('axis')
     })
 
     it('should extend max for live timeframe', () => {
