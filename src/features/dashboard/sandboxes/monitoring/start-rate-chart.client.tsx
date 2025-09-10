@@ -110,7 +110,7 @@ export default function StartRateChartClient({
         </span>
         <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
           <span className="prose-value-big max-md:text-2xl">
-            {formatDecimal(centralTendency.value, 1)}
+            {formatDecimal(centralTendency.value, 3)}
           </span>
           <span className="label-tertiary max-md:text-xs">
             <span className="max-md:hidden">median over range</span>
