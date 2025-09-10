@@ -591,7 +591,7 @@ export const TimePicker = memo(function TimePicker({
 
   // determine which side to show custom panel based on viewport space
   useEffect(() => {
-    if (open && showCustomPanel) {
+    if (open && (showCustomPanel || isCustomSelected)) {
       // small delay to ensure dropdown is mounted and ref is attached
       const checkPosition = () => {
         if (!dropdownRef.current) {
@@ -636,7 +636,7 @@ export const TimePicker = memo(function TimePicker({
       window.addEventListener('resize', checkPosition)
       return () => window.removeEventListener('resize', checkPosition)
     }
-  }, [open, showCustomPanel])
+  }, [open, showCustomPanel, isCustomSelected])
 
   // don't auto-open panel when custom is selected externally
   // panel should only open/close via user interaction
@@ -719,11 +719,22 @@ export const TimePicker = memo(function TimePicker({
   )
 
   const handleCustomSelect = useCallback(() => {
+    isUserInteractionRef.current = true
+    setIsCustomSelected(true)
+    setShowCustomPanel(true)
+    setTimeOptionsValue('')
+
+    setTimeout(() => {
+      isUserInteractionRef.current = false
+    }, 10)
+  }, [])
+
+  const handleCustomToggle = useCallback(() => {
     setShowCustomPanel((prev) => !prev)
   }, [])
 
   useEffect(() => {
-    if (endEnabled && showCustomPanel) {
+    if (endEnabled && (showCustomPanel || isCustomSelected)) {
       if (endTimestamp && !endDateTime) {
         setEndDateTime(formatDatetimeInput(new Date(endTimestamp)))
       } else if (!endDateTime && !endTimestamp) {
@@ -733,10 +744,13 @@ export const TimePicker = memo(function TimePicker({
         setEndTimestamp(now.getTime())
       }
     }
-  }, [endEnabled, showCustomPanel, endTimestamp, endDateTime])
+  }, [endEnabled, showCustomPanel, isCustomSelected, endTimestamp, endDateTime])
 
   useEffect(() => {
-    if (showCustomPanel && (!startDateTime || (!endDateTime && endEnabled))) {
+    if (
+      (showCustomPanel || isCustomSelected) &&
+      (!startDateTime || (!endDateTime && endEnabled))
+    ) {
       const now = new Date()
 
       if (value.mode === 'live' && value.range) {
@@ -766,16 +780,30 @@ export const TimePicker = memo(function TimePicker({
         }
       }
     }
-  }, [showCustomPanel, startDateTime, endDateTime, endEnabled, value])
+  }, [
+    showCustomPanel,
+    isCustomSelected,
+    startDateTime,
+    endDateTime,
+    endEnabled,
+    value,
+  ])
 
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
-      if (!newOpen && showCustomPanel && !isUserInteractionRef.current) {
+      if (
+        !newOpen &&
+        (showCustomPanel || isCustomSelected) &&
+        !isUserInteractionRef.current
+      ) {
         return
       }
       setOpen(newOpen)
+      if (!newOpen) {
+        setShowCustomPanel(false)
+      }
     },
-    [showCustomPanel]
+    [showCustomPanel, isCustomSelected]
   )
 
   const handleCustomSubmit = useCallback(
@@ -819,6 +847,7 @@ export const TimePicker = memo(function TimePicker({
         }
       }
 
+      setShowCustomPanel(false)
       setOpen(false)
       setTimeout(() => {
         isUserInteractionRef.current = false // reset flag after state updates
@@ -865,6 +894,7 @@ export const TimePicker = memo(function TimePicker({
             e.preventDefault()
           } else {
             isUserInteractionRef.current = true
+            setShowCustomPanel(false)
             setTimeout(() => {
               isUserInteractionRef.current = false
             }, 100)
@@ -872,6 +902,7 @@ export const TimePicker = memo(function TimePicker({
         }}
         onEscapeKeyDown={() => {
           isUserInteractionRef.current = true
+          setShowCustomPanel(false)
           setTimeout(() => {
             isUserInteractionRef.current = false
           }, 100)
@@ -907,32 +938,39 @@ export const TimePicker = memo(function TimePicker({
 
             <RadioGroup
               value={isCustomSelected ? 'custom' : ''}
-              onValueChange={() => handleCustomSelect()}
+              onValueChange={(value) => {
+                if (value === 'custom') {
+                  handleCustomSelect()
+                }
+              }}
+              onClick={() => {
+                handleCustomSelect()
+              }}
               className="gap-0"
             >
-              <label
+              <div
                 className={cn(
-                  'flex items-center justify-between px-2 py-1.5 cursor-pointer',
+                  'flex items-center justify-between px-2 py-1.5',
                   'hover:bg-bg-highlight transition-colors',
-                  showCustomPanel && 'bg-bg-highlight'
+                  (showCustomPanel || isCustomSelected) && 'bg-bg-highlight'
                 )}
               >
-                <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer flex-1">
                   <RadioGroupItem value="custom" />
                   <span className="prose-body">Custom</span>
-                </div>
+                </label>
                 <ChevronRight
                   className={cn(
                     'size-4 text-fg-tertiary transition-transform',
                     showCustomPanel && 'rotate-90'
                   )}
                 />
-              </label>
+              </div>
             </RadioGroup>
           </div>
 
           <AnimatePresence mode="wait">
-            {showCustomPanel && (
+            {(showCustomPanel || isCustomSelected) && (
               <motion.div
                 data-custom-panel
                 initial={{
@@ -988,7 +1026,7 @@ export const TimePicker = memo(function TimePicker({
                   startDateTime={startDateTime}
                   endDateTime={endDateTime}
                   endEnabled={endEnabled}
-                  isOpen={showCustomPanel}
+                  isOpen={showCustomPanel || isCustomSelected}
                   onSubmit={handleCustomSubmit}
                   onValuesChange={handleCustomValuesChange}
                 />
