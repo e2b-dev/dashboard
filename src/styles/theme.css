@@ -25,7 +25,7 @@
   }
 
   .font-mono {
-    @apply tracking-wide;
+    @apply !tracking-[0%];
   }
 }
 
@@ -43,8 +43,8 @@
     --protected-sidebar-width: 256px;
   }
 
-  /* Fumadocs 
-  
+  /* Fumadocs
+
   --fd-nav-height: var(--public-nav-height) !important;
   --fd-sidebar-width: var(--protected-sidebar-width) !important;
 
@@ -105,8 +105,57 @@
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgb(255, 135, 99, 0.16);
 
+  --graph-1: #fce8d8;
+  --graph-2: #f7b076;
+  --graph-3: #e27c1d;
+  --graph-4: #c09bb8; /* Pastel purple-peach */
+  --graph-5: #a67fa9; /* Pastel purple leaning to graph-6 */
+  --graph-6: #8c5ca5; /* Purple with orange contrast */
+
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
+
+  --graph-area-accent-main-from: rgba(229, 111, 0, 0.16);
+  --graph-area-accent-main-to: rgba(250, 250, 250, 0.16);
+
+  --graph-area-accent-positive-from: rgba(
+    0,
+    166,
+    112,
+    0.16
+  ); /* Success/positive area gradient */
+  --graph-area-accent-positive-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-fg-from: rgba(108, 108, 108, 0.2);
+  --graph-area-fg-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-1-from: rgba(252, 232, 216, 0.25); /* Peachy area gradient */
+  --graph-area-1-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-2-from: rgba(247, 176, 118, 0.2); /* Orange area gradient */
+  --graph-area-2-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-3-from: rgba(226, 124, 29, 0.18); /* Dark orange area gradient */
+  --graph-area-3-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-4-from: rgba(
+    192,
+    155,
+    184,
+    0.18
+  ); /* Pastel purple-peach area gradient */
+  --graph-area-4-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-5-from: rgba(
+    166,
+    127,
+    169,
+    0.18
+  ); /* Pastel purple area gradient */
+  --graph-area-5-to: rgba(250, 250, 250, 0.2);
+
+  --graph-area-6-from: rgba(140, 92, 165, 0.18); /* Purple area gradient */
+  --graph-area-6-to: rgba(250, 250, 250, 0.2);
 }
 
 .dark {
@@ -137,8 +186,8 @@
   --accent-main-highlight: #ff8800;
   --accent-main-bg: rgba(255, 136, 0, 0.16);
 
-  --accent-positive-highlight: #00d942;
-  --accent-positive-bg: rgba(0, 217, 66, 0.16);
+  --accent-positive-highlight: #00d992;
+  --accent-positive-bg: rgba(0, 217, 146, 0.16);
 
   --accent-info-highlight: #59a8e1;
   --accent-info-bg: rgba(89, 168, 225, 0.22);
@@ -155,8 +204,57 @@
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgba(255, 135, 99, 0.16);
 
+  --graph-1: #fce8d8;
+  --graph-2: #f7b076;
+  --graph-3: #e27c1d;
+  --graph-4: #d4b0cc; /* Pastel purple-peach */
+  --graph-5: #ba94bd; /* Pastel purple leaning to graph-6 */
+  --graph-6: #a275bb; /* Purple with orange contrast */
+
   --shadow: hsl(0 0% 3%);
   --shadow-strength: 0.2;
+
+  --graph-area-accent-main-from: rgba(255, 136, 0, 0.22);
+  --graph-area-accent-main-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-accent-positive-from: rgba(
+    0,
+    217,
+    146,
+    0.22
+  ); /* Success/positive area gradient */
+  --graph-area-accent-positive-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-1-from: rgba(252, 232, 216, 0.35); /* Peachy area gradient */
+  --graph-area-1-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-2-from: rgba(247, 176, 118, 0.3); /* Orange area gradient */
+  --graph-area-2-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-3-from: rgba(226, 124, 29, 0.25); /* Dark orange area gradient */
+  --graph-area-3-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-fg-from: rgba(108, 108, 108, 0.2);
+  --graph-area-fg-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-4-from: rgba(
+    212,
+    176,
+    204,
+    0.25
+  ); /* Pastel purple-peach area gradient */
+  --graph-area-4-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-5-from: rgba(
+    186,
+    148,
+    189,
+    0.25
+  ); /* Pastel purple area gradient */
+  --graph-area-5-to: rgba(10, 10, 10, 0.2);
+
+  --graph-area-6-from: rgba(162, 117, 187, 0.25); /* Purple area gradient */
+  --graph-area-6-to: rgba(10, 10, 10, 0.2);
 }
 
 @theme {
@@ -214,6 +312,13 @@
 
   --color-ring: var(--accent-main-highlight);
 
+  --color-graph-1: var(--graph-1);
+  --color-graph-2: var(--graph-2);
+  --color-graph-3: var(--graph-3);
+  --color-graph-4: var(--graph-4);
+  --color-graph-5: var(--graph-5);
+  --color-graph-6: var(--graph-6);
+
   --color-chart-1: var(--accent-main-highlight);
   --color-chart-2: var(--accent-positive-highlight);
   --color-chart-3: var(--accent-info-highlight);
@@ -269,7 +374,7 @@
     'Liberation Mono', 'Courier New', monospace;
   --font-fira-code: 'Fira Code', monospace;
 
-  /* Fumadocs 
+  /* Fumadocs
     --color-fd-background: var(--bg);
     --color-fd-foreground: var(--fg);
     --color-fd-muted: var(--bg-1);
@@ -285,7 +390,7 @@
     --color-fd-secondary-foreground: var(--fg);
     --color-fd-accent: var(--bg-1);
     --color-fd-accent-foreground: var(--fg);
-    --color-fd-ring: var(--ring); 
+    --color-fd-ring: var(--ring);
   */
 
   /* Animations */
@@ -520,4 +625,9 @@
 
 @utility loader-xl {
   font-size: 1.5rem;
+}
+
+/* Composits */
+.label-tertiary {
+  @apply prose-label text-fg-tertiary uppercase;
 }

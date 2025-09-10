@@ -29,7 +29,7 @@ const SIDEBAR_WIDTH = '14.5rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
 const SIDEBAR_WIDTH_ICON = '3.25rem' // 52px
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
-const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-300 ease-out'
+const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-150 circ-out'
 
 export { SIDEBAR_TRANSITION_CLASSNAMES }
 

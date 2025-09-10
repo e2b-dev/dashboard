@@ -31,7 +31,12 @@ export default function SandboxDetailsTabs({
     <Tabs defaultValue={tab} value={tab} className="min-h-0 w-full flex-1">
       <TabsList className="bg-bg z-30 w-full justify-start pl-3 md:pl-6">
         {tabs.map((tab) => (
-          <TabsTrigger key={tab} value={tab} className="w-fit flex-none">
+          <TabsTrigger
+            layoutkey="tabs-indicator-sandbox"
+            key={tab}
+            value={tab}
+            className="w-fit flex-none"
+          >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </TabsTrigger>
         ))}

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { formatNumber } from '@/lib/utils/formatting'
 import React from 'react'
 
 export interface ResourceUsageProps {
@@ -25,7 +26,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   const hasMetrics = metrics !== null && metrics !== undefined
 
   if (mode === 'simple') {
-    const displayTotal = total ? total.toLocaleString() : 'n/a'
+    const displayTotal = total ? formatNumber(total) : 'n/a'
     return (
       <p className=" text-fg-tertiary">
         <span className="text-accent-info-highlight"> {displayTotal} </span>{' '}
@@ -50,8 +51,8 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         : 'text-fg'
   )
 
-  const displayValue = hasMetrics ? metrics.toLocaleString() : 'n/a'
-  const totalValue = total ? total.toLocaleString() : 'n/a'
+  const displayValue = hasMetrics ? formatNumber(metrics) : 'n/a'
+  const totalValue = total ? formatNumber(total) : 'n/a'
 
   return (
     <span

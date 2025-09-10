@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/index'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
@@ -7,7 +7,7 @@ import { Loader } from './loader'
 const buttonVariants = cva(
   [
     'inline-flex items-center cursor-pointer  justify-center whitespace-nowrap',
-    'font-mono uppercase tracking-wider ',
+    'font-mono uppercase',
     'transition-colors duration-150',
     'focus-visible:outline-none ',
     'disabled:pointer-events-none disabled:opacity-50',

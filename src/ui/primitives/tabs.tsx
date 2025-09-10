@@ -17,21 +17,28 @@ function Tabs({
   onValueChange,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
-  const [stateValue, setStateValue] = React.useState(defaultValue ?? value)
+  const isControlled = value !== undefined
+  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue)
 
-  React.useEffect(() => {
-    if (!stateValue) return
+  const currentValue = isControlled ? value : uncontrolledValue
 
-    onValueChange?.(stateValue)
-  }, [stateValue, onValueChange])
+  const handleValueChange = React.useCallback(
+    (nextValue: string) => {
+      if (!isControlled) {
+        setUncontrolledValue(nextValue)
+      }
+      onValueChange?.(nextValue)
+    },
+    [isControlled, onValueChange]
+  )
 
   return (
-    <TabsContext.Provider value={{ value: stateValue }}>
+    <TabsContext.Provider value={{ value: currentValue }}>
       <TabsPrimitive.Root
         data-slot="tabs"
         className={cn('flex flex-col', className)}
-        value={stateValue}
-        onValueChange={setStateValue}
+        value={currentValue}
+        onValueChange={handleValueChange}
         {...props}
       />
     </TabsContext.Provider>
@@ -46,7 +53,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'inline-flex h-9 w-fit items-center justify-center gap-3 border-b px-6',
+        'inline-flex h-9 w-fit items-center justify-center gap-6 border-b px-6',
         className
       )}
       {...props}
@@ -58,7 +65,7 @@ function TabsTrigger({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+}: React.ComponentProps<typeof TabsPrimitive.Trigger> & { layoutkey: string }) {
   const { value } = React.useContext(TabsContext)
   const isSelected = value === props.value
 
@@ -66,7 +73,7 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-8.25 flex-1 cursor-pointer items-center justify-center gap-1.5 pb-1.5 whitespace-nowrap text-fg-tertiary transition-[color,box-shadow] hover:text-fg-secondary focus-visible:ring-1 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-fg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative inline-flex h-8.25 flex-1 cursor-pointer items-center justify-center gap-2 pb-1.5 whitespace-nowrap text-fg-tertiary prose-body-highlight transition-[color,box-shadow] hover:text-fg-secondary focus-visible:ring-1 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-fg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         'focus-visible:border-ring focus-visible:ring-ring focus-visible:outline-ring',
         className
       )}
@@ -75,8 +82,8 @@ function TabsTrigger({
       {children}
       {isSelected && (
         <motion.div
-          layoutId="tabs-indicator"
-          className="border-accent-main-highlight  absolute inset-0 -bottom-0.5 border-b"
+          layoutId={props.layoutkey}
+          className="border-accent-main-highlight absolute inset-0 -bottom-0.5 border-b"
           initial={false}
           transition={{
             duration: 0.4,

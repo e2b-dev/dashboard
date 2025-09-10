@@ -16,9 +16,7 @@ import { Suspense } from 'react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
+  header?: React.ReactNode
 }
 
 export const metadata: Metadata = {
@@ -29,13 +27,17 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardLayout({
-  children,
-  params,
+  children: page,
+  // we are injecting server components from deeper route tree parts
+  // gives access to previously unavailable props for specific pages
+  // passes up the tree without breaking ssr cycle.
+  //
+  // read more: [@/app/dashboard/_read_me/INJECTABLES.md](@/app/dashboard/_read_me/INJECTABLES.md)
+  header: headerInjectable,
 }: DashboardLayoutProps) {
-  const { teamIdOrSlug } = await params
-
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+  const teamId = await resolveTeamIdInServerComponent()
   const teamSlug = await resolveTeamSlugInServerComponent()
+
   const session = await getSessionInsecure()
   const res = await getUserTeams()
 
@@ -61,11 +63,16 @@ export default async function DashboardLayout({
       <SidebarProvider
         defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
       >
-        <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+        <div className="min-h-dvh min-w-dvw flex max-h-full w-full flex-col overflow-hidden">
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />
             <SidebarInset>
-              <DashboardLayoutView>{children}</DashboardLayoutView>
+              <DashboardLayoutView
+                teamIdOrSlug={teamSlug}
+                headerInjectable={headerInjectable}
+              >
+                {page}
+              </DashboardLayoutView>
             </SidebarInset>
           </div>
         </div>
