@@ -43,7 +43,7 @@ export function formatChartTimestampUTC(
     return formatInTimeZone(date, 'UTC', 'MMM d')
   }
 
-  return formatInTimeZone(date, 'UTC', 'MMM d, h:mm:ss a')
+  return formatInTimeZone(date, 'UTC', 'h:mm:ss a')
 }
 
 /**
