@@ -69,13 +69,15 @@ export function LiveBadge({
 
 export function SemiLiveBadge({ className, ...props }: LiveBadgeProps) {
   return (
-    <HelpTooltip
-      classNames={{ icon: 'text-accent-positive-highlight' }}
-      trigger={<LiveBadge size="sm" className={className} {...props} />}
-    >
-      This data tends to be 30 seconds in the past, but is requested every{' '}
-      {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
-    </HelpTooltip>
+    <div className={className}>
+      <HelpTooltip
+        classNames={{ icon: 'text-accent-positive-highlight' }}
+        trigger={<LiveBadge size="sm" {...props} />}
+      >
+        This data tends to be 30 seconds in the past, but is requested every{' '}
+        {TEAM_METRICS_POLLING_INTERVAL_MS / 1000} seconds.
+      </HelpTooltip>
+    </div>
   )
 }
 
