@@ -276,7 +276,7 @@ export function fillMetricsWithZeros(
   start: number,
   end: number,
   step: number,
-  anomalousGapTolerance: number = 0.1
+  anomalousGapTolerance: number = 0.25
 ): ClientTeamMetrics {
   if (!data.length) {
     // calculate appropriate step for empty data
