@@ -34,17 +34,17 @@ describe('Date & Time Formatting', () => {
   describe('formatChartTimestampUTC', () => {
     it('formats timestamp as expected in UTC', () => {
       const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
-      expect(formatChartTimestampUTC(timestamp)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatChartTimestampUTC(timestamp)).toBe('2:30:45 PM')
     })
 
     it('handles Date object input', () => {
       const date = new Date('2024-01-05T14:30:45Z')
-      expect(formatChartTimestampUTC(date)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatChartTimestampUTC(date)).toBe('2:30:45 PM')
     })
 
     it('handles string input', () => {
       const dateString = '2024-01-05T14:30:45Z'
-      expect(formatChartTimestampUTC(dateString)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatChartTimestampUTC(dateString)).toBe('2:30:45 PM')
     })
 
     it('formats with date when showDate is true', () => {
@@ -139,7 +139,7 @@ describe('Date & Time Formatting', () => {
 
     it('formats time in UTC when useLocal is false', () => {
       const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
-      expect(formatTimeAxisLabel(timestamp, false, false)).toBe('Jan 5, 2:30:45 PM')
+      expect(formatTimeAxisLabel(timestamp, false, false)).toBe('2:30:45 PM')
     })
 
     it('formats with date when showDate is true', () => {
