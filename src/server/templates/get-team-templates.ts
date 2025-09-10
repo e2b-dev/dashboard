@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
@@ -24,7 +25,7 @@ export const getTeamTemplates = authActionClient
     const { teamId } = parsedInput
     const { session } = ctx
 
-    if (process.env.NEXT_PUBLIC_MOCK_DATA === '1') {
+    if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       return {
         templates: MOCK_TEMPLATES_DATA,
@@ -68,7 +69,7 @@ export const getTeamTemplates = authActionClient
 export const getDefaultTemplates = actionClient
   .metadata({ serverFunctionName: 'getDefaultTemplates' })
   .action(async () => {
-    if (process.env.NEXT_PUBLIC_MOCK_DATA === '1') {
+    if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       return {
         templates: MOCK_DEFAULT_TEMPLATES_DATA,
