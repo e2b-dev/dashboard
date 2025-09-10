@@ -12,6 +12,11 @@ import { Calendar } from './primitives/calendar'
 import { Input } from './primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
+// Reference date used for parsing time-only values
+// This date is irrelevant since we only use the time values from the parsed result
+// Any valid date would work here - we just need a complete datetime string for parsing
+const REFERENCE_DATE = '2024-01-01'
+
 // primitive date/time input component with calendar and time selectors
 export interface TimeInputProps {
   dateValue: string
@@ -51,7 +56,7 @@ export const TimeInput = memo(function TimeInput({
   const selectedDate = tryParseDatetime(dateValue)
 
   // parse time values for time selectors
-  const timeDate = tryParseDatetime(`2024-01-01 ${timeValue}`)
+  const timeDate = tryParseDatetime(`${REFERENCE_DATE} ${timeValue}`)
   const [hours, setHours] = useState(timeDate ? timeDate.getHours() : 0)
   const [minutes, setMinutes] = useState(timeDate ? timeDate.getMinutes() : 0)
   const [seconds, setSeconds] = useState(timeDate ? timeDate.getSeconds() : 0)
@@ -63,7 +68,7 @@ export const TimeInput = memo(function TimeInput({
 
   useEffect(() => {
     setDisplayTime(timeValue || '')
-    const timeDate = tryParseDatetime(`2024-01-01 ${timeValue}`)
+    const timeDate = tryParseDatetime(`${REFERENCE_DATE} ${timeValue}`)
     if (timeDate) {
       setHours(timeDate.getHours())
       setMinutes(timeDate.getMinutes())
