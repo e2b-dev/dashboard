@@ -101,6 +101,8 @@ export default function StartRateChartClient({
     [data?.step]
   )
 
+  if (!data) return null
+
   return (
     <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
       <div className="md:min-h-[60px] flex flex-col justify-end">
@@ -166,7 +168,7 @@ export default function StartRateChartClient({
           }),
           yAxis: {
             splitNumber: 2,
-            max: calculateYAxisMax(lineData),
+            max: calculateYAxisMax(lineData, undefined, 1.5),
           },
           grid: {
             left: 40,

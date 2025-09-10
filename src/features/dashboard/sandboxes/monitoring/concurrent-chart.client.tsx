@@ -181,6 +181,8 @@ export default function ConcurrentChartClient({
     [data?.step]
   )
 
+  if (!data) return null
+
   return (
     <div className="p-3 md:p-6 border-b w-full flex flex-col flex-1 md:min-h-0">
       <div className="flex max-md:flex-col md:justify-between gap-2 md:gap-6 md:min-h-[60px]">
@@ -300,7 +302,7 @@ export default function ConcurrentChartClient({
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}
-        // yAxisLimit={concurrentInstancesLimit}
+        yAxisLimit={concurrentInstancesLimit}
         group="sandboxes-monitoring"
         onChartReady={(chart) => {
           // if we have a previous chart instance that's different, unregister it
@@ -340,9 +342,27 @@ export default function ConcurrentChartClient({
           }),
           yAxis: {
             splitNumber: 2,
-            max: calculateYAxisMax(lineData),
+            max: concurrentInstancesLimit
+              ? concurrentInstancesLimit * 1.1
+              : calculateYAxisMax(lineData),
             axisLabel: {
-              formatter: (value: number) => formatAxisNumber(value),
+              formatter: (value: number) => {
+                // Hide labels that are too close to the limit line
+                if (concurrentInstancesLimit !== undefined) {
+                  const tolerance = concurrentInstancesLimit * 0.1 // 10% tolerance
+                  const minDistance = Math.max(
+                    tolerance,
+                    concurrentInstancesLimit * 0.05
+                  ) // At least 5% distance
+
+                  if (
+                    Math.abs(value - concurrentInstancesLimit) <= minDistance
+                  ) {
+                    return '' // Hide the label
+                  }
+                }
+                return formatAxisNumber(value)
+              },
             },
           },
           grid: {

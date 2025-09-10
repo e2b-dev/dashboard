@@ -149,6 +149,22 @@ export default function LineChart({
     }
   }, [breakpoint, duration])
 
+  // Create interval function to hide split lines near limit
+  const createSplitLineInterval = useCallback((limit?: number) => {
+    return (index: number, value: string | number) => {
+      if (limit === undefined) return true
+
+      const numValue = typeof value === 'string' ? parseFloat(value) : value
+      if (isNaN(numValue)) return true
+
+      const tolerance = limit * 0.1 // 10% tolerance
+      const minDistance = Math.max(tolerance, limit * 0.05) // At least 5% distance
+
+      // Hide if too close to limit
+      return Math.abs(numValue - limit) > minDistance
+    }
+  }, [])
+
   const option = useMemo<EChartsOption>(() => {
     const series = makeSeriesFromData(data, cssVars, showTooltip)
     const responsiveConfig = getResponsiveAxisConfig()
@@ -211,7 +227,7 @@ export default function LineChart({
                   yAxis: yAxisLimit,
                   name: 'Limit',
                   label: {
-                    formatter: `${formatNumber(yAxisLimit)}`,
+                    formatter: `${formatAxisNumber(yAxisLimit)}`,
                     position: 'start' as const,
                     backgroundColor: cssVars['--bg-1'],
                     color: cssVars['--accent-error-highlight'],
@@ -534,7 +550,18 @@ export default function LineChart({
           color: cssVars['--fg-tertiary'],
           fontFamily: cssVars['--font-mono'],
           fontSize: responsiveConfig.fontSize,
-          formatter: (value: number) => formatAxisNumber(value),
+          formatter: (value: number) => {
+            // Hide labels that are too close to the limit line
+            if (yAxisLimit !== undefined) {
+              const tolerance = yAxisLimit * 0.1 // 10% tolerance
+              const minDistance = Math.max(tolerance, yAxisLimit * 0.05) // At least 5% distance
+
+              if (Math.abs(value - yAxisLimit) <= minDistance) {
+                return '' // Hide the label
+              }
+            }
+            return formatAxisNumber(value)
+          },
           overflow: 'truncate' as const,
           ellipsis: '…',
           width: breakpoint.isSmDown ? 30 : 40,
@@ -557,6 +584,7 @@ export default function LineChart({
         },
         splitLine: {
           lineStyle: { color: cssVars['--stroke'], type: 'dashed' },
+          interval: createSplitLineInterval(yAxisLimit),
         },
         splitNumber: responsiveConfig.yAxisSplitNumber,
         max: function (value: { max: number }) {
@@ -588,6 +616,7 @@ export default function LineChart({
     yAxisLimit,
     resolvedTheme,
     getResponsiveAxisConfig,
+    createSplitLineInterval,
     breakpoint.isSmDown,
     syncAxisPointers,
     showTooltip,
