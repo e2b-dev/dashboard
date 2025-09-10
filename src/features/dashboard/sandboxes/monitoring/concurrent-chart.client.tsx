@@ -1,6 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { cn } from '@/lib/utils'
 import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
 import {
   TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER,
@@ -11,10 +12,10 @@ import {
   TIME_RANGES,
   TimeRangeKey,
 } from '@/lib/utils/timeframe'
-import { cn } from '@/lib/utils/ui'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
 import CopyButton from '@/ui/copy-button'
+import { createSingleValueTooltipFormatter } from '@/ui/data/chart-utils'
 import LineChart from '@/ui/data/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
@@ -27,7 +28,6 @@ import {
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
-  createSingleValueTooltipFormatter,
   transformMetricsToLineData,
 } from './chart-utils'
 import { useSyncedMetrics } from './hooks/use-synced-metrics'

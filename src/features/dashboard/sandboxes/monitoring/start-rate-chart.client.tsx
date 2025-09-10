@@ -5,6 +5,7 @@ import { formatDecimal } from '@/lib/utils/formatting'
 import { ParsedTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
+import { createSingleValueTooltipFormatter } from '@/ui/data/chart-utils'
 import LineChart from '@/ui/data/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
 import * as echarts from 'echarts'
@@ -16,7 +17,6 @@ import {
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
-  createSingleValueTooltipFormatter,
   transformMetricsToLineData,
 } from './chart-utils'
 import { useSyncedMetrics } from './hooks/use-synced-metrics'

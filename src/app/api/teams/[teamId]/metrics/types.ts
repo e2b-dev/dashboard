@@ -34,7 +34,7 @@ export const TeamMetricsRequestSchema = z
     { message: 'Date range cannot exceed 31 days' }
   )
 
-export type TeamMetricsRequest = z.infer<typeof TeamMetricsRequestSchema>
+// TeamMetricsRequest type is inferred from schema when needed, no need to export
 
 export type TeamMetricsResponse = {
   metrics: ClientTeamMetrics

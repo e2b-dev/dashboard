@@ -18,10 +18,10 @@ import 'echarts/lib/component/dataZoom'
 import 'echarts/lib/component/dataZoomInside'
 import 'echarts/lib/component/title'
 
-import { createSingleValueTooltipFormatter } from '@/features/dashboard/sandboxes/monitoring/chart-utils'
 import { useTheme } from 'next-themes'
 import { useCallback, useMemo, useRef } from 'react'
 import { renderToString } from 'react-dom/server'
+import { createSingleValueTooltipFormatter } from './chart-utils'
 import { defaultLineChartOption } from './line-chart.defaults'
 import {
   LineSeries,

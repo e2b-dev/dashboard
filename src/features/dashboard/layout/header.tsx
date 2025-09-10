@@ -1,7 +1,7 @@
 'use client'
 
 import { getDashboardPageConfig } from '@/configs/layout'
-import { cn } from '@/lib/utils/ui'
+import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
