@@ -195,7 +195,8 @@ export const MaxConcurrentSandboxes = async ({
   const concurrentSandboxes = Math.max(
     ...teamMetricsResult.data.metrics.map(
       (item: ClientTeamMetric) => item.concurrentSandboxes ?? 0
-    )
+    ),
+    0 // default to 0 if no metrics available
   )
 
   return (
