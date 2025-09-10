@@ -12,10 +12,38 @@ import { Calendar } from './primitives/calendar'
 import { Input } from './primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
-// Reference date used for parsing time-only values
-// This date is irrelevant since we only use the time values from the parsed result
-// Any valid date would work here - we just need a complete datetime string for parsing
+// reference date used for parsing time-only values
+// this date is irrelevant since we only use the time values from the parsed result
+// any valid date would work here - we just need a complete datetime string for parsing
 const REFERENCE_DATE = '2024-01-01'
+
+// get timezone identifier in developer-friendly format (e.g., GMT+2, PST, CET)
+function getTimezoneIdentifier(): string {
+  const date = new Date()
+
+  // try to get the timezone abbreviation (like PST, CET, etc.)
+  // this works in some browsers but not all
+  const shortTimeString = date.toLocaleTimeString('en-US', {
+    timeZoneName: 'short',
+  })
+  const match = shortTimeString.match(/\b([A-Z]{2,5})\b$/)
+
+  if (match && match[1] && !match[1].startsWith('GMT')) {
+    // return timezone abbreviation if we found one (PST, CET, etc.)
+    return match[1]
+  }
+
+  // fallback to GMT offset format (GMT+2, GMT-5, etc.)
+  const offset = -date.getTimezoneOffset()
+  const hours = Math.floor(Math.abs(offset) / 60)
+  const minutes = Math.abs(offset) % 60
+  const sign = offset >= 0 ? '+' : '-'
+
+  if (minutes === 0) {
+    return `GMT${sign}${hours}`
+  }
+  return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`
+}
 
 // primitive date/time input component with calendar and time selectors
 export interface TimeInputProps {
@@ -216,11 +244,7 @@ export const TimeInput = memo(function TimeInput({
           />
           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
             <span className="prose-label text-fg-tertiary font-mono">
-              {new Intl.DateTimeFormat()
-                .resolvedOptions()
-                .timeZone.split('/')
-                .pop()
-                ?.replace('_', ' ') || ''}
+              {getTimezoneIdentifier()}
             </span>
 
             <PopoverTrigger asChild>
