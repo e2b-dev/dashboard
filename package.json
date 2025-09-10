@@ -30,7 +30,7 @@
     "<<<<<< Testing": "",
     "test:run": "bun scripts:check-all-env && vitest run",
     "test:integration": "bun scripts:check-app-env && vitest run src/__test__/integration/",
-    "test:unit": "bun scripts:check-app-env && vitest run src/__test__/unit/",
+    "test:unit": "vitest run src/__test__/unit/",
     "test:e2e": "bun scripts:check-all-env && vitest run src/__test__/e2e/",
     "test:watch": "bun scripts:check-all-env && vitest",
     "test:ui": "bun scripts:check-all-env && vitest --ui",

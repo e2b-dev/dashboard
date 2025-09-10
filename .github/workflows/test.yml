@@ -11,15 +11,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
 
-    # minimal environment for unit tests - no external services needed
-    env:
-      NEXT_PUBLIC_E2B_DOMAIN: e2b-test.dev
-      NEXT_PUBLIC_POSTHOG_KEY: test-posthog-key
-      NEXT_PUBLIC_SUPABASE_URL: https://test-supabase-url.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-supabase-anon-key
-      NEXT_PUBLIC_STRIPE_BILLING_URL: https://test-stripe-billing.example.com
-      NEXT_PUBLIC_SCAN: 0
-      NEXT_PUBLIC_MOCK_DATA: 1
+    # unit tests don't need environment variables - they test pure functions
 
     steps:
       - name: Checkout code
