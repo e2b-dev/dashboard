@@ -201,7 +201,7 @@ export const MaxConcurrentSandboxes = async ({
 
   return (
     <>
-      <span className="prose-value-big">
+      <span className="prose-value-big mt-4">
         {formatNumber(concurrentSandboxes)}
       </span>
       {limit && (

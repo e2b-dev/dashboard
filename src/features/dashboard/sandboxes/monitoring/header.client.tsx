@@ -25,7 +25,7 @@ export function ConcurrentSandboxesClient({
 
   return (
     <>
-      <span className="prose-value-big">
+      <span className="prose-value-big mt-4">
         {formatNumber(lastConcurrentSandboxes)}
       </span>
       {limit && (
@@ -47,5 +47,5 @@ export function SandboxesStartRateClient({
     return Math.round(rate * 100) / 100
   }, [data])
 
-  return <span className="prose-value-big">{lastSandboxesStartRate}</span>
+  return <span className="prose-value-big mt-4">{lastSandboxesStartRate}</span>
 }
