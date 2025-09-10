@@ -1,6 +1,5 @@
 import 'server-only'
 
-import { TeamMetricsRequestSchema } from '@/app/api/teams/[teamId]/metrics/types'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   calculateTeamMetricsStep,
@@ -15,15 +14,35 @@ import getTeamMetricsMemoized from './get-team-metrics-memo'
 export const GetTeamMetricsSchema = z
   .object({
     teamId: z.string().uuid(),
-    startDate: TeamMetricsRequestSchema._def.schema.shape.start,
-    endDate: TeamMetricsRequestSchema._def.schema.shape.end,
+    startDate: z
+      .number()
+      .int()
+      .positive()
+      .describe('Unix timestamp in milliseconds')
+      .refine(
+        (start) => {
+          const now = Date.now()
+          const maxDaysAgo = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
+          return start >= now - maxDaysAgo
+        },
+        { message: 'Start date cannot be more than 31 days ago' }
+      ),
+    endDate: z
+      .number()
+      .int()
+      .positive()
+      .describe('Unix timestamp in milliseconds')
+      .refine(
+        (end) => end <= Date.now() + 60 * 1000, // allow 60 seconds in future for clock skew
+        { message: 'End date cannot be more than 60 seconds in the future' }
+      ),
   })
   .refine(
     (data) => {
-      const maxSpanMs = 35 * 24 * 60 * 60 * 1000 // 35 days in ms
+      const maxSpanMs = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
       return data.endDate - data.startDate <= maxSpanMs
     },
-    { message: 'Date range cannot exceed 35 days' }
+    { message: 'Date range cannot exceed 31 days' }
   )
 
 export const getTeamMetrics = authActionClient
