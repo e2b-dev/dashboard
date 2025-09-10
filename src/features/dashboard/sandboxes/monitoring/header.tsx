@@ -1,5 +1,6 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
 import { formatNumber } from '@/lib/utils/formatting'
+import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
@@ -130,9 +131,21 @@ export const ConcurrentSandboxes = async ({
     )
   }
 
+  const filledMetrics = fillTeamMetricsWithZeros(
+    teamMetricsResult.data.metrics,
+    start,
+    now,
+    60_000
+  )
+
+  const initialData = {
+    ...teamMetricsResult.data,
+    metrics: filledMetrics,
+  }
+
   return (
     <ConcurrentSandboxesClient
-      initialData={teamMetricsResult.data}
+      initialData={initialData}
       limit={tierLimits?.data?.concurrentInstances}
     />
   )
@@ -165,7 +178,18 @@ export const SandboxesStartRate = async ({
     )
   }
 
-  return <SandboxesStartRateClient initialData={teamMetricsResult.data} />
+  const filledMetrics = fillTeamMetricsWithZeros(
+    teamMetricsResult.data.metrics,
+    start,
+    now,
+    60_000
+  )
+  const initialData = {
+    ...teamMetricsResult.data,
+    metrics: filledMetrics,
+  }
+
+  return <SandboxesStartRateClient initialData={initialData} />
 }
 
 export const MaxConcurrentSandboxes = async ({

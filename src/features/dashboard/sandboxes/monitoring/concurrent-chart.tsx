@@ -10,6 +10,7 @@ import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 
+import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import ChartFallback from './chart-fallback'
 import ConcurrentChartClient from './concurrent-chart.client'
 
@@ -57,7 +58,17 @@ async function ConcurrentChartResolver({
     getTeamTierLimits({ teamId }),
   ])
 
-  const data = teamMetricsResult?.data ?? { metrics: [], step: 0 }
+  const filledMetrics = fillTeamMetricsWithZeros(
+    teamMetricsResult?.data?.metrics ?? [],
+    timeframe.start,
+    timeframe.end,
+    60_000
+  )
+
+  const initialData = {
+    step: teamMetricsResult?.data?.step ?? 0,
+    metrics: filledMetrics,
+  }
 
   if (!tierLimits?.data) {
     l.error(
@@ -79,7 +90,7 @@ async function ConcurrentChartResolver({
   return (
     <ConcurrentChartClient
       teamId={teamId}
-      initialData={data}
+      initialData={initialData}
       initialTimeframe={timeframe}
       concurrentInstancesLimit={concurrentInstancesLimit}
     />

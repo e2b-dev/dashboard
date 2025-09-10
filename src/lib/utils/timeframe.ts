@@ -210,5 +210,6 @@ export function parseAndCreateTimeframe(
   now: number = Date.now()
 ): ParsedTimeframe {
   const { start, end } = parseTimeframeFromPlot(plot)
+
   return createTimeframe(start, end, now)
 }

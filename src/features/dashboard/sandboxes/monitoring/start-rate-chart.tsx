@@ -8,6 +8,7 @@ import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 
+import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import ChartFallback from './chart-fallback'
 import StartRateChartClient from './start-rate-chart.client'
 
@@ -46,12 +47,21 @@ async function StartRateChartResolver({
     endDate: timeframe.end,
   })
 
-  const data = teamMetricsResult?.data ?? { metrics: [], step: 0 }
+  const filledMetrics = fillTeamMetricsWithZeros(
+    teamMetricsResult?.data?.metrics ?? [],
+    timeframe.start,
+    timeframe.end,
+    60_000
+  )
+  const initialData = {
+    step: teamMetricsResult?.data?.step ?? 0,
+    metrics: filledMetrics,
+  }
 
   return (
     <StartRateChartClient
       teamId={teamId}
-      initialData={data}
+      initialData={initialData}
       initialTimeframe={timeframe}
     />
   )

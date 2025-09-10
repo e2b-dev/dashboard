@@ -583,6 +583,7 @@ export default function LineChart({
           formatter: createSplitLineInterval(yAxisLimit ?? 0),
         },
         axisPointer: {
+          show: false,
           lineStyle: {
             color: cssVars['--bg-inverted'],
             type: 'dashed',

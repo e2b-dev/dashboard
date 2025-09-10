@@ -13,6 +13,75 @@ export function calculateAverage(
   return data.reduce((acc, cur) => acc + (cur.y || 0), 0) / data.length
 }
 
+/**
+ * Calculates the median value from data points.
+ * Median is resistant to outliers and shows the "typical" value.
+ * Use this when you want to understand what most users experience.
+ */
+export function calculateMedian(data: Array<{ x: unknown; y: number | null }>) {
+  if (!data.length) return 0
+
+  const values = data
+    .map((d) => d.y || 0)
+    .filter((v) => v !== null)
+    .sort((a, b) => a - b)
+
+  if (values.length === 0) return 0
+
+  const mid = Math.floor(values.length / 2)
+
+  if (values.length % 2 === 0) {
+    return (values[mid - 1]! + values[mid]!) / 2
+  }
+
+  return values[mid]!
+}
+
+export type CentralTendencyMeasure = {
+  value: number
+  type: 'average' | 'median'
+}
+
+/**
+ * Returns either average (mean) or median with appropriate symbol.
+ *
+ * IMPORTANT: The input data points are already pre-aggregated by the backend
+ * (e.g., each point is a 5-minute average). This function calculates:
+ * - Average of averages (for concurrent sandboxes)
+ * - Median of averages (for start rates)
+ *
+ * Use AVERAGE (x̄) for:
+ * - Concurrent sandboxes: Shows mean resource load across time periods
+ * - Metrics where total capacity matters
+ *
+ * Use MEDIAN (x̃) for:
+ * - Start rates: Shows typical rate, filtering out burst periods
+ * - Metrics with high variability where outliers distort the mean
+ *
+ * @param data - Array of pre-aggregated data points from backend
+ * @param useMedian - true for median (bursty data), false for average (capacity)
+ */
+export function calculateCentralTendency(
+  data: Array<{ x: unknown; y: number | null }>,
+  type: 'average' | 'median'
+): CentralTendencyMeasure {
+  if (!data.length) {
+    return { value: 0, type: 'average' }
+  }
+
+  if (type === 'median') {
+    return {
+      value: calculateMedian(data),
+      type: 'median',
+    }
+  }
+
+  return {
+    value: calculateAverage(data),
+    type: 'average',
+  }
+}
+
 export function createSingleValueTooltipFormatter({
   step,
   label,

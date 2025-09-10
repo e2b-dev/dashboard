@@ -1,11 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import {
-  formatAveragingPeriod,
-  formatCompactDate,
-  formatDecimal,
-} from '@/lib/utils/formatting'
+import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
 import {
   TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER,
   calculateStepForDuration,
@@ -27,12 +23,11 @@ import { InferSafeActionFnResult } from 'next-safe-action'
 import { useEffect, useMemo, useRef } from 'react'
 import { NonUndefined } from 'react-hook-form'
 import {
-  calculateAverage,
+  calculateCentralTendency,
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
   createSingleValueTooltipFormatter,
-  fillMetricsWithZeros,
   transformMetricsToLineData,
 } from './chart-utils'
 import { useSyncedMetrics } from './hooks/use-synced-metrics'
@@ -109,22 +104,17 @@ export default function ConcurrentChartClient({
       return []
     }
 
-    // fill zeros before transforming to line data
-    const filledMetrics = fillMetricsWithZeros(
-      data.metrics,
-      timeframe.start,
-      timeframe.end,
-      data.step
-    )
-
     return transformMetricsToLineData<ClientTeamMetric>(
-      filledMetrics,
+      data.metrics,
       (d) => d.timestamp,
       (d) => d.concurrentSandboxes
     )
-  }, [data?.metrics, data?.step, timeframe.start, timeframe.end])
+  }, [data?.metrics, data?.step])
 
-  const average = useMemo(() => calculateAverage(lineData), [lineData])
+  const centralTendency = useMemo(
+    () => calculateCentralTendency(lineData, 'average'),
+    [lineData]
+  )
 
   const cssVars = useCssVars([
     '--accent-positive-highlight',
@@ -197,13 +187,11 @@ export default function ConcurrentChartClient({
           </span>
           <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
             <span className="prose-value-big max-md:text-2xl">
-              {formatDecimal(average, 1)}
+              {formatDecimal(centralTendency.value, 1)}
             </span>
             <span className="label-tertiary max-md:text-xs">
-              <span className="max-md:hidden">
-                over {formatAveragingPeriod(data?.step || 0)}
-              </span>
-              <span className="md:hidden">avg</span>
+              <span className="max-md:hidden">average over range</span>
+              <span className="md:hidden">avg over range</span>
             </span>
           </div>
         </div>
@@ -334,20 +322,17 @@ export default function ConcurrentChartClient({
             timeframe: {
               start:
                 lineData.length > 0
-                  ? Math.min(lineData[0]?.x as number, timeframe.start)
+                  ? (lineData[0]?.x as number)
                   : timeframe.start,
               end:
                 lineData.length > 0
-                  ? Math.max(
-                      lineData[lineData.length - 1]?.x as number,
-                      timeframe.end
-                    )
+                  ? (lineData[lineData.length - 1]?.x as number)
                   : timeframe.end,
               isLive: syncedTimeframe.isLive,
             },
           }),
           yAxis: {
-            splitNumber: 3,
+            splitNumber: 2,
             max: calculateYAxisMax(lineData, concurrentInstancesLimit || 100),
           },
         }}

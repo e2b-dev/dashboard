@@ -161,6 +161,10 @@ export function formatAveragingPeriod(stepMs: number): string {
   return `${formatDuration(stepMs)} average`
 }
 
+export function formatMedianPeriod(stepMs: number): string {
+  return `${formatDuration(stepMs)} median`
+}
+
 // ============================================================================
 // Number Formatting
 // ============================================================================

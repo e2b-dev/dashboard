@@ -204,7 +204,7 @@ export const useTeamMetricsStore = create<Store>()(
         },
       }),
       {
-        name: 'metrics',
+        name: 'plot',
         storage: createJSONStorage(() => createMetricsUrlStorage(initialState)),
         partialize: (state) => ({
           // only persist start and end timestamps
