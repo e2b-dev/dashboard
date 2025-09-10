@@ -257,9 +257,9 @@ export default function ConcurrentChartClient({
                 variant="ghost"
                 size="slate"
                 className={cn(
-                  'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0',
+                  'text-fg-tertiary hover:text-fg-secondary py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0 prose-label',
                   {
-                    'text-fg prose-body-highlight': currentRange === 'custom',
+                    'text-fg prose-label-highlight': currentRange === 'custom',
                   }
                 )}
               >
@@ -274,9 +274,9 @@ export default function ConcurrentChartClient({
                   variant="ghost"
                   size="slate"
                   className={cn(
-                    'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0',
+                    'text-fg-tertiary hover:text-fg-secondary py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0 prose-label',
                     {
-                      'text-fg prose-body-highlight': currentRange === key,
+                      'text-fg prose-label-highlight': currentRange === key,
                     }
                   )}
                   onClick={() =>
@@ -296,7 +296,7 @@ export default function ConcurrentChartClient({
         onZoomEnd={(from, end) => {
           setStaticMode(from, end)
         }}
-        yAxisLimit={concurrentInstancesLimit}
+        // yAxisLimit={concurrentInstancesLimit}
         group="sandboxes-monitoring"
         onChartReady={(chart) => {
           // if we have a previous chart instance that's different, unregister it
@@ -336,7 +336,7 @@ export default function ConcurrentChartClient({
           }),
           yAxis: {
             splitNumber: 2,
-            max: calculateYAxisMax(lineData, concurrentInstancesLimit || 100),
+            max: calculateYAxisMax(lineData),
           },
         }}
         data={[
