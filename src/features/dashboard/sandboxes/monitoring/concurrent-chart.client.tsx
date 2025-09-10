@@ -221,7 +221,7 @@ export default function ConcurrentChartClient({
                 title="Copy ISO 8601 time interval"
               />
               <span
-                className="text-fg py-0.5 max-md:text-[11px] md:text-xs prose-body-highlight truncate min-w-0"
+                className="text-fg py-0.5 max-md:text-[11px] md:text-xs prose-label-highlight truncate min-w-0"
                 style={{ letterSpacing: '0%' }}
                 title={customRangeCopyValue}
               >
@@ -267,9 +267,9 @@ export default function ConcurrentChartClient({
                 variant="ghost"
                 size="slate"
                 className={cn(
-                  'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0',
+                  'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0 prose-label',
                   {
-                    'text-fg prose-body-highlight': currentRange === 'custom',
+                    'text-fg prose-label-highlight': currentRange === 'custom',
                   }
                 )}
               >
@@ -284,9 +284,9 @@ export default function ConcurrentChartClient({
                   variant="ghost"
                   size="slate"
                   className={cn(
-                    'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0',
+                    'text-fg-tertiary hover:text-fg-secondary px-1 py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0 prose-label',
                     {
-                      'text-fg prose-body-highlight': currentRange === key,
+                      'text-fg prose-label-highlight': currentRange === key,
                     }
                   )}
                   onClick={() =>
