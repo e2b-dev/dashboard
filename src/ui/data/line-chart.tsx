@@ -233,7 +233,7 @@ export default function LineChart({
                     color: cssVars['--accent-error-highlight'],
                     fontFamily: cssVars['--font-mono'],
                     borderRadius: 0,
-                    padding: [4, 8],
+                    padding: [4, 4],
                     style: {
                       borderWidth: 0,
                       borderColor: cssVars['--accent-error-highlight'],
