@@ -227,7 +227,6 @@ export default function LineChart({
                 trigger: 'item' as const,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter: (params: any) => {
-                  console.log('params', params)
                   const value = params.data?.yAxis
                   if (value === undefined) return ''
                   return renderToString(
