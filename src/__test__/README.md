@@ -4,6 +4,70 @@ This project uses a comprehensive testing strategy with different types of tests
 
 ## Current Test Types
 
+### Unit Tests
+
+Unit tests are the most granular tests that verify individual functions, components, or modules work correctly in isolation. These tests are fast, focused, and should be the foundation of our testing pyramid.
+
+**Location:** `src/__test__/unit/`
+
+**Naming Convention:** Unit test files should follow the pattern `[module-name].test.[ext]`
+- For testing `src/lib/utils/formatting.ts`, create `src/__test__/unit/formatting.test.ts`
+- For testing `src/ui/primitives/button.tsx`, create `src/__test__/unit/button.test.tsx`
+- Group related tests in the same file when they test the same module
+
+**Run with:** 
+- All unit tests: `bun test:unit`
+- All tests: `bun test:run`
+- Watch mode: `bun test:watch`
+- Specific file: `bun test src/__test__/unit/formatting.test.ts`
+
+**Examples:**
+- `src/__test__/unit/formatting.test.ts` for testing formatting utilities
+- `src/__test__/unit/auth-utils.test.ts` for testing authentication utilities
+- `src/__test__/unit/button.test.tsx` for testing button component
+
+**Benefits of Centralized Unit Tests:**
+- All unit tests in one location for easy discovery
+- Clear separation between test types
+- Consistent test organization
+- Easy to run all unit tests at once
+
+**What to Unit Test:**
+- Pure utility functions (e.g., formatters, validators, parsers)
+- Business logic functions
+- React hooks
+- Component rendering and behavior
+- Data transformations
+- Error handling edge cases
+
+**Example Unit Test Structure:**
+```typescript
+// src/__test__/unit/formatting.test.ts
+import { describe, it, expect } from 'vitest'
+import { formatNumber, formatMemory, formatDuration } from '@/lib/utils/formatting'
+
+describe('formatNumber', () => {
+  it('should format numbers with thousand separators', () => {
+    expect(formatNumber(1000)).toBe('1,000')
+    expect(formatNumber(1000000)).toBe('1,000,000')
+  })
+  
+  it('should handle zero', () => {
+    expect(formatNumber(0)).toBe('0')
+  })
+})
+
+describe('formatMemory', () => {
+  it('should display MB for values under 1024', () => {
+    expect(formatMemory(512)).toBe('512 MB')
+  })
+  
+  it('should convert to GB for values >= 1024', () => {
+    expect(formatMemory(2048)).toBe('2 GB')
+  })
+})
+```
+
 ### Integration Tests
 
 Integration tests verify that different parts of the application work together correctly, but they use mocks for external dependencies like databases and APIs. These tests are fast, reliable, and don't require external services to be running.
@@ -60,9 +124,20 @@ TEST_E2B_TEMPLATE=base  # optional, defaults to 'base'
 
 ### Locally
 
-To run all tests:
+To run all tests (unit, integration, and E2E):
 ```bash
 bun test:run
+```
+
+To run tests in watch mode (great for development):
+```bash
+bun test:watch
+```
+
+To run only unit tests:
+```bash
+bun test:unit
+bun test src/__test__/unit/formatting.test.ts  # specific unit test file
 ```
 
 To run only integration tests:
@@ -77,7 +152,10 @@ bun test:e2e
 
 ### In CI/CD
 
-Currently, only integration tests are configured to run in CI/CD:
+Currently, unit and integration tests are configured to run in CI/CD:
+- **Unit tests** are run from `src/__test__/unit/`
+- **Integration tests** are run from `src/__test__/integration/`
+- Both use the `.test.` naming convention for automatic discovery
 
 (See [`.github/workflows/test.yml`](.github/workflows/test.yml))
 
@@ -121,9 +199,12 @@ To start implementing E2E tests:
 
 ## Best Practices
 
-1. **Write integration tests for most functionality**: They're faster and more reliable.
-2. **Use E2E tests for critical paths**: Focus on key user journeys like authentication, payment, etc.
-3. **Keep E2E tests minimal**: They're slower and more brittle, so use them sparingly.
-4. **Use test data**: Create and clean up test data in your E2E tests to avoid polluting your development/production environment.
-5. **Skip E2E tests if environment variables are missing**: This allows the tests to be run in environments without the necessary credentials. 
+1. **Start with unit tests**: Write unit tests for all utility functions, pure logic, and isolated components.
+2. **Organize tests by type**: Keep unit tests in `src/__test__/unit/`, integration tests in `src/__test__/integration/`.
+3. **Write integration tests for feature flows**: Test how different parts work together, but mock external dependencies.
+4. **Use E2E tests for critical paths**: Focus on key user journeys like authentication, payment, etc.
+5. **Keep E2E tests minimal**: They're slower and more brittle, so use them sparingly.
+6. **Use test data**: Create and clean up test data in your E2E tests to avoid polluting your development/production environment.
+7. **Skip E2E tests if environment variables are missing**: This allows the tests to be run in environments without the necessary credentials.
+8. **Follow the naming convention**: Always use `.test.` in the filename for all test files. 
 
