@@ -125,7 +125,7 @@ export default function SandboxInspectIncompatible({
               className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
-              <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>
+              <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug, 'list')}>
                 <ChevronLeft className="size-5" />
                 Back to sandboxes
               </Link>

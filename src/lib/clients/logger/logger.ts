@@ -81,6 +81,7 @@ const createLogger = () => {
       paths: REDACTION_PATHS,
       censor: '[Redacted]',
     },
+    level: 'debug',
   }
 
   return pino(baseConfig)

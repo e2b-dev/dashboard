@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { ForwardRefExoticComponent, RefAttributes } from 'react'
 import { INCLUDE_BILLING } from './flags'
+import { PROTECTED_URLS } from './urls'
 
 type DashboardNavLinkArgs = {
   teamIdOrSlug?: string
@@ -23,41 +24,46 @@ export type DashboardNavLink = {
     Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
   >
   group?: string
-  goesDeeper?: boolean
+  activeMatch?: string
 }
 
 export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
   {
     label: 'Sandboxes',
-    href: (args) => `/dashboard/${args.teamIdOrSlug}/sandboxes`,
+    href: (args) => PROTECTED_URLS.SANDBOXES(args.teamIdOrSlug!),
     icon: Box,
+    activeMatch: `/dashboard/*/sandboxes/**`,
   },
   {
     label: 'Templates',
-    href: (args) => `/dashboard/${args.teamIdOrSlug}/templates`,
+    href: (args) => PROTECTED_URLS.TEMPLATES(args.teamIdOrSlug!),
     icon: Container,
+    activeMatch: `/dashboard/*/templates`,
   },
   ...(INCLUDE_BILLING
     ? [
         {
           label: 'Usage',
           href: (args: DashboardNavLinkArgs) =>
-            `/dashboard/${args.teamIdOrSlug}/usage`,
+            PROTECTED_URLS.USAGE(args.teamIdOrSlug!),
           icon: Activity,
+          activeMatch: `/dashboard/*/usage/**`,
         },
       ]
     : []),
   {
     label: 'Team',
-    href: (args) => `/dashboard/${args.teamIdOrSlug}/team`,
+    href: (args) => PROTECTED_URLS.TEAM(args.teamIdOrSlug!),
     icon: Users,
     group: 'manage',
+    activeMatch: `/dashboard/*/team/**`,
   },
   {
     label: 'API Keys',
-    href: (args) => `/dashboard/${args.teamIdOrSlug}/keys`,
+    href: (args) => PROTECTED_URLS.KEYS(args.teamIdOrSlug!),
     icon: Key,
     group: 'manage',
+    activeMatch: `/dashboard/*/keys/**`,
   },
 
   ...(INCLUDE_BILLING
@@ -65,16 +71,18 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
         {
           label: 'Billing',
           href: (args: DashboardNavLinkArgs) =>
-            `/dashboard/${args.teamIdOrSlug}/billing`,
+            PROTECTED_URLS.BILLING(args.teamIdOrSlug!),
           icon: CreditCard,
           group: 'expenses',
+          activeMatch: `/dashboard/*/billing/**`,
         },
         {
           label: 'Budget',
           href: (args: DashboardNavLinkArgs) =>
-            `/dashboard/${args.teamIdOrSlug}/budget`,
+            PROTECTED_URLS.BUDGET(args.teamIdOrSlug!),
           group: 'expenses',
           icon: DollarSign,
+          activeMatch: `/dashboard/*/budget/**`,
         },
       ]
     : []),
@@ -83,7 +91,7 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
 export const EXTRA_DASHBOARD_LINKS: DashboardNavLink[] = [
   {
     label: 'Account Settings',
-    href: (args) => `/dashboard/account`,
+    href: (args) => PROTECTED_URLS.ACCOUNT_SETTINGS,
     icon: UserRoundCog,
   },
 ]

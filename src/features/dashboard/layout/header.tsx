@@ -1,7 +1,7 @@
 'use client'
 
 import { getDashboardPageConfig } from '@/configs/layout'
-import { cn } from '@/lib/utils/ui'
+import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
@@ -9,10 +9,14 @@ import { usePathname } from 'next/navigation'
 
 interface DashboardLayoutHeaderProps {
   className?: string
+  teamIdOrSlug?: string
+  headerInjectable?: React.ReactNode
 }
 
 export default function DashboardLayoutHeader({
   className,
+  teamIdOrSlug,
+  headerInjectable,
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()
   const config = getDashboardPageConfig(pathname)
@@ -29,7 +33,12 @@ export default function DashboardLayoutHeader({
       )}
     >
       <SidebarTrigger className="w-7 h-7 md:hidden" />
+
       <h1 className="mr-auto">{config?.title}</h1>
+
+      {/* custom content if provided via parallel route */}
+      {headerInjectable && <>{headerInjectable}</>}
+
       <ClientOnly>
         <ThemeSwitcher />
       </ClientOnly>

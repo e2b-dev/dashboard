@@ -1,10 +1,11 @@
 'use client'
 
+import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { Sandboxes } from '@/types/api'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import useSWR from 'swr'
 import { useDebounceValue } from 'usehooks-ts'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
@@ -36,6 +37,8 @@ export function useSandboxesMetrics({
 
   const [debouncedSandboxIds] = useDebounceValue(sandboxIds, debounceDelay)
 
+  const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
+
   const { data, error, isLoading } = useSWR<MetricsResponse>(
     debouncedSandboxIds.length > 0
       ? [`/api/teams/${teamId}/sandboxes/metrics`, debouncedSandboxIds]
@@ -47,7 +50,7 @@ export function useSandboxesMetrics({
         }
       }
 
-      if (process.env.NEXT_PUBLIC_MOCK_DATA === '1') {
+      if (USE_MOCK_DATA) {
         return MOCK_METRICS_DATA(sandboxes)
       }
 
@@ -73,22 +76,18 @@ export function useSandboxesMetrics({
       shouldRetryOnError: true,
       errorRetryCount: 100,
       errorRetryInterval: pollingInterval,
-      revalidateOnMount: true,
+      revalidateOnMount: false,
       revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      keepPreviousData: true,
 
       fallbackData: initialMetrics ? { metrics: initialMetrics } : undefined,
+      onSuccess: (data) => {
+        setMetrics(data.metrics)
+      },
     }
   )
-
-  const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
-
-  useEffect(() => {
-    if (data?.metrics) {
-      setMetrics(data.metrics)
-    }
-  }, [data?.metrics, setMetrics])
 
   return {
     metrics: data?.metrics ?? null,

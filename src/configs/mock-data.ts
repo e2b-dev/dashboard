@@ -1,6 +1,9 @@
 import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
 import { DefaultTemplate, Sandbox, Sandboxes, Template } from '@/types/api'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import {
+  ClientSandboxesMetrics,
+  ClientTeamMetrics,
+} from '@/types/sandboxes.types'
 import { addHours, subHours } from 'date-fns'
 import { nanoid } from 'nanoid'
 
@@ -1001,8 +1004,228 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
   }
 }
 
+/**
+ * This function replicates the back-end step calculation logic from e2b-dev/infra.
+ * https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
+ */
+export function calculateTeamMetricsStep(
+  startMs: number,
+  endMs: number
+): number {
+  const duration = endMs - startMs
+  const hour = 60 * 60 * 1000
+  const minute = 60 * 1000
+  const second = 1000
+
+  switch (true) {
+    case duration < hour:
+      return 5 * second
+    case duration < 6 * hour:
+      return 30 * second
+    case duration < 12 * hour:
+      return minute
+    case duration < 24 * hour:
+      return 2 * minute
+    case duration < 7 * 24 * hour:
+      return 5 * minute
+    default:
+      return 15 * minute
+  }
+}
+
+/**
+ * Generate mock team metrics for monitoring charts
+ * Supports small, medium, and large teams with realistic patterns
+ * Can generate data for the past 30 days from now
+ */
+export function generateMockTeamMetrics(
+  startMs: number,
+  endMs: number
+): { metrics: ClientTeamMetrics; step: number } {
+  const now = Date.now()
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+
+  // Clamp start time to no earlier than 30 days ago
+  if (startMs < thirtyDaysAgo) {
+    startMs = thirtyDaysAgo
+  }
+
+  // Don't generate data beyond current time
+  if (endMs > now) {
+    endMs = now
+  }
+  const profiles = {
+    small: {
+      baseConcurrent: 50,
+      peakConcurrent: 200,
+      baseRate: 0.1,
+      peakRate: 2,
+      volatility: 0.15,
+    },
+    medium: {
+      baseConcurrent: 500,
+      peakConcurrent: 5000,
+      baseRate: 1,
+      peakRate: 10,
+      volatility: 0.2,
+    },
+    large: {
+      baseConcurrent: 20000,
+      peakConcurrent: 80000,
+      baseRate: 5,
+      peakRate: 25,
+      volatility: 0.25,
+    },
+  }
+
+  const profile = profiles.large
+  const metrics: ClientTeamMetrics = []
+
+  // Use the backend's step calculation logic
+  const step = calculateTeamMetricsStep(startMs, endMs)
+
+  // Normalize start time based on step size
+  let normalizedStartMs: number
+  const second = 1000
+  const minute = 60 * second
+
+  if (step < minute) {
+    // For steps less than a minute, normalize to nearest step boundary
+    if (step === 5 * second) {
+      // Normalize to nearest 5 seconds
+      normalizedStartMs = Math.floor(startMs / (5 * second)) * (5 * second)
+    } else if (step === 30 * second) {
+      // Normalize to 00 or 30 seconds
+      normalizedStartMs = Math.floor(startMs / (30 * second)) * (30 * second)
+    } else {
+      normalizedStartMs = startMs
+    }
+  } else {
+    // For minute-based steps, normalize to the minute
+    normalizedStartMs = Math.floor(startMs / minute) * minute
+  }
+
+  // Calculate normalized end time to ensure we generate data up to "now" or requested end
+  let normalizedEndMs: number
+  if (step < minute) {
+    if (step === 5 * second) {
+      normalizedEndMs = Math.floor(endMs / (5 * second)) * (5 * second)
+    } else if (step === 30 * second) {
+      normalizedEndMs = Math.floor(endMs / (30 * second)) * (30 * second)
+    } else {
+      normalizedEndMs = endMs
+    }
+  } else {
+    normalizedEndMs = Math.floor(endMs / minute) * minute
+  }
+
+  const durationMs = normalizedEndMs - normalizedStartMs
+  let numPoints = Math.floor(durationMs / step) + 1 // +1 to include the end point
+
+  // Cap number of points for performance
+  numPoints = Math.min(numPoints, 2000)
+
+  // Generate realistic patterns
+  for (let i = 0; i < numPoints; i++) {
+    const timestamp = normalizedStartMs + i * step
+
+    // Don't generate points beyond the normalized end time or current time
+    if (timestamp > normalizedEndMs || timestamp > now) break
+
+    const date = new Date(timestamp)
+
+    // Time-based patterns
+    const hourOfDay = date.getHours()
+    const dayOfWeek = date.getDay()
+    const minuteOfHour = date.getMinutes()
+
+    // Business hours factor (9-17 in user's timezone)
+    const isBusinessHours = hourOfDay >= 9 && hourOfDay <= 17
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5
+
+    // Calculate load factors
+    let loadFactor = 0.3 // base load
+
+    if (isWeekday) {
+      if (isBusinessHours) {
+        // Peak during business hours
+        loadFactor = 0.7 + Math.sin(((hourOfDay - 9) * Math.PI) / 8) * 0.3
+
+        // Add lunch dip
+        if (hourOfDay === 12 || hourOfDay === 13) {
+          loadFactor *= 0.85
+        }
+      } else if (hourOfDay >= 6 && hourOfDay < 9) {
+        // Morning ramp-up
+        loadFactor = 0.3 + (hourOfDay - 6) * 0.15
+      } else if (hourOfDay > 17 && hourOfDay <= 20) {
+        // Evening wind-down
+        loadFactor = 0.7 - (hourOfDay - 17) * 0.1
+      } else {
+        // Night time
+        loadFactor = 0.2 + Math.random() * 0.1
+      }
+    } else {
+      // Weekend - lower but some activity
+      loadFactor = 0.15 + Math.sin((hourOfDay * Math.PI) / 12) * 0.1
+    }
+
+    // Add some micro-patterns (spikes and dips)
+    const microPattern = Math.sin((minuteOfHour * Math.PI) / 30) * 0.05
+    loadFactor += microPattern
+
+    // Add random volatility
+    const randomVolatility = (Math.random() - 0.5) * profile.volatility
+    loadFactor = Math.max(0.1, Math.min(1, loadFactor + randomVolatility))
+
+    // Calculate metrics based on load
+    const concurrentSandboxes = Math.round(
+      profile.baseConcurrent +
+        (profile.peakConcurrent - profile.baseConcurrent) * loadFactor
+    )
+
+    // Start rate has higher volatility and spikiness
+    const rateVolatility = (Math.random() - 0.5) * profile.volatility * 2
+    const startRateFactor = Math.max(0, loadFactor + rateVolatility)
+
+    // Add occasional spikes in start rate (deployments, CI/CD runs)
+    const hasSpike = Math.random() < 0.02 // 2% chance of spike
+    const spikeFactor = hasSpike ? 1.5 + Math.random() : 1
+
+    const sandboxStartRate = Math.max(
+      0,
+      (profile.baseRate +
+        (profile.peakRate - profile.baseRate) * startRateFactor) *
+        spikeFactor
+    )
+
+    metrics.push({
+      timestamp,
+      concurrentSandboxes,
+      sandboxStartRate: Math.round(sandboxStartRate * 100) / 100, // Round to 2 decimals
+    })
+  }
+
+  // Add some smoothing to make it more realistic
+  for (let i = 1; i < metrics.length - 1; i++) {
+    const prev = metrics[i - 1]!
+    const curr = metrics[i]!
+    const next = metrics[i + 1]!
+
+    // Smooth concurrent sandboxes (they change more gradually)
+    curr.concurrentSandboxes = Math.round(
+      prev.concurrentSandboxes * 0.3 +
+        curr.concurrentSandboxes * 0.4 +
+        next.concurrentSandboxes * 0.3
+    )
+  }
+
+  return { metrics, step }
+}
+
 export const MOCK_METRICS_DATA = (sandboxes: Sandbox[]) =>
   generateMockMetrics(sandboxes)
 export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES
+export const MOCK_TEAM_METRICS_DATA = generateMockTeamMetrics

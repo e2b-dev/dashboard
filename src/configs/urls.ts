@@ -12,11 +12,15 @@ export const PROTECTED_URLS = {
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
   TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
-  SANDBOXES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/sandboxes`,
+
+  SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=${tab ?? 'monitoring'}`,
+
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
   SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
+
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,

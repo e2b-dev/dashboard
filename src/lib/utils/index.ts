@@ -8,19 +8,26 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Creates an exponential smoothing easing function for Framer Motion animations.
- * This implements exponential smoothing as described in https://lisyarus.github.io/blog/posts/exponential-smoothing.html
- * where the position approaches the target value smoothly with a speed factor.
- * @param {number} speed - The speed factor that determines how quickly the value approaches the target (default: 10)
- * @returns {(t: number) => number} An easing function that takes a progress value between 0 and 1 and returns a smoothed value
+ * Creates an exponential smoothing easing function based on the mathematical
+ * formula: 1 - exp(-speed * t)
+ *
+ * This provides natural, smooth animations that start fast and slow down
+ * as they approach the target, similar to physical damping.
+ *
+ * @param speed - Controls the animation speed. Higher values = faster animation.
+ *                Typical range: 5-50. Default: 10.
+ * @returns An easing function that takes t (0-1) and returns the eased value
+ *
+ * @see https://lisyarus.github.io/blog/posts/exponential-smoothing.html
  */
-export const exponentialSmoothing =
-  (speed: number = 10) =>
-  (t: number): number => {
-    // For Framer Motion, we want to map t from [0,1] to a smoothed value
-    // Using exponential smoothing formula: 1 - exp(-speed * t)
+export function exponentialSmoothing(speed: number = 10) {
+  return (t: number) => {
+    // Clamp t to [0, 1] range for safety
+    t = Math.max(0, Math.min(1, t))
+    // Apply the exponential smoothing formula
     return 1 - Math.exp(-speed * t)
   }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => void>(

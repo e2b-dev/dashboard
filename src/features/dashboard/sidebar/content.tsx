@@ -6,6 +6,7 @@ import {
 } from '@/configs/dashboard-navs'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
+import micromatch from 'micromatch'
 import Link from 'next/link'
 import { useMemo } from 'react'
 
@@ -49,24 +50,10 @@ export default function DashboardSidebarContent() {
     []
   )
 
-  const isActive = (href: string) => {
-    if (!pathname) return false
+  const isActive = (link: DashboardNavLink) => {
+    if (!pathname || !link.activeMatch) return false
 
-    if (pathname === href) return true
-
-    // split into segments for prefix comparison
-    const hrefSegments = href.split('/').filter(Boolean)
-    const pathSegments = pathname.split('/').filter(Boolean)
-
-    if (pathSegments.length < hrefSegments.length) return false
-
-    for (let i = 0; i < hrefSegments.length; i++) {
-      if (hrefSegments[i] !== pathSegments[i]) {
-        return false
-      }
-    }
-
-    return true
+    return micromatch.isMatch(pathname, link.activeMatch)
   }
 
   return (
@@ -85,7 +72,7 @@ export default function DashboardSidebarContent() {
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
-                    variant={isActive(href) ? 'active' : 'default'}
+                    variant={isActive(item) ? 'active' : 'default'}
                     asChild
                     tooltip={item.label}
                   >
@@ -105,7 +92,7 @@ export default function DashboardSidebarContent() {
                         className={cn(
                           'group-data-[collapsible=icon]:size-5 transition-[size,color]',
                           SIDEBAR_TRANSITION_CLASSNAMES,
-                          isActive(href) && 'text-accent-main-highlight'
+                          isActive(item) && 'text-accent-main-highlight'
                         )}
                       />
                       <span>{item.label}</span>

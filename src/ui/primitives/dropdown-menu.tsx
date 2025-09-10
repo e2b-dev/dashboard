@@ -42,15 +42,15 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       menuItemVariants({ variant }),
-      'data-[state=open]:bg-accent-main-bg data-[state=open]:text-accent-main-highlight ',
-      'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
+      'data-[state=open]:bg-bg-highlight',
+      'focus:bg-bg-highlight',
       inset && 'pl-4',
       className
     )}
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto size-4" />
+    <ChevronRight className="ml-auto size-4 text-fg-tertiary" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =
@@ -114,11 +114,10 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'relative flex cursor-default items-center gap-2 select-none',
+      'relative prose-body flex cursor-default items-center gap-2 select-none',
       'py-1.5 pr-2 pl-8',
-      'font-mono text-xs',
       'outline-none',
-      'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
+      'focus:bg-bg-highlight',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       className
@@ -200,7 +199,7 @@ const DropdownMenuShortcut = ({
   return (
     <span
       className={cn(
-        'text-fg-tertiary ml-auto text-xs tracking-widest',
+        'text-fg-tertiary ml-auto prose-label tracking-widest',
         className
       )}
       {...props}
