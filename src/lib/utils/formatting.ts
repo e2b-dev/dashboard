@@ -215,6 +215,72 @@ export function formatAxisNumber(
   return formatNumber(value, locale)
 }
 
+/**
+ * Format a large number with custom abbreviations (K, M, B, T)
+ * More control than formatCompactNumber for specific styling needs
+ * @param value - Number to format
+ * @param decimals - Number of decimal places (default: 1)
+ * @param locale - Locale to use (defaults to 'en-US')
+ * @returns Formatted abbreviated number with custom suffixes
+ */
+export function formatHumanizedNumber(
+  value: number,
+  decimals: number = 1,
+  locale: string = 'en-US'
+): string {
+  if (value === 0) return '0'
+
+  const absValue = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+
+  const suffixes = [
+    { threshold: 1e12, suffix: 'T' }, // Trillion
+    { threshold: 1e9, suffix: 'B' }, // Billion
+    { threshold: 1e6, suffix: 'M' }, // Million
+    { threshold: 1e3, suffix: 'K' }, // Thousand
+  ]
+
+  for (const { threshold, suffix } of suffixes) {
+    if (absValue >= threshold) {
+      const scaledValue = value / threshold
+      return `${sign}${formatDecimal(Math.abs(scaledValue), decimals, locale)}${suffix}`
+    }
+  }
+
+  // For values less than 1000, show as regular number
+  if (decimals === 0) {
+    return formatNumber(Math.round(value), locale)
+  }
+
+  return formatDecimal(value, decimals, locale)
+}
+
+/**
+ * Format a number for chart axis labels with smart abbreviation
+ * Uses whole numbers when possible, abbreviated for large numbers
+ * @param value - Number to format
+ * @param locale - Locale to use (defaults to 'en-US')
+ * @returns Formatted number suitable for chart axes
+ */
+export function formatAxisNumber(
+  value: number,
+  locale: string = 'en-US'
+): string {
+  // For chart axes, we want clean whole numbers when possible
+  if (Math.abs(value) >= 1000) {
+    // Use 0 decimals for large numbers on axes for cleaner look
+    return formatHumanizedNumber(value, 0, locale)
+  }
+
+  // For smaller numbers, show as whole numbers if they are integers
+  if (Number.isInteger(value)) {
+    return formatNumber(value, locale)
+  }
+
+  // For decimal values less than 1000, show 1 decimal place
+  return formatDecimal(value, 1, locale)
+}
+
 // ============================================================================
 // Date Parsing
 // ============================================================================

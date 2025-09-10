@@ -3,6 +3,7 @@
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import {
+  formatAxisNumber,
   formatChartTimestampLocal,
   formatNumber,
   formatTimeAxisLabel,
@@ -148,18 +149,6 @@ export default function LineChart({
     }
   }, [breakpoint, duration])
 
-  const createSplitLineInterval = useCallback((limit: number) => {
-    return (value: string | number) => {
-      if (typeof value === 'string') {
-        value = parseFloat(value)
-      }
-
-      return value === limit || value === limit * 0.8
-        ? ''
-        : formatNumber(value).toString()
-    }
-  }, [])
-
   const option = useMemo<EChartsOption>(() => {
     const series = makeSeriesFromData(data, cssVars, showTooltip)
     const responsiveConfig = getResponsiveAxisConfig()
@@ -174,18 +163,6 @@ export default function LineChart({
         })
       })
       return Math.ceil(yAxisLimit ? yAxisLimit : maxValue * 1.3)
-    }
-
-    const calculateGridLeft = () => {
-      const maxY = calculateMaxYValue()
-      const formattedMaxY = formatNumber(maxY)
-      const charLength = formattedMaxY.length
-
-      const basePadding = 20
-      const charWidth = responsiveConfig.fontSize * 0.65
-      const padding = basePadding + charLength * charWidth
-
-      return Math.max(35, Math.min(padding, 120))
     }
 
     // Check if data is "live" (last point less than 2 min old)
@@ -473,9 +450,6 @@ export default function LineChart({
 
     const themedDefaults = mergeReplaceArrays(defaultLineChartOption, {
       tooltip: tooltipConfig,
-      grid: {
-        left: calculateGridLeft(),
-      },
       xAxis: {
         axisLine: { lineStyle: { color: cssVars['--stroke'] } },
         axisLabel: {
@@ -560,7 +534,10 @@ export default function LineChart({
           color: cssVars['--fg-tertiary'],
           fontFamily: cssVars['--font-mono'],
           fontSize: responsiveConfig.fontSize,
-          formatter: createSplitLineInterval(yAxisLimit ?? 0),
+          formatter: (value: number) => formatAxisNumber(value),
+          overflow: 'truncate' as const,
+          ellipsis: '…',
+          width: breakpoint.isSmDown ? 30 : 40,
         },
         axisPointer: {
           show: false,
@@ -611,7 +588,7 @@ export default function LineChart({
     yAxisLimit,
     resolvedTheme,
     getResponsiveAxisConfig,
-    createSplitLineInterval,
+    breakpoint.isSmDown,
     syncAxisPointers,
     showTooltip,
     tooltipFormatter,

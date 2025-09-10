@@ -168,6 +168,9 @@ export default function StartRateChartClient({
             splitNumber: 2,
             max: calculateYAxisMax(lineData),
           },
+          grid: {
+            left: 40,
+          },
         }}
         data={[
           createChartSeries({

@@ -2,7 +2,11 @@
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
-import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
+import {
+  formatAxisNumber,
+  formatCompactDate,
+  formatDecimal,
+} from '@/lib/utils/formatting'
 import {
   TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER,
   calculateStepForDuration,
@@ -337,6 +341,12 @@ export default function ConcurrentChartClient({
           yAxis: {
             splitNumber: 2,
             max: calculateYAxisMax(lineData),
+            axisLabel: {
+              formatter: (value: number) => formatAxisNumber(value),
+            },
+          },
+          grid: {
+            left: 40,
           },
         }}
         data={[
