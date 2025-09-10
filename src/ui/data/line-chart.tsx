@@ -28,7 +28,7 @@ import {
   makeSeriesFromData,
   mergeReplaceArrays,
 } from './line-chart.utils'
-import DefaultTooltip, { LimitLineTooltip } from './tooltips'
+import DefaultTooltip from './tooltips'
 
 type TooltipFormatterParams = echarts.TooltipComponentFormatterCallbackParams
 type TooltipFormatterParamsArray =
@@ -223,21 +223,6 @@ export default function LineChart({
                 width: 1,
               },
               z: 10,
-              tooltip: {
-                trigger: 'item' as const,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter: (params: any) => {
-                  console.log('params', params)
-                  const value = params.data?.yAxis
-                  if (value === undefined) return ''
-                  return renderToString(
-                    <LimitLineTooltip value={value} limit={yAxisLimit} />
-                  )
-                },
-                backgroundColor: 'transparent',
-                borderWidth: 0,
-                padding: 0,
-              },
               emphasis: {
                 disabled: true,
                 tooltip: {
@@ -402,11 +387,6 @@ export default function LineChart({
           transitionDuration: 0.2,
           enterable: false,
           hideDelay: 0,
-          axisPointer: {
-            type: 'cross' as const,
-            snap: true,
-            animation: false,
-          },
           backgroundColor: 'transparent',
           padding: 0,
           borderWidth: 0,
