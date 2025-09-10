@@ -17,15 +17,15 @@ export function LiveSandboxCounter({
   return (
     <div
       className={cn(
-        'relative flex items-center gap-2 border bg-bg p-2',
+        'relative flex items-center gap-4 border bg-bg p-2.5',
         className
       )}
     >
-      <SemiLiveBadge className="" />
-
-      <span className="prose-value-small">{formatNumber(count)}</span>
-
-      <span className="prose-label text-fg-tertiary">CONCURRENT SANDBOXES</span>
+      <SemiLiveBadge className="transform -translate-y-[1px]" />
+      <div className="flex gap-1.5 items-center">
+        <span className="prose-value-small">{formatNumber(count)}</span>
+        <span className="prose-label text-fg-tertiary">CONCURRENT SANDBOXES</span>
+      </div>
     </div>
   )
 }
