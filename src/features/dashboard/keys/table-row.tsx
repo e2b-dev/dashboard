@@ -1,5 +1,6 @@
 'use client'
 
+import { API_KEYS_LAST_USED_FIRST_COLLECTION_DATE } from '@/configs/versioning'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
@@ -73,6 +74,16 @@ export default function ApiKeyTableRow({
 
   const concatedKeyMask = `${apiKey.mask.prefix}${apiKey.mask.maskedValuePrefix}......${apiKey.mask.maskedValueSuffix}`
 
+  const createdBeforeLastUsedCollection =
+    new Date(apiKey.createdAt).getTime() <
+    API_KEYS_LAST_USED_FIRST_COLLECTION_DATE.getTime()
+
+  const lastUsed = apiKey.lastUsed
+    ? new Date(apiKey.lastUsed).toLocaleDateString()
+    : createdBeforeLastUsedCollection
+      ? 'N/A'
+      : 'No Usage'
+
   return (
     <>
       <AlertDialog
@@ -100,10 +111,13 @@ export default function ApiKeyTableRow({
             {concatedKeyMask}
           </span>
         </TableCell>
-        <TableCell className="text-fg-tertiary max-w-36 truncate overflow-hidden">
-          <span className="max-w-full truncate">{apiKey.createdBy?.email}</span>
+        <TableCell className="text-fg-tertiary">{lastUsed}</TableCell>
+        <TableCell className="max-w-36 truncate overflow-hidden text-right">
+          <span className="max-w-full text-fg-tertiary truncate">
+            {apiKey.createdBy?.email}
+          </span>
         </TableCell>
-        <TableCell className="text-fg-secondary text-right">
+        <TableCell className="text-fg-tertiary text-right">
           {apiKey.createdAt
             ? new Date(apiKey.createdAt).toLocaleDateString()
             : '-'}

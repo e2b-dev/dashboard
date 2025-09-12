@@ -24,7 +24,8 @@ const ApiKeysTable: FC<ApiKeysTableProps> = ({ teamId, className }) => {
         <TableHeader>
           <TableRow>
             <TableHead className="text-left">Key</TableHead>
-            <TableHead>Created By</TableHead>
+            <TableHead className="text-left">Last Used</TableHead>
+            <TableHead className="text-right">Created By</TableHead>
             <TableHead className="text-right">Created At</TableHead>
             <th></th>
           </TableRow>
