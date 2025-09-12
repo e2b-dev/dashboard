@@ -54,14 +54,7 @@ async function _getTeamTierLimits(
       return null
     }
 
-    const tierData = teamData.tiers as {
-      name: string
-      concurrent_instances: number
-      disk_mb: number
-      max_length_hours: number
-      max_ram_mb: number
-      max_vcpu: number
-    }
+    const tierData = teamData.tiers
 
     return {
       concurrentInstances: tierData.concurrent_instances,
