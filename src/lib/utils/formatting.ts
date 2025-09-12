@@ -3,7 +3,8 @@
  * Uses date-fns for date/time formatting and toLocaleString for numbers
  */
 
-import { format, isThisYear, isValid, parse, parseISO } from 'date-fns'
+import * as chrono from 'chrono-node'
+import { format, isThisYear, isValid } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
 // ============================================================================
@@ -198,46 +199,6 @@ export function formatDecimal(
 }
 
 /**
- * Format a percentage value
- * @param value - Percentage value (0-100)
- * @param decimals - Number of decimal places
- * @param locale - Locale to use (defaults to 'en-US')
- * @returns Formatted percentage string without % sign
- */
-export function formatPercentage(
-  value: number,
-  decimals: number = 0,
-  locale: string = 'en-US'
-): string {
-  return value.toLocaleString(locale, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })
-}
-
-/**
- * Format bytes to human-readable size
- * @param bytes - Number of bytes
- * @param decimals - Number of decimal places
- * @param locale - Locale to use (defaults to 'en-US')
- * @returns Formatted size string (e.g., "1.5 GB", "512 MB")
- */
-export function formatBytes(
-  bytes: number,
-  decimals: number = 2,
-  locale: string = 'en-US'
-): string {
-  if (bytes === 0) return '0 Bytes'
-
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  const value = bytes / Math.pow(k, i)
-  return `${formatDecimal(value, decimals, locale)} ${sizes[i]}`
-}
-
-/**
  * Format memory in MB to appropriate unit
  * @param memoryMB - Memory in megabytes
  * @param locale - Locale to use (defaults to 'en-US')
@@ -267,19 +228,6 @@ export function formatCPUCores(
 }
 
 /**
- * Format disk size in GB
- * @param sizeGB - Size in gigabytes
- * @param locale - Locale to use (defaults to 'en-US')
- * @returns Formatted disk size string
- */
-export function formatDiskSize(
-  sizeGB: number,
-  locale: string = 'en-US'
-): string {
-  return `${formatNumber(sizeGB, locale)} GB`
-}
-
-/**
  * Format a large number with abbreviation (e.g., 1.5K, 2.3M)
  * @param value - Number to format
  * @param decimals - Number of decimal places
@@ -303,71 +251,31 @@ export function formatCompactNumber(
 // ============================================================================
 
 /**
- * Try to parse a datetime string into a Date object
- * Supports multiple formats including ISO, timestamps, relative times, and common formats
+ * Try to parse a datetime string into a Date object using Chrono
+ * Supports multiple formats including ISO, timestamps, relative times, natural language, and common formats
  * @param input - Date string to parse
  * @returns Date object if parsing succeeds, null otherwise
  */
 export function tryParseDatetime(input: string): Date | null {
   if (!input.trim()) return null
 
-  // common date formats to try parsing
-  const dateFormats = [
-    "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-    "yyyy-MM-dd'T'HH:mm:ssxxx",
-    "yyyy-MM-dd'T'HH:mm:ss",
-    'yyyy-MM-dd HH:mm:ss',
-    'yyyy-MM-dd',
-    'MM/dd/yyyy HH:mm:ss',
-    'MM/dd/yyyy',
-    'dd/MM/yyyy HH:mm:ss',
-    'dd/MM/yyyy',
-  ]
-
-  // try parsing as ISO first
-  try {
-    const isoDate = parseISO(input)
-    if (isValid(isoDate)) return isoDate
-  } catch {}
-
-  // try parsing as timestamp
+  // Try parsing as timestamp first (for performance with numeric inputs)
   const timestamp = Number(input)
   if (!isNaN(timestamp)) {
+    // if timestamp is less than 10 digits, multiply by 1000 to get milliseconds
     const date = new Date(
       timestamp < 10000000000 ? timestamp * 1000 : timestamp
     )
     if (isValid(date)) return date
   }
 
-  // try relative times
-  const now = new Date()
-  const relativeMap: Record<string, () => Date> = {
-    now: () => now,
-    today: () => new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-    yesterday: () => new Date(now.getTime() - 24 * 60 * 60 * 1000),
-    tomorrow: () => new Date(now.getTime() + 24 * 60 * 60 * 1000),
-  }
-
-  const lowerInput = input.toLowerCase().trim()
-  if (relativeMap[lowerInput]) {
-    return relativeMap[lowerInput]()
-  }
-
-  // try common formats
-  for (const fmt of dateFormats) {
-    try {
-      const date = parse(input, fmt, new Date())
-      if (isValid(date)) return date
-    } catch {}
-  }
-
-  // try native Date parsing
+  // we use Chrono for all other formats - handles ISO, natural language, relative times, and common formats
   try {
-    const date = new Date(input)
-    if (isValid(date) && !isNaN(date.getTime())) return date
-  } catch {}
-
-  return null
+    const parsedDate = chrono.parseDate(input)
+    return parsedDate || null
+  } catch {
+    return null
+  }
 }
 
 /**
