@@ -33,6 +33,7 @@ export function calculateStepForRange(startMs: number, endMs: number): number {
   return calculateStepForDuration(duration)
 }
 
+// this function comes from e2b-dev/infra and is used to calculate the step for a given duration for /teams/$teamId/metrics
 export function calculateStepForDuration(durationMs: number): number {
   const hour = 60 * 60 * 1000
   const minute = 60 * 1000
