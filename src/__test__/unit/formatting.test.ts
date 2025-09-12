@@ -1,21 +1,14 @@
 import {
   formatAveragingPeriod,
-  formatBytes,
   formatChartTimestampLocal,
   formatChartTimestampUTC,
   formatCompactDate,
-  formatCompactNumber,
   formatCPUCores,
-  formatDateRange,
   formatDecimal,
-  formatDiskSize,
   formatDuration,
   formatMemory,
   formatNumber,
-  formatOrFallback,
-  formatPercentage,
   formatTimeAxisLabel,
-  formatUTCDate,
   parseUTCDateComponents,
 } from '@/lib/utils/formatting'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -67,24 +60,6 @@ describe('Date & Time Formatting', () => {
     })
   })
 
-  describe('formatDateRange', () => {
-    it('formats date range in current year without year', () => {
-      const start = new Date('2024-01-05T14:30:00Z').getTime()
-      const end = new Date('2024-01-06T16:45:00Z').getTime()
-      const result = formatDateRange(start, end)
-      expect(result).toContain('Jan 5')
-      expect(result).toContain('Jan 6')
-      expect(result).toContain(' - ')
-    })
-
-    it('formats date range in different year with year', () => {
-      const start = new Date('2023-01-05T14:30:00Z').getTime()
-      const end = new Date('2023-01-06T16:45:00Z').getTime()
-      const result = formatDateRange(start, end)
-      expect(result).toContain('2023')
-    })
-  })
-
   describe('formatCompactDate', () => {
     it('formats current year date without year', () => {
       const timestamp = new Date('2024-01-05T14:30:00Z').getTime()
@@ -97,20 +72,6 @@ describe('Date & Time Formatting', () => {
       const timestamp = new Date('2023-01-05T14:30:00Z').getTime()
       const result = formatCompactDate(timestamp)
       expect(result).toContain('2023')
-    })
-  })
-
-  describe('formatUTCDate', () => {
-    it('formats Date object to UTC string', () => {
-      const date = new Date('2024-01-05T14:30:45Z')
-      const result = formatUTCDate(date)
-      expect(result).toContain('Fri, 05 Jan 2024 14:30:45 GMT')
-    })
-
-    it('formats date string to UTC string', () => {
-      const dateString = '2024-01-05T14:30:45Z'
-      const result = formatUTCDate(dateString)
-      expect(result).toContain('Fri, 05 Jan 2024 14:30:45 GMT')
     })
   })
 
@@ -205,42 +166,6 @@ describe('Number Formatting', () => {
     })
   })
 
-  describe('formatPercentage', () => {
-    it('formats percentage with default precision', () => {
-      expect(formatPercentage(75.5)).toBe('76')
-    })
-
-    it('formats percentage with custom precision', () => {
-      expect(formatPercentage(75.5, 1)).toBe('75.5')
-    })
-  })
-
-  describe('formatBytes', () => {
-    it('formats zero bytes', () => {
-      expect(formatBytes(0)).toBe('0 Bytes')
-    })
-
-    it('formats bytes', () => {
-      expect(formatBytes(512)).toBe('512.00 Bytes')
-    })
-
-    it('formats kilobytes', () => {
-      expect(formatBytes(1536)).toBe('1.50 KB')
-    })
-
-    it('formats megabytes', () => {
-      expect(formatBytes(1572864)).toBe('1.50 MB')
-    })
-
-    it('formats gigabytes', () => {
-      expect(formatBytes(1610612736)).toBe('1.50 GB')
-    })
-
-    it('formats with custom decimal places', () => {
-      expect(formatBytes(1536, 1)).toBe('1.5 KB')
-    })
-  })
-
   describe('formatMemory', () => {
     it('formats memory in MB', () => {
       expect(formatMemory(512)).toBe('512 MB')
@@ -258,53 +183,6 @@ describe('Number Formatting', () => {
 
     it('formats multiple cores', () => {
       expect(formatCPUCores(4)).toBe('4 cores')
-    })
-  })
-
-  describe('formatDiskSize', () => {
-    it('formats disk size in GB', () => {
-      expect(formatDiskSize(500)).toBe('500 GB')
-      expect(formatDiskSize(1000)).toBe('1,000 GB')
-    })
-  })
-
-  describe('formatCompactNumber', () => {
-    it('formats small numbers normally', () => {
-      expect(formatCompactNumber(999)).toBe('999')
-    })
-
-    it('formats thousands with K', () => {
-      expect(formatCompactNumber(1500)).toBe('1.5K')
-    })
-
-    it('formats millions with M', () => {
-      expect(formatCompactNumber(1500000)).toBe('1.5M')
-    })
-
-    it('formats with custom decimal places', () => {
-      expect(formatCompactNumber(1500, 0)).toBe('2K')
-    })
-  })
-})
-
-describe('Utility Functions', () => {
-  describe('formatOrFallback', () => {
-    const mockFormatter = (val: number) => `${val} units`
-
-    it('formats valid value', () => {
-      expect(formatOrFallback(42, mockFormatter)).toBe('42 units')
-    })
-
-    it('returns default fallback for null', () => {
-      expect(formatOrFallback(null, mockFormatter)).toBe('n/a')
-    })
-
-    it('returns default fallback for undefined', () => {
-      expect(formatOrFallback(undefined, mockFormatter)).toBe('n/a')
-    })
-
-    it('returns custom fallback', () => {
-      expect(formatOrFallback(null, mockFormatter, 'No data')).toBe('No data')
     })
   })
 })
