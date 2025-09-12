@@ -6,6 +6,9 @@ import { renderToString } from 'react-dom/server'
 /**
  * Creates a tooltip formatter function for single-value charts.
  * This is a generic utility that can be used by any chart component.
+ *
+ * The function extracts the relevant data points regardless of format,
+ * ensuring consistent tooltip rendering across different chart configurations.
  */
 export function createSingleValueTooltipFormatter({
   step,
@@ -21,9 +24,13 @@ export function createSingleValueTooltipFormatter({
   timestampClassName?: string
 }) {
   return (params: echarts.TooltipComponentFormatterCallbackParams) => {
+    // handle both array of series data and single series data point
     const paramsData = Array.isArray(params) ? params[0] : params
     if (!paramsData?.value) return ''
 
+    // extract value and timestamp from different possible data structures:
+    // - for time series: value is typically [timestamp, value]
+    // - for simple charts: value is directly the numeric value
     const value = Array.isArray(paramsData.value)
       ? paramsData.value[1]
       : paramsData.value
@@ -31,6 +38,7 @@ export function createSingleValueTooltipFormatter({
       ? (paramsData.value[0] as string)
       : (paramsData.value as string)
 
+    // apply label function if provided and value is numeric
     const displayLabel =
       typeof label === 'function' && typeof value === 'number'
         ? label(value)
