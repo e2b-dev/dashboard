@@ -48,29 +48,6 @@ export function formatChartTimestampUTC(
 }
 
 /**
- * Format a date range for display (e.g., in chart range selectors)
- * @param start - Start timestamp in milliseconds
- * @param end - End timestamp in milliseconds
- * @returns Formatted range string (e.g., "Jan 5, 2:30 PM - Jan 6, 4:45 PM EST")
- */
-export function formatDateRange(start: number, end: number): string {
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-
-  // If same year as current, omit year
-  if (isThisYear(startDate)) {
-    const startFormatted = format(startDate, 'MMM d, h:mm a zzz')
-    const endFormatted = format(endDate, 'MMM d, h:mm a zzz')
-    return `${startFormatted} - ${endFormatted}`
-  }
-
-  // Otherwise show full date with year
-  const startFormatted = format(startDate, 'yyyy MMM d, h:mm a zzz')
-  const endFormatted = format(endDate, 'yyyy MMM d, h:mm a zzz')
-  return `${startFormatted} - ${endFormatted}`
-}
-
-/**
  * Format a date for compact display (used in chart range labels)
  * @param timestamp - Unix timestamp in milliseconds
  * @returns Formatted date string
@@ -86,21 +63,12 @@ export function formatCompactDate(timestamp: number): string {
 }
 
 /**
- * Format a full UTC date string (for tables, detailed views)
- * @param date - Date string or Date object
- * @returns Formatted UTC string (e.g., "Mon, 05 Jan 2024 14:30:45 GMT")
- */
-export function formatUTCDate(date: string | Date): string {
-  return new Date(date).toUTCString()
-}
-
-/**
  * Parse and format a UTC date string into components
  * @param date - Date string or Date object
  * @returns Object with date components
  */
 export function parseUTCDateComponents(date: string | Date) {
-  const dateTimeString = formatUTCDate(date)
+  const dateTimeString = new Date(date).toUTCString()
   const [day, dateStr, month, year, time, timezone] = dateTimeString.split(' ')
 
   return {
@@ -160,10 +128,6 @@ export function formatDuration(durationMs: number): string {
  */
 export function formatAveragingPeriod(stepMs: number): string {
   return `${formatDuration(stepMs)} average`
-}
-
-export function formatMedianPeriod(stepMs: number): string {
-  return `${formatDuration(stepMs)} median`
 }
 
 // ============================================================================
@@ -228,22 +192,27 @@ export function formatCPUCores(
 }
 
 /**
- * Format a large number with abbreviation (e.g., 1.5K, 2.3M)
+ * Format a number for chart axis labels with smart abbreviation
+ * Uses whole numbers when possible, abbreviated for large numbers
  * @param value - Number to format
- * @param decimals - Number of decimal places
  * @param locale - Locale to use (defaults to 'en-US')
- * @returns Formatted abbreviated number
+ * @returns Formatted number suitable for chart axes
  */
-export function formatCompactNumber(
+export function formatAxisNumber(
   value: number,
-  decimals: number = 1,
   locale: string = 'en-US'
 ): string {
-  const formatter = new Intl.NumberFormat(locale, {
-    notation: 'compact',
-    maximumFractionDigits: decimals,
-  })
-  return formatter.format(value)
+  // For chart axes, we want clean whole numbers when possible
+  if (Math.abs(value) >= 1000) {
+    // Use compact notation for large numbers on axes for cleaner look
+    const formatter = new Intl.NumberFormat(locale, {
+      notation: 'compact',
+      maximumFractionDigits: 0,
+    })
+    return formatter.format(value)
+  }
+
+  return formatNumber(value, locale)
 }
 
 // ============================================================================
@@ -285,26 +254,4 @@ export function tryParseDatetime(input: string): Date | null {
  */
 export function formatDatetimeInput(date: Date): string {
   return format(date, 'yyyy-MM-dd HH:mm:ss')
-}
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-/**
- * Format a value or return a fallback for null/undefined
- * @param value - Value to format
- * @param formatter - Formatting function to apply
- * @param fallback - Fallback string (defaults to 'n/a')
- * @returns Formatted value or fallback
- */
-export function formatOrFallback<T>(
-  value: T | null | undefined,
-  formatter: (val: T) => string,
-  fallback: string = 'n/a'
-): string {
-  if (value === null || value === undefined) {
-    return fallback
-  }
-  return formatter(value)
 }
