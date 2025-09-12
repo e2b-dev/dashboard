@@ -16,9 +16,6 @@ import { Suspense } from 'react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
 }
 
 export const metadata: Metadata = {
@@ -30,11 +27,8 @@ export const metadata: Metadata = {
 
 export default async function DashboardLayout({
   children,
-  params,
 }: DashboardLayoutProps) {
-  const { teamIdOrSlug } = await params
-
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+  const teamId = await resolveTeamIdInServerComponent()
   const teamSlug = await resolveTeamSlugInServerComponent()
   const session = await getSessionInsecure()
   const res = await getUserTeams()
