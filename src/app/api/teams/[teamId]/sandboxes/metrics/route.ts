@@ -16,7 +16,15 @@ export async function POST(
   try {
     const { teamId } = await params
 
-    const { sandboxIds } = MetricsRequestSchema.parse(await request.json())
+    const { success, data } = MetricsRequestSchema.safeParse(
+      await request.json()
+    )
+
+    if (!success) {
+      return Response.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    const { sandboxIds } = data
 
     const supabase = await createClient()
     const {
@@ -66,6 +74,6 @@ export async function POST(
 
     return Response.json({ metrics } satisfies MetricsResponse)
   } catch (error) {
-    return Response.json({ error: 'Invalid request' }, { status: 400 })
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
