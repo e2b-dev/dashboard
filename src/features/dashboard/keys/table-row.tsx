@@ -84,6 +84,8 @@ export default function ApiKeyTableRow({
       ? 'N/A'
       : 'No Usage'
 
+  const createdBy = apiKey.createdBy?.email || 'N/A'
+
   return (
     <>
       <AlertDialog
@@ -114,7 +116,7 @@ export default function ApiKeyTableRow({
         <TableCell className="text-fg-tertiary">{lastUsed}</TableCell>
         <TableCell className="max-w-36 truncate overflow-hidden text-right">
           <span className="max-w-full text-fg-tertiary truncate">
-            {apiKey.createdBy?.email}
+            {createdBy}
           </span>
         </TableCell>
         <TableCell className="text-fg-tertiary text-right">
