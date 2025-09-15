@@ -248,6 +248,9 @@ export const useTeamMetrics = () => {
   // set up browser history listener
   useMetricsHistoryListener()
 
+  // manage live updates lifecycle
+  useLiveUpdates()
+
   // compute derived state with stable reference
   const timeframe = useMemo(() => {
     const duration = end - start
@@ -281,9 +284,35 @@ export const useTeamMetrics = () => {
   }
 }
 
-// auto-update end timestamp for live data
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    useTeamMetricsStore.getState().updateLiveEnd()
-  }, TEAM_METRICS_TIMEFRAME_UPDATE_MS)
+let liveUpdateInterval: ReturnType<typeof setInterval> | null = null
+let subscriberCount = 0
+
+const startLiveUpdates = () => {
+  if (!liveUpdateInterval && typeof window !== 'undefined') {
+    liveUpdateInterval = setInterval(() => {
+      useTeamMetricsStore.getState().updateLiveEnd()
+    }, TEAM_METRICS_TIMEFRAME_UPDATE_MS)
+  }
+}
+
+const stopLiveUpdates = () => {
+  if (liveUpdateInterval) {
+    clearInterval(liveUpdateInterval)
+    liveUpdateInterval = null
+  }
+}
+
+export const useLiveUpdates = () => {
+  useEffect(() => {
+    subscriberCount++
+    startLiveUpdates()
+
+    return () => {
+      subscriberCount--
+
+      if (subscriberCount === 0) {
+        stopLiveUpdates()
+      }
+    }
+  }, [])
 }
