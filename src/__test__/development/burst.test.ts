@@ -355,7 +355,8 @@ describe('E2B Sandbox metrics', () => {
           sandboxes.push(...batch)
           const batchDuration = Date.now() - batchStart
 
-          l.info('test:batch_completed', {
+          l.info({
+            key: 'test:batch_completed',
             testId,
             batchNumber,
             batchSize: count,
@@ -590,7 +591,8 @@ describe('E2B Sandbox metrics', () => {
               const sandboxStressDuration = Date.now() - sandboxStressStart
 
               // Log completion regardless of exit code
-              l.info('test:stress_test_completed', {
+              l.info({
+                key: 'test:stress_test_completed',
                 testId,
                 sandboxId: sbx.sandboxId,
                 sandboxIndex: index,
