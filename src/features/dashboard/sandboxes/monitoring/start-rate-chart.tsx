@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
-} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
+} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'

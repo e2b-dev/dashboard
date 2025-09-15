@@ -1,4 +1,4 @@
-import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
+import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
 import { formatNumber } from '@/lib/utils/formatting'
 import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'

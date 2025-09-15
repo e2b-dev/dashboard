@@ -1,9 +1,10 @@
+import { ReactNode } from 'react'
 import SandboxesTabs from './tabs'
 
 interface SandboxesLayoutProps {
-  children: React.ReactNode
-  monitoring: React.ReactNode
-  list: React.ReactNode
+  children: ReactNode
+  monitoring: ReactNode
+  list: ReactNode
   params: Promise<{ teamIdOrSlug: string }>
 }
 
@@ -11,7 +12,6 @@ export default async function SandboxesLayout({
   children,
   monitoring,
   list,
-  params,
 }: SandboxesLayoutProps) {
   return (
     <SandboxesTabs>

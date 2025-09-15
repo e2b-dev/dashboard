@@ -1,12 +1,12 @@
 import { LiveSandboxCounterServer } from '@/features/dashboard/sandboxes/live-counter.server'
 
-interface SandboxesHeaderInjectableCatchAllDefaultProps {
+interface SandboxesHeaderInjectableDefaultProps {
   params: Promise<{ teamIdOrSlug: string }>
 }
 
-export default function SandboxesHeaderInjectableCatchAllDefault({
+export default function SandboxesHeaderInjectableDefault({
   params,
-}: SandboxesHeaderInjectableCatchAllDefaultProps) {
+}: SandboxesHeaderInjectableDefaultProps) {
   return (
     <LiveSandboxCounterServer
       params={params}

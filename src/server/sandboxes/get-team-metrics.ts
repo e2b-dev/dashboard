@@ -91,18 +91,6 @@ export const getTeamMetrics = authActionClient
             d.timestamp >= startDateMs && d.timestamp <= endDateMs + tolerance
         )
 
-      l.info(
-        {
-          key: 'team_metrics:result',
-          team_id: teamId,
-          user_id: session.user.id,
-          data_points: metrics.length,
-          step,
-          overfetch_seconds: overfetchSeconds,
-        },
-        'Team metrics fetched with overfetch'
-      )
-
       return {
         metrics,
         step,

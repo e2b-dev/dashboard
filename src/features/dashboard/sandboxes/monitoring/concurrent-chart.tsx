@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
-} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/default'
+} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
 import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
@@ -40,14 +40,6 @@ async function ConcurrentChartResolver({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const timeframe = parseAndCreateTimeframe(plot)
-
-  l.debug({
-    key: 'concurrent_chart:debug',
-    context: {
-      teamId,
-      timeframe,
-    },
-  })
 
   const [teamMetricsResult, tierLimits] = await Promise.all([
     getTeamMetrics({
