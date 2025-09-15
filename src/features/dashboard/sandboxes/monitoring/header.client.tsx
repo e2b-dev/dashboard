@@ -21,7 +21,7 @@ export function ConcurrentSandboxesClient({
   const { data } = useHeaderMetricsSWR(initialData)
 
   const lastConcurrentSandboxes =
-    data?.metrics[data.metrics.length - 1]?.concurrentSandboxes ?? 0
+    data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
 
   return (
     <>
@@ -43,7 +43,8 @@ export function SandboxesStartRateClient({
   const { data } = useHeaderMetricsSWR(initialData)
 
   const lastSandboxesStartRate = useMemo(() => {
-    const rate = data?.metrics[data.metrics.length - 1]?.sandboxStartRate ?? 0
+    const rate =
+      data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.sandboxStartRate ?? 0
     return Math.round(rate * 100) / 100
   }, [data])
 
