@@ -1,7 +1,5 @@
 # Testing Strategy
 
-This project uses a comprehensive testing strategy with different types of tests for different purposes. This README explains the current state of testing and how to extend it.
-
 ## Current Test Types
 
 ### Unit Tests
@@ -40,34 +38,6 @@ Unit tests are the most granular tests that verify individual functions, compone
 - Data transformations
 - Error handling edge cases
 
-**Example Unit Test Structure:**
-```typescript
-// src/__test__/unit/formatting.test.ts
-import { describe, it, expect } from 'vitest'
-import { formatNumber, formatMemory, formatDuration } from '@/lib/utils/formatting'
-
-describe('formatNumber', () => {
-  it('should format numbers with thousand separators', () => {
-    expect(formatNumber(1000)).toBe('1,000')
-    expect(formatNumber(1000000)).toBe('1,000,000')
-  })
-  
-  it('should handle zero', () => {
-    expect(formatNumber(0)).toBe('0')
-  })
-})
-
-describe('formatMemory', () => {
-  it('should display MB for values under 1024', () => {
-    expect(formatMemory(512)).toBe('512 MB')
-  })
-  
-  it('should convert to GB for values >= 1024', () => {
-    expect(formatMemory(2048)).toBe('2 GB')
-  })
-})
-```
-
 ### Integration Tests
 
 Integration tests verify that different parts of the application work together correctly, but they use mocks for external dependencies like databases and APIs. These tests are fast, reliable, and don't require external services to be running.
@@ -81,10 +51,6 @@ The integration tests use a dummy environment set in `vitest.config.ts` which pr
 **Environment Validation:**
 - Integration tests run the `scripts:check-app-env` script before execution to ensure all required application environment variables are set.
 - This is configured in `package.json`: `"test:integration": "bun scripts:check-app-env && vitest run src/__test__/integration/"`
-
-**Examples:**
-- Authentication tests in `src/__test__/integration/auth.test.ts`
-- Middleware tests in `src/__test__/integration/middleware.test.ts`
 
 ### End-to-End (E2E) Tests
 
@@ -105,9 +71,6 @@ Development tests are specialized tests designed to assist with feature developm
 **Location:** `src/__test__/development/`
 
 **Purpose:** These tests spawn real resources (like sandboxes) that can be observed in the dashboard while developing features, eliminating the need to manually manage test resources.
-
-**Examples:**
-- `metrics.test.ts`: Spawns stressed sandboxes in batches to test dashboard performance and metrics visualization
 
 **Environment Setup:**
 To run development tests, you must create a `.env.test` file with the required environment variables:
