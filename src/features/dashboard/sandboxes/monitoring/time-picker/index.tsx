@@ -78,7 +78,6 @@ export const TimePicker = memo(function TimePicker({
     } else if (matchingOption) {
       // live mode with matching preset
       setTimeOptionsValue(matchingOption.value)
-      setShowCustomPanel(false)
     } else if (duration) {
       // live mode with custom duration
       setTimeOptionsValue('custom')
@@ -88,7 +87,6 @@ export const TimePicker = memo(function TimePicker({
       const defaultOption = TIME_OPTIONS[0]
       if (defaultOption) {
         setTimeOptionsValue(defaultOption.value)
-        setShowCustomPanel(false)
       }
     }
   }, [open, value, setTimeOptionsValue, setShowCustomPanel])

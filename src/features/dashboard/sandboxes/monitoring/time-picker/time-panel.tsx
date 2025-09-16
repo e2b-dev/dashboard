@@ -31,6 +31,7 @@ import {
 } from '@/ui/primitives/form'
 import { TimeInput } from '@/ui/time-input'
 
+import { MAX_DAYS_AGO } from './constants'
 import { customTimeFormSchema, type CustomTimeFormValues } from './validation'
 
 export interface TimePanelRef {
@@ -168,6 +169,7 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
                     <TimeInput
                       dateValue={form.watch('startDate')}
                       timeValue={form.watch('startTime')}
+                      defaultMinDaysAgo={MAX_DAYS_AGO}
                       onDateChange={(value) =>
                         form.setValue('startDate', value, { shouldDirty: true })
                       }

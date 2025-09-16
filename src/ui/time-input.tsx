@@ -16,28 +16,24 @@ import { Calendar } from './primitives/calendar'
 import { Input } from './primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
-// reference date used for parsing time-only values
-// this date is irrelevant since we only use the time values from the parsed result
-// any valid date would work here - we just need a complete datetime string for parsing
+// reference date for parsing time-only values - actual date doesn't matter
 const REFERENCE_DATE = '2024-01-01'
 
 // get timezone identifier in developer-friendly format (e.g., GMT+2, PST, CET)
 function getTimezoneIdentifier(): string {
   const date = new Date()
 
-  // try to get the timezone abbreviation (like PST, CET, etc.)
-  // this works in some browsers but not all
+  // try to get timezone abbreviation first (PST, CET, etc.)
   const shortTimeString = date.toLocaleTimeString('en-US', {
     timeZoneName: 'short',
   })
   const match = shortTimeString.match(/\b([A-Z]{2,5})\b$/)
 
   if (match && match[1] && !match[1].startsWith('GMT')) {
-    // return timezone abbreviation if we found one (PST, CET, etc.)
     return match[1]
   }
 
-  // fallback to GMT offset format (GMT+2, GMT-5, etc.)
+  // fallback to GMT offset format
   const offset = -date.getTimezoneOffset()
   const hours = Math.floor(Math.abs(offset) / 60)
   const minutes = Math.abs(offset) % 60
@@ -49,7 +45,6 @@ function getTimezoneIdentifier(): string {
   return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`
 }
 
-// primitive date/time input component with calendar and time selectors
 export interface TimeInputProps {
   dateValue: string
   timeValue: string
@@ -61,6 +56,16 @@ export interface TimeInputProps {
   className?: string
   minDate?: Date
   maxDate?: Date
+  /** Number of days in the past to allow selection (default: 31) */
+  defaultMinDaysAgo?: number
+  /**
+   * Clock skew tolerance in seconds (default: 60)
+   * Allows selection of times slightly in the future to handle:
+   * - Client clock being behind server clock
+   * - Network latency when submitting
+   * - Small time differences between systems
+   */
+  defaultMaxFutureSeconds?: number
 }
 
 export const TimeInput = memo(function TimeInput({
@@ -74,24 +79,23 @@ export const TimeInput = memo(function TimeInput({
   className,
   minDate,
   maxDate,
+  defaultMinDaysAgo = 31,
+  defaultMaxFutureSeconds = 30,
 }: TimeInputProps) {
   const [dateOpen, setDateOpen] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
 
-  // internal state for display values (no validation while typing)
+  // display values allow typing without validation
   const [displayDate, setDisplayDate] = useState(dateValue || '')
   const [displayTime, setDisplayTime] = useState(timeValue || '')
 
-  // parse date for calendar selection
   const selectedDate = tryParseDatetime(dateValue)
 
-  // parse time values for time selectors
   const timeDate = tryParseDatetime(`${REFERENCE_DATE} ${timeValue}`)
   const [hours, setHours] = useState(timeDate ? timeDate.getHours() : 0)
   const [minutes, setMinutes] = useState(timeDate ? timeDate.getMinutes() : 0)
   const [seconds, setSeconds] = useState(timeDate ? timeDate.getSeconds() : 0)
 
-  // sync external value changes
   useEffect(() => {
     setDisplayDate(dateValue || '')
   }, [dateValue])
@@ -106,10 +110,6 @@ export const TimeInput = memo(function TimeInput({
     }
   }, [timeValue])
 
-  // formatting utilities are imported from @/lib/utils/formatting
-  // no need to redefine them as they're stable functions
-
-  // handle calendar date selection
   const handleDateSelect = useCallback(
     (date: Date | undefined) => {
       if (!date) return
@@ -126,10 +126,8 @@ export const TimeInput = memo(function TimeInput({
     [onDateChange]
   )
 
-  // handle time change
   const handleTimeChange = useCallback(
     (type: 'hours' | 'minutes' | 'seconds', value: number) => {
-      // update state based on type
       if (type === 'hours') setHours(value)
       if (type === 'minutes') setMinutes(value)
       if (type === 'seconds') setSeconds(value)
@@ -145,12 +143,11 @@ export const TimeInput = memo(function TimeInput({
     [hours, minutes, seconds, onTimeChange]
   )
 
-  // calculate default min/max dates if not provided
   const calculatedMinDate =
     minDate ||
     (() => {
       const date = new Date()
-      date.setDate(date.getDate() - 31)
+      date.setDate(date.getDate() - defaultMinDaysAgo)
       date.setHours(0, 0, 0, 0)
       return date
     })()
@@ -159,14 +156,13 @@ export const TimeInput = memo(function TimeInput({
     maxDate ||
     (() => {
       const date = new Date()
-      // add 60 seconds tolerance for clock skew
-      date.setSeconds(date.getSeconds() + 60)
+      // add tolerance for clock skew between client and server
+      date.setSeconds(date.getSeconds() + defaultMaxFutureSeconds)
       return date
     })()
 
   return (
     <div className={cn('flex gap-2 flex-col', className)}>
-      {/* Date input with calendar popover */}
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
         <div className="relative flex-1">
           <Input
@@ -212,7 +208,6 @@ export const TimeInput = memo(function TimeInput({
         </PopoverContent>
       </Popover>
 
-      {/* Time input with time selector popover */}
       <Popover open={timeOpen} onOpenChange={setTimeOpen}>
         <div className="relative flex-1">
           <Input
