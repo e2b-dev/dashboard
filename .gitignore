@@ -44,6 +44,3 @@ next-env.d.ts
 /template
 # Sentry Config File
 .env.sentry-build-plugin
-
-# cursor
-/.cursor

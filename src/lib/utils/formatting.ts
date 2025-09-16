@@ -255,3 +255,81 @@ export function tryParseDatetime(input: string): Date | null {
 export function formatDatetimeInput(date: Date): string {
   return format(date, 'yyyy-MM-dd HH:mm:ss')
 }
+
+// ============================================================================
+// Date/Time Component Formatting
+// ============================================================================
+
+/**
+ * Format a date for display with slashes and spaces (DD / MM / YYYY)
+ * Used in date pickers and forms for better readability
+ * @param date - Date to format
+ * @returns Formatted date string with spaces (e.g., "15 / 03 / 2024")
+ */
+export function formatDateWithSpaces(date: Date | null): string {
+  if (!date) return ''
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day} / ${month} / ${year}`
+}
+
+/**
+ * Format time components with spaces for display (HH : MM : SS)
+ * Used in time pickers for better readability
+ * @param hours - Hours as string or number
+ * @param minutes - Minutes as string or number
+ * @param seconds - Seconds as string or number
+ * @returns Formatted time string with spaces (e.g., "14 : 30 : 45")
+ */
+export function formatTimeWithSpaces(
+  hours: string | number,
+  minutes: string | number,
+  seconds: string | number
+): string {
+  const h = String(hours).padStart(2, '0')
+  const m = String(minutes).padStart(2, '0')
+  const s = String(seconds).padStart(2, '0')
+  return `${h} : ${m} : ${s}`
+}
+
+/**
+ * Parse a datetime string into separate date and time components
+ * Returns date in YYYY/MM/DD format and time in HH:MM:SS format
+ * @param dateTimeStr - Datetime string to parse
+ * @returns Object with date and time strings, or empty strings if invalid
+ */
+export function parseDateTimeComponents(dateTimeStr: string): {
+  date: string
+  time: string
+} {
+  if (!dateTimeStr) return { date: '', time: '' }
+  const parsed = tryParseDatetime(dateTimeStr)
+  if (!parsed) return { date: '', time: '' }
+
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  const hours = String(parsed.getHours()).padStart(2, '0')
+  const minutes = String(parsed.getMinutes()).padStart(2, '0')
+  const seconds = String(parsed.getSeconds()).padStart(2, '0')
+
+  return {
+    date: `${year}/${month}/${day}`,
+    time: `${hours}:${minutes}:${seconds}`,
+  }
+}
+
+/**
+ * Combine separate date and time strings into a Date object
+ * @param date - Date string (any format parseable by chrono)
+ * @param time - Time string (any format parseable by chrono)
+ * @returns Date object or null if invalid
+ */
+export function combineDateTimeStrings(
+  date: string,
+  time: string
+): Date | null {
+  if (!date || !time) return null
+  return tryParseDatetime(`${date} ${time}`)
+}

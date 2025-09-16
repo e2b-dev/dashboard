@@ -37,7 +37,7 @@ import {
 } from './chart-utils'
 import { useSyncedMetrics } from './hooks/use-synced-metrics'
 import { useTeamMetrics } from './store'
-import { TimePicker } from './time-picker'
+import { TimePicker } from './time-picker/index'
 
 const CHART_RANGE_MAP = {
   custom: null,

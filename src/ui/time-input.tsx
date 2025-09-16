@@ -4,7 +4,11 @@ import { CalendarIcon, Clock as ClockIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useState } from 'react'
 
 import { cn } from '@/lib/utils'
-import { tryParseDatetime } from '@/lib/utils/formatting'
+import {
+  formatDateWithSpaces,
+  formatTimeWithSpaces,
+  tryParseDatetime,
+} from '@/lib/utils/formatting'
 
 import { NumberInput } from './number-input'
 import { Button } from './primitives/button'
@@ -54,7 +58,6 @@ export interface TimeInputProps {
   disabled?: boolean
   placeholder?: string
   isLive?: boolean
-  showLiveIndicator?: boolean
   className?: string
   minDate?: Date
   maxDate?: Date
@@ -68,7 +71,6 @@ export const TimeInput = memo(function TimeInput({
   disabled = false,
   placeholder,
   isLive = false,
-  showLiveIndicator = false,
   className,
   minDate,
   maxDate,
@@ -104,19 +106,8 @@ export const TimeInput = memo(function TimeInput({
     }
   }, [timeValue])
 
-  // format date for display (DD / MM / YYYY)
-  const formatDateDisplay = (date: Date | null) => {
-    if (!date) return ''
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = date.getFullYear()
-    return `${day} / ${month} / ${year}`
-  }
-
-  // format time for display (HH : MM : SS)
-  const formatTimeDisplay = (h: string, m: string, s: string) => {
-    return `${h} : ${m} : ${s}`
-  }
+  // formatting utilities are imported from @/lib/utils/formatting
+  // no need to redefine them as they're stable functions
 
   // handle calendar date selection
   const handleDateSelect = useCallback(
@@ -128,7 +119,7 @@ export const TimeInput = memo(function TimeInput({
       const day = String(date.getDate()).padStart(2, '0')
       const formattedDate = `${year}/${month}/${day}`
 
-      setDisplayDate(formatDateDisplay(date))
+      setDisplayDate(formatDateWithSpaces(date))
       onDateChange(formattedDate)
       setDateOpen(false)
     },
@@ -148,13 +139,7 @@ export const TimeInput = memo(function TimeInput({
       const newSeconds = type === 'seconds' ? value : seconds
 
       const formattedTime = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}`
-      setDisplayTime(
-        formatTimeDisplay(
-          String(newHours).padStart(2, '0'),
-          String(newMinutes).padStart(2, '0'),
-          String(newSeconds).padStart(2, '0')
-        )
-      )
+      setDisplayTime(formatTimeWithSpaces(newHours, newMinutes, newSeconds))
       onTimeChange(formattedTime)
     },
     [hours, minutes, seconds, onTimeChange]
@@ -311,30 +296,5 @@ export const TimeInput = memo(function TimeInput({
     </div>
   )
 })
-
-// utility functions for date/time parsing
-export function parseDateTime(dateTimeStr: string) {
-  if (!dateTimeStr) return { date: '', time: '' }
-  const parsed = tryParseDatetime(dateTimeStr)
-  if (!parsed) return { date: '', time: '' }
-
-  const year = parsed.getFullYear()
-  const month = String(parsed.getMonth() + 1).padStart(2, '0')
-  const day = String(parsed.getDate()).padStart(2, '0')
-  const hours = String(parsed.getHours()).padStart(2, '0')
-  const minutes = String(parsed.getMinutes()).padStart(2, '0')
-  const seconds = String(parsed.getSeconds()).padStart(2, '0')
-
-  return {
-    date: `${year}/${month}/${day}`,
-    time: `${hours}:${minutes}:${seconds}`,
-  }
-}
-
-// utility to combine date and time strings
-export function combineDateTime(date: string, time: string) {
-  if (!date || !time) return null
-  return tryParseDatetime(`${date} ${time}`)
-}
 
 export default TimeInput
