@@ -1,8 +1,5 @@
+import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { formatDatetimeInput, tryParseDatetime } from '@/lib/utils/formatting'
-import {
-  TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER,
-  calculateStepForDuration,
-} from '@/lib/utils/sandboxes'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 import {
   CUSTOM_PANEL_HEIGHT,
@@ -11,14 +8,14 @@ import {
 } from './constants'
 
 /**
- * Find a matching time option for a given duration
- * Uses tolerance based on step size to handle minor timing differences
+ * Find a matching time option for a given duration based on the step size
  */
 export function findMatchingTimeOption(duration: number | undefined) {
   if (!duration) return null
 
+  // calculate tolerance to account for rounding errors
   const step = calculateStepForDuration(duration)
-  const tolerance = step * TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER
+  const tolerance = step * 1.5
 
   return TIME_OPTIONS.find(
     (opt) => Math.abs(opt.rangeMs - duration) < tolerance

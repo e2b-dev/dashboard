@@ -1,5 +1,4 @@
 import { calculateTeamMetricsStep } from '@/configs/mock-data'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { type LineSeries } from '@/ui/charts/types'
 
 export function calculateAverage(
@@ -39,23 +38,17 @@ export type CentralTendencyMeasure = {
 }
 
 /**
- * Returns either average (mean) or median with appropriate symbol.
+ * Calculates central tendency (average or median) for pre-aggregated time series data.
  *
- * IMPORTANT: The input data points are already pre-aggregated by the backend
- * (e.g., each point is a 5-minute average). This function calculates:
- * - Average of averages (for concurrent sandboxes)
- * - Median of averages (for start rates)
+ * The input data points are already aggregated by the backend (e.g., 5-minute averages).
+ * This function performs secondary aggregation across those time periods.
  *
- * Use AVERAGE (x̄) for:
- * - Concurrent sandboxes: Shows mean resource load across time periods
- * - Metrics where total capacity matters
+ * Use average for metrics where total capacity matters (concurrent sandboxes).
+ * Use median for metrics with high variability where outliers distort the mean (start rates).
  *
- * Use MEDIAN (x̃) for:
- * - Start rates: Shows typical rate, filtering out burst periods
- * - Metrics with high variability where outliers distort the mean
- *
- * @param data - Array of pre-aggregated data points from backend
- * @param useMedian - true for median (bursty data), false for average (capacity)
+ * @param data Array of pre-aggregated data points from backend
+ * @param type Calculation method - 'average' for mean, 'median' for middle value
+ * @returns Object containing the calculated value and type used
  */
 export function calculateCentralTendency(
   data: Array<{ x: unknown; y: number | null }>,
@@ -211,160 +204,4 @@ export function createChartSeries({
   }
 
   return series
-}
-
-/**
- * Fill gaps in team metrics with zeros for charting
- * Detects anomalous gaps and adds zeros at start/end and between data waves
- * The step parameter is the expected/display step - we detect when actual data
- * intervals are larger than this and fill the gaps
- *
- * Note: Backend overfetches by one step to capture boundary points,
- * so if the last point is close to the end, it likely means activity continued
- */
-export function fillMetricsWithZeros(
-  data: ClientTeamMetrics,
-  start: number,
-  end: number,
-  step: number,
-  anomalousGapTolerance: number = 0.25
-): ClientTeamMetrics {
-  if (!data.length) {
-    // calculate appropriate step for empty data
-    const calculatedStep =
-      step > 0 ? step : calculateTeamMetricsStep(start, end)
-    const result: ClientTeamMetrics = []
-
-    // fill entire range with zeros at calculated step
-    for (let timestamp = start; timestamp < end; timestamp += calculatedStep) {
-      result.push({
-        timestamp,
-        concurrentSandboxes: 0,
-        sandboxStartRate: 0,
-      })
-    }
-
-    return result
-  }
-
-  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
-
-  if (data.length < 2) {
-    return sortedData
-  }
-
-  const result: ClientTeamMetrics = []
-
-  // check if we should add zeros at the start
-  const firstDataPoint = sortedData[0]!
-  const gapFromStart = firstDataPoint.timestamp - start
-  const isStartAnomalous = gapFromStart > step * (1 + anomalousGapTolerance)
-
-  if (isStartAnomalous) {
-    result.push({
-      timestamp: start,
-      concurrentSandboxes: 0,
-      sandboxStartRate: 0,
-    })
-
-    const prefixZeroTimestamp = firstDataPoint.timestamp - step
-    if (
-      prefixZeroTimestamp > start &&
-      prefixZeroTimestamp < firstDataPoint.timestamp
-    ) {
-      result.push({
-        timestamp: prefixZeroTimestamp,
-        concurrentSandboxes: 0,
-        sandboxStartRate: 0,
-      })
-    }
-  }
-
-  // add data points and fill gaps between ALL points
-  // this is key: we use the expected step to detect anomalies,
-  // not the actual data interval (which might be wrong)
-  for (let i = 0; i < sortedData.length; i++) {
-    const currentPoint = sortedData[i]!
-    result.push(currentPoint)
-
-    if (i === sortedData.length - 1) {
-      break
-    }
-
-    const nextPoint = sortedData[i + 1]!
-    const actualGap = nextPoint.timestamp - currentPoint.timestamp
-
-    // detect gaps based on EXPECTED step, not actual data intervals
-    // this is crucial: if API returns 1-hour intervals but we expect 5 minutes,
-    // we need to detect this as anomalous and fill the gaps
-    const tolerance = step * anomalousGapTolerance
-    const isAnomalousGap = actualGap > step + tolerance
-
-    if (isAnomalousGap) {
-      // always fill gaps when detected, even between first points
-      // this handles the case where API returns 1-hour intervals
-      // but we expect 5-minute intervals
-
-      // fill zero after the current point
-      const suffixZeroTimestamp = currentPoint.timestamp + step
-      if (suffixZeroTimestamp < nextPoint.timestamp) {
-        result.push({
-          timestamp: suffixZeroTimestamp,
-          concurrentSandboxes: 0,
-          sandboxStartRate: 0,
-        })
-      }
-
-      // fill zero before the next point
-      const prefixZeroTimestamp = nextPoint.timestamp - step
-      if (
-        prefixZeroTimestamp > currentPoint.timestamp &&
-        prefixZeroTimestamp < nextPoint.timestamp
-      ) {
-        result.push({
-          timestamp: prefixZeroTimestamp,
-          concurrentSandboxes: 0,
-          sandboxStartRate: 0,
-        })
-      }
-    }
-  }
-
-  // check if we should add zeros at the end
-  const lastDataPoint = sortedData[sortedData.length - 1]!
-  const gapToEnd = end - lastDataPoint.timestamp
-
-  // check if last data point is beyond or very close to the end
-  // this indicates the backend overfetched and activity likely continued
-  const isLastPointBeyondEnd = lastDataPoint.timestamp >= end
-  const isLastPointNearBoundary = gapToEnd <= step * 0.5 // within half a step
-
-  // be conservative about adding end zeros when data is near boundary
-  // only add if there's a significant gap or we're certain activity stopped
-  const shouldAddEndZeros =
-    !isLastPointBeyondEnd &&
-    !isLastPointNearBoundary &&
-    // significant gap (more than 2 steps)
-    ((step > 0 && gapToEnd >= step * 2) ||
-      // or very large gap (more than 5 minutes)
-      gapToEnd >= 5 * 60 * 1000)
-
-  if (shouldAddEndZeros) {
-    const suffixZeroTimestamp = lastDataPoint.timestamp + step
-    if (suffixZeroTimestamp < end) {
-      result.push({
-        timestamp: suffixZeroTimestamp,
-        concurrentSandboxes: 0,
-        sandboxStartRate: 0,
-      })
-    }
-
-    result.push({
-      timestamp: end - 1000,
-      concurrentSandboxes: 0,
-      sandboxStartRate: 0,
-    })
-  }
-
-  return result.sort((a, b) => a.timestamp - b.timestamp)
 }

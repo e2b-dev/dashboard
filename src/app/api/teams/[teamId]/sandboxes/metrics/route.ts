@@ -2,11 +2,10 @@ import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
-import { createClient } from '@/lib/clients/supabase/server'
-import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
-
 import { l } from '@/lib/clients/logger/logger'
+import { createClient } from '@/lib/clients/supabase/server'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { MetricsRequestSchema, MetricsResponse } from './types'
 
 export async function POST(

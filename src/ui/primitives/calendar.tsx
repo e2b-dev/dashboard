@@ -104,12 +104,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn(
-        'p-3 w-full',
-        'bg-bg-1 rounded-md',
-        '[--cell-size:2rem]',
-        className
-      )}
+      className={cn('p-3 w-full', '[--cell-size:2rem]', className)}
       captionLayout={captionLayout}
       disabled={disabledDates}
       formatters={{

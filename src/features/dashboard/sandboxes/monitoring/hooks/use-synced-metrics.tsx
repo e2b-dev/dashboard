@@ -5,7 +5,7 @@ import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { ParsedTimeframe } from '@/lib/utils/timeframe'
 import { toast } from 'sonner'
 import useSWR, { SWRConfiguration } from 'swr'
-import { fillMetricsWithZeros } from '../charts/utils'
+import { fillTeamMetricsWithZeros } from '../utils'
 
 interface UseSyncedMetricsOptions {
   teamId: string
@@ -74,7 +74,7 @@ export function useSyncedMetrics({
 
         const result = (await response.json()) as TeamMetricsResponse
 
-        const filledMetrics = fillMetricsWithZeros(
+        const filledMetrics = fillTeamMetricsWithZeros(
           result.metrics,
           start,
           end,

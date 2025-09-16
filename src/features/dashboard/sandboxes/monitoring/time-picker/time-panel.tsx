@@ -10,6 +10,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -149,6 +150,20 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
       return () => subscription.unsubscribe()
     }, [form, onValuesChange])
 
+    const { minDate, maxDate } = useMemo(() => {
+      const now = new Date()
+
+      // create new Date object for minDate (31 days ago)
+      const minDate = new Date(now.getTime() - MAX_DAYS_AGO)
+      minDate.setHours(0, 0, 0, 0)
+
+      // create new Date object for maxDate (end of today)
+      const maxDate = new Date(now)
+      maxDate.setHours(23, 59, 59, 999)
+
+      return { minDate, maxDate }
+    }, [])
+
     return (
       <Form {...form}>
         <form
@@ -169,7 +184,8 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
                     <TimeInput
                       dateValue={form.watch('startDate')}
                       timeValue={form.watch('startTime')}
-                      defaultMinDaysAgo={MAX_DAYS_AGO}
+                      minDate={minDate}
+                      maxDate={maxDate}
                       onDateChange={(value) =>
                         form.setValue('startDate', value, { shouldDirty: true })
                       }
@@ -212,6 +228,8 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
                           <TimeInput
                             dateValue={form.watch('endDate') || ''}
                             timeValue={form.watch('endTime') || ''}
+                            minDate={minDate}
+                            maxDate={maxDate}
                             onDateChange={(value) =>
                               form.setValue('endDate', value, {
                                 shouldDirty: true,

@@ -8,7 +8,7 @@ import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { NonUndefined } from 'react-hook-form'
 import useSWR from 'swr'
-import { fillMetricsWithZeros } from '../charts/utils'
+import { fillTeamMetricsWithZeros } from '../utils'
 
 // header metrics always show last 60 seconds regardless of selected time range
 export default function useHeaderMetricsSWR(
@@ -54,7 +54,7 @@ export default function useHeaderMetricsSWR(
         return
       }
 
-      const filledMetrics = fillMetricsWithZeros(
+      const filledMetrics = fillTeamMetricsWithZeros(
         data.metrics,
         fetchStart,
         fetchEnd,

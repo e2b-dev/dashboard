@@ -56,16 +56,6 @@ export interface TimeInputProps {
   className?: string
   minDate?: Date
   maxDate?: Date
-  /** Number of days in the past to allow selection (default: 31) */
-  defaultMinDaysAgo?: number
-  /**
-   * Clock skew tolerance in seconds (default: 60)
-   * Allows selection of times slightly in the future to handle:
-   * - Client clock being behind server clock
-   * - Network latency when submitting
-   * - Small time differences between systems
-   */
-  defaultMaxFutureSeconds?: number
 }
 
 export const TimeInput = memo(function TimeInput({
@@ -79,8 +69,6 @@ export const TimeInput = memo(function TimeInput({
   className,
   minDate,
   maxDate,
-  defaultMinDaysAgo = 31,
-  defaultMaxFutureSeconds = 30,
 }: TimeInputProps) {
   const [dateOpen, setDateOpen] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
@@ -143,24 +131,6 @@ export const TimeInput = memo(function TimeInput({
     [hours, minutes, seconds, onTimeChange]
   )
 
-  const calculatedMinDate =
-    minDate ||
-    (() => {
-      const date = new Date()
-      date.setDate(date.getDate() - defaultMinDaysAgo)
-      date.setHours(0, 0, 0, 0)
-      return date
-    })()
-
-  const calculatedMaxDate =
-    maxDate ||
-    (() => {
-      const date = new Date()
-      // add tolerance for clock skew between client and server
-      date.setSeconds(date.getSeconds() + defaultMaxFutureSeconds)
-      return date
-    })()
-
   return (
     <div className={cn('flex gap-2 flex-col', className)}>
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
@@ -201,8 +171,8 @@ export const TimeInput = memo(function TimeInput({
             mode="single"
             selected={selectedDate || undefined}
             onSelect={handleDateSelect}
-            minDate={calculatedMinDate}
-            maxDate={calculatedMaxDate}
+            minDate={minDate}
+            maxDate={maxDate}
             autoFocus
           />
         </PopoverContent>

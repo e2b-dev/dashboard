@@ -1,14 +1,12 @@
-import { Suspense } from 'react'
-
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
+import { fillTeamMetricsWithZeros } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-
-import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
+import { Suspense } from 'react'
 import ChartFallback from './fallback'
 import StartRateChartClient from './start-rate-chart.client'
 

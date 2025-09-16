@@ -1,5 +1,6 @@
 'use client'
 
+import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { createSingleValueTooltipFormatter } from '@/lib/utils/chart'
@@ -8,10 +9,6 @@ import {
   formatCompactDate,
   formatDecimal,
 } from '@/lib/utils/formatting'
-import {
-  TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER,
-  calculateStepForDuration,
-} from '@/lib/utils/sandboxes'
 import {
   TIME_RANGES,
   TimeRangeKey,
@@ -126,8 +123,10 @@ export default function ConcurrentChartClient({
 
   const currentRange = useMemo(() => {
     const currentDuration = syncedTimeframe.duration
+
+    // calculate tolerance to account for rounding errors
     const step = calculateStepForDuration(currentDuration)
-    const tolerance = step * TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER
+    const tolerance = step * 1.5
 
     const matchingRange = Object.entries(TIME_RANGES).find(
       ([_, rangeMs]) => Math.abs(rangeMs - currentDuration) < tolerance

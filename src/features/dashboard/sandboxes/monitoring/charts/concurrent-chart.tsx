@@ -1,15 +1,13 @@
-import { Suspense } from 'react'
-
 import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
+import { fillTeamMetricsWithZeros } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
-
-import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
+import { Suspense } from 'react'
 import ConcurrentChartClient from './concurrent-chart.client'
 import ChartFallback from './fallback'
 

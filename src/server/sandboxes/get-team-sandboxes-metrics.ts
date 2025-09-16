@@ -4,7 +4,7 @@ import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
+import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { z } from 'zod'
 

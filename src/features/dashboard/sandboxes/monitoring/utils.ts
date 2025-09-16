@@ -1,32 +1,5 @@
 import { TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS } from '@/configs/intervals'
-import { SandboxesMetricsRecord } from '@/types/api'
-import {
-  ClientSandboxesMetrics,
-  ClientTeamMetrics,
-} from '@/types/sandboxes.types'
-
-export function transformMetricsToClientMetrics(
-  metrics: SandboxesMetricsRecord
-): ClientSandboxesMetrics {
-  return Object.fromEntries(
-    Object.entries(metrics).map(([sandboxID, metric]) => [
-      sandboxID,
-      {
-        cpuCount: metric.cpuCount,
-        cpuUsedPct: Number(metric.cpuUsedPct.toFixed(2)),
-        memUsedMb: Number((metric.memUsed / 1024 / 1024).toFixed(2)),
-        memTotalMb: Number((metric.memTotal / 1024 / 1024).toFixed(2)),
-        diskUsedGb: Number((metric.diskUsed / 1024 / 1024 / 1024).toFixed(2)),
-        diskTotalGb: Number((metric.diskTotal / 1024 / 1024 / 1024).toFixed(2)),
-        timestamp: metric.timestamp,
-      },
-    ])
-  )
-}
-
-// tolerance multiplier for matching time ranges to preset options
-// accounts for timing variations and data granularity
-export const TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER = 1.5
+import { ClientTeamMetrics } from '@/types/sandboxes.types'
 
 export function calculateStepForRange(startMs: number, endMs: number): number {
   const duration = endMs - startMs
@@ -145,10 +118,10 @@ function _fillIntermediateGapsWithZeros(
     // only fill gaps in the middle of data sequences, not at boundaries
     if (hasSequenceBefore && hasDataAfter) {
       const suffixZeroTimestamp = currentPoint.timestamp + step
+      // add suffix zero if it fits in the gap
       if (
         suffixZeroTimestamp < nextPoint.timestamp &&
-        suffixZeroTimestamp - currentPoint.timestamp >
-          TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
+        suffixZeroTimestamp > currentPoint.timestamp
       ) {
         result.push(_createZeroMetricPoint(suffixZeroTimestamp))
       }
@@ -156,7 +129,9 @@ function _fillIntermediateGapsWithZeros(
       const prefixZeroTimestamp = nextPoint.timestamp - step
       if (
         prefixZeroTimestamp > currentPoint.timestamp &&
-        prefixZeroTimestamp < nextPoint.timestamp
+        prefixZeroTimestamp < nextPoint.timestamp &&
+        // ensure prefix and suffix zeros don't overlap
+        prefixZeroTimestamp > suffixZeroTimestamp
       ) {
         result.push(_createZeroMetricPoint(prefixZeroTimestamp))
       }
@@ -232,15 +207,18 @@ export function fillTeamMetricsWithZeros(
     return _generateEmptyTimeSeriesWithZeros(start, end, step)
   }
 
-  // handle single data point case: just return sorted data (no gaps to fill)
-  if (data.length < 2) {
-    return data.sort((a, b) => a.timestamp - b.timestamp)
-  }
-
   const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
   const result: ClientTeamMetrics = []
 
   _addStartPaddingZeros(result, sortedData, start, step, anomalousGapTolerance)
+
+  // handle single data point case: add the point and check for end padding
+  if (data.length === 1) {
+    const singlePoint = sortedData[0]!
+    result.push(singlePoint)
+    _addEndPaddingZeros(result, singlePoint, end, step, anomalousGapTolerance)
+    return result.sort((a, b) => a.timestamp - b.timestamp)
+  }
 
   for (let i = 0; i < sortedData.length; i++) {
     const currentPoint = sortedData[i]!
