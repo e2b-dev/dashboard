@@ -40,12 +40,8 @@ export const TimePicker = memo(function TimePicker({
   disabled = false,
   children,
 }: TimePickerProps) {
-  const {
-    timeOptionsValue,
-    setTimeOptionsValue,
-    isCustomSelected,
-    setIsCustomSelected,
-  } = useTimeOptionSelection(value)
+  const { timeOptionsValue, setTimeOptionsValue } =
+    useTimeOptionSelection(value)
 
   const {
     startDateTime,
@@ -77,17 +73,14 @@ export const TimePicker = memo(function TimePicker({
 
     if (value.mode === 'static') {
       // static mode means custom time range
-      setIsCustomSelected(true)
       setTimeOptionsValue('custom')
       setShowCustomPanel(true) // auto-show panel
     } else if (matchingOption) {
       // live mode with matching preset
       setTimeOptionsValue(matchingOption.value)
-      setIsCustomSelected(false)
       setShowCustomPanel(false)
     } else if (duration) {
       // live mode with custom duration
-      setIsCustomSelected(true)
       setTimeOptionsValue('custom')
       setShowCustomPanel(true)
     } else {
@@ -95,31 +88,22 @@ export const TimePicker = memo(function TimePicker({
       const defaultOption = TIME_OPTIONS[0]
       if (defaultOption) {
         setTimeOptionsValue(defaultOption.value)
-        setIsCustomSelected(false)
         setShowCustomPanel(false)
       }
     }
-  }, [
-    open,
-    value,
-    setTimeOptionsValue,
-    setIsCustomSelected,
-    setShowCustomPanel,
-  ])
+  }, [open, value, setTimeOptionsValue, setShowCustomPanel])
 
   const handleTimeOptionSelect = useCallback(
     (newValue: string) => {
       // handle custom selection differently
+      // we don't want to set the time options value to custom on selection
       if (newValue === 'custom') {
-        setIsCustomSelected(true)
-        setTimeOptionsValue('custom')
         setShowCustomPanel(true)
         return
       }
 
       // handle preset time option selection
       setTimeOptionsValue(newValue)
-      setIsCustomSelected(false)
       setShowCustomPanel(false)
 
       const option = TIME_OPTIONS.find((opt) => opt.value === newValue)
@@ -131,13 +115,7 @@ export const TimePicker = memo(function TimePicker({
         setOpen(false)
       }
     },
-    [
-      onValueChange,
-      setOpen,
-      setIsCustomSelected,
-      setShowCustomPanel,
-      setTimeOptionsValue,
-    ]
+    [onValueChange, setOpen, setShowCustomPanel, setTimeOptionsValue]
   )
 
   const handleCustomSubmit = useCallback(
@@ -163,8 +141,7 @@ export const TimePicker = memo(function TimePicker({
           start: startDate.getTime(),
           end: endDate.getTime(),
         })
-        setIsCustomSelected(true)
-        setTimeOptionsValue('')
+        setTimeOptionsValue('custom')
       } else {
         const now = new Date().getTime()
         const range = now - startDate.getTime()
@@ -182,10 +159,8 @@ export const TimePicker = memo(function TimePicker({
           )
           if (matchingOption) {
             setTimeOptionsValue(matchingOption.value)
-            setIsCustomSelected(false)
           } else {
-            setIsCustomSelected(true)
-            setTimeOptionsValue('')
+            setTimeOptionsValue('custom')
           }
         }
       }
@@ -200,7 +175,6 @@ export const TimePicker = memo(function TimePicker({
       setStartDateTime,
       setEndDateTime,
       setEndEnabled,
-      setIsCustomSelected,
       setTimeOptionsValue,
     ]
   )
@@ -247,7 +221,7 @@ export const TimePicker = memo(function TimePicker({
         <div className="relative">
           <div className="w-[260px] p-2 relative z-10 backdrop-blur-lg">
             <RadioGroup
-              value={isCustomSelected ? 'custom' : timeOptionsValue}
+              value={timeOptionsValue}
               onValueChange={handleTimeOptionSelect}
               className="gap-0"
             >
@@ -274,9 +248,6 @@ export const TimePicker = memo(function TimePicker({
                 onClick={(e) => {
                   // toggle custom panel visibility
                   setShowCustomPanel((prev) => !prev)
-                  // mark as custom selected when clicking on it
-                  setIsCustomSelected(true)
-                  setTimeOptionsValue('custom')
                   e.preventDefault()
                 }}
               >
@@ -290,7 +261,7 @@ export const TimePicker = memo(function TimePicker({
           </div>
 
           <AnimatePresence mode="wait">
-            {(showCustomPanel || isCustomSelected) && (
+            {showCustomPanel && (
               <motion.div
                 data-custom-panel
                 initial={{
@@ -348,7 +319,6 @@ export const TimePicker = memo(function TimePicker({
                   startDateTime={startDateTime}
                   endDateTime={endDateTime}
                   endEnabled={endEnabled}
-                  isOpen={showCustomPanel || isCustomSelected}
                   onSubmit={handleCustomSubmit}
                   onValuesChange={handleCustomValuesChange}
                 />

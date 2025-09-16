@@ -43,21 +43,13 @@ interface TimePanelProps {
   startDateTime: string
   endDateTime: string
   endEnabled: boolean
-  isOpen: boolean
   onSubmit: (values: CustomTimeFormValues) => void
   onValuesChange: (values: CustomTimeFormValues) => void
 }
 
 export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
   function TimePanel(
-    {
-      startDateTime,
-      endDateTime,
-      endEnabled,
-      isOpen,
-      onSubmit,
-      onValuesChange,
-    },
+    { startDateTime, endDateTime, endEnabled, onSubmit, onValuesChange },
     ref
   ) {
     'use no memo'
@@ -99,12 +91,6 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
       }),
       [form, handleFormSubmit]
     )
-
-    useEffect(() => {
-      if (!isOpen) {
-        setIsFocused(false)
-      }
-    }, [isOpen])
 
     // sync form with external props (but not when user is editing)
     useEffect(() => {
