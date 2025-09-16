@@ -5,7 +5,7 @@ import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { ParsedTimeframe } from '@/lib/utils/timeframe'
 import { toast } from 'sonner'
 import useSWR, { SWRConfiguration } from 'swr'
-import { fillMetricsWithZeros } from '../chart-utils'
+import { fillMetricsWithZeros } from '../charts/utils'
 
 interface UseSyncedMetricsOptions {
   teamId: string

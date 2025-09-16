@@ -2,6 +2,7 @@
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
+import { createSingleValueTooltipFormatter } from '@/lib/utils/chart'
 import {
   formatAxisNumber,
   formatCompactDate,
@@ -12,32 +13,30 @@ import {
   calculateStepForDuration,
 } from '@/lib/utils/sandboxes'
 import {
-  ParsedTimeframe,
   TIME_RANGES,
   TimeRangeKey,
   formatTimeframeAsISO8601Interval,
 } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
+import LineChart from '@/ui/charts/line-chart'
 import CopyButton from '@/ui/copy-button'
-import { createSingleValueTooltipFormatter } from '@/ui/data/chart-utils'
-import LineChart from '@/ui/data/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
-import * as echarts from 'echarts'
+import { ECharts } from 'echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useEffect, useMemo, useRef } from 'react'
 import { NonUndefined } from 'react-hook-form'
+import { useSyncedMetrics } from '../hooks/use-synced-metrics'
+import { useTeamMetrics } from '../store'
+import { TimePicker } from '../time-picker'
 import {
   calculateCentralTendency,
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
   transformMetricsToLineData,
-} from './chart-utils'
-import { useSyncedMetrics } from './hooks/use-synced-metrics'
-import { useTeamMetrics } from './store'
-import { TimePicker } from './time-picker/index'
+} from './utils'
 
 const CHART_RANGE_MAP = {
   custom: null,
@@ -53,17 +52,15 @@ interface ConcurrentChartProps {
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
   >
-  initialTimeframe: ParsedTimeframe
   concurrentInstancesLimit?: number
 }
 
 export default function ConcurrentChartClient({
   teamId,
   initialData,
-  initialTimeframe,
   concurrentInstancesLimit,
 }: ConcurrentChartProps) {
-  const chartRef = useRef<echarts.ECharts | null>(null)
+  const chartRef = useRef<ECharts | null>(null)
   const isRegisteredRef = useRef(false)
 
   const {

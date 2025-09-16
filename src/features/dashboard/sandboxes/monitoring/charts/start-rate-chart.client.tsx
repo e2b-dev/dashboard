@@ -1,41 +1,38 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { createSingleValueTooltipFormatter } from '@/lib/utils/chart'
 import { formatDecimal } from '@/lib/utils/formatting'
-import { ParsedTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
-import { createSingleValueTooltipFormatter } from '@/ui/data/chart-utils'
-import LineChart from '@/ui/data/line-chart'
+import LineChart from '@/ui/charts/line-chart'
 import { ReactiveLiveBadge } from '@/ui/live'
-import * as echarts from 'echarts'
+import { ECharts } from 'echarts/types/dist/echarts'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useEffect, useMemo, useRef } from 'react'
 import { NonUndefined } from 'react-hook-form'
+import { useSyncedMetrics } from '../hooks/use-synced-metrics'
+import { useTeamMetrics } from '../store'
 import {
   calculateCentralTendency,
   calculateYAxisMax,
   createChartSeries,
   createMonitoringChartOptions,
   transformMetricsToLineData,
-} from './chart-utils'
-import { useSyncedMetrics } from './hooks/use-synced-metrics'
-import { useTeamMetrics } from './store'
+} from './utils'
 
 interface StartRateChartProps {
   teamId: string
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
   >
-  initialTimeframe: ParsedTimeframe
 }
 
 export default function StartRateChartClient({
   teamId,
   initialData,
-  initialTimeframe,
 }: StartRateChartProps) {
-  const chartRef = useRef<echarts.ECharts | null>(null)
+  const chartRef = useRef<ECharts | null>(null)
   const isRegisteredRef = useRef(false)
   const { timeframe, registerChart, unregisterChart } = useTeamMetrics()
 

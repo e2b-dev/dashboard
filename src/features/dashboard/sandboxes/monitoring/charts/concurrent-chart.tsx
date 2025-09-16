@@ -4,15 +4,17 @@ import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
-import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 
 import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
-import ChartFallback from './chart-fallback'
 import ConcurrentChartClient from './concurrent-chart.client'
+import ChartFallback from './fallback'
+
+const TITLE = 'Concurrent'
+const SUBTITLE = 'Average over range'
 
 interface ConcurrentChartProps {
   params: Promise<SandboxesMonitoringPageParams>
@@ -24,7 +26,7 @@ export async function ConcurrentChart({
   searchParams,
 }: ConcurrentChartProps) {
   return (
-    <Suspense fallback={<ChartFallback title="Concurrent" subtitle="AVG" />}>
+    <Suspense fallback={<ChartFallback title={TITLE} subtitle={SUBTITLE} />}>
       <ConcurrentChartResolver params={params} searchParams={searchParams} />
     </Suspense>
   )
@@ -41,7 +43,7 @@ async function ConcurrentChartResolver({
 
   const timeframe = parseAndCreateTimeframe(plot)
 
-  const [teamMetricsResult, tierLimits] = await Promise.all([
+  const [teamMetricsResult, tierLimitsResult] = await Promise.all([
     getTeamMetrics({
       teamId,
       startDate: timeframe.start,
@@ -50,40 +52,43 @@ async function ConcurrentChartResolver({
     getTeamTierLimits({ teamId }),
   ])
 
-  const filledMetrics = fillTeamMetricsWithZeros(
-    teamMetricsResult?.data?.metrics ?? [],
-    timeframe.start,
-    timeframe.end,
-    60_000
-  )
-
-  const initialData = {
-    step: teamMetricsResult?.data?.step ?? 0,
-    metrics: filledMetrics,
-  }
-
-  if (!tierLimits?.data) {
-    l.error(
-      {
-        key: 'concurrent_chart:error',
-        team_id: teamId,
-        context: {
-          timeframe,
-          serverError: tierLimits?.serverError,
-        },
-      },
-      'No tier limits found for team:',
-      teamId
+  if (
+    !teamMetricsResult?.data ||
+    teamMetricsResult.serverError ||
+    teamMetricsResult.validationErrors
+  ) {
+    return (
+      <ChartFallback
+        title={TITLE}
+        subtitle={SUBTITLE}
+        error={
+          teamMetricsResult?.serverError ||
+          teamMetricsResult?.validationErrors?.formErrors[0] ||
+          'Failed to load concurrent data.'
+        }
+      />
     )
   }
 
-  const concurrentInstancesLimit = tierLimits?.data?.concurrentInstances
+  const metrics = teamMetricsResult.data.metrics
+  const step = teamMetricsResult.data.step
+
+  const filledMetrics = fillTeamMetricsWithZeros(
+    metrics,
+    timeframe.start,
+    timeframe.end,
+    step
+  )
+
+  const concurrentInstancesLimit = tierLimitsResult?.data?.concurrentInstances
 
   return (
     <ConcurrentChartClient
       teamId={teamId}
-      initialData={initialData}
-      initialTimeframe={timeframe}
+      initialData={{
+        step,
+        metrics: filledMetrics,
+      }}
       concurrentInstancesLimit={concurrentInstancesLimit}
     />
   )

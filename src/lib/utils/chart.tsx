@@ -1,6 +1,6 @@
 import { formatAveragingPeriod } from '@/lib/utils/formatting'
-import { SingleValueTooltip } from '@/ui/data/tooltips'
-import * as echarts from 'echarts'
+import { SingleValueTooltip } from '@/ui/charts/tooltips'
+import type { TooltipComponentFormatterCallbackParams } from 'echarts'
 import { renderToString } from 'react-dom/server'
 
 /**
@@ -23,7 +23,7 @@ export function createSingleValueTooltipFormatter({
   descriptionClassName?: string
   timestampClassName?: string
 }) {
-  return (params: echarts.TooltipComponentFormatterCallbackParams) => {
+  return (params: TooltipComponentFormatterCallbackParams) => {
     // handle both array of series data and single series data point
     const paramsData = Array.isArray(params) ? params[0] : params
     if (!paramsData?.value) return ''

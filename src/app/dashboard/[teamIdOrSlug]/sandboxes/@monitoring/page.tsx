@@ -1,6 +1,6 @@
-import { ConcurrentChart } from '@/features/dashboard/sandboxes/monitoring/concurrent-chart'
+import { ConcurrentChart } from '@/features/dashboard/sandboxes/monitoring/charts/concurrent-chart'
+import { StartRateChart } from '@/features/dashboard/sandboxes/monitoring/charts/start-rate-chart'
 import SandboxesMonitoringHeader from '@/features/dashboard/sandboxes/monitoring/header'
-import { StartRateChart } from '@/features/dashboard/sandboxes/monitoring/start-rate-chart'
 import { ChartRegistryProvider } from '@/lib/hooks/use-connected-charts'
 
 export interface SandboxesMonitoringPageParams {

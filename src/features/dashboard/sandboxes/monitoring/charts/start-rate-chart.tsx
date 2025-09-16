@@ -9,8 +9,11 @@ import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 
 import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
-import ChartFallback from './chart-fallback'
+import ChartFallback from './fallback'
 import StartRateChartClient from './start-rate-chart.client'
+
+const TITLE = 'Start Rate per Second'
+const SUBTITLE = 'Median over range'
 
 interface StartedChartProps {
   params: Promise<SandboxesMonitoringPageParams>
@@ -22,9 +25,7 @@ export async function StartRateChart({
   searchParams,
 }: StartedChartProps) {
   return (
-    <Suspense
-      fallback={<ChartFallback title="Start Rate" subtitle="PER SECOND" />}
-    >
+    <Suspense fallback={<ChartFallback title={TITLE} subtitle={SUBTITLE} />}>
       <StartRateChartResolver params={params} searchParams={searchParams} />
     </Suspense>
   )
@@ -35,9 +36,9 @@ async function StartRateChartResolver({
   searchParams,
 }: StartedChartProps) {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
   const { plot } = await searchParams
+
+  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const timeframe = parseAndCreateTimeframe(plot)
 
@@ -47,22 +48,41 @@ async function StartRateChartResolver({
     endDate: timeframe.end,
   })
 
+  if (
+    !teamMetricsResult?.data ||
+    teamMetricsResult.serverError ||
+    teamMetricsResult.validationErrors
+  ) {
+    return (
+      <ChartFallback
+        title={TITLE}
+        subtitle={SUBTITLE}
+        error={
+          teamMetricsResult?.serverError ||
+          teamMetricsResult?.validationErrors?.formErrors[0] ||
+          'Failed to load start rate data.'
+        }
+      />
+    )
+  }
+
+  const metrics = teamMetricsResult.data.metrics
+  const step = teamMetricsResult.data.step
+
   const filledMetrics = fillTeamMetricsWithZeros(
-    teamMetricsResult?.data?.metrics ?? [],
+    metrics,
     timeframe.start,
     timeframe.end,
-    60_000
+    step
   )
-  const initialData = {
-    step: teamMetricsResult?.data?.step ?? 0,
-    metrics: filledMetrics,
-  }
 
   return (
     <StartRateChartClient
       teamId={teamId}
-      initialData={initialData}
-      initialTimeframe={timeframe}
+      initialData={{
+        step,
+        metrics: filledMetrics,
+      }}
     />
   )
 }

@@ -1,6 +1,6 @@
 import { calculateTeamMetricsStep } from '@/configs/mock-data'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
-import { LineSeries } from '@/ui/data/line-chart.utils'
+import { type LineSeries } from '@/ui/charts/types'
 
 export function calculateAverage(
   data: Array<{ x: unknown; y: number | null }>
@@ -106,6 +106,7 @@ export function calculateYAxisMax(
     const snappedValue = numberOfDivisions * divisionValue
 
     // never snap exactly to limit - apply padding instead
+    // this prevents limit line being cut off by the chart constraints
     if (snappedValue >= limit) {
       return Math.round(limit * limitPadding)
     }
@@ -113,7 +114,6 @@ export function calculateYAxisMax(
     return snappedValue
   }
 
-  // round to nice numbers when no limit
   const scaledValue = maxDataValue * scaleFactor
 
   if (scaledValue < 10) {
@@ -247,11 +247,12 @@ export function fillMetricsWithZeros(
     return result
   }
 
+  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
+
   if (data.length < 2) {
-    return [...data].sort((a, b) => a.timestamp - b.timestamp)
+    return sortedData
   }
 
-  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
   const result: ClientTeamMetrics = []
 
   // check if we should add zeros at the start

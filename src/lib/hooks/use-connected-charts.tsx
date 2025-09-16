@@ -1,6 +1,7 @@
 'use client'
 
-import * as echarts from 'echarts'
+import { connect, disconnect } from 'echarts'
+import type { ECharts } from 'echarts/types/dist/echarts'
 import {
   createContext,
   ReactNode,
@@ -12,8 +13,8 @@ import {
 } from 'react'
 
 interface ChartRegistryContextType {
-  registerChart: (chart: echarts.ECharts) => void
-  unregisterChart: (chart: echarts.ECharts) => void
+  registerChart: (chart: ECharts) => void
+  unregisterChart: (chart: ECharts) => void
 }
 
 const ChartRegistryContext = createContext<ChartRegistryContextType | null>(
@@ -27,23 +28,23 @@ export function ChartRegistryProvider({
   children: ReactNode
   group: string
 }) {
-  const [charts, setCharts] = useState<echarts.ECharts[]>([])
+  const [charts, setCharts] = useState<ECharts[]>([])
   const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const mountedRef = useRef(false)
 
   // on mount, disconnect any existing charts in this group to start fresh
   useEffect(() => {
     if (!mountedRef.current) {
-      echarts.disconnect(group)
+      disconnect(group)
       mountedRef.current = true
     }
   }, [group])
 
   const connectCharts = useCallback(
-    (chartsToConnect: echarts.ECharts[]) => {
+    (chartsToConnect: ECharts[]) => {
       if (chartsToConnect.length > 1) {
         // always disconnect first to ensure clean state
-        echarts.disconnect(group)
+        disconnect(group)
 
         // set group on all charts before connecting
         chartsToConnect.forEach((chart) => {
@@ -51,14 +52,14 @@ export function ChartRegistryProvider({
         })
 
         // connect using array of chart instances
-        echarts.connect(chartsToConnect)
+        connect(chartsToConnect)
       }
     },
     [group]
   )
 
   const registerChart = useCallback(
-    (chart: echarts.ECharts) => {
+    (chart: ECharts) => {
       setCharts((prevCharts) => {
         // check if chart is already in the list
         if (prevCharts.includes(chart)) {
@@ -93,7 +94,7 @@ export function ChartRegistryProvider({
   )
 
   const unregisterChart = useCallback(
-    (chart: echarts.ECharts) => {
+    (chart: ECharts) => {
       setCharts((prevCharts) => {
         const newCharts = prevCharts.filter((c) => c !== chart)
 
@@ -102,7 +103,7 @@ export function ChartRegistryProvider({
           connectCharts(newCharts)
         } else if (newCharts.length <= 1) {
           // disconnect if we have 1 or 0 charts
-          echarts.disconnect(group)
+          disconnect(group)
         }
 
         return newCharts
@@ -117,7 +118,7 @@ export function ChartRegistryProvider({
       if (batchTimeoutRef.current) {
         clearTimeout(batchTimeoutRef.current)
       }
-      echarts.disconnect(group)
+      disconnect(group)
     }
   }, [group])
 

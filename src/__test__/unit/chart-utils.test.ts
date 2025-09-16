@@ -5,7 +5,7 @@ import {
   createMonitoringChartOptions,
   fillMetricsWithZeros,
   transformMetricsToLineData,
-} from '@/features/dashboard/sandboxes/monitoring/chart-utils'
+} from '@/features/dashboard/sandboxes/monitoring/charts/utils'
 import type { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { describe, expect, it } from 'vitest'
 
