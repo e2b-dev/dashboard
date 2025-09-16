@@ -15,6 +15,7 @@ import {
   ParsedTimeframe,
   TIME_RANGES,
   TimeRangeKey,
+  formatTimeframeAsISO8601Interval,
 } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
@@ -152,10 +153,10 @@ export default function ConcurrentChartClient({
 
   const customRangeCopyValue = useMemo(() => {
     if (!syncedTimeframe.isLive || currentRange === 'custom') {
-      // ISO 8601 time interval format: start/end in UTC
-      const startISO = new Date(syncedTimeframe.start).toISOString()
-      const endISO = new Date(syncedTimeframe.end).toISOString()
-      return `${startISO}/${endISO}`
+      return formatTimeframeAsISO8601Interval(
+        syncedTimeframe.start,
+        syncedTimeframe.end
+      )
     }
     return null
   }, [

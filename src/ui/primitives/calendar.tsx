@@ -21,6 +21,57 @@ export type CalendarProps = DayPickerBaseProps & {
   maxDate?: Date
 }
 
+import { isSameDay, isWithinInterval } from 'date-fns'
+
+function isDateInRange(date: Date, minDate?: Date, maxDate?: Date): boolean {
+  // if no min/max date, show all
+  if (!minDate && !maxDate) return true
+
+  // if both min/max date, use isWithinInterval
+  if (minDate && maxDate) {
+    return isWithinInterval(date, { start: minDate, end: maxDate })
+  }
+
+  // if only min date, show all dates after min date
+  if (minDate && date < minDate) return false
+  if (maxDate && date > maxDate) return false
+
+  return true
+}
+
+// helper function to check if date matches disabled criteria
+// handles all Matcher types from react-day-picker
+function isDateDisabledByProp(
+  date: Date,
+  disabledProp?: DayPickerBaseProps['disabled']
+): boolean {
+  if (disabledProp === undefined || disabledProp === null) return false
+
+  // boolean - all dates disabled or enabled
+  if (typeof disabledProp === 'boolean') {
+    return disabledProp
+  }
+
+  // function predicate
+  if (typeof disabledProp === 'function') {
+    return disabledProp(date)
+  }
+
+  // single date
+  if (disabledProp instanceof Date) {
+    return isSameDay(date, disabledProp)
+  }
+
+  // array of dates
+  if (Array.isArray(disabledProp)) {
+    return disabledProp.some((d) => d instanceof Date && isSameDay(date, d))
+  }
+
+  // for other complex Matcher types (DateRange, DateBefore, etc.)
+  // we let react-day-picker handle them natively
+  return false
+}
+
 function Calendar({
   className,
   classNames,
@@ -39,36 +90,13 @@ function Calendar({
   // combine the min/max date constraints with any existing disabled logic
   const disabledDates = React.useCallback(
     (date: Date) => {
-      // check if date is disabled by external logic
-      if (disabledProp) {
-        if (typeof disabledProp === 'function') {
-          if (disabledProp(date)) return true
-        } else if (disabledProp instanceof Date) {
-          if (date.toDateString() === disabledProp.toDateString()) return true
-        } else if (Array.isArray(disabledProp)) {
-          if (
-            disabledProp.some((d) => {
-              if (d instanceof Date) {
-                return d.toDateString() === date.toDateString()
-              }
-              return false
-            })
-          )
-            return true
-        }
-      }
-
-      // check min date constraint
-      if (minDate && date < minDate) {
+      // check external disabled logic first
+      if (isDateDisabledByProp(date, disabledProp)) {
         return true
       }
 
-      // check max date constraint
-      if (maxDate && date > maxDate) {
-        return true
-      }
-
-      return false
+      // check date range constraints
+      return !isDateInRange(date, minDate, maxDate)
     },
     [disabledProp, minDate, maxDate]
   )

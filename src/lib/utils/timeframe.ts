@@ -105,3 +105,17 @@ export function parseAndCreateTimeframe(
 
   return createTimeframe(start, end, now)
 }
+
+/**
+ * Formats a timeframe as an ISO 8601 time interval
+ * Format: start/end in UTC (e.g., "2024-01-15T10:30:00.000Z/2024-01-15T11:30:00.000Z")
+ * Useful for clipboard copying, sharing, and APIs that accept ISO 8601 intervals
+ */
+export function formatTimeframeAsISO8601Interval(
+  start: number | Date,
+  end: number | Date
+): string {
+  const startISO = new Date(start).toISOString()
+  const endISO = new Date(end).toISOString()
+  return `${startISO}/${endISO}`
+}

@@ -21,7 +21,6 @@ import {
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
-import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
@@ -41,48 +40,46 @@ export default function DashboardSidebarMenu({
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   const pathname = usePathname()
 
-  const getNextUrl = (team: ClientTeam) => {
-    if (!selectedTeam) return PROTECTED_URLS.DASHBOARD
+  const getNextUrl = useCallback(
+    (team: ClientTeam) => {
+      if (!selectedTeam) return PROTECTED_URLS.DASHBOARD
 
-    return pathname
-      .replace(selectedTeam.slug, team.slug)
-      .replace(selectedTeam.id, team.id)
-  }
+      // use word boundaries to prevent partial replacements and ensure /dashboard/ prefix
+      const slugPattern = new RegExp(`/dashboard/${selectedTeam.slug}\\b`, 'g')
+      const idPattern = new RegExp(`/dashboard/${selectedTeam.id}\\b`, 'g')
 
-  const handleTeamChange = async (teamId: string) => {
-    const team = teams.find((t) => t.id === teamId)
+      return pathname
+        .replace(slugPattern, `/dashboard/${team.slug}`)
+        .replace(idPattern, `/dashboard/${team.id}`)
+    },
+    [selectedTeam, pathname]
+  )
 
-    if (!team || !selectedTeam) return
+  const handleTeamChange = useCallback(
+    async (teamId: string) => {
+      const team = teams.find((t) => t.id === teamId)
 
-    await fetch('/api/team/state', {
-      method: 'POST',
-      body: JSON.stringify({ teamId: team.id, teamSlug: team.slug }),
-    })
+      if (!team || !selectedTeam || team.id === selectedTeam.id) return
 
-    router.push(getNextUrl(team))
-    router.refresh()
-  }
+      await fetch('/api/team/state', {
+        method: 'POST',
+        body: JSON.stringify({ teamId: team.id, teamSlug: team.slug }),
+      })
+
+      router.push(getNextUrl(team))
+      router.refresh()
+    },
+    [teams, selectedTeam, router, getNextUrl]
+  )
 
   const handleLogout = () => {
     signOutAction()
   }
 
-  const handleMenuOpenChange = useCallback(
-    (open: boolean) => {
-      if (open && teams.length > 0) {
-        teams.forEach((team) => {
-          const url = getNextUrl(team)
-          router.prefetch(url, { kind: PrefetchKind.FULL })
-        })
-      }
-    },
-    [teams, getNextUrl, router]
-  )
-
   return (
     <>
       <SidebarMenuItem className="px-3 pb-2 group-data-[collapsible=icon]:p-2">
-        <DropdownMenu onOpenChange={handleMenuOpenChange}>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               variant="outline"
@@ -142,18 +139,20 @@ export default function DashboardSidebarMenu({
               )}
               {teams.length > 0 ? (
                 teams.map((team) => (
-                  <DropdownMenuRadioItem key={team.id} value={team.id}>
-                    <Avatar className="size-5 shrink-0 border-none">
-                      <AvatarImage
-                        src={team.profile_picture_url || undefined}
-                      />
-                      <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
-                        {team.name?.charAt(0).toUpperCase() || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="flex-1 truncate font-sans prose-label-highlight">
-                      {team.transformed_default_name || team.name}
-                    </span>
+                  <DropdownMenuRadioItem key={team.id} value={team.id} asChild>
+                    <Link href={getNextUrl(team)}>
+                      <Avatar className="size-5 shrink-0 border-none">
+                        <AvatarImage
+                          src={team.profile_picture_url || undefined}
+                        />
+                        <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
+                          {team.name?.charAt(0).toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1 truncate font-sans prose-label-highlight">
+                        {team.transformed_default_name || team.name}
+                      </span>
+                    </Link>
                   </DropdownMenuRadioItem>
                 ))
               ) : (

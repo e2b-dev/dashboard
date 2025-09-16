@@ -140,23 +140,25 @@ const DropdownMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
 >(({ className, children, ...props }, ref) => (
-  <DropdownMenuPrimitive.RadioItem
-    ref={ref}
-    className={cn(
-      menuItemVariants({ variant: 'default' }),
-      '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
-      'pr-10',
-      className
-    )}
-    {...props}
-  >
-    {children}
+  <div className="relative">
+    <DropdownMenuPrimitive.RadioItem
+      ref={ref}
+      className={cn(
+        menuItemVariants({ variant: 'default' }),
+        '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+        'pr-10',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </DropdownMenuPrimitive.RadioItem>
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
         <Check className="text-accent-main-highlight size-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
-  </DropdownMenuPrimitive.RadioItem>
+  </div>
 ))
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName
 
