@@ -339,9 +339,7 @@ export default function ConcurrentChartClient({
           }),
           yAxis: {
             splitNumber: 2,
-            max: concurrentInstancesLimit
-              ? concurrentInstancesLimit * 1.1
-              : calculateYAxisMax(lineData),
+            max: calculateYAxisMax(lineData, concurrentInstancesLimit),
             axisLabel: {
               formatter: (value: number) => {
                 // Hide labels that are too close to the limit line
