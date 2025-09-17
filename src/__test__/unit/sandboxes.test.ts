@@ -1,4 +1,4 @@
-import { fillTeamMetricsWithZeros } from '@/lib/utils/sandboxes'
+import { fillTeamMetricsWithZeros } from '@/server/sandboxes/utils'
 import type { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { describe, expect, it } from 'vitest'
 
