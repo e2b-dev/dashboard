@@ -10,7 +10,7 @@ import { describe, it } from 'vitest'
 const l = console
 
 // Ensure required environment variables exist
-const { TEST_E2B_DOMAIN, TEST_E2B_API_KEY } = import.meta.env
+const { TEST_E2B_DOMAIN, TEST_E2B_API_KEY, TEST_E2B_TEMPLATE } = import.meta.env
 
 if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
   throw new Error(
@@ -18,7 +18,7 @@ if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
   )
 }
 
-const TEMPLATE = process.env.TEST_E2B_TEMPLATE || 'base'
+const TEMPLATE = TEST_E2B_TEMPLATE || 'base'
 
 const TEST_DURATION_MINUTES = 15
 const SPAWN_PROBABILITY = 0.6
