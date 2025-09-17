@@ -23,7 +23,7 @@ export default function useHeaderMetricsSWR(
     ? SWR_KEYS.TEAM_METRICS_RECENT(selectedTeam.id)
     : null
 
-  return useSWR<typeof initialData | undefined>(
+  const swr = useSWR<typeof initialData | undefined>(
     swrKey,
     async ([url, teamId, type]: readonly unknown[]) => {
       if (!url || !teamId) return
@@ -70,12 +70,13 @@ export default function useHeaderMetricsSWR(
       fallbackData: initialData,
       shouldRetryOnError: false,
       refreshInterval: TEAM_METRICS_POLLING_INTERVAL_MS,
-      dedupingInterval: 5000, // dedupe requests within 5s
-      keepPreviousData: true,
+      keepPreviousData: false,
       revalidateOnMount: true,
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
     }
   )
+
+  return swr
 }

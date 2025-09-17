@@ -1,7 +1,6 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { ActivityIcon, LayoutListIcon, LucideIcon } from 'lucide-react'
@@ -56,8 +55,6 @@ export default function SandboxesTabs({
   const activeTab = TABS.find((tab) => tab.value === urlTab)
 
   const isInspectRoute = micromatch.isMatch(pathname, '*/**/sandboxes/**/*')
-
-  l.debug({ key: 'isInspectRoute', value: isInspectRoute }, 'isInspectRoute')
 
   if (isInspectRoute) {
     return inspectContent
