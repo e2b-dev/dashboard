@@ -123,6 +123,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/teams/{teamID}/metrics/max": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get the maximum metrics for the team in the given interval */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
+                    start?: number;
+                    end?: number;
+                    /** @description Metric to retrieve the maximum value for */
+                    metric: "concurrent_sandboxes" | "sandbox_start_rate";
+                };
+                header?: never;
+                path: {
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MaxTeamMetric"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes": {
         parameters: {
             query?: never;
@@ -1400,9 +1448,15 @@ export interface components {
         SandboxMetric: {
             /**
              * Format: date-time
+             * @deprecated
              * @description Timestamp of the metric entry
              */
             timestamp: string;
+            /**
+             * Format: int64
+             * @description Timestamp of the metric entry in Unix time (seconds since epoch)
+             */
+            timestampUnix: number;
             /**
              * Format: int32
              * @description Number of CPU cores
@@ -1557,9 +1611,15 @@ export interface components {
         TeamMetric: {
             /**
              * Format: date-time
+             * @deprecated
              * @description Timestamp of the metric entry
              */
             timestamp: string;
+            /**
+             * Format: int64
+             * @description Timestamp of the metric entry in Unix time (seconds since epoch)
+             */
+            timestampUnix: number;
             /**
              * Format: int32
              * @description The number of concurrent sandboxes for the team
@@ -1570,6 +1630,22 @@ export interface components {
              * @description Number of sandboxes started per second
              */
             sandboxStartRate: number;
+        };
+        /** @description Team metric with timestamp */
+        MaxTeamMetric: {
+            /**
+             * Format: date-time
+             * @deprecated
+             * @description Timestamp of the metric entry
+             */
+            timestamp: string;
+            /**
+             * Format: int64
+             * @description Timestamp of the metric entry in Unix time (seconds since epoch)
+             */
+            timestampUnix: number;
+            /** @description The maximum value of the requested metric in the given interval */
+            value: number;
         };
         Template: {
             /** @description Identifier of the template */
@@ -1582,7 +1658,7 @@ export interface components {
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
             /** @description Aliases of the template */
-            aliases?: string[];
+            aliases: string[];
             /**
              * Format: date-time
              * @description Time when the template was created
@@ -1598,7 +1674,7 @@ export interface components {
              * Format: date-time
              * @description Time when the template was last used
              */
-            lastSpawnedAt: string;
+            lastSpawnedAt: string | null;
             /**
              * Format: int64
              * @description Number of times the template was used
@@ -1760,6 +1836,11 @@ export interface components {
          */
         NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
         NodeStatusChange: {
+            /**
+             * Format: uuid
+             * @description Identifier of the cluster
+             */
+            clusterID?: string;
             status: components["schemas"]["NodeStatus"];
         };
         DiskMetrics: {

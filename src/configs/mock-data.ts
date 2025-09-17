@@ -1229,3 +1229,37 @@ export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES
 export const MOCK_TEAM_METRICS_DATA = generateMockTeamMetrics
+
+/**
+ * Generate mock max team metrics data for a given date range and metric
+ */
+export const MOCK_TEAM_METRICS_MAX_DATA = (
+  startDateMs: number,
+  endDateMs: number,
+  metric: 'concurrent_sandboxes' | 'sandbox_start_rate'
+) => {
+  const metrics = generateMockTeamMetrics(startDateMs, endDateMs)
+
+  // find the maximum value for the requested metric
+  let maxValue = 0
+  let maxTimestamp = startDateMs
+
+  for (const m of metrics.metrics) {
+    const value =
+      metric === 'concurrent_sandboxes'
+        ? m.concurrentSandboxes
+        : m.sandboxStartRate
+
+    if (value > maxValue) {
+      maxValue = value
+      maxTimestamp = m.timestamp
+    }
+  }
+
+  return {
+    timestamp: maxTimestamp,
+    timestampUnix: maxTimestamp, // already in milliseconds
+    value: maxValue,
+    metric,
+  }
+}

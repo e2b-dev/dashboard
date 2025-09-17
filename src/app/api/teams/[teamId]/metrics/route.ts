@@ -19,10 +19,16 @@ export async function POST(
   try {
     const { teamId } = await params
 
-    const { start, end } = TeamMetricsRequestSchema.parse(await request.json())
+    const parsedInput = TeamMetricsRequestSchema.safeParse(await request.json())
+
+    if (!parsedInput.success) {
+      return Response.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    const { start: startMs, end: endMs } = parsedInput.data
 
     if (USE_MOCK_DATA) {
-      const mockData = MOCK_TEAM_METRICS_DATA(start, end)
+      const mockData = MOCK_TEAM_METRICS_DATA(startMs, endMs)
       return Response.json(mockData satisfies TeamMetricsResponse)
     }
 
@@ -35,90 +41,85 @@ export async function POST(
       return Response.json({ error: 'Unauthenticated' }, { status: 401 })
     }
 
-    const startSeconds = Math.floor(start / 1000)
-    const endSeconds = Math.floor(end / 1000)
+    const startS = Math.floor(startMs / 1000)
+    const endS = Math.floor(endMs / 1000)
 
     // calculate step to determine overfetch amount
-    const step = calculateTeamMetricsStep(start, end)
+    const stepMs = calculateTeamMetricsStep(startMs, endMs)
 
-    const overfetchSeconds = Math.ceil(step / 1000) // overfetch by one step
+    // overfetch by one step
+    // the overfetch is accounted for when post=processing the data using fillTeamMetricsWithZeros
 
-    try {
-      const res = await infra.GET('/teams/{teamID}/metrics', {
-        params: {
-          path: {
-            teamID: teamId,
-          },
-          query: {
-            start: startSeconds,
-            end: endSeconds + overfetchSeconds, // overfetch to capture boundary points
-          },
+    // TODO: refactor the overfetch handling, to make this behavior more explicit
+    const stepS = Math.ceil(stepMs / 1000)
+
+    const res = await infra.GET('/teams/{teamID}/metrics', {
+      params: {
+        path: {
+          teamID: teamId,
         },
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        query: {
+          start: startS,
+          end: endS + stepS,
         },
-        cache: 'no-store',
-      })
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      },
+      cache: 'no-store',
+    })
 
-      if (res.error) {
-        throw res.error
-      }
-
-      // transform timestamps and filter to requested range (with tolerance)
-      // allow data points up to half a step beyond the end for boundary cases
-      const tolerance = step * 0.5
-      const metrics = res.data
-        .map((d) => ({
-          ...d,
-          timestamp: new Date(d.timestamp).getTime(),
-        }))
-        .filter((d) => d.timestamp >= start && d.timestamp <= end + tolerance)
-
-      l.info(
-        {
-          key: 'api_team_metrics:result',
-          team_id: teamId,
-          user_id: session.user.id,
-          context: {
-            path: '/api/teams/[teamId]/metrics',
-            requested_range: { start, end },
-            data_points: metrics.length,
-            step,
-            overfetch_seconds: overfetchSeconds,
-          },
-        },
-        'Team metrics API response'
-      )
-
-      return Response.json({
-        metrics,
-        step,
-      } satisfies TeamMetricsResponse)
-    } catch (error: unknown) {
-      const status = error instanceof Response ? error.status : 500
+    if (res.error) {
+      const status = res.response.status
 
       l.error(
         {
-          key: 'api_team_metrics:error',
-          error: error,
+          key: 'route_handler_team_metrics:infra_error',
+          error: res.error,
           team_id: teamId,
           user_id: session.user.id,
           context: {
-            path: '/api/teams/[teamId]/metrics',
             status,
-            start,
-            end,
-            message: error instanceof Error ? error.message : 'Unknown error',
+            startMs,
+            endMs,
+            stepMs,
+            stepS,
           },
         },
-        `Failed to get team metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Route /teams/[teamId]/metrics failed to get team metrics: ${res.error.message}`
       )
 
-      return Response.json(
-        { error: handleDefaultInfraError(status) },
-        { status }
-      )
+      const message = handleDefaultInfraError(status)
+
+      return Response.json({ error: message }, { status })
     }
+
+    const metrics = res.data.map((d) => ({
+      concurrentSandboxes: d.concurrentSandboxes,
+      sandboxStartRate: d.sandboxStartRate,
+      timestamp: d.timestampUnix * 1000, // since javascript timestamps are in milliseconds, we want to convert the timestamp back to milliseconds
+    }))
+
+    l.info(
+      {
+        key: 'route_handler_team_metrics:result',
+        team_id: teamId,
+        user_id: session.user.id,
+        context: {
+          path: '/api/teams/[teamId]/metrics',
+          requestedRangeMs: { startMs, endMs },
+          dataPoints: metrics.length,
+          stepMs,
+          overfetchSeconds: stepS,
+        },
+      },
+      'Route /teams/[teamId]/metrics successfully fetched team metrics'
+    )
+
+    return Response.json({
+      metrics,
+      step: stepMs,
+    } satisfies TeamMetricsResponse)
   } catch (error) {
     return Response.json({ error: 'Invalid request' }, { status: 400 })
   }

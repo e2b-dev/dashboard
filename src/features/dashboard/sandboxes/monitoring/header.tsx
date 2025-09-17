@@ -3,8 +3,8 @@ import { fillTeamMetricsWithZeros } from '@/features/dashboard/sandboxes/monitor
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { getTeamMetricsMax } from '@/server/sandboxes/get-team-metrics-max'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
-import { ClientTeamMetric } from '@/types/sandboxes.types'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -14,6 +14,7 @@ import {
   ConcurrentSandboxesClient,
   SandboxesStartRateClient,
 } from './header.client'
+import { MAX_DAYS_AGO } from './time-picker/constants'
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
@@ -200,8 +201,16 @@ export const MaxConcurrentSandboxes = async ({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
+  const end = Date.now()
+  const start = end - MAX_DAYS_AGO
+
   const [teamMetricsResult, tierLimits] = await Promise.all([
-    getTeamMetricsLast30Days(teamId),
+    getTeamMetricsMax({
+      teamId,
+      startDate: start,
+      endDate: end,
+      metric: 'concurrent_sandboxes',
+    }),
     getTeamTierLimits({ teamId }),
   ])
 
@@ -216,11 +225,7 @@ export const MaxConcurrentSandboxes = async ({
 
   const limit = tierLimits?.data?.concurrentInstances
 
-  const concurrentSandboxes = Math.max(
-    ...teamMetricsResult.data.metrics.map(
-      (item: ClientTeamMetric) => item.concurrentSandboxes ?? 0
-    )
-  )
+  const concurrentSandboxes = teamMetricsResult.data.value
 
   return (
     <>

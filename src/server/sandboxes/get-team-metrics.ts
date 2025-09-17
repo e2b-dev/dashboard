@@ -5,6 +5,7 @@ import {
   calculateTeamMetricsStep,
   MOCK_TEAM_METRICS_DATA,
 } from '@/configs/mock-data'
+import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 import { authActionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
@@ -22,27 +23,29 @@ export const GetTeamMetricsSchema = z
       .refine(
         (start) => {
           const now = Date.now()
-          const maxDaysAgo = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
-          return start >= now - maxDaysAgo
+
+          return start >= now - MAX_DAYS_AGO
         },
-        { message: 'Start date cannot be more than 31 days ago' }
+        {
+          message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
+        }
       ),
     endDate: z
       .number()
       .int()
       .positive()
       .describe('Unix timestamp in milliseconds')
-      .refine(
-        (end) => end <= Date.now() + 60 * 1000, // allow 60 seconds in future for clock skew
-        { message: 'End date cannot be more than 60 seconds in the future' }
-      ),
+      .refine((end) => end <= Date.now(), {
+        message: 'End date cannot be in the future',
+      }),
   })
   .refine(
     (data) => {
-      const maxSpanMs = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
-      return data.endDate - data.startDate <= maxSpanMs
+      return data.endDate - data.startDate <= MAX_DAYS_AGO
     },
-    { message: 'Date range cannot exceed 31 days' }
+    {
+      message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,
+    }
   )
 
 export const getTeamMetrics = authActionClient
@@ -58,50 +61,33 @@ export const getTeamMetrics = authActionClient
       return MOCK_TEAM_METRICS_DATA(startDateMs, endDateMs)
     }
 
-    try {
-      const startSeconds = Math.floor(startDateMs / 1000)
-      const endSeconds = Math.floor(endDateMs / 1000)
+    const startS = Math.floor(startDateMs / 1000)
+    const endS = Math.floor(endDateMs / 1000)
 
-      // calculate step to determine overfetch amount
-      const step = calculateTeamMetricsStep(startDateMs, endDateMs)
-      const overfetchSeconds = Math.ceil(step / 1000) // overfetch by one step
+    // calculate step to determine overfetch amount
+    const stepMs = calculateTeamMetricsStep(startDateMs, endDateMs)
 
-      // fetch with overfetch to capture boundary points
-      const res = await getTeamMetricsMemoized(
-        session.access_token,
-        teamId,
-        startSeconds,
-        endSeconds + overfetchSeconds
-      )
+    // overfetch by one step
+    // the overfetch is accounted for when post=processing the data using fillTeamMetricsWithZeros
 
-      if (res.error) {
-        throw res.error
-      }
+    // TODO: refactor the overfetch handling, to make this behavior more explicit
+    const overfetchS = Math.ceil(stepMs / 1000)
 
-      // transform timestamps and filter to requested range (with tolerance)
-      // allow data points up to half a step beyond the end for boundary cases
-      const tolerance = step * 0.5
-      const metrics = res.data
-        .map((d) => ({
-          ...d,
-          timestamp: new Date(d.timestamp).getTime(),
-        }))
-        .filter(
-          (d) =>
-            d.timestamp >= startDateMs && d.timestamp <= endDateMs + tolerance
-        )
+    // memoize since we call this server function in multiple server component leaf nodes, per request
+    const res = await getTeamMetricsMemoized(
+      session.access_token,
+      teamId,
+      startS,
+      endS + overfetchS
+    )
 
-      return {
-        metrics,
-        step,
-      }
-    } catch (error) {
-      const status = error instanceof Response ? error.status : 500
+    if (res.error) {
+      const status = res.response.status
 
       l.error(
         {
           key: 'get_team_metrics:infra_error',
-          error: error,
+          error: res.error,
           team_id: teamId,
           user_id: session.user.id,
           context: {
@@ -110,9 +96,20 @@ export const getTeamMetrics = authActionClient
             endDate: endDateMs,
           },
         },
-        `Failed to get team metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get team metrics: ${res.error.message}`
       )
 
       return handleDefaultInfraError(status)
+    }
+
+    const metrics = res.data.map((d) => ({
+      concurrentSandboxes: d.concurrentSandboxes,
+      sandboxStartRate: d.sandboxStartRate,
+      timestamp: d.timestampUnix * 1000, // since javascript timestamps are in milliseconds, we want to convert the timestamp back to milliseconds
+    }))
+
+    return {
+      metrics,
+      step: stepMs,
     }
   })

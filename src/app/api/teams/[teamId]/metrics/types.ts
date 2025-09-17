@@ -1,3 +1,4 @@
+import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { z } from 'zod'
 
@@ -11,27 +12,28 @@ export const TeamMetricsRequestSchema = z
       .refine(
         (start) => {
           const now = Date.now()
-          const maxDaysAgo = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
-          return start >= now - maxDaysAgo
+          return start >= now - MAX_DAYS_AGO
         },
-        { message: 'Start date cannot be more than 31 days ago' }
+        {
+          message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
+        }
       ),
     end: z
       .number()
       .int()
       .positive()
       .describe('Unix timestamp in milliseconds')
-      .refine(
-        (end) => end <= Date.now() + 60 * 1000, // allow 60 seconds in future for clock skew
-        { message: 'End date cannot be more than 60 seconds in the future' }
-      ),
+      .refine((end) => end <= Date.now(), {
+        message: 'End date cannot be more than now',
+      }),
   })
   .refine(
     (data) => {
-      const maxSpanMs = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
-      return data.end - data.start <= maxSpanMs
+      return data.end - data.start <= MAX_DAYS_AGO
     },
-    { message: 'Date range cannot exceed 31 days' }
+    {
+      message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,
+    }
   )
 
 // TeamMetricsRequest type is inferred from schema when needed, no need to export

@@ -12,7 +12,10 @@ export type ClientSandboxMetric = {
 
 export type ClientSandboxesMetrics = Record<string, ClientSandboxMetric>
 
-export type ClientTeamMetric = Omit<TeamMetric, 'timestamp'> & {
+export type ClientTeamMetric = Pick<
+  TeamMetric,
+  'concurrentSandboxes' | 'sandboxStartRate'
+> & {
   timestamp: number // unix timestamp in milliseconds
 }
 
