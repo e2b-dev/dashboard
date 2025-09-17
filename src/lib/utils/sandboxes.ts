@@ -116,10 +116,7 @@ function _addStartPaddingZeros(
     result.push(_createZeroMetricPoint(start))
 
     const prefixZeroTimestamp = firstDataPoint.timestamp - step
-    if (
-      prefixZeroTimestamp > start &&
-      prefixZeroTimestamp < firstDataPoint.timestamp
-    ) {
+    if (prefixZeroTimestamp > start) {
       result.push(_createZeroMetricPoint(prefixZeroTimestamp))
     }
   }
@@ -139,11 +136,11 @@ function _fillIntermediateGapsWithZeros(
   const isAnomalousGap = _isGapAnomalous(actualGap, step, anomalousGapTolerance)
 
   if (isAnomalousGap) {
-    const hasSequenceBefore = currentIndex >= 1
+    const hasDataBefore = currentIndex >= 1
     const hasDataAfter = currentIndex + 1 < sortedData.length
 
     // only fill gaps in the middle of data sequences, not at boundaries
-    if (hasSequenceBefore && hasDataAfter) {
+    if (hasDataBefore && hasDataAfter) {
       const suffixZeroTimestamp = currentPoint.timestamp + step
       if (
         suffixZeroTimestamp < nextPoint.timestamp &&
