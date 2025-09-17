@@ -26,17 +26,25 @@ export function createSingleValueTooltipFormatter({
   return (params: TooltipComponentFormatterCallbackParams) => {
     // handle both array of series data and single series data point
     const paramsData = Array.isArray(params) ? params[0] : params
+
     if (!paramsData?.value) return ''
 
-    // extract value and timestamp from different possible data structures:
-    // - for time series: value is typically [timestamp, value]
-    // - for simple charts: value is directly the numeric value
-    const value = Array.isArray(paramsData.value)
-      ? paramsData.value[1]
-      : paramsData.value
-    const timestamp = Array.isArray(paramsData.value)
-      ? (paramsData.value[0] as string)
-      : (paramsData.value as string)
+    const isTimeSeries = Array.isArray(paramsData.value)
+
+    if (!isTimeSeries) {
+      throw new Error('This chart / data type is not supported.')
+    }
+
+    const delta = paramsData.value
+
+    const isCompatibleFormat = delta instanceof Array
+
+    if (!isCompatibleFormat) {
+      throw new Error('This chart / data type is not supported.')
+    }
+
+    const value = delta[1] as number
+    const timestamp = delta[0] as string
 
     // apply label function if provided and value is numeric
     const displayLabel =
