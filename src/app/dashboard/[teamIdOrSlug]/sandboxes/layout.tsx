@@ -9,15 +9,15 @@ interface SandboxesLayoutProps {
 }
 
 export default async function SandboxesLayout({
-  children,
+  children: inspect,
   monitoring,
   list,
 }: SandboxesLayoutProps) {
   return (
-    <SandboxesTabs>
-      {monitoring}
-      {list}
-      {children}
-    </SandboxesTabs>
+    <SandboxesTabs
+      monitoringContent={monitoring}
+      listContent={list}
+      inspectContent={inspect}
+    />
   )
 }

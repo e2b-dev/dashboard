@@ -1,4 +1,5 @@
 import { l } from '@/lib/clients/logger/logger'
+import { cn } from '@/lib/utils'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -16,7 +17,9 @@ export async function LiveSandboxCounterServer({
 }: LiveSandboxCounterServerProps) {
   return (
     <Suspense
-      fallback={<Skeleton className="h-[60px] w-[250px] bg-bg-highlight" />}
+      fallback={
+        <Skeleton className={cn(className, 'border h-[42px] w-[250px]')} />
+      }
     >
       <LiveSandboxCounterResolver params={params} className={className} />
     </Suspense>

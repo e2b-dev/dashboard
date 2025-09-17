@@ -16,7 +16,7 @@ interface SandboxesMonitoringPageProps {
   searchParams: Promise<SandboxesMonitoringPageSearchParams>
 }
 
-export default async function SandboxesMonitoringPage({
+export default function SandboxesMonitoringPage({
   params,
   searchParams,
 }: SandboxesMonitoringPageProps) {

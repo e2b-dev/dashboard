@@ -1,44 +1,71 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import { l } from '@/lib/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-import { ActivityIcon, LayoutListIcon } from 'lucide-react'
+import { ActivityIcon, LayoutListIcon, LucideIcon } from 'lucide-react'
+import micromatch from 'micromatch'
 import Link from 'next/link'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import { ReactNode } from 'react'
 
-const TABS = [
+type TabValue = 'monitoring' | 'list'
+
+interface TabConfig {
+  value: TabValue
+  icon: LucideIcon
+  label: string
+  url: (teamIdOrSlug: string) => string
+}
+
+const TABS: TabConfig[] = [
   {
     value: 'monitoring',
     icon: ActivityIcon,
+    label: 'Monitoring',
     url: (teamIdOrSlug: string) =>
       PROTECTED_URLS.SANDBOXES(teamIdOrSlug, 'monitoring'),
   },
   {
     value: 'list',
     icon: LayoutListIcon,
+    label: 'List',
     url: (teamIdOrSlug: string) =>
       PROTECTED_URLS.SANDBOXES(teamIdOrSlug, 'list'),
   },
 ]
 
 interface SandboxesTabsProps {
-  children: ReactNode[]
+  monitoringContent: ReactNode
+  listContent: ReactNode
+  inspectContent?: ReactNode
 }
 
-export default function SandboxesTabs({ children }: SandboxesTabsProps) {
+export default function SandboxesTabs({
+  monitoringContent,
+  listContent,
+  inspectContent,
+}: SandboxesTabsProps) {
   const searchParams = useSearchParams()
   const urlTab = searchParams.get('tab') || TABS[0]?.value
 
   const pathname = usePathname()
-
   const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
 
   const activeTab = TABS.find((tab) => tab.value === urlTab)
 
-  if (pathname.includes('/sandboxes/')) {
-    return children[children.length - 1]
+  const isInspectRoute = micromatch.isMatch(pathname, '*/**/sandboxes/**/*')
+
+  l.debug({ key: 'isInspectRoute', value: isInspectRoute }, 'isInspectRoute')
+
+  if (isInspectRoute) {
+    return inspectContent
+  }
+
+  const tabContentMap: Record<TabValue, ReactNode> = {
+    monitoring: monitoringContent,
+    list: listContent,
   }
 
   return (
@@ -57,18 +84,18 @@ export default function SandboxesTabs({ children }: SandboxesTabsProps) {
           >
             <Link href={tab.url(teamIdOrSlug)} prefetch>
               <tab.icon className="size-3.5" />
-              {tab.value.charAt(0).toUpperCase() + tab.value.slice(1)}
+              {tab.label}
             </Link>
           </TabsTrigger>
         ))}
       </TabsList>
-      {TABS.map((tab, ix) => (
+      {TABS.map((tab) => (
         <TabsContent
           key={tab.value}
           value={tab.value}
           className={cn('flex flex-1 flex-col overflow-hidden')}
         >
-          {children?.[ix]}
+          {tabContentMap[tab.value]}
         </TabsContent>
       ))}
     </Tabs>
