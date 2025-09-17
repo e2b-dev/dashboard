@@ -3,8 +3,8 @@ import 'server-cli-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { getSessionInsecure } from '@/server/auth/get-session'
 import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { MetricsRequestSchema, MetricsResponse } from './types'
 
@@ -25,10 +25,8 @@ export async function POST(
 
     const { sandboxIds } = data
 
-    const supabase = await createClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    // fine to use here, we only need a token for the infra api request. it will validate the token.
+    const session = await getSessionInsecure()
 
     if (!session) {
       return Response.json({ error: 'Unauthenticated' }, { status: 401 })

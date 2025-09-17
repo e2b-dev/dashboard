@@ -8,8 +8,8 @@ import {
 } from '@/configs/mock-data'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { getSessionInsecure } from '@/server/auth/get-session'
 import { TeamMetricsRequestSchema, TeamMetricsResponse } from './types'
 
 export async function POST(
@@ -32,10 +32,8 @@ export async function POST(
       return Response.json(mockData satisfies TeamMetricsResponse)
     }
 
-    const supabase = await createClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    // fine to use here, we only need a token for the infra api request. it will validate the token.
+    const session = await getSessionInsecure()
 
     if (!session) {
       return Response.json({ error: 'Unauthenticated' }, { status: 401 })

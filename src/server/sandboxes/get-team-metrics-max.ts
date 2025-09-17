@@ -24,7 +24,9 @@ export const GetTeamMetricsMaxSchema = z
 
           return start >= now - MAX_DAYS_AGO
         },
-        { message: 'Start date cannot be more than 31 days ago' }
+        {
+          message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
+        }
       ),
     endDate: z
       .number()
@@ -32,7 +34,7 @@ export const GetTeamMetricsMaxSchema = z
       .positive()
       .describe('Unix timestamp in milliseconds')
       .refine((end) => end <= Date.now(), {
-        message: 'End date cannot be more than now',
+        message: 'End date cannot be in the future',
       }),
     metric: z.enum(['concurrent_sandboxes', 'sandbox_start_rate']),
   })
@@ -40,7 +42,9 @@ export const GetTeamMetricsMaxSchema = z
     (data) => {
       return data.endDate - data.startDate <= MAX_DAYS_AGO
     },
-    { message: 'Date range cannot exceed 31 days' }
+    {
+      message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,
+    }
   )
 
 export const getTeamMetricsMax = authActionClient

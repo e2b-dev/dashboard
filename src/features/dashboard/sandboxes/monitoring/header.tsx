@@ -14,7 +14,6 @@ import {
   ConcurrentSandboxesClient,
   SandboxesStartRateClient,
 } from './header.client'
-import { MAX_DAYS_AGO } from './time-picker/constants'
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
@@ -90,14 +89,6 @@ export default function SandboxesMonitoringHeader({
       </BaseCard>
     </div>
   )
-}
-
-function getTeamMetricsLast30Days(teamId: string) {
-  return getTeamMetrics({
-    teamId,
-    startDate: Date.now() - 1000 * 60 * 60 * 24 * 30,
-    endDate: Date.now(),
-  })
 }
 
 // Components
@@ -202,7 +193,7 @@ export const MaxConcurrentSandboxes = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = Date.now()
-  const start = end - MAX_DAYS_AGO
+  const start = end - 1000 * 60 * 60 * 24 * 30 // 30 days
 
   const [teamMetricsResult, tierLimits] = await Promise.all([
     getTeamMetricsMax({
