@@ -35,17 +35,17 @@ describe('chart-utils', () => {
   describe('calculateYAxisMax', () => {
     it('should round to nice numbers without limit', () => {
       const data = [{ y: 80 }, { y: 100 }, { y: 60 }]
-      expect(calculateYAxisMax(data)).toBe(150) // rounds to nearest 50
+      expect(calculateYAxisMax(data)).toBe(150)
     })
 
-    it('should show limit with padding when data reaches 80%', () => {
+    it('should show limit with padding when data is at or below limit', () => {
       const data = [{ y: 80 }, { y: 100 }, { y: 60 }]
-      expect(calculateYAxisMax(data, 125)).toBe(138) // 125 * 1.1
+      expect(calculateYAxisMax(data, 100, undefined, 1.1)).toBe(110)
     })
 
-    it('should show limit with padding at 80% threshold', () => {
-      const data = [{ y: 70 }, { y: 80 }, { y: 60 }]
-      expect(calculateYAxisMax(data, 100)).toBe(110)
+    it('should apply limit padding when data exceeds limit', () => {
+      const data = [{ y: 120 }, { y: 140 }, { y: 130 }]
+      expect(calculateYAxisMax(data, 100, 1.25, 1.1)).toBe(200)
     })
 
     it('should use custom scale factor', () => {
