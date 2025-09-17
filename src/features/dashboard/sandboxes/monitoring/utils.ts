@@ -177,6 +177,14 @@ function _addEndPaddingZeros(
   }
 }
 
+function _stripPotentialOverfetching(
+  data: ClientTeamMetrics,
+  start: number,
+  end: number
+): ClientTeamMetrics {
+  return data.filter((d) => d.timestamp >= start && d.timestamp <= end)
+}
+
 /**
  * Fills team metrics data with zero values to create smooth, continuous time series for visualization.
  *
@@ -207,7 +215,7 @@ export function fillTeamMetricsWithZeros(
     return _generateEmptyTimeSeriesWithZeros(start, end, step)
   }
 
-  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
+  let sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
   const result: ClientTeamMetrics = []
 
   _addStartPaddingZeros(result, sortedData, start, step, anomalousGapTolerance)
@@ -217,7 +225,9 @@ export function fillTeamMetricsWithZeros(
     const singlePoint = sortedData[0]!
     result.push(singlePoint)
     _addEndPaddingZeros(result, singlePoint, end, step, anomalousGapTolerance)
-    return result.sort((a, b) => a.timestamp - b.timestamp)
+    const sorted = result.sort((a, b) => a.timestamp - b.timestamp)
+
+    return _stripPotentialOverfetching(sorted, start, end)
   }
 
   for (let i = 0; i < sortedData.length; i++) {
@@ -240,5 +250,11 @@ export function fillTeamMetricsWithZeros(
   const lastDataPoint = sortedData[sortedData.length - 1]!
   _addEndPaddingZeros(result, lastDataPoint, end, step, anomalousGapTolerance)
 
-  return result.sort((a, b) => a.timestamp - b.timestamp)
+  // re-sort the data
+  sortedData = result.sort((a, b) => a.timestamp - b.timestamp)
+
+  // strip potential overfetching coming from the server functions
+  const strippedData = _stripPotentialOverfetching(sortedData, start, end)
+
+  return strippedData
 }

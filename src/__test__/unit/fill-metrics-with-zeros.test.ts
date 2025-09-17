@@ -814,16 +814,15 @@ describe('fillTeamMetricsWithZeros', () => {
         0.1
       )
 
-      // should NOT add zeros at the end since data continues beyond boundary
-      const zerosAtEnd = result.filter(
-        (p) => p.timestamp > 2000500 && p.concurrentSandboxes === 0
-      )
-      expect(zerosAtEnd).toHaveLength(0)
+      // should filter out data beyond end boundary
+      const dataAfterEnd = result.filter((p) => p.timestamp > 2000000)
+      expect(dataAfterEnd).toHaveLength(0)
 
-      // last point should be the actual data point beyond boundary
+      // should add zeros at end since overfetched data is stripped
       const lastPoint = result[result.length - 1]
-      expect(lastPoint?.timestamp).toBe(2000500)
-      expect(lastPoint?.concurrentSandboxes).toBe(40)
+      // algorithm adds a zero at 1600000 + step (1900000)
+      expect(lastPoint?.timestamp).toBe(1900000)
+      expect(lastPoint?.concurrentSandboxes).toBe(0)
     })
 
     it('should NOT add zeros when last point is within half a step of the end', () => {
@@ -883,7 +882,7 @@ describe('fillTeamMetricsWithZeros', () => {
         0.25
       )
 
-      // should add zeros before the overfetched point
+      // should add zeros when overfetched point is stripped
       expect(result.length).toBeGreaterThan(1)
 
       // should have zeros at the start
@@ -891,16 +890,15 @@ describe('fillTeamMetricsWithZeros', () => {
       expect(startZero).toBeDefined()
       expect(startZero?.concurrentSandboxes).toBe(0)
 
-      // should include the overfetched data point
+      // should NOT include the overfetched data point
       const dataPoint = result.find((p) => p.timestamp === 2000500)
-      expect(dataPoint).toBeDefined()
-      expect(dataPoint?.concurrentSandboxes).toBe(10)
+      expect(dataPoint).toBeUndefined()
 
-      // should NOT add zeros after the overfetched point
-      const zerosAfter = result.filter(
-        (p) => p.timestamp > 2000500 && p.concurrentSandboxes === 0
+      // all points should be within range
+      const pointsOutsideRange = result.filter(
+        (p) => p.timestamp < 1000000 || p.timestamp > 2000000
       )
-      expect(zerosAfter).toHaveLength(0)
+      expect(pointsOutsideRange).toHaveLength(0)
     })
 
     it('should handle 24H range with API returning hourly data when expecting 5-minute intervals', () => {

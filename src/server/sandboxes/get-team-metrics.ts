@@ -68,7 +68,7 @@ export const getTeamMetrics = authActionClient
     const stepMs = calculateTeamMetricsStep(startDateMs, endDateMs)
 
     // overfetch by one step
-    // the overfetch is accounted for when post=processing the data using fillTeamMetricsWithZeros
+    // the overfetch is accounted for, when post-processing the data using fillTeamMetricsWithZeros
 
     // TODO: refactor the overfetch handling, to make this behavior more explicit
     const overfetchS = Math.ceil(stepMs / 1000)
