@@ -9,6 +9,7 @@ import { GeneralAnalyticsCollector } from '@/features/general-analytics-collecto
 import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import Head from 'next/head'
 import { Metadata } from 'next/types'
 import { Suspense } from 'react'
@@ -51,6 +52,7 @@ export default function RootLayout({
           </Suspense>
         </ClientProviders>
         <Analytics />
+        <SpeedInsights />
       </Body>
     </html>
   )
