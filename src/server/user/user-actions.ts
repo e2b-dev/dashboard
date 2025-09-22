@@ -31,7 +31,12 @@ export const updateUserAction = authActionClient
   .action(async ({ parsedInput, ctx }) => {
     const { supabase } = ctx
 
-    if (parsedInput.password === parsedInput.email) {
+    // basic security check, that password does not equal e-mail
+    if (
+      parsedInput.password &&
+      parsedInput.email &&
+      parsedInput.password.toLowerCase() === parsedInput.email.toLowerCase()
+    ) {
       return returnValidationErrors(UpdateUserSchema, {
         password: {
           _errors: ['Password is too weak.'],
