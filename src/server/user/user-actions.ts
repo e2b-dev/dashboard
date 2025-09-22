@@ -31,6 +31,14 @@ export const updateUserAction = authActionClient
   .action(async ({ parsedInput, ctx }) => {
     const { supabase } = ctx
 
+    if (parsedInput.password === parsedInput.email) {
+      return returnValidationErrors(UpdateUserSchema, {
+        password: {
+          _errors: ['Password is too weak.'],
+        },
+      })
+    }
+
     const origin = (await headers()).get('origin')
 
     const { data: updateData, error } = await supabase.auth.updateUser(
