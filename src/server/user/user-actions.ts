@@ -29,13 +29,13 @@ export const updateUserAction = authActionClient
   .schema(UpdateUserSchema)
   .metadata({ actionName: 'updateUser' })
   .action(async ({ parsedInput, ctx }) => {
-    const { supabase } = ctx
+    const { supabase, user } = ctx
 
     // basic security check, that password does not equal e-mail
     if (
       parsedInput.password &&
-      parsedInput.email &&
-      parsedInput.password.toLowerCase() === parsedInput.email.toLowerCase()
+      user.email &&
+      parsedInput.password.toLowerCase() === user.email.toLowerCase()
     ) {
       return returnValidationErrors(UpdateUserSchema, {
         password: {
