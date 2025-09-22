@@ -2,7 +2,7 @@
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
-import { returnServerError } from '@/lib/utils/action'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CustomerPortalResponse } from '@/types/billing'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
@@ -19,13 +19,17 @@ const RedirectToCheckoutParamsSchema = z.object({
 export const redirectToCheckoutAction = authActionClient
   .schema(RedirectToCheckoutParamsSchema)
   .metadata({ actionName: 'redirectToCheckout' })
-  .action(async ({ parsedInput }) => {
+  .action(async ({ parsedInput, ctx }) => {
+    const { session } = ctx
     const { teamId, tierId } = parsedInput
+
+    const accessToken = session.access_token
 
     const res = await fetch(`${process.env.BILLING_API_URL}/checkouts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
       },
       body: JSON.stringify({
         teamID: teamId,
@@ -34,8 +38,7 @@ export const redirectToCheckoutAction = authActionClient
     })
 
     if (!res.ok) {
-      const text = await res.text()
-      throw new Error(text ?? 'Failed to redirect to checkout')
+      return handleDefaultInfraError(res.status)
     }
 
     const data = (await res.json()) as { url: string; error?: string }

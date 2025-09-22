@@ -1,4 +1,4 @@
-import { UnknownError } from '@/types/errors'
+import { UnauthorizedError, UnknownError } from '@/types/errors'
 
 /**
  * Custom error class for action-specific errors.
@@ -46,6 +46,8 @@ export function handleDefaultInfraError(status: number) {
       return returnServerError(
         'You may have reached your billing limits or your account may be blocked. Please check your billing settings or contact support.'
       )
+    case 401:
+      return returnServerError(UnauthorizedError('Unauthorized').message)
     default:
       return returnServerError(UnknownError().message)
   }
