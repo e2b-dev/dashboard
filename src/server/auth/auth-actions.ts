@@ -79,6 +79,11 @@ export const signUpAction = actionClient
     const supabase = await createClient()
     const origin = (await headers()).get('origin') || ''
 
+    // basic security check, that password does not equal e-mail
+    if (password.toLowerCase() === email.toLowerCase()) {
+      return returnServerError(USER_MESSAGES.passwordWeak.message)
+    }
+
     const validationResult = await validateEmail(email)
 
     if (validationResult?.data) {

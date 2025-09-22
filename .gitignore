@@ -40,6 +40,8 @@ next-env.d.ts
 # fuma-docs
 /.source
 
+CLAUDE.md
+
 # tooling
 /template
 # Sentry Config File
