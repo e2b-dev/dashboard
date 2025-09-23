@@ -192,7 +192,7 @@ export default function ConcurrentChartClient({
         <div className="flex justify-between">
           <div className="inline-flex items-end gap-2">
             <span className="prose-value-big max-md:text-2xl">
-              {formatDecimal(centralTendency.value, 1)}
+              {formatAxisNumber(centralTendency.value)}
             </span>
             <span className="label-tertiary max-md:text-xs">
               <span className="max-md:hidden">average over range</span>

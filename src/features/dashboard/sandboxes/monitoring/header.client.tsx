@@ -1,6 +1,6 @@
 'use client'
 
-import { formatNumber } from '@/lib/utils/formatting'
+import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
@@ -45,7 +45,7 @@ export function SandboxesStartRateClient({
   const lastSandboxesStartRate = useMemo(() => {
     const rate =
       data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.sandboxStartRate ?? 0
-    return Math.round(rate * 100) / 100
+    return formatDecimal(rate, 3)
   }, [data])
 
   return <span className="prose-value-big mt-4">{lastSandboxesStartRate}</span>
