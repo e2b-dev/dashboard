@@ -70,7 +70,7 @@ export const formatErrors = (
     })
     .filter(Boolean)
 
-const merged = serverSchema.extend(clientSchema)
+const merged = serverSchema.merge(clientSchema)
 
 export type Env = z.infer<typeof merged>
 
