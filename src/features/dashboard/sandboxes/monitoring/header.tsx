@@ -53,26 +53,25 @@ export default function SandboxesMonitoringHeader({
     <div className="flex md:flex-row flex-col items-center border-b w-full md:min-h-52 max-md:py-2">
       <BaseCard>
         <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
-
-        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
-          <SandboxesStartRate params={params} />
-        </Suspense>
-        <BaseSubtitle>
-          Start Rate per Second <br className="max-md:hidden" />
-          <span className="md:hidden">per sec</span>
-          <span className="max-md:hidden">(5 sec average)</span>
-        </BaseSubtitle>
-      </BaseCard>
-
-      <BaseCard>
-        <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <ConcurrentSandboxes params={params} />
         </Suspense>
         <BaseSubtitle>
           Concurrent <span className="max-md:hidden">Sandboxes</span>{' '}
           <br className="max-md:hidden" />
-          <span className="max-md:hidden">(5 sec average)</span>
+          <span className="max-md:hidden">(5-sec avg)</span>
+        </BaseSubtitle>
+      </BaseCard>
+
+      <BaseCard>
+        <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
+        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
+          <SandboxesStartRate params={params} />
+        </Suspense>
+        <BaseSubtitle>
+          Start Rate per Second <br className="max-md:hidden" />
+          <span className="md:hidden">per sec</span>
+          <span className="max-md:hidden">(5-sec avg)</span>
         </BaseSubtitle>
       </BaseCard>
 
@@ -84,7 +83,7 @@ export default function SandboxesMonitoringHeader({
           Max<span className="max-md:hidden"> Concurrent Sandboxes</span>
           <span className="md:hidden"> Concurrent</span>
           <br className="max-md:hidden" />
-          <span className="max-md:hidden">(Last 30 Days)</span>
+          <span className="max-md:hidden">(30-day max)</span>
         </BaseSubtitle>
       </BaseCard>
     </div>

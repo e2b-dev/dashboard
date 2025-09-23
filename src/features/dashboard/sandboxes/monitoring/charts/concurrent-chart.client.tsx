@@ -185,7 +185,7 @@ export default function ConcurrentChartClient({
       <div className="flex max-md:flex-col md:justify-between gap-2 md:gap-6 md:min-h-[60px]">
         <div className="flex flex-col justify-end">
           <span className="prose-label-highlight uppercase max-md:text-sm">
-            Concurrent
+            Concurrent sandboxes
             <ReactiveLiveBadge
               show={isPolling}
               className="ml-3 transform -translate-y-0.5"
