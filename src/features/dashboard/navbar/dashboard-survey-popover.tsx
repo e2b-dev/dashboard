@@ -117,13 +117,13 @@ function DashboardSurveyPopover() {
         <SidebarMenuButton
           tooltip="Feedback"
           className={cn(
-            'bg-bg-highlight hover:bg-bg-inverted hover:text-fg-inverted transition-colors',
+            'hover:bg-bg-hover transition-all  h-status-bar border-t justify-center group-data-[collapsible=icon]:justify-start',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
         >
           <MessageSquarePlus
             className={cn(
-              'size-4 group-data-[collapsible=icon]:!size-5',
+              'size-4 group-data-[collapsible=icon]:ml-2 group-data-[collapsible=icon]:!size-5',
               SIDEBAR_TRANSITION_CLASSNAMES
             )}
           />

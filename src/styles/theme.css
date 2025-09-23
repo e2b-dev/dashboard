@@ -34,6 +34,7 @@
   --public-nav-height: 50px;
 
   --protected-nav-height: 50px;
+  --protected-status-bar-height: 36px;
   --protected-sidebar-width: 0px;
 
   --shadow: hsl(0 0% 90%);
@@ -260,6 +261,9 @@
 @theme {
   /* Border Radius */
   --radius: 0.375rem;
+
+  /* Sizes */
+  --height-status-bar: var(--protected-status-bar-height);
 
   /* Colors */
   --color-ring: var(--stroke-active);
