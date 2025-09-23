@@ -42,20 +42,18 @@ const config = {
       ],
     },
   ],
-  rewrites: async () => [
-    {
-      source: '/ingest/static/:path*',
-      destination: 'https://us-assets.i.posthog.com/static/:path*',
-    },
-    {
-      source: '/ingest/:path*',
-      destination: 'https://us.i.posthog.com/:path*',
-    },
-    {
-      source: '/ingest/decide',
-      destination: 'https://us.i.posthog.com/decide',
-    },
-  ],
+  rewrites: async () => {
+      return [
+      {
+        source: "/ph-proxy/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ph-proxy/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+      ]
+  },
   redirects: async () => [
     {
       source: '/docs/api/cli',

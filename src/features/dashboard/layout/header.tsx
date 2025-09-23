@@ -9,13 +9,11 @@ import { usePathname } from 'next/navigation'
 
 interface DashboardLayoutHeaderProps {
   className?: string
-  teamIdOrSlug?: string
   headerInjectable?: React.ReactNode
 }
 
 export default function DashboardLayoutHeader({
   className,
-  teamIdOrSlug,
   headerInjectable,
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()

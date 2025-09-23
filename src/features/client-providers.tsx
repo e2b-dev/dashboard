@@ -32,7 +32,10 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    if (
+      !process.env.NEXT_PUBLIC_POSTHOG_KEY ||
+      !process.env.NEXT_PUBLIC_POSTHOG_HOST
+    ) {
       return
     }
 
@@ -42,8 +45,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // This setup utilizes Next.js rewrites to act as a reverse proxy, to improve
       // reliability of client-side tracking & make requests less likely to be intercepted by tracking blockers.
       // https://posthog.com/docs/libraries/next-js#configuring-a-reverse-proxy-to-posthog
-      api_host: '/ingest',
+      api_host: '/ph-proxy',
       ui_host: 'https://us.posthog.com',
+      advanced_enable_surveys: true,
       disable_session_recording: process.env.NODE_ENV !== 'production',
       advanced_disable_toolbar_metrics: true,
       opt_in_site_apps: true,

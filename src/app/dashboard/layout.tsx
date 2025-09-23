@@ -67,10 +67,7 @@ export default async function DashboardLayout({
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />
             <SidebarInset>
-              <DashboardLayoutView
-                teamIdOrSlug={teamSlug}
-                headerInjectable={headerInjectable}
-              >
+              <DashboardLayoutView headerInjectable={headerInjectable}>
                 {page}
               </DashboardLayoutView>
             </SidebarInset>

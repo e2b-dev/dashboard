@@ -1,3 +1,5 @@
+'use client'
+
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'
@@ -11,6 +13,7 @@ import {
 } from '@/ui/primitives/sidebar'
 import { Book, Github } from 'lucide-react'
 import Link from 'next/link'
+import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -45,6 +48,11 @@ export default function DashboardSidebarFooter() {
                 Documentation
                 <ExternalIcon className="ml-auto size-4" />
               </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem key="survey">
+            <SidebarMenuButton asChild tooltip="Survey">
+              <DashboardSurveyPopover />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

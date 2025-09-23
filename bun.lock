@@ -80,7 +80,7 @@
         "pathe": "^2.0.3",
         "pino": "^9.7.0",
         "postgres": "^3.4.5",
-        "posthog-js": "^1.214.0",
+        "posthog-js": "^1.268.1",
         "react": "^19.1.0",
         "react-day-picker": "^9.9.0",
         "react-dom": "^19.1.0",
@@ -636,7 +636,7 @@
 
     "@polka/url": ["@polka/url@1.0.0-next.29", "", {}, "sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww=="],
 
-    "@posthog/core": ["@posthog/core@1.0.2", "", {}, "sha512-hWk3rUtJl2crQK0WNmwg13n82hnTwB99BT99/XI5gZSvIlYZ1TPmMZE8H2dhJJ98J/rm9vYJ/UXNzw3RV5HTpQ=="],
+    "@posthog/core": ["@posthog/core@1.1.0", "", {}, "sha512-igElrcnRPJh2nWYACschjH4OwGwzSa6xVFzRDVzpnjirUivdJ8nv4hE+H31nvwE56MFhvvglfHuotnWLMcRW7w=="],
 
     "@preact/signals": ["@preact/signals@1.3.2", "", { "dependencies": { "@preact/signals-core": "^1.7.0" }, "peerDependencies": { "preact": "10.x" } }, "sha512-naxcJgUJ6BTOROJ7C3QML7KvwKwCXQJYTc5L/b0eEsdYgPB6SxwoQ1vDGcS0Q7GVjAenVq/tXrybVdFShHYZWg=="],
 
@@ -2452,7 +2452,7 @@
 
     "postgres-interval": ["postgres-interval@1.2.0", "", { "dependencies": { "xtend": "^4.0.0" } }, "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ=="],
 
-    "posthog-js": ["posthog-js@1.261.0", "", { "dependencies": { "@posthog/core": "1.0.2", "core-js": "^3.38.1", "fflate": "^0.4.8", "preact": "^10.19.3", "web-vitals": "^4.2.4" }, "peerDependencies": { "@rrweb/types": "2.0.0-alpha.17", "rrweb-snapshot": "2.0.0-alpha.17" }, "optionalPeers": ["@rrweb/types", "rrweb-snapshot"] }, "sha512-jyiXqyrCU+VlpbNNVRA6OQYAVut0XZMYNELCZH+XvTd981VqbE4jXn4XCBreo7XCL2gdPgDVxUVOuzNvEuKcmw=="],
+    "posthog-js": ["posthog-js@1.268.1", "", { "dependencies": { "@posthog/core": "1.1.0", "core-js": "^3.38.1", "fflate": "^0.4.8", "preact": "^10.19.3", "web-vitals": "^4.2.4" }, "peerDependencies": { "@rrweb/types": "2.0.0-alpha.17", "rrweb-snapshot": "2.0.0-alpha.17" }, "optionalPeers": ["@rrweb/types", "rrweb-snapshot"] }, "sha512-vkV8vFHUWtPsFeHZCCszGdnLxKJn93UVw7a7SZGTJyyQ3JBC1Sydy4DvolnDt2IhqIUZCs9ljwqaUXcITqLoEg=="],
 
     "preact": ["preact@10.27.1", "", {}, "sha512-V79raXEWch/rbqoNc7nT9E4ep7lu+mI3+sBmfRD4i1M73R3WLYcCtdI0ibxGVf4eQL8ZIz2nFacqEC+rmnOORQ=="],
 
