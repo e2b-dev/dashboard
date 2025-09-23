@@ -56,7 +56,9 @@ export const testEnvSchema = z.object({
  * You can't destruct `process.env` as a regular object, so we do
  * a simple validation of the environment variables we need.
  */
-export const formatErrors = (errors: z.inferFlattenedErrors<z.AnyZodObject>) =>
+export const formatErrors = (
+  errors: z.core.$ZodFlattenedError<z.ZodObject<z.ZodRawShape>>
+) =>
   Object.entries(errors.fieldErrors)
     .map(([name, value]) => {
       if (value) return `${name}: ${value.join(', ')}\n`
