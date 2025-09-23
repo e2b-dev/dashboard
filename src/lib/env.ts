@@ -2,16 +2,16 @@ import { z } from 'zod'
 
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  INFRA_API_URL: z.string().url(),
+  INFRA_API_URL: z.url(),
   KV_REST_API_TOKEN: z.string().min(1),
-  KV_REST_API_URL: z.string().url(),
+  KV_REST_API_URL: z.url(),
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
-  BILLING_API_URL: z.string().url().optional(),
+  BILLING_API_URL: z.url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
-  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z
     .enum(['grpc', 'http/protobuf', 'http/json'])
     .optional(),
@@ -37,7 +37,7 @@ export const serverSchema = z.object({
 })
 
 export const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
@@ -53,7 +53,7 @@ export const clientSchema = z.object({
 })
 
 export const testEnvSchema = z.object({
-  TEST_USER_EMAIL: z.string().email(),
+  TEST_USER_EMAIL: z.email(),
   TEST_USER_PASSWORD: z.string().min(8),
 })
 
@@ -70,7 +70,8 @@ export const formatErrors = (
     })
     .filter(Boolean)
 
-const merged = serverSchema.merge(clientSchema)
+const merged = serverSchema.extend(clientSchema)
+
 export type Env = z.infer<typeof merged>
 
 export function validateEnv(schema: z.ZodSchema) {
