@@ -102,15 +102,14 @@ export default function StartRateChartClient({
 
   return (
     <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
-      <div className="md:min-h-[60px] flex flex-col justify-end">
-        <span className="prose-label-highlight uppercase max-md:text-sm">
-          Start Rate per Second
+      <div className="flex flex-col gap-2">
+        <div className="prose-label-highlight uppercase max-md:text-sm flex justify-between items-center w-full">
+          <span>Start Rate per Second</span>
           <ReactiveLiveBadge
             show={isPolling}
-            className="ml-3 transform -translate-y-0.5"
           />
-        </span>
-        <div className="inline-flex items-end gap-2 md:gap-3 mt-1 md:mt-2">
+        </div>
+        <div className="inline-flex items-end gap-2 md:gap-3">
           <span className="prose-value-big max-md:text-2xl">
             {formatDecimal(centralTendency.value, 3)}
           </span>
