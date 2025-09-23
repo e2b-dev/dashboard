@@ -8,12 +8,7 @@ export function GeneralAnalyticsCollector() {
   const posthog = usePostHog()
 
   useEffect(() => {
-    if (
-      !posthog ||
-      !process.env.NEXT_PUBLIC_POSTHOG_KEY ||
-      !process.env.NEXT_PUBLIC_POSTHOG_HOST
-    )
-      return
+    if (!posthog || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
 
     supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {

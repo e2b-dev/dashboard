@@ -32,10 +32,7 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (
-      !process.env.NEXT_PUBLIC_POSTHOG_KEY ||
-      !process.env.NEXT_PUBLIC_POSTHOG_HOST
-    ) {
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       return
     }
 
