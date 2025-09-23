@@ -17,7 +17,7 @@ import {
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-4 md:p-6 max-md:not-last:border-b md:not-last:border-r h-full flex-1 w-full flex flex-col justify-center items-center gap-2 md:gap-3 relative max-md:min-h-[100px] md:min-h-[200px]">
+    <div className="p-4 md:p-6 max-md:not-last:border-b md:not-last:border-r flex-1 w-full flex flex-col justify-center items-center gap-2 md:gap-3 relative min-h-[100px] md:h-45">
       {children}
     </div>
   )
@@ -50,7 +50,7 @@ export default function SandboxesMonitoringHeader({
   params: Promise<SandboxesMonitoringPageParams>
 }) {
   return (
-    <div className="flex md:flex-row flex-col items-center border-b w-full md:min-h-52 max-md:py-2">
+    <div className="flex md:flex-row flex-col items-center border-b w-full max-md:py-2">
       <BaseCard>
         <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
@@ -219,7 +219,7 @@ export const MaxConcurrentSandboxes = async ({
 
   return (
     <>
-      <span className="prose-value-big mt-4">
+      <span className="prose-value-big mt-1">
         {formatNumber(concurrentSandboxes)}
       </span>
       {limit && (
