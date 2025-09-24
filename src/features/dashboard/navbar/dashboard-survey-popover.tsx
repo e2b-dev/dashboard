@@ -2,21 +2,19 @@
 
 import { l } from '@/lib/clients/logger/logger'
 import { useToast } from '@/lib/hooks/use-toast'
-import { cn } from '@/lib/utils'
 import { Popover, PopoverContent } from '@/ui/primitives/popover'
-import {
-  SIDEBAR_TRANSITION_CLASSNAMES,
-  SidebarMenuButton,
-} from '@/ui/primitives/sidebar'
 import { SurveyContent } from '@/ui/survey'
 import { PopoverTrigger } from '@radix-ui/react-popover'
-import { MessageSquarePlus } from 'lucide-react'
 import { Survey } from 'posthog-js'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
 import useSWR from 'swr'
 
-function DashboardSurveyPopover() {
+interface DashboardSurveyPopoverProps {
+  trigger: React.ReactNode
+}
+
+function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
   const posthog = usePostHog()
   const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
@@ -113,23 +111,8 @@ function DashboardSurveyPopover() {
         setIsOpen(open)
       }}
     >
-      <PopoverTrigger asChild>
-        <SidebarMenuButton
-          tooltip="Feedback"
-          className={cn(
-            'hover:bg-bg-hover transition-all  h-status-bar border-t justify-center group-data-[collapsible=icon]:justify-start',
-            SIDEBAR_TRANSITION_CLASSNAMES
-          )}
-        >
-          <MessageSquarePlus
-            className={cn(
-              'size-4 group-data-[collapsible=icon]:ml-2 group-data-[collapsible=icon]:!size-5',
-              SIDEBAR_TRANSITION_CLASSNAMES
-            )}
-          />
-          Feedback
-        </SidebarMenuButton>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+
       <PopoverContent
         className="w-[400px]"
         collisionPadding={20}
@@ -147,7 +130,9 @@ function DashboardSurveyPopover() {
   )
 }
 
-export default function DashboardSurveyPopoverResolver() {
+export default function DashboardSurveyPopoverResolver(
+  props: DashboardSurveyPopoverProps
+) {
   if (
     !process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID ||
     !process.env.NEXT_PUBLIC_POSTHOG_KEY
@@ -155,5 +140,5 @@ export default function DashboardSurveyPopoverResolver() {
     return null
   }
 
-  return <DashboardSurveyPopover />
+  return <DashboardSurveyPopover {...props} />
 }

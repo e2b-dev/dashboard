@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Github } from 'lucide-react'
+import { Book, Github, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import TeamBlockageAlert from './blocked-banner'
@@ -60,10 +60,28 @@ export default function DashboardSidebarFooter() {
       </SidebarFooter>
 
       <SidebarMenu className="p-0 gap-0">
-        <SidebarMenuItem key="survey">
-          <SidebarMenuButton asChild tooltip="Survey" variant="ghost">
-            <DashboardSurveyPopover />
-          </SidebarMenuButton>
+        <SidebarMenuItem
+          key="survey"
+          className={cn(
+            'transition-all border-t group-data-[collapsible=icon]:pl-2',
+            SIDEBAR_TRANSITION_CLASSNAMES
+          )}
+        >
+          <DashboardSurveyPopover
+            trigger={
+              <SidebarMenuButton
+                tooltip="Survey"
+                variant="ghost"
+                className={cn(
+                  'hover:bg-bg-hover transition-all w-full min-h-status-bar justify-center group-data-[collapsible=icon]:justify-start',
+                  SIDEBAR_TRANSITION_CLASSNAMES
+                )}
+              >
+                <MessageSquarePlus className="group-data-[collapsible=icon]:!size-5" />
+                Feedback
+              </SidebarMenuButton>
+            }
+          />
         </SidebarMenuItem>
       </SidebarMenu>
     </>

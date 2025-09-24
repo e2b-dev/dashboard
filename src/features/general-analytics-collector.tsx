@@ -14,7 +14,7 @@ export function GeneralAnalyticsCollector() {
       if (session?.user) {
         posthog?.identify(session.user.id, { email: session.user.email })
       } else if (event === 'SIGNED_OUT') {
-        //posthog?.reset()
+        posthog?.reset()
       }
     })
   }, [posthog])
