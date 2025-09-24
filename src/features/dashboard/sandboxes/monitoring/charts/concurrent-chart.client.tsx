@@ -189,7 +189,7 @@ export default function ConcurrentChartClient({
             show={isPolling}
           />
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between max-md:flex-col max-md:gap-2">
           <div className="inline-flex items-end gap-2">
             <span className="prose-value-big max-md:text-2xl">
               {formatAxisNumber(centralTendency.value)}
@@ -199,7 +199,7 @@ export default function ConcurrentChartClient({
               <span className="md:hidden">avg over range</span>
             </span>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-2 max-md:flex-col max-md:items-start">
             {/* Date range label - full width on mobile */}
             {customRangeLabel && customRangeCopyValue && (
               <div className="flex items-center gap-2 max-md:w-full max-md:min-w-0">
