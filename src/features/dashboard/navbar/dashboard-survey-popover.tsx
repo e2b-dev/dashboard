@@ -1,14 +1,13 @@
 'use client'
 
+import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { l } from '@/lib/clients/logger/logger'
-import { useToast } from '@/lib/hooks/use-toast'
 import { Popover, PopoverContent } from '@/ui/primitives/popover'
 import { SurveyContent } from '@/ui/survey'
 import { PopoverTrigger } from '@radix-ui/react-popover'
-import { Survey } from 'posthog-js'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
-import useSWR from 'swr'
+import { toast } from 'sonner'
 
 interface DashboardSurveyPopoverProps {
   trigger: React.ReactNode
@@ -16,40 +15,14 @@ interface DashboardSurveyPopoverProps {
 
 function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
   const posthog = usePostHog()
-  const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
 
-  const { data: survey, isLoading } = useSWR<Survey | undefined>(
-    ['dashboard-feedback-survey', posthog.__loaded],
-    () => {
-      return new Promise<Survey | undefined>((resolve) => {
-        posthog.getSurveys((surveys) => {
-          for (const survey of surveys) {
-            if (
-              survey.id ===
-              process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID
-            ) {
-              resolve(survey)
-              return
-            }
-          }
-          resolve(undefined)
-        })
-      })
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      dedupingInterval: Infinity,
-      shouldRetryOnError: false,
-    }
-  )
+  const { dashboardFeedbackSurvey, isInitialized } = useAppPostHogProvider()
 
   const handleSubmit = useCallback(
     (responses: Record<number, string>) => {
-      if (!survey) return
+      if (!dashboardFeedbackSurvey) return
 
       const responseData = Object.entries(responses).reduce(
         (acc, [index, response]) => ({
@@ -60,16 +33,13 @@ function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
       )
 
       posthog.capture('survey sent', {
-        $survey_id: survey.id,
+        $survey_id: dashboardFeedbackSurvey.id,
         ...responseData,
       })
 
       setWasSubmitted(true)
 
-      toast({
-        title: 'Thank you!',
-        description: 'Your feedback has been recorded.',
-      })
+      toast.success('Thank you! Your feedback has been recorded.')
 
       // reset states
       setIsOpen(false)
@@ -77,14 +47,20 @@ function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
         setWasSubmitted(false)
       }, 100)
     },
-    [survey, posthog, toast]
+    [dashboardFeedbackSurvey, posthog]
   )
+
+  // we will optimistically render the button on first render.
+  // if we can't resolve the survey on the client side, we hide the button.
+  if (!dashboardFeedbackSurvey && isInitialized) {
+    return null
+  }
 
   return (
     <Popover
       open={isOpen}
       onOpenChange={(open) => {
-        if (!survey) {
+        if (!dashboardFeedbackSurvey) {
           l.error(
             {
               key: 'dashboard_survey_popover:survey_not_found',
@@ -98,14 +74,14 @@ function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
           return
         }
 
-        if (!open && !wasSubmitted && survey) {
+        if (!open && !wasSubmitted && dashboardFeedbackSurvey) {
           posthog.capture('survey dismissed', {
-            $survey_id: survey.id,
+            $survey_id: dashboardFeedbackSurvey.id,
           })
         }
-        if (open && survey) {
+        if (open && dashboardFeedbackSurvey) {
           posthog.capture('survey shown', {
-            $survey_id: survey.id,
+            $survey_id: dashboardFeedbackSurvey.id,
           })
         }
         setIsOpen(open)
@@ -118,10 +94,10 @@ function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
         collisionPadding={20}
         sideOffset={25}
       >
-        {survey && (
+        {dashboardFeedbackSurvey && (
           <SurveyContent
-            survey={survey}
-            isLoading={isLoading}
+            survey={dashboardFeedbackSurvey}
+            isLoading={!isInitialized}
             onSubmit={handleSubmit}
           />
         )}
