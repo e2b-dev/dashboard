@@ -1,6 +1,6 @@
 'use client'
 
-import { getDashboardPageConfig } from '@/configs/layout'
+import { getPageConfig } from '@/configs/dashboard-routes'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
@@ -19,7 +19,7 @@ export default function DashboardLayoutHeader({
   headerInjectable,
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()
-  const config = getDashboardPageConfig(pathname)
+  const config = getPageConfig(pathname)
 
   return (
     <div

@@ -41,6 +41,7 @@ export default function SandboxLayout({
         }
         templateNameOrId={sandboxInfo.alias || sandboxInfo.templateID}
         teamIdOrSlug={teamIdOrSlug}
+        sandboxId={sandboxInfo.sandboxID}
       >
         {children}
       </SandboxDetailsTabs>

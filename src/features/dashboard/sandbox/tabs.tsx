@@ -1,8 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-import { usePathname } from 'next/navigation'
+import { DashboardTabs } from '@/ui/dashboard-tabs'
 import { ReactNode } from 'react'
 import SandboxInspectIncompatible from './inspect/incompatible'
 
@@ -12,6 +10,7 @@ interface SandboxDetailsTabsProps {
   isEnvdVersionIncompatibleForInspect: boolean
   templateNameOrId: string
   teamIdOrSlug: string
+  sandboxId: string
 }
 
 export default function SandboxDetailsTabs({
@@ -20,43 +19,37 @@ export default function SandboxDetailsTabs({
   isEnvdVersionIncompatibleForInspect,
   templateNameOrId,
   teamIdOrSlug,
+  sandboxId,
 }: SandboxDetailsTabsProps) {
-  const pathname = usePathname()
-  const tab = pathname.split('/').pop() || tabs[0]
+  // transform string tabs into structured format
+  const structuredTabs = tabs.map((tab) => ({
+    id: tab,
+    label: tab.charAt(0).toUpperCase() + tab.slice(1),
+    href: `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}${tab === tabs[0] ? '' : `/${tab}`}`,
+  }))
 
-  const showInspectTab =
-    tab === 'inspect' && isEnvdVersionIncompatibleForInspect
+  // handle incompatible inspect tab
+  const tabContent: Record<string, ReactNode> = {}
+  tabs.forEach((tab) => {
+    if (tab === 'inspect' && isEnvdVersionIncompatibleForInspect) {
+      tabContent[tab] = (
+        <SandboxInspectIncompatible
+          templateNameOrId={templateNameOrId}
+          teamIdOrSlug={teamIdOrSlug}
+        />
+      )
+    } else {
+      tabContent[tab] = children
+    }
+  })
 
   return (
-    <Tabs defaultValue={tab} value={tab} className="min-h-0 w-full flex-1">
-      <TabsList className="bg-bg z-30 w-full justify-start pl-3 md:pl-6">
-        {tabs.map((tab) => (
-          <TabsTrigger
-            layoutkey="tabs-indicator-sandbox"
-            key={tab}
-            value={tab}
-            className="w-fit flex-none"
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-      {tabs.map((tab) => (
-        <TabsContent
-          key={tab}
-          value={tab}
-          className={cn('flex flex-1 flex-col md:overflow-hidden')}
-        >
-          {showInspectTab ? (
-            children
-          ) : (
-            <SandboxInspectIncompatible
-              templateNameOrId={templateNameOrId}
-              teamIdOrSlug={teamIdOrSlug}
-            />
-          )}
-        </TabsContent>
-      ))}
-    </Tabs>
+    <DashboardTabs
+      type="path"
+      tabs={structuredTabs}
+      layoutKey="tabs-indicator-sandbox"
+    >
+      {tabContent}
+    </DashboardTabs>
   )
 }

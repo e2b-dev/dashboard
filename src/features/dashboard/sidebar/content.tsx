@@ -1,9 +1,6 @@
 'use client'
 
-import {
-  DashboardNavLink,
-  MAIN_DASHBOARD_LINKS,
-} from '@/configs/dashboard-navs'
+import { getGroupedRoutes } from '@/configs/dashboard-routes'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
 import micromatch from 'micromatch'
@@ -23,21 +20,6 @@ import {
 } from '@/ui/primitives/sidebar'
 import { usePathname } from 'next/navigation'
 
-type GroupedLinks = {
-  [key: string]: DashboardNavLink[]
-}
-
-const createGroupedLinks = (links: DashboardNavLink[]): GroupedLinks => {
-  return links.reduce((acc, link) => {
-    const group = link.group || 'ungrouped'
-    if (!acc[group]) {
-      acc[group] = []
-    }
-    acc[group].push(link)
-    return acc
-  }, {} as GroupedLinks)
-}
-
 export default function DashboardSidebarContent() {
   const selectedTeam = useSelectedTeam()
   const selectedTeamIdentifier = selectedTeam?.slug ?? selectedTeam?.id
@@ -45,36 +27,39 @@ export default function DashboardSidebarContent() {
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
 
-  const groupedNavLinks = useMemo(
-    () => createGroupedLinks(MAIN_DASHBOARD_LINKS),
-    []
-  )
+  const groupedRoutes = useMemo(() => getGroupedRoutes(), [])
 
-  const isActive = (link: DashboardNavLink) => {
-    if (!pathname || !link.activeMatch) return false
-
-    return micromatch.isMatch(pathname, link.activeMatch)
+  const isActive = (pattern: string) => {
+    if (!pathname) return false
+    return micromatch.isMatch(pathname, pattern)
   }
 
   return (
     <SidebarContent className="overflow-x-hidden gap-0">
-      {Object.entries(groupedNavLinks).map(([group, links], ix) => (
+      {Object.entries(groupedRoutes).map(([group, routes]) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
             <SidebarGroupLabel>{group}</SidebarGroupLabel>
           )}
           <SidebarMenu>
-            {links.map((item) => {
-              const href = item.href({
-                teamIdOrSlug: selectedTeamIdentifier ?? undefined,
-              })
+            {routes.map((route) => {
+              // handle default tab if route has tabs
+              let href = route.path(selectedTeamIdentifier ?? '')
+              if (route.tabs) {
+                const defaultTab = route.tabs.find((t) => t.isDefault)
+                if (defaultTab) {
+                  href = `${href}?tab=${defaultTab.id}`
+                }
+              }
 
               return (
-                <SidebarMenuItem key={item.label}>
+                <SidebarMenuItem key={route.id}>
                   <SidebarMenuButton
-                    variant={isActive(item) ? 'active' : 'default'}
+                    variant={
+                      isActive(route.activePattern) ? 'active' : 'default'
+                    }
                     asChild
-                    tooltip={item.label}
+                    tooltip={route.label}
                   >
                     <Link
                       suppressHydrationWarning
@@ -88,14 +73,15 @@ export default function DashboardSidebarContent() {
                           : undefined
                       }
                     >
-                      <item.icon
+                      <route.icon
                         className={cn(
                           'group-data-[collapsible=icon]:size-5 transition-[size,color]',
                           SIDEBAR_TRANSITION_CLASSNAMES,
-                          isActive(item) && 'text-accent-main-highlight'
+                          isActive(route.activePattern) &&
+                            'text-accent-main-highlight'
                         )}
                       />
-                      <span>{item.label}</span>
+                      <span>{route.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

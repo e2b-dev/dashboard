@@ -11,10 +11,13 @@ export const PROTECTED_URLS = {
   ACCOUNT_SETTINGS: '/dashboard/account',
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
-  TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
+
+  SETTINGS: (teamIdOrSlug: string, tab?: 'general' | 'keys') =>
+    `/dashboard/${teamIdOrSlug}/settings${tab ? `?tab=${tab}` : ''}`,
+  MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
   SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
-    `/dashboard/${teamIdOrSlug}/sandboxes?tab=${tab ?? 'monitoring'}`,
+    `/dashboard/${teamIdOrSlug}/sandboxes${tab ? `?tab=${tab}` : '?tab=monitoring'}`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
@@ -25,7 +28,6 @@ export const PROTECTED_URLS = {
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
-  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   RESET_PASSWORD: '/dashboard/account',
 }
 

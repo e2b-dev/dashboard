@@ -1,6 +1,6 @@
 'use client'
 
-import { getDashboardPageConfig } from '@/configs/layout'
+import { getPageConfig } from '@/configs/dashboard-routes'
 import { CatchErrorBoundary } from '@/ui/error'
 import { usePathname } from 'next/navigation'
 
@@ -10,7 +10,7 @@ export default function DashboardLayoutWrapper({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const config = getDashboardPageConfig(pathname)
+  const config = getPageConfig(pathname)
 
   if (config?.type === 'default') {
     return (

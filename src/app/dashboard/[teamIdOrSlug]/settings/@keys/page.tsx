@@ -1,6 +1,5 @@
-import CreateApiKeyDialog from '@/features/dashboard/keys/create-api-key-dialog'
-import ApiKeysTable from '@/features/dashboard/keys/table'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import CreateApiKeyDialog from '@/features/dashboard/settings/keys/create-api-key-dialog'
+import ApiKeysTable from '@/features/dashboard/settings/keys/table'
 import Frame from '@/ui/frame'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -20,9 +19,6 @@ interface KeysPageClientProps {
 }
 
 export default async function KeysPage({ params }: KeysPageClientProps) {
-  const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
   return (
     <Frame
       classNames={{
@@ -42,7 +38,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
             </div>
 
             <Suspense fallback={null}>
-              <CreateApiKeyDialog teamId={teamId}>
+              <CreateApiKeyDialog params={params}>
                 <Button className="w-full sm:w-auto sm:self-start">
                   <Plus className="size-4" /> CREATE KEY
                 </Button>
@@ -53,7 +49,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
 
         <CardContent>
           <div className="w-full overflow-x-auto">
-            <ApiKeysTable teamId={teamId} className="min-w-[800px]" />
+            <ApiKeysTable params={params} className="min-w-[800px]" />
           </div>
         </CardContent>
       </Card>

@@ -10,11 +10,13 @@ import AddMemberForm from './add-member-form'
 import MemberTable from './member-table'
 
 interface MemberCardProps {
-  teamId: string
+  params: Promise<{
+    teamIdOrSlug: string
+  }>
   className?: string
 }
 
-export function MemberCard({ teamId, className }: MemberCardProps) {
+export function MemberCard({ params, className }: MemberCardProps) {
   return (
     <Card className={className}>
       <CardHeader>
@@ -27,7 +29,7 @@ export function MemberCard({ teamId, className }: MemberCardProps) {
             <AddMemberForm className="w-full max-w-[24rem]" />
           </Suspense>
           <div className="bg-card w-full overflow-x-auto">
-            <MemberTable teamId={teamId} />
+            <MemberTable params={params} />
           </div>
         </div>
       </CardContent>

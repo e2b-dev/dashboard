@@ -1,6 +1,6 @@
 'use client'
 
-import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
+import { ACCOUNT_ROUTE, DASHBOARD_ROUTES } from '@/configs/dashboard-routes'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
@@ -75,24 +75,31 @@ export default function DashboardSidebarCommand({
         <CommandList className="p-1 pb-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {ALL_DASHBOARD_LINKS.map((link) => (
-              <CommandItem
-                key={link.label}
-                onSelect={() => {
-                  router.push(
-                    link.href({
-                      teamIdOrSlug:
-                        selectedTeam?.slug ?? selectedTeam?.id ?? undefined,
-                    })
-                  )
-                  setOpen(false)
-                }}
-                className="group"
-              >
-                <link.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent-main-highlight  !size-4" />
-                {link.label}
-              </CommandItem>
-            ))}
+            {[...DASHBOARD_ROUTES, ACCOUNT_ROUTE].map((route) => {
+              const teamIdOrSlug = selectedTeam?.slug ?? selectedTeam?.id ?? ''
+              // handle default tab for routes with tabs
+              let href = route.path(teamIdOrSlug)
+              if (route.tabs) {
+                const defaultTab = route.tabs.find((t) => t.isDefault)
+                if (defaultTab) {
+                  href = `${href}?tab=${defaultTab.id}`
+                }
+              }
+
+              return (
+                <CommandItem
+                  key={route.id}
+                  onSelect={() => {
+                    router.push(href)
+                    setOpen(false)
+                  }}
+                  className="group"
+                >
+                  <route.icon className="text-fg-tertiary group-[&[data-selected=true]]:text-accent-main-highlight  !size-4" />
+                  {route.label}
+                </CommandItem>
+              )
+            })}
           </CommandGroup>
         </CommandList>
       </CommandDialog>
