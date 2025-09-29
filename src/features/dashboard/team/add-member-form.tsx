@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 const addMemberSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
 })
 
 type AddMemberForm = z.infer<typeof addMemberSchema>

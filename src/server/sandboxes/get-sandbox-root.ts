@@ -6,7 +6,7 @@ import Sandbox, { NotFoundError } from 'e2b'
 import { z } from 'zod'
 
 export const GetSandboxRootSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   sandboxId: z.string(),
   rootPath: z.string().default('/'),
 })

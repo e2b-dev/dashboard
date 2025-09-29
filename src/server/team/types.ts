@@ -30,7 +30,7 @@ export const TeamNameSchema = z
 // Shared schemas
 
 const UpdateTeamNameSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   name: TeamNameSchema,
 })
 

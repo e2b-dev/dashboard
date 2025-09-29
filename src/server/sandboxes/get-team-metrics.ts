@@ -14,7 +14,7 @@ import getTeamMetricsMemoized from './get-team-metrics-memo'
 
 export const GetTeamMetricsSchema = z
   .object({
-    teamId: z.string().uuid(),
+    teamId: z.uuid(),
     startDate: z
       .number()
       .int()

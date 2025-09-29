@@ -13,7 +13,7 @@ import { cache } from 'react'
 import { z } from 'zod'
 
 const GetUsageAuthActionSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 async function _fetchTeamUsageDataLogic(teamId: string, accessToken: string) {

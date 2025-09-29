@@ -57,20 +57,7 @@ export const testEnvSchema = z.object({
   TEST_USER_PASSWORD: z.string().min(8),
 })
 
-/**
- * You can't destruct `process.env` as a regular object, so we do
- * a simple validation of the environment variables we need.
- */
-export const formatErrors = (
-  errors: z.core.$ZodFlattenedError<z.ZodObject<z.ZodRawShape>>
-) =>
-  Object.entries(errors.fieldErrors)
-    .map(([name, value]) => {
-      if (value) return `${name}: ${value.join(', ')}\n`
-    })
-    .filter(Boolean)
-
-const merged = serverSchema.merge(clientSchema)
+const merged = serverSchema.extend(clientSchema.shape)
 
 export type Env = z.infer<typeof merged>
 
@@ -78,10 +65,7 @@ export function validateEnv(schema: z.ZodSchema) {
   const parsed = schema.safeParse(process.env)
 
   if (!parsed.success) {
-    console.error(
-      '❌ Invalid environment variables:\n\n',
-      ...formatErrors(parsed.error.flatten())
-    )
+    console.error(z.prettifyError(parsed.error))
     process.exit(1)
   }
 
