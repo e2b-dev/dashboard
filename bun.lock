@@ -103,7 +103,7 @@
         "usehooks-ts": "^3.1.0",
         "vaul": "^1.1.2",
         "zod": "^4.1.11",
-        "zod-form-data": "^2.0.7",
+        "zod-form-data": "^3.0.1",
         "zustand": "^5.0.3",
         "zustand-computed": "^2.0.2",
       },
@@ -2988,7 +2988,7 @@
 
     "zod": ["zod@4.1.11", "", {}, "sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg=="],
 
-    "zod-form-data": ["zod-form-data@2.0.8", "", { "dependencies": { "@rvf/set-get": "^7.0.0" }, "peerDependencies": { "zod": ">= 3.11.0" } }, "sha512-X31GkEc8uk5/L387L4TVI1z7obBbN/0MRHBHfHW3uMOWkVJeSsa+grvkTvY9qyFbNshKEnqK+jLJNlY+d7jpLw=="],
+    "zod-form-data": ["zod-form-data@3.0.1", "", { "dependencies": { "@rvf/set-get": "^7.0.0" }, "peerDependencies": { "zod": ">= 3.25.0" } }, "sha512-uwSrDzpLDoXeAxePjPHrjjMelE5pk5zL5JcwLFISvqidGjtPl7hcheH584xGcS76c9IRHq6tqdGkf+A4eKO6Cw=="],
 
     "zrender": ["zrender@6.0.0", "", { "dependencies": { "tslib": "2.3.0" } }, "sha512-41dFXEEXuJpNecuUQq6JlbybmnHaqqpGlbH1yxnA5V9MMP4SbohSVZsJIwz+zdjQXSSlR1Vc34EgH1zxyTDvhg=="],
 
