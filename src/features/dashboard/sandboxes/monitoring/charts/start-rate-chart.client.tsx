@@ -101,7 +101,7 @@ export default function StartRateChartClient({
   if (!data) return null
 
   return (
-    <div className="p-3 md:p-6 border-b w-full h-full flex flex-col flex-1 md:min-h-0">
+    <div className="p-3 md:p-6 w-full h-full flex flex-col flex-1 md:min-h-0">
       <div className="md:min-h-[60px] flex flex-col justify-end">
         <span className="prose-label-highlight uppercase max-md:text-sm">
           Start Rate per Second

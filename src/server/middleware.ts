@@ -43,7 +43,7 @@ export async function resolveTeamForDashboard(
         return { redirect: PROTECTED_URLS.DASHBOARD }
       }
 
-      const isUuid = z.string().uuid().safeParse(teamIdOrSlug).success
+      const isUuid = z.uuid().safeParse(teamIdOrSlug).success
       const teamSlug = isUuid
         ? (await kv.get<string>(KV_KEYS.TEAM_ID_TO_SLUG(teamId))) || undefined
         : teamIdOrSlug || undefined

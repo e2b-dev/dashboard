@@ -8,7 +8,7 @@ import { handleDefaultInfraError } from '@/lib/utils/action'
 import { z } from 'zod'
 
 const GetApiKeysSchema = z.object({
-  teamId: z.string({ required_error: 'Team ID is required' }).uuid(),
+  teamId: z.uuid({ error: 'Team ID is required' }),
 })
 
 export const getTeamApiKeys = authActionClient

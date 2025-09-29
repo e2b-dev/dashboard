@@ -9,7 +9,7 @@ import { z } from 'zod'
 
 const UpdateUserSchema = z
   .object({
-    email: z.string().email().optional(),
+    email: z.email().optional(),
     password: z.string().min(8).optional(),
     name: z.string().min(1).optional(),
   })

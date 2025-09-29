@@ -12,7 +12,7 @@ import { z } from 'zod'
 
 export const GetTeamMetricsMaxSchema = z
   .object({
-    teamId: z.string().uuid(),
+    teamId: z.uuid(),
     startDate: z
       .number()
       .int()

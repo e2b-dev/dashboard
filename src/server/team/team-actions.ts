@@ -48,8 +48,8 @@ export const updateTeamNameAction = authActionClient
   })
 
 const AddTeamMemberSchema = z.object({
-  teamId: z.string().uuid(),
-  email: z.string().email(),
+  teamId: z.uuid(),
+  email: z.email(),
 })
 
 export const addTeamMemberAction = authActionClient
@@ -121,8 +121,8 @@ export const addTeamMemberAction = authActionClient
   })
 
 const RemoveTeamMemberSchema = z.object({
-  teamId: z.string().uuid(),
-  userId: z.string().uuid(),
+  teamId: z.uuid(),
+  userId: z.uuid(),
 })
 
 export const removeTeamMemberAction = authActionClient

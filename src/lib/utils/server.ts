@@ -94,8 +94,8 @@ export async function checkUserTeamAuthorization(
   teamId: string
 ) {
   if (
-    !z.string().uuid().safeParse(userId).success ||
-    !z.string().uuid().safeParse(teamId).success
+    !z.uuid().safeParse(userId).success ||
+    !z.uuid().safeParse(teamId).success
   ) {
     return false
   }
@@ -152,7 +152,7 @@ export function bailOutFromPPR() {
  */
 export async function resolveTeamId(identifier: string): Promise<string> {
   // If identifier is UUID, return directly
-  if (z.string().uuid().safeParse(identifier).success) {
+  if (z.uuid().safeParse(identifier).success) {
     return identifier
   }
 

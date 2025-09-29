@@ -17,7 +17,7 @@ const confirmSchema = z.object({
     'email',
     'email_change',
   ]),
-  next: z.string().url(),
+  next: z.url(),
 })
 
 const normalizeOrigin = (origin: string) =>

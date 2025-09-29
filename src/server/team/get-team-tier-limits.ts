@@ -25,7 +25,7 @@ const MOCK_TIER_LIMITS: TeamTierLimits = {
 }
 
 const GetTeamTierLimitsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getTeamTierLimits = authActionClient

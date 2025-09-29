@@ -9,7 +9,7 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 
 const GetTeamSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getTeam = authActionClient
