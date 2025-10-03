@@ -195,9 +195,6 @@ export async function resolveTeamId(identifier: string): Promise<string> {
  * If the input is a valid UUID, returns it directly.
  * If it's a slug, attempts to resolve it to an ID using Redis cache first, then database.
  *
- * This function should be used in page components rather than client components for better performance,
- * as it avoids unnecessary database queries by checking cookies first.
- *
  * @param identifier - Team UUID or slug
  * @returns Promise<string> - Resolved team ID
  */

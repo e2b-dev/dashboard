@@ -6,7 +6,6 @@ const config = {
   reactStrictMode: true,
   experimental: {
     reactCompiler: true,
-    ppr: true,
     staleTimes: {
       dynamic: 180,
       static: 180,
@@ -14,22 +13,15 @@ const config = {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    clientSegmentCache: true,
   },
   logging: {
     fetches: {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['pino', 'pino-loki'],
+  serverExternalPackages: ['pino'],
   trailingSlash: false,
-  webpack: (config) => {
-    config.module.rules.push({
-      test: /\.node$/,
-      use: 'node-loader',
-    })
-
-    return config
-  },
   headers: async () => [
     {
       source: '/(.*)',
