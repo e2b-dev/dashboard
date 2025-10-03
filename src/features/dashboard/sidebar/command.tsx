@@ -1,6 +1,6 @@
 'use client'
 
-import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
+import { SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
@@ -75,7 +75,7 @@ export default function DashboardSidebarCommand({
         <CommandList className="p-1 pb-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {ALL_DASHBOARD_LINKS.map((link) => (
+            {SIDEBAR_ALL_LINKS.map((link) => (
               <CommandItem
                 key={link.label}
                 onSelect={() => {

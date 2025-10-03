@@ -13,13 +13,13 @@ import { ForwardRefExoticComponent, RefAttributes } from 'react'
 import { INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
-type DashboardNavLinkArgs = {
+type SidebarNavArgs = {
   teamIdOrSlug?: string
 }
 
-export type DashboardNavLink = {
+export type SidebarNavItem = {
   label: string
-  href: (args: DashboardNavLinkArgs) => string
+  href: (args: SidebarNavArgs) => string
   icon: ForwardRefExoticComponent<
     Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
   >
@@ -27,7 +27,7 @@ export type DashboardNavLink = {
   activeMatch?: string
 }
 
-export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
+export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   {
     label: 'Sandboxes',
     href: (args) => PROTECTED_URLS.SANDBOXES(args.teamIdOrSlug!),
@@ -44,7 +44,7 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
     ? [
         {
           label: 'Usage',
-          href: (args: DashboardNavLinkArgs) =>
+          href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.USAGE(args.teamIdOrSlug!),
           icon: Activity,
           activeMatch: `/dashboard/*/usage/**`,
@@ -52,25 +52,24 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
       ]
     : []),
   {
-    label: 'Team',
-    href: (args) => PROTECTED_URLS.TEAM(args.teamIdOrSlug!),
+    label: 'Members',
+    href: (args) => PROTECTED_URLS.MEMBERS(args.teamIdOrSlug!),
     icon: Users,
-    group: 'manage',
-    activeMatch: `/dashboard/*/team/**`,
+    group: 'team',
+    activeMatch: `/dashboard/*/members/**`,
   },
   {
-    label: 'API Keys',
-    href: (args) => PROTECTED_URLS.KEYS(args.teamIdOrSlug!),
+    label: 'Settings',
+    href: (args) => PROTECTED_URLS.SETTINGS(args.teamIdOrSlug!, 'general'),
     icon: Key,
-    group: 'manage',
-    activeMatch: `/dashboard/*/keys/**`,
+    group: 'team',
+    activeMatch: `/dashboard/*/settings/**`,
   },
-
   ...(INCLUDE_BILLING
     ? [
         {
           label: 'Billing',
-          href: (args: DashboardNavLinkArgs) =>
+          href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.BILLING(args.teamIdOrSlug!),
           icon: CreditCard,
           group: 'expenses',
@@ -78,7 +77,7 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
         },
         {
           label: 'Budget',
-          href: (args: DashboardNavLinkArgs) =>
+          href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.BUDGET(args.teamIdOrSlug!),
           group: 'expenses',
           icon: DollarSign,
@@ -88,15 +87,12 @@ export const MAIN_DASHBOARD_LINKS: DashboardNavLink[] = [
     : []),
 ]
 
-export const EXTRA_DASHBOARD_LINKS: DashboardNavLink[] = [
+export const SIDEBAR_EXTRA_LINKS: SidebarNavItem[] = [
   {
     label: 'Account Settings',
-    href: (args) => PROTECTED_URLS.ACCOUNT_SETTINGS,
+    href: () => PROTECTED_URLS.ACCOUNT_SETTINGS,
     icon: UserRoundCog,
   },
 ]
 
-export const ALL_DASHBOARD_LINKS = [
-  ...MAIN_DASHBOARD_LINKS,
-  ...EXTRA_DASHBOARD_LINKS,
-]
+export const SIDEBAR_ALL_LINKS = [...SIDEBAR_MAIN_LINKS, ...SIDEBAR_EXTRA_LINKS]

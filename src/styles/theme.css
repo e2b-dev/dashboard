@@ -33,13 +33,14 @@
 :root {
   --public-nav-height: 50px;
 
-  --protected-nav-height: 50px;
+  --protected-nav-height: 32px;
   --protected-sidebar-width: 0px;
 
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
 
   @media (min-width: 768px) {
+    --protected-nav-height: 52px;
     --protected-sidebar-width: 256px;
   }
 
@@ -260,6 +261,12 @@
 @theme {
   /* Border Radius */
   --radius: 0.375rem;
+
+  /* Sizes */
+  --height-protected-nav: var(--protected-nav-height);
+  --max-height-protected-nav: var(--max-height-protected-nav);
+
+  --width-protected-sidebar: var(--protected-sidebar-width);
 
   /* Colors */
   --color-ring: var(--stroke-active);
