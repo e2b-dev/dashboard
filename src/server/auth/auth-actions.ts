@@ -1,5 +1,6 @@
 'use server'
 
+import { ENABLE_SIGN_UP_RATE_LIMITING } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
@@ -13,11 +14,13 @@ import {
   validateEmail,
 } from '@/server/auth/validate-email'
 import { Provider } from '@supabase/supabase-js'
+import { ipAddress } from '@vercel/functions'
 import { returnValidationErrors } from 'next-safe-action'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
+import { incrementSignUpRateLimit, isSignUpRateLimited } from './ratelimit'
 
 export const signInWithOAuthAction = actionClient
   .schema(
@@ -78,7 +81,11 @@ export const signUpAction = actionClient
   .metadata({ actionName: 'signUp' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
     const supabase = await createClient()
-    const origin = (await headers()).get('origin') || ''
+    const headersStore = await headers()
+
+    const origin = headersStore.get('origin') || ''
+
+    // EMAIL VALIDATION
 
     // basic security check, that password does not equal e-mail
     if (password && email && password.toLowerCase() === email.toLowerCase()) {
@@ -103,6 +110,32 @@ export const signUpAction = actionClient
       }
     }
 
+    // RATE LIMITING
+
+    const ip = ipAddress(headersStore)
+
+    if (ENABLE_SIGN_UP_RATE_LIMITING && process.env.NODE_ENV === 'production') {
+      if (ip && (await isSignUpRateLimited(ip))) {
+        return returnServerError(
+          'Too many sign-up attempts. Please try again later.'
+        )
+      }
+
+      if (!ip) {
+        l.warn(
+          {
+            key: 'sign_up_rate_limit:no_ip_headers',
+            context: {
+              message: 'no ip headers found in production',
+            },
+          },
+          'Tried to rate limit, but no ip headers were found in production.'
+        )
+      }
+    }
+
+    // SIGN UP
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -122,9 +155,21 @@ export const signUpAction = actionClient
           return returnServerError(USER_MESSAGES.emailInUse.message)
         case 'weak_password':
           return returnServerError(USER_MESSAGES.passwordWeak.message)
+        case 'email_address_invalid':
+          return returnServerError(
+            USER_MESSAGES.signUpEmailValidationInvalid.message
+          )
         default:
           throw error
       }
+    }
+
+    if (
+      ENABLE_SIGN_UP_RATE_LIMITING &&
+      process.env.NODE_ENV === 'production' &&
+      ip
+    ) {
+      await incrementSignUpRateLimit(ip)
     }
   })
 

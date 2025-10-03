@@ -1,5 +1,18 @@
 import { z } from 'zod'
 
+const NumericBoolean = z.enum(['1', '0'])
+
+// string that must parse as a positive number
+const StringPositiveNumber = z.string().refine(
+  (val) => {
+    const num = Number(val)
+    return !isNaN(num) && num > 0
+  },
+  {
+    message: 'Must be a string that can be parsed as a positive number',
+  }
+)
+
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   INFRA_API_URL: z.string().url(),
@@ -9,6 +22,10 @@ export const serverSchema = z.object({
 
   BILLING_API_URL: z.string().url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
+
+  ENABLE_SIGN_UP_RATE_LIMITING: NumericBoolean.optional(),
+  SIGN_UP_LIMIT_PER_WINDOW: StringPositiveNumber.optional(),
+  SIGN_UP_WINDOW_HOURS: StringPositiveNumber.optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
@@ -41,10 +58,10 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
-  NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
-  NEXT_PUBLIC_SCAN: z.string().optional(),
-  NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
-  NEXT_PUBLIC_VERBOSE: z.string().optional(),
+  NEXT_PUBLIC_INCLUDE_BILLING: NumericBoolean.optional(),
+  NEXT_PUBLIC_SCAN: NumericBoolean.optional(),
+  NEXT_PUBLIC_MOCK_DATA: NumericBoolean.optional(),
+  NEXT_PUBLIC_VERBOSE: NumericBoolean.optional(),
 })
 
 export const testEnvSchema = z.object({
