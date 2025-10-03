@@ -12,7 +12,7 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
   {
     source: '/change',
     destination:
-      'https://e2bdev.notion.site/Careers-at-E2B-2163f176991f43f69b0984bf2a142920',
+      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=change',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
@@ -21,7 +21,7 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
   {
     source: '/humans',
     destination:
-      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=change',
+      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=humans',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
@@ -30,7 +30,7 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
   {
     source: '/start',
     destination:
-      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=start_ooh',
+      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=start',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
@@ -39,7 +39,7 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
   {
     source: '/machines',
     destination:
-      '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
+      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=machines',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
