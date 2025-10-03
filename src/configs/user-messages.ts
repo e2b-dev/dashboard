@@ -72,6 +72,26 @@ export const USER_MESSAGES = {
   checkCredentials: {
     message: 'Please check your credentials.',
   },
+  googleEmailNotVerified: {
+    message:
+      'Your Google account email is not verified. Please verify your email with Google and try again.',
+    timeoutMs: 30000,
+  },
+  githubEmailNotVerified: {
+    message:
+      'Your GitHub email is not verified. Please verify your email with GitHub and try again.',
+    timeoutMs: 30000,
+  },
+  oauthEmailNotVerified: {
+    message:
+      'Your email is not verified. Please verify your email and try again.',
+    timeoutMs: 30000,
+  },
+  genericEmailNotVerified: {
+    message:
+      'Your email is not verified. Please verify your email and try again.',
+    timeoutMs: 30000,
+  },
 }
 
 export const getTimeoutMsFromUserMessage = (

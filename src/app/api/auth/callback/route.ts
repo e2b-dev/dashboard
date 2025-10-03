@@ -1,7 +1,8 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
-import { encodedRedirect } from '@/lib/utils/auth'
+import { encodedRedirect, isOAuthEmailVerified } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
 import { serializeError } from 'serialize-error'
 
@@ -57,6 +58,59 @@ export async function GET(request: Request) {
         },
         `OTP successfully exchanged for user session`
       )
+
+      // Check email verification only for new users (signup)
+      // Existing users with linked identities can sign in with any provider
+      const isNewUser = data.user.identities?.length === 1
+
+      if (isNewUser) {
+        const emailVerification = isOAuthEmailVerified(data.user)
+
+        if (!emailVerification.verified) {
+          l.warn(
+            {
+              key: 'auth_callback:email_not_verified',
+              user_id: data.user.id,
+              provider: emailVerification.provider,
+              reason: emailVerification.reason,
+            },
+            `User OAuth email not verified: ${emailVerification.reason}`
+          )
+
+          // Sign out the user since they don't have a verified email
+          await supabase.auth.signOut()
+
+          // Redirect with appropriate error message based on provider
+          let errorMessage: string
+          if (emailVerification.provider === 'google') {
+            errorMessage = USER_MESSAGES.googleEmailNotVerified.message
+          } else if (emailVerification.provider === 'github') {
+            errorMessage = USER_MESSAGES.githubEmailNotVerified.message
+          } else if (emailVerification.provider) {
+            errorMessage = USER_MESSAGES.oauthEmailNotVerified.message
+          } else {
+            errorMessage = USER_MESSAGES.genericEmailNotVerified.message
+          }
+
+          throw encodedRedirect('error', AUTH_URLS.SIGN_IN, errorMessage)
+        }
+
+        l.info(
+          {
+            key: 'auth_callback:email_verified',
+            user_id: data.user.id,
+          },
+          `User OAuth email verified successfully`
+        )
+      } else {
+        l.info(
+          {
+            key: 'auth_callback:existing_user',
+            user_id: data.user.id,
+          },
+          `Existing user sign-in, skipping email verification check`
+        )
+      }
     }
   }
 
