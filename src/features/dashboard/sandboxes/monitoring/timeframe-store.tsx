@@ -13,8 +13,14 @@ import {
   TEAM_METRICS_INITIAL_RANGE_MS,
   TEAM_METRICS_TIMEFRAME_UPDATE_MS,
 } from '@/configs/intervals'
-import { useChartRegistry } from '@/lib/hooks/use-connected-charts'
 import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
+
+/**
+ * Zustand store for managing the selected time range (start/end) for team metrics charts.
+ * - Persists timeframe in the URL for shareability and browser navigation support.
+ * - Provides hooks for reading/updating the timeframe and for live mode updates.
+ * - Exposes derived state (isLive, duration) for consumers.
+ */
 
 interface TeamMetricsState {
   // just store start and end timestamps
@@ -217,12 +223,6 @@ export const useTeamMetricsStore = create<Store>()(
   )
 )
 
-// hook for chart registration
-export const useChartActions = () => {
-  const { registerChart, unregisterChart } = useChartRegistry()
-  return { registerChart, unregisterChart }
-}
-
 // hook to handle browser navigation
 export const useMetricsHistoryListener = () => {
   useEffect(() => {
@@ -238,18 +238,16 @@ export const useMetricsHistoryListener = () => {
 }
 
 // main hook for components
-export const useTeamMetrics = () => {
+export const useTimeframe = () => {
   const start = useTeamMetricsStore((state) => state.start)
   const end = useTeamMetricsStore((state) => state.end)
+
   const setTimeRange = useTeamMetricsStore((state) => state.setTimeRange)
   const setCustomRange = useTeamMetricsStore((state) => state.setCustomRange)
-  const { registerChart, unregisterChart } = useChartActions()
+  const updateLiveEnd = useTeamMetricsStore((state) => state.updateLiveEnd)
 
   // set up browser history listener
   useMetricsHistoryListener()
-
-  // manage live updates lifecycle
-  useLiveUpdates()
 
   // compute derived state with stable reference
   const timeframe = useMemo(() => {
@@ -266,53 +264,26 @@ export const useTeamMetrics = () => {
       start,
       end,
       isLive,
+      duration,
     }
   }, [start, end])
+
+  // manage live polling directly in React (single interval per component tree)
+  useEffect(() => {
+    if (!timeframe.isLive) return
+
+    const interval = setInterval(() => {
+      updateLiveEnd()
+    }, TEAM_METRICS_TIMEFRAME_UPDATE_MS)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [timeframe.isLive, updateLiveEnd])
 
   return {
     timeframe,
     setTimeRange,
     setCustomRange,
-    // compatibility methods for smooth transition
-    setLiveMode: (range: number) => {
-      const now = getStableNow()
-      setCustomRange(now - range, now)
-    },
-    setStaticMode: setCustomRange,
-    registerChart,
-    unregisterChart,
   }
-}
-
-let liveUpdateInterval: ReturnType<typeof setInterval> | null = null
-let subscriberCount = 0
-
-const startLiveUpdates = () => {
-  if (!liveUpdateInterval && typeof window !== 'undefined') {
-    liveUpdateInterval = setInterval(() => {
-      useTeamMetricsStore.getState().updateLiveEnd()
-    }, TEAM_METRICS_TIMEFRAME_UPDATE_MS)
-  }
-}
-
-const stopLiveUpdates = () => {
-  if (liveUpdateInterval) {
-    clearInterval(liveUpdateInterval)
-    liveUpdateInterval = null
-  }
-}
-
-export const useLiveUpdates = () => {
-  useEffect(() => {
-    subscriberCount++
-    startLiveUpdates()
-
-    return () => {
-      subscriberCount--
-
-      if (subscriberCount === 0) {
-        stopLiveUpdates()
-      }
-    }
-  }, [])
 }
