@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     title: METADATA.title,
     description: METADATA.description,
     siteName: 'E2B',
-    url: '/',
+    url: E2B_DOMAIN,
   },
   robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
 }
