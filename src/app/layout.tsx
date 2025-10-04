@@ -3,7 +3,6 @@ import '@/styles/globals.css'
 
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { METADATA } from '@/configs/metadata'
-import { BASE_URL } from '@/configs/urls'
 import ClientProviders from '@/features/client-providers'
 import { GeneralAnalyticsCollector } from '@/features/general-analytics-collector'
 import { GTMHead } from '@/features/google-tag-manager'
@@ -15,8 +14,13 @@ import { Metadata } from 'next/types'
 import { Suspense } from 'react'
 import { Body } from './layout.client'
 
+// only for metadata purposes
+// we want to ensure to point to our main
+//  domain, no matter the environment
+const E2B_DOMAIN = 'https://e2b.dev'
+
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(E2B_DOMAIN),
   title: {
     template: '%s - E2B',
     default: METADATA.title,
@@ -30,7 +34,7 @@ export const metadata: Metadata = {
     title: METADATA.title,
     description: METADATA.description,
     siteName: 'E2B',
-    url: 'https://e2b.dev',
+    url: '/',
   },
   robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
 }
