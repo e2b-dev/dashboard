@@ -29,6 +29,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: METADATA.title,
     description: METADATA.description,
+    siteName: 'E2B',
+    url: 'https://e2b.dev',
   },
   robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
 }
