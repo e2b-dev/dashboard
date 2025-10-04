@@ -1,4 +1,4 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'

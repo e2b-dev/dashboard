@@ -1,0 +1,51 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "src/app/**/*.{ts,tsx}",
+    "src/middleware.ts",
+    "src/instrumentation.ts",
+    "src/instrumentation.node.ts",
+    "next.config.mjs",
+    "postcss.config.js",
+    "eslint.config.mjs",
+    "vitest.config.ts",
+    "scripts/**/*.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.ts"
+  ],
+  "ignore": [
+    "src/types/**/*.d.ts",
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}"
+  ],
+  "ignoreDependencies": [
+    "prettier-plugin-*",
+    "eslint-plugin-*",
+    "eslint-config-*",
+    "autoprefixer",
+    "postcss",
+    "postcss-import",
+    "tailwindcss",
+    "tailwindcss-animate",
+    "node-loader",
+    "babel-plugin-react-compiler",
+    "@vitest/coverage-v8",
+    "@vitest/ui",
+    "pino-pretty"
+  ],
+  "next": {
+    "entry": [
+      "src/app/**/*.{ts,tsx}!",
+      "src/middleware.ts",
+      "src/instrumentation.ts"
+    ]
+  },
+  "vitest": {
+    "entry": [
+      "vitest.config.ts",
+      "src/__test__/setup.ts"
+    ]
+  }
+}
