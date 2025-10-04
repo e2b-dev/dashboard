@@ -16,7 +16,7 @@ import { Body } from './layout.client'
 
 // only for metadata purposes
 // we want to ensure to point to our main
-//  domain, no matter the environment
+// domain, no matter the environment
 const E2B_DOMAIN = 'https://e2b.dev'
 
 export const metadata: Metadata = {
