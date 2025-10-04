@@ -1,4 +1,5 @@
 import { COOKIE_KEYS } from '@/configs/keys'
+import { METADATA } from '@/configs/metadata'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import { ServerContextProvider } from '@/features/dashboard/server-context'
@@ -20,6 +21,7 @@ interface DashboardLayoutProps {
 }
 
 export const metadata: Metadata = {
+  ...METADATA,
   robots: {
     index: false,
     follow: false,
