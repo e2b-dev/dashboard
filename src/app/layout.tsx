@@ -14,28 +14,8 @@ import { Metadata } from 'next/types'
 import { Suspense } from 'react'
 import { Body } from './layout.client'
 
-// only for metadata purposes
-// we want to ensure to point to our main
-// domain, no matter the environment
-const E2B_DOMAIN = 'https://e2b.dev'
-
 export const metadata: Metadata = {
-  metadataBase: new URL(E2B_DOMAIN),
-  title: {
-    template: '%s - E2B',
-    default: METADATA.title,
-  },
-  description: METADATA.description,
-  twitter: {
-    title: METADATA.title,
-    description: METADATA.description,
-  },
-  openGraph: {
-    title: METADATA.title,
-    description: METADATA.description,
-    siteName: 'E2B',
-    url: E2B_DOMAIN,
-  },
+  ...METADATA,
   robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
 }
 
