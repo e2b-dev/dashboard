@@ -10,13 +10,17 @@ import { Toaster } from '@/ui/primitives/toaster'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Head from 'next/head'
-import { Metadata } from 'next/types'
 import { Suspense } from 'react'
 import { Body } from './layout.client'
 
-export const metadata: Metadata = {
-  ...METADATA,
-  robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
+export const generateMetadata = () => {
+  return {
+    title: METADATA.title,
+    description: METADATA.description,
+    openGraph: METADATA.openGraph,
+    twitter: METADATA.twitter,
+    robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
+  }
 }
 
 export default function RootLayout({
