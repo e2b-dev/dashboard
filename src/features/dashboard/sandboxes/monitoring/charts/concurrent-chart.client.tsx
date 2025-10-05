@@ -88,14 +88,14 @@ export default function ConcurrentChartClient({
       <div className="flex flex-col gap-2">
         <div className="prose-label-highlight uppercase max-md:text-sm flex justify-between items-center">
           <span>Concurrent sandboxes</span>
-          <ReactiveLiveBadge show={isPolling} />
+          <ReactiveLiveBadge suppressHydrationWarning show={isPolling} />
         </div>
         <div className="flex justify-between max-md:flex-col max-md:gap-2">
           <div className="inline-flex items-end gap-2">
             <span className="prose-value-big max-md:text-2xl">
               {formatAxisNumber(centralValue)}
             </span>
-            <span className="label-tertiary max-md:text-xs">
+            <span className="text-fg-tertiary prose-label uppercase max-md:text-xs">
               <span className="max-md:hidden">average over range</span>
               <span className="md:hidden">avg over range</span>
             </span>

@@ -633,7 +633,3 @@
   font-size: 1.5rem;
 }
 
-/* Composits */
-.label-tertiary {
-  @apply prose-label text-fg-tertiary uppercase;
-}

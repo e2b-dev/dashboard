@@ -3,7 +3,7 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { createContext, ReactNode, useContext, useMemo } from 'react'
 import useSWR from 'swr'
-import { useTimeframe } from './timeframe-store'
+import { useTimeframe } from './hooks/use-timeframe'
 
 interface TeamMetricsChartsContextValue
   extends ReturnType<typeof useTimeframe> {
@@ -29,7 +29,7 @@ export function TeamMetricsChartsProvider({
   initialData,
   children,
 }: TeamMetricsChartsProviderProps) {
-  const { timeframe, ...timeframeStateRest } = useTimeframe()
+  const { timeframe, setTimeRange, setCustomRange } = useTimeframe()
 
   const { data, error, isLoading, isValidating } = useSWR<TeamMetricsResponse>(
     [`/api/teams/${teamId}/metrics`, timeframe.start, timeframe.end],
@@ -74,9 +74,18 @@ export function TeamMetricsChartsProvider({
       isValidating,
       isPolling: timeframe.isLive,
       timeframe,
-      ...timeframeStateRest,
+      setTimeRange,
+      setCustomRange,
     }),
-    [data, error, isLoading, isValidating, timeframe, timeframeStateRest]
+    [
+      data,
+      error,
+      isLoading,
+      isValidating,
+      timeframe,
+      setTimeRange,
+      setCustomRange,
+    ]
   )
 
   return (

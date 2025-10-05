@@ -183,11 +183,13 @@ export default function TeamMetricsChart({
 
   // build complete echarts option once
   const option = useMemo<EChartsOption>(() => {
-    const yAxisMax = calculateYAxisMax(
-      chartData,
-      config.yAxisScaleFactor,
-      concurrentLimit
-    )
+    // calculate y-axis max based on data only
+    let yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
+
+    // ensure limit line is visible if it exceeds calculated max
+    if (concurrentLimit !== undefined && concurrentLimit > yAxisMax) {
+      yAxisMax = Math.round(concurrentLimit * 1.1)
+    }
 
     const seriesData = buildSeriesData(chartData)
     const isLive = hasLiveData(chartData)
@@ -259,7 +261,7 @@ export default function TeamMetricsChart({
     return {
       ...STATIC_ECHARTS_CONFIG,
       grid: {
-        top: 0,
+        top: 10,
         right: 5,
         bottom: 0,
         left: 40,

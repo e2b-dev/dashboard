@@ -50,5 +50,4 @@ export const STATIC_ECHARTS_CONFIG = {
 } as const
 
 export const AXIS_SPLIT_NUMBER = 2
-export const LIMIT_LINE_PADDING = 1.1
 export const LIVE_PADDING_MULTIPLIER = 1

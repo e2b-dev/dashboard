@@ -33,41 +33,36 @@ describe('team-metrics-chart-utils', () => {
   })
 
   describe('calculateYAxisMax', () => {
-    it('should round to nice numbers without limit', () => {
+    it('should round to nice numbers based on data', () => {
       const data = [
         { x: 1, y: 80 },
         { x: 2, y: 100 },
         { x: 3, y: 60 },
       ]
+      // max = 100, scale = 1.25 → 125 → snap to 150
       expect(calculateYAxisMax(data, 1.25)).toBe(150)
-    })
-
-    it('should show limit with padding when data is at or below limit', () => {
-      const data = [
-        { x: 1, y: 80 },
-        { x: 2, y: 100 },
-        { x: 3, y: 60 },
-      ]
-      expect(calculateYAxisMax(data, 1.25, 100)).toBe(110)
-    })
-
-    it('should apply limit padding when data exceeds limit', () => {
-      const data = [
-        { x: 1, y: 120 },
-        { x: 2, y: 140 },
-        { x: 3, y: 130 },
-      ]
-      expect(calculateYAxisMax(data, 1.25, 100)).toBe(200)
     })
 
     it('should use custom scale factor', () => {
       const data = [{ x: 1, y: 100 }]
+      // max = 100, scale = 1.5 → 150
       expect(calculateYAxisMax(data, 1.5)).toBe(150)
     })
 
-    it('should apply padding for empty data with limit', () => {
+    it('should snap to nice values for different ranges', () => {
+      // small values < 10
+      expect(calculateYAxisMax([{ x: 1, y: 5 }], 1.5)).toBe(8) // 7.5 → ceil to 8
+
+      // values 10-100
+      expect(calculateYAxisMax([{ x: 1, y: 50 }], 1.5)).toBe(80) // 75 → snap to 80
+
+      // values 100-1000
+      expect(calculateYAxisMax([{ x: 1, y: 500 }], 1.5)).toBe(750) // 750 → snap to 750
+    })
+
+    it('should return default for empty data', () => {
       const data: Array<{ x: number; y: number }> = []
-      expect(calculateYAxisMax(data, 1.25, 100)).toBe(110)
+      expect(calculateYAxisMax(data, 1.25)).toBe(1)
     })
   })
 

@@ -24,7 +24,11 @@ function BaseCard({ children }: { children: React.ReactNode }) {
 }
 
 function BaseSubtitle({ children }: { children: React.ReactNode }) {
-  return <span className="label-tertiary text-center">{children}</span>
+  return (
+    <span className="text-fg-tertiary prose-label uppercase text-center">
+      {children}
+    </span>
+  )
 }
 
 function BaseErrorTooltip({ children }: { children: React.ReactNode }) {

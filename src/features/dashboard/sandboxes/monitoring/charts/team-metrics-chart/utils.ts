@@ -1,6 +1,6 @@
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
-import { TeamMetricDataPoint } from './types'
+import type { TeamMetricDataPoint } from './types'
 
 /**
  * Transform metrics array to chart data points
@@ -47,7 +47,7 @@ function calculateMedian(data: TeamMetricDataPoint[]): number {
   const len = data.length
   if (len === 0) return 0
 
-  // use Float64Array for faster sorting
+  // Float64Array for faster sorting
   const values = new Float64Array(len)
   for (let i = 0; i < len; i++) {
     values[i] = data[i]!.y
@@ -71,14 +71,14 @@ export function calculateCentralTendency(
 
 /**
  * Calculate y-axis max with snapping to nice values
+ * Always based on data, independent of any limit lines
  */
 export function calculateYAxisMax(
   data: TeamMetricDataPoint[],
-  scaleFactor: number,
-  limit?: number
+  scaleFactor: number
 ): number {
   if (data.length === 0) {
-    return limit !== undefined ? Math.round(limit * 1.1) : 10
+    return 1
   }
 
   // find max in single pass
@@ -96,13 +96,7 @@ export function calculateYAxisMax(
     return Math.ceil(value / 1000) * 1000
   }
 
-  if (limit !== undefined) {
-    if (max > limit) {
-      return snapToAxis(max * 1.1)
-    }
-    return Math.round(limit * 1.1)
-  }
-
+  // always ensure limit line is visible if it exists below calculated max
   return snapToAxis(max * scaleFactor)
 }
 

@@ -2,8 +2,8 @@ import {
   SandboxesMonitoringPageParams,
   SandboxesMonitoringPageSearchParams,
 } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { parseAndCreateTimeframe } from '@/lib/utils/timeframe'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 import { Suspense } from 'react'
@@ -43,16 +43,22 @@ async function TeamMetricsChartsResolver({
   searchParams,
 }: TeamMetricsChartsProps) {
   const { teamIdOrSlug } = await params
-  const { plot } = await searchParams
+  const { start: startParam, end: endParam } = await searchParams
 
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-  const timeframe = parseAndCreateTimeframe(plot)
+
+  // parse start/end from URL params with defaults
+  const now = Date.now()
+  const start = startParam
+    ? parseInt(startParam, 10)
+    : now - TEAM_METRICS_INITIAL_RANGE_MS
+  const end = endParam ? parseInt(endParam, 10) : now
 
   const [teamMetricsResult, tierLimitsResult] = await Promise.all([
     getTeamMetrics({
       teamId,
-      startDate: timeframe.start,
-      endDate: timeframe.end,
+      startDate: start,
+      endDate: end,
     }),
     getTeamTierLimits({ teamId }),
   ])

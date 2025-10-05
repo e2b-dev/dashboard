@@ -29,15 +29,13 @@ export default function StartRateChartClient() {
       <div className="flex flex-col gap-2">
         <div className="prose-label-highlight uppercase max-md:text-sm flex justify-between items-center w-full">
           <span>Start Rate per Second</span>
-          <ReactiveLiveBadge
-            show={isPolling}
-          />
+          <ReactiveLiveBadge show={isPolling} />
         </div>
         <div className="inline-flex items-end gap-2 md:gap-3">
           <span className="prose-value-big max-md:text-2xl">
             {formatDecimal(centralValue, 3)}
           </span>
-          <span className="label-tertiary max-md:text-xs">
+          <span className="text-fg-tertiary prose-label uppercase max-md:text-xs">
             <span className="max-md:hidden">median over range</span>
             <span className="md:hidden">med over range</span>
           </span>

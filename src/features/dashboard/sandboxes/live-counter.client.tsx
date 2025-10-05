@@ -67,12 +67,11 @@ export function LiveSandboxCounterClient({
       fallbackData: initialData,
       shouldRetryOnError: false,
       refreshInterval: polling ? TEAM_METRICS_POLLING_INTERVAL_MS : 0,
-      dedupingInterval: 10000, // dedupe requests within 10s
       keepPreviousData: true,
-      revalidateOnMount: true,
+      revalidateOnMount: false,
       revalidateIfStale: true,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
   )
 

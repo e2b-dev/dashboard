@@ -6,7 +6,8 @@ export interface SandboxesMonitoringPageParams {
 }
 
 export interface SandboxesMonitoringPageSearchParams {
-  plot?: string
+  start?: string
+  end?: string
 }
 
 interface SandboxesMonitoringPageProps {
