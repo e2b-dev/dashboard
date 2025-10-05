@@ -29,6 +29,11 @@ export const PROTECTED_URLS = {
   RESET_PASSWORD: '/dashboard/account',
 }
 
+export const RESOLVER_URLS = {
+  INSPECT_SANDBOX: (sandboxId: string) =>
+    `/dashboard/inspect/sandbox/${sandboxId}`,
+}
+
 export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
