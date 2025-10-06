@@ -44,11 +44,6 @@ const {
   VERCEL_REGION,
   VERCEL_DEPLOYMENT_ID,
   VERCEL_GIT_COMMIT_SHA,
-  VERCEL_GIT_COMMIT_MESSAGE,
-  VERCEL_GIT_COMMIT_AUTHOR_NAME,
-  VERCEL_GIT_REPO_SLUG,
-  VERCEL_GIT_REPO_OWNER,
-  VERCEL_GIT_PROVIDER,
 } = process.env
 
 const sdk = new NodeSDK({
@@ -71,19 +66,6 @@ const sdk = new NodeSDK({
     ...(VERCEL_GIT_COMMIT_SHA && {
       'vercel.git.commit_sha': VERCEL_GIT_COMMIT_SHA,
     }),
-    ...(VERCEL_GIT_COMMIT_MESSAGE && {
-      'vercel.git.commit_message': VERCEL_GIT_COMMIT_MESSAGE,
-    }),
-    ...(VERCEL_GIT_COMMIT_AUTHOR_NAME && {
-      'vercel.git.commit_author': VERCEL_GIT_COMMIT_AUTHOR_NAME,
-    }),
-    ...(VERCEL_GIT_REPO_SLUG && {
-      'vercel.git.repo_slug': VERCEL_GIT_REPO_SLUG,
-    }),
-    ...(VERCEL_GIT_REPO_OWNER && {
-      'vercel.git.repo_owner': VERCEL_GIT_REPO_OWNER,
-    }),
-    ...(VERCEL_GIT_PROVIDER && { 'vercel.git.provider': VERCEL_GIT_PROVIDER }),
   }),
   traceExporter: new OTLPTraceExporter({
     url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,
@@ -105,6 +87,41 @@ const sdk = new NodeSDK({
       // disable `instrumentation-fs` because it's bloating the traces
       '@opentelemetry/instrumentation-fs': {
         enabled: false,
+      },
+      '@opentelemetry/instrumentation-http': {
+        requestHook: (span, request) => {
+          // capture forwarded ip headers from incoming requests
+          if ('headers' in request && request.headers) {
+            const headers = request.headers
+            if (headers['x-forwarded-for']) {
+              span.setAttribute(
+                'http.client_ip.forwarded',
+                headers['x-forwarded-for']
+              )
+            }
+            if (headers['x-real-ip']) {
+              span.setAttribute('http.client_ip.real', headers['x-real-ip'])
+            }
+            if (headers['cf-connecting-ip']) {
+              span.setAttribute(
+                'http.client_ip.cloudflare',
+                headers['cf-connecting-ip']
+              )
+            }
+            if (headers['x-forwarded-proto']) {
+              span.setAttribute(
+                'http.forwarded.proto',
+                headers['x-forwarded-proto']
+              )
+            }
+            if (headers['x-forwarded-host']) {
+              span.setAttribute(
+                'http.forwarded.host',
+                headers['x-forwarded-host']
+              )
+            }
+          }
+        },
       },
     }),
     new FetchInstrumentation(),
