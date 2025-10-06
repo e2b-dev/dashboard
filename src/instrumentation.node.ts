@@ -88,41 +88,6 @@ const sdk = new NodeSDK({
       '@opentelemetry/instrumentation-fs': {
         enabled: false,
       },
-      '@opentelemetry/instrumentation-http': {
-        requestHook: (span, request) => {
-          // capture forwarded ip headers from incoming requests
-          if ('headers' in request && request.headers) {
-            const headers = request.headers
-            if (headers['x-forwarded-for']) {
-              span.setAttribute(
-                'http.client_ip.forwarded',
-                headers['x-forwarded-for']
-              )
-            }
-            if (headers['x-real-ip']) {
-              span.setAttribute('http.client_ip.real', headers['x-real-ip'])
-            }
-            if (headers['cf-connecting-ip']) {
-              span.setAttribute(
-                'http.client_ip.cloudflare',
-                headers['cf-connecting-ip']
-              )
-            }
-            if (headers['x-forwarded-proto']) {
-              span.setAttribute(
-                'http.forwarded.proto',
-                headers['x-forwarded-proto']
-              )
-            }
-            if (headers['x-forwarded-host']) {
-              span.setAttribute(
-                'http.forwarded.host',
-                headers['x-forwarded-host']
-              )
-            }
-          }
-        },
-      },
     }),
     new FetchInstrumentation(),
   ],
