@@ -1,3 +1,5 @@
+import { withBotId } from 'botid/next/config';
+
 /** @type {import('next').NextConfig} */
 const config = {
   eslint: {
@@ -82,4 +84,6 @@ const config = {
   skipTrailingSlashRedirect: true,
 }
 
-export default config
+const exportedConfig = process.env.NEXT_PUBLIC_USE_BOT_ID === '1' ? withBotId(config) : config
+
+export default exportedConfig

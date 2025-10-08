@@ -10,10 +10,18 @@ import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { BotIdClient } from 'botid/client'
 import Head from 'next/head'
 import { Metadata } from 'next/types'
 import { Suspense } from 'react'
 import { Body } from './layout.client'
+
+const protectedRoutes = [
+  {
+    path: '/sign-up',
+    method: 'POST',
+  },
+]
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -42,6 +50,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <Head>
         <GTMHead />
+        <BotIdClient protect={protectedRoutes} />
       </Head>
       <Body>
         <ClientProviders>

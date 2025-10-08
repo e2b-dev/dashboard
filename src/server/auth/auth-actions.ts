@@ -1,5 +1,6 @@
 'use server'
 
+import { USE_BOT_ID } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
@@ -12,17 +13,19 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
-import { Provider } from '@supabase/supabase-js'
+import { checkBotId } from 'botid/server'
 import { returnValidationErrors } from 'next-safe-action'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
+const ProviderSchema = z.enum(['google', 'github'])
+
 export const signInWithOAuthAction = actionClient
   .schema(
     z.object({
-      provider: z.string() as unknown as z.ZodType<Provider>,
+      provider: ProviderSchema,
       returnTo: relativeUrlSchema.optional(),
     })
   )
@@ -89,6 +92,40 @@ export const signUpAction = actionClient
       })
     }
 
+    // bot detection
+    if (USE_BOT_ID) {
+      const verification = await checkBotId()
+
+      if (verification.isBot) {
+        l.warn(
+          {
+            key: 'sign_up_action:bot_detection_triggered',
+            context: {
+              email,
+              verification,
+            },
+          },
+          `Bot detection prevented sign up for: ${email}`
+        )
+
+        return returnServerError(
+          'Access denied. Please contact support if this issue persists.'
+        )
+      } else {
+        l.info(
+          {
+            key: 'sign_up_action:bot_detection_passed',
+            context: {
+              email,
+              verification,
+            },
+          },
+          `Bot detection passed sign up for: ${email}`
+        )
+      }
+    }
+
+    // email validation
     const validationResult = await validateEmail(email)
 
     if (validationResult?.data) {
@@ -103,6 +140,7 @@ export const signUpAction = actionClient
       }
     }
 
+    // sign up
     const { error } = await supabase.auth.signUp({
       email,
       password,

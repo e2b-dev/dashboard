@@ -86,6 +86,7 @@
     "@vercel/otel": "^1.13.0",
     "@vercel/speed-insights": "^1.2.0",
     "ansis": "^3.17.0",
+    "botid": "^1.5.8",
     "cheerio": "^1.0.0",
     "chrono-node": "^2.8.4",
     "class-variance-authority": "^0.7.1",
