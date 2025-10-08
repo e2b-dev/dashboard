@@ -56,10 +56,10 @@ export function CreateTeamDialog({
     },
     actionProps: {
       onError: async ({ error }) => {
-        toast(defaultErrorToast(error.serverError || 'Failed to create team.'))
+        toast(defaultErrorToast(error.serverError || 'Failed to create team'))
       },
       onSuccess: async (result) => {
-        toast(defaultSuccessToast('Team was created.'))
+        toast(defaultSuccessToast('Team was created'))
 
         if (result.data && result.data.slug) {
           router.push(PROTECTED_URLS.SANDBOXES(result.data.slug))
