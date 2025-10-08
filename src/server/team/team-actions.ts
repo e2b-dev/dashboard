@@ -6,7 +6,7 @@ import { authActionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { returnServerError } from '@/lib/utils/action'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
 import { CreateTeamsResponse } from '@/types/billing'
@@ -209,9 +209,14 @@ export const createTeamAction = authActionClient
     })
 
     if (!response.ok) {
+      const status = response.status
       const error = await response.json()
 
-      throw new Error(error?.message ?? 'Failed to create team')
+      if (status === 400) {
+        return returnServerError(error?.message ?? 'Failed to create team')
+      }
+
+      return handleDefaultInfraError(status)
     }
 
     revalidatePath('/dashboard', 'layout')

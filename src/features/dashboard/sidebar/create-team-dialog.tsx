@@ -1,7 +1,11 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  toast,
+} from '@/lib/hooks/use-toast'
 import { createTeamAction } from '@/server/team/team-actions'
 import { CreateTeamSchema } from '@/server/team/types'
 import { Button } from '@/ui/primitives/button'
@@ -51,6 +55,9 @@ export function CreateTeamDialog({
       },
     },
     actionProps: {
+      onError: async ({ error }) => {
+        toast(defaultErrorToast(error.serverError || 'Failed to create team.'))
+      },
       onSuccess: async (result) => {
         toast(defaultSuccessToast('Team was created.'))
 
