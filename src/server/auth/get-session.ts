@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/clients/supabase/server'
-import 'server-cli-only'
+import 'server-only'
 
 /**
  * Retrieves the current user session from Supabase authentication in an insecure way.

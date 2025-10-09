@@ -1,4 +1,4 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'

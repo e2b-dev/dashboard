@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import { TerminalIcon } from 'lucide-react'
 import { type HTMLAttributes } from 'react'
-import { IconBaseProps } from 'react-icons/lib'
 
 export function IconContainer({
   icon: Icon,
@@ -27,7 +26,7 @@ export function IconContainer({
   )
 }
 
-export function PiSmileyStarEyesFill({ size = '32px' }: IconBaseProps) {
+export function PiSmileyStarEyesFill({ size = '32px' }) {
   return (
     <svg
       width={size}
@@ -47,7 +46,7 @@ export function PiSmileyStarEyesFill({ size = '32px' }: IconBaseProps) {
   )
 }
 
-export function PiSmileyHeartEyesFill({ size = '32px' }: IconBaseProps) {
+export function PiSmileyHeartEyesFill({ size = '32px' }) {
   return (
     <svg
       width={size}

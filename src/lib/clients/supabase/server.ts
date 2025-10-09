@@ -1,4 +1,4 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { Database } from '@/types/database.types'
 import { createServerClient } from '@supabase/ssr'

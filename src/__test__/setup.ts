@@ -26,3 +26,7 @@ vi.mock('@/lib/clients/logger', () => ({
     debug: console.info,
   },
 }))
+
+vi.mock('server-only', () => {
+  return {}
+})
