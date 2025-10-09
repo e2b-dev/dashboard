@@ -8,9 +8,14 @@ import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { NonUndefined } from 'react-hook-form'
 import useSWR from 'swr'
-import { fillTeamMetricsWithZeros } from '../utils'
 
-// header metrics always show last 60 seconds regardless of selected time range
+/**
+ * SWR hook for fetching and caching team header metrics for the last 60 seconds.
+ * Always fetches the most recent 60s window, regardless of selected time range.
+ *
+ * @param initialData - Initial metrics data for hydration (from server or SSR)
+ * @returns SWR response object with latest team metrics data
+ */
 export default function useHeaderMetricsSWR(
   initialData: NonUndefined<
     InferSafeActionFnResult<typeof getTeamMetrics>['data']
@@ -48,23 +53,7 @@ export default function useHeaderMetricsSWR(
         throw new Error(error || 'Failed to fetch metrics')
       }
 
-      const data = (await response.json()) as TeamMetricsResponse
-
-      if (!data.metrics) {
-        return
-      }
-
-      const filledMetrics = fillTeamMetricsWithZeros(
-        data.metrics,
-        fetchStart,
-        fetchEnd,
-        data.step
-      )
-
-      return {
-        ...data,
-        metrics: filledMetrics,
-      }
+      return (await response.json()) as TeamMetricsResponse
     },
     {
       fallbackData: initialData,
