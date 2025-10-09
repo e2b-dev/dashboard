@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { l } from './lib/clients/logger/logger'
+import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
 import {
   getAuthRedirect,
@@ -14,6 +15,22 @@ import {
 
 export async function middleware(request: NextRequest) {
   try {
+    // Redirects, that require custom headers
+    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
+    const middlewareRedirect = getMiddlewareRedirectFromPath(
+      request.nextUrl.pathname
+    )
+
+    if (middlewareRedirect) {
+      const headers = new Headers(middlewareRedirect.headers)
+      const url = new URL(middlewareRedirect.destination, request.url)
+
+      return NextResponse.redirect(url, {
+        status: middlewareRedirect.statusCode,
+        headers,
+      })
+    }
+
     // Catch-all route rewrite paths should not be handled by middleware
     // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
     const { config: routeRewriteConfig } = getRewriteForPath(

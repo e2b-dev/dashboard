@@ -1,5 +1,17 @@
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
+import { METADATA } from '@/configs/metadata'
 import { cn } from '@/lib/utils'
 import { GridPattern } from '@/ui/grid-pattern'
+
+const robots = ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow'
+
+export const metadata = {
+  title: METADATA.title,
+  description: METADATA.description,
+  openGraph: METADATA.openGraph,
+  twitter: METADATA.twitter,
+  robots: robots,
+}
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
