@@ -78,7 +78,7 @@ export const addTeamMemberAction = authActionClient
 
     if (!existingUser) {
       return returnServerError(
-        'User with this email does not exist. Account must be registered first.'
+        'User with this email address does not exist. Please ask them to sign up first and try again.'
       )
     }
 
