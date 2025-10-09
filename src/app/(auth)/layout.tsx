@@ -3,7 +3,7 @@ import { METADATA } from '@/configs/metadata'
 import { cn } from '@/lib/utils'
 import { GridPattern } from '@/ui/grid-pattern'
 
-const robots = ALLOW_SEO_INDEXING ? 'noindex, nofollow' : 'index, follow'
+const robots = ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow'
 
 export const metadata = {
   title: METADATA.title,
