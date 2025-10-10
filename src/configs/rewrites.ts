@@ -1,8 +1,9 @@
 import { DomainConfig } from '@/types/rewrites.types'
 
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
-export const DOCS_NEXT_DOMAIN = 'e2b-docs.vercel.app'
-export const STAGING_DOCS_NEXT_DOMAIN = 'e2b-docs.dev'
+export const SDK_REFERENCE_DOMAIN = 'e2b-docs.vercel.app'
+// NOTE: DOCUMENTATION_DOMAIN has to be defined in next.config.mjs, such that we are able to use it there
+import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Currently we have two locations for rewrites to happen.
 
@@ -38,13 +39,17 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
 ]
 
 // Middleware native rewrite config
+// we implemented this custom, instead of the next.config.js rewrites,
+// because of cloudflare-nextjs security blockage on cloudflare's side.
+
+// TODO: re-evaluate if this is still needed
 export const MIDDLEWARE_REWRITE_CONFIG: DomainConfig[] = [
   {
-    domain: DOCS_NEXT_DOMAIN,
+    domain: SDK_REFERENCE_DOMAIN,
     rules: [{ path: '/docs/sdk-reference' }],
   },
   {
-    domain: STAGING_DOCS_NEXT_DOMAIN,
-    rules: [{ path: '/docs' }],
+    domain: DOCUMENTATION_DOMAIN,
+    rules: [{ path: '/docs' }, { path: '/mcp' }],
   },
 ]

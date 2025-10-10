@@ -9,14 +9,14 @@
 
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import {
-  DOCS_NEXT_DOMAIN,
   LANDING_PAGE_DOMAIN,
   ROUTE_REWRITE_CONFIG,
-  STAGING_DOCS_NEXT_DOMAIN,
+  SDK_REFERENCE_DOMAIN,
 } from '@/configs/rewrites'
 import { DomainConfig } from '@/types/rewrites.types'
 import { XMLParser } from 'fast-xml-parser'
 import { MetadataRoute } from 'next'
+import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Cache the sitemap for 15 minutes (in seconds)
 const SITEMAP_CACHE_TIME = 15 * 60
@@ -57,13 +57,13 @@ const sites: Site[] = [
     baseUrl: 'https://e2b.dev',
   },
   {
-    sitemapUrl: `https://${DOCS_NEXT_DOMAIN}/sitemap.xml`,
-    priority: 0.9,
+    sitemapUrl: `https://${SDK_REFERENCE_DOMAIN}/sitemap.xml`,
+    priority: 0.7,
     changeFrequency: 'weekly',
     baseUrl: 'https://e2b.dev',
   },
   {
-    sitemapUrl: `https://${STAGING_DOCS_NEXT_DOMAIN}/sitemap.xml`,
+    sitemapUrl: `https://${DOCUMENTATION_DOMAIN}/sitemap.xml`,
     priority: 0.9,
     changeFrequency: 'weekly',
     baseUrl: 'https://e2b.dev',

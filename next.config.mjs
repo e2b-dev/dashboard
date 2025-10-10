@@ -1,3 +1,6 @@
+// NOTE: related to src/configs/rewrites.ts
+export const DOCUMENTATION_DOMAIN = 'e2b-docs.dev'
+
 /** @type {import('next').NextConfig} */
 const config = {
   eslint: {
@@ -54,13 +57,14 @@ const config = {
       },
 
       // Asset rewrites for Mintlify
+      // NOTE: this domain is also hardcoded in src/configs/rewrites.ts, specifically for required asset rewrites
       {
         source: '/mintlify-assets/_next/static/:path*',
-        destination: 'https://e2b-migrate-main-docs.mintlify.app/mintlify-assets/_next/static/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/_next/static/:path*`,
       },
       {
         source: '/_mintlify/:path*',
-        destination: 'https://e2b-migrate-main-docs.mintlify.app/_mintlify/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`,
       },
     ],
   }),
