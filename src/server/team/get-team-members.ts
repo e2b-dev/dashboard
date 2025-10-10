@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { TeamMemberInfo } from './types'
 
 const GetTeamMembersSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getTeamMembers = authActionClient

@@ -1,103 +1,120 @@
 'use client'
 
-import { useToast } from '@/lib/hooks/use-toast'
-import { Button } from '@/ui/primitives/button'
+import { useAppPostHogProvider } from '@/features/posthog-provider'
+import { l } from '@/lib/clients/logger/logger'
 import { Popover, PopoverContent } from '@/ui/primitives/popover'
 import { SurveyContent } from '@/ui/survey'
 import { PopoverTrigger } from '@radix-ui/react-popover'
-import { MessageSquarePlus } from 'lucide-react'
-import { Survey } from 'posthog-js'
 import { usePostHog } from 'posthog-js/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { toast } from 'sonner'
 
-export function DashboardSurveyPopover() {
+interface DashboardSurveyPopoverProps {
+  trigger: React.ReactNode
+}
+
+function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
   const posthog = usePostHog()
-  const { toast } = useToast()
-  const [survey, setSurvey] = useState<Survey | null>(null)
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
 
-  useEffect(() => {
-    if (!survey) {
-      setIsLoading(true)
-      posthog.getSurveys((surveys) => {
-        const survey = surveys.find((survey) =>
-          survey.name.includes('Dashboard')
-        )
-        if (!survey) return
+  const { dashboardFeedbackSurvey, isInitialized } = useAppPostHogProvider()
 
-        setSurvey(survey)
+  const handleSubmit = useCallback(
+    (responses: Record<number, string>) => {
+      if (!dashboardFeedbackSurvey) return
 
-        setIsLoading(false)
+      const responseData = Object.entries(responses).reduce(
+        (acc, [index, response]) => ({
+          ...acc,
+          [`$survey_response${index === '0' ? '' : '_' + index}`]: response,
+        }),
+        {}
+      )
+
+      posthog.capture('survey sent', {
+        $survey_id: dashboardFeedbackSurvey.id,
+        ...responseData,
       })
-    }
-  }, [posthog, survey])
 
-  const handleSubmit = (responses: Record<number, string>) => {
-    if (!survey) return
+      setWasSubmitted(true)
 
-    const responseData = Object.entries(responses).reduce(
-      (acc, [index, response]) => ({
-        ...acc,
-        [`$survey_response${index === '0' ? '' : '_' + index}`]: response,
-      }),
-      {}
-    )
+      toast.success('Thank you! Your feedback has been recorded.')
 
-    posthog.capture('survey sent', {
-      $survey_id: survey.id,
-      ...responseData,
-    })
+      // reset states
+      setIsOpen(false)
+      setTimeout(() => {
+        setWasSubmitted(false)
+      }, 100)
+    },
+    [dashboardFeedbackSurvey, posthog]
+  )
 
-    setWasSubmitted(true)
-
-    toast({
-      title: 'Thank you!',
-      description: 'Your feedback has been recorded.',
-    })
-
-    // Reset states
-    setIsOpen(false)
-    setTimeout(() => {
-      setWasSubmitted(false)
-    }, 100)
+  // we will optimistically render the button on first render.
+  // if we can't resolve the survey on the client side, we hide the button.
+  if (!dashboardFeedbackSurvey && isInitialized) {
+    return null
   }
 
   return (
     <Popover
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open && !wasSubmitted && survey) {
+        if (!dashboardFeedbackSurvey) {
+          l.error(
+            {
+              key: 'dashboard_survey_popover:survey_not_found',
+              context: {
+                survey_id:
+                  process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID,
+              },
+            },
+            'Tried to open survey popover but survey was not found.'
+          )
+          return
+        }
+
+        if (!open && !wasSubmitted && dashboardFeedbackSurvey) {
           posthog.capture('survey dismissed', {
-            $survey_id: survey.id,
+            $survey_id: dashboardFeedbackSurvey.id,
           })
         }
-        if (open && survey) {
+        if (open && dashboardFeedbackSurvey) {
           posthog.capture('survey shown', {
-            $survey_id: survey.id,
+            $survey_id: dashboardFeedbackSurvey.id,
           })
         }
         setIsOpen(open)
       }}
     >
-      <PopoverTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <MessageSquarePlus className="h-4 w-4" />
-          Feedback
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+
       <PopoverContent
         className="w-[400px]"
         collisionPadding={20}
         sideOffset={25}
       >
-        <SurveyContent
-          survey={survey}
-          isLoading={isLoading}
-          onSubmit={handleSubmit}
-        />
+        {dashboardFeedbackSurvey && (
+          <SurveyContent
+            survey={dashboardFeedbackSurvey}
+            isLoading={!isInitialized}
+            onSubmit={handleSubmit}
+          />
+        )}
       </PopoverContent>
     </Popover>
   )
+}
+
+export default function DashboardSurveyPopoverResolver(
+  props: DashboardSurveyPopoverProps
+) {
+  if (
+    !process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID ||
+    !process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ) {
+    return null
+  }
+
+  return <DashboardSurveyPopover {...props} />
 }

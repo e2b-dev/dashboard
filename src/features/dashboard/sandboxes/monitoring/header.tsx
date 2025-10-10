@@ -17,7 +17,7 @@ import {
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-4 md:p-6 max-md:not-last:border-b md:not-last:border-r h-full flex-1 w-full flex flex-col justify-center items-center gap-2 md:gap-3 relative max-md:min-h-[100px] md:min-h-[200px]">
+    <div className="p-4 md:p-6 max-md:not-last:border-b md:not-last:border-r flex-1 w-full flex flex-col justify-center items-center gap-2 md:gap-3 relative min-h-[100px] md:h-45">
       {children}
     </div>
   )
@@ -50,29 +50,26 @@ export default function SandboxesMonitoringHeader({
   params: Promise<SandboxesMonitoringPageParams>
 }) {
   return (
-    <div className="flex md:flex-row flex-col items-center border-b w-full md:min-h-52 max-md:py-2">
-      <BaseCard>
-        <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
-
-        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
-          <SandboxesStartRate params={params} />
-        </Suspense>
-        <BaseSubtitle>
-          Start Rate per Second <br className="max-md:hidden" />
-          <span className="md:hidden">per sec</span>
-          <span className="max-md:hidden">(5 sec average)</span>
-        </BaseSubtitle>
-      </BaseCard>
-
+    <div className="flex md:flex-row flex-col items-center border-b w-full max-md:py-2">
       <BaseCard>
         <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
         <Suspense fallback={<Skeleton className="w-16 h-8" />}>
           <ConcurrentSandboxes params={params} />
         </Suspense>
         <BaseSubtitle>
-          Concurrent <span className="max-md:hidden">Sandboxes</span>{' '}
-          <br className="max-md:hidden" />
-          <span className="max-md:hidden">(5 sec average)</span>
+          Concurrent Sandboxes <br className="max-md:hidden" />
+          <span className="max-md:hidden">(5-sec avg)</span>
+        </BaseSubtitle>
+      </BaseCard>
+
+      <BaseCard>
+        <SemiLiveBadge className="absolute left-3 top-3 md:left-6 md:top-6" />
+        <Suspense fallback={<Skeleton className="w-16 h-8" />}>
+          <SandboxesStartRate params={params} />
+        </Suspense>
+        <BaseSubtitle>
+          Start Rate per Second <br className="max-md:hidden" />
+          <span className="max-md:hidden">(5-sec avg)</span>
         </BaseSubtitle>
       </BaseCard>
 
@@ -81,10 +78,9 @@ export default function SandboxesMonitoringHeader({
           <MaxConcurrentSandboxes params={params} />
         </Suspense>
         <BaseSubtitle>
-          Max<span className="max-md:hidden"> Concurrent Sandboxes</span>
-          <span className="md:hidden"> Concurrent</span>
+          Peak Concurrent Sandboxes
           <br className="max-md:hidden" />
-          <span className="max-md:hidden">(Last 30 Days)</span>
+          <span className="max-md:hidden">(30-day max)</span>
         </BaseSubtitle>
       </BaseCard>
     </div>
@@ -220,11 +216,11 @@ export const MaxConcurrentSandboxes = async ({
 
   return (
     <>
-      <span className="prose-value-big mt-4">
+      <span className="prose-value-big mt-1">
         {formatNumber(concurrentSandboxes)}
       </span>
       {limit && (
-        <span className="absolute right-6 bottom-4 prose-label text-fg-tertiary ">
+        <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
           LIMIT: {formatNumber(limit)}
         </span>
       )}

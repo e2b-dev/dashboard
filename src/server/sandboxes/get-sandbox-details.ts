@@ -6,7 +6,7 @@ import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 
 export const GetSandboxDetailsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   sandboxId: z.string(),
 })
 

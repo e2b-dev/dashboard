@@ -6,7 +6,7 @@ import { BillingLimit } from '@/types/billing'
 import { z } from 'zod'
 
 const GetBillingLimitsParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getBillingLimits = authActionClient
