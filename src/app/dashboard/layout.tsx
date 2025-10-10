@@ -12,7 +12,6 @@ import { getSessionInsecure } from '@/server/auth/get-session'
 import { getUserTeams } from '@/server/team/get-team'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
-import { Suspense } from 'react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -75,9 +74,7 @@ export default async function DashboardLayout({
           </div>
         </div>
       </SidebarProvider>
-      <Suspense fallback={null}>
-        <DashboardTitleProvider />
-      </Suspense>
+      <DashboardTitleProvider />
     </ServerContextProvider>
   )
 }

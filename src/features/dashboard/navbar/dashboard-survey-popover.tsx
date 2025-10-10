@@ -1,5 +1,6 @@
 'use client'
 
+import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY } from '@/configs/flags'
 import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { l } from '@/lib/clients/logger/logger'
 import { Popover, PopoverContent } from '@/ui/primitives/popover'
@@ -109,10 +110,7 @@ function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
 export default function DashboardSurveyPopoverResolver(
   props: DashboardSurveyPopoverProps
 ) {
-  if (
-    !process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID ||
-    !process.env.NEXT_PUBLIC_POSTHOG_KEY
-  ) {
+  if (!INCLUDE_DASHBOARD_FEEDBACK_SURVEY) {
     return null
   }
 
