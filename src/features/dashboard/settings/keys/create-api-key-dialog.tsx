@@ -133,7 +133,11 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
               />
 
               <DialogFooter>
-                <Button type="submit" loading={isPending}>
+                <Button
+                  type="submit"
+                  loading={isPending}
+                  disabled={!selectedTeam?.id}
+                >
                   Create Key
                 </Button>
               </DialogFooter>
