@@ -34,13 +34,14 @@
   --public-nav-height: 50px;
 
   --protected-nav-height: 50px;
-  --protected-sidebar-width: 0px;
+  --protected-status-bar-height: 36px;
+  --protected-sidebar-width: 52px;
 
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
 
   @media (min-width: 768px) {
-    --protected-sidebar-width: 256px;
+    --protected-sidebar-width: 14.5rem;
   }
 
   /* Fumadocs
@@ -260,6 +261,11 @@
 @theme {
   /* Border Radius */
   --radius: 0.375rem;
+
+  /* Sizes */
+  --height-status-bar: var(--protected-status-bar-height);
+  --width-sidebar: var(--protected-sidebar-width);
+  --min-width-sidebar: var(--protected-sidebar-width);
 
   /* Colors */
   --color-ring: var(--stroke-active);

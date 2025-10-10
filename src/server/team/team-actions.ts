@@ -6,7 +6,7 @@ import { authActionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { returnServerError } from '@/lib/utils/action'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
 import { CreateTeamsResponse } from '@/types/billing'
@@ -48,8 +48,8 @@ export const updateTeamNameAction = authActionClient
   })
 
 const AddTeamMemberSchema = z.object({
-  teamId: z.string().uuid(),
-  email: z.string().email(),
+  teamId: z.uuid(),
+  email: z.email(),
 })
 
 export const addTeamMemberAction = authActionClient
@@ -78,7 +78,7 @@ export const addTeamMemberAction = authActionClient
 
     if (!existingUser) {
       return returnServerError(
-        'User with this email does not exist. Account must be registered first.'
+        'User with this email address does not exist. Please ask them to sign up first and try again.'
       )
     }
 
@@ -121,8 +121,8 @@ export const addTeamMemberAction = authActionClient
   })
 
 const RemoveTeamMemberSchema = z.object({
-  teamId: z.string().uuid(),
-  userId: z.string().uuid(),
+  teamId: z.uuid(),
+  userId: z.uuid(),
 })
 
 export const removeTeamMemberAction = authActionClient
@@ -209,9 +209,14 @@ export const createTeamAction = authActionClient
     })
 
     if (!response.ok) {
+      const status = response.status
       const error = await response.json()
 
-      throw new Error(error?.message ?? 'Failed to create team')
+      if (status === 400) {
+        return returnServerError(error?.message ?? 'Failed to create team')
+      }
+
+      return handleDefaultInfraError(status)
     }
 
     revalidatePath('/dashboard', 'layout')

@@ -12,7 +12,7 @@ import { z } from 'zod'
 // Checkout
 
 const RedirectToCheckoutParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   tierId: z.string(),
 })
 
@@ -57,7 +57,7 @@ function typeToKey(type: 'limit' | 'alert') {
 }
 
 const SetLimitParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   type: z.enum(['limit', 'alert']),
   value: z.number().min(1),
 })
@@ -92,7 +92,7 @@ export const setLimitAction = authActionClient
   })
 
 const ClearLimitParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   type: z.enum(['limit', 'alert']),
 })
 
@@ -125,7 +125,7 @@ export const clearLimitAction = authActionClient
 // CUSTOMER PORTAL
 
 const RedirectToCustomerPortalParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const redirectToCustomerPortal = authActionClient

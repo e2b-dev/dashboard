@@ -6,7 +6,7 @@ import { Invoice } from '@/types/billing'
 import { z } from 'zod'
 
 const GetInvoicesParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getInvoices = authActionClient
