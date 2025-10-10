@@ -1,5 +1,6 @@
 'use client'
 
+import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY } from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'
@@ -59,31 +60,33 @@ export default function DashboardSidebarFooter() {
         </SidebarGroup>
       </SidebarFooter>
 
-      <SidebarMenu className="p-0 gap-0">
-        <SidebarMenuItem
-          key="survey"
-          className={cn(
-            'transition-all border-t group-data-[collapsible=icon]:pl-2',
-            SIDEBAR_TRANSITION_CLASSNAMES
-          )}
-        >
-          <DashboardSurveyPopover
-            trigger={
-              <SidebarMenuButton
-                tooltip="Survey"
-                variant="ghost"
-                className={cn(
-                  'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
-                  SIDEBAR_TRANSITION_CLASSNAMES
-                )}
-              >
-                <MessageSquarePlus className="group-data-[collapsible=icon]:!size-5" />
-                Feedback
-              </SidebarMenuButton>
-            }
-          />
-        </SidebarMenuItem>
-      </SidebarMenu>
+      {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
+        <SidebarMenu className="p-0 gap-0">
+          <SidebarMenuItem
+            key="survey"
+            className={cn(
+              'transition-all border-t group-data-[collapsible=icon]:pl-2',
+              SIDEBAR_TRANSITION_CLASSNAMES
+            )}
+          >
+            <DashboardSurveyPopover
+              trigger={
+                <SidebarMenuButton
+                  tooltip="Survey"
+                  variant="ghost"
+                  className={cn(
+                    'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                    SIDEBAR_TRANSITION_CLASSNAMES
+                  )}
+                >
+                  <MessageSquarePlus className="group-data-[collapsible=icon]:!size-5" />
+                  Feedback
+                </SidebarMenuButton>
+              }
+            />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      )}
     </>
   )
 }
