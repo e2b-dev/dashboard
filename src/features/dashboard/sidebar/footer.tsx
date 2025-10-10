@@ -73,7 +73,7 @@ export default function DashboardSidebarFooter() {
                 tooltip="Survey"
                 variant="ghost"
                 className={cn(
-                  'hover:bg-bg-hover transition-all w-full min-h-status-bar justify-center group-data-[collapsible=icon]:justify-start',
+                  'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
                   SIDEBAR_TRANSITION_CLASSNAMES
                 )}
               >
