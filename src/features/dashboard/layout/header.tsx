@@ -24,9 +24,9 @@ export default function DashboardLayoutHeader({
       className={cn(
         'sticky top-0 z-50 bg-bg/40 backdrop-blur-md p-3 md:p-6 flex items-end gap-2',
         {
-          'border-b min-h-[var(--height-protected-nav)+12px] md:min-h-[var(--height-protected-nav)+24px] max-h-min':
+          'border-b min-h-[var(--height-protected-navbar)+12px] md:min-h-[var(--height-protected-navbar)+24px] max-h-min':
             config.type === 'default',
-          '!pb-0 min-h-protected-nav max-h-min': config.type === 'custom',
+          '!pb-0 min-h-protected-navbar max-h-min': config.type === 'custom',
         },
         className
       )}
