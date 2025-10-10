@@ -57,10 +57,9 @@ const config = {
       },
 
       // Asset rewrites for Mintlify
-      // NOTE: this domain is also hardcoded in src/configs/rewrites.ts, specifically for required asset rewrites
       {
-        source: '/mintlify-assets/_next/static/:path*',
-        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/_next/static/:path*`,
+        source: '/mintlify-assets/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/:path*`,
       },
       {
         source: '/_mintlify/:path*',
