@@ -62,11 +62,17 @@ export async function middleware(request: NextRequest) {
         headers.set('x-e2b-should-index', '1')
       }
 
-      return NextResponse.rewrite(rewriteUrl, {
+      const response = NextResponse.rewrite(rewriteUrl, {
         request: {
           headers,
         },
       })
+
+      if (ALLOW_SEO_INDEXING) {
+        response.headers.set('X-Robots-Tag', 'index, follow')
+      }
+
+      return response
     }
 
     // Setup response and Supabase client
