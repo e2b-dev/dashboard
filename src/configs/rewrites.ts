@@ -64,8 +64,11 @@ export const MIDDLEWARE_REWRITE_CONFIG: DomainConfig[] = [
     rules: [
       { path: '/docs' },
       { path: '/mcp' },
-      { path: '/llms.txt' },
-      { path: '/llms-full.txt' },
+      { path: '/docs/llms.txt', pathPreprocessor: () => '/llms.txt' },
+      {
+        path: '/docs/llms-full.txt',
+        pathPreprocessor: () => '/llms-full.txt',
+      },
     ],
   },
 ]
