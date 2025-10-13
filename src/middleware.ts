@@ -45,16 +45,19 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if the path should be rewritten by middleware
-    const { config: middlewareRewriteConfig } = getRewriteForPath(
-      request.nextUrl.pathname,
-      'middleware'
-    )
+    const { config: middlewareRewriteConfig, rule: middlewareRewriteRule } =
+      getRewriteForPath(request.nextUrl.pathname, 'middleware')
 
     if (middlewareRewriteConfig) {
       const rewriteUrl = new URL(request.url)
       rewriteUrl.hostname = middlewareRewriteConfig.domain
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
+      if (middlewareRewriteRule && middlewareRewriteRule.pathPreprocessor) {
+        rewriteUrl.pathname = middlewareRewriteRule.pathPreprocessor(
+          rewriteUrl.pathname
+        )
+      }
 
       const headers = new Headers(request.headers)
 
