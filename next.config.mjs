@@ -1,5 +1,5 @@
 // NOTE: related to src/configs/rewrites.ts
-export const DOCUMENTATION_DOMAIN = 'e2b-docs.dev'
+export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -63,7 +63,7 @@ const config = {
       },
       {
         source: '/_mintlify/:path*',
-        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`,
+        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`, 
       },
     ],
   }),

@@ -42,18 +42,17 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
  * Middleware native rewrite config
  *
  * We implement rewrites directly in middleware rather than using Next.js's built-in
- * `rewrites` configuration in next.config.js due to Cloudflare WAF compatibility issues.
+ * `rewrites` configuration in next.config.js because we need to set custom request
+ * and response headers for these rewritten requests.
  *
- * Context: Next.js's native rewrite system seemed to use the `x-middleware-subrequest` header
- * internally, which triggered Cloudflare's managed WAF rules designed to mitigate
- * CVE-2025-29927 (Next.js authentication bypass vulnerability). This causes legitimate
- * rewrite requests to be blocked when the WAF rule is enabled.
+ * Specifically, we need to:
+ * - Add custom headers to the request (e.g., x-e2b-should-index for SEO control)
+ * - Set custom response headers (e.g., X-Robots-Tag for search engine indexing)
+ * - Have fine-grained control over the rewrite behavior based on environment variables
  *
- * By handling rewrites directly in our middleware layer and controlling the headers, we avoid using the internal
- * header mechanism and prevent false positives from Cloudflare's security filters.
- *
- * @see https://developers.cloudflare.com/changelog/2025-03-22-next-js-vulnerability-waf/
- * TODO: Re-evaluate if this workaround is still necessary after Cloudflare updates their WAF rules
+ * Next.js's native rewrite configuration doesn't provide this level of header manipulation
+ * capability, so we handle these rewrites in our middleware layer where we have full
+ * control over the request/response cycle.
  */
 export const MIDDLEWARE_REWRITE_CONFIG: DomainConfig[] = [
   {

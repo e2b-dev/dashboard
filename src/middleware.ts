@@ -70,6 +70,8 @@ export async function middleware(request: NextRequest) {
 
       if (ALLOW_SEO_INDEXING) {
         response.headers.set('X-Robots-Tag', 'index, follow')
+      } else {
+        response.headers.set('X-Robots-Tag', 'noindex, nofollow')
       }
 
       return response
