@@ -1,7 +1,9 @@
 import { DomainConfig } from '@/types/rewrites.types'
 
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
-export const DOCS_NEXT_DOMAIN = 'e2b-docs.vercel.app'
+export const SDK_REFERENCE_DOMAIN = 'e2b-docs.vercel.app'
+// NOTE: DOCUMENTATION_DOMAIN has to be defined in next.config.mjs, such that we are able to use it there
+import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Currently we have two locations for rewrites to happen.
 
@@ -36,10 +38,29 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
   },
 ]
 
-// Middleware native rewrite config
+/**
+ * Middleware native rewrite config
+ *
+ * We implement rewrites directly in middleware rather than using Next.js's built-in
+ * `rewrites` configuration in next.config.js because we need to set custom request
+ * and response headers for these rewritten requests.
+ *
+ * Specifically, we need to:
+ * - Add custom headers to the request (e.g., x-e2b-should-index for SEO control)
+ * - Set custom response headers (e.g., X-Robots-Tag for search engine indexing)
+ * - Have fine-grained control over the rewrite behavior based on environment variables
+ *
+ * Next.js's native rewrite configuration doesn't provide this level of header manipulation
+ * capability, so we handle these rewrites in our middleware layer where we have full
+ * control over the request/response cycle.
+ */
 export const MIDDLEWARE_REWRITE_CONFIG: DomainConfig[] = [
   {
-    domain: DOCS_NEXT_DOMAIN,
-    rules: [{ path: '/docs' }],
+    domain: SDK_REFERENCE_DOMAIN,
+    rules: [{ path: '/docs/sdk-reference' }],
+  },
+  {
+    domain: DOCUMENTATION_DOMAIN,
+    rules: [{ path: '/docs' }, { path: '/mcp' }],
   },
 ]
