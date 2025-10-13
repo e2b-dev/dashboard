@@ -62,11 +62,19 @@ export async function middleware(request: NextRequest) {
         headers.set('x-e2b-should-index', '1')
       }
 
-      return NextResponse.rewrite(rewriteUrl, {
+      const response = NextResponse.rewrite(rewriteUrl, {
         request: {
           headers,
         },
       })
+
+      if (ALLOW_SEO_INDEXING) {
+        response.headers.set('X-Robots-Tag', 'index, follow')
+      } else {
+        response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+      }
+
+      return response
     }
 
     // Setup response and Supabase client
@@ -131,6 +139,6 @@ export const config = {
      * - vercel analytics route
      * - posthog routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/|mintlify-assets/|_mintlify/).*)',
   ],
 }

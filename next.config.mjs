@@ -1,3 +1,6 @@
+// NOTE: related to src/configs/rewrites.ts
+export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
+
 /** @type {import('next').NextConfig} */
 const config = {
   eslint: {
@@ -42,8 +45,8 @@ const config = {
       ],
     }, 
   ],
-  rewrites: async () => {
-      return [
+  rewrites: async () => ({
+    beforeFiles: [
       {
         source: "/ph-proxy/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
@@ -52,8 +55,18 @@ const config = {
         source: "/ph-proxy/:path*",
         destination: "https://us.i.posthog.com/:path*",
       },
-      ]
-  },
+
+      // Asset rewrites for Mintlify
+      {
+        source: '/mintlify-assets/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/:path*`,
+      },
+      {
+        source: '/_mintlify/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`, 
+      },
+    ],
+  }),
   redirects: async () => [
     {
       source: '/docs/api/cli',
