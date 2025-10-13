@@ -103,12 +103,14 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
         {!createdApiKey ? (
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((values) =>
+              onSubmit={form.handleSubmit((values) => {
+                if (!selectedTeam) return
+
                 createApiKey({
-                  teamId: selectedTeam?.id ?? '',
+                  teamId: selectedTeam.id,
                   name: values.name,
                 })
-              )}
+              })}
               className="flex flex-col gap-6"
             >
               <FormField
