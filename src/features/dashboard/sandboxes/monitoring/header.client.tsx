@@ -5,7 +5,7 @@ import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
 import { NonUndefined } from 'react-hook-form'
-import useHeaderMetricsSWR from './hooks/use-header-metrics-swr'
+import { useRecentMetrics } from './hooks/use-recent-metrics'
 
 interface TeamMonitoringHeaderClientProps {
   initialData: NonUndefined<
@@ -18,7 +18,7 @@ export function ConcurrentSandboxesClient({
   initialData,
   limit,
 }: TeamMonitoringHeaderClientProps) {
-  const { data } = useHeaderMetricsSWR(initialData)
+  const { data } = useRecentMetrics({ initialData })
 
   const lastConcurrentSandboxes =
     data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
@@ -40,7 +40,7 @@ export function ConcurrentSandboxesClient({
 export function SandboxesStartRateClient({
   initialData,
 }: TeamMonitoringHeaderClientProps) {
-  const { data } = useHeaderMetricsSWR(initialData)
+  const { data } = useRecentMetrics({ initialData })
 
   const lastSandboxesStartRate = useMemo(() => {
     const rate =

@@ -28,6 +28,42 @@ export function calculateStepForDuration(durationMs: number): number {
   }
 }
 
+// TIMEFRAME LIVE STATE CALCULATION
+
+const LIVE_THRESHOLD_PERCENT = 0.02
+const LIVE_THRESHOLD_MIN_MS = 60 * 1000
+
+/**
+ * Determines if a timeframe should be considered "live" based on how
+ * recent the end timestamp is relative to current time.
+ *
+ * A timeframe is considered live if the end timestamp is within a threshold
+ * of the current time. The threshold is the maximum of:
+ * - 2% of the timeframe duration
+ * - 60 seconds (minimum threshold)
+ *
+ * @param start - Start timestamp in milliseconds (or null)
+ * @param end - End timestamp in milliseconds (or null)
+ * @param now - Current timestamp in milliseconds (defaults to Date.now())
+ * @returns True if the timeframe should be considered live
+ */
+export function calculateIsLive(
+  start: number | null,
+  end: number | null,
+  now: number = Date.now()
+): boolean {
+  // default to live if params missing
+  if (!start || !end) return true
+
+  const duration = end - start
+  const threshold = Math.max(
+    duration * LIVE_THRESHOLD_PERCENT,
+    LIVE_THRESHOLD_MIN_MS
+  )
+
+  return now - end < threshold
+}
+
 // FILL TEAM METRICS WITH ZEROS
 // core function for rendering data coming from the back-end into the charts
 

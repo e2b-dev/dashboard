@@ -6,11 +6,9 @@ import {
 } from '@/configs/intervals'
 import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
 import { parseAsInteger, useQueryStates } from 'nuqs'
-import { useCallback, useMemo } from 'react'
-import { useInterval } from 'usehooks-ts'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { calculateIsLive } from '../utils'
 
-const LIVE_THRESHOLD_PERCENT = 0.02
-const LIVE_THRESHOLD_MIN_MS = 60 * 1000
 const MAX_DAYS_AGO = 31 * 24 * 60 * 60 * 1000
 const MIN_RANGE_MS = 1.5 * 60 * 1000
 
@@ -64,24 +62,25 @@ const timeframeParams = {
 }
 
 export const useTimeframe = () => {
-  const initialNow = getStableNow()
+  const initialNowRef = useRef(getStableNow())
+  const lastUpdateRef = useRef<number>(0)
 
   const [params, setParams] = useQueryStates(timeframeParams, {
     history: 'push',
     shallow: true,
   })
 
-  const start = params.start ?? initialNow - TEAM_METRICS_INITIAL_RANGE_MS
-  const end = params.end ?? initialNow
+  const start = useMemo(
+    () => params.start ?? initialNowRef.current - TEAM_METRICS_INITIAL_RANGE_MS,
+    [params.start]
+  )
+  const end = useMemo(() => params.end ?? initialNowRef.current, [params.end])
 
+  // calculate isLive at the time params were set, not at render time
   const timeframe = useMemo(() => {
     const duration = end - start
-    const threshold = Math.max(
-      duration * LIVE_THRESHOLD_PERCENT,
-      LIVE_THRESHOLD_MIN_MS
-    )
-    const stableNow = getStableNow()
-    const isLive = stableNow - end < threshold
+    const now = getStableNow()
+    const isLive = calculateIsLive(start, end, now)
 
     return {
       start,
@@ -91,31 +90,94 @@ export const useTimeframe = () => {
     }
   }, [start, end])
 
-  const setTimeRange = (range: TimeRangeKey) => {
-    const rangeMs = TIME_RANGES[range]
+  const setTimeRange = useCallback(
+    (range: TimeRangeKey) => {
+      const rangeMs = TIME_RANGES[range]
+      const now = getStableNow()
+      const validated = validateTimeRange(now - rangeMs, now)
+      setParams(validated)
+      lastUpdateRef.current = now
+    },
+    [setParams]
+  )
+
+  const setCustomRange = useCallback(
+    (start: number, end: number) => {
+      const validated = validateTimeRange(start, end)
+      setParams(validated)
+      lastUpdateRef.current = Date.now()
+    },
+    [setParams]
+  )
+
+  // stable ref for the update function to prevent interval restarts
+  const updateTimeframeRef = useRef<(() => void) | null>(null)
+  updateTimeframeRef.current = () => {
     const now = getStableNow()
-    const validated = validateTimeRange(now - rangeMs, now)
-    setParams(validated)
-  }
 
-  const setCustomRange = (start: number, end: number) => {
-    const validated = validateTimeRange(start, end)
-    setParams(validated)
-  }
+    // prevent updates faster than the interval
+    const timeSinceLastUpdate = now - lastUpdateRef.current
+    if (timeSinceLastUpdate < TEAM_METRICS_TIMEFRAME_UPDATE_MS - 100) {
+      return
+    }
 
-  const handleTimeframeUpdate = useCallback(() => {
-    if (!timeframe.isLive) return
-
-    const now = getStableNow()
     const duration = timeframe.duration
     const validated = validateTimeRange(now - duration, now)
-    setParams(validated)
-  }, [timeframe.isLive, timeframe.duration, setParams])
 
-  useInterval(
-    handleTimeframeUpdate,
-    timeframe.isLive ? TEAM_METRICS_TIMEFRAME_UPDATE_MS : null
-  )
+    // only update if values actually changed
+    if (validated.start !== start || validated.end !== end) {
+      setParams(validated)
+      lastUpdateRef.current = now
+    }
+  }
+
+  useEffect(() => {
+    if (!timeframe.isLive) return
+
+    let intervalId: NodeJS.Timeout | null = null
+    let isVisible = !document.hidden
+
+    const startInterval = () => {
+      if (intervalId) return
+      intervalId = setInterval(() => {
+        updateTimeframeRef.current?.()
+      }, TEAM_METRICS_TIMEFRAME_UPDATE_MS)
+    }
+
+    const stopInterval = () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      const nowVisible = !document.hidden
+
+      if (nowVisible && !isVisible) {
+        // tab became visible - do immediate update then start interval
+        isVisible = true
+        updateTimeframeRef.current?.()
+        startInterval()
+      } else if (!nowVisible && isVisible) {
+        // tab became hidden - stop interval
+        isVisible = false
+        stopInterval()
+      }
+    }
+
+    // start interval if visible
+    if (isVisible) {
+      startInterval()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      stopInterval()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [timeframe.isLive])
 
   return {
     timeframe,
