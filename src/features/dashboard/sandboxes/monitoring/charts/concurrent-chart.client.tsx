@@ -2,7 +2,7 @@
 
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { cn } from '@/lib/utils'
-import { formatAxisNumber, formatCompactDate } from '@/lib/utils/formatting'
+import { formatCompactDate, formatNumber } from '@/lib/utils/formatting'
 import {
   TIME_RANGES,
   TimeRangeKey,
@@ -11,9 +11,10 @@ import {
 import CopyButton from '@/ui/copy-button'
 import { ReactiveLiveBadge } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useTeamMetricsCharts } from '../charts-context'
 import { TimePicker } from '../time-picker'
+import { AnimatedMetricDisplay } from './animated-metric-display'
 import TeamMetricsChart, {
   calculateCentralTendency,
   transformMetrics,
@@ -35,8 +36,19 @@ interface ConcurrentChartProps {
 export default function ConcurrentChartClient({
   concurrentInstancesLimit,
 }: ConcurrentChartProps) {
-  const { data, isPolling, timeframe, setTimeRange, setCustomRange } =
-    useTeamMetricsCharts()
+  const {
+    data,
+    isPolling,
+    timeframe,
+    setTimeRange,
+    setCustomRange,
+    hoveredValue,
+    setHoveredValue,
+  } = useTeamMetricsCharts()
+
+  // ref to avoid recreating handlers when data changes
+  const metricsRef = useRef(data?.metrics)
+  metricsRef.current = data?.metrics
 
   const chartData = useMemo(() => {
     if (!data?.metrics) return []
@@ -47,6 +59,43 @@ export default function ConcurrentChartClient({
     () => calculateCentralTendency(chartData, 'average'),
     [chartData]
   )
+
+  // determine display value, label, and subtitle
+  const { displayValue, label, timestamp } = useMemo(() => {
+    if (hoveredValue?.concurrentSandboxes !== undefined) {
+      const formattedDate = formatCompactDate(hoveredValue.timestamp)
+      return {
+        displayValue: formatNumber(hoveredValue.concurrentSandboxes),
+        label: 'on',
+        timestamp: formattedDate,
+      }
+    }
+    return {
+      displayValue: formatNumber(centralValue),
+      label: 'average',
+      timestamp: null,
+    }
+  }, [hoveredValue, centralValue])
+
+  const handleTooltipValueChange = useCallback(
+    (timestamp: number, value: number) => {
+      // find start rate value for the same timestamp using ref
+      const concurrentDataPoint = metricsRef.current?.find(
+        (m) => m.timestamp === timestamp
+      )
+
+      setHoveredValue({
+        timestamp,
+        concurrentSandboxes: value,
+        sandboxStartRate: concurrentDataPoint?.sandboxStartRate,
+      })
+    },
+    [setHoveredValue]
+  )
+
+  const handleHoverEnd = useCallback(() => {
+    setHoveredValue(null)
+  }, [setHoveredValue])
 
   const currentRange = useMemo(() => {
     const currentDuration = timeframe.duration
@@ -91,15 +140,11 @@ export default function ConcurrentChartClient({
           <ReactiveLiveBadge suppressHydrationWarning show={isPolling} />
         </div>
         <div className="flex justify-between max-md:flex-col max-md:gap-2">
-          <div className="inline-flex items-end gap-2">
-            <span className="prose-value-big max-md:text-2xl">
-              {formatAxisNumber(centralValue)}
-            </span>
-            <span className="text-fg-tertiary prose-label uppercase max-md:text-xs">
-              <span className="max-md:hidden">average over range</span>
-              <span className="md:hidden">avg over range</span>
-            </span>
-          </div>
+          <AnimatedMetricDisplay
+            value={displayValue}
+            label={label}
+            timestamp={timestamp}
+          />
           <div className="flex items-end gap-2 max-md:flex-col max-md:items-start">
             {/* Date range label - full width on mobile */}
             {customRangeLabel && customRangeCopyValue && (
@@ -201,6 +246,8 @@ export default function ConcurrentChartClient({
         timeframe={timeframe}
         concurrentLimit={concurrentInstancesLimit}
         onZoomEnd={(from, end) => setCustomRange(from, end)}
+        onTooltipValueChange={handleTooltipValueChange}
+        onHoverEnd={handleHoverEnd}
         className="mt-3 md:mt-4 flex-1 max-md:min-h-[30dvh]"
       />
     </div>

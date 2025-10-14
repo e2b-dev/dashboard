@@ -1,18 +1,11 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { createSingleValueTooltipFormatter } from '@/lib/utils/chart'
-import {
-  formatChartTimestampLocal,
-  formatTimeAxisLabel,
-} from '@/lib/utils/formatting'
+import { formatTimeAxisLabel } from '@/lib/utils/formatting'
 import { format } from 'date-fns'
-// Import the echarts core module
 import { EChartsOption } from 'echarts'
-import * as echarts from 'echarts/core'
-// Import only the charts we need
+import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
-// Import only the components we need
 import {
   AxisPointerComponent,
   DataZoomComponent,
@@ -22,12 +15,10 @@ import {
   ToolboxComponent,
   TooltipComponent,
 } from 'echarts/components'
-// Import canvas renderer
+import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-// Import core ReactECharts for tree-shaking
-import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
-import { useCallback, useMemo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import {
   AXIS_SPLIT_NUMBER,
   CHART_CONFIGS,
@@ -85,7 +76,7 @@ function createXAxisFormatter() {
  * Highly optimized team metrics chart component
  * Minimizes re-renders and deep merges, builds complete ECharts config once
  */
-export default function TeamMetricsChart({
+function TeamMetricsChart({
   type,
   metrics,
   step,
@@ -93,10 +84,20 @@ export default function TeamMetricsChart({
   className,
   concurrentLimit,
   onZoomEnd,
+  onTooltipValueChange,
+  onHoverEnd,
 }: TeamMetricsChartProps) {
   const chartRef = useRef<ReactEChartsCore | null>(null)
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const { resolvedTheme } = useTheme()
+
+  // use refs for callbacks to avoid re-creating chart options
+  const onTooltipValueChangeRef = useRef(onTooltipValueChange)
+  const onHoverEndRef = useRef(onHoverEnd)
+
+  // keep refs up to date
+  onTooltipValueChangeRef.current = onTooltipValueChange
+  onHoverEndRef.current = onHoverEnd
 
   const config = CHART_CONFIGS[type]
 
@@ -135,18 +136,30 @@ export default function TeamMetricsChart({
   const errorBg = cssVars['--accent-error-bg'] || '#fee'
   const bg1 = cssVars['--bg-1'] || '#fff'
 
-  // tooltip formatter (stable reference)
-  const tooltipFormatter = useMemo(
-    () =>
-      createSingleValueTooltipFormatter({
-        step,
-        label: config.tooltipLabel,
-        valueClassName: config.tooltipValueClass,
-      }),
-    [step, config.tooltipLabel, config.tooltipValueClass]
+  // tooltip formatter that extracts data and calls onTooltipValueChange
+  const tooltipFormatter = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (params: any) => {
+      // params is an array when trigger is 'axis'
+      const paramArray = Array.isArray(params) ? params : [params]
+
+      if (paramArray.length > 0 && paramArray[0]?.value) {
+        const [timestamp, value] = paramArray[0].value
+
+        if (
+          onTooltipValueChangeRef.current &&
+          timestamp !== undefined &&
+          value !== undefined
+        ) {
+          onTooltipValueChangeRef.current(timestamp, value)
+        }
+      }
+
+      return ''
+    },
+    []
   )
 
-  // zoom handler
   const handleZoom = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
@@ -160,7 +173,7 @@ export default function TeamMetricsChart({
     [onZoomEnd]
   )
 
-  // chart ready handler
+  // chart ready handler - stable reference
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
 
@@ -174,11 +187,14 @@ export default function TeamMetricsChart({
       { flush: true }
     )
 
-    // set group for syncing
     chart.group = 'sandboxes-monitoring'
-    // setTimeout(() => {
-    //   echarts.connect('sandboxes-monitoring')
-    // }, 0)
+    echarts.connect('sandboxes-monitoring')
+  }, [])
+
+  const handleGlobalOut = useCallback(() => {
+    if (onHoverEndRef.current) {
+      onHoverEndRef.current()
+    }
   }, [])
 
   // build complete echarts option once
@@ -202,9 +218,10 @@ export default function TeamMetricsChart({
       id: config.id,
       name: config.name,
       type: 'line',
-      symbol: 'circle',
-      symbolSize: 0,
-      showSymbol: false,
+      symbol: 'rect',
+      symbolSize: 1,
+      showSymbol: true,
+      showAllSymbol: false,
       lineStyle: {
         width: 1,
         color: lineColor,
@@ -263,33 +280,29 @@ export default function TeamMetricsChart({
       grid: {
         top: 10,
         right: 5,
-        bottom: 0,
+        bottom: 5,
         left: 40,
       },
       tooltip: {
         show: true,
         trigger: 'axis',
-        triggerOn: 'mousemove|click',
-        confine: true,
-        transitionDuration: 0.2,
+        transitionDuration: 0,
         enterable: false,
         hideDelay: 0,
+        // render tooltip invisible - used only for value extraction
         backgroundColor: 'transparent',
-        padding: 0,
         borderWidth: 0,
-        shadowBlur: 0,
-        shadowOffsetX: 0,
-        shadowOffsetY: 0,
-        shadowColor: 'transparent',
-        textStyle: { color: fg },
+        textStyle: { fontSize: 0, color: 'transparent' },
         formatter: tooltipFormatter,
+        // position off-screen
+        position: [-9999, -9999],
       },
       xAxis: {
         type: 'time',
         min: xMin,
         max: xMax,
         axisLine: {
-          show: true,
+          show: false,
           lineStyle: { color: stroke },
         },
         axisTick: { show: false },
@@ -305,23 +318,10 @@ export default function TeamMetricsChart({
         },
         axisPointer: {
           show: true,
-          type: 'line',
-          lineStyle: {
-            color: bgInverted,
-            type: 'dashed',
-          },
-          label: {
-            textMargin: [4, 0],
-            show: true,
-            backgroundColor: bgHighlight,
-            color: fg,
-            fontFamily: fontMono,
-            borderRadius: 0,
-            fontSize: 12,
-            formatter: (params: { value: unknown }) =>
-              formatChartTimestampLocal(params.value as string | number),
-          },
-          snap: true,
+          type: 'shadow',
+          lineStyle: { color: stroke },
+          triggerTooltip: false,
+          snap: false,
         },
       },
       yAxis: {
@@ -350,20 +350,6 @@ export default function TeamMetricsChart({
         },
         axisPointer: {
           show: false,
-          lineStyle: {
-            color: bgInverted,
-            type: 'dashed',
-          },
-          label: {
-            show: true,
-            backgroundColor: bgHighlight,
-            color: fg,
-            fontFamily: fontMono,
-            position: 'top',
-            borderRadius: 0,
-            fontSize: 14,
-          },
-          snap: false,
         },
       },
       toolbox: {
@@ -411,17 +397,42 @@ export default function TeamMetricsChart({
       key={resolvedTheme}
       echarts={echarts}
       option={option}
-      notMerge={true}
+      notMerge={false}
       lazyUpdate={true}
       style={{ width: '100%', height: '100%' }}
       onChartReady={handleChartReady}
       className={className}
       onEvents={{
         datazoom: handleZoom,
+        globalout: handleGlobalOut,
       }}
     />
   )
 }
+
+// memoize component to prevent re-renders when parent re-renders
+// only re-render if actual props change
+const MemoizedTeamMetricsChart = memo(
+  TeamMetricsChart,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.type === nextProps.type &&
+      prevProps.metrics === nextProps.metrics &&
+      prevProps.step === nextProps.step &&
+      prevProps.timeframe.start === nextProps.timeframe.start &&
+      prevProps.timeframe.end === nextProps.timeframe.end &&
+      prevProps.timeframe.isLive === nextProps.timeframe.isLive &&
+      prevProps.concurrentLimit === nextProps.concurrentLimit &&
+      prevProps.className === nextProps.className
+      // explicitly exclude onTooltipValueChange and onHoverEnd from comparison
+      // they are handled via refs internally
+    )
+  }
+)
+
+MemoizedTeamMetricsChart.displayName = 'TeamMetricsChart'
+
+export default MemoizedTeamMetricsChart
 
 // export utilities for use in parent components
 export { CHART_CONFIGS } from './constants'

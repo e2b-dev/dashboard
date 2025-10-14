@@ -1,16 +1,28 @@
 'use client'
 
-import { formatDecimal } from '@/lib/utils/formatting'
+import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
 import { ReactiveLiveBadge } from '@/ui/live'
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useTeamMetricsCharts } from '../charts-context'
+import { AnimatedMetricDisplay } from './animated-metric-display'
 import TeamMetricsChart, {
   calculateCentralTendency,
   transformMetrics,
 } from './team-metrics-chart'
 
 export default function StartRateChartClient() {
-  const { data, isPolling, timeframe, setCustomRange } = useTeamMetricsCharts()
+  const {
+    data,
+    isPolling,
+    timeframe,
+    setCustomRange,
+    hoveredValue,
+    setHoveredValue,
+  } = useTeamMetricsCharts()
+
+  // ref to avoid recreating handlers when data changes
+  const metricsRef = useRef(data?.metrics)
+  metricsRef.current = data?.metrics
 
   const chartData = useMemo(() => {
     if (!data?.metrics) return []
@@ -18,9 +30,30 @@ export default function StartRateChartClient() {
   }, [data?.metrics])
 
   const centralValue = useMemo(
-    () => calculateCentralTendency(chartData, 'median'),
+    () => calculateCentralTendency(chartData, 'average'),
     [chartData]
   )
+
+  // determine display value, label, and subtitle
+  const { displayValue, label, timestamp } = useMemo(() => {
+    if (hoveredValue?.sandboxStartRate !== undefined) {
+      const formattedDate = formatCompactDate(hoveredValue.timestamp)
+      return {
+        displayValue: formatDecimal(hoveredValue.sandboxStartRate, 3),
+        label: 'on',
+        timestamp: formattedDate,
+      }
+    }
+    return {
+      displayValue: formatDecimal(centralValue, 3),
+      label: 'average',
+      timestamp: null,
+    }
+  }, [hoveredValue, centralValue])
+
+  const handleHoverEnd = useCallback(() => {
+    setHoveredValue(null)
+  }, [setHoveredValue])
 
   if (!data) return null
 
@@ -31,15 +64,11 @@ export default function StartRateChartClient() {
           <span>Start Rate per Second</span>
           <ReactiveLiveBadge show={isPolling} />
         </div>
-        <div className="inline-flex items-end gap-2 md:gap-3">
-          <span className="prose-value-big max-md:text-2xl">
-            {formatDecimal(centralValue, 3)}
-          </span>
-          <span className="text-fg-tertiary prose-label uppercase max-md:text-xs">
-            <span className="max-md:hidden">median over range</span>
-            <span className="md:hidden">med over range</span>
-          </span>
-        </div>
+        <AnimatedMetricDisplay
+          value={displayValue}
+          label={label}
+          timestamp={timestamp}
+        />
       </div>
 
       <TeamMetricsChart
@@ -49,6 +78,8 @@ export default function StartRateChartClient() {
         timeframe={timeframe}
         className="mt-3 md:mt-4 flex-1 max-md:min-h-[30dvh]"
         onZoomEnd={(from, end) => setCustomRange(from, end)}
+        // NOTE: no onTooltipValueChange handler since it's handled in concurrent chart
+        onHoverEnd={handleHoverEnd}
       />
     </div>
   )

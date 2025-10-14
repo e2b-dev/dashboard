@@ -15,6 +15,8 @@ export interface TeamMetricsChartProps {
   className?: string
   concurrentLimit?: number
   onZoomEnd?: (from: number, to: number) => void
+  onTooltipValueChange?: (timestamp: number, value: number) => void
+  onHoverEnd?: () => void
 }
 
 /**

@@ -22,7 +22,7 @@ export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
     id: 'rate',
     name: 'Rate',
     valueKey: 'sandboxStartRate',
-    centralTendency: 'median',
+    centralTendency: 'average',
     lineColorVar: '--bg-inverted',
     areaFromVar: '--graph-area-fg-from',
     areaToVar: '--graph-area-fg-to',
@@ -35,7 +35,7 @@ export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
 // echarts static configuration that never changes
 export const STATIC_ECHARTS_CONFIG = {
   backgroundColor: 'transparent',
-  animation: false, // disable animations for performance
+  animation: false,
   toolbox: {
     id: 'toolbox',
     show: true,

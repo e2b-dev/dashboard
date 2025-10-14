@@ -1,9 +1,15 @@
 'use client'
 
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
-import { createContext, ReactNode, useContext, useMemo } from 'react'
+import { createContext, ReactNode, useContext, useMemo, useState } from 'react'
 import useSWR from 'swr'
 import { useTimeframe } from './hooks/use-timeframe'
+
+interface HoveredChartValue {
+  timestamp: number
+  concurrentSandboxes?: number
+  sandboxStartRate?: number
+}
 
 interface TeamMetricsChartsContextValue
   extends ReturnType<typeof useTimeframe> {
@@ -12,6 +18,8 @@ interface TeamMetricsChartsContextValue
   isLoading: boolean
   isValidating: boolean
   isPolling: boolean
+  hoveredValue: HoveredChartValue | null
+  setHoveredValue: (value: HoveredChartValue | null) => void
 }
 
 const TeamMetricsChartsContext = createContext<
@@ -30,6 +38,9 @@ export function TeamMetricsChartsProvider({
   children,
 }: TeamMetricsChartsProviderProps) {
   const { timeframe, setTimeRange, setCustomRange } = useTimeframe()
+  const [hoveredValue, setHoveredValue] = useState<HoveredChartValue | null>(
+    null
+  )
 
   const { data, error, isLoading, isValidating } = useSWR<TeamMetricsResponse>(
     [`/api/teams/${teamId}/metrics`, timeframe.start, timeframe.end],
@@ -76,6 +87,8 @@ export function TeamMetricsChartsProvider({
       timeframe,
       setTimeRange,
       setCustomRange,
+      hoveredValue,
+      setHoveredValue,
     }),
     [
       data,
@@ -85,6 +98,7 @@ export function TeamMetricsChartsProvider({
       timeframe,
       setTimeRange,
       setCustomRange,
+      hoveredValue,
     ]
   )
 
