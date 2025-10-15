@@ -1,8 +1,6 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { formatTimeAxisLabel } from '@/lib/utils/formatting'
-import { format } from 'date-fns'
 import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
@@ -51,28 +49,6 @@ echarts.use([
 ])
 
 /**
- * Create x-axis label formatter
- */
-function createXAxisFormatter() {
-  return (value: string | number): string => {
-    const date = new Date(value)
-    const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
-
-    const width = window.innerWidth
-
-    if (width < 768) {
-      return isNewDay ? format(date, 'MMM d') : format(date, 'HH:mm')
-    } else if (width < 1024) {
-      return isNewDay ? format(date, 'MMM d') : format(date, 'h:mm a')
-    } else if (width < 1280) {
-      return isNewDay ? format(date, 'MMM d') : format(date, 'h:mm a')
-    }
-
-    return formatTimeAxisLabel(value, isNewDay)
-  }
-}
-
-/**
  * Highly optimized team metrics chart component
  * Minimizes re-renders and deep merges, builds complete ECharts config once
  */
@@ -114,9 +90,7 @@ function TeamMetricsChart({
     config.areaToVar,
     '--stroke',
     '--fg-tertiary',
-    '--fg',
     '--bg-inverted',
-    '--bg-highlight',
     '--font-mono',
     '--accent-error-highlight',
     '--accent-error-bg',
@@ -128,9 +102,7 @@ function TeamMetricsChart({
   const areaTo = cssVars[config.areaToVar] || '#000'
   const stroke = cssVars['--stroke'] || '#000'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
-  const fg = cssVars['--fg'] || '#000'
   const bgInverted = cssVars['--bg-inverted'] || '#fff'
-  const bgHighlight = cssVars['--bg-highlight'] || '#f0f0f0'
   const fontMono = cssVars['--font-mono'] || 'monospace'
   const errorHighlight = cssVars['--accent-error-highlight'] || '#f00'
   const errorBg = cssVars['--accent-error-bg'] || '#fee'
@@ -213,7 +185,6 @@ function TeamMetricsChart({
       chartData.length > 0 ? chartData[chartData.length - 1] : null
 
     // build series object with proper typing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const seriesItem: SeriesOption = {
       id: config.id,
       name: config.name,
@@ -317,7 +288,14 @@ function TeamMetricsChart({
           fontSize: 12,
           hideOverlap: true,
           rotate: 0,
-          formatter: createXAxisFormatter(),
+          formatter: {
+            year: '{yyyy}',
+            month: '{MMM} {d}',
+            day: '{MMM} {d}',
+            hour: '{HH}:{mm}',
+            minute: '{HH}:{mm}',
+            second: '{HH}:{mm}:{ss}',
+          },
         },
         axisPointer: {
           show: true,
@@ -385,9 +363,7 @@ function TeamMetricsChart({
     areaTo,
     stroke,
     fgTertiary,
-    fg,
     bgInverted,
-    bgHighlight,
     fontMono,
     errorHighlight,
     errorBg,
