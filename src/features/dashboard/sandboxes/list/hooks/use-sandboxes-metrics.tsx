@@ -73,6 +73,8 @@ export function useSandboxesMetrics({
     },
     {
       refreshInterval: pollingInterval,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
       shouldRetryOnError: true,
       errorRetryCount: 100,
       errorRetryInterval: pollingInterval,

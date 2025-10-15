@@ -131,12 +131,14 @@ export function SandboxProvider({
       return data.metrics[serverSandboxInfo.sandboxID]
     },
     {
-      refreshInterval: SANDBOXES_DETAILS_METRICS_POLLING_MS,
       errorRetryInterval: 1000,
       errorRetryCount: 3,
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
+      refreshInterval: SANDBOXES_DETAILS_METRICS_POLLING_MS,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
     }
   )
 
