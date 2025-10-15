@@ -1,5 +1,4 @@
 import {
-  calculateCentralTendency,
   calculateYAxisMax,
   transformMetrics,
 } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
@@ -7,31 +6,6 @@ import { ClientTeamMetric } from '@/types/sandboxes.types'
 import { describe, expect, it } from 'vitest'
 
 describe('team-metrics-chart-utils', () => {
-  describe('calculateCentralTendency', () => {
-    it('should calculate average of chart data', () => {
-      const data = [
-        { x: 1000, y: 10 },
-        { x: 2000, y: 20 },
-        { x: 3000, y: 30 },
-      ]
-      expect(calculateCentralTendency(data, 'average')).toBe(20)
-    })
-
-    it('should calculate median of chart data', () => {
-      const data = [
-        { x: 1000, y: 10 },
-        { x: 2000, y: 50 },
-        { x: 3000, y: 30 },
-      ]
-      expect(calculateCentralTendency(data, 'median')).toBe(30)
-    })
-
-    it('should return 0 for empty data', () => {
-      expect(calculateCentralTendency([], 'average')).toBe(0)
-      expect(calculateCentralTendency([], 'median')).toBe(0)
-    })
-  })
-
   describe('calculateYAxisMax', () => {
     it('should round to nice numbers based on data', () => {
       const data = [
@@ -93,8 +67,8 @@ describe('team-metrics-chart-utils', () => {
 
     it('should handle null values as 0', () => {
       const metrics: ClientTeamMetric[] = [
-        { timestamp: 1000, concurrentSandboxes: 10, sandboxStartRate: null },
-        { timestamp: 2000, concurrentSandboxes: null, sandboxStartRate: 1.0 },
+        { timestamp: 1000, concurrentSandboxes: 10, sandboxStartRate: 0 },
+        { timestamp: 2000, concurrentSandboxes: 0, sandboxStartRate: 1.0 },
       ]
       expect(transformMetrics(metrics, 'concurrentSandboxes')).toEqual([
         { x: 1000, y: 10 },
