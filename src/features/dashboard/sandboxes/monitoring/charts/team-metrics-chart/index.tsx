@@ -219,8 +219,8 @@ function TeamMetricsChart({
       name: config.name,
       type: 'line',
       symbol: 'rect',
-      symbolSize: 1,
-      showSymbol: true,
+      symbolSize: 0,
+      showSymbol: false,
       showAllSymbol: false,
       lineStyle: {
         width: 1,
