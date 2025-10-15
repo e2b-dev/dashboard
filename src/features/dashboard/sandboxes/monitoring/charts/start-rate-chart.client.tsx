@@ -1,102 +1,54 @@
 'use client'
 
-import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { createSingleValueTooltipFormatter } from '@/lib/utils/chart'
-import { formatDecimal } from '@/lib/utils/formatting'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { ClientTeamMetric } from '@/types/sandboxes.types'
-import LineChart from '@/ui/charts/line-chart'
+import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
 import { ReactiveLiveBadge } from '@/ui/live'
-import { ECharts } from 'echarts/types/dist/echarts'
-import { InferSafeActionFnResult } from 'next-safe-action'
-import { useEffect, useMemo, useRef } from 'react'
-import { NonUndefined } from 'react-hook-form'
-import { useSyncedMetrics } from '../hooks/use-synced-metrics'
-import { useTeamMetrics } from '../store'
-import {
-  calculateCentralTendency,
-  calculateYAxisMax,
-  createChartSeries,
-  createMonitoringChartOptions,
-  transformMetricsToLineData,
-} from './utils'
+import { useCallback, useMemo, useRef } from 'react'
+import { useTeamMetricsCharts } from '../charts-context'
+import { AnimatedMetricDisplay } from './animated-metric-display'
+import TeamMetricsChart, { transformMetrics } from './team-metrics-chart'
+import { calculateAverage } from './team-metrics-chart/utils'
 
-interface StartRateChartProps {
-  teamId: string
-  initialData: NonUndefined<
-    InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >
-}
+export default function StartRateChartClient() {
+  const {
+    data,
+    isPolling,
+    timeframe,
+    setCustomRange,
+    hoveredValue,
+    setHoveredValue,
+  } = useTeamMetricsCharts()
 
-export default function StartRateChartClient({
-  teamId,
-  initialData,
-}: StartRateChartProps) {
-  const chartRef = useRef<ECharts | null>(null)
-  const isRegisteredRef = useRef(false)
-  const { timeframe, registerChart, unregisterChart } = useTeamMetrics()
+  // ref to avoid recreating handlers when data changes
+  const metricsRef = useRef(data?.metrics)
+  metricsRef.current = data?.metrics
 
-  // cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (chartRef.current && isRegisteredRef.current) {
-        unregisterChart(chartRef.current)
-        chartRef.current = null
-        isRegisteredRef.current = false
+  const chartData = useMemo(() => {
+    if (!data?.metrics) return []
+    return transformMetrics(data.metrics, 'sandboxStartRate')
+  }, [data?.metrics])
+
+  const centralValue = useMemo(() => calculateAverage(chartData), [chartData])
+
+  // determine display value, label, and subtitle
+  const { displayValue, label, timestamp } = useMemo(() => {
+    if (hoveredValue?.sandboxStartRate !== undefined) {
+      const formattedDate = formatCompactDate(hoveredValue.timestamp)
+      return {
+        displayValue: formatDecimal(hoveredValue.sandboxStartRate, 3),
+        label: 'at',
+        timestamp: formattedDate,
       }
     }
-  }, [unregisterChart])
-
-  // create a complete timeframe object for the hook
-  // always use store timeframe as it's the source of truth
-  const syncedTimeframe = useMemo(() => {
     return {
-      start: timeframe.start,
-      end: timeframe.end,
-      isLive: timeframe.isLive,
-      duration: timeframe.end - timeframe.start,
+      displayValue: formatDecimal(centralValue, 3),
+      label: 'average',
+      timestamp: null,
     }
-  }, [timeframe.start, timeframe.end, timeframe.isLive])
+  }, [hoveredValue, centralValue])
 
-  // use synced metrics hook for consistent fetching
-  const { data, isPolling } = useSyncedMetrics({
-    teamId,
-    timeframe: syncedTimeframe,
-    initialData,
-  })
-
-  const lineData = useMemo(() => {
-    if (!data?.metrics || !data?.step) {
-      return []
-    }
-
-    return transformMetricsToLineData<ClientTeamMetric>(
-      data.metrics,
-      (d) => d.timestamp,
-      (d) => d.sandboxStartRate
-    )
-  }, [data?.metrics, data?.step])
-
-  const centralTendency = useMemo(
-    () => calculateCentralTendency(lineData, 'median'),
-    [lineData]
-  )
-
-  const cssVars = useCssVars([
-    '--bg-inverted',
-    '--graph-area-fg-from',
-    '--graph-area-fg-to',
-  ] as const)
-
-  const tooltipFormatter = useMemo(
-    () =>
-      createSingleValueTooltipFormatter({
-        step: data?.step || 0,
-        label: 'sandboxes/s',
-        valueClassName: 'text-fg',
-      }),
-    [data?.step]
-  )
+  const handleHoverEnd = useCallback(() => {
+    setHoveredValue(null)
+  }, [setHoveredValue])
 
   if (!data) return null
 
@@ -105,83 +57,24 @@ export default function StartRateChartClient({
       <div className="flex flex-col gap-2">
         <div className="prose-label-highlight uppercase max-md:text-sm flex justify-between items-center w-full">
           <span>Start Rate per Second</span>
-          <ReactiveLiveBadge
-            show={isPolling}
-          />
+          <ReactiveLiveBadge show={isPolling} />
         </div>
-        <div className="inline-flex items-end gap-2 md:gap-3">
-          <span className="prose-value-big max-md:text-2xl">
-            {formatDecimal(centralTendency.value, 3)}
-          </span>
-          <span className="label-tertiary max-md:text-xs">
-            <span className="max-md:hidden">median over range</span>
-            <span className="md:hidden">med over range</span>
-          </span>
-        </div>
+        <AnimatedMetricDisplay
+          value={displayValue}
+          label={label}
+          timestamp={timestamp}
+        />
       </div>
 
-      <LineChart
+      <TeamMetricsChart
+        type="start-rate"
+        metrics={data.metrics}
+        step={data.step}
+        timeframe={timeframe}
         className="mt-3 md:mt-4 flex-1 max-md:min-h-[30dvh]"
-        onZoomEnd={(from, end) => {
-          // no need to do anything here, since concurrent chart will handle this already
-        }}
-        group="sandboxes-monitoring"
-        onChartReady={(chart) => {
-          // if we have a previous chart instance that's different, unregister it
-          if (
-            chartRef.current &&
-            chartRef.current !== chart &&
-            isRegisteredRef.current
-          ) {
-            unregisterChart(chartRef.current)
-            isRegisteredRef.current = false
-          }
-
-          // only register if this is a new chart instance
-          if (!isRegisteredRef.current || chartRef.current !== chart) {
-            chartRef.current = chart
-            registerChart(chart)
-            isRegisteredRef.current = true
-          }
-        }}
-        duration={syncedTimeframe.duration}
-        syncAxisPointers={true}
-        showTooltip={true}
-        tooltipFormatter={tooltipFormatter}
-        option={{
-          ...createMonitoringChartOptions({
-            timeframe: {
-              start:
-                lineData.length > 0
-                  ? (lineData[0]?.x as number)
-                  : timeframe.start,
-              end:
-                lineData.length > 0
-                  ? (lineData[lineData.length - 1]?.x as number)
-                  : timeframe.end,
-              isLive: syncedTimeframe.isLive,
-            },
-          }),
-          yAxis: {
-            splitNumber: 2,
-            max: calculateYAxisMax(lineData, undefined, 1.5),
-          },
-          grid: {
-            left: 40,
-          },
-        }}
-        data={[
-          createChartSeries({
-            id: 'rate',
-            name: 'Rate',
-            data: lineData,
-            lineColor: cssVars['--bg-inverted'],
-            areaColors: {
-              from: cssVars['--graph-area-fg-from'],
-              to: cssVars['--graph-area-fg-to'],
-            },
-          }),
-        ]}
+        onZoomEnd={(from, end) => setCustomRange(from, end)}
+        // NOTE: no onTooltipValueChange handler since it's handled in concurrent chart
+        onHoverEnd={handleHoverEnd}
       />
     </div>
   )

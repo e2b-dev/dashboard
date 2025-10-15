@@ -1,5 +1,4 @@
 import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
-import { fillTeamMetricsWithZeros } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -14,6 +13,7 @@ import {
   ConcurrentSandboxesClient,
   SandboxesStartRateClient,
 } from './header.client'
+import { MAX_DAYS_AGO } from './time-picker/constants'
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +24,11 @@ function BaseCard({ children }: { children: React.ReactNode }) {
 }
 
 function BaseSubtitle({ children }: { children: React.ReactNode }) {
-  return <span className="label-tertiary text-center">{children}</span>
+  return (
+    <span className="text-fg-tertiary prose-label uppercase text-center">
+      {children}
+    </span>
+  )
 }
 
 function BaseErrorTooltip({ children }: { children: React.ReactNode }) {
@@ -119,21 +123,9 @@ export const ConcurrentSandboxes = async ({
     )
   }
 
-  const filledMetrics = fillTeamMetricsWithZeros(
-    teamMetricsResult.data.metrics,
-    start,
-    now,
-    teamMetricsResult.data.step
-  )
-
-  const initialData = {
-    ...teamMetricsResult.data,
-    metrics: filledMetrics,
-  }
-
   return (
     <ConcurrentSandboxesClient
-      initialData={initialData}
+      initialData={teamMetricsResult.data}
       limit={tierLimits?.data?.concurrentInstances}
     />
   )
@@ -166,18 +158,7 @@ export const SandboxesStartRate = async ({
     )
   }
 
-  const filledMetrics = fillTeamMetricsWithZeros(
-    teamMetricsResult.data.metrics,
-    start,
-    now,
-    teamMetricsResult.data.step
-  )
-  const initialData = {
-    ...teamMetricsResult.data,
-    metrics: filledMetrics,
-  }
-
-  return <SandboxesStartRateClient initialData={initialData} />
+  return <SandboxesStartRateClient initialData={teamMetricsResult.data} />
 }
 
 export const MaxConcurrentSandboxes = async ({
@@ -189,7 +170,7 @@ export const MaxConcurrentSandboxes = async ({
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = Date.now()
-  const start = end - 1000 * 60 * 60 * 24 * 30 // 30 days
+  const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
   const [teamMetricsResult, tierLimits] = await Promise.all([
     getTeamMetricsMax({

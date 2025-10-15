@@ -40,7 +40,6 @@ export const commonXAxisProps = {
   fontSize: 12,
   minTickGap: 30,
   allowDataOverflow: true,
-  interval: 'preserveStart',
 } as const
 
 export const commonYAxisProps = {
