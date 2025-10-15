@@ -18,7 +18,6 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
 import {
-  AXIS_SPLIT_NUMBER,
   CHART_CONFIGS,
   LIVE_PADDING_MULTIPLIER,
   STATIC_ECHARTS_CONFIG,
@@ -172,12 +171,7 @@ function TeamMetricsChart({
   // build complete echarts option once
   const option = useMemo<EChartsOption>(() => {
     // calculate y-axis max based on data only
-    let yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
-
-    // ensure limit line is visible if it exceeds calculated max
-    if (concurrentLimit !== undefined && concurrentLimit > yAxisMax) {
-      yAxisMax = Math.round(concurrentLimit * 1.1)
-    }
+    const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
 
     const seriesData = buildSeriesData(chartData)
     const isLive = hasLiveData(chartData)
@@ -228,16 +222,6 @@ function TeamMetricsChart({
       ) as MarkPointComponentOption
     }
 
-    // add limit line if present
-    if (concurrentLimit !== undefined) {
-      seriesItem.markLine = createLimitLine(concurrentLimit, {
-        errorHighlightColor: errorHighlight,
-        errorBgColor: errorBg,
-        bg1Color: bg1,
-        fontMono,
-      })
-    }
-
     const series: EChartsOption['series'] = [seriesItem]
 
     // calculate time bounds
@@ -247,6 +231,15 @@ function TeamMetricsChart({
         ? chartData[chartData.length - 1]!.x +
           (timeframe.isLive ? step * LIVE_PADDING_MULTIPLIER : 0)
         : timeframe.end
+
+    if (concurrentLimit !== undefined && concurrentLimit <= yAxisMax) {
+      seriesItem.markLine = createLimitLine(concurrentLimit, {
+        errorHighlightColor: errorHighlight,
+        errorBgColor: errorBg,
+        bg1Color: bg1,
+        fontMono,
+      })
+    }
 
     // build complete option object
     return {
@@ -307,8 +300,9 @@ function TeamMetricsChart({
       },
       yAxis: {
         type: 'value',
-        splitNumber: AXIS_SPLIT_NUMBER,
+        min: 0,
         max: yAxisMax,
+        interval: yAxisMax / 2, // creates lines at 0%, 50%, 100%
         axisLine: {
           show: false,
           lineStyle: { color: stroke },
@@ -317,14 +311,22 @@ function TeamMetricsChart({
         splitLine: {
           show: true,
           lineStyle: { color: stroke, type: 'dashed' },
-          interval: createSplitLineInterval(concurrentLimit),
+          interval:
+            concurrentLimit !== undefined && concurrentLimit <= yAxisMax
+              ? createSplitLineInterval(concurrentLimit)
+              : 0, // 0 means show all split lines (at 0, 50%, 100%)
         },
         axisLabel: {
           show: true,
           color: fgTertiary,
           fontFamily: fontMono,
           fontSize: 14,
-          formatter: createYAxisLabelFormatter(concurrentLimit),
+          interval: 0, // show all labels (at 0, 50%, 100%)
+          formatter: createYAxisLabelFormatter(
+            concurrentLimit !== undefined && concurrentLimit <= yAxisMax
+              ? concurrentLimit
+              : undefined
+          ),
           overflow: 'truncate',
           ellipsis: '…',
           width: 40,

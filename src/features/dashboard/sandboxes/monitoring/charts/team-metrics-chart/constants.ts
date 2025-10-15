@@ -12,10 +12,7 @@ export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
     lineColorVar: '--accent-positive-highlight',
     areaFromVar: '--graph-area-accent-positive-from',
     areaToVar: '--graph-area-accent-positive-to',
-    tooltipLabel: (value: number) =>
-      value === 1 ? 'concurrent sandbox' : 'concurrent sandboxes',
-    tooltipValueClass: 'text-accent-positive-highlight',
-    yAxisScaleFactor: 1.25,
+    yAxisScaleFactor: 1.75,
   },
   'start-rate': {
     id: 'rate',
@@ -24,9 +21,7 @@ export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
     lineColorVar: '--bg-inverted',
     areaFromVar: '--graph-area-fg-from',
     areaToVar: '--graph-area-fg-to',
-    tooltipLabel: 'sandboxes/s',
-    tooltipValueClass: 'text-fg',
-    yAxisScaleFactor: 1.5,
+    yAxisScaleFactor: 1.75,
   },
 }
 
@@ -47,5 +42,4 @@ export const STATIC_ECHARTS_CONFIG = {
   },
 } as const
 
-export const AXIS_SPLIT_NUMBER = 2
 export const LIVE_PADDING_MULTIPLIER = 1

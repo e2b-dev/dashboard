@@ -92,8 +92,8 @@ export function createYAxisLabelFormatter(limit?: number) {
     return (value: number) => formatAxisNumber(value)
   }
 
-  const tolerance = limit * 0.1
-  const minDistance = Math.max(tolerance, limit * 0.05)
+  const tolerance = limit * 0.05
+  const minDistance = Math.max(tolerance, limit * 0.025)
 
   return (value: number): string => {
     if (Math.abs(value - limit) <= minDistance) {

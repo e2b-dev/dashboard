@@ -39,7 +39,5 @@ export interface TeamMetricChartConfig {
   lineColorVar: string
   areaFromVar: string
   areaToVar: string
-  tooltipLabel: string | ((value: number) => string)
-  tooltipValueClass: string
   yAxisScaleFactor: number
 }
