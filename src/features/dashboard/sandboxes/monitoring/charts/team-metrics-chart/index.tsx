@@ -325,7 +325,8 @@ function TeamMetricsChart({
           formatter: createYAxisLabelFormatter(
             concurrentLimit !== undefined && concurrentLimit <= yAxisMax
               ? concurrentLimit
-              : undefined
+              : undefined,
+            yAxisMax
           ),
           overflow: 'truncate',
           ellipsis: '…',
@@ -379,7 +380,7 @@ function TeamMetricsChart({
       echarts={echarts}
       option={option}
       notMerge={false}
-      lazyUpdate={true}
+      lazyUpdate={false}
       style={{ width: '100%', height: '100%' }}
       onChartReady={handleChartReady}
       className={className}

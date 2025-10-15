@@ -67,8 +67,10 @@ export function calculateYAxisMax(
     return Math.ceil(value / 1000) * 1000
   }
 
-  // always ensure limit line is visible if it exists below calculated max
-  return snapToAxis(max * scaleFactor)
+  const calculatedMax = snapToAxis(max * scaleFactor)
+
+  // ensure minimum y-axis range when all data is zero
+  return Math.max(calculatedMax, 1)
 }
 
 /**
@@ -86,10 +88,25 @@ export function hasLiveData(data: TeamMetricDataPoint[]): boolean {
 
 /**
  * Create Y-axis formatter that hides labels near limit line
+ * Shows decimals for small ranges to avoid duplicate labels
  */
-export function createYAxisLabelFormatter(limit?: number) {
+export function createYAxisLabelFormatter(limit?: number, yAxisMax?: number) {
+  // determine if we need decimal precision based on axis range
+  const needsDecimals = yAxisMax !== undefined && yAxisMax <= 1
+
+  const formatValue = (value: number): string => {
+    if (needsDecimals) {
+      // show 1 decimal for small ranges
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      })
+    }
+    return formatAxisNumber(value)
+  }
+
   if (limit === undefined) {
-    return (value: number) => formatAxisNumber(value)
+    return formatValue
   }
 
   const tolerance = limit * 0.05
@@ -99,7 +116,7 @@ export function createYAxisLabelFormatter(limit?: number) {
     if (Math.abs(value - limit) <= minDistance) {
       return ''
     }
-    return formatAxisNumber(value)
+    return formatValue(value)
   }
 }
 
