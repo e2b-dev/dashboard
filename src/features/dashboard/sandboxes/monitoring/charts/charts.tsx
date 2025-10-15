@@ -8,9 +8,9 @@ import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
 import { Suspense } from 'react'
 import { TeamMetricsChartsProvider } from '../charts-context'
-import ConcurrentChartClient from './concurrent-chart.client'
+import ConcurrentChartClient from './concurrent-chart'
 import ChartFallback from './fallback'
-import StartRateChartClient from './start-rate-chart.client'
+import StartRateChartClient from './startrate-chart'
 
 interface TeamMetricsChartsProps {
   params: Promise<SandboxesMonitoringPageParams>
