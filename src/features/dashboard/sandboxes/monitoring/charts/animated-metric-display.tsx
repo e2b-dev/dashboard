@@ -1,5 +1,6 @@
 'use client'
 
+import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { AnimatePresence, motion } from 'motion/react'
 import { memo } from 'react'
 
@@ -18,7 +19,10 @@ function AnimatedMetricDisplayComponent({
 }: AnimatedMetricDisplayProps) {
   return (
     <div className="inline-flex items-end gap-2 md:gap-3">
-      <span className="prose-value-big max-md:text-2xl">{value}</span>
+      <AnimatedNumber
+        value={value}
+        className="prose-value-big max-md:text-2xl"
+      />
 
       <span className="text-fg-tertiary prose-label uppercase max-md:text-xs">
         <span className="max-md:hidden">{label}</span>

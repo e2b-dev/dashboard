@@ -3,7 +3,7 @@
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { formatTimeAxisLabel } from '@/lib/utils/formatting'
 import { format } from 'date-fns'
-import { EChartsOption } from 'echarts'
+import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
 import {
@@ -214,7 +214,7 @@ function TeamMetricsChart({
 
     // build series object with proper typing
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const seriesItem: any = {
+    const seriesItem: SeriesOption = {
       id: config.id,
       name: config.name,
       type: 'line',
@@ -251,7 +251,10 @@ function TeamMetricsChart({
 
     // add live indicators if live
     if (isLive && lastPoint) {
-      seriesItem.markPoint = createLiveIndicators(lastPoint, lineColor)
+      seriesItem.markPoint = createLiveIndicators(
+        lastPoint,
+        lineColor
+      ) as MarkPointComponentOption
     }
 
     // add limit line if present

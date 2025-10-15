@@ -2,6 +2,7 @@
 
 import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
 import { NonUndefined } from 'react-hook-form'
@@ -20,14 +21,16 @@ export function ConcurrentSandboxesClient({
 }: TeamMonitoringHeaderClientProps) {
   const { data } = useRecentMetrics({ initialData })
 
-  const lastConcurrentSandboxes =
+  const lastConcurrentSandboxes = formatNumber(
     data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
+  )
 
   return (
     <>
-      <span className="prose-value-big mt-1">
-        {formatNumber(lastConcurrentSandboxes)}
-      </span>
+      <AnimatedNumber
+        value={lastConcurrentSandboxes}
+        className="prose-value-big mt-1"
+      />
       {limit && (
         <span className="absolute right-3 bottom-3 md:right-6 md:bottom-4 text-fg-tertiary prose-label">
           LIMIT: {formatNumber(limit)}
@@ -48,5 +51,10 @@ export function SandboxesStartRateClient({
     return formatDecimal(rate, 3)
   }, [data])
 
-  return <span className="prose-value-big mt-1">{lastSandboxesStartRate}</span>
+  return (
+    <AnimatedNumber
+      value={lastSandboxesStartRate}
+      className="prose-value-big mt-1"
+    />
+  )
 }

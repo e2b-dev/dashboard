@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/utils/formatting'
 import { SemiLiveBadge } from '@/ui/live'
+import { AnimatedNumber } from '@/ui/primitives/animated-number'
 
 interface LiveSandboxCounterProps {
   count: number
@@ -22,7 +23,10 @@ export function LiveSandboxCounter({
     >
       <SemiLiveBadge className="mr-2.5" />
 
-      <span className="prose-value-small">{formatNumber(count)}</span>
+      <AnimatedNumber
+        value={formatNumber(count)}
+        className="prose-value-small"
+      />
 
       <span className="prose-label text-fg-tertiary">CONCURRENT SANDBOXES</span>
     </div>
