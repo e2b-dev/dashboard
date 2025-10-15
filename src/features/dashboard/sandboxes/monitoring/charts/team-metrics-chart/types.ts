@@ -36,7 +36,6 @@ export interface TeamMetricChartConfig {
   id: string
   name: string
   valueKey: 'concurrentSandboxes' | 'sandboxStartRate'
-  centralTendency: 'average' | 'median'
   lineColorVar: string
   areaFromVar: string
   areaToVar: string

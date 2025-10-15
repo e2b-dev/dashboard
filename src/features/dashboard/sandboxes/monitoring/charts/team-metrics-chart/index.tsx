@@ -416,4 +416,4 @@ export default MemoizedTeamMetricsChart
 // export utilities for use in parent components
 export { CHART_CONFIGS } from './constants'
 export type { ChartType, TeamMetricsChartProps } from './types'
-export { calculateCentralTendency, transformMetrics } from './utils'
+export { transformMetrics } from './utils'

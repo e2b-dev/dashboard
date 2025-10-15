@@ -29,7 +29,7 @@ function AnimatedMetricDisplayComponent({
         <span className="md:hidden">{mobileLabel || label}</span>
       </span>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {timestamp && (
           <motion.span
             initial={{ opacity: 0, x: 5 }}

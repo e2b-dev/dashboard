@@ -15,10 +15,8 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useTeamMetricsCharts } from '../charts-context'
 import { TimePicker } from '../time-picker'
 import { AnimatedMetricDisplay } from './animated-metric-display'
-import TeamMetricsChart, {
-  calculateCentralTendency,
-  transformMetrics,
-} from './team-metrics-chart'
+import TeamMetricsChart, { transformMetrics } from './team-metrics-chart'
+import { calculateAverage } from './team-metrics-chart/utils'
 
 const CHART_RANGE_MAP = {
   custom: null,
@@ -55,10 +53,7 @@ export default function ConcurrentChartClient({
     return transformMetrics(data.metrics, 'concurrentSandboxes')
   }, [data?.metrics])
 
-  const centralValue = useMemo(
-    () => calculateCentralTendency(chartData, 'average'),
-    [chartData]
-  )
+  const centralValue = useMemo(() => calculateAverage(chartData), [chartData])
 
   // determine display value, label, and subtitle
   const { displayValue, label, timestamp } = useMemo(() => {
@@ -66,7 +61,7 @@ export default function ConcurrentChartClient({
       const formattedDate = formatCompactDate(hoveredValue.timestamp)
       return {
         displayValue: formatNumber(hoveredValue.concurrentSandboxes),
-        label: 'on',
+        label: 'at',
         timestamp: formattedDate,
       }
     }

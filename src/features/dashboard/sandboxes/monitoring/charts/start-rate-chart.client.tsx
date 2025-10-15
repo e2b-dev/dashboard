@@ -5,10 +5,8 @@ import { ReactiveLiveBadge } from '@/ui/live'
 import { useCallback, useMemo, useRef } from 'react'
 import { useTeamMetricsCharts } from '../charts-context'
 import { AnimatedMetricDisplay } from './animated-metric-display'
-import TeamMetricsChart, {
-  calculateCentralTendency,
-  transformMetrics,
-} from './team-metrics-chart'
+import TeamMetricsChart, { transformMetrics } from './team-metrics-chart'
+import { calculateAverage } from './team-metrics-chart/utils'
 
 export default function StartRateChartClient() {
   const {
@@ -29,10 +27,7 @@ export default function StartRateChartClient() {
     return transformMetrics(data.metrics, 'sandboxStartRate')
   }, [data?.metrics])
 
-  const centralValue = useMemo(
-    () => calculateCentralTendency(chartData, 'average'),
-    [chartData]
-  )
+  const centralValue = useMemo(() => calculateAverage(chartData), [chartData])
 
   // determine display value, label, and subtitle
   const { displayValue, label, timestamp } = useMemo(() => {
@@ -40,7 +35,7 @@ export default function StartRateChartClient() {
       const formattedDate = formatCompactDate(hoveredValue.timestamp)
       return {
         displayValue: formatDecimal(hoveredValue.sandboxStartRate, 3),
-        label: 'on',
+        label: 'at',
         timestamp: formattedDate,
       }
     }

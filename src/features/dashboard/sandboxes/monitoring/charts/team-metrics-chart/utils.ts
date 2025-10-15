@@ -27,7 +27,7 @@ export function transformMetrics(
 /**
  * Calculate average - single pass
  */
-function calculateAverage(data: TeamMetricDataPoint[]): number {
+export function calculateAverage(data: TeamMetricDataPoint[]): number {
   if (data.length === 0) return 0
 
   let sum = 0
@@ -38,35 +38,6 @@ function calculateAverage(data: TeamMetricDataPoint[]): number {
   }
 
   return sum / len
-}
-
-/**
- * Calculate median - optimized with typed array for sorting
- */
-function calculateMedian(data: TeamMetricDataPoint[]): number {
-  const len = data.length
-  if (len === 0) return 0
-
-  // Float64Array for faster sorting
-  const values = new Float64Array(len)
-  for (let i = 0; i < len; i++) {
-    values[i] = data[i]!.y
-  }
-
-  values.sort()
-
-  const mid = len >> 1 // bit shift for division by 2
-  return len & 1 ? values[mid]! : (values[mid - 1]! + values[mid]!) / 2
-}
-
-/**
- * Calculate central tendency based on type
- */
-export function calculateCentralTendency(
-  data: TeamMetricDataPoint[],
-  type: 'average' | 'median'
-): number {
-  return type === 'median' ? calculateMedian(data) : calculateAverage(data)
 }
 
 /**

@@ -14,10 +14,7 @@ const MIN_RANGE_MS = 1.5 * 60 * 1000
 
 const getStableNow = () => {
   const now = Date.now()
-  return (
-    Math.floor(now / TEAM_METRICS_TIMEFRAME_UPDATE_MS) *
-    TEAM_METRICS_TIMEFRAME_UPDATE_MS
-  )
+  return Math.floor(now / 1_000) * 1_000
 }
 
 function validateTimeRange(

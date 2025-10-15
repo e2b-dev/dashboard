@@ -62,9 +62,18 @@ function AnimatedNumberComponent({
   const characters = stringValue.split('')
 
   return (
-    <div className={cn('flex flex-row', className)}>
+    <div className={cn('relative flex flex-row', className)}>
+      {/* copyable layer - transparent text that overlays animated chars */}
+      <span className="absolute inset-0 flex flex-row select-text text-transparent z-10 pointer-events-auto">
+        {stringValue}
+      </span>
+
+      {/* animated visual layer - not selectable */}
       {characters.map((char, index) => (
-        <div key={index} className="relative inline-block overflow-hidden">
+        <div
+          key={index}
+          className="relative inline-block overflow-hidden select-none"
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={`${index}-${char}`}
