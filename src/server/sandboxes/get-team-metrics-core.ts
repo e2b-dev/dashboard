@@ -6,10 +6,10 @@ import {
   calculateTeamMetricsStep,
   MOCK_TEAM_METRICS_DATA,
 } from '@/configs/mock-data'
-import { fillTeamMetricsWithZeros } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { fillTeamMetricsWithZeros } from '@/server/sandboxes/utils'
 import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { cache } from 'react'
 
