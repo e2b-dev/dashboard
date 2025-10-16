@@ -1,4 +1,5 @@
 import { COOKIE_KEYS } from '@/configs/keys'
+import { METADATA } from '@/configs/metadata'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
@@ -7,6 +8,14 @@ import getUserMemo from '@/server/auth/get-user-memo'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { unauthorized } from 'next/navigation'
+
+export const metadata = {
+  title: 'Dashboard - E2B',
+  description: METADATA.description,
+  openGraph: METADATA.openGraph,
+  twitter: METADATA.twitter,
+  robots: 'noindex, nofollow',
+}
 
 export interface DashboardLayoutProps {
   params: Promise<{

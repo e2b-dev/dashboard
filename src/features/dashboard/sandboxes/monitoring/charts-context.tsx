@@ -3,6 +3,7 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react'
 import useSWR from 'swr'
+import { useDashboard } from '../../context'
 import { useTimeframe } from './hooks/use-timeframe'
 
 interface HoveredChartValue {
@@ -27,23 +28,22 @@ const TeamMetricsChartsContext = createContext<
 >(undefined)
 
 interface TeamMetricsChartsProviderProps {
-  teamId: string
   initialData: TeamMetricsResponse
   children: ReactNode
 }
 
 export function TeamMetricsChartsProvider({
-  teamId,
   initialData,
   children,
 }: TeamMetricsChartsProviderProps) {
+  const { team } = useDashboard()
   const { timeframe, setTimeRange, setCustomRange } = useTimeframe()
   const [hoveredValue, setHoveredValue] = useState<HoveredChartValue | null>(
     null
   )
 
   const { data, error, isLoading, isValidating } = useSWR<TeamMetricsResponse>(
-    [`/api/teams/${teamId}/metrics`, timeframe.start, timeframe.end],
+    [`/api/teams/${team?.id}/metrics`, timeframe.start, timeframe.end],
     async ([url, start, end]: [string, number, number]) => {
       const response = await fetch(url, {
         method: 'POST',

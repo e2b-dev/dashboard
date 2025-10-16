@@ -1,6 +1,7 @@
 'use client'
 
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -29,7 +30,6 @@ import { Skeleton } from '@/ui/primitives/skeleton'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { AnimatePresence, motion } from 'motion/react'
-import { useDashboard } from '../context'
 
 interface NameCardProps {
   className?: string

@@ -1,6 +1,7 @@
 'use client'
 
 import { API_KEYS_LAST_USED_FIRST_COLLECTION_DATE } from '@/configs/versioning'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -24,7 +25,6 @@ import { MoreHorizontal } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
-import { useDashboard } from '../context'
 
 interface TableRowProps {
   apiKey: TeamAPIKey

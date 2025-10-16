@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const TeamIdOrSlugSchema = z.union([
-  z.string().uuid(),
+  z.uuid(),
   z
     .string()
     .regex(

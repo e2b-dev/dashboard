@@ -27,7 +27,7 @@ export const getTeamIdFromSegment = async (segment: string) => {
     return null
   }
 
-  if (z.string().uuid(segment).safeParse(segment).success) {
+  if (z.uuid(segment).safeParse(segment).success) {
     return segment
   }
 

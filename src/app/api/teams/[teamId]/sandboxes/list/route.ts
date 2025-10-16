@@ -4,8 +4,8 @@ import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { SandboxesListResponse } from './types'
 
 export async function GET(
-  request: Request,
-  params: Promise<{ teamId: string }>
+  _req: Request,
+  { params }: RouteContext<'/api/teams/[teamId]/sandboxes/list'>
 ) {
   try {
     const { teamId } = await params

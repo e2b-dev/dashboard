@@ -9,7 +9,6 @@ import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { Sandbox } from '@/types/api'
-import { unauthorized } from 'next/navigation'
 import { z } from 'zod'
 
 const GetTeamSandboxesSchema = z.object({
@@ -17,21 +16,16 @@ const GetTeamSandboxesSchema = z.object({
 })
 
 export const getTeamSandboxes = authActionClient
-  .schema(GetTeamSandboxesSchema)
   .metadata({ serverFunctionName: 'getTeamSandboxes' })
+  .schema(GetTeamSandboxesSchema)
   .use(withTeamIdResolution)
   .action(
     async ({
-      parsedInput,
       ctx,
     }): Promise<{
       sandboxes: Sandbox[]
     }> => {
       const { session, teamId } = ctx
-
-      if (!teamId) {
-        throw unauthorized()
-      }
 
       if (USE_MOCK_DATA) {
         await new Promise((resolve) => setTimeout(resolve, 200))

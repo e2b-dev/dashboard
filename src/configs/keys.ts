@@ -38,4 +38,8 @@ export const SWR_KEYS = {
     [`/api/teams/${teamId}/sandboxes/metrics`, sandboxIds] as const,
   SANDBOX_INFO: (sandboxId: string) =>
     [`/api/sandbox/details`, sandboxId] as const,
+
+  // sandboxes list keys
+  SANDBOXES_LIST: (teamId: string) =>
+    [`/api/teams/${teamId}/sandboxes/list`] as const,
 }

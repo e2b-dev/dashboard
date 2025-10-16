@@ -1,5 +1,6 @@
 'use client'
 
+import { useDashboard } from '@/features/dashboard/context'
 import CopyButton from '@/ui/copy-button'
 import { Badge } from '@/ui/primitives/badge'
 import {
@@ -10,7 +11,6 @@ import {
   CardTitle,
 } from '@/ui/primitives/card'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useDashboard } from '../context'
 
 interface InfoCardProps {
   className?: string

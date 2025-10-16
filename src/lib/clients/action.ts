@@ -175,6 +175,17 @@ export const withTeamIdResolution = createMiddleware<{
     typeof clientInput !== 'object' ||
     !('teamIdOrSlug' in clientInput)
   ) {
+    l.error(
+      {
+        key: 'with_team_id_resolution:missing_team_id_or_slug',
+        context: {
+          teamIdOrSlug: (clientInput as { teamIdOrSlug?: string })
+            ?.teamIdOrSlug,
+        },
+      },
+      'Missing teamIdOrSlug when using withTeamIdResolution middleware'
+    )
+
     throw new Error(
       'teamIdOrSlug is required when using withTeamIdResolution middleware'
     )

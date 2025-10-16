@@ -1,6 +1,7 @@
 'use client'
 
 import { SandboxesListResponse } from '@/app/api/teams/[teamId]/sandboxes/list/types'
+import { SWR_KEYS } from '@/configs/keys'
 import { Sandboxes } from '@/types/api'
 import useSWR from 'swr'
 import { useDashboard } from '../../../context'
@@ -16,9 +17,11 @@ export function useSandboxes({
 }: UseSandboxesProps) {
   const { team } = useDashboard()
 
+  const swrKey = team ? SWR_KEYS.SANDBOXES_LIST(team.id) : [null]
+
   const swr = useSWR<SandboxesListResponse>(
-    team ? [`/api/teams/${team?.id}/sandboxes/list`] : [],
-    async ([url]: [string]) => {
+    swrKey,
+    async ([url]: [string | null]) => {
       if (!url) {
         return {
           sandboxes: initialSandboxes || [],
@@ -26,6 +29,7 @@ export function useSandboxes({
       }
 
       const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -35,16 +39,16 @@ export function useSandboxes({
       if (!response.ok) {
         const { error } = await response.json()
 
-        throw new Error(error || 'Failed to fetch metrics')
+        throw new Error(error || 'Failed to fetch sandboxes list')
       }
 
       return (await response.json()) as SandboxesListResponse
     },
     {
       refreshInterval: pollingInterval,
-      shouldRetryOnError: true,
-      errorRetryCount: 100,
-      errorRetryInterval: pollingInterval,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
+      shouldRetryOnError: false,
       revalidateOnMount: false,
       revalidateIfStale: true,
       revalidateOnFocus: false,

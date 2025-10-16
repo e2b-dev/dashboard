@@ -9,17 +9,11 @@ const config = {
   reactStrictMode: true,
   experimental: {
     reactCompiler: true,
-    ppr: true,
     useCache: true,
-    staleTimes: {
-      dynamic: 180,
-      static: 180,
-    },
     serverActions: {
       bodySizeLimit: '5mb',
     },
     authInterrupts: true,
-    cacheComponents: true,
     cacheLife: {
       teamSettings: {
         stale: 180,

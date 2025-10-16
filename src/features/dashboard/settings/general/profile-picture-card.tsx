@@ -1,6 +1,7 @@
 'use client'
 
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -15,7 +16,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRef, useState } from 'react'
-import { useDashboard } from '../context'
 
 interface ProfilePictureCardProps {
   className?: string

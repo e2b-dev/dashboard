@@ -11,7 +11,7 @@ import Head from 'next/head'
 import { Suspense } from 'react'
 import { Body } from './body'
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
