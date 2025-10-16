@@ -141,7 +141,7 @@ export async function checkUserTeamAuthorization(
  */
 export async function resolveTeamId(identifier: string): Promise<string> {
   // If identifier is UUID, return directly
-  if (z.string().uuid().safeParse(identifier).success) {
+  if (z.uuid().safeParse(identifier).success) {
     return identifier
   }
 

@@ -12,7 +12,7 @@ export const customTimeFormSchema = z
     startTime: z.string(),
     endDate: z.string().optional(),
     endTime: z.string().optional(),
-    endEnabled: z.boolean().default(false),
+    endEnabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
     // start date and time are required

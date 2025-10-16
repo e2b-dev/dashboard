@@ -22,9 +22,9 @@ export async function SandboxesCard({
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="font-mono">Sandboxes Started</CardTitle>
+        <CardTitle className="font-mono">Sandboxes Usage</CardTitle>
         <CardDescription>
-          The number of sandboxes your team started over time.
+          Total sandboxes started and resumed over time.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

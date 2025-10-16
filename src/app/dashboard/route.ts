@@ -1,8 +1,9 @@
 import { COOKIE_KEYS } from '@/configs/keys'
-import { PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
+import { encodedRedirect } from '@/lib/utils/auth'
 import { getTeamMetadataFromCookiesMemo } from '@/lib/utils/server'
 import getUserMemo from '@/server/auth/get-user-memo'
 import { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
@@ -22,8 +23,10 @@ const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   usage: (teamId) => PROTECTED_URLS.USAGE(teamId),
   billing: (teamId) => PROTECTED_URLS.BILLING(teamId),
   budget: (teamId) => PROTECTED_URLS.BUDGET(teamId),
-  keys: (teamId) => PROTECTED_URLS.KEYS(teamId),
-  team: (teamId) => PROTECTED_URLS.TEAM(teamId),
+  keys: (teamId) => PROTECTED_URLS.SETTINGS(teamId, 'keys'),
+  settings: (teamId) => PROTECTED_URLS.SETTINGS(teamId, 'general'),
+  team: (teamId) => PROTECTED_URLS.SETTINGS(teamId, 'general'),
+  members: (teamId) => PROTECTED_URLS.MEMBERS(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
 }
@@ -121,8 +124,16 @@ export async function GET(request: NextRequest) {
         },
         'dashboard route - no teams found, redirecting to new team'
       )
-      return NextResponse.redirect(
-        new URL(PROTECTED_URLS.NEW_TEAM, request.url)
+
+      // UNEXPECTED STATE - sign out and redirect to sign-in
+      await supabase.auth.signOut()
+
+      const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
+
+      return encodedRedirect(
+        'error',
+        signInUrl.toString(),
+        'No personal team found. Please contact support.'
       )
     }
 

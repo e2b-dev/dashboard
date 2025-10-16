@@ -14,7 +14,7 @@ import { z } from 'zod'
 const CreateApiKeySchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,
   name: z
-    .string({ required_error: 'Name is required' })
+    .string({ error: 'Name is required' })
     .min(1, 'Name cannot be empty')
     .max(50, 'Name cannot be longer than 50 characters')
     .trim(),
@@ -65,7 +65,7 @@ export const createApiKeyAction = authActionClient
 
 const DeleteApiKeySchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,
-  apiKeyId: z.string({ required_error: 'API Key ID is required' }).uuid(),
+  apiKeyId: z.uuid(),
 })
 
 export const deleteApiKeyAction = authActionClient

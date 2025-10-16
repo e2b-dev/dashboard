@@ -34,7 +34,7 @@ export const DashboardTitleProvider = () => {
 
   // Update document title whenever title changes
   useEffect(() => {
-    document.title = title
+    document.title = title as string
   }, [title])
 
   // Empty fragment since this is just a utility component

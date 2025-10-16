@@ -1,14 +1,13 @@
-import { ConcurrentChart } from '@/features/dashboard/sandboxes/monitoring/charts/concurrent-chart'
-import { StartRateChart } from '@/features/dashboard/sandboxes/monitoring/charts/start-rate-chart'
+import { TeamMetricsCharts } from '@/features/dashboard/sandboxes/monitoring/charts/charts'
 import SandboxesMonitoringHeader from '@/features/dashboard/sandboxes/monitoring/header'
-import { ChartRegistryProvider } from '@/lib/hooks/use-connected-charts'
 
 export interface SandboxesMonitoringPageParams {
   teamIdOrSlug: string
 }
 
 export interface SandboxesMonitoringPageSearchParams {
-  plot?: string
+  start?: string
+  end?: string
 }
 
 interface SandboxesMonitoringPageProps {
@@ -21,14 +20,11 @@ export default function SandboxesMonitoringPage({
   searchParams,
 }: SandboxesMonitoringPageProps) {
   return (
-    <ChartRegistryProvider group="sandboxes-monitoring">
-      <div className="flex flex-col h-full relative min-h-0 max-md:overflow-y-auto">
-        <SandboxesMonitoringHeader params={params} />
-        <div className="flex flex-col flex-1 max-md:min-h-[calc(100vh-3.5rem)] min-h-0">
-          <ConcurrentChart params={params} searchParams={searchParams} />
-          <StartRateChart params={params} searchParams={searchParams} />
-        </div>
+    <div className="flex flex-col h-full relative min-h-0 max-md:overflow-y-auto">
+      <SandboxesMonitoringHeader params={params} />
+      <div className="flex flex-col flex-1 max-md:min-h-[calc(100vh-3.5rem)] min-h-0">
+        <TeamMetricsCharts params={params} searchParams={searchParams} />
       </div>
-    </ChartRegistryProvider>
+    </div>
   )
 }

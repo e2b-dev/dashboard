@@ -47,7 +47,7 @@ async function PageContent({ params }: PageProps) {
               'Unknown error',
           } satisfies Error
         }
-        description={'Could not load sandboxes'}
+        description="Could not load sandboxes"
       />
     )
   }
@@ -70,10 +70,12 @@ async function PageContent({ params }: PageProps) {
   ]
 
   return (
-    <SandboxesTable
-      templates={templates}
-      initialSandboxes={sandboxes}
-      initialMetrics={metricsRes?.data?.metrics || null}
-    />
+    <div className="flex flex-col h-full relative min-h-0 md:overflow-hidden">
+      <SandboxesTable
+        templates={templates}
+        initialSandboxes={sandboxes}
+        initialMetrics={metricsRes?.data?.metrics || null}
+      />
+    </div>
   )
 }

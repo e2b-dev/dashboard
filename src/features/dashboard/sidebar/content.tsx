@@ -1,9 +1,6 @@
 'use client'
 
-import {
-  DashboardNavLink,
-  MAIN_DASHBOARD_LINKS,
-} from '@/configs/dashboard-navs'
+import { SIDEBAR_MAIN_LINKS, SidebarNavItem } from '@/configs/sidebar'
 import { cn } from '@/lib/utils'
 import micromatch from 'micromatch'
 import Link from 'next/link'
@@ -24,10 +21,10 @@ import { usePathname } from 'next/navigation'
 import { useDashboard } from '../context'
 
 type GroupedLinks = {
-  [key: string]: DashboardNavLink[]
+  [key: string]: SidebarNavItem[]
 }
 
-const createGroupedLinks = (links: DashboardNavLink[]): GroupedLinks => {
+const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
   return links.reduce((acc, link) => {
     const group = link.group || 'ungrouped'
     if (!acc[group]) {
@@ -47,11 +44,11 @@ export default function DashboardSidebarContent() {
   const { setOpenMobile } = useSidebar()
 
   const groupedNavLinks = useMemo(
-    () => createGroupedLinks(MAIN_DASHBOARD_LINKS),
+    () => createGroupedLinks(SIDEBAR_MAIN_LINKS),
     []
   )
 
-  const isActive = (link: DashboardNavLink) => {
+  const isActive = (link: SidebarNavItem) => {
     if (!pathname || !link.activeMatch) return false
 
     return micromatch.isMatch(pathname, link.activeMatch)

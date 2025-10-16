@@ -13,6 +13,7 @@ import {
   validateEmail,
 } from '@/server/auth/validate-email'
 import { Provider } from '@supabase/supabase-js'
+import { returnValidationErrors } from 'next-safe-action'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -78,6 +79,15 @@ export const signUpAction = actionClient
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
     const supabase = await createClient()
     const origin = (await headers()).get('origin') || ''
+
+    // basic security check, that password does not equal e-mail
+    if (password && email && password.toLowerCase() === email.toLowerCase()) {
+      return returnValidationErrors(signUpSchema, {
+        password: {
+          _errors: ['Password is too weak.'],
+        },
+      })
+    }
 
     const validationResult = await validateEmail(email)
 
