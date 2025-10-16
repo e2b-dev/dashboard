@@ -2,7 +2,6 @@ import { COOKIE_KEYS } from '@/configs/keys'
 import { SandboxInspectProvider } from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
-import { cn } from '@/lib/utils'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxRoot } from '@/server/sandboxes/get-sandbox-root'
 import ClientOnly from '@/ui/client-only'
@@ -40,12 +39,7 @@ export default async function SandboxInspectPage({
       rootPath={rootPath}
       seedEntries={res?.data?.entries ?? []}
     >
-      <ClientOnly
-        className={cn(
-          'flex flex-1 gap-4 overflow-hidden p-3 md:p-6',
-          'max-md:sticky max-md:top-0 max-md:min-h-[calc(100vh-var(--protected-navbar-height))]'
-        )}
-      >
+      <ClientOnly className="flex flex-1 gap-4 overflow-hidden p-3 md:p-6">
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
       </ClientOnly>

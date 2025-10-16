@@ -33,14 +33,18 @@ export default function SandboxLayout({
   }
 
   return (
-    <div className="flex max-h-svh h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
+    <div className="flex max-h-svh h-full min-h-0 flex-1 flex-col max-md:h-auto max-md:min-h-svh max-md:overflow-y-auto">
       {header}
 
-      <DashboardTabs type="path" layoutKey="tabs-indicator-sandbox">
+      <DashboardTabs
+        type="path"
+        layoutKey="tabs-indicator-sandbox"
+        className="max-md:sticky max-md:top-0 max-md:z-20 max-md:bg-bg"
+      >
         <DashboardTab
           id="inspect"
           label="Inspect"
-          className="flex flex-col max-h-full"
+          className="flex flex-col max-h-full max-md:min-h-svh"
         >
           {isEnvdVersionCompatibleForInspect ? (
             children
