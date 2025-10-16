@@ -39,7 +39,7 @@ export default async function SandboxInspectPage({
       rootPath={rootPath}
       seedEntries={res?.data?.entries ?? []}
     >
-      <ClientOnly className="flex flex-1 gap-4 overflow-hidden p-3 md:p-6">
+      <ClientOnly className="max-md:absolute max-md:inset-0 flex flex-1 gap-4 overflow-hidden p-3 md:p-6">
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
       </ClientOnly>

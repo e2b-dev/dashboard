@@ -39,12 +39,12 @@ export default function SandboxLayout({
       <DashboardTabs
         type="path"
         layoutKey="tabs-indicator-sandbox"
-        className="max-md:sticky max-md:top-0 max-md:z-20 max-md:bg-bg"
+        className="max-md:sticky max-md:top-0 max-md:z-20 max-md:bg-bg max-md:min-h-svh"
       >
         <DashboardTab
           id="inspect"
           label="Inspect"
-          className="flex flex-col max-h-full max-md:min-h-svh"
+          className="flex flex-col max-h-full relative"
         >
           {isEnvdVersionCompatibleForInspect ? (
             children
