@@ -13,11 +13,13 @@ import { FC, Suspense } from 'react'
 import MemberTableBody from './member-table-body'
 
 interface MemberTableProps {
-  teamId: string
+  params: Promise<{
+    teamIdOrSlug: string
+  }>
   className?: string
 }
 
-const MemberTable: FC<MemberTableProps> = ({ teamId, className }) => {
+const MemberTable: FC<MemberTableProps> = async ({ params, className }) => {
   return (
     <Table className={cn('min-w-[800px]', className)}>
       <TableHeader>
@@ -45,7 +47,7 @@ const MemberTable: FC<MemberTableProps> = ({ teamId, className }) => {
             </TableRow>
           }
         >
-          <MemberTableBody teamId={teamId} />
+          <MemberTableBody params={params} />
         </Suspense>
       </TableBody>
     </Table>

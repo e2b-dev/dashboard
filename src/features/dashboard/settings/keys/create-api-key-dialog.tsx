@@ -1,5 +1,6 @@
 'use client'
 
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { createApiKeyAction } from '@/server/keys/key-actions'
 import CopyButton from '@/ui/copy-button'
@@ -42,15 +43,19 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface CreateApiKeyDialogProps {
-  teamId: string
+  params: Promise<{
+    teamIdOrSlug: string
+  }>
   children?: ReactNode
 }
 
 const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
-  teamId,
+  params,
   children,
 }) => {
   'use no memo'
+
+  const selectedTeam = useSelectedTeam()
 
   const [open, setOpen] = useState(false)
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null)
@@ -98,9 +103,14 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
         {!createdApiKey ? (
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((values) =>
-                createApiKey({ teamId, name: values.name })
-              )}
+              onSubmit={form.handleSubmit((values) => {
+                if (!selectedTeam) return
+
+                createApiKey({
+                  teamId: selectedTeam.id,
+                  name: values.name,
+                })
+              })}
               className="flex flex-col gap-6"
             >
               <FormField
@@ -125,7 +135,11 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
               />
 
               <DialogFooter>
-                <Button type="submit" loading={isPending}>
+                <Button
+                  type="submit"
+                  loading={isPending}
+                  disabled={!selectedTeam?.id}
+                >
                   Create Key
                 </Button>
               </DialogFooter>
