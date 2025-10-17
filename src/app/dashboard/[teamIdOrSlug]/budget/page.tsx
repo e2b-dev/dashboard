@@ -7,9 +7,7 @@ interface BudgetPageProps {
   params: Promise<{ teamIdOrSlug: string }>
 }
 
-export default async function BudgetPage({ params }: BudgetPageProps) {
-  'use cache'
-
+export default function BudgetPage({ params }: BudgetPageProps) {
   return (
     <Frame
       classNames={{

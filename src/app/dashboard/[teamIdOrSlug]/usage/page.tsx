@@ -10,8 +10,6 @@ export default async function UsagePage({
 }: {
   params: Promise<{ teamIdOrSlug: string }>
 }) {
-  'use cache'
-
   return (
     <Frame
       classNames={{
@@ -29,13 +27,11 @@ export default async function UsagePage({
   )
 }
 
-async function UsagePageContent({
+function UsagePageContent({
   params,
 }: {
   params: Promise<{ teamIdOrSlug: string }>
 }) {
-  'use cache'
-
   return (
     <CatchErrorBoundary
       hideFrame

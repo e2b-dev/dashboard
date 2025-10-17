@@ -13,8 +13,6 @@ export default async function SandboxesLayout({
   monitoring,
   list,
 }: SandboxesLayoutProps) {
-  'use cache'
-
   return (
     <SandboxesTabs
       monitoringContent={monitoring}

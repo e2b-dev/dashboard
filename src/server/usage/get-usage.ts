@@ -10,6 +10,7 @@ import {
   UsageData,
 } from '@/server/usage/types'
 import { UsageResponse } from '@/types/billing'
+import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { z } from 'zod'
 
@@ -92,7 +93,12 @@ export const getUsageThroughReactCache = authActionClient
   .metadata({ serverFunctionName: 'getUsage' })
   .use(withTeamIdResolution)
   .action(async ({ ctx }) => {
+    'use cache'
+    unstable_cacheLife('default')
+    unstable_cacheTag(`usage-${ctx.teamId}`)
+
     const { teamId } = ctx
+
     const accessToken = ctx.session.access_token
 
     const result = await getAndCacheTeamUsageData(teamId, accessToken)

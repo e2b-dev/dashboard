@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { cacheLife } from 'next/dist/server/use-cache/cache-life'
 import BillingCreditsContent from '../billing/credits-content'
 
 interface CreditsCardProps {
@@ -17,9 +16,6 @@ export default async function CreditsCard({
   params,
   className,
 }: CreditsCardProps) {
-  'use cache'
-  cacheLife('default')
-
   return (
     <Card className={className}>
       <CardHeader>

@@ -1,4 +1,4 @@
-import sitemap from '@/app/sitemap'
+import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { BASE_URL } from '@/configs/urls'
@@ -9,19 +9,13 @@ import {
 } from '@/lib/utils/rewrites'
 import { NextRequest } from 'next/server'
 import { serializeError } from 'serialize-error'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export const dynamic = 'force-static'
+export const revalidate = 900
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
 
 export async function GET(request: NextRequest): Promise<Response> {
-  "use cache"
-
-  cacheLife({
-    stale: 3600, // 1 hour
-    revalidate: REVALIDATE_TIME,
-    expire: 86400, // 1 day
-  })
-
   const url = new URL(request.url)
 
   const requestHostname = url.hostname
@@ -54,10 +48,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       ...(notFound
         ? { cache: 'no-store' }
         : {
-          next: {
-            revalidate: REVALIDATE_TIME,
-          },
-        }),
+            next: {
+              revalidate: REVALIDATE_TIME,
+            },
+          }),
     })
 
     const contentType = res.headers.get('Content-Type')
@@ -109,7 +103,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 }
 
 export async function generateStaticParams() {
-  const sitemapEntries = await sitemap()
+  const sitemapEntries = await constructSitemap()
 
   const slugs = sitemapEntries
     .filter((entry) => {
