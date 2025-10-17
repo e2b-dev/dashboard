@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Suspense } from 'react'
 
 export default function BillingPage({
   params,
@@ -33,9 +32,7 @@ export default function BillingPage({
         </CardHeader>
 
         <CardContent>
-          <Suspense>
-            <CustomerPortalLink className="bg-bg w-fit" />
-          </Suspense>
+          <CustomerPortalLink className="bg-bg w-fit" />
 
           <div className="mt-3 flex flex-col gap-12 overflow-x-auto max-lg:mb-6 lg:flex-row">
             {TIERS.map((tier) => (

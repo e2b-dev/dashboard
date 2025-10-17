@@ -1,7 +1,6 @@
 import CreditsCard from '@/features/dashboard/budget/credits-card'
 import UsageLimits from '@/features/dashboard/budget/usage-limits'
 import Frame from '@/ui/frame'
-import { Suspense } from 'react'
 
 interface BudgetPageProps {
   params: Promise<{ teamIdOrSlug: string }>
@@ -16,9 +15,7 @@ export default function BudgetPage({ params }: BudgetPageProps) {
       }}
     >
       <CreditsCard params={params} />
-      <Suspense>
-        <UsageLimits params={params} />
-      </Suspense>
+      <UsageLimits params={params} />
     </Frame>
   )
 }

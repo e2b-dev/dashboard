@@ -12,6 +12,7 @@ import {
   TableRow,
 } from '@/ui/primitives/table'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 interface BillingInvoicesTableProps {
   params: Promise<{ teamIdOrSlug: string }>
@@ -107,7 +108,9 @@ export default function BillingInvoicesTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        <InvoicesTableContent params={params} />
+        <Suspense fallback={<LoadingFallback />}>
+          <InvoicesTableContent params={params} />
+        </Suspense>
       </TableBody>
     </Table>
   )

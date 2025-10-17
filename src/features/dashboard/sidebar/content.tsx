@@ -3,10 +3,10 @@
 import { SIDEBAR_MAIN_LINKS, SidebarNavItem } from '@/configs/sidebar'
 import { cn } from '@/lib/utils'
 import micromatch from 'micromatch'
-import Link from 'next/link'
 import { useMemo } from 'react'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarContent,
@@ -74,8 +74,7 @@ export default function DashboardSidebarContent() {
                     asChild
                     tooltip={item.label}
                   >
-                    <Link
-                      suppressHydrationWarning
+                    <HoverPrefetchLink
                       href={href}
                       onClick={
                         isMobile
@@ -93,7 +92,7 @@ export default function DashboardSidebarContent() {
                         )}
                       />
                       <span>{item.label}</span>
-                    </Link>
+                    </HoverPrefetchLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )

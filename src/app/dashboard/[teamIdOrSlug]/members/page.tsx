@@ -16,7 +16,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
       }}
     >
       <section className="col-span-full">
-        <MemberCard params={params} className="" />
+        <MemberCard params={params} />
       </section>
     </Frame>
   )
