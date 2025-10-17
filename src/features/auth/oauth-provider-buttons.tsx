@@ -2,14 +2,17 @@
 
 import { signInWithOAuthAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
+import { useAction } from 'next-safe-action/hooks'
 import { useSearchParams } from 'next/navigation'
 
 export function OAuthProviders() {
   const searchParams = useSearchParams()
   const returnTo = searchParams.get('returnTo')
 
+  const { execute, isTransitioning } = useAction(signInWithOAuthAction)
+
   const handleOAuthSignIn = (provider: 'google' | 'github') => {
-    signInWithOAuthAction({ provider, returnTo: returnTo || undefined })
+    execute({ provider, returnTo: returnTo || undefined })
   }
 
   return (
@@ -18,6 +21,7 @@ export function OAuthProviders() {
         variant="muted"
         onClick={() => handleOAuthSignIn('google')}
         className="flex items-center gap-2"
+        disabled={isTransitioning}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5">
           <path
@@ -44,6 +48,7 @@ export function OAuthProviders() {
         variant="muted"
         onClick={() => handleOAuthSignIn('github')}
         className="flex items-center gap-2"
+        disabled={isTransitioning}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5">
           <path

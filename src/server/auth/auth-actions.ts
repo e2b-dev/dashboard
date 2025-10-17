@@ -31,7 +31,13 @@ export const signInWithOAuthAction = actionClient
 
     const supabase = await createClient()
 
-    const origin = (await headers()).get('origin')
+    const headerStore = await headers()
+
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
 
     l.info(
       {
@@ -41,7 +47,7 @@ export const signInWithOAuthAction = actionClient
           returnTo,
         },
       },
-      `Initializing OAuth sign-in with provider ${provider}`
+      `sign_in_with_oauth_action: initializing OAuth sign-in with provider: ${provider}`
     )
 
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -81,7 +87,13 @@ export const signUpAction = actionClient
   .metadata({ actionName: 'signUp' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
     const supabase = await createClient()
-    const origin = (await headers()).get('origin') || ''
+    const headerStore = await headers()
+
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
 
     // basic security check, that password does not equal e-mail
     if (password && email && password.toLowerCase() === email.toLowerCase()) {
@@ -139,7 +151,11 @@ export const signInAction = actionClient
 
     const headerStore = await headers()
 
-    const origin = headerStore.get('origin') || ''
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
