@@ -73,16 +73,7 @@ export const signInWithOAuthAction = actionClient
       )
     }
 
-    if (data.url) {
-      throw redirect(data.url)
-    }
-
-    throw encodedRedirect(
-      'error',
-      AUTH_URLS.SIGN_IN,
-      'Something went wrong',
-      returnTo ? { returnTo } : undefined
-    )
+    throw redirect(data.url)
   })
 
 export const signUpAction = actionClient
