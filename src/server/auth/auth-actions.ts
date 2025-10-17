@@ -12,7 +12,6 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
-import { Provider } from '@supabase/supabase-js'
 import { returnValidationErrors } from 'next-safe-action'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -22,7 +21,7 @@ import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 export const signInWithOAuthAction = actionClient
   .schema(
     z.object({
-      provider: z.string() as unknown as z.ZodType<Provider>,
+      provider: z.union([z.literal('github'), z.literal('google')]),
       returnTo: relativeUrlSchema.optional(),
     })
   )
@@ -37,8 +36,10 @@ export const signInWithOAuthAction = actionClient
     l.info(
       {
         key: 'sign_in_with_oauth_action:init',
-        provider,
-        returnTo,
+        context: {
+          provider,
+          returnTo,
+        },
       },
       `Initializing OAuth sign-in with provider ${provider}`
     )
@@ -52,6 +53,17 @@ export const signInWithOAuthAction = actionClient
     })
 
     if (error) {
+      l.error(
+        {
+          key: 'sign_in_with_oauth_action:supabase_error',
+          context: {
+            provider,
+            returnTo,
+          },
+        },
+        `sign_in_with_oauth_action: supabase error: ${error.message}`
+      )
+
       const queryParams = returnTo ? { returnTo } : undefined
       throw encodedRedirect(
         'error',
@@ -62,7 +74,7 @@ export const signInWithOAuthAction = actionClient
     }
 
     if (data.url) {
-      redirect(data.url)
+      throw redirect(data.url)
     }
 
     throw encodedRedirect(
