@@ -18,15 +18,15 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
+const SignInWithOAuthInputSchema = z.object({
+  provider: z.union([z.literal('github'), z.literal('google')]),
+  returnTo: relativeUrlSchema.optional(),
+})
+
 export const signInWithOAuthAction = actionClient
-  .schema(
-    z.object({
-      provider: z.union([z.literal('github'), z.literal('google')]),
-      returnTo: relativeUrlSchema.optional(),
-    })
-  )
+  .inputSchema(SignInWithOAuthInputSchema)
   .metadata({ actionName: 'signInWithOAuth' })
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
 
     const supabase = await createClient()
