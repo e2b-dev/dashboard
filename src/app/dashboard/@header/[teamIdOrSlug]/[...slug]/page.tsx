@@ -9,8 +9,8 @@ export default function SandboxesHeaderInjectablePage({
 }: SandboxesHeaderInjectablePageProps) {
   return (
     <LiveSandboxCounterServer
+      className="top-1/2 -translate-y-1/2 absolute right-10 max-md:hidden"
       params={params}
-      className="top-5 absolute right-17 max-md:hidden"
     />
   )
 }

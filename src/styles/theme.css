@@ -31,17 +31,16 @@
 
 /* Common Variables */
 :root {
-  --public-nav-height: 50px;
-
-  --protected-nav-height: 50px;
-  --protected-status-bar-height: 36px;
-  --protected-sidebar-width: 52px;
+  --protected-navbar-height: 32px;
+  --protected-sidebar-width: 0px;
+  --protected-statusbar-height: 36px;
 
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
 
   @media (min-width: 768px) {
-    --protected-sidebar-width: 14.5rem;
+    --protected-navbar-height: 52px;
+    --protected-sidebar-width: 256px;
   }
 
   /* Fumadocs
@@ -263,9 +262,9 @@
   --radius: 0.375rem;
 
   /* Sizes */
-  --height-status-bar: var(--protected-status-bar-height);
-  --width-sidebar: var(--protected-sidebar-width);
-  --min-width-sidebar: var(--protected-sidebar-width);
+  --height-protected-navbar: var(--protected-navbar-height);
+  --width-protected-sidebar: var(--protected-sidebar-width);
+  --height-protected-statusbar: var(--protected-statusbar-height);
 
   /* Colors */
   --color-ring: var(--stroke-active);
@@ -633,7 +632,3 @@
   font-size: 1.5rem;
 }
 
-/* Composits */
-.label-tertiary {
-  @apply prose-label text-fg-tertiary uppercase;
-}

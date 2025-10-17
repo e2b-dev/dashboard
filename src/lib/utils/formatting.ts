@@ -56,10 +56,10 @@ export function formatCompactDate(timestamp: number): string {
   const date = new Date(timestamp)
 
   if (isThisYear(date)) {
-    return format(date, 'MMM d, h:mm a zzz')
+    return format(date, 'MMM d, h:mm:ss a zzz')
   }
 
-  return format(date, 'yyyy MMM d, h:mm a zzz')
+  return format(date, 'yyyy MMM d, h:mm:ss a zzz')
 }
 
 /**
@@ -141,7 +141,9 @@ export function formatAveragingPeriod(stepMs: number): string {
  * @returns Formatted number string
  */
 export function formatNumber(value: number, locale: string = 'en-US'): string {
-  return value.toLocaleString(locale)
+  return value.toLocaleString(locale, {
+    maximumFractionDigits: 0,
+  })
 }
 
 /**
