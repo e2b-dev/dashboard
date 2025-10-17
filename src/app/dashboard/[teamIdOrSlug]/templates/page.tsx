@@ -11,9 +11,7 @@ interface PageProps {
   }>
 }
 
-export default async function Page({ params }: PageProps) {
-  'use cache'
-
+export default function Page({ params }: PageProps) {
   return (
     <div className="flex flex-1 flex-col">
       <PageContent params={params} />

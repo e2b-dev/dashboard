@@ -1,21 +1,11 @@
-import { COOKIE_KEYS } from '@/configs/keys'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
-import { getTeamMetadataFromCookiesMemo } from '@/lib/utils/server'
+import { setTeamCookies } from '@/lib/utils/cookies'
 import getUserMemo from '@/server/auth/get-user-memo'
-import { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
-import { cookies } from 'next/headers'
+import { resolveUserTeam } from '@/server/team/resolve-user-team'
 import { NextRequest, NextResponse } from 'next/server'
-
-const COOKIE_OPTIONS: Partial<ResponseCookie> = {
-  path: '/dashboard/*',
-  maxAge: 60 * 60 * 24 * 365, // 1 year
-  sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
-}
 
 const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES(teamId),
@@ -69,114 +59,54 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
-  const metadata = await getTeamMetadataFromCookiesMemo(request.url)
+  const team = await resolveUserTeam(data.user.id)
+
+  if (!team) {
+    l.debug(
+      {
+        key: 'dashboard_route:no_teams',
+        userId: data.user.id,
+      },
+      'dashboard route - no teams found, redirecting to sign-in'
+    )
+
+    // UNEXPECTED STATE - sign out and redirect to sign-in
+    await supabase.auth.signOut()
+
+    const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
+
+    return encodedRedirect(
+      'error',
+      signInUrl.toString(),
+      'No personal team found. Please contact support.'
+    )
+  }
 
   l.debug(
     {
-      key: 'dashboard_route:team_metadata',
-      hasMetadata: !!metadata,
-      teamId: metadata?.id,
-      teamSlug: metadata?.slug,
+      key: 'dashboard_route:team_resolved',
+      teamId: team.id,
+      teamSlug: team.slug,
+      source: team.source,
     },
-    'dashboard route - team metadata'
+    'dashboard route - team resolved'
   )
 
-  const cookieStore = await cookies()
+  // Set team cookies for persistence
+  await setTeamCookies(team.id, team.slug)
 
-  let teamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
-  let teamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
-
-  if (!metadata) {
-    l.debug(
-      {
-        key: 'dashboard_route:cookies',
-        teamId,
-        teamSlug,
-      },
-      'dashboard route - reading team from cookies'
-    )
-
-    const { data: teamsData } = await supabaseAdmin
-      .from('users_teams')
-      .select(
-        `
-        team_id,
-        is_default,
-        team:teams(*)
-      `
-      )
-      .eq('user_id', data.user.id)
-
-    l.debug(
-      {
-        key: 'dashboard_route:teams_query',
-        teamsCount: teamsData?.length ?? 0,
-        userId: data.user.id,
-      },
-      'dashboard route - queried user teams'
-    )
-
-    if (!teamsData?.length) {
-      l.debug(
-        {
-          key: 'dashboard_route:no_teams',
-          redirectTo: PROTECTED_URLS.NEW_TEAM,
-        },
-        'dashboard route - no teams found, redirecting to new team'
-      )
-
-      // UNEXPECTED STATE - sign out and redirect to sign-in
-      await supabase.auth.signOut()
-
-      const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
-
-      return encodedRedirect(
-        'error',
-        signInUrl.toString(),
-        'No personal team found. Please contact support.'
-      )
-    }
-
-    const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]!
-    teamId = defaultTeam.team_id
-    teamSlug = defaultTeam.team?.slug || defaultTeam.team_id
-
-    l.debug(
-      {
-        key: 'dashboard_route:default_team',
-        teamId,
-        teamSlug,
-        isDefault: !!teamsData.find((t) => t.is_default),
-      },
-      'dashboard route - resolved default team'
-    )
-  }
-
-  if (!teamSlug || !teamId) {
-    l.debug(
-      {
-        key: 'dashboard_route:no_team_data',
-        redirectTo: PROTECTED_URLS.DASHBOARD,
-      },
-      'dashboard route - no team data, redirecting to home'
-    )
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  cookieStore.set(COOKIE_KEYS.SELECTED_TEAM_ID, teamId, COOKIE_OPTIONS)
-  cookieStore.set(COOKIE_KEYS.SELECTED_TEAM_SLUG, teamSlug, COOKIE_OPTIONS)
-
+  // Determine redirect path based on tab parameter
   const urlGenerator = tab ? TAB_URL_MAP[tab] : null
   const redirectPath = urlGenerator
-    ? urlGenerator(teamSlug || teamId)
-    : PROTECTED_URLS.SANDBOXES(teamSlug || teamId)
+    ? urlGenerator(team.slug || team.id)
+    : PROTECTED_URLS.SANDBOXES(team.slug || team.id)
 
   l.debug(
     {
       key: 'dashboard_route:redirect',
       tab,
       redirectPath,
-      teamIdentifier: teamSlug || teamId,
+      teamIdentifier: team.slug || team.id,
     },
     'dashboard route - redirecting to tab'
   )

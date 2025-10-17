@@ -12,13 +12,11 @@ import {
 } from '@/ui/primitives/card'
 import { Suspense } from 'react'
 
-export default async function BillingPage({
+export default function BillingPage({
   params,
 }: {
   params: Promise<{ teamIdOrSlug: string }>
 }) {
-  'use cache'
-
   return (
     <Frame
       classNames={{

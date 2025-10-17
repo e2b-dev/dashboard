@@ -1,17 +1,6 @@
 /*
- * cookie keys in use
- */
-export const COOKIE_KEYS = {
-  API_DOMAIN: 'e2b-api-domain',
-  SELECTED_TEAM_ID: 'e2b-selected-team-id',
-  SELECTED_TEAM_SLUG: 'e2b-selected-team-slug',
-  SIDEBAR_STATE: 'e2b-sidebar-state',
-  SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
-  SANDBOX_INSPECT_POLLING_INTERVAL: 'e2b-sandbox-inspect-polling-interval',
-}
-
-/*
- * kv keys in use
+ * KV (key-value store) keys in use
+ * Note: Cookie keys have been moved to @/configs/cookies
  */
 export const KV_KEYS = {
   USER_TEAM_ACCESS: (userId: string, teamIdOrSlug: string) =>

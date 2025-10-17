@@ -76,7 +76,6 @@ export default function DashboardSidebarContent() {
                   >
                     <Link
                       suppressHydrationWarning
-                      prefetch={!!team}
                       href={href}
                       onClick={
                         isMobile

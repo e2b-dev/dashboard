@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { cacheLife } from 'next/dist/server/use-cache/cache-life'
 import Link from 'next/link'
 
 interface BillingInvoicesTableProps {
@@ -94,13 +93,9 @@ async function InvoicesTableContent({
   )
 }
 
-export default async function BillingInvoicesTable({
+export default function BillingInvoicesTable({
   params,
 }: BillingInvoicesTableProps) {
-  'use cache'
-
-  cacheLife('default')
-
   return (
     <Table className="animate-in fade-in w-full min-w-[800px]">
       <TableHeader>

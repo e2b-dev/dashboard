@@ -1,5 +1,6 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS } from '@/configs/cookies'
+import { KV_KEYS } from '@/configs/keys'
 import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'

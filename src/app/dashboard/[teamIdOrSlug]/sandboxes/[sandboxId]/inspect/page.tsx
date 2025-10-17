@@ -1,4 +1,4 @@
-import { COOKIE_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { SandboxInspectProvider } from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'

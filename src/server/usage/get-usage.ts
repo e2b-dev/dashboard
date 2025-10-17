@@ -19,6 +19,10 @@ const GetUsageAuthActionSchema = z.object({
 })
 
 async function _fetchTeamUsageDataLogic(teamId: string, accessToken: string) {
+  'use cache'
+  unstable_cacheLife('default')
+  unstable_cacheTag(`usage-${teamId}`)
+
   const response = await fetch(
     `${process.env.BILLING_API_URL}/v2/teams/${teamId}/usage`,
     {
@@ -93,10 +97,6 @@ export const getUsageThroughReactCache = authActionClient
   .metadata({ serverFunctionName: 'getUsage' })
   .use(withTeamIdResolution)
   .action(async ({ ctx }) => {
-    'use cache'
-    unstable_cacheLife('default')
-    unstable_cacheTag(`usage-${ctx.teamId}`)
-
     const { teamId } = ctx
 
     const accessToken = ctx.session.access_token

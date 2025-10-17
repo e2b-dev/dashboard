@@ -4,7 +4,6 @@ import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-pic
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { getTeamMetricsCore } from './get-team-metrics-core'
 
@@ -49,19 +48,6 @@ export const getTeamMetrics = authActionClient
   .metadata({ serverFunctionName: 'getTeamMetrics' })
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    'use cache'
-    unstable_cacheLife({
-      stale: 10, // 10 seconds
-      revalidate: 60, // 1 minute
-      expire: 300, // 5 minutes
-    })
-    unstable_cacheTag(
-      `team-metrics`,
-      ctx.teamId,
-      parsedInput.startDate.toString(),
-      parsedInput.endDate.toString()
-    )
-
     const { session, teamId } = ctx
 
     const { startDate: startDateMs, endDate: endDateMs } = parsedInput

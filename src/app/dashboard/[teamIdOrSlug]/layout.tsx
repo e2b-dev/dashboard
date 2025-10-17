@@ -1,4 +1,4 @@
-import { COOKIE_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
@@ -48,7 +48,9 @@ export default async function DashboardLayout({
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar params={params} />
             <SidebarInset>
-              <DashboardLayoutView>{children}</DashboardLayoutView>
+              <DashboardLayoutView params={params}>
+                {children}
+              </DashboardLayoutView>
             </SidebarInset>
           </div>
         </div>

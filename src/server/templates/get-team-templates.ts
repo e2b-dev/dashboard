@@ -28,14 +28,6 @@ export const getTeamTemplates = authActionClient
   .schema(GetTeamTemplatesSchema)
   .use(withTeamIdResolution)
   .action(async ({ ctx }) => {
-    'use cache'
-    unstable_cacheLife({
-      stale: 3600, // 1 hour
-      revalidate: 86400, // 1 day
-      expire: 604800, // 1 week
-    })
-    unstable_cacheTag(`templates-${ctx.teamId}`)
-
     const { session, teamId } = ctx
 
     if (USE_MOCK_DATA) {
@@ -77,11 +69,7 @@ export const getDefaultTemplates = actionClient
   .metadata({ serverFunctionName: 'getDefaultTemplates' })
   .action(async () => {
     'use cache'
-    unstable_cacheLife({
-      stale: 3600, // 1 hour
-      revalidate: 86400, // 1 day
-      expire: 604800, // 1 week
-    })
+    unstable_cacheLife('hours')
     unstable_cacheTag('default-templates')
 
     if (USE_MOCK_DATA) {
