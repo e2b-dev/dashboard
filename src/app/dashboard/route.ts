@@ -3,7 +3,6 @@ import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
-import getUserMemo from '@/server/auth/get-user-memo'
 import { resolveUserTeam } from '@/server/team/resolve-user-team'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -36,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient()
 
-  const { data, error } = await getUserMemo(supabase)
+  const { data, error } = await supabase.auth.getUser()
 
   l.debug(
     {

@@ -5,7 +5,6 @@ import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { l } from './lib/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
-import getUserMemo from './server/auth/get-user-memo'
 import { getAuthRedirect } from './server/middleware'
 
 export async function middleware(request: NextRequest) {
@@ -122,7 +121,7 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    const { error, data } = await getUserMemo(supabase)
+    const { error, data } = await supabase.auth.getUser()
 
     l.debug(
       {

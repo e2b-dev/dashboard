@@ -1,5 +1,6 @@
 import 'server-cli-only'
 
+import { CACHE_TAGS } from '@/configs/cache'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
@@ -11,7 +12,7 @@ import z from 'zod'
 export const getTeamIdFromSegment = async (segment: string) => {
   'use cache'
   cacheLife('default')
-  cacheTag(`team-id-from-segment-${segment}`)
+  cacheTag(CACHE_TAGS.TEAM_ID_FROM_SEGMENT(segment))
 
   if (!TeamIdOrSlugSchema.safeParse(segment).success) {
     l.warn(

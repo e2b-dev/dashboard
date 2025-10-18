@@ -4,7 +4,8 @@ import { DashboardContextProvider } from '@/features/dashboard/context'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { createClient } from '@/lib/clients/supabase/server'
-import getUserMemo from '@/server/auth/get-user-memo'
+import { getSessionInsecure } from '@/server/auth/get-session'
+import getUserByToken from '@/server/auth/get-user-by-token'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { unauthorized } from 'next/navigation'
@@ -30,17 +31,19 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const supabase = await createClient()
   const cookieStore = await cookies()
-  const user = await getUserMemo(supabase)
+
+  const session = await getSessionInsecure(supabase)
+  const { error, data } = await getUserByToken(session?.access_token)
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'
 
-  if (!user.data.user) {
+  if (error || !data.user) {
     throw unauthorized()
   }
 
   return (
-    <DashboardContextProvider initialTeam={null} initialUser={user.data.user}>
+    <DashboardContextProvider initialTeam={null} initialUser={data.user}>
       <SidebarProvider
         defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
       >

@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
@@ -70,7 +71,7 @@ export const getDefaultTemplates = actionClient
   .action(async () => {
     'use cache'
     unstable_cacheLife('hours')
-    unstable_cacheTag('default-templates')
+    unstable_cacheTag(CACHE_TAGS.DEFAULT_TEMPLATES)
 
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))

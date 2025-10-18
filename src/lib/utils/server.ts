@@ -1,14 +1,14 @@
+import 'server-only'
+
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { KV_KEYS } from '@/configs/keys'
 import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { createClient } from '@/lib/clients/supabase/server'
-import { getSessionInsecure } from '@/server/auth/get-session'
-import getUserMemo from '@/server/auth/get-user-memo'
 import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
-import { E2BError, UnauthenticatedError } from '@/types/errors'
-import { unstable_cacheLife } from 'next/cache'
+import { E2BError } from '@/types/errors'
+import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
 import { serializeError } from 'serialize-error'
@@ -16,38 +16,6 @@ import { z } from 'zod'
 import { infra } from '../clients/api'
 import { l } from '../clients/logger/logger'
 import { returnServerError } from './action'
-
-/*
- *  This function checks if the user is authenticated and returns the user and the supabase client.
- *  If the user is not authenticated, it throws an error.
- *
- *  @params request - an optional NextRequest object to create a supabase client for route handlers
- */
-export async function checkAuthenticated() {
-  const supabase = await createClient()
-
-  // retrieve session from storage medium (cookies)
-  // if no stored session found, not authenticated
-
-  // it's fine to use the "insecure" cookie session here, since we only use it for quick denial and do a proper auth check (auth.getUser) afterwards.
-  const session = await getSessionInsecure(supabase)
-
-  // early return if user is no session already
-  if (!session) {
-    throw UnauthenticatedError()
-  }
-
-  // now retrieve user from supabase to use further
-  const {
-    data: { user },
-  } = await getUserMemo(supabase)
-
-  if (!user || !session) {
-    throw UnauthenticatedError()
-  }
-
-  return { user, session, supabase }
-}
 
 /*
  *  This function generates an e2b user access token for a given user.
@@ -98,6 +66,7 @@ export async function checkUserTeamAuthorization(
 ) {
   'use cache'
   unstable_cacheLife('minutes')
+  unstable_cacheTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamIdOrSlug))
 
   const teamId = await getTeamIdFromSegment(teamIdOrSlug)
 
@@ -195,7 +164,7 @@ export const getTeamMetadataFromCookiesCache = cache(
   ) => {
     const isSensical =
       cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
-    const isUUID = z.string().uuid().safeParse(cookieTeamId).success
+    const isUUID = z.uuid().safeParse(cookieTeamId).success
 
     l.debug(
       {

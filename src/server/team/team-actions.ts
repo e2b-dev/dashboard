@@ -1,7 +1,7 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { KV_KEYS } from '@/configs/keys'
+import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
@@ -10,14 +10,12 @@ import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
 import { CreateTeamsResponse } from '@/types/billing'
-import { kv } from '@vercel/kv'
 import { returnValidationErrors } from 'next-safe-action'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { after } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
-import { getTeam } from './get-team'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -25,7 +23,7 @@ export const updateTeamNameAction = authActionClient
 
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { name } = parsedInput
+    const { name, teamIdOrSlug } = parsedInput
     const { teamId } = ctx
 
     const { data, error } = await supabaseAdmin
@@ -39,7 +37,7 @@ export const updateTeamNameAction = authActionClient
       return returnServerError(`Failed to update team name: ${error.message}`)
     }
 
-    revalidatePath('/dashboard', 'layout')
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
 
     return data
   })
@@ -54,7 +52,7 @@ export const addTeamMemberAction = authActionClient
   .metadata({ actionName: 'addTeamMember' })
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { email } = parsedInput
+    const { email, teamIdOrSlug } = parsedInput
     const { teamId, user } = ctx
 
     const { data: existingUsers, error: userError } = await supabaseAdmin
@@ -99,17 +97,7 @@ export const addTeamMemberAction = authActionClient
       )
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
-
-    await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, teamId))
-    getTeam({ teamIdOrSlug: teamId }).then(async (result) => {
-      if (!result?.data || result.serverError || result.validationErrors) {
-        return
-      }
-
-      await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, result.data.slug))
-    })
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 
 const RemoveTeamMemberSchema = z.object({
@@ -122,7 +110,7 @@ export const removeTeamMemberAction = authActionClient
   .metadata({ actionName: 'removeTeamMember' })
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { userId } = parsedInput
+    const { userId, teamIdOrSlug } = parsedInput
     const { teamId, user } = ctx
 
     const { data: teamMemberData, error: teamMemberError } = await supabaseAdmin
@@ -166,17 +154,8 @@ export const removeTeamMemberAction = authActionClient
       throw removeError
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
-
-    await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, teamId))
-    getTeam({ teamIdOrSlug: teamId }).then(async (result) => {
-      if (!result?.data || result.serverError || result.validationErrors) {
-        return
-      }
-
-      await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, result.data.slug))
-    })
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(user.id, teamIdOrSlug))
   })
 
 export const createTeamAction = authActionClient
@@ -206,8 +185,6 @@ export const createTeamAction = authActionClient
       return handleDefaultInfraError(status)
     }
 
-    revalidatePath('/dashboard', 'layout')
-
     const data = (await response.json()) as CreateTeamsResponse
 
     return data
@@ -225,7 +202,7 @@ export const uploadTeamProfilePictureAction = authActionClient
   .metadata({ actionName: 'uploadTeamProfilePicture' })
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { image } = parsedInput
+    const { image, teamIdOrSlug } = parsedInput
     const { teamId } = ctx
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml']
@@ -298,8 +275,7 @@ export const uploadTeamProfilePictureAction = authActionClient
       }
     })
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
 
     return data
   })

@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
@@ -20,7 +21,7 @@ export const getTeamApiKeys = authActionClient
   .action(async ({ ctx }) => {
     'use cache'
     unstable_cacheLife('default')
-    unstable_cacheTag(`api-keys-${ctx.teamId}`)
+    unstable_cacheTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
 
     const { session, teamId } = ctx
 

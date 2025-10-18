@@ -1,3 +1,5 @@
+import { getSessionInsecure } from '@/server/auth/get-session'
+import getUserByToken from '@/server/auth/get-user-by-token'
 import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
 import { UnauthenticatedError, UnknownError } from '@/types/errors'
 import { SpanStatusCode, trace } from '@opentelemetry/api'
@@ -7,9 +9,9 @@ import { unauthorized } from 'next/navigation'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { ActionError, flattenClientInputValue } from '../utils/action'
-import { checkAuthenticated, checkUserTeamAuthorization } from '../utils/server'
+import { checkUserTeamAuthorization } from '../utils/server'
 import { l } from './logger/logger'
-import type { createClient } from './supabase/server'
+import { createClient } from './supabase/server'
 import { getTracer } from './tracer'
 
 export const actionClient = createSafeActionClient({
@@ -133,7 +135,27 @@ export const actionClient = createSafeActionClient({
 })
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const { user, session, supabase } = await checkAuthenticated()
+  const supabase = await createClient()
+
+  // retrieve session from storage medium (cookies)
+  // if no stored session found, not authenticated
+
+  // it's fine to use the "insecure" cookie session here, since we only use it for quick denial and do a proper auth check (auth.getUser) afterwards.
+  const session = await getSessionInsecure(supabase)
+
+  // early return if user is no session already
+  if (!session) {
+    throw UnauthenticatedError()
+  }
+
+  // now retrieve user from supabase to use further
+  const {
+    data: { user },
+  } = await getUserByToken(session.access_token)
+
+  if (!user || !session) {
+    throw UnauthenticatedError()
+  }
 
   if (!session) {
     throw UnauthenticatedError()

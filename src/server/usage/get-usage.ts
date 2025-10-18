@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
@@ -11,18 +12,16 @@ import {
 } from '@/server/usage/types'
 import { UsageResponse } from '@/types/billing'
 import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
-import { cache } from 'react'
 import { z } from 'zod'
 
 const GetUsageAuthActionSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
-async function _fetchTeamUsageDataLogic(teamId: string, accessToken: string) {
-  'use cache'
-  unstable_cacheLife('default')
-  unstable_cacheTag(`usage-${teamId}`)
-
+async function fetchAndTransformTeamUsageData(
+  teamId: string,
+  accessToken: string
+) {
   const response = await fetch(
     `${process.env.BILLING_API_URL}/v2/teams/${teamId}/usage`,
     {
@@ -90,18 +89,21 @@ const transformResponseToUsageData = (response: UsageResponse): UsageData => {
   }
 }
 
-export const getAndCacheTeamUsageData = cache(_fetchTeamUsageDataLogic)
-
 export const getUsageThroughReactCache = authActionClient
   .schema(GetUsageAuthActionSchema)
   .metadata({ serverFunctionName: 'getUsage' })
   .use(withTeamIdResolution)
   .action(async ({ ctx }) => {
+    'use cache'
+
     const { teamId } = ctx
+
+    unstable_cacheLife('default')
+    unstable_cacheTag(CACHE_TAGS.TEAM_USAGE(teamId))
 
     const accessToken = ctx.session.access_token
 
-    const result = await getAndCacheTeamUsageData(teamId, accessToken)
+    const result = await fetchAndTransformTeamUsageData(teamId, accessToken)
 
     if (!result) {
       return returnServerError('Failed to fetch usage data')
