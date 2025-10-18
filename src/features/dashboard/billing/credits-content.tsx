@@ -3,13 +3,16 @@ import ErrorTooltip from '@/ui/error-tooltip'
 import { AlertTriangle } from 'lucide-react'
 
 export default async function BillingCreditsContent({
-  teamId,
+  params,
 }: {
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
 }) {
+  const { teamIdOrSlug } = await params
+
   const res = await getUsageThroughReactCache({
-    teamId,
+    teamIdOrSlug,
   })
+
   if (!res?.data || res.serverError) {
     return (
       <ErrorTooltip

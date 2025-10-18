@@ -2,7 +2,6 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { useServerContext } from '@/features/dashboard/server-context'
 import { useTemplateTableStore } from '@/features/dashboard/templates/stores/table-store'
 import { parseUTCDateComponents } from '@/lib/utils/formatting'
 import { Template } from '@/types/api'
@@ -12,6 +11,7 @@ import { CellContext } from '@tanstack/react-table'
 import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
+import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import { SandboxWithMetrics } from './table-config'
 
@@ -114,10 +114,10 @@ export function TemplateCell({
   const template: Template | undefined = table
     .getState()
     .templates?.find((t: Template) => t.templateID === templateId)
-  const { selectedTeamSlug, selectedTeamId } = useServerContext()
+  const { team } = useDashboard()
   const router = useRouter()
 
-  if (!selectedTeamSlug || !selectedTeamId) return null
+  if (!team) return null
 
   return (
     <Button
@@ -128,9 +128,7 @@ export function TemplateCell({
         e.preventDefault()
 
         useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(
-          PROTECTED_URLS.TEMPLATES(selectedTeamSlug ?? selectedTeamId)
-        )
+        router.push(PROTECTED_URLS.TEMPLATES(team.slug ?? team.id))
       }}
     >
       {template?.aliases?.[0] ?? templateId}

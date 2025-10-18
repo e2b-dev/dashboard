@@ -3,29 +3,29 @@ import 'server-cli-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { Sandbox } from '@/types/api'
 import { z } from 'zod'
 
 const GetTeamSandboxesSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamSandboxes = authActionClient
-  .schema(GetTeamSandboxesSchema)
   .metadata({ serverFunctionName: 'getTeamSandboxes' })
+  .schema(GetTeamSandboxesSchema)
+  .use(withTeamIdResolution)
   .action(
     async ({
-      parsedInput,
       ctx,
     }): Promise<{
       sandboxes: Sandbox[]
     }> => {
-      const { teamId } = parsedInput
-      const { session } = ctx
+      const { session, teamId } = ctx
 
       if (USE_MOCK_DATA) {
         await new Promise((resolve) => setTimeout(resolve, 200))

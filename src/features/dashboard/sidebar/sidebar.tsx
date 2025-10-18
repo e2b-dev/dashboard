@@ -3,10 +3,13 @@ import DashboardSidebarContent from './content'
 import DashboardSidebarFooter from './footer'
 import DashboardSidebarHeader from './header'
 
-export default function DashboardSidebar({ ...props }: SidebarProps) {
+export default function DashboardSidebar({
+  params,
+  ...props
+}: SidebarProps & { params: Promise<{ teamIdOrSlug: string }> }) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <DashboardSidebarHeader />
+      <DashboardSidebarHeader params={params} />
       <DashboardSidebarContent />
       <DashboardSidebarFooter />
       <SidebarRail />

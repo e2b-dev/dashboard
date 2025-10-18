@@ -1,4 +1,3 @@
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMembers } from '@/server/team/get-team-members'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
@@ -16,10 +15,8 @@ export default async function MemberTableBody({
 }: TableBodyContentProps) {
   const { teamIdOrSlug } = await params
 
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
   try {
-    const result = await getTeamMembers({ teamId })
+    const result = await getTeamMembers({ teamIdOrSlug })
 
     if (!result?.data || result.serverError || result.validationErrors) {
       throw new Error(result?.serverError || 'Unknown error')

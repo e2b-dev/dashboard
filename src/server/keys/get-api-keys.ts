@@ -1,22 +1,29 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { CACHE_TAGS } from '@/configs/cache'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
 import { z } from 'zod'
 
 const GetApiKeysSchema = z.object({
-  teamId: z.uuid({ error: 'Team ID is required' }),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamApiKeys = authActionClient
   .schema(GetApiKeysSchema)
   .metadata({ serverFunctionName: 'getTeamApiKeys' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
-    const { session } = ctx
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    'use cache'
+    unstable_cacheLife('default')
+    unstable_cacheTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
+
+    const { session, teamId } = ctx
 
     const accessToken = session.access_token
 

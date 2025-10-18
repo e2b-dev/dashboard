@@ -2,7 +2,6 @@ import { AccessTokenSettings } from '@/features/dashboard/account/access-token-s
 import { EmailSettings } from '@/features/dashboard/account/email-settings'
 import { NameSettings } from '@/features/dashboard/account/name-settings'
 import { PasswordSettingsServer } from '@/features/dashboard/account/password-settings-server'
-import { Suspense } from 'react'
 
 export interface AccountPageSearchParams {
   reauth?: '1'
@@ -15,21 +14,13 @@ export default async function AccountPage({
 }) {
   return (
     <div className="flex flex-col md:gap-6">
-      <Suspense fallback={null}>
-        <NameSettings />
-      </Suspense>
+      <NameSettings />
 
-      <Suspense fallback={null}>
-        <EmailSettings />
-      </Suspense>
+      <EmailSettings />
 
-      <Suspense fallback={null}>
-        <AccessTokenSettings />
-      </Suspense>
+      <AccessTokenSettings />
 
-      <Suspense fallback={null}>
-        <PasswordSettingsServer searchParams={await searchParams} />
-      </Suspense>
+      <PasswordSettingsServer searchParams={searchParams} />
     </div>
   )
 }

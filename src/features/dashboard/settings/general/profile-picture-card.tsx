@@ -1,7 +1,7 @@
 'use client'
 
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -22,7 +22,7 @@ interface ProfilePictureCardProps {
 }
 
 export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -77,7 +77,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
       formData.append('image', file)
 
       uploadProfilePicture({
-        teamId: team.id,
+        teamIdOrSlug: team.id,
         image: file,
       })
     }

@@ -1,9 +1,9 @@
 'use client'
 
 import { METADATA } from '@/configs/metadata'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
+import { useDashboard } from './context'
 
 /**
  * DashboardTitleProvider updates the document title based on the current team and pathname.
@@ -13,7 +13,7 @@ import { useEffect, useMemo } from 'react'
  */
 export const DashboardTitleProvider = () => {
   // Get current team and pathname
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
   const pathname = usePathname()
 
   // Compute the title based on team and current page

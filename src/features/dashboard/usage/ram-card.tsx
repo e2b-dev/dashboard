@@ -11,8 +11,13 @@ import {
 import { Suspense } from 'react'
 import { RAMChart } from './ram-chart'
 
-async function RAMCardContentResolver({ teamId }: { teamId: string }) {
-  const result = await getUsageThroughReactCache({ teamId })
+async function RAMCardContentResolver({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string }>
+}) {
+  const { teamIdOrSlug } = await params
+  const result = await getUsageThroughReactCache({ teamIdOrSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     const errorMessage =
@@ -24,9 +29,9 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
     l.error({
       key: 'ram_card:server_error',
       error: result?.serverError,
-      team_id: teamId,
       context: {
         errorMessage,
+        team_segment: teamIdOrSlug,
       },
     })
 
@@ -62,10 +67,10 @@ async function RAMCardContentResolver({ teamId }: { teamId: string }) {
 }
 
 export function RAMCard({
-  teamId,
+  params,
   className,
 }: {
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
   className?: string
 }) {
   return (
@@ -85,7 +90,7 @@ export function RAMCard({
             />
           }
         >
-          <RAMCardContentResolver teamId={teamId} />
+          <RAMCardContentResolver params={params} />
         </Suspense>
       </CardContent>
     </Card>

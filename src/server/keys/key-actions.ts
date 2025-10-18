@@ -1,9 +1,10 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -11,7 +12,7 @@ import { z } from 'zod'
 // Create API Key
 
 const CreateApiKeySchema = z.object({
-  teamId: z.uuid({ error: 'Team ID is required' }),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   name: z
     .string({ error: 'Name is required' })
     .min(1, 'Name cannot be empty')
@@ -22,9 +23,10 @@ const CreateApiKeySchema = z.object({
 export const createApiKeyAction = authActionClient
   .schema(CreateApiKeySchema)
   .metadata({ actionName: 'createApiKey' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, name } = parsedInput
-    const { session } = ctx
+    const { session, teamId } = ctx
+    const { name } = parsedInput
 
     const accessToken = session.access_token
 
@@ -62,16 +64,17 @@ export const createApiKeyAction = authActionClient
 // Delete API Key
 
 const DeleteApiKeySchema = z.object({
-  teamId: z.uuid({ error: 'Team ID is required' }),
-  apiKeyId: z.uuid({ error: 'API Key ID is required' }),
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  apiKeyId: z.uuid(),
 })
 
 export const deleteApiKeyAction = authActionClient
   .schema(DeleteApiKeySchema)
   .metadata({ actionName: 'deleteApiKey' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, apiKeyId } = parsedInput
-    const { session } = ctx
+    const { apiKeyId } = parsedInput
+    const { session, teamId } = ctx
 
     const accessToken = session.access_token
 

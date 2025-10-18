@@ -9,9 +9,12 @@ export const AUTH_URLS = {
 export const PROTECTED_URLS = {
   DASHBOARD: '/dashboard',
   ACCOUNT_SETTINGS: '/dashboard/account',
+  RESET_PASSWORD: '/dashboard/account',
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
 
+  RESOLVED_ACCOUNT_SETTINGS: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/account`,
   SETTINGS: (teamIdOrSlug: string, tab?: 'general' | 'keys') =>
     `/dashboard/${teamIdOrSlug}/settings${tab ? `?tab=${tab}` : ''}`,
   MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
@@ -28,7 +31,6 @@ export const PROTECTED_URLS = {
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
-  RESET_PASSWORD: '/dashboard/account',
 }
 
 export const HELP_URLS = {

@@ -6,7 +6,6 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
@@ -30,6 +29,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useDashboard } from '../context'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name cannot be empty').max(32, 'Max 32 characters'),
@@ -44,7 +44,7 @@ interface NameSettingsProps {
 export function NameSettings({ className }: NameSettingsProps) {
   'use no memo'
 
-  const { user } = useUser()
+  const { user } = useDashboard()
   const { toast } = useToast()
 
   const form = useForm<FormValues>({

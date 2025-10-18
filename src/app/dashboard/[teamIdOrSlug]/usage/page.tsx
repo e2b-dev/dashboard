@@ -2,7 +2,6 @@ import { CostCard } from '@/features/dashboard/usage/cost-card'
 import { RAMCard } from '@/features/dashboard/usage/ram-card'
 import { SandboxesCard } from '@/features/dashboard/usage/sandboxes-card'
 import { VCPUCard } from '@/features/dashboard/usage/vcpu-card'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { CatchErrorBoundary } from '@/ui/error'
 import Frame from '@/ui/frame'
 
@@ -11,9 +10,6 @@ export default async function UsagePage({
 }: {
   params: Promise<{ teamIdOrSlug: string }>
 }) {
-  const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
   return (
     <Frame
       classNames={{
@@ -23,15 +19,19 @@ export default async function UsagePage({
       }}
     >
       <SandboxesCard
-        teamId={teamId}
+        params={params}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12"
       />
-      <UsagePageContent teamId={teamId} />
+      <UsagePageContent params={params} />
     </Frame>
   )
 }
 
-function UsagePageContent({ teamId }: { teamId: string }) {
+function UsagePageContent({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string }>
+}) {
   return (
     <CatchErrorBoundary
       hideFrame
@@ -41,15 +41,15 @@ function UsagePageContent({ teamId }: { teamId: string }) {
       }}
     >
       <CostCard
-        teamId={teamId}
+        params={params}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12"
       />
       <VCPUCard
-        teamId={teamId}
+        params={params}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-r"
       />
       <RAMCard
-        teamId={teamId}
+        params={params}
         className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-b-0"
       />
     </CatchErrorBoundary>

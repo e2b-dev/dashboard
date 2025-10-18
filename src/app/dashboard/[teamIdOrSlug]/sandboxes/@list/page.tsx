@@ -1,5 +1,4 @@
 import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
 import {
@@ -15,21 +14,19 @@ interface PageProps {
 }
 
 export default async function Page({ params }: PageProps) {
+  return (
+    <div className="flex flex-1 flex-col md:overflow-hidden">
+      <PageContent params={params} />
+    </div>
+  )
+}
+
+async function PageContent({ params }: PageProps) {
   const { teamIdOrSlug } = await params
 
-  return <PageContent teamIdOrSlug={teamIdOrSlug} />
-}
-
-interface PageContentProps {
-  teamIdOrSlug: string
-}
-
-async function PageContent({ teamIdOrSlug }: PageContentProps) {
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
   const [sandboxesRes, templatesRes, defaultTemplateRes] = await Promise.all([
-    getTeamSandboxes({ teamId }),
-    getTeamTemplates({ teamId }),
+    getTeamSandboxes({ teamIdOrSlug }),
+    getTeamTemplates({ teamIdOrSlug }),
     getDefaultTemplates(),
   ])
 
@@ -58,7 +55,7 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
   const maxSandboxesToFetchInitially = 100
 
   const metricsRes = await getTeamSandboxesMetrics({
-    teamId,
+    teamIdOrSlug,
     sandboxIds: sandboxesRes.data.sandboxes
       .map((sandbox) => sandbox.sandboxID)
       .slice(0, maxSandboxesToFetchInitially),
@@ -75,8 +72,8 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
   return (
     <div className="flex flex-col h-full relative min-h-0 md:overflow-hidden">
       <SandboxesTable
-        sandboxes={sandboxes}
         templates={templates}
+        initialSandboxes={sandboxes}
         initialMetrics={metricsRes?.data?.metrics || null}
       />
     </div>

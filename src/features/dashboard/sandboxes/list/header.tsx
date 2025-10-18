@@ -2,8 +2,7 @@ import { Template } from '@/types/api'
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useSandboxes } from './hooks/use-sandboxes'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -26,14 +25,10 @@ export function SandboxesHeader({
   'use no memo'
 
   const { pollingInterval, setPollingInterval } = useSandboxTableStore()
-  const [isRefreshing, startRefreshTransition] = useTransition()
-
-  const router = useRouter()
+  const { mutate, isLoading } = useSandboxes({})
 
   const handleRefresh = () => {
-    startRefreshTransition(() => {
-      router.refresh()
-    })
+    mutate()
   }
 
   const hasActiveFilters = () => {
@@ -54,7 +49,7 @@ export function SandboxesHeader({
               pollingInterval={pollingInterval}
               onIntervalChange={setPollingInterval}
               onRefresh={handleRefresh}
-              isPolling={isRefreshing}
+              isPolling={isLoading}
             />
           </div>
 

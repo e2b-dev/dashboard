@@ -1,21 +1,23 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 
 export const GetSandboxDetailsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   sandboxId: z.string(),
 })
 
 export const getSandboxDetails = authActionClient
   .schema(GetSandboxDetailsSchema)
   .metadata({ serverFunctionName: 'getSandboxDetails' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { session } = ctx
-    const { teamId, sandboxId } = parsedInput
+    const { session, teamId } = ctx
+    const { sandboxId } = parsedInput
 
     const res = await infra.GET('/sandboxes/{sandboxID}', {
       params: {

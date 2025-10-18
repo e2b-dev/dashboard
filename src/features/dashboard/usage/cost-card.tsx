@@ -11,8 +11,13 @@ import {
 import { Suspense } from 'react'
 import { CostChart } from './cost-chart'
 
-async function CostCardContentResolver({ teamId }: { teamId: string }) {
-  const result = await getUsageThroughReactCache({ teamId })
+async function CostCardContentResolver({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string }>
+}) {
+  const { teamIdOrSlug } = await params
+  const result = await getUsageThroughReactCache({ teamIdOrSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     const errorMessage =
@@ -24,9 +29,9 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
     l.error({
       key: 'cost_card:server_error',
       error: result?.serverError,
-      team_id: teamId,
       context: {
         errorMessage,
+        team_segment: teamIdOrSlug,
       },
     })
 
@@ -65,10 +70,10 @@ async function CostCardContentResolver({ teamId }: { teamId: string }) {
 }
 
 export function CostCard({
-  teamId,
+  params,
   className,
 }: {
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
   className?: string
 }) {
   return (
@@ -88,7 +93,7 @@ export function CostCard({
             />
           }
         >
-          <CostCardContentResolver teamId={teamId} />
+          <CostCardContentResolver params={params} />
         </Suspense>
       </CardContent>
     </Card>
