@@ -11,15 +11,11 @@ export function OAuthProviders() {
 
   const { execute, isTransitioning } = useAction(signInWithOAuthAction)
 
-  const handleOAuthSignIn = (provider: 'google' | 'github') => {
-    execute({ provider, returnTo: returnTo || undefined })
-  }
-
   return (
     <div className="mt-4 flex flex-col gap-2">
       <Button
         variant="muted"
-        onClick={() => handleOAuthSignIn('google')}
+        onClick={() => execute({ provider: 'google', returnTo: returnTo || undefined })}
         className="flex items-center gap-2"
         disabled={isTransitioning}
       >
@@ -46,7 +42,7 @@ export function OAuthProviders() {
 
       <Button
         variant="muted"
-        onClick={() => handleOAuthSignIn('github')}
+        onClick={() => execute({ provider: 'github', returnTo: returnTo || undefined })}
         className="flex items-center gap-2"
         disabled={isTransitioning}
       >
