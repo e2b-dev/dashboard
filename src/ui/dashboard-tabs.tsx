@@ -74,7 +74,7 @@ function DashboardTabsComponent({
             className="w-fit flex-none"
             asChild
           >
-            <Link href={tab.href} prefetch>
+            <Link href={tab.href}>
               {tab.icon}
               {tab.label}
             </Link>
