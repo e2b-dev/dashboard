@@ -2,7 +2,7 @@ import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { NextResponse } from 'next/server'
 
-export const revalidate = 30 // cache for 30 seconds
+export const runtime = 'edge' // we use edge for cdn caching
 export const maxDuration = 10 // max duration of 10 seconds
 
 export async function GET() {
@@ -40,7 +40,8 @@ export async function GET() {
     {
       status: allHealthy ? 200 : 503,
       headers: {
-        'Cache-Control': 'public, max-age=30, must-revalidate',
+        // should cache on vercel cdn for 3 minutes
+        'Cache-Control': 'public, max-age=180',
       },
     }
   )
