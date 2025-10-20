@@ -2,10 +2,9 @@ import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { NextResponse } from 'next/server'
 
-// NOTE - we are using cdn caching here, to have some sort of rate limiting on the db calls
+// NOTE - using cdn caching for rate limiting on db calls
 
-export const runtime = 'edge' // we use edge for cdn caching
-export const maxDuration = 10 // max duration of 10 seconds
+export const maxDuration = 10
 
 export async function GET() {
   const checks = {
@@ -43,7 +42,7 @@ export async function GET() {
       status: allHealthy ? 200 : 503,
       headers: {
         // vercel infra respects this to cache on cdn
-        'Cache-Control': 'public, max-age=30',
+        'Cache-Control': 'public, max-age=30, must-revalidate',
       },
     }
   )
