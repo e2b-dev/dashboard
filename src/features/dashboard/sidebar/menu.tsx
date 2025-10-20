@@ -3,7 +3,6 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { signOutAction } from '@/server/auth/auth-actions'
-import { ClientTeam } from '@/types/dashboard.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,
@@ -17,30 +16,19 @@ import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
 import Link from 'next/link'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'
 
 interface DashboardSidebarMenuProps {
-  initialTeam?: ClientTeam
   className?: string
 }
 
 export default function DashboardSidebarMenu({
-  initialTeam,
   className,
 }: DashboardSidebarMenuProps) {
-  const hasSetInitialteam = useRef(false)
-  const { setTeam, team } = useDashboard()
-
-  useLayoutEffect(() => {
-    if (!hasSetInitialteam.current && initialTeam) {
-      setTeam(initialTeam)
-      hasSetInitialteam.current = true
-    }
-  }, [initialTeam, setTeam])
-
+  const { team } = useDashboard()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
 
   const handleLogout = () => {

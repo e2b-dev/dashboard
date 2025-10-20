@@ -8,7 +8,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/ui/primitives/dropdown-menu'
-import { Loader } from '@/ui/primitives/loader'
+import { Skeleton } from '@/ui/primitives/skeleton'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCallback } from 'react'
@@ -70,7 +70,24 @@ export default function DashboardSidebarMenuTeams() {
   )
 
   if (isLoading) {
-    return <Loader />
+    return (
+      <>
+        {user?.email && (
+          <DropdownMenuLabel className="mb-2">
+            <Skeleton className="h-3 w-40 bg-bg-inverted/10" />
+          </DropdownMenuLabel>
+        )}
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="relative flex select-none items-center gap-2 px-2 py-1.5 pr-10"
+          >
+            <Skeleton className="size-5 shrink-0 bg-bg-inverted/10" />
+            <Skeleton className="h-3.5 flex-1 bg-bg-inverted/10" />
+          </div>
+        ))}
+      </>
+    )
   }
 
   return (
@@ -83,8 +100,8 @@ export default function DashboardSidebarMenuTeams() {
       )}
       {teams && teams.length > 0 ? (
         teams.map((team) => (
-          <DropdownMenuRadioItem key={team.id} value={team.id} asChild>
-            <Link href={getNextUrl(team)}>
+          <Link href={getNextUrl(team)} passHref key={team.id}>
+            <DropdownMenuRadioItem value={team.id}>
               <Avatar className="size-5 shrink-0 border-none">
                 <AvatarImage src={team.profile_picture_url || undefined} />
                 <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
@@ -94,8 +111,8 @@ export default function DashboardSidebarMenuTeams() {
               <span className="flex-1 truncate font-sans prose-label-highlight">
                 {team.transformed_default_name || team.name}
               </span>
-            </Link>
-          </DropdownMenuRadioItem>
+            </DropdownMenuRadioItem>
+          </Link>
         ))
       ) : (
         <DropdownMenuItem disabled>No teams available</DropdownMenuItem>

@@ -3,9 +3,9 @@ import { METADATA } from '@/configs/metadata'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import { createClient } from '@/lib/clients/supabase/server'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
+import { getTeam } from '@/server/team/get-team'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { unauthorized } from 'next/navigation'
@@ -29,10 +29,10 @@ export default async function DashboardLayout({
   children,
   params,
 }: DashboardLayoutProps) {
-  const supabase = await createClient()
   const cookieStore = await cookies()
+  const { teamIdOrSlug } = await params
 
-  const session = await getSessionInsecure(supabase)
+  const session = await getSessionInsecure()
   const { error, data } = await getUserByToken(session?.access_token)
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
@@ -42,14 +42,17 @@ export default async function DashboardLayout({
     throw unauthorized()
   }
 
+  const teamRes = await getTeam({ teamIdOrSlug })
+  const team = teamRes?.data ?? null
+
   return (
-    <DashboardContextProvider initialTeam={null} initialUser={data.user}>
+    <DashboardContextProvider initialTeam={team} initialUser={data.user}>
       <SidebarProvider
         defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
       >
         <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
-            <Sidebar params={params} />
+            <Sidebar />
             <SidebarInset>
               <DashboardLayoutView params={params}>
                 {children}
