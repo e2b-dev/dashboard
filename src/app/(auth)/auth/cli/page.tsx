@@ -2,16 +2,13 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
-import { bailOutFromPPR, generateE2BUserAccessToken } from '@/lib/utils/server'
+import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { getDefaultTeamRelation } from '@/server/auth/get-default-team'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { serializeError } from 'serialize-error'
-
-// Mark route as dynamic to prevent static optimization
-export const dynamic = 'force-dynamic'
 
 // Types
 type CLISearchParams = Promise<{
@@ -89,8 +86,6 @@ export default async function CLIAuthPage({
 }: {
   searchParams: CLISearchParams
 }) {
-  bailOutFromPPR()
-
   const { next, state, error } = await searchParams
   const supabase = await createClient()
 

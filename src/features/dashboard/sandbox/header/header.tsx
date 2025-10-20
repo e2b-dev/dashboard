@@ -1,4 +1,4 @@
-import { COOKIE_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api'
 import { ChevronLeftIcon } from 'lucide-react'

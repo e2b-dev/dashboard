@@ -15,7 +15,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 
 interface BillingInvoicesTableProps {
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
 }
 
 function LoadingFallback() {
@@ -34,8 +34,14 @@ function LoadingFallback() {
   )
 }
 
-async function InvoicesTableContent({ teamId }: { teamId: string }) {
-  const res = await getInvoices({ teamId })
+async function InvoicesTableContent({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string }>
+}) {
+  const { teamIdOrSlug } = await params
+
+  const res = await getInvoices({ teamIdOrSlug })
 
   if (!res?.data || res.serverError || res.validationErrors) {
     return (
@@ -89,7 +95,7 @@ async function InvoicesTableContent({ teamId }: { teamId: string }) {
 }
 
 export default function BillingInvoicesTable({
-  teamId,
+  params,
 }: BillingInvoicesTableProps) {
   return (
     <Table className="animate-in fade-in w-full min-w-[800px]">
@@ -103,7 +109,7 @@ export default function BillingInvoicesTable({
       </TableHeader>
       <TableBody>
         <Suspense fallback={<LoadingFallback />}>
-          <InvoicesTableContent teamId={teamId} />
+          <InvoicesTableContent params={params} />
         </Suspense>
       </TableBody>
     </Table>

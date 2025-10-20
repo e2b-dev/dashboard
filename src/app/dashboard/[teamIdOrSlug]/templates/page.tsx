@@ -1,5 +1,4 @@
 import TemplatesTable from '@/features/dashboard/templates/table'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import {
   getDefaultTemplates,
   getTeamTemplates,
@@ -12,21 +11,25 @@ interface PageProps {
   }>
 }
 
-export default async function Page({ params }: PageProps) {
-  const { teamIdOrSlug } = await params
-
-  return <PageContent teamIdOrSlug={teamIdOrSlug} />
+export default function Page({ params }: PageProps) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <PageContent params={params} />
+    </div>
+  )
 }
 
 interface PageContentProps {
-  teamIdOrSlug: string
+  params: Promise<{
+    teamIdOrSlug: string
+  }>
 }
 
-async function PageContent({ teamIdOrSlug }: PageContentProps) {
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
+async function PageContent({ params }: PageContentProps) {
+  const { teamIdOrSlug } = await params
 
   const res = await getTeamTemplates({
-    teamId,
+    teamIdOrSlug,
   })
 
   const defaultRes = await getDefaultTemplates()

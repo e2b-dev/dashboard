@@ -11,8 +11,13 @@ import {
 import { Suspense } from 'react'
 import { VCPUChart } from './vcpu-chart'
 
-async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
-  const result = await getUsageThroughReactCache({ teamId })
+async function VCPUCardContentResolver({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string }>
+}) {
+  const { teamIdOrSlug } = await params
+  const result = await getUsageThroughReactCache({ teamIdOrSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     const errorMessage =
@@ -23,8 +28,8 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
     l.error({
       key: 'vcpu_card:server_error',
       error: result?.serverError,
-      team_id: teamId,
       context: {
+        team_segment: teamIdOrSlug,
         errorMessage,
       },
     })
@@ -61,10 +66,10 @@ async function VCPUCardContentResolver({ teamId }: { teamId: string }) {
 }
 
 export function VCPUCard({
-  teamId,
+  params,
   className,
 }: {
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
   className?: string
 }) {
   return (
@@ -84,7 +89,7 @@ export function VCPUCard({
             />
           }
         >
-          <VCPUCardContentResolver teamId={teamId} />
+          <VCPUCardContentResolver params={params} />
         </Suspense>
       </CardContent>
     </Card>

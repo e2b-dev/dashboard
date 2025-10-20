@@ -110,14 +110,14 @@ export default function LimitForm({
     setLimit({
       type,
       value: data.value,
-      teamId,
+      teamIdOrSlug: teamId,
     })
   }
 
   const handleClear = () => {
     clearLimit({
       type,
-      teamId,
+      teamIdOrSlug: teamId,
     })
   }
 

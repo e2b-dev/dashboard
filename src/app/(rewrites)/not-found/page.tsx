@@ -1,8 +1,6 @@
 import NotFound from '@/ui/not-found'
 import { Metadata } from 'next'
 
-export const dynamic = 'force-static'
-
 export const metadata: Metadata = {
   title: '404 - Page Not Found',
   description:
@@ -10,6 +8,8 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow',
 }
 
-export default function NotFoundShell() {
+export default async function NotFoundShell() {
+  'use cache'
+
   return <NotFound />
 }

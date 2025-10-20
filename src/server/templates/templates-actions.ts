@@ -1,20 +1,26 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+// although team information is not required here, we still use the middleware
+// to handle this issue before it comes back from the infra.
+
 const DeleteTemplateParamsSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
   templateId: z.string(),
 })
 
 export const deleteTemplateAction = authActionClient
   .schema(DeleteTemplateParamsSchema)
   .metadata({ actionName: 'deleteTemplate' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { templateId } = parsedInput
 
@@ -67,6 +73,7 @@ export const deleteTemplateAction = authActionClient
   })
 
 const UpdateTemplateParamsSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
   templateId: z.string(),
   props: z
     .object({
@@ -78,6 +85,7 @@ const UpdateTemplateParamsSchema = z.object({
 export const updateTemplateAction = authActionClient
   .schema(UpdateTemplateParamsSchema)
   .metadata({ actionName: 'updateTemplate' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { templateId, props } = parsedInput
     const { session } = ctx

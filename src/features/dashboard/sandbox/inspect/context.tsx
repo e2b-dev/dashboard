@@ -16,6 +16,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
+import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
@@ -33,7 +34,6 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 interface SandboxInspectProviderProps {
   children: ReactNode
   rootPath: string
-  teamId: string
   seedEntries?: EntryInfo[]
 }
 
@@ -41,8 +41,10 @@ export function SandboxInspectProvider({
   children,
   rootPath,
   seedEntries,
-  teamId,
 }: SandboxInspectProviderProps) {
+  const { team } = useDashboard()
+  const teamId = team?.id
+
   const { sandboxInfo, isRunning } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)

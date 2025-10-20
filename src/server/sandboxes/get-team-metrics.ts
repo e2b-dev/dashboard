@@ -1,14 +1,15 @@
 import 'server-only'
 
 import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 import { getTeamMetricsCore } from './get-team-metrics-core'
 
 export const GetTeamMetricsSchema = z
   .object({
-    teamId: z.uuid(),
+    teamIdOrSlug: TeamIdOrSlugSchema,
     startDate: z
       .number()
       .int()
@@ -45,10 +46,9 @@ export const GetTeamMetricsSchema = z
 export const getTeamMetrics = authActionClient
   .schema(GetTeamMetricsSchema)
   .metadata({ serverFunctionName: 'getTeamMetrics' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { session } = ctx
-
-    const teamId = parsedInput.teamId
+    const { session, teamId } = ctx
 
     const { startDate: startDateMs, endDate: endDateMs } = parsedInput
 

@@ -24,6 +24,7 @@ import { subHours } from 'date-fns'
 import React, { useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
+import { useSandboxes } from './hooks/use-sandboxes'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { TableBody } from './table-body'
 import {
@@ -41,14 +42,14 @@ const VIRTUAL_OVERSCAN = 8
 // metrics fetched via useSandboxesMetrics
 
 interface SandboxesTableProps {
-  sandboxes: Sandbox[]
   templates: Template[]
+  initialSandboxes: Sandbox[]
   initialMetrics: ClientSandboxesMetrics | null
 }
 
 export default function SandboxesTable({
-  sandboxes,
   templates,
+  initialSandboxes,
   initialMetrics,
 }: SandboxesTableProps) {
   'use no memo'
@@ -77,6 +78,7 @@ export default function SandboxesTable({
     setSorting,
     setGlobalFilter,
     setRowPinning,
+    pollingInterval,
   } = useSandboxTableStore()
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -144,11 +146,19 @@ export default function SandboxesTable({
     resetScroll()
   }, [sorting, globalFilter])
 
-  const tableData = useMemo(() => sandboxes, [sandboxes])
+  const { data: sandboxesData } = useSandboxes({
+    initialSandboxes,
+    pollingInterval,
+  })
+
+  const sandboxes = useMemo(
+    () => sandboxesData?.sandboxes || [],
+    [sandboxesData]
+  )
 
   const table = useReactTable({
     columns: COLUMNS,
-    data: tableData,
+    data: sandboxes,
     state: {
       globalFilter,
       sorting,

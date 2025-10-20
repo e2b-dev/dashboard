@@ -1,7 +1,8 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CustomerPortalResponse } from '@/types/billing'
 import { revalidatePath } from 'next/cache'
@@ -12,16 +13,17 @@ import { z } from 'zod'
 // Checkout
 
 const RedirectToCheckoutParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   tierId: z.string(),
 })
 
 export const redirectToCheckoutAction = authActionClient
   .schema(RedirectToCheckoutParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'redirectToCheckout' })
   .action(async ({ parsedInput, ctx }) => {
-    const { session } = ctx
-    const { teamId, tierId } = parsedInput
+    const { teamId, session } = ctx
+    const { tierId } = parsedInput
 
     const accessToken = session.access_token
 
@@ -57,17 +59,18 @@ function typeToKey(type: 'limit' | 'alert') {
 }
 
 const SetLimitParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   type: z.enum(['limit', 'alert']),
   value: z.number().min(1),
 })
 
 export const setLimitAction = authActionClient
   .schema(SetLimitParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'setLimit' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, type, value } = parsedInput
-    const { session } = ctx
+    const { type, value } = parsedInput
+    const { session, teamId } = ctx
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/billing-limits`,
@@ -92,16 +95,17 @@ export const setLimitAction = authActionClient
   })
 
 const ClearLimitParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   type: z.enum(['limit', 'alert']),
 })
 
 export const clearLimitAction = authActionClient
   .schema(ClearLimitParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'clearLimit' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, type } = parsedInput
-    const { session } = ctx
+    const { session, teamId } = ctx
+    const { type } = parsedInput
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/billing-limits/${typeToKey(type)}`,
@@ -125,14 +129,15 @@ export const clearLimitAction = authActionClient
 // CUSTOMER PORTAL
 
 const RedirectToCustomerPortalParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const redirectToCustomerPortal = authActionClient
   .schema(RedirectToCustomerPortalParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'redirectToCustomerPortal' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
+  .action(async ({ ctx }) => {
+    const { teamId } = ctx
     const { session } = ctx
 
     const origin = (await headers()).get('origin')

@@ -1,15 +1,16 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { z } from 'zod'
 
 const GetTeamSandboxesMetricsSchema = z.object({
-  teamId: z.string(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   sandboxIds: z.array(z.string()),
 })
 
@@ -18,6 +19,7 @@ export const getTeamSandboxesMetrics = authActionClient
     serverFunctionName: 'getTeamSandboxesMetrics',
   })
   .schema(GetTeamSandboxesMetricsSchema)
+  .use(withTeamIdResolution)
   .action(
     async ({
       parsedInput,
@@ -25,8 +27,8 @@ export const getTeamSandboxesMetrics = authActionClient
     }): Promise<{
       metrics: ClientSandboxesMetrics
     }> => {
-      const { teamId, sandboxIds } = parsedInput
-      const { session } = ctx
+      const { session, teamId } = ctx
+      const { sandboxIds } = parsedInput
 
       if (sandboxIds.length === 0 || USE_MOCK_DATA) {
         return {

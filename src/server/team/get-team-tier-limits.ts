@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { USE_MOCK_DATA } from '@/configs/flags'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 import getTeamTierLimitsMemo from './get-team-tier-limits-memo'
@@ -25,15 +26,15 @@ const MOCK_TIER_LIMITS: TeamTierLimits = {
 }
 
 const GetTeamTierLimitsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamTierLimits = authActionClient
   .schema(GetTeamTierLimitsSchema)
   .metadata({ serverFunctionName: 'getTeamTierLimits' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { user } = ctx
-    const { teamId } = parsedInput
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { user, teamId } = ctx
 
     if (USE_MOCK_DATA) {
       return MOCK_TIER_LIMITS

@@ -1,13 +1,13 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn, exponentialSmoothing } from '@/lib/utils'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { AlertOctagonIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
+import { useDashboard } from '../context'
 
 interface TeamBlockageAlertProps {
   className?: string
@@ -16,7 +16,7 @@ interface TeamBlockageAlertProps {
 export default function TeamBlockageAlert({
   className,
 }: TeamBlockageAlertProps) {
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
   const router = useRouter()
 
   const isBillingLimit = useMemo(

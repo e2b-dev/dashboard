@@ -13,9 +13,7 @@ import { FC, Suspense } from 'react'
 import TableBodyContent from './table-body'
 
 interface ApiKeysTableProps {
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
+  params: Promise<{ teamIdOrSlug: string }>
   className?: string
 }
 

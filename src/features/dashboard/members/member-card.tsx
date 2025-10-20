@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Suspense } from 'react'
 import AddMemberForm from './add-member-form'
 import MemberTable from './member-table'
 
@@ -25,9 +24,7 @@ export function MemberCard({ params, className }: MemberCardProps) {
       </CardHeader>
       <CardContent>
         <div className="grid gap-8">
-          <Suspense>
-            <AddMemberForm className="w-full max-w-[24rem]" />
-          </Suspense>
+          <AddMemberForm className="w-full max-w-[24rem]" />
           <div className="bg-card w-full overflow-x-auto">
             <MemberTable params={params} />
           </div>

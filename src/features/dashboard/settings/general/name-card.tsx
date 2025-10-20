@@ -1,7 +1,7 @@
 'use client'
 
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -38,7 +38,7 @@ interface NameCardProps {
 export function NameCard({ className }: NameCardProps) {
   'use no memo'
 
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
 
   const { toast } = useToast()
 
@@ -52,7 +52,7 @@ export function NameCard({ className }: NameCardProps) {
     {
       formProps: {
         defaultValues: {
-          teamId: team?.id ?? '',
+          teamIdOrSlug: team?.id ?? '',
           name: team?.name ?? '',
         },
       },
@@ -96,18 +96,18 @@ export function NameCard({ className }: NameCardProps) {
           Change your team name to display on your invoices and receipts.
         </CardDescription>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="py-0 max-h-full">
         {team ? (
           <Form {...form}>
             <form
               onSubmit={handleSubmitWithAction}
-              className="flex max-w-sm gap-2"
+              className="flex max-w-sm gap-2 mt-auto"
             >
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="flex-1 gap-1">
+                  <FormItem className="flex-1 gap-1 p-0">
                     <FormControl>
                       <Input placeholder="Acme, Inc." {...field} />
                     </FormControl>

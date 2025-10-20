@@ -12,10 +12,10 @@ import { SandboxesChart } from './sandboxes-chart'
 
 export function SandboxesCard({
   className,
-  teamId,
+  params,
 }: {
   className?: string
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
 }) {
   return (
     <Card className={className}>
@@ -35,15 +35,20 @@ export function SandboxesCard({
             />
           }
         >
-          <SandboxesStartedContent teamId={teamId} />
+          <SandboxesStartedContent params={params} />
         </Suspense>
       </CardContent>
     </Card>
   )
 }
 
-async function SandboxesStartedContent({ teamId }: { teamId: string }) {
-  const response = await getUsageThroughReactCache({ teamId })
+async function SandboxesStartedContent({
+  params,
+}: {
+  params: Promise<{ teamIdOrSlug: string }>
+}) {
+  const { teamIdOrSlug } = await params
+  const response = await getUsageThroughReactCache({ teamIdOrSlug })
 
   if (response?.serverError || response?.validationErrors || !response?.data) {
     throw new Error(response?.serverError || 'Failed to load usage')

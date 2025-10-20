@@ -1,7 +1,6 @@
 'use client'
 
 import { Tier } from '@/configs/tiers'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { redirectToCheckoutAction } from '@/server/billing/billing-actions'
@@ -9,6 +8,7 @@ import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { useAction } from 'next-safe-action/hooks'
 import { forwardRef } from 'react'
+import { useDashboard } from '../context'
 
 interface BillingTierCardProps {
   tier: Tier
@@ -18,7 +18,7 @@ interface BillingTierCardProps {
 
 const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
   ({ tier, isHighlighted = false, className }, ref) => {
-    const team = useSelectedTeam()
+    const { team } = useDashboard()
 
     const { toast } = useToast()
 
@@ -47,7 +47,7 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
       if (!team) return
 
       redirectToCheckout({
-        teamId: team.id,
+        teamIdOrSlug: team.id,
         tierId: tier.id,
       })
     }
