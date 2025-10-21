@@ -10,7 +10,6 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import {
   DeleteWebhookSchema,
-  TestWebhookSchema,
   UpsertWebhookSchema,
 } from './schema'
 
@@ -23,7 +22,7 @@ export const upsertWebhookAction = authActionClient
   .schema(UpsertWebhookSchema)
   .metadata({ actionName: 'upsertWebhook' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, mode, url, events } = parsedInput
+    const { teamId, mode, name, url, events } = parsedInput
     const { session } = ctx
 
     const accessToken = session.access_token
@@ -35,6 +34,7 @@ export const upsertWebhookAction = authActionClient
             ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
           },
           body: {
+            name,
             url,
             events,
           },
@@ -44,6 +44,7 @@ export const upsertWebhookAction = authActionClient
             ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
           },
           body: {
+            name,
             url,
             events,
           },
@@ -64,6 +65,7 @@ export const upsertWebhookAction = authActionClient
           context: {
             teamId,
             mode,
+            name,
             url,
             events,
           },
@@ -125,46 +127,6 @@ export const deleteWebhookAction = authActionClient
     )?.value
 
     revalidatePath(`/dashboard/${teamSlug}/settings?tab=webhooks`, 'page')
-
-    return { success: true }
-  })
-
-// Test Webhook
-
-export const testWebhookAction = authActionClient
-  .schema(TestWebhookSchema)
-  .metadata({ actionName: 'testWebhook' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
-    const { session } = ctx
-
-    const accessToken = session.access_token
-
-    const response = await infra.POST('/events/webhooks/sandboxes/test', {
-      headers: {
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
-      },
-    })
-
-    if (response.error) {
-      const status = response.response.status
-
-      l.error(
-        {
-          key: 'test_webhook:infra_error',
-          status,
-          error: response.error,
-          team_id: teamId,
-          user_id: session.user.id,
-          context: {
-            teamId,
-          },
-        },
-        `Failed to test webhook: ${status}: ${response.error.message}`
-      )
-
-      return handleDefaultInfraError(status)
-    }
 
     return { success: true }
   })

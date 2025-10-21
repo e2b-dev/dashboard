@@ -9,18 +9,15 @@ const WebhookUrlSchema = z
 export const UpsertWebhookSchema = zfd.formData({
   teamId: zfd.text(z.string().uuid()),
   mode: zfd.text(z.enum(['add', 'edit'])),
+  name: zfd.text(z.string().min(1, 'Name is required').trim()),
   url: zfd.text(WebhookUrlSchema),
   events: zfd.repeatable(z.array(zfd.text()).min(1)),
+  secret: zfd.text(z.string().min(32, 'Secret must be at least 32 characters')),
 })
 
 export const DeleteWebhookSchema = zfd.formData({
   teamId: zfd.text(z.string().uuid()),
 })
 
-export const TestWebhookSchema = zfd.formData({
-  teamId: zfd.text(z.string().uuid()),
-})
-
 export type UpsertWebhookSchemaType = z.infer<typeof UpsertWebhookSchema>
 export type DeleteWebhookSchemaType = z.infer<typeof DeleteWebhookSchema>
-export type TestWebhookSchemaType = z.infer<typeof TestWebhookSchema>
