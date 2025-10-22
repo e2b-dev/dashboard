@@ -18,7 +18,7 @@ import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
 import {
@@ -50,6 +50,7 @@ export function WebhookAddEditDialogSteps({
   const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
     'pre-generated'
   )
+  const customInputRef = useRef<HTMLInputElement>(null)
 
   const preGeneratedSecret = useMemo(() => {
     const chars =
@@ -69,6 +70,16 @@ export function WebhookAddEditDialogSteps({
       form.setValue('signatureSecret', '')
     }
   }, [secretType, preGeneratedSecret, form])
+
+  // autofocus custom input when switching to custom tab
+  useEffect(() => {
+    if (secretType === 'custom' && customInputRef.current) {
+      // ensure autofocus happens in the next render cycle
+      setTimeout(() => {
+        customInputRef.current?.focus()
+      }, 0)
+    }
+  }, [secretType])
 
   const handleCopy = async () => {
     try {
@@ -188,7 +199,7 @@ export function WebhookAddEditDialogSteps({
           <div className="flex flex-col gap-2 min-w-0">
             <p className="text-fg-tertiary prose-body break-words">
               We'll send a POST request with a JSON payload to{' '}
-              <span className="break-all">
+              <span className="break-all text-fg">
                 {form.watch('url') || 'https://example.com/postreceive'}
               </span>{' '}
               for each event. Example:
@@ -304,6 +315,10 @@ export function WebhookAddEditDialogSteps({
                         className="min-w-0"
                         {...field}
                         value={field.value || ''}
+                        ref={(e) => {
+                          field.ref(e)
+                          customInputRef.current = e
+                        }}
                       />
                     </FormControl>
                     <p className="text-fg-tertiary prose-body">

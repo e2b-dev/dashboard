@@ -17,7 +17,7 @@ export default function WebhooksEmpty({ error }: WebhooksEmptyProps) {
           error && 'text-accent-error-highlight'
         )}
       >
-        {error ? error : 'No webhook set up yet'}
+        {error ? error : 'No webhooks added yet'}
       </p>
     </div>
   )

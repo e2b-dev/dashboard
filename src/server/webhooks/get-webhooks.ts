@@ -7,12 +7,12 @@ import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { z } from 'zod'
 
-const GetWebhookSchema = z.object({
+const GetWebhooksSchema = z.object({
   teamId: z.string({ required_error: 'Team ID is required' }).uuid(),
 })
 
-export const getWebhook = authActionClient
-  .schema(GetWebhookSchema)
+export const getWebhooks = authActionClient
+  .schema(GetWebhooksSchema)
   .metadata({ serverFunctionName: 'getWebhook' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId } = parsedInput
@@ -20,7 +20,7 @@ export const getWebhook = authActionClient
 
     const accessToken = session.access_token
 
-    const response = await infra.GET('/events/webhooks/sandboxes', {
+    const response = await infra.GET('/events/webhooks', {
       headers: {
         ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
       },
@@ -30,12 +30,12 @@ export const getWebhook = authActionClient
       const status = response.response.status
 
       if (status === 404) {
-        return { webhook: null }
+        return { webhooks: [] }
       }
 
       l.error(
         {
-          key: 'get_webhook:infra_error',
+          key: 'get_webhooks:infra_error',
           status,
           error: response.error,
           team_id: teamId,
@@ -49,5 +49,5 @@ export const getWebhook = authActionClient
 
     const data = response.data
 
-    return { webhook: data }
+    return { webhooks: data }
   })

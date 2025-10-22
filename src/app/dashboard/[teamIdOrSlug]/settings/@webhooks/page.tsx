@@ -1,15 +1,16 @@
-import WebhookControls from '@/features/dashboard/settings/webhooks/controls'
+import WebhookAddEditDialog from '@/features/dashboard/settings/webhooks/add-edit-dialog'
 import WebhooksEmpty from '@/features/dashboard/settings/webhooks/empty'
-import WebhookCard from '@/features/dashboard/settings/webhooks/webhook-card'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { getWebhook } from '@/server/webhooks/get-webhook'
+import { getWebhooks } from '@/server/webhooks/get-webhooks'
 import Frame from '@/ui/frame'
+import { Button } from '@/ui/primitives/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
 } from '@/ui/primitives/card'
+import { Plus } from 'lucide-react'
 
 interface WebhooksPageClientProps {
   params: Promise<{
@@ -23,12 +24,12 @@ export default async function WebhooksPage({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const webhookResult = await getWebhook({ teamId })
+  const webhooksResult = await getWebhooks({ teamId })
 
   // undefined data indicates execution error so we disable the controls
-  const hasError = webhookResult?.data === undefined
+  const hasError = webhooksResult?.data === undefined
   // normalize data field, no matter the execution result
-  const data = webhookResult?.data ? webhookResult.data : { webhook: null }
+  const data = webhooksResult?.data ? webhooksResult.data : { webhooks: [] }
 
   return (
     <Frame
@@ -46,18 +47,25 @@ export default async function WebhooksPage({
               send a POST request to the URL you provide.
             </CardDescription>
 
-            <WebhookControls webhook={data.webhook} disabled={hasError} />
+            <WebhookAddEditDialog mode="add">
+              <Button className="w-full sm:w-auto sm:self-start">
+                <Plus className="size-4" />{' '}
+                {data.webhooks.length === 0
+                  ? 'Add a Webhook'
+                  : 'Add new Webhook'}
+              </Button>
+            </WebhookAddEditDialog>
           </div>
         </CardHeader>
 
         <CardContent>
-          {!hasError && data.webhook ? (
-            <WebhookCard webhook={data.webhook} />
+          {!hasError && data.webhooks.length > 0 ? (
+            <> </>
           ) : (
             <WebhooksEmpty
               error={
                 hasError
-                  ? 'Failed to get webhook state. Try again or contact support.'
+                  ? 'Failed to get webhooks. Try again or contact support.'
                   : undefined
               }
             />

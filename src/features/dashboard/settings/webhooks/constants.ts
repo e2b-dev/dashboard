@@ -1,24 +1,33 @@
 export const WEBHOOK_EVENTS = [
-  'create',
-  'pause',
-  'resume',
-  'update',
-  'kill',
+  'sandbox.lifecycle.created',
+  'sandbox.lifecycle.paused',
+  'sandbox.lifecycle.resumed',
+  'sandbox.lifecycle.updated',
+  'sandbox.lifecycle.killed',
 ] as const
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number]
 
 export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
-  create: 'CREATE',
-  pause: 'PAUSE',
-  resume: 'RESUME',
-  update: 'UPDATE',
-  kill: 'KILL',
+  'sandbox.lifecycle.created': 'CREATE',
+  'sandbox.lifecycle.paused': 'PAUSE',
+  'sandbox.lifecycle.resumed': 'RESUME',
+  'sandbox.lifecycle.updated': 'UPDATE',
+  'sandbox.lifecycle.killed': 'KILL',
 }
 
 export const WEBHOOK_EXAMPLE_PAYLOAD = `{
-  "timestamp": 1757839788,
-  "sandboxID": "ef621980-59ad-4552-8cf7-c1b4984dcf13",
-  "eventLabel": "create",
-  // ... more fields, see docs
-}`
+  "version": "v1",
+  "id": "<UUID>",
+  "type": "sandbox.lifecycle.created",
+  "eventData": null,
+  "sandboxBuildId": "<UUID>",
+  "sandboxExecutionId": "<UUID>",
+  "sandboxId": "<SANDBOX_ID>",
+  "sandboxTeamId": "<UUID>",
+  "sandboxTemplateId": "<TEMPLATE_ID>",
+  "timestamp": "<ISO_8601_TIMESTAMP>"
+}
+
+// Payload structure may vary by event type. 
+// See docs for full schema.`

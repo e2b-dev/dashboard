@@ -12,7 +12,7 @@ export const UpsertWebhookSchema = zfd.formData({
   webhookId: zfd.text(z.string().uuid().optional()),
   name: zfd.text(z.string().min(1, 'Name is required').trim()),
   url: zfd.text(WebhookUrlSchema),
-  events: zfd.repeatable(zfd.text()).pipe(z.array(z.string()).min(1)),
+  events: z.array(z.string()).min(1),
   signatureSecret: zfd.text(
     z.string().min(32, 'Secret must be at least 32 characters')
   ),
