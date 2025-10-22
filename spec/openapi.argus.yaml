@@ -33,38 +33,8 @@ components:
       name: X-Admin-Token
 
   parameters:
-    templateID:
-      name: templateID
-      in: path
-      required: true
-      schema:
-        type: string
-    buildID:
-      name: buildID
-      in: path
-      required: true
-      schema:
-        type: string
     sandboxID:
       name: sandboxID
-      in: path
-      required: true
-      schema:
-        type: string
-    nodeID:
-      name: nodeID
-      in: path
-      required: true
-      schema:
-        type: string
-    apiKeyID:
-      name: apiKeyID
-      in: path
-      required: true
-      schema:
-        type: string
-    accessTokenID:
-      name: accessTokenID
       in: path
       required: true
       schema:
@@ -126,6 +96,8 @@ components:
     SandboxEvent:
       description: Sandbox event
       required:
+        - version
+        - type
         - timestamp
         - sandboxUptimeSecs
         - sandboxId
@@ -133,9 +105,26 @@ components:
         - sandboxTemplateId
         - sandboxBuildId
         - sandboxTeamId
-        - eventCategory
-        - eventLabel
       properties:
+        version:
+          type: string
+          description: Event structure version
+        type:
+          type: string
+          description: Event name
+        eventCategory:
+          type: string
+          deprecated: true
+          description: Category of the event (e.g., 'lifecycle', 'process', etc.)
+        eventLabel:
+          type: string
+          deprecated: true
+          description: Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
+        eventData:
+          type: object
+          nullable: true
+          description: Optional JSON data associated with the event
+
         timestamp:
           type: string
           format: date-time
@@ -159,23 +148,17 @@ components:
         sandboxTeamId:
           type: string
           description: Team identifier associated with the sandbox
-        eventCategory:
-          type: string
-          description: Category of the event (e.g., 'lifecycle', 'process', etc.)
-        eventLabel:
-          type: string
-          description: Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
-        eventData:
-          type: object
-          nullable: true
-          description: Optional JSON data associated with the event
 
-    SandboxWebhooksPayloadPost:
+    WebhookCreate:
       description: Configuration for registering new webhooks
       required:
+        - name
         - url
         - events
+        - signatureSecret
       properties:
+        name:
+          type: string
         url:
           type: string
           format: uri
@@ -183,10 +166,90 @@ components:
           type: array
           items:
             type: string
+        enabled:
+          type: boolean
+          default: true
+        signatureSecret:
+          type: string
+          description: Secret used to sign the webhook payloads
 
-    SandboxWebhooksPayloadPatch:
+    WebhookCreateResponse:
+      description: Webhook creation response
+      required:
+        - id
+        - name
+        - createdAt
+        - teamId
+        - url
+        - enabled
+        - events
+      properties:
+        id:
+          type: string
+          description: Webhook unique identifier
+        name:
+          type: string
+          description: Webhook user friendly name
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        teamId:
+          type: string
+          description: Unique identifier for the team
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+
+    WebhookDetail:
+      description: Webhook detail response
+      required:
+        - id
+        - teamId
+        - name
+        - createdAt
+        - teamId
+        - url
+        - enabled
+        - events
+      properties:
+        id:
+          type: string
+          description: Webhook unique identifier
+        teamId:
+          type: string
+          description: Unique identifier for the team
+        name:
+          type: string
+          description: Webhook user friendly name
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+
+    WebhookConfiguration:
       description: Configuration for updating existing webhooks
       properties:
+        enabled:
+          type: boolean
+        name:
+          type: string
+          description: Webhook user friendly name
         url:
           type: string
           format: uri
@@ -194,24 +257,9 @@ components:
           type: array
           items:
             type: string
-
-    SandboxWebhooksPayloadGet:
-      description: Registered webhooks for a sandbox
-      required:
-        - teamID
-        - url
-        - events
-      properties:
-        teamID:
+        signatureSecret:
           type: string
-          format: uuid
-        url:
-          type: string
-          format: uri
-        events:
-          type: array
-          items:
-            type: string
+          description: Secret used to sign the webhook payloads
 
 paths:
   /health:
@@ -320,21 +368,79 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /events/webhooks/sandboxes:
-    get:
-      description: Get a registered webhook
+  /events/webhooks:
+    post:
+      operationId: webhookCreate
+      description: Register events webhook.
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
-        - Supabase2TeamAuth: []
+          Supabase2TeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookCreate"
       responses:
-        "200":
-          description: Successfully returned the webhook
+        "201":
+          description: Successfully returned all webhooks
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SandboxWebhooksPayloadGet"
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/WebhookCreateResponse"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    get:
+        operationId: webhooksList
+        description: List registered webhooks.
+        tags: [webhooks]
+        security:
+          - ApiKeyAuth: []
+          - Supabase1TokenAuth: []
+            Supabase2TeamAuth: []
+        responses:
+          "201":
+            description: Successfully registered webhook.
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/WebhookDetail"
+          "404":
+            $ref: "#/components/responses/404"
+          "401":
+            $ref: "#/components/responses/401"
+          "500":
+            $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}:
+    get:
+      operationId: webhookGet
+      description: Get a registered webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      responses:
+        "200":
+          description: Successfully returned the webhook configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDetail"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -342,49 +448,29 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-    post:
-      description: Register webhooks for a sandbox
-      tags: [webhooks]
-      security:
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-        - Supabase2TeamAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SandboxWebhooksPayloadPost"
-      responses:
-        "201":
-          description: Successfully registered webhook
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-    
     patch:
-      description: Update a registered webhook configuration
+      operationId: webhookUpdate
+      description: Update a registered webhook configuration.
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
-        - Supabase2TeamAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SandboxWebhooksPayloadPatch"
+              $ref: "#/components/schemas/WebhookConfiguration"
       responses:
         "200":
-          description: Successfully updated webhook
+          description: Successfully updated webhook.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SandboxWebhooksPayloadGet"
+                $ref: "#/components/schemas/WebhookDetail"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -393,33 +479,18 @@ paths:
           $ref: "#/components/responses/500"
 
     delete:
-      description: Delete a webhook
+      operationId: webhookDelete
+      description: Delete a registered webhook.
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
-        - Supabase2TeamAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
       responses:
         "200":
-          description: Successfully deleted webhook
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /events/webhooks/sandboxes/test:
-    post:
-      description: Test a webhook
-      tags: [webhooks]
-      security:
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-        - Supabase2TeamAuth: []
-      responses:
-        "200":
-          description: Successfully sent a test webhook
+          description: Successfully deleted webhook.
         "404":
           $ref: "#/components/responses/404"
         "401":

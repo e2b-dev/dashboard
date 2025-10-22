@@ -64,9 +64,9 @@ export function WebhookAddEditDialogSteps({
   // sync secret with form state
   useEffect(() => {
     if (secretType === 'pre-generated') {
-      form.setValue('secret', preGeneratedSecret)
+      form.setValue('signatureSecret', preGeneratedSecret)
     } else {
-      form.setValue('secret', '')
+      form.setValue('signatureSecret', '')
     }
   }, [secretType, preGeneratedSecret, form])
 
@@ -256,7 +256,7 @@ export function WebhookAddEditDialogSteps({
             >
               <FormField
                 control={form.control}
-                name="secret"
+                name="signatureSecret"
                 render={({ field }) => (
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-1 items-start">
@@ -294,7 +294,7 @@ export function WebhookAddEditDialogSteps({
             <TabsContent value="custom" className="flex flex-col gap-2 mt-4">
               <FormField
                 control={form.control}
-                name="secret"
+                name="signatureSecret"
                 render={({ field }) => (
                   <FormItem className="min-w-0">
                     <FormControl>

@@ -127,153 +127,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/events/webhooks/sandboxes": {
+    "/events/webhooks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Get a registered webhook */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the webhook */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxWebhooksPayloadGet"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
+        /** @description List registered webhooks. */
+        get: operations["webhooksList"];
         put?: never;
-        /** @description Register webhooks for a sandbox */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SandboxWebhooksPayloadPost"];
-                };
-            };
-            responses: {
-                /** @description Successfully registered webhook */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        /** @description Delete a webhook */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully deleted webhook */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        /** @description Update a registered webhook configuration */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SandboxWebhooksPayloadPatch"];
-                };
-            };
-            responses: {
-                /** @description Successfully updated webhook */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxWebhooksPayloadGet"];
-                    };
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        trace?: never;
-    };
-    "/events/webhooks/sandboxes/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Test a webhook */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully sent a test webhook */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
+        /** @description Register events webhook. */
+        post: operations["webhookCreate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/events/webhooks/{webhookID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get a registered webhook. */
+        get: operations["webhookGet"];
+        put?: never;
+        post?: never;
+        /** @description Delete a registered webhook. */
+        delete: operations["webhookDelete"];
+        options?: never;
+        head?: never;
+        /** @description Update a registered webhook configuration. */
+        patch: operations["webhookUpdate"];
         trace?: never;
     };
 }
@@ -291,6 +179,22 @@ export interface components {
         };
         /** @description Sandbox event */
         SandboxEvent: {
+            /** @description Event structure version */
+            version: string;
+            /** @description Event name */
+            type: string;
+            /**
+             * @deprecated
+             * @description Category of the event (e.g., 'lifecycle', 'process', etc.)
+             */
+            eventCategory?: string;
+            /**
+             * @deprecated
+             * @description Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
+             */
+            eventLabel?: string;
+            /** @description Optional JSON data associated with the event */
+            eventData?: Record<string, never> | null;
             /**
              * Format: date-time
              * @description Timestamp of the event
@@ -318,32 +222,64 @@ export interface components {
             sandboxBuildId: string;
             /** @description Team identifier associated with the sandbox */
             sandboxTeamId: string;
-            /** @description Category of the event (e.g., 'lifecycle', 'process', etc.) */
-            eventCategory: string;
-            /** @description Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.) */
-            eventLabel: string;
-            /** @description Optional JSON data associated with the event */
-            eventData?: Record<string, never> | null;
         };
         /** @description Configuration for registering new webhooks */
-        SandboxWebhooksPayloadPost: {
+        WebhookCreate: {
+            name: string;
             /** Format: uri */
             url: string;
+            events: string[];
+            /** @default true */
+            enabled: boolean;
+            /** @description Secret used to sign the webhook payloads */
+            signatureSecret: string;
+        };
+        /** @description Webhook creation response */
+        WebhookCreateResponse: {
+            /** @description Webhook unique identifier */
+            id: string;
+            /** @description Webhook user friendly name */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was created
+             */
+            createdAt: string;
+            /** @description Unique identifier for the team */
+            teamId: string;
+            /** Format: uri */
+            url: string;
+            enabled: boolean;
+            events: string[];
+        };
+        /** @description Webhook detail response */
+        WebhookDetail: {
+            /** @description Webhook unique identifier */
+            id: string;
+            /** @description Unique identifier for the team */
+            teamId: string;
+            /** @description Webhook user friendly name */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was created
+             */
+            createdAt: string;
+            /** Format: uri */
+            url: string;
+            enabled: boolean;
             events: string[];
         };
         /** @description Configuration for updating existing webhooks */
-        SandboxWebhooksPayloadPatch: {
+        WebhookConfiguration: {
+            enabled?: boolean;
+            /** @description Webhook user friendly name */
+            name?: string;
             /** Format: uri */
             url?: string;
             events?: string[];
-        };
-        /** @description Registered webhooks for a sandbox */
-        SandboxWebhooksPayloadGet: {
-            /** Format: uuid */
-            teamID: string;
-            /** Format: uri */
-            url: string;
-            events: string[];
+            /** @description Secret used to sign the webhook payloads */
+            signatureSecret?: string;
         };
     };
     responses: {
@@ -394,12 +330,7 @@ export interface components {
         };
     };
     parameters: {
-        templateID: string;
-        buildID: string;
         sandboxID: string;
-        nodeID: string;
-        apiKeyID: string;
-        accessTokenID: string;
         webhookID: string;
     };
     requestBodies: never;
@@ -407,4 +338,132 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    webhooksList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successfully registered webhook. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDetail"][];
+                };
+            };
+            401: components["responses"]["401"];
+            404: components["responses"]["404"];
+            500: components["responses"]["500"];
+        };
+    };
+    webhookCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookCreate"];
+            };
+        };
+        responses: {
+            /** @description Successfully returned all webhooks */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookCreateResponse"][];
+                };
+            };
+            401: components["responses"]["401"];
+            404: components["responses"]["404"];
+            500: components["responses"]["500"];
+        };
+    };
+    webhookGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookID: components["parameters"]["webhookID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successfully returned the webhook configuration. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDetail"];
+                };
+            };
+            401: components["responses"]["401"];
+            404: components["responses"]["404"];
+            500: components["responses"]["500"];
+        };
+    };
+    webhookDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookID: components["parameters"]["webhookID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successfully deleted webhook. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["401"];
+            404: components["responses"]["404"];
+            500: components["responses"]["500"];
+        };
+    };
+    webhookUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookID: components["parameters"]["webhookID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookConfiguration"];
+            };
+        };
+        responses: {
+            /** @description Successfully updated webhook. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDetail"];
+                };
+            };
+            401: components["responses"]["401"];
+            404: components["responses"]["404"];
+            500: components["responses"]["500"];
+        };
+    };
+}

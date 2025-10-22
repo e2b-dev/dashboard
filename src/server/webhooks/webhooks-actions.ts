@@ -8,10 +8,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
-import {
-  DeleteWebhookSchema,
-  UpsertWebhookSchema,
-} from './schema'
+import { DeleteWebhookSchema, UpsertWebhookSchema } from './schema'
 
 // Upsert Webhook (Create or Update)
 
@@ -22,24 +19,38 @@ export const upsertWebhookAction = authActionClient
   .schema(UpsertWebhookSchema)
   .metadata({ actionName: 'upsertWebhook' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, mode, name, url, events } = parsedInput
+    const {
+      teamId,
+      mode,
+      webhookId,
+      name,
+      url,
+      events,
+      signatureSecret,
+      enabled,
+    } = parsedInput
     const { session } = ctx
 
     const accessToken = session.access_token
     const isEdit = mode === 'edit'
 
     const response = isEdit
-      ? await infra.PATCH('/events/webhooks/sandboxes', {
+      ? await infra.PATCH('/events/webhooks/{webhookID}', {
           headers: {
             ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+          },
+          params: {
+            path: { webhookID: webhookId! },
           },
           body: {
             name,
             url,
             events,
+            enabled,
+            signatureSecret,
           },
         })
-      : await infra.POST('/events/webhooks/sandboxes', {
+      : await infra.POST('/events/webhooks', {
           headers: {
             ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
           },
@@ -47,6 +58,8 @@ export const upsertWebhookAction = authActionClient
             name,
             url,
             events,
+            enabled,
+            signatureSecret,
           },
         })
 
@@ -68,6 +81,7 @@ export const upsertWebhookAction = authActionClient
             name,
             url,
             events,
+            signatureSecret,
           },
         },
         `Failed to ${isEdit ? 'update' : 'create'} webhook: ${status}: ${response.error.message}`
@@ -91,14 +105,17 @@ export const deleteWebhookAction = authActionClient
   .schema(DeleteWebhookSchema)
   .metadata({ actionName: 'deleteWebhook' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
+    const { teamId, webhookId } = parsedInput
     const { session } = ctx
 
     const accessToken = session.access_token
 
-    const response = await infra.DELETE('/events/webhooks/sandboxes', {
+    const response = await infra.DELETE('/events/webhooks/{webhookID}', {
       headers: {
         ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+      params: {
+        path: { webhookID: webhookId },
       },
     })
 
