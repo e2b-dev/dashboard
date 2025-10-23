@@ -4,7 +4,7 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
 import {
-  ComputeUsageMonthDelta,
+  ComputeUsageDelta,
   SandboxesUsageDelta,
   UsageData,
 } from '@/server/usage/types'
@@ -39,35 +39,15 @@ async function _fetchTeamUsageDataLogic(teamId: string, accessToken: string) {
 }
 
 const transformResponseToUsageData = (response: UsageResponse): UsageData => {
-  // group daily usages by month
-  const monthlyUsage = response.day_usages.reduce(
-    (acc, usage) => {
-      const date = new Date(usage.date)
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-
-      if (!acc[monthKey]) {
-        acc[monthKey] = {
-          total_cost: 0,
-          ram_gb_hours: 0,
-          vcpu_hours: 0,
-          month: date.getMonth() + 1,
-          year: date.getFullYear(),
-        }
-      }
-
-      acc[monthKey].ram_gb_hours += usage.ram_gib_hours
-      acc[monthKey].vcpu_hours += usage.cpu_hours
-      acc[monthKey].total_cost += usage.price_for_ram + usage.price_for_cpu
-
-      return acc
-    },
-    {} as Record<string, ComputeUsageMonthDelta>
-  )
-
-  const computeUsage = Object.values(monthlyUsage).sort((a, b) => {
-    if (a.year !== b.year) return a.year - b.year
-    return a.month - b.month
-  })
+  const computeUsage = response.day_usages.reduce((acc, usage) => {
+    acc.push({
+      date: new Date(usage.date),
+      ram_gb_hours: usage.ram_gib_hours,
+      vcpu_hours: usage.cpu_hours,
+      total_cost: usage.price_for_ram + usage.price_for_cpu,
+    })
+    return acc
+  }, [] as ComputeUsageDelta[])
 
   const sandboxesUsage = response.day_usages.reduce((acc, usage) => {
     acc.push({

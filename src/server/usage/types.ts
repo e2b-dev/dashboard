@@ -3,9 +3,8 @@ interface SandboxesUsageDelta {
   count: number
 }
 
-interface ComputeUsageMonthDelta {
-  month: number
-  year: number
+interface ComputeUsageDelta {
+  date: Date
   total_cost: number
   ram_gb_hours: number
   vcpu_hours: number
@@ -13,8 +12,8 @@ interface ComputeUsageMonthDelta {
 
 type UsageData = {
   sandboxes: SandboxesUsageDelta[]
-  compute: ComputeUsageMonthDelta[]
+  compute: ComputeUsageDelta[]
   credits: number
 }
 
-export type { ComputeUsageMonthDelta, SandboxesUsageDelta, UsageData }
+export type { ComputeUsageDelta, SandboxesUsageDelta, UsageData }
