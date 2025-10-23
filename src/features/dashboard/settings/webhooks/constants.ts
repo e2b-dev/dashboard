@@ -8,14 +8,6 @@ export const WEBHOOK_EVENTS = [
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number]
 
-export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
-  'sandbox.lifecycle.created': 'CREATE',
-  'sandbox.lifecycle.paused': 'PAUSE',
-  'sandbox.lifecycle.resumed': 'RESUME',
-  'sandbox.lifecycle.updated': 'UPDATE',
-  'sandbox.lifecycle.killed': 'KILL',
-}
-
 export const WEBHOOK_EXAMPLE_PAYLOAD = `{
   "version": "v1",
   "id": "<UUID>",

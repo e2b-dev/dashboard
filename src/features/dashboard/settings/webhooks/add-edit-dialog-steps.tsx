@@ -18,14 +18,10 @@ import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
-import {
-  WEBHOOK_EVENTS,
-  WEBHOOK_EVENT_LABELS,
-  WEBHOOK_EXAMPLE_PAYLOAD,
-} from './constants'
+import { WEBHOOK_EVENTS, WEBHOOK_EXAMPLE_PAYLOAD } from './constants'
 
 type WebhookAddEditDialogStepsProps = {
   currentStep: number
@@ -50,7 +46,6 @@ export function WebhookAddEditDialogSteps({
   const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
     'pre-generated'
   )
-  const customInputRef = useRef<HTMLInputElement>(null)
 
   const preGeneratedSecret = useMemo(() => {
     const chars =
@@ -70,16 +65,6 @@ export function WebhookAddEditDialogSteps({
       form.setValue('signatureSecret', '')
     }
   }, [secretType, preGeneratedSecret, form])
-
-  // autofocus custom input when switching to custom tab
-  useEffect(() => {
-    if (secretType === 'custom' && customInputRef.current) {
-      // ensure autofocus happens in the next render cycle
-      setTimeout(() => {
-        customInputRef.current?.focus()
-      }, 0)
-    }
-  }, [secretType])
 
   const handleCopy = async () => {
     try {
@@ -184,7 +169,7 @@ export function WebhookAddEditDialogSteps({
                           htmlFor={`event-${event}`}
                           className="cursor-pointer select-none"
                         >
-                          {WEBHOOK_EVENT_LABELS[event]}
+                          {event}
                         </Label>
                       </div>
                     ))}
@@ -314,11 +299,6 @@ export function WebhookAddEditDialogSteps({
                         disabled={isExecuting}
                         className="min-w-0"
                         {...field}
-                        value={field.value || ''}
-                        ref={(e) => {
-                          field.ref(e)
-                          customInputRef.current = e
-                        }}
                       />
                     </FormControl>
                     <p className="text-fg-tertiary prose-body">

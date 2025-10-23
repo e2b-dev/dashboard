@@ -10,27 +10,26 @@ import { TableLoader } from '@/ui/table-loader'
 import { FC, Suspense } from 'react'
 import TableBodyContent from './table-body'
 
-interface ApiKeysTableProps {
+interface WebhooksTableProps {
   params: Promise<{
     teamIdOrSlug: string
   }>
   className?: string
 }
 
-const ApiKeysTable: FC<ApiKeysTableProps> = ({ params, className }) => {
+const WebhooksTable: FC<WebhooksTableProps> = ({ params, className }) => {
   return (
-    <Table className={cn('w-full animate-in fade-in', className)}>
+    <Table className={cn('w-full animate-in fade-in table-fixed', className)}>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-left">Key</TableHead>
-          <TableHead className="text-left">Last Used</TableHead>
-          <TableHead className="text-right">Created By</TableHead>
-          <TableHead className="text-right">Created At</TableHead>
-          <th></th>
+          <TableHead className="text-left w-[30%]">Name & URL</TableHead>
+          <TableHead className="text-left w-[50%]">Events</TableHead>
+          <TableHead className="text-right w-[15%]">Added</TableHead>
+          <th className="w-[5%]"></th>
         </TableRow>
       </TableHeader>
       <TableBody>
-        <Suspense fallback={<TableLoader colSpan={5} />}>
+        <Suspense fallback={<TableLoader colSpan={4} />}>
           <TableBodyContent params={params} />
         </Suspense>
       </TableBody>
@@ -38,4 +37,4 @@ const ApiKeysTable: FC<ApiKeysTableProps> = ({ params, className }) => {
   )
 }
 
-export default ApiKeysTable
+export default WebhooksTable
