@@ -11,6 +11,7 @@ import {
 import { UsageResponse } from '@/types/billing'
 import { cache } from 'react'
 import { z } from 'zod'
+import { fillComputeUsageWithZeros, fillSandboxesUsageWithZeros } from './fill-zeros'
 
 const GetUsageAuthActionSchema = z.object({
   teamId: z.uuid(),
@@ -57,9 +58,24 @@ const transformResponseToUsageData = (response: UsageResponse): UsageData => {
     return acc
   }, [] as SandboxesUsageDelta[])
 
+  // Determine time range for zero-filling
+  const now = Date.now()
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+  
+  // Use the earliest data point as start, or 30 days ago if no data
+  let start = thirtyDaysAgo
+  if (computeUsage.length > 0) {
+    const firstDate = new Date(computeUsage[0]!.date).getTime()
+    start = Math.min(firstDate, thirtyDaysAgo)
+  }
+
+  // Fill with zeros to ensure continuous time series
+  const filledComputeUsage = fillComputeUsageWithZeros(computeUsage, start, now)
+  const filledSandboxesUsage = fillSandboxesUsageWithZeros(sandboxesUsage, start, now)
+
   return {
-    compute: computeUsage,
-    sandboxes: sandboxesUsage,
+    compute: filledComputeUsage,
+    sandboxes: filledSandboxesUsage,
     credits: response.credits,
   }
 }

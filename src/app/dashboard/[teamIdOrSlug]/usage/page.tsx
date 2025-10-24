@@ -1,10 +1,11 @@
-import { CostCard } from '@/features/dashboard/usage/cost-card'
-import { RAMCard } from '@/features/dashboard/usage/ram-card'
-import { SandboxesCard } from '@/features/dashboard/usage/sandboxes-card'
-import { VCPUCard } from '@/features/dashboard/usage/vcpu-card'
+import { CostChart } from '@/features/dashboard/usage/cost-chart'
+import { RAMChart } from '@/features/dashboard/usage/ram-chart'
+import { SandboxesChart } from '@/features/dashboard/usage/sandboxes-chart'
+import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
+import { VCPUChart } from '@/features/dashboard/usage/vcpu-chart'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { CatchErrorBoundary } from '@/ui/error'
-import Frame from '@/ui/frame'
+import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import ErrorBoundary from '@/ui/error'
 
 export default async function UsagePage({
   params,
@@ -14,44 +15,30 @@ export default async function UsagePage({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  return (
-    <Frame
-      classNames={{
-        frame:
-          'relative grid max-h-full w-full grid-cols-1 self-start lg:grid-cols-12 max-md:border-none',
-        wrapper: 'w-full max-md:p-0',
-      }}
-    >
-      <SandboxesCard
-        teamId={teamId}
-        className="col-span-1 min-h-[360px] border-b lg:col-span-12"
-      />
-      <UsagePageContent teamId={teamId} />
-    </Frame>
-  )
-}
+  const result = await getUsageThroughReactCache({ teamId })
 
-function UsagePageContent({ teamId }: { teamId: string }) {
+  if (!result?.data || result.serverError || result.validationErrors) {
+    return (
+      <ErrorBoundary
+        error={
+          {
+            name: 'Usage Error',
+            message: result?.serverError ?? 'Failed to load usage data',
+          } satisfies Error
+        }
+        description="Could not load usage data"
+      />
+    )
+  }
+
   return (
-    <CatchErrorBoundary
-      hideFrame
-      classNames={{
-        wrapper: 'col-span-full bg-bg',
-        errorBoundary: 'mx-auto',
-      }}
-    >
-      <CostCard
-        teamId={teamId}
-        className="col-span-1 min-h-[360px] border-b lg:col-span-12"
-      />
-      <VCPUCard
-        teamId={teamId}
-        className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-r"
-      />
-      <RAMCard
-        teamId={teamId}
-        className="col-span-1 min-h-[360px] border-b lg:col-span-12 lg:border-b-0"
-      />
-    </CatchErrorBoundary>
+    <UsageChartsProvider data={result.data}>
+      <div className="grid grid-cols-1 md:grid-cols-2 md:h-full md:grid-rows-2 gap-6 md:flex-1">
+        <SandboxesChart className="max-md:min-h-[400px]" />
+        <CostChart className="max-md:min-h-[400px]" />
+        <VCPUChart className="max-md:min-h-[400px]" />
+        <RAMChart className="max-md:min-h-[400px]" />
+      </div>
+    </UsageChartsProvider>
   )
 }

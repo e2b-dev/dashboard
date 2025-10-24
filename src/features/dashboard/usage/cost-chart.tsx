@@ -1,72 +1,97 @@
 'use client'
 
-import { UsageData } from '@/server/usage/types'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/ui/primitives/chart'
-import { useMemo } from 'react'
-import { Area, AreaChart, XAxis, YAxis } from 'recharts'
-import {
-  bigNumbersAxisTickFormatter,
-  chartConfig,
-  commonChartProps,
-  commonXAxisProps,
-  commonYAxisProps,
-} from './chart-config'
+import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
+import { cn } from '@/lib/utils'
+import { Card, CardContent, CardHeader } from '@/ui/primitives/card'
+import { useCallback, useMemo } from 'react'
+import ComputeUsageChart from './compute-usage-chart'
+import { useUsageCharts } from './usage-charts-context'
+import { UsageTimeRangeControls } from './usage-time-range-controls'
 
-export function CostChart({ data }: { data: UsageData['compute'] }) {
-  const chartData = useMemo(() => {
-    return data.map((item) => ({
-      x: `${item.month}/${item.year}`,
-      y: item.total_cost,
-    }))
-  }, [data])
+export function CostChart({ className }: { className?: string }) {
+  const {
+    data,
+    visibleData,
+    hoveredTimestamp,
+    setHoveredTimestamp,
+    timeframe,
+    setTimeframe,
+  } = useUsageCharts()
+
+  // Calculate total cost
+  const totalCost = useMemo(() => {
+    if (data.compute.length === 0) return 0
+    return data.compute.reduce((acc, item) => acc + item.total_cost, 0)
+  }, [data.compute])
+
+  const handleTooltipValueChange = useCallback(
+    (timestamp: number) => {
+      setHoveredTimestamp(timestamp)
+    },
+    [setHoveredTimestamp]
+  )
+
+  const handleHoverEnd = useCallback(() => {
+    setHoveredTimestamp(null)
+  }, [setHoveredTimestamp])
+
+  // Display logic - look up value for hovered timestamp
+  const { displayValue, label, timestamp } = useMemo(() => {
+    if (hoveredTimestamp) {
+      // Find the data point for this timestamp
+      const dataPoint = data.compute.find((d) => {
+        const pointTime = new Date(d.date).getTime()
+        // Match within a day's range
+        return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
+      })
+
+      if (dataPoint) {
+        return {
+          displayValue: `$${dataPoint.total_cost.toFixed(2)}`,
+          label: 'on',
+          timestamp: new Date(hoveredTimestamp).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+        }
+      }
+    }
+    return {
+      displayValue: `$${totalCost.toFixed(2)}`,
+      label: 'total',
+      timestamp: null,
+    }
+  }, [hoveredTimestamp, totalCost, data.compute])
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-48">
-      <AreaChart data={chartData} {...commonChartProps}>
-        <defs>
-          <linearGradient id="cost" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-cost)" stopOpacity={0.2} />
-            <stop offset="100%" stopColor="var(--color-cost)" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <XAxis dataKey="x" {...commonXAxisProps} />
-        <YAxis
-          {...commonYAxisProps}
-          tickFormatter={(value) => `$${bigNumbersAxisTickFormatter(value)}`}
+    <Card className={cn('h-full flex flex-col', className)}>
+      <CardHeader className="space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="prose-label-highlight uppercase max-md:text-sm">
+            Usage Cost
+          </span>
+          <UsageTimeRangeControls
+            timeframe={timeframe}
+            onTimeRangeChange={setTimeframe}
+          />
+        </div>
+        <AnimatedMetricDisplay
+          value={displayValue}
+          label={label}
+          timestamp={timestamp}
         />
-        <ChartTooltip
-          content={({ active, payload, label }) => {
-            if (!active || !payload || !payload.length || !payload[0]?.payload)
-              return null
-
-            return (
-              <ChartTooltipContent
-                labelFormatter={() => label}
-                formatter={(value, name, item) => [
-                  <span key="value" className="text-accent-main-highlight ">
-                    {Number(value).toFixed(2).toLocaleString()}
-                  </span>,
-                  `$`,
-                ]}
-                payload={payload}
-                active={active}
-              />
-            )
-          }}
-        />
-        <Area
-          type="monotone"
-          dataKey="y"
-          stroke="var(--color-cost)"
-          strokeWidth={2}
-          fill="url(#cost)"
-          connectNulls
-        />
-      </AreaChart>
-    </ChartContainer>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 flex-1 min-h-0">
+        <div className="flex-1 min-h-0">
+          <ComputeUsageChart
+            type="cost"
+            data={visibleData.compute}
+            onTooltipValueChange={handleTooltipValueChange}
+            onHoverEnd={handleHoverEnd}
+          />
+        </div>
+      </CardContent>
+    </Card>
   )
 }

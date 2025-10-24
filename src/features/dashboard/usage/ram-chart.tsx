@@ -1,90 +1,97 @@
 'use client'
 
-import { UsageData } from '@/server/usage/types'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/ui/primitives/chart'
-import { useMemo } from 'react'
-import { Area, AreaChart, XAxis, YAxis } from 'recharts'
-import {
-  bigNumbersAxisTickFormatter,
-  chartConfig,
-  commonChartProps,
-  commonXAxisProps,
-  commonYAxisProps,
-} from './chart-config'
+import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
+import { cn } from '@/lib/utils'
+import { formatNumber } from '@/lib/utils/formatting'
+import { Card, CardContent, CardHeader } from '@/ui/primitives/card'
+import { useCallback, useMemo } from 'react'
+import ComputeUsageChart from './compute-usage-chart'
+import { useUsageCharts } from './usage-charts-context'
+import { UsageTimeRangeControls } from './usage-time-range-controls'
 
-interface RAMChartProps {
-  data: UsageData['compute']
-}
+export function RAMChart({ className }: { className?: string }) {
+  const {
+    data,
+    visibleData,
+    hoveredTimestamp,
+    setHoveredTimestamp,
+    timeframe,
+    setTimeframe,
+  } = useUsageCharts()
 
-export function RAMChart({ data }: RAMChartProps) {
-  const chartData = useMemo(() => {
-    return data.map((item) => ({
-      x: `${item.month}/${item.year}`,
-      y: item.ram_gb_hours,
-    }))
-  }, [data])
+  const totalRAM = useMemo(() => {
+    if (data.compute.length === 0) return 0
+    return data.compute.reduce((acc, item) => acc + item.ram_gb_hours, 0)
+  }, [data.compute])
+
+  const handleTooltipValueChange = useCallback(
+    (timestamp: number) => {
+      setHoveredTimestamp(timestamp)
+    },
+    [setHoveredTimestamp]
+  )
+
+  const handleHoverEnd = useCallback(() => {
+    setHoveredTimestamp(null)
+  }, [setHoveredTimestamp])
+
+  // Display logic - look up value for hovered timestamp
+  const { displayValue, label, timestamp } = useMemo(() => {
+    if (hoveredTimestamp) {
+      // Find the data point for this timestamp
+      const dataPoint = data.compute.find((d) => {
+        const pointTime = new Date(d.date).getTime()
+        // Match within a day's range
+        return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
+      })
+
+      if (dataPoint) {
+        return {
+          displayValue: formatNumber(dataPoint.ram_gb_hours),
+          label: 'on',
+          timestamp: new Date(hoveredTimestamp).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+        }
+      }
+    }
+    return {
+      displayValue: formatNumber(totalRAM),
+      label: 'total',
+      timestamp: null,
+    }
+  }, [hoveredTimestamp, totalRAM, data.compute])
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-36">
-      <AreaChart data={chartData} {...commonChartProps}>
-        <defs>
-          <linearGradient id="ram" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-ram)" stopOpacity={0.2} />
-            <stop offset="100%" stopColor="var(--color-ram)" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <XAxis dataKey="x" {...commonXAxisProps} />
-        <YAxis
-          {...commonYAxisProps}
-          tickFormatter={bigNumbersAxisTickFormatter}
+    <Card className={cn('h-full flex flex-col', className)}>
+      <CardHeader className="space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="prose-label-highlight uppercase max-md:text-sm">
+            RAM Hours
+          </span>
+          <UsageTimeRangeControls
+            timeframe={timeframe}
+            onTimeRangeChange={setTimeframe}
+          />
+        </div>
+        <AnimatedMetricDisplay
+          value={displayValue}
+          label={label}
+          timestamp={timestamp}
         />
-        <ChartTooltip
-          content={({ active, payload, label }) => {
-            if (!active || !payload || !payload.length || !payload[0]?.payload)
-              return null
-
-            const dataPoint = payload[0]!.payload // Actual data for the bar
-            let dateRangeString = ''
-            const dateFormatOptions: Intl.DateTimeFormatOptions = {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            }
-
-            if (dataPoint.year !== undefined && dataPoint.month !== undefined) {
-              const startDate = new Date(dataPoint.year, dataPoint.month, 1)
-              const endDate = new Date(dataPoint.year, dataPoint.month + 1, 0) // 0 day of next month is last day of current month
-              dateRangeString = `(${startDate.toLocaleDateString(undefined, dateFormatOptions)} - ${endDate.toLocaleDateString(undefined, dateFormatOptions)})`
-            }
-
-            return (
-              <ChartTooltipContent
-                labelFormatter={() => label}
-                formatter={(value, name, item) => [
-                  <span key="value" className="text-accent-main-highlight ">
-                    {Number(value).toLocaleString()}
-                  </span>,
-                  `RAM Hours`,
-                ]}
-                payload={payload}
-                active={active}
-              />
-            )
-          }}
-        />
-        <Area
-          type="monotone"
-          dataKey="y"
-          stroke="var(--color-ram)"
-          strokeWidth={2}
-          fill="url(#ram)"
-          connectNulls
-        />
-      </AreaChart>
-    </ChartContainer>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 flex-1 min-h-0">
+        <div className="flex-1 min-h-0">
+          <ComputeUsageChart
+            type="ram"
+            data={visibleData.compute}
+            onTooltipValueChange={handleTooltipValueChange}
+            onHoverEnd={handleHoverEnd}
+          />
+        </div>
+      </CardContent>
+    </Card>
   )
 }
