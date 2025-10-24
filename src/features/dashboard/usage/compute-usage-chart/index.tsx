@@ -3,7 +3,7 @@
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { EChartsOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
-import { LineChart } from 'echarts/charts'
+import { BarChart } from 'echarts/charts'
 import {
   BrushComponent,
   GridComponent,
@@ -22,7 +22,7 @@ import {
 } from './utils'
 
 echarts.use([
-  LineChart,
+  BarChart,
   GridComponent,
   TooltipComponent,
   BrushComponent,
@@ -67,8 +67,6 @@ function ComputeUsageChart({
 
   const cssVars = useCssVars([
     config.barColorVar,
-    config.areaFromVar,
-    config.areaToVar,
     '--stroke',
     '--fg-tertiary',
     '--bg-inverted',
@@ -76,8 +74,6 @@ function ComputeUsageChart({
   ] as const)
 
   const barColor = cssVars[config.barColorVar] || '#000'
-  const areaFrom = cssVars[config.areaFromVar] || '#000'
-  const areaTo = cssVars[config.areaToVar] || '#000'
   const stroke = cssVars['--stroke'] || '#000'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
   const bgInverted = cssVars['--bg-inverted'] || '#fff'
@@ -162,34 +158,25 @@ function ComputeUsageChart({
     const seriesItem: SeriesOption = {
       id: config.id,
       name: config.name,
-      type: 'line',
-      step: 'middle',
-      smooth: false,
-      symbol: 'rect',
-      symbolSize: 0,
-      showSymbol: false,
-      showAllSymbol: false,
-      lineStyle: {
-        width: 1,
-        color: barColor,
-      },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: areaFrom },
-            { offset: 1, color: areaTo },
-          ],
+      type: 'bar',
+      itemStyle: {
+        color: 'transparent',
+        borderColor: barColor,
+        borderWidth: 1,
+        opacity: 0.7,
+        decal: {
+          symbol: 'line',
+          symbolSize: 1,
+          rotation: -Math.PI / 4,
+          dashArrayX: [1, 0],
+          dashArrayY: [3, 6],
+          color: barColor,
         },
       },
       emphasis: {
-        scale: true,
         itemStyle: {
-          borderWidth: 2,
+          opacity: 1,
+          borderWidth: 1,
           borderColor: barColor,
         },
       },
@@ -216,6 +203,9 @@ function ComputeUsageChart({
           borderType: 'solid',
           borderWidth: 1,
           borderColor: bgInverted,
+        },
+        outOfBrush: {
+          color: 'transparent',
         },
       },
       grid: {
@@ -304,8 +294,6 @@ function ComputeUsageChart({
     config,
     tooltipFormatter,
     barColor,
-    areaFrom,
-    areaTo,
     bgInverted,
     stroke,
     fgTertiary,

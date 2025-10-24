@@ -30,7 +30,7 @@ export default async function UsagePage({
 
   return (
     <UsageChartsProvider data={result.data}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 lg:h-full lg:grid-rows-[4fr_2fr] lg:flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:h-full lg:grid-rows-[3fr_2fr] lg:flex-1">
         <UsageMetricChart
           metric="sandboxes"
           className="min-h-[48svh] lg:min-h-0"
