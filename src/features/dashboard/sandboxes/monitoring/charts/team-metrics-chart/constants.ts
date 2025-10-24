@@ -25,21 +25,4 @@ export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
   },
 }
 
-// echarts static configuration that never changes
-export const STATIC_ECHARTS_CONFIG = {
-  backgroundColor: 'transparent',
-  animation: false,
-  toolbox: {
-    id: 'toolbox',
-    show: true,
-    iconStyle: { opacity: 0 },
-    showTitle: false,
-    feature: {
-      dataZoom: {
-        yAxisIndex: 'none',
-      },
-    },
-  },
-} as const
-
 export const LIVE_PADDING_MULTIPLIER = 1
