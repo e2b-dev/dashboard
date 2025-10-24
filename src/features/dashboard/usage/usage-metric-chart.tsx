@@ -15,7 +15,7 @@ interface MetricConfig {
 }
 
 const METRIC_CONFIGS: Record<UsageMetricType, MetricConfig> = {
-  sandboxes: { title: 'Started Sandboxes' },
+  sandboxes: { title: 'Started & Resumed Sandboxes' },
   cost: { title: 'Usage Cost' },
   vcpu: { title: 'vCPU Hours' },
   ram: { title: 'RAM Hours' },
@@ -65,14 +65,14 @@ export function UsageMetricChart({
   return (
     <Card className={cn('h-full flex flex-col', className)}>
       <CardHeader className="space-y-2">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-2">
           <span className="prose-label-highlight uppercase max-md:text-sm">
             {config.title}
           </span>
           <UsageTimeRangeControls
             timeframe={timeframe}
             onTimeRangeChange={setTimeframe}
-            className={timeRangeControlsClassName}
+            className={cn('max-lg:self-start', timeRangeControlsClassName)}
           />
         </div>
         <AnimatedMetricDisplay
