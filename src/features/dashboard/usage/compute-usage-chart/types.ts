@@ -1,10 +1,10 @@
-import { UsageData } from '@/server/usage/types'
+import { TimeSeriesPoint } from '@/lib/utils/time-series'
 
 export type ComputeChartType = 'cost' | 'ram' | 'vcpu' | 'sandboxes'
 
 export interface ComputeUsageChartProps {
   type: ComputeChartType
-  data: UsageData['compute'] | UsageData['sandboxes']
+  data: TimeSeriesPoint[]
   className?: string
   onTooltipValueChange?: (timestamp: number) => void
   onHoverEnd?: () => void

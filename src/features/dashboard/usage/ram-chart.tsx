@@ -2,27 +2,20 @@
 
 import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
 import { cn } from '@/lib/utils'
-import { formatNumber } from '@/lib/utils/formatting'
 import { Card, CardContent, CardHeader } from '@/ui/primitives/card'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import ComputeUsageChart from './compute-usage-chart'
 import { useUsageCharts } from './usage-charts-context'
 import { UsageTimeRangeControls } from './usage-time-range-controls'
 
 export function RAMChart({ className }: { className?: string }) {
   const {
-    data,
-    visibleData,
-    hoveredTimestamp,
+    filledSeries,
     setHoveredTimestamp,
     timeframe,
     setTimeframe,
+    displayValues,
   } = useUsageCharts()
-
-  const totalRAM = useMemo(() => {
-    if (data.compute.length === 0) return 0
-    return data.compute.reduce((acc, item) => acc + item.ram_gb_hours, 0)
-  }, [data.compute])
 
   const handleTooltipValueChange = useCallback(
     (timestamp: number) => {
@@ -35,34 +28,7 @@ export function RAMChart({ className }: { className?: string }) {
     setHoveredTimestamp(null)
   }, [setHoveredTimestamp])
 
-  // Display logic - look up value for hovered timestamp
-  const { displayValue, label, timestamp } = useMemo(() => {
-    if (hoveredTimestamp) {
-      // Find the data point for this timestamp
-      const dataPoint = data.compute.find((d) => {
-        const pointTime = new Date(d.date).getTime()
-        // Match within a day's range
-        return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
-      })
-
-      if (dataPoint) {
-        return {
-          displayValue: formatNumber(dataPoint.ram_gb_hours),
-          label: 'on',
-          timestamp: new Date(hoveredTimestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          }),
-        }
-      }
-    }
-    return {
-      displayValue: formatNumber(totalRAM),
-      label: 'total',
-      timestamp: null,
-    }
-  }, [hoveredTimestamp, totalRAM, data.compute])
+  const { displayValue, label, timestamp } = displayValues.ram
 
   return (
     <Card className={cn('h-full flex flex-col', className)}>
@@ -86,7 +52,7 @@ export function RAMChart({ className }: { className?: string }) {
         <div className="flex-1 min-h-0">
           <ComputeUsageChart
             type="ram"
-            data={visibleData.compute}
+            data={filledSeries.ram}
             onTooltipValueChange={handleTooltipValueChange}
             onHoverEnd={handleHoverEnd}
           />

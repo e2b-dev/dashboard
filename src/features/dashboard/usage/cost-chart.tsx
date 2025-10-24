@@ -3,26 +3,19 @@
 import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader } from '@/ui/primitives/card'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import ComputeUsageChart from './compute-usage-chart'
 import { useUsageCharts } from './usage-charts-context'
 import { UsageTimeRangeControls } from './usage-time-range-controls'
 
 export function CostChart({ className }: { className?: string }) {
   const {
-    data,
-    visibleData,
-    hoveredTimestamp,
+    filledSeries,
     setHoveredTimestamp,
     timeframe,
     setTimeframe,
+    displayValues,
   } = useUsageCharts()
-
-  // Calculate total cost
-  const totalCost = useMemo(() => {
-    if (data.compute.length === 0) return 0
-    return data.compute.reduce((acc, item) => acc + item.total_cost, 0)
-  }, [data.compute])
 
   const handleTooltipValueChange = useCallback(
     (timestamp: number) => {
@@ -35,34 +28,7 @@ export function CostChart({ className }: { className?: string }) {
     setHoveredTimestamp(null)
   }, [setHoveredTimestamp])
 
-  // Display logic - look up value for hovered timestamp
-  const { displayValue, label, timestamp } = useMemo(() => {
-    if (hoveredTimestamp) {
-      // Find the data point for this timestamp
-      const dataPoint = data.compute.find((d) => {
-        const pointTime = new Date(d.date).getTime()
-        // Match within a day's range
-        return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
-      })
-
-      if (dataPoint) {
-        return {
-          displayValue: `$${dataPoint.total_cost.toFixed(2)}`,
-          label: 'on',
-          timestamp: new Date(hoveredTimestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          }),
-        }
-      }
-    }
-    return {
-      displayValue: `$${totalCost.toFixed(2)}`,
-      label: 'total',
-      timestamp: null,
-    }
-  }, [hoveredTimestamp, totalCost, data.compute])
+  const { displayValue, label, timestamp } = displayValues.cost
 
   return (
     <Card className={cn('h-full flex flex-col', className)}>
@@ -86,7 +52,7 @@ export function CostChart({ className }: { className?: string }) {
         <div className="flex-1 min-h-0">
           <ComputeUsageChart
             type="cost"
-            data={visibleData.compute}
+            data={filledSeries.cost}
             onTooltipValueChange={handleTooltipValueChange}
             onHoverEnd={handleHoverEnd}
           />

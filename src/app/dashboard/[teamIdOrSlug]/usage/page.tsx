@@ -4,7 +4,7 @@ import { SandboxesChart } from '@/features/dashboard/usage/sandboxes-chart'
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
 import { VCPUChart } from '@/features/dashboard/usage/vcpu-chart'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
-import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { getUsage } from '@/server/usage/get-usage'
 import ErrorBoundary from '@/ui/error'
 
 export default async function UsagePage({
@@ -15,7 +15,7 @@ export default async function UsagePage({
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const result = await getUsageThroughReactCache({ teamId })
+  const result = await getUsage({ teamId })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     return (

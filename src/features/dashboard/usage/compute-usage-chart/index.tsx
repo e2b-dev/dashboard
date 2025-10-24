@@ -47,8 +47,8 @@ function ComputeUsageChart({
 
   // Transform data once
   const chartData = useMemo(
-    () => transformComputeData(data, config.valueKey),
-    [data, config.valueKey]
+    () => transformComputeData(data),
+    [data]
   )
 
   // Get CSS vars - automatically updates on theme change

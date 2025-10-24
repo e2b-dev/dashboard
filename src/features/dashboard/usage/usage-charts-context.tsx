@@ -1,21 +1,60 @@
 'use client'
 
-import { UsageData } from '@/server/usage/types'
+import { formatDay, formatNumber } from '@/lib/utils/formatting'
+import {
+  fillTimeSeriesWithEmptyPoints,
+  TimeSeriesPoint,
+} from '@/lib/utils/time-series'
+import { UsageResponse } from '@/types/billing'
 import { parseAsInteger, useQueryStates } from 'nuqs'
-import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react'
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react'
 
 interface Timeframe {
   start: number
   end: number
 }
 
+interface DisplayValue {
+  displayValue: string
+  label: string
+  timestamp: string | null
+}
+
+interface MetricTotals {
+  sandboxes: number
+  cost: number
+  vcpu: number
+  ram: number
+}
+
+interface FilledSeriesData {
+  sandboxes: TimeSeriesPoint[]
+  cost: TimeSeriesPoint[]
+  vcpu: TimeSeriesPoint[]
+  ram: TimeSeriesPoint[]
+}
+
 interface UsageChartsContextValue {
-  data: UsageData
-  visibleData: UsageData
+  data: UsageResponse
+  filledSeries: FilledSeriesData
   timeframe: Timeframe
   setTimeframe: (start: number, end: number) => void
   hoveredTimestamp: number | null
   setHoveredTimestamp: (timestamp: number | null) => void
+  totals: MetricTotals
+  displayValues: {
+    sandboxes: DisplayValue
+    cost: DisplayValue
+    vcpu: DisplayValue
+    ram: DisplayValue
+  }
 }
 
 const UsageChartsContext = createContext<UsageChartsContextValue | undefined>(
@@ -23,7 +62,7 @@ const UsageChartsContext = createContext<UsageChartsContextValue | undefined>(
 )
 
 interface UsageChartsProviderProps {
-  data: UsageData
+  data: UsageResponse
   children: ReactNode
 }
 
@@ -43,9 +82,11 @@ export function UsageChartsProvider({
 
   // Get default range from data
   const defaultRange = useMemo(() => {
-    if (data.compute && data.compute.length > 0) {
-      const firstDate = new Date(data.compute[0]!.date).getTime()
-      const lastDate = new Date(data.compute[data.compute.length - 1]!.date).getTime()
+    if (data.day_usages && data.day_usages.length > 0) {
+      const firstDate = new Date(data.day_usages[0]!.date).getTime()
+      const lastDate = new Date(
+        data.day_usages[data.day_usages.length - 1]!.date
+      ).getTime()
       return { start: firstDate, end: lastDate }
     }
     // Default to last 30 days
@@ -70,32 +111,164 @@ export function UsageChartsProvider({
     [setParams]
   )
 
-  // Filter data based on timeframe
-  const visibleData = useMemo<UsageData>(() => {
-    const filterByTimeframe = <T extends { date: Date }>(items: T[]): T[] => {
-      return items.filter((item) => {
-        const itemTime = item.date.getTime()
-        return itemTime >= timeframe.start && itemTime <= timeframe.end
-      })
-    }
+  // Filter data based on timeframe and fill with zeros for smooth visualization
+  const filledSeries = useMemo<FilledSeriesData>(() => {
+    // Filter day_usages by timeframe
+    const filteredUsages = data.day_usages.filter((usage) => {
+      const timestamp = new Date(usage.date).getTime()
+      return timestamp >= timeframe.start && timestamp <= timeframe.end
+    })
+
+    const step = 24 * 60 * 60 * 1000 // 1 day
+
+    // Transform directly from day_usages to TimeSeriesPoint[] for each metric
+    const sandboxesSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+      x: new Date(d.date).getTime(),
+      y: d.sandbox_count,
+    }))
+    const costSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+      x: new Date(d.date).getTime(),
+      y: d.price_for_ram + d.price_for_cpu,
+    }))
+    const ramSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+      x: new Date(d.date).getTime(),
+      y: d.ram_gib_hours,
+    }))
+    const vcpuSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+      x: new Date(d.date).getTime(),
+      y: d.cpu_hours,
+    }))
+
+    const filledSandboxes = fillTimeSeriesWithEmptyPoints(sandboxesSeries, {
+      start: timeframe.start,
+      end: timeframe.end,
+      step,
+    })
+    const filledCost = fillTimeSeriesWithEmptyPoints(costSeries, {
+      start: timeframe.start,
+      end: timeframe.end,
+      step,
+    })
+    const filledRam = fillTimeSeriesWithEmptyPoints(ramSeries, {
+      start: timeframe.start,
+      end: timeframe.end,
+      step,
+    })
+    const filledVcpu = fillTimeSeriesWithEmptyPoints(vcpuSeries, {
+      start: timeframe.start,
+      end: timeframe.end,
+      step,
+    })
 
     return {
-      sandboxes: filterByTimeframe(data.sandboxes),
-      compute: filterByTimeframe(data.compute),
-      credits: data.credits,
+      sandboxes: filledSandboxes,
+      cost: filledCost,
+      vcpu: filledVcpu,
+      ram: filledRam,
     }
   }, [data, timeframe])
+
+  // Calculate totals from filled series data
+  const totals = useMemo<MetricTotals>(() => {
+    const sandboxesTotal = filledSeries.sandboxes.reduce(
+      (acc, item) => acc + item.y,
+      0
+    )
+    const costTotal = filledSeries.cost.reduce((acc, item) => acc + item.y, 0)
+    const vcpuTotal = filledSeries.vcpu.reduce((acc, item) => acc + item.y, 0)
+    const ramTotal = filledSeries.ram.reduce((acc, item) => acc + item.y, 0)
+
+    return {
+      sandboxes: sandboxesTotal,
+      cost: costTotal,
+      vcpu: vcpuTotal,
+      ram: ramTotal,
+    }
+  }, [filledSeries])
+
+  // Calculate display values based on hovered state
+  const displayValues = useMemo(() => {
+    if (hoveredTimestamp) {
+      const timestampLabel = formatDay(hoveredTimestamp)
+
+      // Find the day usage for the hovered timestamp
+      const dayUsage = data.day_usages.find((d) => {
+        const pointTime = new Date(d.date).getTime()
+        // Match within a day's range
+        return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
+      })
+
+      if (dayUsage) {
+        return {
+          sandboxes: {
+            displayValue: formatNumber(dayUsage.sandbox_count),
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+          cost: {
+            displayValue: `$${(dayUsage.price_for_ram + dayUsage.price_for_cpu).toFixed(2)}`,
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+          vcpu: {
+            displayValue: formatNumber(dayUsage.cpu_hours),
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+          ram: {
+            displayValue: formatNumber(dayUsage.ram_gib_hours),
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+        }
+      }
+    }
+
+    // Default: show totals
+    return {
+      sandboxes: {
+        displayValue: formatNumber(totals.sandboxes),
+        label: 'total',
+        timestamp: null,
+      },
+      cost: {
+        displayValue: `$${totals.cost.toFixed(2)}`,
+        label: 'total',
+        timestamp: null,
+      },
+      vcpu: {
+        displayValue: formatNumber(totals.vcpu),
+        label: 'total',
+        timestamp: null,
+      },
+      ram: {
+        displayValue: formatNumber(totals.ram),
+        label: 'total',
+        timestamp: null,
+      },
+    }
+  }, [hoveredTimestamp, data, totals])
 
   const value = useMemo(
     () => ({
       data,
-      visibleData,
+      filledSeries,
       timeframe,
       setTimeframe,
       hoveredTimestamp,
       setHoveredTimestamp,
+      totals,
+      displayValues,
     }),
-    [data, visibleData, timeframe, setTimeframe, hoveredTimestamp]
+    [
+      data,
+      filledSeries,
+      timeframe,
+      setTimeframe,
+      hoveredTimestamp,
+      totals,
+      displayValues,
+    ]
   )
 
   return (
@@ -109,9 +282,7 @@ export function useUsageCharts() {
   const context = useContext(UsageChartsContext)
 
   if (context === undefined) {
-    throw new Error(
-      'useUsageCharts must be used within UsageChartsProvider'
-    )
+    throw new Error('useUsageCharts must be used within UsageChartsProvider')
   }
   return context
 }

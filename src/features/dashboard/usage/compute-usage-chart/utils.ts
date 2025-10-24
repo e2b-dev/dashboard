@@ -1,28 +1,19 @@
-import { ComputeUsageDelta, UsageData } from '@/server/usage/types'
+import { TimeSeriesPoint } from '@/lib/utils/time-series'
 import type { ComputeDataPoint } from './types'
 
 /**
- * Transform compute or sandboxes data into chart points
+ * Transform TimeSeriesPoint data into chart points with labels
  */
 export function transformComputeData(
-  data: UsageData['compute'] | UsageData['sandboxes'],
-  valueKey: 'total_cost' | 'ram_gb_hours' | 'vcpu_hours' | 'count'
+  data: TimeSeriesPoint[]
 ): ComputeDataPoint[] {
   return data.map((item) => {
-    const timestamp = new Date(item.date).getTime()
-    const dateStr = typeof item.date === 'string' ? item.date : item.date.toISOString()
-    
-    // Extract value based on type
-    let value = 0
-    if (valueKey === 'count') {
-      value = 'count' in item ? item.count : 0
-    } else {
-      value = valueKey in item ? (item as ComputeUsageDelta)[valueKey] : 0
-    }
+    const timestamp = typeof item.x === 'number' ? item.x : new Date(item.x).getTime()
+    const dateStr = new Date(timestamp).toISOString()
     
     return {
       x: timestamp,
-      y: value,
+      y: item.y,
       label: dateStr,
     }
   })
