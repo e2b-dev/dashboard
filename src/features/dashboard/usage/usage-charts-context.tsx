@@ -80,17 +80,17 @@ export function UsageChartsProvider({
     shallow: true,
   })
 
-  // Get default range from data
   const defaultRange = useMemo(() => {
+    const now = Date.now()
+
     if (data.day_usages && data.day_usages.length > 0) {
       const firstDate = new Date(data.day_usages[0]!.date).getTime()
-      const lastDate = new Date(
-        data.day_usages[data.day_usages.length - 1]!.date
-      ).getTime()
-      return { start: firstDate, end: lastDate }
+      // start: 3 days before first data point
+      const start = firstDate - 3 * 24 * 60 * 60 * 1000
+      return { start, end: now }
     }
-    // Default to last 30 days
-    const now = Date.now()
+
+    // fallback to last 30 days
     return { start: now - 30 * 24 * 60 * 60 * 1000, end: now }
   }, [data])
 
@@ -111,9 +111,9 @@ export function UsageChartsProvider({
     [setParams]
   )
 
-  // Filter data based on timeframe and fill with zeros for smooth visualization
+  // filter data based on timeframe and fill with zeros for smooth visualization
   const filledSeries = useMemo<FilledSeriesData>(() => {
-    // Filter day_usages by timeframe
+    // filter by timeframe
     const filteredUsages = data.day_usages.filter((usage) => {
       const timestamp = new Date(usage.date).getTime()
       return timestamp >= timeframe.start && timestamp <= timeframe.end
@@ -121,7 +121,7 @@ export function UsageChartsProvider({
 
     const step = 24 * 60 * 60 * 1000 // 1 day
 
-    // Transform directly from day_usages to TimeSeriesPoint[] for each metric
+    // transform
     const sandboxesSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
       x: new Date(d.date).getTime(),
       y: d.sandbox_count,
@@ -168,7 +168,6 @@ export function UsageChartsProvider({
     }
   }, [data, timeframe])
 
-  // Calculate totals from filled series data
   const totals = useMemo<MetricTotals>(() => {
     const sandboxesTotal = filledSeries.sandboxes.reduce(
       (acc, item) => acc + item.y,
@@ -186,15 +185,15 @@ export function UsageChartsProvider({
     }
   }, [filledSeries])
 
-  // Calculate display values based on hovered state
+  // calculates display values based on hovered state
   const displayValues = useMemo(() => {
     if (hoveredTimestamp) {
       const timestampLabel = formatDay(hoveredTimestamp)
 
-      // Find the day usage for the hovered timestamp
+      // find the day usage for the hovered timestamp
       const dayUsage = data.day_usages.find((d) => {
         const pointTime = new Date(d.date).getTime()
-        // Match within a day's range
+        // match within a day's range
         return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
       })
 
@@ -224,26 +223,26 @@ export function UsageChartsProvider({
       }
     }
 
-    // Default: show totals
+    // default: show totals
     return {
       sandboxes: {
         displayValue: formatNumber(totals.sandboxes),
-        label: 'total',
+        label: 'over range',
         timestamp: null,
       },
       cost: {
         displayValue: `$${totals.cost.toFixed(2)}`,
-        label: 'total',
+        label: 'over range',
         timestamp: null,
       },
       vcpu: {
         displayValue: formatNumber(totals.vcpu),
-        label: 'total',
+        label: 'over range',
         timestamp: null,
       },
       ram: {
         displayValue: formatNumber(totals.ram),
-        label: 'total',
+        label: 'over range',
         timestamp: null,
       },
     }
