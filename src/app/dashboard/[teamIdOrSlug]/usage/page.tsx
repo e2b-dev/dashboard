@@ -30,11 +30,27 @@ export default async function UsagePage({
 
   return (
     <UsageChartsProvider data={result.data}>
-      <div className="grid grid-cols-1 md:grid-cols-2 md:h-full md:grid-rows-2 gap-6 md:flex-1">
-        <UsageMetricChart metric="sandboxes" className="max-md:min-h-[400px]" />
-        <UsageMetricChart metric="cost" className="max-md:min-h-[400px]" />
-        <UsageMetricChart metric="vcpu" className="max-md:min-h-[400px]" />
-        <UsageMetricChart metric="ram" className="max-md:min-h-[400px]" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:h-full lg:grid-rows-2 gap-6 lg:flex-1">
+        <UsageMetricChart
+          metric="sandboxes"
+          className="max-lg:min-h-[400px]"
+          timeRangeControlsClassName="max-lg:flex lg:hidden"
+        />
+        <UsageMetricChart
+          metric="cost"
+          className="max-lg:min-h-[400px]"
+          timeRangeControlsClassName="flex"
+        />
+        <UsageMetricChart
+          metric="vcpu"
+          className="max-lg:min-h-[400px]"
+          timeRangeControlsClassName="max-lg:flex lg:hidden"
+        />
+        <UsageMetricChart
+          metric="ram"
+          className="max-lg:min-h-[400px]"
+          timeRangeControlsClassName="max-lg:flex lg:hidden"
+        />
       </div>
     </UsageChartsProvider>
   )

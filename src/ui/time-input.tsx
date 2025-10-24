@@ -172,6 +172,7 @@ export const TimeInput = memo(function TimeInput({
           <Calendar
             mode="single"
             selected={selectedDate || undefined}
+            defaultMonth={selectedDate || undefined}
             onSelect={handleDateSelect}
             minDate={minDate}
             maxDate={maxDate}

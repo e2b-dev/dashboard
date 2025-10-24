@@ -24,9 +24,14 @@ const METRIC_CONFIGS: Record<UsageMetricType, MetricConfig> = {
 interface UsageMetricChartProps {
   metric: UsageMetricType
   className?: string
+  timeRangeControlsClassName?: string
 }
 
-export function UsageMetricChart({ metric, className }: UsageMetricChartProps) {
+export function UsageMetricChart({
+  metric,
+  className,
+  timeRangeControlsClassName,
+}: UsageMetricChartProps) {
   const {
     filledSeries,
     setHoveredTimestamp,
@@ -67,6 +72,7 @@ export function UsageMetricChart({ metric, className }: UsageMetricChartProps) {
           <UsageTimeRangeControls
             timeframe={timeframe}
             onTimeRangeChange={setTimeframe}
+            className={timeRangeControlsClassName}
           />
         </div>
         <AnimatedMetricDisplay

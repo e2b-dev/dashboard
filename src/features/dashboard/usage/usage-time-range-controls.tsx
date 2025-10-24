@@ -1,7 +1,6 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { formatDay } from '@/lib/utils/formatting'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import CopyButton from '@/ui/copy-button'
 import { Button } from '@/ui/primitives/button'
@@ -20,18 +19,24 @@ interface UsageTimeRangeControlsProps {
     end: number
   }
   onTimeRangeChange: (start: number, end: number) => void
+  className?: string
 }
 
 export function UsageTimeRangeControls({
   timeframe,
   onTimeRangeChange,
+  className,
 }: UsageTimeRangeControlsProps) {
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
 
-  const rangeLabel = useMemo(
-    () => `${formatDay(timeframe.start)} - ${formatDay(timeframe.end)}`,
-    [timeframe.start, timeframe.end]
-  )
+  const rangeLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+    return `${formatter.format(timeframe.start)} - ${formatter.format(timeframe.end)}`
+  }, [timeframe.start, timeframe.end])
 
   const rangeCopyValue = useMemo(
     () => formatTimeframeAsISO8601Interval(timeframe.start, timeframe.end),
@@ -73,13 +78,13 @@ export function UsageTimeRangeControls({
   )
 
   return (
-    <div className="flex items-end">
+    <div className={cn('flex items-end', className)}>
       <Button
         size="sm"
         variant="outline"
         onClick={handlePreviousRange}
         className="border-r-0 px-2"
-        title="Move back by half range"
+        title="Move back by one-third of the range"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -119,7 +124,7 @@ export function UsageTimeRangeControls({
         variant="outline"
         onClick={handleNextRange}
         className="px-2"
-        title="Move forward by half range"
+        title="Move forward by one-third of the range"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
