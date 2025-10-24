@@ -8,6 +8,7 @@ export interface ComputeUsageChartProps {
   className?: string
   onTooltipValueChange?: (timestamp: number) => void
   onHoverEnd?: () => void
+  onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
 }
 
 /**

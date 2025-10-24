@@ -49,20 +49,3 @@ export const COMPUTE_CHART_CONFIGS: Record<
     yAxisFormatter: formatAxisNumber,
   },
 }
-
-// echarts static configuration
-export const STATIC_ECHARTS_CONFIG = {
-  backgroundColor: 'transparent',
-  animation: false,
-  toolbox: {
-    id: 'toolbox',
-    show: true,
-    iconStyle: { opacity: 0 },
-    showTitle: false,
-    feature: {
-      dataZoom: {
-        yAxisIndex: 'none',
-      },
-    },
-  },
-} as const

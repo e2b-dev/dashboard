@@ -17,6 +17,13 @@ export function RAMChart({ className }: { className?: string }) {
     displayValues,
   } = useUsageCharts()
 
+  const handleBrushEnd = useCallback(
+    (start: number, end: number) => {
+      setTimeframe(start, end)
+    },
+    [setTimeframe]
+  )
+
   const handleTooltipValueChange = useCallback(
     (timestamp: number) => {
       setHoveredTimestamp(timestamp)
@@ -55,6 +62,7 @@ export function RAMChart({ className }: { className?: string }) {
             data={filledSeries.ram}
             onTooltipValueChange={handleTooltipValueChange}
             onHoverEnd={handleHoverEnd}
+            onBrushEnd={handleBrushEnd}
           />
         </div>
       </CardContent>

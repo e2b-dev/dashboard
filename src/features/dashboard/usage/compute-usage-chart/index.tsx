@@ -4,12 +4,16 @@ import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { EChartsOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent } from 'echarts/components'
+import {
+  BrushComponent,
+  GridComponent,
+  TooltipComponent,
+} from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
-import { COMPUTE_CHART_CONFIGS, STATIC_ECHARTS_CONFIG } from './constants'
+import { COMPUTE_CHART_CONFIGS } from './constants'
 import type { ComputeUsageChartProps } from './types'
 import {
   buildSeriesData,
@@ -18,7 +22,31 @@ import {
 } from './utils'
 
 // Register echarts components
-echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
+echarts.use([
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  BrushComponent,
+  CanvasRenderer,
+])
+
+/**
+ * Normalize timestamp to start of day (00:00:00)
+ */
+function normalizeToStartOfDay(timestamp: number): number {
+  const date = new Date(timestamp)
+  date.setHours(0, 0, 0, 0)
+  return date.getTime()
+}
+
+/**
+ * Normalize timestamp to end of day (23:59:59.999)
+ */
+function normalizeToEndOfDay(timestamp: number): number {
+  const date = new Date(timestamp)
+  date.setHours(23, 59, 59, 999)
+  return date.getTime()
+}
 
 /**
  * Generic compute usage chart component for cost, RAM, and vCPU metrics
@@ -30,6 +58,7 @@ function ComputeUsageChart({
   className,
   onTooltipValueChange,
   onHoverEnd,
+  onBrushEnd,
 }: ComputeUsageChartProps) {
   const chartRef = useRef<ReactEChartsCore | null>(null)
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
@@ -38,18 +67,17 @@ function ComputeUsageChart({
   // Use refs for callbacks to avoid re-creating chart options
   const onTooltipValueChangeRef = useRef(onTooltipValueChange)
   const onHoverEndRef = useRef(onHoverEnd)
+  const onBrushEndRef = useRef(onBrushEnd)
 
   // Keep refs up to date
   onTooltipValueChangeRef.current = onTooltipValueChange
   onHoverEndRef.current = onHoverEnd
+  onBrushEndRef.current = onBrushEnd
 
   const config = COMPUTE_CHART_CONFIGS[type]
 
   // Transform data once
-  const chartData = useMemo(
-    () => transformComputeData(data),
-    [data]
-  )
+  const chartData = useMemo(() => transformComputeData(data), [data])
 
   // Get CSS vars - automatically updates on theme change
   const cssVars = useCssVars([
@@ -67,7 +95,6 @@ function ComputeUsageChart({
   const areaTo = cssVars[config.areaToVar] || '#000'
   const stroke = cssVars['--stroke'] || '#000'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
-  const bgInverted = cssVars['--bg-inverted'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
 
   // Tooltip formatter that extracts data and calls onTooltipValueChange
@@ -95,9 +122,53 @@ function ComputeUsageChart({
     }
   }, [])
 
+  // Handle brush end event
+  const handleBrushEnd = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (params: any) => {
+      const areas = params.areas
+      if (areas && areas.length > 0) {
+        const area = areas[0]
+        const coordRange = area.coordRange
+
+        if (coordRange && coordRange.length === 2 && onBrushEndRef.current) {
+          const startValue = coordRange[0]
+          const endValue = coordRange[1]
+
+          // Normalize to full day boundaries
+          const normalizedStart = normalizeToStartOfDay(Math.round(startValue))
+          const normalizedEnd = normalizeToEndOfDay(Math.round(endValue))
+
+          // Call callback to update timeframe
+          onBrushEndRef.current(normalizedStart, normalizedEnd)
+
+          chartInstanceRef.current?.dispatchAction({
+            type: 'brush',
+            command: 'clear',
+            areas: [],
+          })
+        }
+      }
+    },
+    []
+  )
+
   // Chart ready handler
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
+
+    // Activate brush selection mode
+    chart.dispatchAction(
+      {
+        type: 'takeGlobalCursor',
+        key: 'brush',
+        brushOption: {
+          brushType: 'lineX',
+          brushMode: 'single',
+        },
+      },
+      { flush: true }
+    )
 
     chart.group = 'usage'
     echarts.connect('usage')
@@ -151,7 +222,20 @@ function ComputeUsageChart({
       chartData.length > 0 ? chartData[chartData.length - 1]!.x : Date.now()
 
     return {
-      ...STATIC_ECHARTS_CONFIG,
+      backgroundColor: 'transparent',
+      animation: false,
+      brush: {
+        brushType: 'lineX',
+        brushMode: 'single',
+        xAxisIndex: 0,
+        brushLink: 'all',
+        brushStyle: {
+          borderWidth: 1,
+        },
+        outOfBrush: {
+          colorAlpha: 0.3,
+        },
+      },
       grid: {
         top: 10,
         right: 5,
@@ -258,6 +342,7 @@ function ComputeUsageChart({
       className={className}
       onEvents={{
         globalout: handleGlobalOut,
+        brushEnd: handleBrushEnd,
       }}
     />
   )
