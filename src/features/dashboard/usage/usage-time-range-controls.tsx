@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@/ui/primitives/popover'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
 interface UsageTimeRangeControlsProps {
@@ -37,6 +38,24 @@ export function UsageTimeRangeControls({
     [timeframe.start, timeframe.end]
   )
 
+  const thirdOfRangeDuration = useMemo(() => {
+    return Math.floor((timeframe.end - timeframe.start) / 3)
+  }, [timeframe.start, timeframe.end])
+
+  const handlePreviousRange = useCallback(() => {
+    onTimeRangeChange(
+      timeframe.start - thirdOfRangeDuration,
+      timeframe.end - thirdOfRangeDuration
+    )
+  }, [timeframe.start, timeframe.end, thirdOfRangeDuration, onTimeRangeChange])
+
+  const handleNextRange = useCallback(() => {
+    onTimeRangeChange(
+      timeframe.start + thirdOfRangeDuration,
+      timeframe.end + thirdOfRangeDuration
+    )
+  }, [timeframe.start, timeframe.end, thirdOfRangeDuration, onTimeRangeChange])
+
   const handleTimeRangeApply = useCallback(
     (values: TimeRangeValues) => {
       const startTime = values.startTime || '00:00:00'
@@ -55,6 +74,15 @@ export function UsageTimeRangeControls({
 
   return (
     <div className="flex items-end">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handlePreviousRange}
+        className="border-r-0 px-2"
+        title="Move back by half range"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
       <CopyButton
         value={rangeCopyValue}
         size="sm"
@@ -64,7 +92,11 @@ export function UsageTimeRangeControls({
       />
       <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
         <PopoverTrigger asChild>
-          <Button size="sm" variant="outline" className={cn('prose-label')}>
+          <Button
+            size="sm"
+            variant="outline"
+            className={cn('prose-label', 'border-r-0')}
+          >
             {rangeLabel}
           </Button>
         </PopoverTrigger>
@@ -82,6 +114,15 @@ export function UsageTimeRangeControls({
           />
         </PopoverContent>
       </Popover>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleNextRange}
+        className="px-2"
+        title="Move forward by half range"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
     </div>
   )
 }
