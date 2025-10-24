@@ -40,12 +40,14 @@ export function UsageTimeRangeControls({
   const handleTimeRangeApply = useCallback(
     (values: TimeRangeValues) => {
       // Parse the date/time values to timestamps
+      // If time is null/empty, default to start of day (00:00:00) for start, end of day for end
+      const startTime = values.startTime || '00:00:00'
+      const endTime = values.endTime || '23:59:59'
+
       const startTimestamp = new Date(
-        `${values.startDate} ${values.startTime}`
+        `${values.startDate} ${startTime}`
       ).getTime()
-      const endTimestamp = values.endEnabled
-        ? new Date(`${values.endDate} ${values.endTime}`).getTime()
-        : Date.now()
+      const endTimestamp = new Date(`${values.endDate} ${endTime}`).getTime()
 
       onTimeRangeChange(startTimestamp, endTimestamp)
       setIsTimePickerOpen(false)
@@ -77,9 +79,8 @@ export function UsageTimeRangeControls({
           <TimeRangePicker
             startDateTime={new Date(timeframe.start).toISOString()}
             endDateTime={new Date(timeframe.end).toISOString()}
-            endEnabled={true}
             onApply={handleTimeRangeApply}
-            showApplyButton={true}
+            hideTime
           />
         </PopoverContent>
       </Popover>

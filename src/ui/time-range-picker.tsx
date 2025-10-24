@@ -13,16 +13,14 @@ import {
 } from '@/lib/utils/formatting'
 
 import { Button } from './primitives/button'
-import { Checkbox } from './primitives/checkbox'
 import { Label } from './primitives/label'
 import { TimeInput } from './time-input'
 
 export interface TimeRangeValues {
   startDate: string
-  startTime: string
+  startTime: string | null
   endDate: string
-  endTime: string
-  endEnabled: boolean
+  endTime: string | null
 }
 
 interface TimeRangePickerProps {
@@ -30,8 +28,6 @@ interface TimeRangePickerProps {
   startDateTime: string
   /** Initial end datetime in any parseable format */
   endDateTime: string
-  /** Whether the end time is initially enabled */
-  endEnabled: boolean
   /** Optional minimum selectable date */
   minDate?: Date
   /** Optional maximum selectable date */
@@ -40,22 +36,21 @@ interface TimeRangePickerProps {
   onApply?: (values: TimeRangeValues) => void
   /** Called whenever values change (real-time) */
   onChange?: (values: TimeRangeValues) => void
-  /** Show the Apply button (default: true) */
-  showApplyButton?: boolean
   /** Custom className for the container */
   className?: string
+  /** Hide time inputs and only show date pickers (default: false) */
+  hideTime?: boolean
 }
 
 export function TimeRangePicker({
   startDateTime,
   endDateTime,
-  endEnabled: initialEndEnabled,
   minDate,
   maxDate,
   onApply,
   onChange,
-  showApplyButton = true,
   className,
+  hideTime = false,
 }: TimeRangePickerProps) {
   'use no memo'
 
@@ -69,10 +64,9 @@ export function TimeRangePicker({
   )
 
   const [startDate, setStartDate] = useState(startParts.date || '')
-  const [startTime, setStartTime] = useState(startParts.time || '')
+  const [startTime, setStartTime] = useState(startParts.time || null)
   const [endDate, setEndDate] = useState(endParts.date || '')
-  const [endTime, setEndTime] = useState(endParts.time || '')
-  const [endEnabled, setEndEnabled] = useState(initialEndEnabled || false)
+  const [endTime, setEndTime] = useState(endParts.time || null)
 
   // track if user has made changes
   const [isDirty, setIsDirty] = useState(false)
@@ -99,27 +93,17 @@ export function TimeRangePicker({
       currentStartTime &&
       Math.abs(propStartTime - currentStartTime) > 1000
 
-    if (isExternalChange || endEnabled !== initialEndEnabled) {
+    if (isExternalChange) {
       const newStartParts = parseDateTimeComponents(startDateTime)
       const newEndParts = parseDateTimeComponents(endDateTime)
 
       setStartDate(newStartParts.date || '')
-      setStartTime(newStartParts.time || '')
+      setStartTime(newStartParts.time || null)
       setEndDate(newEndParts.date || '')
-      setEndTime(newEndParts.time || '')
-      setEndEnabled(initialEndEnabled || false)
+      setEndTime(newEndParts.time || null)
       setIsDirty(false)
     }
-  }, [
-    startDateTime,
-    endDateTime,
-    initialEndEnabled,
-    startDate,
-    startTime,
-    endEnabled,
-    isDirty,
-    isFocused,
-  ])
+  }, [startDateTime, endDateTime, startDate, startTime, isDirty, isFocused])
 
   // notify on changes
   useEffect(() => {
@@ -128,9 +112,8 @@ export function TimeRangePicker({
       startTime,
       endDate,
       endTime,
-      endEnabled,
     })
-  }, [startDate, startTime, endDate, endTime, endEnabled, onChange])
+  }, [startDate, startTime, endDate, endTime, onChange])
 
   const handleValueChange = useCallback(() => {
     setIsDirty(true)
@@ -142,10 +125,9 @@ export function TimeRangePicker({
       startTime,
       endDate,
       endTime,
-      endEnabled,
     })
     setIsDirty(false)
-  }, [startDate, startTime, endDate, endTime, endEnabled, onApply])
+  }, [startDate, startTime, endDate, endTime, onApply])
 
   return (
     <div className={className ?? 'p-4 flex flex-col gap-4 h-full'}>
@@ -161,7 +143,7 @@ export function TimeRangePicker({
           >
             <TimeInput
               dateValue={startDate}
-              timeValue={startTime}
+              timeValue={startTime || ''}
               minDate={minDate}
               maxDate={maxDate}
               onDateChange={(value) => {
@@ -169,66 +151,54 @@ export function TimeRangePicker({
                 handleValueChange()
               }}
               onTimeChange={(value) => {
-                setStartTime(value)
+                setStartTime(value || null)
                 handleValueChange()
               }}
               disabled={false}
+              hideTime={hideTime}
             />
           </div>
         </div>
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <Label className="prose-label uppercase text-fg-tertiary">
-            End Time
-          </Label>
-          <Checkbox
-            checked={endEnabled}
-            onCheckedChange={(checked) => {
-              setEndEnabled(!!checked)
-              handleValueChange()
-            }}
-          />
-        </div>
-        <div className={!endEnabled ? 'opacity-50' : ''}>
-          <div className="flex gap-2">
-            <div
-              className="flex-1"
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-            >
-              <TimeInput
-                dateValue={endDate || ''}
-                timeValue={endTime || ''}
-                minDate={minDate}
-                maxDate={maxDate}
-                onDateChange={(value) => {
-                  setEndDate(value)
-                  handleValueChange()
-                }}
-                onTimeChange={(value) => {
-                  setEndTime(value)
-                  handleValueChange()
-                }}
-                disabled={!endEnabled}
-                isLive={!endEnabled}
-              />
-            </div>
+        <Label className="prose-label uppercase text-fg-tertiary mb-2 block">
+          End Time
+        </Label>
+        <div className="flex gap-2">
+          <div
+            className="flex-1"
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+          >
+            <TimeInput
+              dateValue={endDate}
+              timeValue={endTime || ''}
+              minDate={minDate}
+              maxDate={maxDate}
+              onDateChange={(value) => {
+                setEndDate(value)
+                handleValueChange()
+              }}
+              onTimeChange={(value) => {
+                setEndTime(value || null)
+                handleValueChange()
+              }}
+              disabled={false}
+              hideTime={hideTime}
+            />
           </div>
         </div>
       </div>
 
-      {showApplyButton && (
-        <Button
-          onClick={handleApply}
-          disabled={!isDirty}
-          className="w-fit self-end mt-auto"
-          variant="outline"
-        >
-          Apply
-        </Button>
-      )}
+      <Button
+        onClick={handleApply}
+        disabled={!isDirty}
+        className="w-fit self-end mt-auto"
+        variant="outline"
+      >
+        Apply
+      </Button>
     </div>
   )
 }
