@@ -39,8 +39,6 @@ export function UsageTimeRangeControls({
 
   const handleTimeRangeApply = useCallback(
     (values: TimeRangeValues) => {
-      // Parse the date/time values to timestamps
-      // If time is null/empty, default to start of day (00:00:00) for start, end of day for end
       const startTime = values.startTime || '00:00:00'
       const endTime = values.endTime || '23:59:59'
 

@@ -21,7 +21,6 @@ import {
   transformComputeData,
 } from './utils'
 
-// Register echarts components
 echarts.use([
   LineChart,
   GridComponent,
@@ -30,28 +29,18 @@ echarts.use([
   CanvasRenderer,
 ])
 
-/**
- * Normalize timestamp to start of day (00:00:00)
- */
 function normalizeToStartOfDay(timestamp: number): number {
   const date = new Date(timestamp)
   date.setHours(0, 0, 0, 0)
   return date.getTime()
 }
 
-/**
- * Normalize timestamp to end of day (23:59:59.999)
- */
 function normalizeToEndOfDay(timestamp: number): number {
   const date = new Date(timestamp)
   date.setHours(23, 59, 59, 999)
   return date.getTime()
 }
 
-/**
- * Generic compute usage chart component for cost, RAM, and vCPU metrics
- * Uses ECharts with line step visualization
- */
 function ComputeUsageChart({
   type,
   data,
@@ -64,22 +53,18 @@ function ComputeUsageChart({
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const { resolvedTheme } = useTheme()
 
-  // Use refs for callbacks to avoid re-creating chart options
   const onTooltipValueChangeRef = useRef(onTooltipValueChange)
   const onHoverEndRef = useRef(onHoverEnd)
   const onBrushEndRef = useRef(onBrushEnd)
 
-  // Keep refs up to date
   onTooltipValueChangeRef.current = onTooltipValueChange
   onHoverEndRef.current = onHoverEnd
   onBrushEndRef.current = onBrushEnd
 
   const config = COMPUTE_CHART_CONFIGS[type]
 
-  // Transform data once
   const chartData = useMemo(() => transformComputeData(data), [data])
 
-  // Get CSS vars - automatically updates on theme change
   const cssVars = useCssVars([
     config.barColorVar,
     config.areaFromVar,
@@ -98,7 +83,6 @@ function ComputeUsageChart({
   const bgInverted = cssVars['--bg-inverted'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
 
-  // Tooltip formatter that extracts data and calls onTooltipValueChange
   const tooltipFormatter = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
@@ -154,7 +138,7 @@ function ComputeUsageChart({
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
 
-    // activates brush selection mode
+    // activate brush selection mode
     chart.dispatchAction(
       {
         type: 'takeGlobalCursor',
@@ -171,7 +155,6 @@ function ComputeUsageChart({
     echarts.connect('usage')
   }, [])
 
-  // builds complete echarts option once
   const option = useMemo<EChartsOption>(() => {
     const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
     const seriesData = buildSeriesData(chartData)
@@ -247,12 +230,12 @@ function ComputeUsageChart({
         transitionDuration: 0,
         enterable: false,
         hideDelay: 0,
-        // Render tooltip invisible - used only for value extraction
+        // render tooltip invisible - used only for value extraction
         backgroundColor: 'transparent',
         borderWidth: 0,
         textStyle: { fontSize: 0, color: 'transparent' },
         formatter: tooltipFormatter,
-        // Position off-screen
+        // position off-screen
         position: [-9999, -9999],
       },
       xAxis: {
@@ -292,7 +275,7 @@ function ComputeUsageChart({
         type: 'value',
         min: 0,
         max: yAxisMax,
-        interval: yAxisMax / 2, // Creates lines at 0%, 50%, 100%
+        interval: yAxisMax / 2,
         axisLine: {
           show: false,
         },
@@ -300,14 +283,14 @@ function ComputeUsageChart({
         splitLine: {
           show: true,
           lineStyle: { color: stroke, type: 'dashed' },
-          interval: 0, // Show all split lines (at 0, 50%, 100%)
+          interval: 0,
         },
         axisLabel: {
           show: true,
           color: fgTertiary,
           fontFamily: fontMono,
           fontSize: 12,
-          interval: 0, // Show all labels (at 0, 50%, 100%)
+          interval: 0,
           formatter: config.yAxisFormatter,
         },
         axisPointer: {
@@ -348,7 +331,6 @@ function ComputeUsageChart({
   )
 }
 
-// Memoize to prevent unnecessary re-renders
 const MemoizedComputeUsageChart = memo(
   ComputeUsageChart,
   (prevProps, nextProps) => {
@@ -356,8 +338,7 @@ const MemoizedComputeUsageChart = memo(
       prevProps.type === nextProps.type &&
       prevProps.data === nextProps.data &&
       prevProps.className === nextProps.className
-      // Explicitly exclude onTooltipValueChange and onHoverEnd from comparison
-      // They are handled via refs internally
+      // exclude onTooltipValueChange and onHoverEnd - they're handled via refs
     )
   }
 )

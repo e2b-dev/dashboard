@@ -1,9 +1,5 @@
 import { ChartType, TeamMetricChartConfig } from './types'
 
-/**
- * Static chart configurations by type
- * These never change and can be referenced directly
- */
 export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
   concurrent: {
     id: 'concurrent-sandboxes',

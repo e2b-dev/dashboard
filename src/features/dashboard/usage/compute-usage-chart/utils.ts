@@ -1,9 +1,6 @@
 import { TimeSeriesPoint } from '@/lib/utils/time-series'
 import type { ComputeDataPoint } from './types'
 
-/**
- * Transform TimeSeriesPoint data into chart points with labels
- */
 export function transformComputeData(
   data: TimeSeriesPoint[]
 ): ComputeDataPoint[] {
@@ -19,17 +16,12 @@ export function transformComputeData(
   })
 }
 
-/**
- * Calculate y-axis max with nice rounding
- * Uses same logic as team metrics chart
- */
 export function calculateYAxisMax(
   data: ComputeDataPoint[],
   scaleFactor: number
 ): number {
   if (data.length === 0) return 1
 
-  // Find max in single pass
   let max = 0
   for (let i = 0; i < data.length; i++) {
     const y = data[i]!.y
@@ -46,13 +38,9 @@ export function calculateYAxisMax(
 
   const calculatedMax = snapToAxis(max * scaleFactor)
 
-  // Ensure minimum y-axis range when all data is zero
   return Math.max(calculatedMax, 1)
 }
 
-/**
- * Build ECharts series data array
- */
 export function buildSeriesData(
   data: ComputeDataPoint[]
 ): Array<{ value: [number, number]; label: string }> {

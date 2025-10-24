@@ -1,9 +1,6 @@
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import { ComputeChartConfig, ComputeChartType } from './types'
 
-/**
- * Static chart configurations by type
- */
 export const COMPUTE_CHART_CONFIGS: Record<
   ComputeChartType,
   ComputeChartConfig

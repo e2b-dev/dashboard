@@ -85,12 +85,10 @@ export function UsageChartsProvider({
 
     if (data.day_usages && data.day_usages.length > 0) {
       const firstDate = new Date(data.day_usages[0]!.date).getTime()
-      // start: 3 days before first data point
       const start = firstDate - 3 * 24 * 60 * 60 * 1000
       return { start, end: now }
     }
 
-    // fallback to last 30 days
     return { start: now - 30 * 24 * 60 * 60 * 1000, end: now }
   }, [data])
 
@@ -111,17 +109,13 @@ export function UsageChartsProvider({
     [setParams]
   )
 
-  // filter data based on timeframe and fill with zeros for smooth visualization
   const filledSeries = useMemo<FilledSeriesData>(() => {
-    // filter by timeframe
     const filteredUsages = data.day_usages.filter((usage) => {
       const timestamp = new Date(usage.date).getTime()
       return timestamp >= timeframe.start && timestamp <= timeframe.end
     })
 
-    const step = 24 * 60 * 60 * 1000 // 1 day
-
-    // transform
+    const step = 24 * 60 * 60 * 1000
     const sandboxesSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
       x: new Date(d.date).getTime(),
       y: d.sandbox_count,
@@ -185,15 +179,12 @@ export function UsageChartsProvider({
     }
   }, [filledSeries])
 
-  // calculates display values based on hovered state
   const displayValues = useMemo(() => {
     if (hoveredTimestamp) {
       const timestampLabel = formatDay(hoveredTimestamp)
 
-      // find the day usage for the hovered timestamp
       const dayUsage = data.day_usages.find((d) => {
         const pointTime = new Date(d.date).getTime()
-        // match within a day's range
         return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
       })
 
@@ -223,7 +214,6 @@ export function UsageChartsProvider({
       }
     }
 
-    // default: show totals
     return {
       sandboxes: {
         displayValue: formatNumber(totals.sandboxes),

@@ -11,18 +11,12 @@ export interface ComputeUsageChartProps {
   onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
 }
 
-/**
- * Compute usage specific data point
- */
 export interface ComputeDataPoint {
   x: number // timestamp
   y: number // value
   label: string // formatted label for display
 }
 
-/**
- * Configuration for a specific compute usage chart type
- */
 export interface ComputeChartConfig {
   id: string
   name: string

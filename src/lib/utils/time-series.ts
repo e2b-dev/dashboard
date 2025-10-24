@@ -1,33 +1,15 @@
-/**
- * Generic time series utilities for filling gaps in data with zero/empty values.
- * This ensures smooth, continuous visualization of sparse data.
- */
-
-/**
- * Time series point with x (timestamp) and y (value)
- */
 export interface TimeSeriesPoint {
   x: number | Date
   y: number
 }
 
-/**
- * Configuration for time series filling behavior
- */
 export interface FillTimeSeriesConfig {
-  /** Start timestamp in milliseconds */
   start: number
-  /** End timestamp in milliseconds */
   end: number
-  /** Step size in milliseconds between data points */
   step: number
-  /** Tolerance for detecting anomalous gaps (default 0.5 = 50% over expected step) */
   anomalousGapTolerance?: number
 }
 
-/**
- * Check if gap between two timestamps is anomalous
- */
 function isGapAnomalous(
   gapDuration: number,
   expectedStep: number,
@@ -36,9 +18,6 @@ function isGapAnomalous(
   return gapDuration > expectedStep * (1 + anomalousGapTolerance)
 }
 
-/**
- * Generate empty time series with zeros for the given range
- */
 function generateEmptyTimeSeries(
   start: number,
   end: number,
@@ -61,11 +40,7 @@ function generateEmptyTimeSeries(
  * 2. Sparse Data: Adds empty points to show periods of no activity
  * 3. Boundary Gaps: Pads with empty points at start/end of range
  *
- * **CRITICAL**: This logic is highly tested. Do not modify the algorithm without extensive testing.
- *
- * @param data - Array of time series points with {x, y} shape
- * @param config - Configuration object with start, end, step
- * @returns Sorted array of data with zero-padding for smooth visualization
+ * CRITICAL: this logic is highly tested. do not modify without extensive testing
  */
 export function fillTimeSeriesWithEmptyPoints(
   data: TimeSeriesPoint[],

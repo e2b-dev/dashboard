@@ -1,8 +1,5 @@
-import { CostChart } from '@/features/dashboard/usage/cost-chart'
-import { RAMChart } from '@/features/dashboard/usage/ram-chart'
-import { SandboxesChart } from '@/features/dashboard/usage/sandboxes-chart'
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
-import { VCPUChart } from '@/features/dashboard/usage/vcpu-chart'
+import { UsageMetricChart } from '@/features/dashboard/usage/usage-metric-chart'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getUsage } from '@/server/usage/get-usage'
 import ErrorBoundary from '@/ui/error'
@@ -34,10 +31,10 @@ export default async function UsagePage({
   return (
     <UsageChartsProvider data={result.data}>
       <div className="grid grid-cols-1 md:grid-cols-2 md:h-full md:grid-rows-2 gap-6 md:flex-1">
-        <SandboxesChart className="max-md:min-h-[400px]" />
-        <CostChart className="max-md:min-h-[400px]" />
-        <VCPUChart className="max-md:min-h-[400px]" />
-        <RAMChart className="max-md:min-h-[400px]" />
+        <UsageMetricChart metric="sandboxes" className="max-md:min-h-[400px]" />
+        <UsageMetricChart metric="cost" className="max-md:min-h-[400px]" />
+        <UsageMetricChart metric="vcpu" className="max-md:min-h-[400px]" />
+        <UsageMetricChart metric="ram" className="max-md:min-h-[400px]" />
       </div>
     </UsageChartsProvider>
   )
