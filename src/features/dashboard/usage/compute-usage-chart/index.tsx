@@ -95,6 +95,7 @@ function ComputeUsageChart({
   const areaTo = cssVars[config.areaToVar] || '#000'
   const stroke = cssVars['--stroke'] || '#000'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
+  const bgInverted = cssVars['--bg-inverted'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
 
   // Tooltip formatter that extracts data and calls onTooltipValueChange
@@ -122,7 +123,6 @@ function ComputeUsageChart({
     }
   }, [])
 
-  // Handle brush end event
   const handleBrushEnd = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
@@ -135,11 +135,9 @@ function ComputeUsageChart({
           const startValue = coordRange[0]
           const endValue = coordRange[1]
 
-          // Normalize to full day boundaries
           const normalizedStart = normalizeToStartOfDay(Math.round(startValue))
           const normalizedEnd = normalizeToEndOfDay(Math.round(endValue))
 
-          // Call callback to update timeframe
           onBrushEndRef.current(normalizedStart, normalizedEnd)
 
           chartInstanceRef.current?.dispatchAction({
@@ -153,11 +151,10 @@ function ComputeUsageChart({
     []
   )
 
-  // Chart ready handler
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
 
-    // Activate brush selection mode
+    // activates brush selection mode
     chart.dispatchAction(
       {
         type: 'takeGlobalCursor',
@@ -174,23 +171,24 @@ function ComputeUsageChart({
     echarts.connect('usage')
   }, [])
 
-  // Build complete echarts option once
+  // builds complete echarts option once
   const option = useMemo<EChartsOption>(() => {
     const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
     const seriesData = buildSeriesData(chartData)
 
-    // Build line step series
     const seriesItem: SeriesOption = {
       id: config.id,
       name: config.name,
       type: 'line',
       step: 'middle',
       smooth: false,
+      symbol: 'rect',
+      symbolSize: 0,
       showSymbol: false,
-      symbol: 'none',
+      showAllSymbol: false,
       lineStyle: {
-        color: barColor,
         width: 1,
+        color: barColor,
       },
       areaStyle: {
         color: {
@@ -206,9 +204,10 @@ function ComputeUsageChart({
         },
       },
       emphasis: {
-        lineStyle: {
-          color: barColor,
-          width: 1,
+        scale: true,
+        itemStyle: {
+          borderWidth: 2,
+          borderColor: barColor,
         },
       },
       data: seriesData.map((d) => d.value),
@@ -216,7 +215,6 @@ function ComputeUsageChart({
 
     const series: EChartsOption['series'] = [seriesItem]
 
-    // Calculate time bounds
     const xMin = chartData.length > 0 ? chartData[0]!.x : Date.now()
     const xMax =
       chartData.length > 0 ? chartData[chartData.length - 1]!.x : Date.now()
@@ -230,10 +228,11 @@ function ComputeUsageChart({
         xAxisIndex: 0,
         brushLink: 'all',
         brushStyle: {
+          color: bgInverted,
+          opacity: 0.2,
+          borderType: 'solid',
           borderWidth: 1,
-        },
-        outOfBrush: {
-          colorAlpha: 0.3,
+          borderColor: bgInverted,
         },
       },
       grid: {
@@ -324,6 +323,7 @@ function ComputeUsageChart({
     barColor,
     areaFrom,
     areaTo,
+    bgInverted,
     stroke,
     fgTertiary,
     fontMono,
