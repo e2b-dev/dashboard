@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import CopyButton from '@/ui/copy-button'
 import { Button } from '@/ui/primitives/button'
@@ -9,7 +10,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/ui/primitives/popover'
+import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
+import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -22,12 +25,142 @@ interface UsageTimeRangeControlsProps {
   className?: string
 }
 
+const TIME_RANGE_PRESETS: TimeRangePreset[] = [
+  {
+    id: 'last-7-days',
+    label: 'Last 7 days',
+    shortcut: '7D',
+    getValue: () => {
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      const start = new Date(end)
+      start.setDate(start.getDate() - 6)
+      start.setHours(0, 0, 0, 0)
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'last-14-days',
+    label: 'Last 14 days',
+    shortcut: '14D',
+    getValue: () => {
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      const start = new Date(end)
+      start.setDate(start.getDate() - 13)
+      start.setHours(0, 0, 0, 0)
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'last-30-days',
+    label: 'Last 30 days',
+    shortcut: '30D',
+    getValue: () => {
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      const start = new Date(end)
+      start.setDate(start.getDate() - 29)
+      start.setHours(0, 0, 0, 0)
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'last-90-days',
+    label: 'Last 90 days',
+    shortcut: '90D',
+    getValue: () => {
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      const start = new Date(end)
+      start.setDate(start.getDate() - 89)
+      start.setHours(0, 0, 0, 0)
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'this-month',
+    label: 'This month',
+    getValue: () => {
+      const now = new Date()
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      const end = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999
+      )
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'last-month',
+    label: 'Last month',
+    getValue: () => {
+      const now = new Date()
+      const start = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+        0,
+        0,
+        0,
+        0
+      )
+      const end = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        0,
+        23,
+        59,
+        59,
+        999
+      )
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'this-year',
+    label: 'This year',
+    getValue: () => {
+      const now = new Date()
+      const start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
+      const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+  {
+    id: 'last-year',
+    label: 'Last year',
+    getValue: () => {
+      const now = new Date()
+      const start = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0)
+      const end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
+      return { start: start.getTime(), end: end.getTime() }
+    },
+  },
+]
+
 export function UsageTimeRangeControls({
   timeframe,
   onTimeRangeChange,
   className,
 }: UsageTimeRangeControlsProps) {
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
+
+  const selectedPresetId = useMemo(
+    () =>
+      findMatchingPreset(
+        TIME_RANGE_PRESETS,
+        timeframe.start,
+        timeframe.end,
+        1000 * 60 * 60 * 24 // 1 day in tolerance
+      ),
+    [timeframe.start, timeframe.end]
+  )
 
   const rangeLabel = useMemo(() => {
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -77,6 +210,15 @@ export function UsageTimeRangeControls({
     [onTimeRangeChange]
   )
 
+  const handlePresetSelect = useCallback(
+    (preset: TimeRangePreset) => {
+      const { start, end } = preset.getValue()
+      onTimeRangeChange(start, end)
+      setIsTimePickerOpen(false)
+    },
+    [onTimeRangeChange]
+  )
+
   return (
     <div className={cn('flex items-end', className)}>
       <Button
@@ -105,13 +247,31 @@ export function UsageTimeRangeControls({
             {rangeLabel}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" side="bottom" sideOffset={4}>
-          <TimeRangePicker
-            startDateTime={new Date(timeframe.start).toISOString()}
-            endDateTime={new Date(timeframe.end).toISOString()}
-            onApply={handleTimeRangeApply}
-            hideTime
-          />
+        <PopoverContent
+          className="w-auto p-0 max-md:w-[calc(100vw-2rem)]"
+          side="bottom"
+          sideOffset={4}
+        >
+          <div className="flex max-md:flex-col max-h-[500px] max-md:max-h-[600px]">
+            <TimeRangePicker
+              startDateTime={new Date(timeframe.start).toISOString()}
+              endDateTime={new Date(timeframe.end).toISOString()}
+              onApply={handleTimeRangeApply}
+              hideTime
+              className="p-3 w-56 max-md:w-full"
+            />
+            <Separator
+              orientation="vertical"
+              className="h-auto max-md:hidden"
+            />
+            <Separator orientation="horizontal" className="w-auto md:hidden" />
+            <TimeRangePresets
+              presets={TIME_RANGE_PRESETS}
+              selectedId={selectedPresetId}
+              onSelect={handlePresetSelect}
+              className="w-56 max-md:w-full p-3"
+            />
+          </div>
         </PopoverContent>
       </Popover>
       <Button

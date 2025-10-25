@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { cn } from '@/lib/utils'
 import {
   parseDateTimeComponents,
   tryParseDatetime,
@@ -130,7 +131,7 @@ export function TimeRangePicker({
   }, [startDate, startTime, endDate, endTime, onApply])
 
   return (
-    <div className={className ?? 'p-4 flex flex-col gap-4 h-full'}>
+    <div className={cn('flex flex-col gap-4 h-full', className)}>
       <div>
         <Label className="prose-label uppercase text-fg-tertiary mb-2 block">
           Start Time
