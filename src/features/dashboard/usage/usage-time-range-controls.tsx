@@ -242,7 +242,7 @@ export function UsageTimeRangeControls({
           <Button
             size="sm"
             variant="outline"
-            className={cn('prose-label', 'border-r-0')}
+            className={cn('prose-label font-sans', 'border-r-0')}
           >
             {rangeLabel}
           </Button>
@@ -256,6 +256,7 @@ export function UsageTimeRangeControls({
             <TimeRangePicker
               startDateTime={new Date(timeframe.start).toISOString()}
               endDateTime={new Date(timeframe.end).toISOString()}
+              minDate={new Date('2023-01-01')}
               onApply={handleTimeRangeApply}
               hideTime
               className="p-3 w-56 max-md:w-full"

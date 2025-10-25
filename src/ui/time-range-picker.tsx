@@ -5,7 +5,10 @@
 
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useCallback, useEffect, useMemo } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { cn } from '@/lib/utils'
 import {
@@ -14,7 +17,14 @@ import {
 } from '@/lib/utils/formatting'
 
 import { Button } from './primitives/button'
-import { Label } from './primitives/label'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './primitives/form'
 import { TimeInput } from './time-input'
 
 export interface TimeRangeValues {
@@ -64,142 +74,225 @@ export function TimeRangePicker({
     [endDateTime]
   )
 
-  const [startDate, setStartDate] = useState(startParts.date || '')
-  const [startTime, setStartTime] = useState(startParts.time || null)
-  const [endDate, setEndDate] = useState(endParts.date || '')
-  const [endTime, setEndTime] = useState(endParts.time || null)
+  // Create dynamic zod schema based on min/max dates
+  const schema = useMemo(() => {
+    // When hideTime is true, allow dates up to end of today
+    // Otherwise, allow up to now + 10 seconds (for time drift)
+    const defaultMaxDate = hideTime
+      ? (() => {
+          const endOfToday = new Date()
+          endOfToday.setDate(endOfToday.getDate() + 1)
+          endOfToday.setHours(0, 0, 0, 0)
+          return endOfToday
+        })()
+      : new Date(Date.now() + 10000)
 
-  // track if user has made changes
-  const [isDirty, setIsDirty] = useState(false)
+    const maxDateValue = maxDate || defaultMaxDate
+    const minDateValue = minDate
 
-  // prevent external updates while user is actively editing
-  const [isFocused, setIsFocused] = useState(false)
+    return z
+      .object({
+        startDate: z.string().min(1, 'Start date is required'),
+        startTime: z.string().nullable(),
+        endDate: z.string().min(1, 'End date is required'),
+        endTime: z.string().nullable(),
+      })
+      .superRefine((data, ctx) => {
+        const startTimeStr = data.startTime || '00:00:00'
+        const endTimeStr = data.endTime || '23:59:59'
+        const startTimestamp = tryParseDatetime(
+          `${data.startDate} ${startTimeStr}`
+        )?.getTime()
+        const endTimestamp = tryParseDatetime(
+          `${data.endDate} ${endTimeStr}`
+        )?.getTime()
 
-  // sync with external props (but not when user is editing)
+        if (!startTimestamp) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Invalid start date format',
+            path: ['startDate'],
+          })
+          return
+        }
+
+        if (!endTimestamp) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Invalid end date format',
+            path: ['endDate'],
+          })
+          return
+        }
+
+        // validate against min date
+        if (minDateValue && startTimestamp < minDateValue.getTime()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Start date cannot be before ${minDateValue.toLocaleDateString()}`,
+            path: ['startDate'],
+          })
+        }
+
+        // validate against max date
+        if (endTimestamp > maxDateValue.getTime()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'End date cannot be in the future',
+            path: ['endDate'],
+          })
+        }
+
+        // validate end date is not before start date
+        if (endTimestamp < startTimestamp) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'End date cannot be before start date',
+            path: ['endDate'],
+          })
+        }
+      })
+  }, [minDate, maxDate, hideTime])
+
+  const form = useForm<TimeRangeValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      startDate: startParts.date || '',
+      startTime: startParts.time || null,
+      endDate: endParts.date || '',
+      endTime: endParts.time || null,
+    },
+    mode: 'onChange',
+  })
+
+  // Sync with external props when they change
   useEffect(() => {
-    if (isDirty || isFocused) {
-      return
-    }
-
-    const currentStartTime = startDate
-      ? tryParseDatetime(`${startDate} ${startTime}`)?.getTime()
+    const currentStartTime = form.getValues('startDate')
+      ? tryParseDatetime(
+          `${form.getValues('startDate')} ${form.getValues('startTime')}`
+        )?.getTime()
       : undefined
     const propStartTime = startDateTime
       ? tryParseDatetime(startDateTime)?.getTime()
       : undefined
 
-    // detect meaningful external changes (>1s difference)
+    // Detect meaningful external changes (>1s difference)
     const isExternalChange =
       propStartTime &&
       currentStartTime &&
       Math.abs(propStartTime - currentStartTime) > 1000
 
-    if (isExternalChange) {
+    if (isExternalChange && !form.formState.isDirty) {
       const newStartParts = parseDateTimeComponents(startDateTime)
       const newEndParts = parseDateTimeComponents(endDateTime)
 
-      setStartDate(newStartParts.date || '')
-      setStartTime(newStartParts.time || null)
-      setEndDate(newEndParts.date || '')
-      setEndTime(newEndParts.time || null)
-      setIsDirty(false)
+      form.reset({
+        startDate: newStartParts.date || '',
+        startTime: newStartParts.time || null,
+        endDate: newEndParts.date || '',
+        endTime: newEndParts.time || null,
+      })
     }
-  }, [startDateTime, endDateTime, startDate, startTime, isDirty, isFocused])
+  }, [startDateTime, endDateTime, form])
 
-  // notify on changes
+  // Notify on changes
   useEffect(() => {
-    onChange?.({
-      startDate,
-      startTime,
-      endDate,
-      endTime,
+    const subscription = form.watch((values) => {
+      onChange?.(values as TimeRangeValues)
     })
-  }, [startDate, startTime, endDate, endTime, onChange])
+    return () => subscription.unsubscribe()
+  }, [form, onChange])
 
-  const handleValueChange = useCallback(() => {
-    setIsDirty(true)
-  }, [])
-
-  const handleApply = useCallback(() => {
-    onApply?.({
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-    })
-    setIsDirty(false)
-  }, [startDate, startTime, endDate, endTime, onApply])
+  const handleSubmit = useCallback(
+    (values: TimeRangeValues) => {
+      onApply?.(values)
+    },
+    [onApply]
+  )
 
   return (
-    <div className={cn('flex flex-col gap-4 h-full', className)}>
-      <div>
-        <Label className="prose-label uppercase text-fg-tertiary mb-2 block">
-          Start Time
-        </Label>
-        <div className="flex gap-2">
-          <div
-            className="flex-1"
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-          >
-            <TimeInput
-              dateValue={startDate}
-              timeValue={startTime || ''}
-              minDate={minDate}
-              maxDate={maxDate}
-              onDateChange={(value) => {
-                setStartDate(value)
-                handleValueChange()
-              }}
-              onTimeChange={(value) => {
-                setStartTime(value || null)
-                handleValueChange()
-              }}
-              disabled={false}
-              hideTime={hideTime}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <Label className="prose-label uppercase text-fg-tertiary mb-2 block">
-          End Time
-        </Label>
-        <div className="flex gap-2">
-          <div
-            className="flex-1"
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-          >
-            <TimeInput
-              dateValue={endDate}
-              timeValue={endTime || ''}
-              minDate={minDate}
-              maxDate={maxDate}
-              onDateChange={(value) => {
-                setEndDate(value)
-                handleValueChange()
-              }}
-              onTimeChange={(value) => {
-                setEndTime(value || null)
-                handleValueChange()
-              }}
-              disabled={false}
-              hideTime={hideTime}
-            />
-          </div>
-        </div>
-      </div>
-
-      <Button
-        onClick={handleApply}
-        disabled={!isDirty}
-        className="w-fit self-end mt-auto"
-        variant="outline"
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className={cn('flex flex-col gap-4 h-full', className)}
       >
-        Apply
-      </Button>
-    </div>
+        <FormField
+          control={form.control}
+          name="startDate"
+          render={({ field: dateField }) => (
+            <FormItem>
+              <FormLabel className="prose-label uppercase text-fg-tertiary">
+                Start Time
+              </FormLabel>
+              <FormControl>
+                <TimeInput
+                  dateValue={dateField.value}
+                  timeValue={form.watch('startTime') || ''}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                  onDateChange={(value) => {
+                    dateField.onChange(value)
+                    form.trigger(['startDate', 'endDate'])
+                  }}
+                  onTimeChange={(value) => {
+                    form.setValue('startTime', value || null, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                    form.trigger(['startDate', 'endDate'])
+                  }}
+                  disabled={false}
+                  hideTime={hideTime}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="endDate"
+          render={({ field: dateField }) => (
+            <FormItem>
+              <FormLabel className="prose-label uppercase text-fg-tertiary">
+                End Time
+              </FormLabel>
+              <FormControl>
+                <TimeInput
+                  dateValue={dateField.value}
+                  timeValue={form.watch('endTime') || ''}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                  onDateChange={(value) => {
+                    dateField.onChange(value)
+                    form.trigger(['startDate', 'endDate'])
+                  }}
+                  onTimeChange={(value) => {
+                    form.setValue('endTime', value || null, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                    form.trigger(['startDate', 'endDate'])
+                  }}
+                  disabled={false}
+                  hideTime={hideTime}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button
+          type="submit"
+          disabled={!form.formState.isDirty || !form.formState.isValid}
+          className="w-fit self-end mt-auto"
+          variant="outline"
+        >
+          Apply
+        </Button>
+      </form>
+    </Form>
   )
 }
