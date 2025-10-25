@@ -62,6 +62,23 @@ export function formatCompactDate(timestamp: number): string {
   return format(date, 'yyyy MMM d, h:mm:ss a zzz')
 }
 
+export function formatDay(timestamp: number): string {
+  const date = new Date(timestamp)
+
+  if (isThisYear(date)) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }).format(date)
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
+}
+
 /**
  * Parse and format a UTC date string into components
  * @param date - Date string or Date object

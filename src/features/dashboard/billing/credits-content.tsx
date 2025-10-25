@@ -1,4 +1,4 @@
-import { getUsageThroughReactCache } from '@/server/usage/get-usage'
+import { getUsage } from '@/server/usage/get-usage'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { AlertTriangle } from 'lucide-react'
 
@@ -7,9 +7,10 @@ export default async function BillingCreditsContent({
 }: {
   teamId: string
 }) {
-  const res = await getUsageThroughReactCache({
+  const res = await getUsage({
     teamId,
   })
+
   if (!res?.data || res.serverError) {
     return (
       <ErrorTooltip

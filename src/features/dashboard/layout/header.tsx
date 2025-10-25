@@ -27,6 +27,9 @@ export default function DashboardLayoutHeader({
           'border-b min-h-[var(--height-protected-navbar)+12px] md:min-h-[var(--height-protected-navbar)+24px] max-h-min':
             config.type === 'default',
           '!pb-0 min-h-protected-navbar max-h-min': config.type === 'custom',
+          'border-b !pb-3 md:!pb-6':
+            config.custom?.includeHeaderBottomStyles &&
+            config.type === 'custom',
         },
         className
       )}
