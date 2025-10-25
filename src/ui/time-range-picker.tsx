@@ -165,22 +165,37 @@ export function TimeRangePicker({
     mode: 'onChange',
   })
 
-  // Sync with external props when they change
+  // sync with external props when they change
   useEffect(() => {
     const currentStartTime = form.getValues('startDate')
       ? tryParseDatetime(
           `${form.getValues('startDate')} ${form.getValues('startTime')}`
         )?.getTime()
       : undefined
+    const currentEndTime = form.getValues('endDate')
+      ? tryParseDatetime(
+          `${form.getValues('endDate')} ${form.getValues('endTime')}`
+        )?.getTime()
+      : undefined
+
     const propStartTime = startDateTime
       ? tryParseDatetime(startDateTime)?.getTime()
       : undefined
+    const propEndTime = endDateTime
+      ? tryParseDatetime(endDateTime)?.getTime()
+      : undefined
 
-    // Detect meaningful external changes (>1s difference)
-    const isExternalChange =
+    // detect meaningful external changes (>1s difference)
+    const startChanged =
       propStartTime &&
       currentStartTime &&
       Math.abs(propStartTime - currentStartTime) > 1000
+    const endChanged =
+      propEndTime &&
+      currentEndTime &&
+      Math.abs(propEndTime - currentEndTime) > 1000
+
+    const isExternalChange = startChanged || endChanged
 
     if (isExternalChange && !form.formState.isDirty) {
       const newStartParts = parseDateTimeComponents(startDateTime)
