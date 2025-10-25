@@ -5,6 +5,16 @@ export const COMPUTE_CHART_CONFIGS: Record<
   ComputeChartType,
   ComputeChartConfig
 > = {
+  sandboxes: {
+    id: 'sandboxes-usage',
+    name: 'Sandboxes',
+    valueKey: 'count',
+    barColorVar: '--accent-main-highlight',
+    areaFromVar: '--graph-area-accent-main-from',
+    areaToVar: '--graph-area-accent-main-to',
+    yAxisScaleFactor: 1.8,
+    yAxisFormatter: formatAxisNumber,
+  },
   cost: {
     id: 'cost-usage',
     name: 'Cost',
@@ -12,7 +22,7 @@ export const COMPUTE_CHART_CONFIGS: Record<
     barColorVar: '--accent-positive-highlight',
     areaFromVar: '--graph-area-accent-positive-from',
     areaToVar: '--graph-area-accent-positive-to',
-    yAxisScaleFactor: 1.2,
+    yAxisScaleFactor: 1.8,
     yAxisFormatter: (value: number) => `$${formatAxisNumber(value)}`,
   },
   ram: {
@@ -22,7 +32,7 @@ export const COMPUTE_CHART_CONFIGS: Record<
     barColorVar: '--bg-inverted',
     areaFromVar: '--graph-area-fg-from',
     areaToVar: '--graph-area-fg-to',
-    yAxisScaleFactor: 1.2,
+    yAxisScaleFactor: 1.8,
     yAxisFormatter: formatAxisNumber,
   },
   vcpu: {
@@ -32,17 +42,7 @@ export const COMPUTE_CHART_CONFIGS: Record<
     barColorVar: '--bg-inverted',
     areaFromVar: '--graph-area-fg-from',
     areaToVar: '--graph-area-fg-to',
-    yAxisScaleFactor: 1.2,
-    yAxisFormatter: formatAxisNumber,
-  },
-  sandboxes: {
-    id: 'sandboxes-usage',
-    name: 'Sandboxes',
-    valueKey: 'count',
-    barColorVar: '--accent-main-highlight',
-    areaFromVar: '--graph-area-accent-main-from',
-    areaToVar: '--graph-area-accent-main-to',
-    yAxisScaleFactor: 1.2,
+    yAxisScaleFactor: 1.8,
     yAxisFormatter: formatAxisNumber,
   },
 }

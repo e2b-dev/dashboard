@@ -105,12 +105,7 @@ export function UsageTimeRangeControls({
             {rangeLabel}
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-80 p-0"
-          side="bottom"
-          align="end"
-          sideOffset={4}
-        >
+        <PopoverContent className="w-80 p-0" side="bottom" sideOffset={4}>
           <TimeRangePicker
             startDateTime={new Date(timeframe.start).toISOString()}
             endDateTime={new Date(timeframe.end).toISOString()}

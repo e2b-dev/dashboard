@@ -162,22 +162,22 @@ function ComputeUsageChart({
       itemStyle: {
         color: 'transparent',
         borderColor: barColor,
-        borderWidth: 1,
-        opacity: 0.7,
+        borderWidth: 0.3,
+        borderCap: 'square',
+        opacity: 0.8,
         decal: {
           symbol: 'line',
-          symbolSize: 1,
+          symbolSize: 1.5,
           rotation: -Math.PI / 4,
           dashArrayX: [1, 0],
-          dashArrayY: [3, 6],
+          dashArrayY: [2, 4],
           color: barColor,
         },
       },
       emphasis: {
+        blurScope: 'global',
         itemStyle: {
           opacity: 1,
-          borderWidth: 1,
-          borderColor: barColor,
         },
       },
       data: seriesData.map((d) => d.value),

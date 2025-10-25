@@ -67,8 +67,8 @@ interface UsageChartsProviderProps {
 }
 
 const timeframeParams = {
-  startTime: parseAsInteger,
-  endTime: parseAsInteger,
+  start: parseAsInteger,
+  end: parseAsInteger,
 }
 
 export function UsageChartsProvider({
@@ -94,17 +94,17 @@ export function UsageChartsProvider({
 
   const timeframe = useMemo(
     () => ({
-      start: params.startTime ?? defaultRange.start,
-      end: params.endTime ?? defaultRange.end,
+      start: params.start ?? defaultRange.start,
+      end: params.end ?? defaultRange.end,
     }),
-    [params.startTime, params.endTime, defaultRange]
+    [params.start, params.end, defaultRange]
   )
 
   const [hoveredTimestamp, setHoveredTimestamp] = useState<number | null>(null)
 
   const setTimeframe = useCallback(
     (start: number, end: number) => {
-      setParams({ startTime: start, endTime: end })
+      setParams({ start: start, end: end })
     },
     [setParams]
   )
