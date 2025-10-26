@@ -80,6 +80,45 @@ export function formatDay(timestamp: number): string {
 }
 
 /**
+ * Format a date range (e.g., for weekly aggregations)
+ * @param startTimestamp - Start of the range in milliseconds
+ * @param endTimestamp - End of the range in milliseconds
+ * @returns Formatted date range string (e.g., "Jan 1 - Jan 7" or "Dec 26, 2023 - Jan 1, 2024")
+ */
+export function formatDateRange(
+  startTimestamp: number,
+  endTimestamp: number
+): string {
+  const startDate = new Date(startTimestamp)
+  const endDate = new Date(endTimestamp)
+
+  const startYear = startDate.getFullYear()
+  const endYear = endDate.getFullYear()
+  const startMonth = startDate.getMonth()
+  const endMonth = endDate.getMonth()
+  const sameYear = startYear === endYear
+  const sameMonth = sameYear && startMonth === endMonth
+
+  const startFormat = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+
+  const endFormat = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: isThisYear(endDate) ? undefined : 'numeric',
+  })
+
+  if (sameMonth) {
+    return `${startFormat.format(startDate)} - ${endDate.getDate()}`
+  }
+
+  return `${startFormat.format(startDate)} - ${endFormat.format(endDate)}`
+}
+
+/**
  * Parse and format a UTC date string into components
  * @param date - Date string or Date object
  * @returns Object with date components
