@@ -89,6 +89,8 @@ export function UsageMetricChart({
             onTooltipValueChange={handleTooltipValueChange}
             onHoverEnd={handleHoverEnd}
             onBrushEnd={handleBrushEnd}
+            startTime={timeframe.start}
+            endTime={timeframe.end}
           />
         </div>
       </CardContent>

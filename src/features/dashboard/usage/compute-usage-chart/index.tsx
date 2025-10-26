@@ -6,13 +6,14 @@ import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { BarChart } from 'echarts/charts'
 import {
   BrushComponent,
+  DataZoomComponent,
   GridComponent,
   TooltipComponent,
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
-import { memo, useCallback, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { COMPUTE_CHART_CONFIGS } from './constants'
 import type { ComputeUsageChartProps } from './types'
 import {
@@ -27,6 +28,7 @@ echarts.use([
   TooltipComponent,
   BrushComponent,
   CanvasRenderer,
+  DataZoomComponent,
 ])
 
 function normalizeToStartOfDay(timestamp: number): number {
@@ -42,6 +44,8 @@ function normalizeToEndOfDay(timestamp: number): number {
 }
 
 function ComputeUsageChart({
+  startTime,
+  endTime,
   type,
   data,
   className,
@@ -84,7 +88,7 @@ function ComputeUsageChart({
     (params: any) => {
       const paramArray = Array.isArray(params) ? params : [params]
 
-      if (paramArray.length > 0 && paramArray[0]?.value) {
+      if (paramArray.length && paramArray[0]?.value) {
         const [timestamp] = paramArray[0].value
 
         if (onTooltipValueChangeRef.current && timestamp !== undefined) {
@@ -185,13 +189,14 @@ function ComputeUsageChart({
 
     const series: EChartsOption['series'] = [seriesItem]
 
-    const xMin = chartData.length > 0 ? chartData[0]!.x : Date.now()
-    const xMax =
-      chartData.length > 0 ? chartData[chartData.length - 1]!.x : Date.now()
-
     return {
       backgroundColor: 'transparent',
       animation: false,
+      dataZoom: [
+        {
+          type: 'inside',
+        },
+      ],
       brush: {
         brushType: 'lineX',
         brushMode: 'single',
@@ -230,8 +235,6 @@ function ComputeUsageChart({
       },
       xAxis: {
         type: 'time',
-        min: xMin,
-        max: xMax,
         axisPointer: {
           show: true,
           type: 'line',
@@ -299,6 +302,26 @@ function ComputeUsageChart({
     fgTertiary,
     fontMono,
   ])
+
+  useEffect(() => {
+    const chart = chartInstanceRef.current
+    if (chart) {
+      chart.setOption({
+        xAxis: {
+          min: startTime,
+          max: endTime,
+        },
+      })
+
+      queueMicrotask(() => {
+        chart.dispatchAction({
+          type: 'dataZoom',
+          startValue: startTime,
+          endValue: endTime,
+        })
+      })
+    }
+  }, [startTime, endTime])
 
   return (
     <ReactEChartsCore

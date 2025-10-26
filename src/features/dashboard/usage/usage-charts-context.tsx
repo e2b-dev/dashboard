@@ -1,10 +1,7 @@
 'use client'
 
 import { formatDay, formatNumber } from '@/lib/utils/formatting'
-import {
-  fillTimeSeriesWithEmptyPoints,
-  TimeSeriesPoint,
-} from '@/lib/utils/time-series'
+import { TimeSeriesPoint } from '@/lib/utils/time-series'
 import { UsageResponse } from '@/types/billing'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import {
@@ -85,11 +82,11 @@ export function UsageChartsProvider({
 
     if (data.day_usages && data.day_usages.length > 0) {
       const firstDate = new Date(data.day_usages[0]!.date).getTime()
-      const start = firstDate - 3 * 24 * 60 * 60 * 1000
+      const start = firstDate - 3 * 24 * 60 * 60 * 1000 // - 3 days from first data point
       return { start, end: now }
     }
 
-    return { start: now - 30 * 24 * 60 * 60 * 1000, end: now }
+    return { start: now - 30 * 24 * 60 * 60 * 1000, end: now } // 30 days fallback
   }, [data])
 
   const timeframe = useMemo(
@@ -133,32 +130,32 @@ export function UsageChartsProvider({
       y: d.cpu_hours,
     }))
 
-    const filledSandboxes = fillTimeSeriesWithEmptyPoints(sandboxesSeries, {
-      start: timeframe.start,
-      end: timeframe.end,
-      step,
-    })
-    const filledCost = fillTimeSeriesWithEmptyPoints(costSeries, {
-      start: timeframe.start,
-      end: timeframe.end,
-      step,
-    })
-    const filledRam = fillTimeSeriesWithEmptyPoints(ramSeries, {
-      start: timeframe.start,
-      end: timeframe.end,
-      step,
-    })
-    const filledVcpu = fillTimeSeriesWithEmptyPoints(vcpuSeries, {
-      start: timeframe.start,
-      end: timeframe.end,
-      step,
-    })
+    // const filledSandboxes = fillTimeSeriesWithEmptyPoints(sandboxesSeries, {
+    //   start: timeframe.start,
+    //   end: timeframe.end,
+    //   step,
+    // })
+    // const filledCost = fillTimeSeriesWithEmptyPoints(costSeries, {
+    //   start: timeframe.start,
+    //   end: timeframe.end,
+    //   step,
+    // })
+    // const filledRam = fillTimeSeriesWithEmptyPoints(ramSeries, {
+    //   start: timeframe.start,
+    //   end: timeframe.end,
+    //   step,
+    // })
+    // const filledVcpu = fillTimeSeriesWithEmptyPoints(vcpuSeries, {
+    //   start: timeframe.start,
+    //   end: timeframe.end,
+    //   step,
+    // })
 
     return {
-      sandboxes: filledSandboxes,
-      cost: filledCost,
-      vcpu: filledVcpu,
-      ram: filledRam,
+      sandboxes: sandboxesSeries,
+      cost: costSeries,
+      vcpu: vcpuSeries,
+      ram: ramSeries,
     }
   }, [data, timeframe])
 

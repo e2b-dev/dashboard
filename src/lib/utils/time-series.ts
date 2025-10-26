@@ -32,6 +32,10 @@ function generateEmptyTimeSeries(
   return result
 }
 
+function generateEmptyPoint(x: number): TimeSeriesPoint {
+  return { x, y: 0 }
+}
+
 /**
  * Fills time series data with empty values to create smooth, continuous series for visualization.
  *
@@ -68,11 +72,11 @@ export function fillTimeSeriesWithEmptyPoints(
       : new Date(sortedData[0]!.x).getTime()
   const gapFromStart = firstTimestamp - start
   if (isGapAnomalous(gapFromStart, step, anomalousGapTolerance)) {
-    result.push({ x: start, y: 0 })
+    result.push(generateEmptyPoint(start))
 
     const prefixZeroTimestamp = firstTimestamp - step
     if (prefixZeroTimestamp > start && prefixZeroTimestamp < firstTimestamp) {
-      result.push({ x: prefixZeroTimestamp, y: 0 })
+      result.push(generateEmptyPoint(prefixZeroTimestamp))
     }
   }
 
@@ -100,7 +104,7 @@ export function fillTimeSeriesWithEmptyPoints(
         suffixZeroTimestamp < nextTimestamp &&
         suffixZeroTimestamp > currentTimestamp
       ) {
-        result.push({ x: suffixZeroTimestamp, y: 0 })
+        result.push(generateEmptyPoint(suffixZeroTimestamp))
       }
 
       const prefixZeroTimestamp = nextTimestamp - step
@@ -109,7 +113,7 @@ export function fillTimeSeriesWithEmptyPoints(
         prefixZeroTimestamp < nextTimestamp &&
         prefixZeroTimestamp > suffixZeroTimestamp
       ) {
-        result.push({ x: prefixZeroTimestamp, y: 0 })
+        result.push(generateEmptyPoint(prefixZeroTimestamp))
       }
     }
   }
@@ -126,10 +130,10 @@ export function fillTimeSeriesWithEmptyPoints(
   if (gapToEnd >= step * 2) {
     const suffixZeroTimestamp = lastTimestamp + step
     if (suffixZeroTimestamp < end) {
-      result.push({ x: suffixZeroTimestamp, y: 0 })
+      result.push(generateEmptyPoint(suffixZeroTimestamp))
     }
 
-    result.push({ x: end - 1000, y: 0 })
+    result.push(generateEmptyPoint(end - 1000))
   }
 
   // Sort and strip potential overfetching

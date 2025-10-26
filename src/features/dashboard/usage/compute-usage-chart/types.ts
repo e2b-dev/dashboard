@@ -3,6 +3,8 @@ import { TimeSeriesPoint } from '@/lib/utils/time-series'
 export type ComputeChartType = 'cost' | 'ram' | 'vcpu' | 'sandboxes'
 
 export interface ComputeUsageChartProps {
+  startTime?: number
+  endTime?: number
   type: ComputeChartType
   data: TimeSeriesPoint[]
   className?: string
