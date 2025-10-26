@@ -184,6 +184,9 @@ function ComputeUsageChart({
           opacity: 1,
         },
       },
+      barGap: 10,
+      barMaxWidth: 50,
+      barMinWidth: 1,
       data: seriesData.map((d) => d.value),
     }
 
@@ -192,11 +195,6 @@ function ComputeUsageChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
-      dataZoom: [
-        {
-          type: 'inside',
-        },
-      ],
       brush: {
         brushType: 'lineX',
         brushMode: 'single',
@@ -312,14 +310,6 @@ function ComputeUsageChart({
           max: endTime,
         },
       })
-
-      queueMicrotask(() => {
-        chart.dispatchAction({
-          type: 'dataZoom',
-          startValue: startTime,
-          endValue: endTime,
-        })
-      })
     }
   }, [startTime, endTime])
 
@@ -348,7 +338,9 @@ const MemoizedComputeUsageChart = memo(
     return (
       prevProps.type === nextProps.type &&
       prevProps.data === nextProps.data &&
-      prevProps.className === nextProps.className
+      prevProps.className === nextProps.className &&
+      prevProps.startTime === nextProps.startTime &&
+      prevProps.endTime === nextProps.endTime
       // exclude onTooltipValueChange and onHoverEnd - they're handled via refs
     )
   }

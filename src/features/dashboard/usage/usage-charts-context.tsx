@@ -107,25 +107,21 @@ export function UsageChartsProvider({
   )
 
   const filledSeries = useMemo<FilledSeriesData>(() => {
-    const filteredUsages = data.day_usages.filter((usage) => {
-      const timestamp = new Date(usage.date).getTime()
-      return timestamp >= timeframe.start && timestamp <= timeframe.end
-    })
+    // const step = 24 * 60 * 60 * 1000
 
-    const step = 24 * 60 * 60 * 1000
-    const sandboxesSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+    const sandboxesSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
       x: new Date(d.date).getTime(),
       y: d.sandbox_count,
     }))
-    const costSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+    const costSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
       x: new Date(d.date).getTime(),
       y: d.price_for_ram + d.price_for_cpu,
     }))
-    const ramSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+    const ramSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
       x: new Date(d.date).getTime(),
       y: d.ram_gib_hours,
     }))
-    const vcpuSeries: TimeSeriesPoint[] = filteredUsages.map((d) => ({
+    const vcpuSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
       x: new Date(d.date).getTime(),
       y: d.cpu_hours,
     }))
@@ -157,7 +153,7 @@ export function UsageChartsProvider({
       vcpu: vcpuSeries,
       ram: ramSeries,
     }
-  }, [data, timeframe])
+  }, [data])
 
   const totals = useMemo<MetricTotals>(() => {
     const sandboxesTotal = filledSeries.sandboxes.reduce(
