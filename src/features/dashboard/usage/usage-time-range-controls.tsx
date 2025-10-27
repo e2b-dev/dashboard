@@ -32,10 +32,10 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     shortcut: '7D',
     getValue: () => {
       const end = new Date()
-      end.setHours(23, 59, 59, 999)
+      end.setUTCHours(23, 59, 59, 999)
       const start = new Date(end)
-      start.setDate(start.getDate() - 6)
-      start.setHours(0, 0, 0, 0)
+      start.setUTCDate(start.getUTCDate() - 6)
+      start.setUTCHours(0, 0, 0, 0)
       return { start: start.getTime(), end: end.getTime() }
     },
   },
@@ -45,10 +45,10 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     shortcut: '14D',
     getValue: () => {
       const end = new Date()
-      end.setHours(23, 59, 59, 999)
+      end.setUTCHours(23, 59, 59, 999)
       const start = new Date(end)
-      start.setDate(start.getDate() - 13)
-      start.setHours(0, 0, 0, 0)
+      start.setUTCDate(start.getUTCDate() - 13)
+      start.setUTCHours(0, 0, 0, 0)
       return { start: start.getTime(), end: end.getTime() }
     },
   },
@@ -58,10 +58,10 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     shortcut: '30D',
     getValue: () => {
       const end = new Date()
-      end.setHours(23, 59, 59, 999)
+      end.setUTCHours(23, 59, 59, 999)
       const start = new Date(end)
-      start.setDate(start.getDate() - 29)
-      start.setHours(0, 0, 0, 0)
+      start.setUTCDate(start.getUTCDate() - 29)
+      start.setUTCHours(0, 0, 0, 0)
       return { start: start.getTime(), end: end.getTime() }
     },
   },
@@ -71,10 +71,10 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     shortcut: '90D',
     getValue: () => {
       const end = new Date()
-      end.setHours(23, 59, 59, 999)
+      end.setUTCHours(23, 59, 59, 999)
       const start = new Date(end)
-      start.setDate(start.getDate() - 89)
-      start.setHours(0, 0, 0, 0)
+      start.setUTCDate(start.getUTCDate() - 89)
+      start.setUTCHours(0, 0, 0, 0)
       return { start: start.getTime(), end: end.getTime() }
     },
   },
@@ -83,15 +83,19 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     label: 'This month',
     getValue: () => {
       const now = new Date()
-      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      const start = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0)
+      )
       const end = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-        999
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999
+        )
       )
       return { start: start.getTime(), end: end.getTime() }
     },
@@ -102,22 +106,10 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     getValue: () => {
       const now = new Date()
       const start = new Date(
-        now.getFullYear(),
-        now.getMonth() - 1,
-        1,
-        0,
-        0,
-        0,
-        0
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1, 0, 0, 0, 0)
       )
       const end = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        0,
-        23,
-        59,
-        59,
-        999
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 23, 59, 59, 999)
       )
       return { start: start.getTime(), end: end.getTime() }
     },
@@ -127,8 +119,10 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     label: 'This year',
     getValue: () => {
       const now = new Date()
-      const start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
-      const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+      const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0, 0))
+      const end = new Date(
+        Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999)
+      )
       return { start: start.getTime(), end: end.getTime() }
     },
   },
@@ -137,8 +131,12 @@ const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     label: 'Last year',
     getValue: () => {
       const now = new Date()
-      const start = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0)
-      const end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
+      const start = new Date(
+        Date.UTC(now.getUTCFullYear() - 1, 0, 1, 0, 0, 0, 0)
+      )
+      const end = new Date(
+        Date.UTC(now.getUTCFullYear() - 1, 11, 31, 23, 59, 59, 999)
+      )
       return { start: start.getTime(), end: end.getTime() }
     },
   },

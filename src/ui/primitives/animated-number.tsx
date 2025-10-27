@@ -74,7 +74,7 @@ function AnimatedNumberComponent({
           key={index}
           className="relative inline-block overflow-hidden select-none"
         >
-          <AnimatePresence mode="popLayout" initial={false}>
+          <AnimatePresence mode="popLayout">
             <motion.span
               key={`${index}-${char}`}
               initial={{ y: '50%', opacity: 0 }}

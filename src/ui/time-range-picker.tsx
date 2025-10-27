@@ -134,15 +134,6 @@ export function TimeRangePicker({
           })
         }
 
-        // validate against max date
-        if (endTimestamp > maxDateValue.getTime()) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'End date cannot be in the future',
-            path: ['endDate'],
-          })
-        }
-
         // validate end date is not before start date
         if (endTimestamp < startTimestamp) {
           ctx.addIssue({

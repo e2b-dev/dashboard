@@ -28,13 +28,13 @@ echarts.use([
 
 function normalizeToStartOfDay(timestamp: number): number {
   const date = new Date(timestamp)
-  date.setHours(0, 0, 0, 0)
+  date.setUTCHours(0, 0, 0, 0)
   return date.getTime()
 }
 
 function normalizeToEndOfDay(timestamp: number): number {
   const date = new Date(timestamp)
-  date.setHours(23, 59, 59, 999)
+  date.setUTCHours(23, 59, 59, 999)
   return date.getTime()
 }
 
@@ -111,8 +111,8 @@ function ComputeUsageChart({
           const startValue = coordRange[0]
           const endValue = coordRange[1]
 
-          const normalizedStart = Math.round(startValue)
-          const normalizedEnd = Math.round(endValue)
+          const normalizedStart = normalizeToStartOfDay(Math.round(startValue))
+          const normalizedEnd = normalizeToEndOfDay(Math.round(endValue))
 
           onBrushEndRef.current(normalizedStart, normalizedEnd)
 
@@ -165,7 +165,7 @@ function ComputeUsageChart({
         borderColor: barColor,
         borderWidth: 0.3,
         borderCap: 'square',
-        opacity: 0.8,
+        opacity: 0.6,
         decal: {
           symbol: 'line',
           symbolSize: 1.5,
@@ -176,14 +176,13 @@ function ComputeUsageChart({
         },
       },
       emphasis: {
-        blurScope: 'global',
         itemStyle: {
           opacity: 1,
         },
       },
-      barWidth: '100%',
-      barMaxWidth: 60,
-      barMinWidth: 1,
+      // we need to enforce max bar width, to ensure our timeframe state is correctly constraint via axis min/max
+      // TODO: figure out how we can get rid of this, while accurately representing chart
+      barMaxWidth: 7,
       data: seriesData.map((d) => d.value),
     }
 
@@ -192,9 +191,6 @@ function ComputeUsageChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
-      toolbox: {
-        show: false,
-      },
       brush: {
         brushType: 'lineX',
         brushMode: 'single',
@@ -295,7 +291,7 @@ function ComputeUsageChart({
 
   useEffect(() => {
     const chart = chartInstanceRef.current
-    if (chart) {
+    if (chart && startTime !== undefined && endTime !== undefined) {
       chart.setOption({
         xAxis: {
           min: startTime,
@@ -303,7 +299,9 @@ function ComputeUsageChart({
         },
       })
     }
-  }, [startTime, endTime])
+    // we define the options state as a dependency, since when it changes, we want to re-set the min/max
+    // NOTE - this is only the options state and not the chart instance options. this won't create an infinite loop
+  }, [option, startTime, endTime, chartData.length])
 
   return (
     <ReactEChartsCore

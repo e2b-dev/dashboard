@@ -63,20 +63,18 @@ export function formatCompactDate(timestamp: number): string {
 }
 
 export function formatDay(timestamp: number): string {
-  const date = new Date(timestamp)
-
-  if (isThisYear(date)) {
+  if (isThisYear(timestamp)) {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
-    }).format(date)
+    }).format(timestamp)
   }
 
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  }).format(date)
+  }).format(timestamp)
 }
 
 /**
@@ -102,6 +100,7 @@ export function formatDateRange(
   const startFormat = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
     ...(sameYear ? {} : { year: 'numeric' }),
   })
 
@@ -109,6 +108,7 @@ export function formatDateRange(
     month: 'short',
     day: 'numeric',
     year: isThisYear(endDate) ? undefined : 'numeric',
+    timeZone: 'UTC',
   })
 
   if (sameMonth) {
