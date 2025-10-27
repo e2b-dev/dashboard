@@ -1,6 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateYAxisMax } from '@/lib/utils/chart'
 import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
@@ -20,7 +21,6 @@ import { CHART_CONFIGS, LIVE_PADDING_MULTIPLIER } from './constants'
 import type { TeamMetricsChartProps } from './types'
 import {
   buildSeriesData,
-  calculateYAxisMax,
   createLimitLine,
   createLiveIndicators,
   createSplitLineInterval,

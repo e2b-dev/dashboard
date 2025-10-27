@@ -1,16 +1,5 @@
 'use client'
 
-import {
-  formatDateRange,
-  formatDay,
-  formatNumber,
-} from '@/lib/utils/formatting'
-import {
-  downsampleToWeekly,
-  getWeekEndForWeekStart,
-  getWeekStartForTimestamp,
-  TimeSeriesPoint,
-} from '@/lib/utils/time-series'
 import { UsageResponse } from '@/types/billing'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import {
@@ -21,41 +10,33 @@ import {
   useMemo,
   useState,
 } from 'react'
-
-interface Timeframe {
-  start: number
-  end: number
-}
-
-interface DisplayValue {
-  displayValue: string
-  label: string
-  timestamp: string | null
-}
-
-interface MetricTotals {
-  sandboxes: number
-  cost: number
-  vcpu: number
-  ram: number
-}
-
-interface FilledSeriesData {
-  sandboxes: TimeSeriesPoint[]
-  cost: TimeSeriesPoint[]
-  vcpu: TimeSeriesPoint[]
-  ram: TimeSeriesPoint[]
-}
+import {
+  formatEmptyValues,
+  formatHoveredValues,
+  formatTotalValues,
+} from './display-utils'
+import {
+  calculateTotals,
+  determineSamplingMode,
+  findHoveredDataPoint,
+  processUsageData,
+} from './sampling-utils'
+import {
+  ComputeUsageSeriesData,
+  DisplayValue,
+  MetricTotals,
+  SamplingMode,
+  Timeframe,
+} from './types'
 
 interface UsageChartsContextValue {
-  data: UsageResponse
-  filledSeries: FilledSeriesData
+  seriesData: ComputeUsageSeriesData
   timeframe: Timeframe
   setTimeframe: (start: number, end: number) => void
   hoveredTimestamp: number | null
   setHoveredTimestamp: (timestamp: number | null) => void
   totals: MetricTotals
-  isDownsampled: boolean
+  samplingMode: SamplingMode
   displayValues: {
     sandboxes: DisplayValue
     cost: DisplayValue
@@ -116,256 +97,82 @@ export function UsageChartsProvider({
     [setParams]
   )
 
-  // Determine if we should downsample (3 months = ~90 days)
-  const isDownsampled = useMemo(() => {
-    const rangeDays = (timeframe.end - timeframe.start) / (24 * 60 * 60 * 1000)
-    return rangeDays >= 90
-  }, [timeframe])
+  // determine sampling mode based on timeframe duration
+  const samplingMode = useMemo(
+    () => determineSamplingMode(timeframe),
+    [timeframe]
+  )
 
-  const filledSeries = useMemo<FilledSeriesData>(() => {
-    const sandboxesSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
-      x: new Date(d.date).getTime(),
-      y: d.sandbox_count,
-    }))
-    const costSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
-      x: new Date(d.date).getTime(),
-      y: d.price_for_ram + d.price_for_cpu,
-    }))
-    const ramSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
-      x: new Date(d.date).getTime(),
-      y: d.ram_gib_hours,
-    }))
-    const vcpuSeries: TimeSeriesPoint[] = data.day_usages.map((d) => ({
-      x: new Date(d.date).getTime(),
-      y: d.cpu_hours,
-    }))
+  const sampledData = useMemo(
+    () => processUsageData(data.day_usages, timeframe, samplingMode),
+    [data.day_usages, timeframe, samplingMode]
+  )
 
-    // Apply weekly downsampling for ranges >= 3 months
-    if (isDownsampled) {
-      return {
-        sandboxes: downsampleToWeekly(sandboxesSeries),
-        cost: downsampleToWeekly(costSeries),
-        vcpu: downsampleToWeekly(vcpuSeries),
-        ram: downsampleToWeekly(ramSeries),
-      }
-    }
-
+  // convert sampled data to time series format for charts
+  const seriesData = useMemo<ComputeUsageSeriesData>(() => {
     return {
-      sandboxes: sandboxesSeries,
-      cost: costSeries,
-      vcpu: vcpuSeries,
-      ram: ramSeries,
+      sandboxes: sampledData.map((d) => ({
+        x: d.timestamp,
+        y: d.sandboxCount,
+      })),
+      cost: sampledData.map((d) => ({ x: d.timestamp, y: d.cost })),
+      vcpu: sampledData.map((d) => ({ x: d.timestamp, y: d.vcpuHours })),
+      ram: sampledData.map((d) => ({ x: d.timestamp, y: d.ramGibHours })),
     }
-  }, [data, isDownsampled])
+  }, [sampledData])
 
-  const totals = useMemo<MetricTotals>(() => {
-    const sandboxesTotal = data.day_usages
-      .filter((d) => {
-        const ts = new Date(d.date).getTime()
-        return ts >= timeframe.start && ts <= timeframe.end
-      })
-      .reduce((acc, d) => acc + d.sandbox_count, 0)
-
-    const costTotal = data.day_usages
-      .filter((d) => {
-        const ts = new Date(d.date).getTime()
-        return ts >= timeframe.start && ts <= timeframe.end
-      })
-      .reduce((acc, d) => acc + d.price_for_ram + d.price_for_cpu, 0)
-
-    const vcpuTotal = data.day_usages
-      .filter((d) => {
-        const ts = new Date(d.date).getTime()
-        return ts >= timeframe.start && ts <= timeframe.end
-      })
-      .reduce((acc, d) => acc + d.cpu_hours, 0)
-
-    const ramTotal = data.day_usages
-      .filter((d) => {
-        const ts = new Date(d.date).getTime()
-        return ts >= timeframe.start && ts <= timeframe.end
-      })
-      .reduce((acc, d) => acc + d.ram_gib_hours, 0)
-
-    return {
-      sandboxes: sandboxesTotal,
-      cost: costTotal,
-      vcpu: vcpuTotal,
-      ram: ramTotal,
-    }
-  }, [data.day_usages, timeframe])
+  // calculate totals from sampled data (guarantees consistency with charts)
+  const totals = useMemo<MetricTotals>(
+    () => calculateTotals(sampledData),
+    [sampledData]
+  )
 
   const displayValues = useMemo(() => {
-    // check if there's any data in the current timeframe
-    const hasDataInRange = filledSeries.sandboxes.some((point) => {
-      const timestamp =
-        typeof point.x === 'number' ? point.x : new Date(point.x).getTime()
-      return timestamp >= timeframe.start && timestamp <= timeframe.end
-    })
-
+    // case 1: hovering - always show hover state (with data or zeros)
     if (hoveredTimestamp) {
-      if (isDownsampled) {
-        // for downsampled data, find the week and aggregate all days in that week
-        const weekStart = getWeekStartForTimestamp(hoveredTimestamp)
-        const weekEnd = getWeekEndForWeekStart(weekStart)
-        const timestampLabel = formatDateRange(weekStart, weekEnd)
+      const hoveredPoint = findHoveredDataPoint(
+        sampledData,
+        hoveredTimestamp,
+        samplingMode
+      )
 
-        // aggregate all days within this week
-        const weekUsages = data.day_usages.filter((d) => {
-          const pointTime = new Date(d.date).getTime()
-          return pointTime >= weekStart && pointTime <= weekEnd
-        })
-
-        const aggregatedSandboxes = weekUsages.reduce(
-          (sum, d) => sum + d.sandbox_count,
-          0
-        )
-        const aggregatedCost = weekUsages.reduce(
-          (sum, d) => sum + d.price_for_ram + d.price_for_cpu,
-          0
-        )
-        const aggregatedVcpu = weekUsages.reduce(
-          (sum, d) => sum + d.cpu_hours,
-          0
-        )
-        const aggregatedRam = weekUsages.reduce(
-          (sum, d) => sum + d.ram_gib_hours,
-          0
-        )
-
-        return {
-          sandboxes: {
-            displayValue: formatNumber(aggregatedSandboxes),
-            label: 'week of',
-            timestamp: timestampLabel,
-          },
-          cost: {
-            displayValue: `$${aggregatedCost.toFixed(2)}`,
-            label: 'week of',
-            timestamp: timestampLabel,
-          },
-          vcpu: {
-            displayValue: formatNumber(aggregatedVcpu),
-            label: 'week of',
-            timestamp: timestampLabel,
-          },
-          ram: {
-            displayValue: formatNumber(aggregatedRam),
-            label: 'week of',
-            timestamp: timestampLabel,
-          },
-        }
-      } else {
-        const timestampLabel = formatDay(hoveredTimestamp)
-
-        // find exact day match (within same calendar day)
-        const dayUsage = data.day_usages.find((d) => {
-          const pointTime = new Date(d.date).getTime()
-          const hoveredDay = new Date(hoveredTimestamp)
-          const dataDay = new Date(pointTime)
-          
-          return (
-            hoveredDay.getUTCFullYear() === dataDay.getUTCFullYear() &&
-            hoveredDay.getUTCMonth() === dataDay.getUTCMonth() &&
-            hoveredDay.getUTCDate() === dataDay.getUTCDate()
-          )
-        })
-
-        return {
-          sandboxes: {
-            displayValue: formatNumber(dayUsage?.sandbox_count ?? 0),
-            label: 'on',
-            timestamp: timestampLabel,
-          },
-          cost: {
-            displayValue: `$${((dayUsage?.price_for_ram ?? 0) + (dayUsage?.price_for_cpu ?? 0)).toFixed(2)}`,
-            label: 'on',
-            timestamp: timestampLabel,
-          },
-          vcpu: {
-            displayValue: formatNumber(dayUsage?.cpu_hours ?? 0),
-            label: 'on',
-            timestamp: timestampLabel,
-          },
-          ram: {
-            displayValue: formatNumber(dayUsage?.ram_gib_hours ?? 0),
-            label: 'on',
-            timestamp: timestampLabel,
-          },
-        }
-      }
+      return formatHoveredValues(
+        hoveredPoint.sandboxCount,
+        hoveredPoint.cost,
+        hoveredPoint.vcpuHours,
+        hoveredPoint.ramGibHours,
+        hoveredPoint.timestamp,
+        samplingMode
+      )
     }
 
-    // no data in selected range
-    if (!hasDataInRange) {
-      return {
-        sandboxes: {
-          displayValue: '0',
-          label: 'no data in range',
-          timestamp: null,
-        },
-        cost: {
-          displayValue: '$0.00',
-          label: 'no data in range',
-          timestamp: null,
-        },
-        vcpu: {
-          displayValue: '0',
-          label: 'no data in range',
-          timestamp: null,
-        },
-        ram: {
-          displayValue: '0',
-          label: 'no data in range',
-          timestamp: null,
-        },
-      }
+    // case 2: no data in range
+    if (sampledData.length === 0) {
+      return formatEmptyValues()
     }
 
-    return {
-      sandboxes: {
-        displayValue: formatNumber(totals.sandboxes),
-        label: 'total over range',
-        timestamp: null,
-      },
-      cost: {
-        displayValue: `$${totals.cost.toFixed(2)}`,
-        label: 'total over range',
-        timestamp: null,
-      },
-      vcpu: {
-        displayValue: formatNumber(totals.vcpu),
-        label: 'total over range',
-        timestamp: null,
-      },
-      ram: {
-        displayValue: formatNumber(totals.ram),
-        label: 'total over range',
-        timestamp: null,
-      },
-    }
-  }, [hoveredTimestamp, data, totals, isDownsampled, filledSeries, timeframe])
+    // case 3: default (show totals)
+    return formatTotalValues(totals)
+  }, [hoveredTimestamp, sampledData, samplingMode, totals])
 
   const value = useMemo(
     () => ({
-      data,
-      filledSeries,
+      seriesData,
       timeframe,
       setTimeframe,
       hoveredTimestamp,
       setHoveredTimestamp,
       totals,
-      isDownsampled,
+      samplingMode,
       displayValues,
     }),
     [
-      data,
-      filledSeries,
+      seriesData,
       timeframe,
       setTimeframe,
       hoveredTimestamp,
       totals,
-      isDownsampled,
+      samplingMode,
       displayValues,
     ]
   )

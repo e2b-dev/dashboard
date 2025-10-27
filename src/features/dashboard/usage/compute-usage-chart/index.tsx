@@ -1,6 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { buildSeriesData, calculateYAxisMax } from '@/lib/utils/chart'
 import { EChartsOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { BarChart } from 'echarts/charts'
@@ -15,11 +16,7 @@ import { useTheme } from 'next-themes'
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { COMPUTE_CHART_CONFIGS } from './constants'
 import type { ComputeUsageChartProps } from './types'
-import {
-  buildSeriesData,
-  calculateYAxisMax,
-  transformComputeData,
-} from './utils'
+import { transformComputeData } from './utils'
 
 echarts.use([
   BarChart,
@@ -46,6 +43,7 @@ function ComputeUsageChart({
   endTime,
   type,
   data,
+  samplingMode,
   className,
   onHover,
   onHoverEnd,
@@ -113,8 +111,8 @@ function ComputeUsageChart({
           const startValue = coordRange[0]
           const endValue = coordRange[1]
 
-          const normalizedStart = normalizeToStartOfDay(Math.round(startValue))
-          const normalizedEnd = normalizeToEndOfDay(Math.round(endValue))
+          const normalizedStart = Math.round(startValue)
+          const normalizedEnd = Math.round(endValue)
 
           onBrushEndRef.current(normalizedStart, normalizedEnd)
 
@@ -153,6 +151,11 @@ function ComputeUsageChart({
     const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
     const seriesData = buildSeriesData(chartData)
 
+    // calculate tick interval based on sampling mode
+    const DAY_MS = 24 * 60 * 60 * 1000
+    const WEEK_MS = 7 * DAY_MS
+    const minInterval = samplingMode === 'weekly' ? WEEK_MS : DAY_MS
+
     const seriesItem: SeriesOption = {
       id: config.id,
       name: config.name,
@@ -178,8 +181,8 @@ function ComputeUsageChart({
           opacity: 1,
         },
       },
-      barGap: 10,
-      barMaxWidth: 50,
+      barWidth: '100%',
+      barMaxWidth: 60,
       barMinWidth: 1,
       data: seriesData.map((d) => d.value),
     }
@@ -216,6 +219,7 @@ function ComputeUsageChart({
       },
       xAxis: {
         type: 'time',
+        minInterval,
         axisPointer: {
           show: true,
           type: 'line',
@@ -280,6 +284,7 @@ function ComputeUsageChart({
   }, [
     chartData,
     config,
+    samplingMode,
     barColor,
     bgInverted,
     stroke,
@@ -325,10 +330,11 @@ const MemoizedComputeUsageChart = memo(
     return (
       prevProps.type === nextProps.type &&
       prevProps.data === nextProps.data &&
+      prevProps.samplingMode === nextProps.samplingMode &&
       prevProps.className === nextProps.className &&
       prevProps.startTime === nextProps.startTime &&
       prevProps.endTime === nextProps.endTime
-      // exclude onTooltipValueChange and onHoverEnd - they're handled via refs
+      // exclude onHover and onHoverEnd - they're handled via refs
     )
   }
 )

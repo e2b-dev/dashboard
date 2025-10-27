@@ -33,11 +33,12 @@ export function UsageMetricChart({
   timeRangeControlsClassName,
 }: UsageMetricChartProps) {
   const {
-    filledSeries,
+    seriesData,
     setHoveredTimestamp,
     timeframe,
     setTimeframe,
     displayValues,
+    samplingMode,
   } = useUsageCharts()
 
   const handleBrushEnd = useCallback(
@@ -60,7 +61,7 @@ export function UsageMetricChart({
 
   const config = METRIC_CONFIGS[metric]
   const { displayValue, label, timestamp } = displayValues[metric]
-  const data = filledSeries[metric]
+  const data = seriesData[metric]
 
   return (
     <Card className={cn('h-full flex flex-col', className)}>
@@ -86,6 +87,7 @@ export function UsageMetricChart({
           <ComputeUsageChart
             type={metric}
             data={data}
+            samplingMode={samplingMode}
             onHover={handleHover}
             onHoverEnd={handleHoverEnd}
             onBrushEnd={handleBrushEnd}

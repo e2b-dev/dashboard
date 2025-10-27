@@ -152,31 +152,30 @@ export function fillTimeSeriesWithEmptyPoints(
 /**
  * Downsamples time series data by aggregating points into weekly buckets.
  * Each week's data is summed and assigned to the start of that week (Monday).
- * 
+ *
  * @param data - Array of time series points to downsample
  * @returns Array of downsampled points with weekly aggregation
  */
-export function downsampleToWeekly(
-  data: TimeSeriesPoint[]
-): TimeSeriesPoint[] {
+export function downsampleToWeekly(data: TimeSeriesPoint[]): TimeSeriesPoint[] {
   if (!data.length) return []
 
   // Group data by week (Monday-based)
   const weeklyMap = new Map<number, number>()
 
   data.forEach((point) => {
-    const timestamp = typeof point.x === 'number' ? point.x : new Date(point.x).getTime()
+    const timestamp =
+      typeof point.x === 'number' ? point.x : new Date(point.x).getTime()
     const date = new Date(timestamp)
-    
+
     // Get Monday of the week
     const dayOfWeek = date.getUTCDay()
     const diff = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek // Adjust Sunday to previous Monday
     const monday = new Date(date)
     monday.setUTCDate(date.getUTCDate() + diff)
     monday.setUTCHours(0, 0, 0, 0)
-    
+
     const weekStart = monday.getTime()
-    
+
     // Aggregate values for this week
     const currentValue = weeklyMap.get(weekStart) || 0
     weeklyMap.set(weekStart, currentValue + point.y)
@@ -194,7 +193,7 @@ export function downsampleToWeekly(
 
 /**
  * Finds the weekly bucket that contains the given timestamp and returns its start timestamp.
- * 
+ *
  * @param timestamp - The timestamp to find the week for
  * @returns The start timestamp (Monday) of the week containing the input timestamp
  */
@@ -210,7 +209,7 @@ export function getWeekStartForTimestamp(timestamp: number): number {
 
 /**
  * Gets the end timestamp (Sunday 23:59:59) for a given week start.
- * 
+ *
  * @param weekStart - The start timestamp of the week (Monday)
  * @returns The end timestamp of that week (Sunday)
  */
