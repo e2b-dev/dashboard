@@ -6,7 +6,6 @@ import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { BarChart } from 'echarts/charts'
 import {
   BrushComponent,
-  DataZoomComponent,
   GridComponent,
   TooltipComponent,
 } from 'echarts/components'
@@ -28,7 +27,6 @@ echarts.use([
   TooltipComponent,
   BrushComponent,
   CanvasRenderer,
-  DataZoomComponent,
 ])
 
 function normalizeToStartOfDay(timestamp: number): number {
@@ -49,7 +47,7 @@ function ComputeUsageChart({
   type,
   data,
   className,
-  onTooltipValueChange,
+  onHover,
   onHoverEnd,
   onBrushEnd,
 }: ComputeUsageChartProps) {
@@ -57,11 +55,11 @@ function ComputeUsageChart({
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const { resolvedTheme } = useTheme()
 
-  const onTooltipValueChangeRef = useRef(onTooltipValueChange)
+  const onHoverRef = useRef(onHover)
   const onHoverEndRef = useRef(onHoverEnd)
   const onBrushEndRef = useRef(onBrushEnd)
 
-  onTooltipValueChangeRef.current = onTooltipValueChange
+  onHoverRef.current = onHover
   onHoverEndRef.current = onHoverEnd
   onBrushEndRef.current = onBrushEnd
 
@@ -83,17 +81,13 @@ function ComputeUsageChart({
   const bgInverted = cssVars['--bg-inverted'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
 
-  const tooltipFormatter = useCallback(
+  const handleAxisPointer = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
-      const paramArray = Array.isArray(params) ? params : [params]
+      const timestamp = params.value
 
-      if (paramArray.length && paramArray[0]?.value) {
-        const [timestamp] = paramArray[0].value
-
-        if (onTooltipValueChangeRef.current && timestamp !== undefined) {
-          onTooltipValueChangeRef.current(timestamp)
-        }
+      if (timestamp && onHoverRef.current) {
+        onHoverRef.current(timestamp)
       }
 
       return ''
@@ -195,6 +189,9 @@ function ComputeUsageChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
+      toolbox: {
+        show: false,
+      },
       brush: {
         brushType: 'lineX',
         brushMode: 'single',
@@ -217,28 +214,18 @@ function ComputeUsageChart({
         bottom: 20,
         left: 50,
       },
-      tooltip: {
-        show: true,
-        trigger: 'axis',
-        transitionDuration: 0,
-        enterable: false,
-        hideDelay: 0,
-        // render tooltip invisible - used only for value extraction
-        backgroundColor: 'transparent',
-        borderWidth: 0,
-        textStyle: { fontSize: 0, color: 'transparent' },
-        formatter: tooltipFormatter,
-        // position off-screen
-        position: [-9999, -9999],
-      },
       xAxis: {
         type: 'time',
         axisPointer: {
           show: true,
           type: 'line',
           lineStyle: { color: stroke, type: 'solid', width: 1 },
-          triggerTooltip: true,
           snap: false,
+          label: {
+            backgroundColor: 'transparent',
+            // only to get currently axis value
+            formatter: handleAxisPointer,
+          },
         },
         axisLine: {
           show: true,
@@ -293,12 +280,12 @@ function ComputeUsageChart({
   }, [
     chartData,
     config,
-    tooltipFormatter,
     barColor,
     bgInverted,
     stroke,
     fgTertiary,
     fontMono,
+    handleAxisPointer,
   ])
 
   useEffect(() => {

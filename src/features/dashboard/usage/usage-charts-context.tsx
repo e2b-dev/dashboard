@@ -159,29 +159,33 @@ export function UsageChartsProvider({
   }, [data, isDownsampled])
 
   const totals = useMemo<MetricTotals>(() => {
-    const filterByTimeframe = (series: TimeSeriesPoint[]) =>
-      series.filter((point) => {
-        const timestamp =
-          typeof point.x === 'number' ? point.x : new Date(point.x).getTime()
-        return timestamp >= timeframe.start && timestamp <= timeframe.end
+    const sandboxesTotal = data.day_usages
+      .filter((d) => {
+        const ts = new Date(d.date).getTime()
+        return ts >= timeframe.start && ts <= timeframe.end
       })
+      .reduce((acc, d) => acc + d.sandbox_count, 0)
 
-    const sandboxesTotal = filterByTimeframe(filledSeries.sandboxes).reduce(
-      (acc, item) => acc + item.y,
-      0
-    )
-    const costTotal = filterByTimeframe(filledSeries.cost).reduce(
-      (acc, item) => acc + item.y,
-      0
-    )
-    const vcpuTotal = filterByTimeframe(filledSeries.vcpu).reduce(
-      (acc, item) => acc + item.y,
-      0
-    )
-    const ramTotal = filterByTimeframe(filledSeries.ram).reduce(
-      (acc, item) => acc + item.y,
-      0
-    )
+    const costTotal = data.day_usages
+      .filter((d) => {
+        const ts = new Date(d.date).getTime()
+        return ts >= timeframe.start && ts <= timeframe.end
+      })
+      .reduce((acc, d) => acc + d.price_for_ram + d.price_for_cpu, 0)
+
+    const vcpuTotal = data.day_usages
+      .filter((d) => {
+        const ts = new Date(d.date).getTime()
+        return ts >= timeframe.start && ts <= timeframe.end
+      })
+      .reduce((acc, d) => acc + d.cpu_hours, 0)
+
+    const ramTotal = data.day_usages
+      .filter((d) => {
+        const ts = new Date(d.date).getTime()
+        return ts >= timeframe.start && ts <= timeframe.end
+      })
+      .reduce((acc, d) => acc + d.ram_gib_hours, 0)
 
     return {
       sandboxes: sandboxesTotal,
@@ -189,7 +193,7 @@ export function UsageChartsProvider({
       vcpu: vcpuTotal,
       ram: ramTotal,
     }
-  }, [filledSeries, timeframe])
+  }, [data.day_usages, timeframe])
 
   const displayValues = useMemo(() => {
     // check if there's any data in the current timeframe
@@ -212,78 +216,82 @@ export function UsageChartsProvider({
           return pointTime >= weekStart && pointTime <= weekEnd
         })
 
-        if (weekUsages.length > 0) {
-          const aggregatedSandboxes = weekUsages.reduce(
-            (sum, d) => sum + d.sandbox_count,
-            0
-          )
-          const aggregatedCost = weekUsages.reduce(
-            (sum, d) => sum + d.price_for_ram + d.price_for_cpu,
-            0
-          )
-          const aggregatedVcpu = weekUsages.reduce(
-            (sum, d) => sum + d.cpu_hours,
-            0
-          )
-          const aggregatedRam = weekUsages.reduce(
-            (sum, d) => sum + d.ram_gib_hours,
-            0
-          )
+        const aggregatedSandboxes = weekUsages.reduce(
+          (sum, d) => sum + d.sandbox_count,
+          0
+        )
+        const aggregatedCost = weekUsages.reduce(
+          (sum, d) => sum + d.price_for_ram + d.price_for_cpu,
+          0
+        )
+        const aggregatedVcpu = weekUsages.reduce(
+          (sum, d) => sum + d.cpu_hours,
+          0
+        )
+        const aggregatedRam = weekUsages.reduce(
+          (sum, d) => sum + d.ram_gib_hours,
+          0
+        )
 
-          return {
-            sandboxes: {
-              displayValue: formatNumber(aggregatedSandboxes),
-              label: 'week of',
-              timestamp: timestampLabel,
-            },
-            cost: {
-              displayValue: `$${aggregatedCost.toFixed(2)}`,
-              label: 'week of',
-              timestamp: timestampLabel,
-            },
-            vcpu: {
-              displayValue: formatNumber(aggregatedVcpu),
-              label: 'week of',
-              timestamp: timestampLabel,
-            },
-            ram: {
-              displayValue: formatNumber(aggregatedRam),
-              label: 'week of',
-              timestamp: timestampLabel,
-            },
-          }
+        return {
+          sandboxes: {
+            displayValue: formatNumber(aggregatedSandboxes),
+            label: 'week of',
+            timestamp: timestampLabel,
+          },
+          cost: {
+            displayValue: `$${aggregatedCost.toFixed(2)}`,
+            label: 'week of',
+            timestamp: timestampLabel,
+          },
+          vcpu: {
+            displayValue: formatNumber(aggregatedVcpu),
+            label: 'week of',
+            timestamp: timestampLabel,
+          },
+          ram: {
+            displayValue: formatNumber(aggregatedRam),
+            label: 'week of',
+            timestamp: timestampLabel,
+          },
         }
       } else {
         const timestampLabel = formatDay(hoveredTimestamp)
 
+        // find exact day match (within same calendar day)
         const dayUsage = data.day_usages.find((d) => {
           const pointTime = new Date(d.date).getTime()
-          return Math.abs(pointTime - hoveredTimestamp) < 12 * 60 * 60 * 1000
+          const hoveredDay = new Date(hoveredTimestamp)
+          const dataDay = new Date(pointTime)
+          
+          return (
+            hoveredDay.getUTCFullYear() === dataDay.getUTCFullYear() &&
+            hoveredDay.getUTCMonth() === dataDay.getUTCMonth() &&
+            hoveredDay.getUTCDate() === dataDay.getUTCDate()
+          )
         })
 
-        if (dayUsage) {
-          return {
-            sandboxes: {
-              displayValue: formatNumber(dayUsage.sandbox_count),
-              label: 'on',
-              timestamp: timestampLabel,
-            },
-            cost: {
-              displayValue: `$${(dayUsage.price_for_ram + dayUsage.price_for_cpu).toFixed(2)}`,
-              label: 'on',
-              timestamp: timestampLabel,
-            },
-            vcpu: {
-              displayValue: formatNumber(dayUsage.cpu_hours),
-              label: 'on',
-              timestamp: timestampLabel,
-            },
-            ram: {
-              displayValue: formatNumber(dayUsage.ram_gib_hours),
-              label: 'on',
-              timestamp: timestampLabel,
-            },
-          }
+        return {
+          sandboxes: {
+            displayValue: formatNumber(dayUsage?.sandbox_count ?? 0),
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+          cost: {
+            displayValue: `$${((dayUsage?.price_for_ram ?? 0) + (dayUsage?.price_for_cpu ?? 0)).toFixed(2)}`,
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+          vcpu: {
+            displayValue: formatNumber(dayUsage?.cpu_hours ?? 0),
+            label: 'on',
+            timestamp: timestampLabel,
+          },
+          ram: {
+            displayValue: formatNumber(dayUsage?.ram_gib_hours ?? 0),
+            label: 'on',
+            timestamp: timestampLabel,
+          },
         }
       }
     }

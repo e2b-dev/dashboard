@@ -8,7 +8,7 @@ export interface ComputeUsageChartProps {
   type: ComputeChartType
   data: TimeSeriesPoint[]
   className?: string
-  onTooltipValueChange?: (timestamp: number) => void
+  onHover?: (timestamp: number) => void
   onHoverEnd?: () => void
   onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
 }

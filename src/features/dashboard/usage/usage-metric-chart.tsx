@@ -47,7 +47,7 @@ export function UsageMetricChart({
     [setTimeframe]
   )
 
-  const handleTooltipValueChange = useCallback(
+  const handleHover = useCallback(
     (timestamp: number) => {
       setHoveredTimestamp(timestamp)
     },
@@ -86,7 +86,7 @@ export function UsageMetricChart({
           <ComputeUsageChart
             type={metric}
             data={data}
-            onTooltipValueChange={handleTooltipValueChange}
+            onHover={handleHover}
             onHoverEnd={handleHoverEnd}
             onBrushEnd={handleBrushEnd}
             startTime={timeframe.start}
