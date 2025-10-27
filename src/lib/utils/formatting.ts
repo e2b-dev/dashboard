@@ -100,7 +100,6 @@ export function formatDateRange(
   const startFormat = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
     ...(sameYear ? {} : { year: 'numeric' }),
   })
 
@@ -108,7 +107,6 @@ export function formatDateRange(
     month: 'short',
     day: 'numeric',
     year: isThisYear(endDate) ? undefined : 'numeric',
-    timeZone: 'UTC',
   })
 
   if (sameMonth) {
