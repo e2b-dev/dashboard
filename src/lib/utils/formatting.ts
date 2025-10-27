@@ -268,6 +268,10 @@ export function formatAxisNumber(
     return formatter.format(value)
   }
 
+  if (value < 1 && value > 0) {
+    return value.toFixed(2)
+  }
+
   return formatNumber(value, locale)
 }
 

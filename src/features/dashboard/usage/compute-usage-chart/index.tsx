@@ -8,6 +8,7 @@ import { BarChart } from 'echarts/charts'
 import {
   BrushComponent,
   GridComponent,
+  ToolboxComponent,
   TooltipComponent,
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
@@ -24,6 +25,7 @@ echarts.use([
   TooltipComponent,
   BrushComponent,
   CanvasRenderer,
+  ToolboxComponent,
 ])
 
 function normalizeToStartOfDay(timestamp: number): number {
@@ -190,6 +192,9 @@ function ComputeUsageChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
+      toolbox: {
+        show: false,
+      },
       brush: {
         brushType: 'lineX',
         brushMode: 'single',
@@ -241,14 +246,14 @@ function ComputeUsageChart({
           fontSize: 12,
           showMinLabel: true,
           showMaxLabel: true,
-          formatter: (value: number, index: number) => {
+          formatter: (value: number) => {
             return formatAxisDate(value)
           },
           alignMaxLabel: 'right',
           alignMinLabel: 'left',
         },
-        // only show first and last ticks
-        interval: Math.max(chartSpan, minInterval),
+        // show no tick in-between, only start and end
+        interval: Number.MAX_SAFE_INTEGER,
       },
       yAxis: {
         type: 'value',
