@@ -13,7 +13,7 @@ import {
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import { COMPUTE_CHART_CONFIGS } from './constants'
 import type { ComputeUsageChartProps } from './types'
 import { formatAxisDate, transformComputeData } from './utils'
@@ -155,6 +155,7 @@ function ComputeUsageChart({
     const DAY_MS = 24 * 60 * 60 * 1000
     const WEEK_MS = 7 * DAY_MS
     const minInterval = samplingMode === 'weekly' ? WEEK_MS : DAY_MS
+    const chartSpan = endTime && startTime ? endTime - startTime : 0
 
     const seriesItem: SeriesOption = {
       id: config.id,
@@ -214,6 +215,8 @@ function ComputeUsageChart({
       xAxis: {
         type: 'value',
         minInterval,
+        min: startTime,
+        max: endTime,
         axisPointer: {
           show: true,
           type: 'line',
@@ -245,7 +248,7 @@ function ComputeUsageChart({
           alignMinLabel: 'left',
         },
         // only show first and last ticks
-        interval: endTime && startTime ? endTime - startTime : 0,
+        interval: Math.max(chartSpan, minInterval),
       },
       yAxis: {
         type: 'value',
@@ -288,20 +291,6 @@ function ComputeUsageChart({
     startTime,
     endTime,
   ])
-
-  useEffect(() => {
-    const chart = chartInstanceRef.current
-    if (chart && startTime !== undefined && endTime !== undefined) {
-      chart.setOption({
-        xAxis: {
-          min: startTime,
-          max: endTime,
-        },
-      })
-    }
-    // we define the options state as a dependency, since when it changes, we want to re-set the min/max
-    // NOTE - this is only the options state and not the chart instance options. this won't create an infinite loop
-  }, [option, startTime, endTime, chartData.length])
 
   return (
     <ReactEChartsCore
