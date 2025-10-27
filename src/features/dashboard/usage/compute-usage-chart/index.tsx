@@ -16,7 +16,7 @@ import { useTheme } from 'next-themes'
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { COMPUTE_CHART_CONFIGS } from './constants'
 import type { ComputeUsageChartProps } from './types'
-import { transformComputeData } from './utils'
+import { formatAxisDate, transformComputeData } from './utils'
 
 echarts.use([
   BarChart,
@@ -175,14 +175,12 @@ function ComputeUsageChart({
           color: barColor,
         },
       },
+      barCategoryGap: 1,
       emphasis: {
         itemStyle: {
           opacity: 1,
         },
       },
-      // we need to enforce max bar width, to ensure our timeframe state is correctly constraint via axis min/max
-      // TODO: figure out how we can get rid of this, while accurately representing chart
-      barMaxWidth: 7,
       data: seriesData.map((d) => d.value),
     }
 
@@ -214,7 +212,7 @@ function ComputeUsageChart({
         left: 50,
       },
       xAxis: {
-        type: 'time',
+        type: 'value',
         minInterval,
         axisPointer: {
           show: true,
@@ -238,16 +236,16 @@ function ComputeUsageChart({
           color: fgTertiary,
           fontFamily: fontMono,
           fontSize: 12,
-          hideOverlap: true,
-          formatter: {
-            year: '{yyyy}',
-            month: '{MMM} {d}',
-            day: '{MMM} {d}',
-            hour: '{HH}:{mm}',
-            minute: '{HH}:{mm}',
-            second: '{HH}:{mm}:{ss}',
+          showMinLabel: true,
+          showMaxLabel: true,
+          formatter: (value: number, index: number) => {
+            return formatAxisDate(value)
           },
+          alignMaxLabel: 'right',
+          alignMinLabel: 'left',
         },
+        // only show first and last ticks
+        interval: endTime && startTime ? endTime - startTime : 0,
       },
       yAxis: {
         type: 'value',
@@ -287,6 +285,8 @@ function ComputeUsageChart({
     fgTertiary,
     fontMono,
     handleAxisPointer,
+    startTime,
+    endTime,
   ])
 
   useEffect(() => {
@@ -344,4 +344,4 @@ export default MemoizedComputeUsageChart
 // Export utilities
 export { COMPUTE_CHART_CONFIGS } from './constants'
 export type { ComputeChartType, ComputeUsageChartProps } from './types'
-export { transformComputeData } from './utils'
+export { formatAxisDate, transformComputeData } from './utils'
