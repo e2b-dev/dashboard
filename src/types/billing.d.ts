@@ -31,7 +31,25 @@ interface CreateTeamsResponse {
   slug: string
 }
 
+interface AddOnOrderItem {
+  name: 'addon_500_sandboxes'
+  quantity: number
+}
+
+interface AddOnOrderCreateResponse {
+  id: string
+  amount: number
+  items: AddOnOrderItem[]
+}
+
+interface AddOnOrderConfirmResponse {
+  client_secret: string
+}
+
 export type {
+  AddOnOrderConfirmResponse,
+  AddOnOrderCreateResponse,
+  AddOnOrderItem,
   BillingLimit,
   CreateTeamsResponse,
   CustomerPortalResponse,

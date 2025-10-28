@@ -3,7 +3,11 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
-import { CustomerPortalResponse } from '@/types/billing'
+import {
+  AddOnOrderConfirmResponse,
+  AddOnOrderCreateResponse,
+  CustomerPortalResponse,
+} from '@/types/billing'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -154,4 +158,78 @@ export const redirectToCustomerPortal = authActionClient
     const data = (await res.json()) as CustomerPortalResponse
 
     throw redirect(data.url)
+  })
+
+// ORDERS - Addon Purchase
+
+const CreateOrderParamsSchema = z.object({
+  teamId: z.uuid(),
+  quantity: z.number().min(1),
+})
+
+export const createOrderAction = authActionClient
+  .schema(CreateOrderParamsSchema)
+  .metadata({ actionName: 'createOrder' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId, quantity } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              name: 'addon_500_sandboxes',
+              quantity,
+            },
+          ],
+        }),
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      return returnServerError(text ?? 'Failed to create order')
+    }
+
+    const data: AddOnOrderCreateResponse = await res.json()
+    return data
+  })
+
+const ConfirmOrderParamsSchema = z.object({
+  teamId: z.uuid(),
+  orderId: z.uuid(),
+})
+
+export const confirmOrderAction = authActionClient
+  .schema(ConfirmOrderParamsSchema)
+  .metadata({ actionName: 'confirmOrder' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId, orderId } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${orderId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      return returnServerError(text ?? 'Failed to confirm order')
+    }
+
+    const data: AddOnOrderConfirmResponse = await res.json()
+    return data
   })
