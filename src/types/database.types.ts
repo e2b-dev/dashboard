@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "10.2.0 (e07807d)"
   }
   public: {
     Tables: {
@@ -319,7 +319,7 @@ export type Database = {
           public?: boolean
           spawn_count?: number
           team_id: string
-          updated_at: string
+          updated_at?: string
         }
         Update: {
           build_count?: number
@@ -364,6 +364,38 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: number
+          text: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: number
+          text?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: number
+          text?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snapshots: {
         Row: {
           allow_internet_access: boolean | null
@@ -390,7 +422,7 @@ export type Database = {
           metadata?: Json | null
           origin_node_id: string
           sandbox_id: string
-          sandbox_started_at: string
+          sandbox_started_at?: string
           team_id: string
         }
         Update: {
@@ -514,6 +546,7 @@ export type Database = {
           id: string
           is_banned: boolean
           is_blocked: boolean
+          is_default: boolean | null
           name: string
           profile_picture_url: string | null
           slug: string
@@ -527,6 +560,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
+          is_default?: boolean | null
           name: string
           profile_picture_url?: string | null
           slug: string
@@ -540,6 +574,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
+          is_default?: boolean | null
           name?: string
           profile_picture_url?: string | null
           slug?: string
@@ -598,7 +633,7 @@ export type Database = {
       users_teams: {
         Row: {
           added_by: string | null
-          created_at: string | null
+          created_at: string
           id: number
           is_default: boolean
           team_id: string
@@ -606,7 +641,7 @@ export type Database = {
         }
         Insert: {
           added_by?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: number
           is_default?: boolean
           team_id: string
@@ -614,7 +649,7 @@ export type Database = {
         }
         Update: {
           added_by?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: number
           is_default?: boolean
           team_id?: string
@@ -682,21 +717,28 @@ export type Database = {
       }
     }
     Functions: {
+      append_array: {
+        Args: { id: string; new_element: Json }
+        Returns: undefined
+      }
       extra_for_post_user_signup: {
         Args: { team_id: string; user_id: string }
         Returns: undefined
       }
       generate_access_token: { Args: never; Returns: string }
+      generate_sandbox_video_stream_token: { Args: never; Returns: string }
       generate_team_api_key: { Args: never; Returns: string }
       generate_team_slug: { Args: { name: string }; Returns: string }
+      get_project_user_ids: { Args: never; Returns: string[] }
       is_member_of_team: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
+      temp_create_access_token: { Args: never; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      deployment_state: "generating" | "deploying" | "finished" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -823,6 +865,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      deployment_state: ["generating", "deploying", "finished", "error"],
+    },
   },
 } as const
