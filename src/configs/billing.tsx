@@ -38,3 +38,6 @@ export const TIERS: Tier[] = [
     ],
   },
 ]
+
+export const MONTHLY_PRO_PRICE_DOLLARS = 150
+export const MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS = 100

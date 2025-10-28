@@ -1,4 +1,4 @@
-import { TIERS } from '@/configs/tiers'
+import { TIERS } from '@/configs/billing'
 import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
 import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
 import BillingTierCard from '@/features/dashboard/billing/tier-card'
