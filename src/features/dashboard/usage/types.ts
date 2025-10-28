@@ -1,6 +1,6 @@
 import { TimeSeriesPoint } from '@/lib/utils/time-series'
 
-export type SamplingMode = 'daily' | 'weekly'
+export type SamplingMode = 'hourly' | 'daily' | 'weekly'
 
 export interface Timeframe {
   start: number

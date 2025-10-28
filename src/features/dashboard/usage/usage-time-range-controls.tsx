@@ -15,6 +15,7 @@ import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
+import { TIME_RANGE_PRESETS } from './constants'
 
 interface UsageTimeRangeControlsProps {
   timeframe: {
@@ -24,123 +25,6 @@ interface UsageTimeRangeControlsProps {
   onTimeRangeChange: (start: number, end: number) => void
   className?: string
 }
-
-const TIME_RANGE_PRESETS: TimeRangePreset[] = [
-  {
-    id: 'last-7-days',
-    label: 'Last 7 days',
-    shortcut: '7D',
-    getValue: () => {
-      const end = new Date()
-      end.setUTCHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setUTCDate(start.getUTCDate() - 6)
-      start.setUTCHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'last-14-days',
-    label: 'Last 14 days',
-    shortcut: '14D',
-    getValue: () => {
-      const end = new Date()
-      end.setUTCHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setUTCDate(start.getUTCDate() - 13)
-      start.setUTCHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'last-30-days',
-    label: 'Last 30 days',
-    shortcut: '30D',
-    getValue: () => {
-      const end = new Date()
-      end.setUTCHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setUTCDate(start.getUTCDate() - 29)
-      start.setUTCHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'last-90-days',
-    label: 'Last 90 days',
-    shortcut: '90D',
-    getValue: () => {
-      const end = new Date()
-      end.setUTCHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setUTCDate(start.getUTCDate() - 89)
-      start.setUTCHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'this-month',
-    label: 'This month',
-    getValue: () => {
-      const now = new Date()
-      const start = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0)
-      )
-      const end = new Date(
-        Date.UTC(
-          now.getUTCFullYear(),
-          now.getUTCMonth() + 1,
-          0,
-          23,
-          59,
-          59,
-          999
-        )
-      )
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'last-month',
-    label: 'Last month',
-    getValue: () => {
-      const now = new Date()
-      const start = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1, 0, 0, 0, 0)
-      )
-      const end = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 23, 59, 59, 999)
-      )
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'this-year',
-    label: 'This year',
-    getValue: () => {
-      const now = new Date()
-      const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0, 0))
-      const end = new Date(
-        Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999)
-      )
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-  {
-    id: 'last-year',
-    label: 'Last year',
-    getValue: () => {
-      const now = new Date()
-      const start = new Date(
-        Date.UTC(now.getUTCFullYear() - 1, 0, 1, 0, 0, 0, 0)
-      )
-      const end = new Date(
-        Date.UTC(now.getUTCFullYear() - 1, 11, 31, 23, 59, 59, 999)
-      )
-      return { start: start.getTime(), end: end.getTime() }
-    },
-  },
-]
 
 export function UsageTimeRangeControls({
   timeframe,
@@ -174,23 +58,33 @@ export function UsageTimeRangeControls({
     [timeframe.start, timeframe.end]
   )
 
-  const thirdOfRangeDuration = useMemo(() => {
-    return Math.floor((timeframe.end - timeframe.start) / 3)
+  const quarterOfRangeDuration = useMemo(() => {
+    return Math.floor((timeframe.end - timeframe.start) / 4)
   }, [timeframe.start, timeframe.end])
 
   const handlePreviousRange = useCallback(() => {
     onTimeRangeChange(
-      timeframe.start - thirdOfRangeDuration,
-      timeframe.end - thirdOfRangeDuration
+      timeframe.start - quarterOfRangeDuration,
+      timeframe.end - quarterOfRangeDuration
     )
-  }, [timeframe.start, timeframe.end, thirdOfRangeDuration, onTimeRangeChange])
+  }, [
+    timeframe.start,
+    timeframe.end,
+    quarterOfRangeDuration,
+    onTimeRangeChange,
+  ])
 
   const handleNextRange = useCallback(() => {
     onTimeRangeChange(
-      timeframe.start + thirdOfRangeDuration,
-      timeframe.end + thirdOfRangeDuration
+      timeframe.start + quarterOfRangeDuration,
+      timeframe.end + quarterOfRangeDuration
     )
-  }, [timeframe.start, timeframe.end, thirdOfRangeDuration, onTimeRangeChange])
+  }, [
+    timeframe.start,
+    timeframe.end,
+    quarterOfRangeDuration,
+    onTimeRangeChange,
+  ])
 
   const handleTimeRangeApply = useCallback(
     (values: TimeRangeValues) => {
@@ -224,7 +118,7 @@ export function UsageTimeRangeControls({
         variant="outline"
         onClick={handlePreviousRange}
         className="border-r-0 px-2"
-        title="Move back by one-third of the range"
+        title="Move back by one-quarter of the range"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -278,7 +172,7 @@ export function UsageTimeRangeControls({
         variant="outline"
         onClick={handleNextRange}
         className="px-2"
-        title="Move forward by one-third of the range"
+        title="Move forward by one-quarter of the range"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

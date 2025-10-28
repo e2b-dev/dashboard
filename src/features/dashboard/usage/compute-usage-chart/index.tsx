@@ -14,8 +14,9 @@ import {
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
-import { memo, useCallback, useMemo, useRef } from 'react'
-import { COMPUTE_CHART_CONFIGS } from './constants'
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { COMPUTE_CHART_CONFIGS } from '../constants'
+import { normalizeToStartOfSamplingPeriod } from '../sampling-utils'
 import type { ComputeUsageChartProps } from './types'
 import { formatAxisDate, transformComputeData } from './utils'
 
@@ -27,18 +28,6 @@ echarts.use([
   CanvasRenderer,
   ToolboxComponent,
 ])
-
-function normalizeToStartOfDay(timestamp: number): number {
-  const date = new Date(timestamp)
-  date.setUTCHours(0, 0, 0, 0)
-  return date.getTime()
-}
-
-function normalizeToEndOfDay(timestamp: number): number {
-  const date = new Date(timestamp)
-  date.setUTCHours(23, 59, 59, 999)
-  return date.getTime()
-}
 
 function ComputeUsageChart({
   startTime,
@@ -113,8 +102,14 @@ function ComputeUsageChart({
           const startValue = coordRange[0]
           const endValue = coordRange[1]
 
-          const normalizedStart = normalizeToStartOfDay(Math.round(startValue))
-          const normalizedEnd = normalizeToEndOfDay(Math.round(endValue))
+          const normalizedStart = normalizeToStartOfSamplingPeriod(
+            Math.round(startValue),
+            samplingMode
+          )
+          const normalizedEnd = normalizeToStartOfSamplingPeriod(
+            Math.round(endValue),
+            samplingMode
+          )
 
           onBrushEndRef.current(normalizedStart, normalizedEnd)
 
@@ -126,7 +121,7 @@ function ComputeUsageChart({
         }
       }
     },
-    []
+    [samplingMode]
   )
 
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
@@ -154,10 +149,18 @@ function ComputeUsageChart({
     const seriesData = buildSeriesData(chartData)
 
     // calculate tick interval based on sampling mode
-    const DAY_MS = 24 * 60 * 60 * 1000
+    const HOUR_MS = 60 * 60 * 1000
+    const DAY_MS = 24 * HOUR_MS
     const WEEK_MS = 7 * DAY_MS
-    const minInterval = samplingMode === 'weekly' ? WEEK_MS : DAY_MS
-    const chartSpan = endTime && startTime ? endTime - startTime : 0
+
+    let minInterval: number
+    if (samplingMode === 'hourly') {
+      minInterval = HOUR_MS
+    } else if (samplingMode === 'weekly') {
+      minInterval = WEEK_MS
+    } else {
+      minInterval = DAY_MS
+    }
 
     const seriesItem: SeriesOption = {
       id: config.id,
@@ -168,7 +171,7 @@ function ComputeUsageChart({
         borderColor: barColor,
         borderWidth: 0.3,
         borderCap: 'square',
-        opacity: 0.6,
+        opacity: 1,
         decal: {
           symbol: 'line',
           symbolSize: 1.5,
@@ -178,7 +181,7 @@ function ComputeUsageChart({
           color: barColor,
         },
       },
-      barCategoryGap: 1,
+      barCategoryGap: 3,
       emphasis: {
         itemStyle: {
           opacity: 1,
@@ -213,15 +216,13 @@ function ComputeUsageChart({
       },
       grid: {
         top: 10,
-        right: 5,
         bottom: 20,
-        left: 50,
+        left: 0,
+        right: 0,
       },
       xAxis: {
         type: 'value',
         minInterval,
-        min: startTime,
-        max: endTime,
         axisPointer: {
           show: true,
           type: 'line',
@@ -293,9 +294,20 @@ function ComputeUsageChart({
     fgTertiary,
     fontMono,
     handleAxisPointer,
-    startTime,
-    endTime,
   ])
+
+  useEffect(() => {
+    const chart = chartInstanceRef.current
+
+    if (chart) {
+      chart.setOption({
+        xAxis: {
+          min: startTime,
+          max: endTime,
+        },
+      })
+    }
+  }, [option, startTime, endTime])
 
   return (
     <ReactEChartsCore
@@ -334,8 +346,3 @@ const MemoizedComputeUsageChart = memo(
 MemoizedComputeUsageChart.displayName = 'ComputeUsageChart'
 
 export default MemoizedComputeUsageChart
-
-// Export utilities
-export { COMPUTE_CHART_CONFIGS } from './constants'
-export type { ComputeChartType, ComputeUsageChartProps } from './types'
-export { formatAxisDate, transformComputeData } from './utils'

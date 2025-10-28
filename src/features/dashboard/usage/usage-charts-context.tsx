@@ -11,16 +11,17 @@ import {
   useState,
 } from 'react'
 import {
+  INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS,
+  INITIAL_TIMEFRAME_FALLBACK_RANGE_MS,
+} from './constants'
+import {
+  calculateTotals,
+  findHoveredDataPoint,
   formatEmptyValues,
   formatHoveredValues,
   formatTotalValues,
 } from './display-utils'
-import {
-  calculateTotals,
-  determineSamplingMode,
-  findHoveredDataPoint,
-  processUsageData,
-} from './sampling-utils'
+import { determineSamplingMode, processUsageData } from './sampling-utils'
 import {
   ComputeUsageSeriesData,
   DisplayValue,
@@ -63,30 +64,12 @@ export function UsageChartsProvider({
   data,
   children,
 }: UsageChartsProviderProps) {
+  // MUTABLE STATE
+
   const [params, setParams] = useQueryStates(timeframeParams, {
     history: 'push',
     shallow: true,
   })
-
-  const defaultRange = useMemo(() => {
-    const now = Date.now()
-
-    if (data.day_usages && data.day_usages.length > 0) {
-      const firstDate = new Date(data.day_usages[0]!.date).getTime()
-      const start = firstDate - 3 * 24 * 60 * 60 * 1000 // - 3 days from first data point
-      return { start, end: now }
-    }
-
-    return { start: now - 30 * 24 * 60 * 60 * 1000, end: now } // 30 days fallback
-  }, [data])
-
-  const timeframe = useMemo(
-    () => ({
-      start: params.start ?? defaultRange.start,
-      end: params.end ?? defaultRange.end,
-    }),
-    [params.start, params.end, defaultRange]
-  )
 
   const [hoveredTimestamp, setHoveredTimestamp] = useState<number | null>(null)
 
@@ -97,18 +80,38 @@ export function UsageChartsProvider({
     [setParams]
   )
 
-  // determine sampling mode based on timeframe duration
+  // DERIVED STATE
+
+  const defaultRange = useMemo(() => {
+    const now = Date.now()
+
+    if (data.hour_usages && data.hour_usages.length > 0) {
+      const firstTimestamp = data.hour_usages[0]!.timestamp
+      const start = firstTimestamp - INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS
+      return { start, end: now }
+    }
+
+    return { start: now - INITIAL_TIMEFRAME_FALLBACK_RANGE_MS, end: now }
+  }, [data])
+
+  const timeframe = useMemo(
+    () => ({
+      start: params.start ?? defaultRange.start,
+      end: params.end ?? defaultRange.end,
+    }),
+    [params.start, params.end, defaultRange]
+  )
+
   const samplingMode = useMemo(
     () => determineSamplingMode(timeframe),
     [timeframe]
   )
 
   const sampledData = useMemo(
-    () => processUsageData(data.day_usages, timeframe, samplingMode),
-    [data.day_usages, timeframe, samplingMode]
+    () => processUsageData(data.hour_usages, samplingMode),
+    [data.hour_usages, samplingMode]
   )
 
-  // convert sampled data to time series format for charts
   const seriesData = useMemo<ComputeUsageSeriesData>(() => {
     return {
       sandboxes: sampledData.map((d) => ({
@@ -121,14 +124,12 @@ export function UsageChartsProvider({
     }
   }, [sampledData])
 
-  // calculate totals from sampled data (guarantees consistency with charts)
   const totals = useMemo<MetricTotals>(
     () => calculateTotals(sampledData),
     [sampledData]
   )
 
   const displayValues = useMemo(() => {
-    // case 1: hovering - always show hover state (with data or zeros)
     if (hoveredTimestamp) {
       const hoveredPoint = findHoveredDataPoint(
         sampledData,
@@ -146,12 +147,10 @@ export function UsageChartsProvider({
       )
     }
 
-    // case 2: no data in range
     if (sampledData.length === 0) {
       return formatEmptyValues()
     }
 
-    // case 3: default (show totals)
     return formatTotalValues(totals)
   }, [hoveredTimestamp, sampledData, samplingMode, totals])
 

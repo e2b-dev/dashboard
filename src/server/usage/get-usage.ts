@@ -33,5 +33,16 @@ export const getUsage = authActionClient
       return returnServerError(text)
     }
 
-    return (await response.json()) as UsageResponse
+    const responseData: UsageResponse = await response.json()
+
+    // convert unix seconds to milliseconds because JavaScript
+    const data: UsageResponse = {
+      ...responseData,
+      hour_usages: responseData.hour_usages.map((hour) => ({
+        ...hour,
+        timestamp: hour.timestamp * 1000,
+      })),
+    }
+
+    return data
   })

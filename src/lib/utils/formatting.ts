@@ -78,6 +78,31 @@ export function formatDay(timestamp: number): string {
 }
 
 /**
+ * Format a timestamp to show date and hour (for hourly aggregations)
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns Formatted string (e.g., "Jan 5, 2pm" or "Jan 5, 2024, 2pm")
+ */
+export function formatHour(timestamp: number): string {
+  const date = new Date(timestamp)
+  const hour = date.getHours()
+  const ampm = hour >= 12 ? 'pm' : 'am'
+  const hour12 = hour % 12 || 12
+
+  if (isThisYear(timestamp)) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }).format(timestamp) + `, ${hour12}${ampm}`
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(timestamp) + `, ${hour12}${ampm}`
+}
+
+/**
  * Format a date range (e.g., for weekly aggregations)
  * @param startTimestamp - Start of the range in milliseconds
  * @param endTimestamp - End of the range in milliseconds
