@@ -163,19 +163,19 @@ export const redirectToCustomerPortal = authActionClient
 
 // ORDERS - Addon Purchase
 
-const PurchaseAddonParamsSchema = z.object({
+const CreateOrderParamsSchema = z.object({
   teamId: z.uuid(),
-  quantity: z.number().min(1),
+  itemId: z.union([z.literal('addon_500_sandboxes')]),
 })
 
-export const purchaseAddonAction = authActionClient
-  .schema(PurchaseAddonParamsSchema)
-  .metadata({ actionName: 'purchaseAddon' })
+export const createOrderAction = authActionClient
+  .schema(CreateOrderParamsSchema)
+  .metadata({ actionName: 'createOrder' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, quantity } = parsedInput
+    const { teamId, itemId } = parsedInput
     const { session } = ctx
 
-    const createRes = await fetch(
+    const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/orders`,
       {
         method: 'POST',
@@ -186,24 +186,37 @@ export const purchaseAddonAction = authActionClient
         body: JSON.stringify({
           items: [
             {
-              name: 'addon_500_sandboxes',
-              quantity,
+              name: itemId,
+              quantity: 1,
             },
           ],
         }),
       }
     )
 
-    if (!createRes.ok) {
-      const text = await createRes.text()
-
+    if (!res.ok) {
+      const text = await res.text()
       throw new Error(text ?? 'Failed to create order')
     }
 
-    const createData: AddOnOrderCreateResponse = await createRes.json()
+    const data: AddOnOrderCreateResponse = await res.json()
+    return data
+  })
 
-    const confirmRes = await fetch(
-      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${createData.id}`,
+const ConfirmOrderParamsSchema = z.object({
+  teamId: z.uuid(),
+  orderId: z.uuid(),
+})
+
+export const confirmOrderAction = authActionClient
+  .schema(ConfirmOrderParamsSchema)
+  .metadata({ actionName: 'confirmOrder' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId, orderId } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${orderId}`,
       {
         method: 'POST',
         headers: {
@@ -213,17 +226,15 @@ export const purchaseAddonAction = authActionClient
       }
     )
 
-    if (!confirmRes.ok) {
-      const text = await confirmRes.text()
-
+    if (!res.ok) {
+      const text = await res.text()
       throw new Error(text ?? 'Failed to confirm order')
     }
 
-    const confirmData: AddOnOrderConfirmResponse = await confirmRes.json()
+    const data: AddOnOrderConfirmResponse = await res.json()
 
     const slug = await resolveTeamSlugInServerComponent()
-
     revalidatePath(`/dashboard/${slug}/billing`, 'page')
 
-    return confirmData
+    return data
   })

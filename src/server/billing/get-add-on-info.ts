@@ -7,8 +7,8 @@ const GetAddOnInfoSchema = z.object({
 })
 
 export const getAddOnInfo = authActionClient
-  .metadata({ serverFunctionName: 'getAddOnInfo' })
+  .metadata({ serverFunctionName: 'getBillingStatus' })
   .inputSchema(GetAddOnInfoSchema)
   .action(async () => {
-    return { maxAddons: 0, currentAddons: 0, pricePerAddon: 0 }
+    return {}
   })

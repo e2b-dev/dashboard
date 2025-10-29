@@ -1,4 +1,3 @@
-import { TIERS } from '@/configs/billing'
 import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
 import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
 import BillingTierCard from '@/features/dashboard/billing/tier-card'
@@ -42,14 +41,34 @@ export default async function BillingPage({
           </Suspense>
 
           <div className="mt-3 flex flex-col gap-12 overflow-x-auto max-lg:mb-6 lg:flex-row">
-            {TIERS.map((tier) => (
-              <BillingTierCard
-                key={tier.id}
-                tier={tier}
-                isHighlighted={tier.id === 'pro_v1'}
-                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
-              />
-            ))}
+            <BillingTierCard
+              tier={{
+                id: 'base_v1',
+                name: 'Hobby',
+                features: [
+                  'One-time $100 of usage in credits',
+                  'Community support',
+                  'Up to 1 hour sandbox session length',
+                  'Up to 20 concurrently running sandboxes',
+                ],
+              }}
+              isHighlighted={false}
+              className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
+            />
+            <BillingTierCard
+              tier={{
+                id: 'pro_v1',
+                name: 'Pro',
+                features: [
+                  'One-time $100 of usage in credits',
+                  'Customize your Sandbox CPU & RAM',
+                  'Up to 24 hours sandbox session length',
+                  'Up to 100 concurrently running sandboxes',
+                ],
+              }}
+              isHighlighted={true}
+              className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
+            />
           </div>
         </CardContent>
       </Card>

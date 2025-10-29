@@ -3,16 +3,19 @@
 import { MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS } from '@/configs/billing'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { purchaseAddonAction } from '@/server/billing/billing-actions'
+import { confirmOrderAction } from '@/server/billing/billing-actions'
+import { AsciiSandbox } from '@/ui/patterns'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { SandboxIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { loadStripe } from '@stripe/stripe-js'
 import { ArrowRight, CircleDollarSign } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
@@ -21,11 +24,13 @@ import { useEffect, useRef } from 'react'
 interface AddOnPurchaseDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  orderData: { id: string } | null
 }
 
 export function AddOnPurchaseDialog({
   open,
   onOpenChange,
+  orderData,
 }: AddOnPurchaseDialogProps) {
   const team = useSelectedTeam()
   const { toast } = useToast()
@@ -37,8 +42,8 @@ export function AddOnPurchaseDialog({
     }
   }, [open])
 
-  const { execute: purchaseAddon, isTransitioning } = useAction(
-    purchaseAddonAction,
+  const { execute: confirmOrder, status: confirmStatus } = useAction(
+    confirmOrderAction,
     {
       onSuccess: async ({ data }) => {
         if (data?.client_secret && !isConfirmingPayment.current) {
@@ -55,7 +60,6 @@ export function AddOnPurchaseDialog({
               return
             }
 
-            // retrieve the PaymentIntent to check its status
             const { paymentIntent, error: retrieveError } =
               await stripe.retrievePaymentIntent(data.client_secret)
 
@@ -67,7 +71,6 @@ export function AddOnPurchaseDialog({
               return
             }
 
-            // Check if 3DS or other action is required
             if (paymentIntent.status === 'requires_action') {
               const { error: actionError } = await stripe.handleNextAction({
                 clientSecret: data.client_secret,
@@ -83,7 +86,6 @@ export function AddOnPurchaseDialog({
                 return
               }
 
-              // after handling action, retrieve again to check final status
               const { paymentIntent: finalIntent, error: finalError } =
                 await stripe.retrievePaymentIntent(data.client_secret)
 
@@ -113,76 +115,83 @@ export function AddOnPurchaseDialog({
         }
       },
       onError: ({ error }) => {
-        toast(
-          defaultErrorToast(error.serverError ?? 'Failed to purchase add-on')
-        )
+        toast(defaultErrorToast(error.serverError ?? 'Failed to confirm order'))
       },
     }
   )
 
   const handlePurchase = () => {
-    if (!team) {
-      toast(defaultErrorToast('No team selected'))
+    if (!team || !orderData?.id) {
+      toast(defaultErrorToast('Order not ready'))
       return
     }
 
-    purchaseAddon({
+    confirmOrder({
       teamId: team.id,
-      quantity: 1,
+      orderId: orderData.id,
     })
   }
 
+  const isLoading = confirmStatus === 'executing'
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-8">
-        {/* Hidden title for accessibility */}
-        <DialogTitle className="sr-only">
-          +500 Sandboxes Add-on Purchase
-        </DialogTitle>
-        <DialogDescription className="sr-only">
-          Purchase additional sandbox concurrency for your team
-        </DialogDescription>
-
-        <div className="flex flex-col items-center text-center">
-          {/* Title */}
-          <h2 className="mb-3">+500 Sandboxes Add-on</h2>
-
-          {/* Price Badge */}
-          <Badge variant="default" size="lg" className="mb-8">
-            ${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
-          </Badge>
+      <DialogContent className="!p-0 md:max-w-[600px] md:min-w-[600px] flex gap-0">
+        <div className="hidden w-32 border-r relative md:flex items-center justify-center overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <AsciiSandbox className="scale-85 text-fg-tertiary" />
+          </div>
+          <div className="p-1 bg-bg-1 relative z-10">
+            <SandboxIcon className="size-7 text-fg-tertiary" />
+          </div>
+        </div>
+        <div className="p-3 md:p-6 flex-1 space-y-4">
+          {/* Hidden title for accessibility */}
+          <DialogHeader>
+            <DialogTitle>+500 Sandboxes Add-on</DialogTitle>
+            <DialogDescription>
+              <Badge variant="default" className="bg-bg-highlight uppercase">
+                ${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
+              </Badge>
+            </DialogDescription>
+          </DialogHeader>
 
           {/* Benefits List */}
-          <div className="space-y-4 mb-8 w-full max-w-xl">
+          <ul className="space-y-2 w-full">
             {/* Bullet 1 - Increases limit */}
-            <div className="flex items-start gap-3 text-left">
-              <SandboxIcon className="text-icon-tertiary mt-0.5 shrink-0 size-5" />
+            <li className="flex items-start gap-2 text-left">
+              <SandboxIcon className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
               <p className="prose-body text-fg">
                 Increases total concurrent sandbox limit from 1,000 to 1,500
               </p>
-            </div>
+            </li>
 
             {/* Bullet 2 - Raises subscription */}
-            <div className="flex items-start gap-3 text-left">
-              <CircleDollarSign className="text-icon-tertiary mt-0.5 shrink-0 size-5" />
+            <li className="flex items-start gap-2 text-left">
+              <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
               <p className="prose-body text-fg">
                 Raises current subscription from $150/mo to $250/mo
               </p>
-            </div>
-          </div>
+            </li>
+          </ul>
 
           {/* CTA Button */}
-          <Button
-            variant="default"
-            size="lg"
-            className="w-full max-w-xl justify-center uppercase"
-            onClick={handlePurchase}
-            loading={isTransitioning}
-            disabled={isTransitioning}
-          >
-            Add for +${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
-            <ArrowRight className="size-4" />
-          </Button>
+          {!isLoading ? (
+            <Button
+              variant="default"
+              size="lg"
+              className="w-full justify-center uppercase"
+              onClick={handlePurchase}
+              disabled={!orderData?.id}
+            >
+              Add for +${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
+              <ArrowRight className="size-4" />
+            </Button>
+          ) : (
+            <span className="flex items-center justify-center ">
+              <Loader variant="slash" size="sm" /> Processing Payment...
+            </span>
+          )}
         </div>
       </DialogContent>
     </Dialog>
