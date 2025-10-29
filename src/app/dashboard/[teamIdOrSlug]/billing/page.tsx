@@ -59,6 +59,10 @@ export default async function BillingPage({
 
   const { tiers, addons } = itemsRes.data
 
+  const concurrentSandboxesAddonItem = addons.current?.find(
+    (a) => a.id === 'addon_500_sandboxes'
+  )
+
   const pro = tiers.available.find((t) => t.id === 'pro_v1')
   const base = tiers.available.find((t) => t.id === 'base_v1')
 
@@ -72,8 +76,6 @@ export default async function BillingPage({
 
   const isAbleToPurchaseConcurrentSandboxAddons =
     isOnProTier && !!availableConcurrentSandboxAddOns
-
-  const currentAddons = addons.current || []
 
   if (!selectedTier) {
     l.error(
@@ -162,10 +164,18 @@ export default async function BillingPage({
                     ...generateBaseLimitsFeatures(pro.limits),
                   ],
                 }}
-                addons={currentAddons.map((addon) => ({
-                  label: addon.name,
-                  price_cents: addon.price_cents,
-                }))}
+                addons={
+                  concurrentSandboxesAddonItem &&
+                  concurrentSandboxesAddonItem.quantity
+                    ? Array.from(
+                        { length: concurrentSandboxesAddonItem.quantity },
+                        (_, i) => ({
+                          label: `+500 Concurrent Sandboxes`,
+                          price_cents: concurrentSandboxesAddonItem.price_cents,
+                        })
+                      )
+                    : []
+                }
                 isSelectable
                 isSelected={pro.id === selectedTier?.id}
                 className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"

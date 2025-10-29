@@ -201,8 +201,6 @@ export const createOrderAction = authActionClient
 
     const data: AddOnOrderCreateResponse = await res.json()
 
-    console.log(data)
-
     return data
   })
 

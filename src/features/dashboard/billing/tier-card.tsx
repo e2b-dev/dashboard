@@ -94,23 +94,29 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
         </ul>
 
         {/* Price Section */}
-        <div className="border-stroke border-t py-4 px-5">
+        <div className="border-stroke border-t py-4 px-5 space-y-1">
           <div className="flex items-center justify-between">
             <Label>Price</Label>
             <span className="prose-body-highlight">{tierPrice}</span>
           </div>
-          {addons.map((addon, i) => (
-            <div
-              key={`addon-${i}`}
-              className="flex items-center justify-between"
-            >
-              <Label className="text-fg-tertiary">{addon.label}</Label>
-              <span className="prose-body-highlight">
-                ${addon.price_cents / 100}
-              </span>
-            </div>
-          ))}
         </div>
+
+        {!!addons.length && (
+          <div className="border-stroke border-t py-4 px-5 flex flex-col gap-1">
+            <Label>Bought Add-Ons</Label>
+            {addons.map((addon, i) => (
+              <div
+                key={`addon-${i}`}
+                className="flex items-center justify-between"
+              >
+                <Label className="text-fg-tertiary">{addon.label}</Label>
+                <span className="prose-body-highlight">
+                  ${addon.price_cents / 100}/mo
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Footer (e.g., add-on section or select button) */}
         {footer}

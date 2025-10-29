@@ -65,7 +65,7 @@ export function ConcurrentSandboxAddonSection({
               })
             }}
           >
-            View Details
+            Buy Add-on
           </Button>
         </div>
       </div>
