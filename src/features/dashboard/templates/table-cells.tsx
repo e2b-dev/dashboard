@@ -320,3 +320,21 @@ export function EnvdVersionCell({
     </div>
   )
 }
+
+export function StatusCell({
+  getValue,
+}: CellContext<Template | DefaultTemplate, unknown>) {
+  const valueString = getValue() as string
+  return (
+    <div
+      className={cn(
+        'text-fg-tertiary whitespace-nowrap font-mono flex flex-row gap-1.5',
+        {
+          'text-accent-error-highlight': valueString === 'failed',
+        }
+      )}
+    >
+      {valueString !== 'uploaded' ? valueString : 'success'}
+    </div>
+  )
+}
