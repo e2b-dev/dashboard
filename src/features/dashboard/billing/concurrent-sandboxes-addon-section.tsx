@@ -65,7 +65,7 @@ export function ConcurrentSandboxAddonSection({
               })
             }}
           >
-            Purchase for +${priceCents / 100}/mo
+            View Details
           </Button>
         </div>
       </div>

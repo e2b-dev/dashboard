@@ -4,19 +4,17 @@ import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { confirmOrderAction } from '@/server/billing/billing-actions'
 import { AsciiSandbox } from '@/ui/patterns'
-import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { SandboxIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { loadStripe } from '@stripe/stripe-js'
-import { ArrowRight, CircleDollarSign } from 'lucide-react'
+import { ArrowRight, CircleDollarSign, CreditCard } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useEffect, useRef } from 'react'
 
@@ -47,7 +45,7 @@ export function ConcurrentSandboxAddOnPurchaseDialog({
     }
   }, [open])
 
-  const { execute: confirmOrder, isTransitioning: isLoading } = useAction(
+  const { execute: confirmOrder, isPending: isLoading } = useAction(
     confirmOrderAction,
     {
       onSuccess: async ({ data }) => {
@@ -69,6 +67,8 @@ export function ConcurrentSandboxAddOnPurchaseDialog({
               await stripe.retrievePaymentIntent(data.client_secret)
 
             if (retrieveError) {
+              console.error('Payment intent retrieval failed:', retrieveError)
+
               toast(
                 defaultErrorToast(retrieveError.message ?? 'Payment failed')
               )
@@ -82,6 +82,8 @@ export function ConcurrentSandboxAddOnPurchaseDialog({
               })
 
               if (actionError) {
+                console.error('3D Secure authentication failed:', actionError)
+
                 toast(
                   defaultErrorToast(
                     actionError.message ?? '3D Secure authentication failed'
@@ -95,11 +97,22 @@ export function ConcurrentSandboxAddOnPurchaseDialog({
                 await stripe.retrievePaymentIntent(data.client_secret)
 
               if (finalError || finalIntent.status !== 'succeeded') {
+                console.error(
+                  'Final payment check failed:',
+                  finalError,
+                  finalIntent?.status
+                )
+
                 toast(defaultErrorToast('Payment failed'))
                 isConfirmingPayment.current = false
                 return
               }
             } else if (paymentIntent.status !== 'succeeded') {
+              console.error(
+                'Final payment check failed:',
+                paymentIntent?.status
+              )
+
               toast(
                 defaultErrorToast(`Payment status: ${paymentIntent.status}`)
               )
@@ -160,14 +173,9 @@ export function ConcurrentSandboxAddOnPurchaseDialog({
             <SandboxIcon className="size-7 text-fg-tertiary" />
           </div>
         </div>
-        <div className="p-3 md:p-6 flex-1 space-y-4">
+        <div className="p-5 flex-1 space-y-6">
           <DialogHeader>
             <DialogTitle>+500 Sandboxes Add-on</DialogTitle>
-            <DialogDescription>
-              <Badge variant="default" className="bg-bg-highlight uppercase">
-                ${monthlyPriceCents / 100}/mo
-              </Badge>
-            </DialogDescription>
           </DialogHeader>
 
           <ul className="space-y-2 w-full">
@@ -179,33 +187,38 @@ export function ConcurrentSandboxAddOnPurchaseDialog({
             <li className="flex items-start gap-2 text-left">
               <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
               <p className="prose-body text-fg">
-                Pay <b>${(amountDueCents / 100).toFixed(2)}</b> now
+                Raises current subscription by <b>${monthlyPriceCents / 100}</b>
+                /month
               </p>
             </li>
 
             <li className="flex items-start gap-2 text-left">
-              <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+              <CreditCard className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
               <p className="prose-body text-fg">
-                Raises current subscription by <b>${monthlyPriceCents / 100}</b>
-                /MO
+                Pay <b>${(amountDueCents / 100).toFixed(2)}</b> now for the
+                remaining time of the month
               </p>
             </li>
           </ul>
 
+          {/* Action Button */}
           {!isLoading ? (
             <Button
               variant="default"
               size="lg"
-              className="w-full justify-center uppercase"
+              className="w-full justify-center"
               onClick={handlePurchase}
             >
-              Purchase
+              Add +500 Sandboxes
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <span className="flex items-center justify-center ">
-              <Loader variant="slash" size="sm" /> Processing Payment...
-            </span>
+            <div className="flex items-center justify-center py-3 gap-2">
+              <Loader variant="slash" size="sm" />
+              <span className="prose-body text-fg-secondary">
+                Processing payment...
+              </span>
+            </div>
           )}
         </div>
       </DialogContent>
