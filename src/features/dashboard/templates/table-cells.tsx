@@ -296,11 +296,9 @@ export function EnvdVersionCell({
   const versionValue =
     valueString && valueString !== INVALID_ENVD_VERSION ? valueString : null
 
-  const isNotV2Compatible =
-    isVersionCompatible(
-      versionValue ?? SDK_V2_MINIMAL_ENVD_VERSION,
-      SDK_V2_MINIMAL_ENVD_VERSION
-    ) === false
+  const isNotV2Compatible = versionValue
+    ? isVersionCompatible(versionValue, SDK_V2_MINIMAL_ENVD_VERSION) === false
+    : false
   return (
     <div
       className={cn(
