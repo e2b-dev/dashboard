@@ -284,3 +284,15 @@ export function VisibilityCell({
     </span>
   )
 }
+
+export function EnvdVersionCell({
+  getValue,
+}: CellContext<Template | DefaultTemplate, unknown>) {
+  const versionValue = getValue() as string
+
+  return (
+    <span className={cn('text-fg-tertiary whitespace-nowrap font-mono')}>
+      {versionValue}
+    </span>
+  )
+}
