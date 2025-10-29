@@ -102,21 +102,18 @@ export function SandboxProvider({
   )
 
   const { data: metricsData } = useSWR(
-    !serverSandboxInfo?.sandboxID
+    !lastFallbackData?.sandboxID
       ? null
-      : [
-          `/api/teams/${teamId}/sandboxes/metrics`,
-          serverSandboxInfo?.sandboxID,
-        ],
+      : [`/api/teams/${teamId}/sandboxes/metrics`, lastFallbackData?.sandboxID],
     async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID || !isRunning) return null
+      if (!lastFallbackData?.sandboxID || !isRunning) return null
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sandboxIds: [serverSandboxInfo.sandboxID] }),
+        body: JSON.stringify({ sandboxIds: [lastFallbackData.sandboxID] }),
         cache: 'no-store',
       })
 
@@ -128,7 +125,7 @@ export function SandboxProvider({
 
       const data = (await response.json()) as MetricsResponse
 
-      return data.metrics[serverSandboxInfo.sandboxID]
+      return data.metrics[lastFallbackData.sandboxID]
     },
     {
       errorRetryInterval: 1000,
@@ -136,7 +133,7 @@ export function SandboxProvider({
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      refreshInterval: SANDBOXES_DETAILS_METRICS_POLLING_MS,
+      refreshInterval: isRunning ? SANDBOXES_DETAILS_METRICS_POLLING_MS : 0,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     }
