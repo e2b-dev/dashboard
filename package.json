@@ -73,6 +73,8 @@
     "@shikijs/rehype": "3.2.1",
     "@shikijs/themes": "3.2.1",
     "@shikijs/twoslash": "3.2.1",
+    "@stripe/react-stripe-js": "^5.3.0",
+    "@stripe/stripe-js": "^8.2.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/match-sorter-utils": "^8.19.4",

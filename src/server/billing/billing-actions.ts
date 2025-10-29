@@ -3,6 +3,7 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
+import { resolveTeamSlugInServerComponent } from '@/lib/utils/server'
 import {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -162,19 +163,19 @@ export const redirectToCustomerPortal = authActionClient
 
 // ORDERS - Addon Purchase
 
-const CreateOrderParamsSchema = z.object({
+const PurchaseAddonParamsSchema = z.object({
   teamId: z.uuid(),
   quantity: z.number().min(1),
 })
 
-export const createOrderAction = authActionClient
-  .schema(CreateOrderParamsSchema)
-  .metadata({ actionName: 'createOrder' })
+export const purchaseAddonAction = authActionClient
+  .schema(PurchaseAddonParamsSchema)
+  .metadata({ actionName: 'purchaseAddon' })
   .action(async ({ parsedInput, ctx }) => {
     const { teamId, quantity } = parsedInput
     const { session } = ctx
 
-    const res = await fetch(
+    const createRes = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/orders`,
       {
         method: 'POST',
@@ -193,29 +194,15 @@ export const createOrderAction = authActionClient
       }
     )
 
-    if (!res.ok) {
-      const text = await res.text()
+    if (!createRes.ok) {
+      const text = await createRes.text()
       return returnServerError(text ?? 'Failed to create order')
     }
 
-    const data: AddOnOrderCreateResponse = await res.json()
-    return data
-  })
+    const createData: AddOnOrderCreateResponse = await createRes.json()
 
-const ConfirmOrderParamsSchema = z.object({
-  teamId: z.uuid(),
-  orderId: z.uuid(),
-})
-
-export const confirmOrderAction = authActionClient
-  .schema(ConfirmOrderParamsSchema)
-  .metadata({ actionName: 'confirmOrder' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId, orderId } = parsedInput
-    const { session } = ctx
-
-    const res = await fetch(
-      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${orderId}`,
+    const confirmRes = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${createData.id}`,
       {
         method: 'POST',
         headers: {
@@ -225,11 +212,16 @@ export const confirmOrderAction = authActionClient
       }
     )
 
-    if (!res.ok) {
-      const text = await res.text()
+    if (!confirmRes.ok) {
+      const text = await confirmRes.text()
       return returnServerError(text ?? 'Failed to confirm order')
     }
 
-    const data: AddOnOrderConfirmResponse = await res.json()
-    return data
+    const confirmData: AddOnOrderConfirmResponse = await confirmRes.json()
+
+    const slug = await resolveTeamSlugInServerComponent()
+
+    revalidatePath(`/dashboard/${slug}/billing`, 'page')
+
+    return confirmData
   })

@@ -13,7 +13,8 @@ import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { Label } from '@/ui/primitives/label'
 import { useAction } from 'next-safe-action/hooks'
-import { forwardRef } from 'react'
+import { forwardRef, useState } from 'react'
+import { AddOnPurchaseDialog } from './addon-purchase-dialog'
 
 interface BillingTierCardProps {
   tier: Tier
@@ -24,6 +25,7 @@ interface BillingTierCardProps {
 const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
   ({ tier, isHighlighted = false, className }, ref) => {
     const team = useSelectedTeam()
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     const { toast } = useToast()
 
@@ -68,7 +70,7 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
           className
         )}
       >
-        <div className="mb-3 flex items-center justify-between px-5 pt-5">
+        <div className="mb-3 flex items-center justify-between px-5 pt-5 h-10">
           <h5>{tier.name}</h5>
           {isSelected && (
             <Badge size="lg" className="uppercase" variant="info">
@@ -108,14 +110,14 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
               <div className="flex-1">
                 <p className="prose-body text-fg">+500 concurrent sandboxes</p>
                 <p className="text-fg-tertiary prose-label mt-0.5 uppercase">
-                  +${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo - Stackable
-                  2x
+                  +${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
                 </p>
               </div>
               <Button
                 variant="default"
                 size="default"
                 className="w-full sm:w-auto sm:shrink-0"
+                onClick={() => setIsDialogOpen(true)}
               >
                 Purchase for +${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
               </Button>
@@ -136,6 +138,12 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
             </Button>
           </div>
         )}
+
+        {/* Add-on Purchase Dialog */}
+        <AddOnPurchaseDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+        />
       </div>
     )
   }
