@@ -41,6 +41,7 @@ export default async function SandboxLayout({
         header={
           <SandboxDetailsHeader
             teamIdOrSlug={teamIdOrSlug}
+            teamId={teamId}
             state={exists ? 'running' : 'paused'}
           />
         }

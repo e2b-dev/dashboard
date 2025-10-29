@@ -54,18 +54,18 @@ export function SandboxProvider({
     isLoading: isSandboxInfoLoading,
     isValidating: isSandboxInfoValidating,
   } = useSWR<SandboxInfo | void>(
-    !serverSandboxInfo?.sandboxID
+    !lastFallbackData?.sandboxID
       ? null
-      : [`/api/sandbox/details`, serverSandboxInfo?.sandboxID],
+      : [`/api/sandbox/details`, lastFallbackData?.sandboxID],
     async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID) return
+      if (!lastFallbackData?.sandboxID) return
 
       const origin = document.location.origin
 
       const requestUrl = new URL(url, origin)
 
       requestUrl.searchParams.set('teamId', teamId)
-      requestUrl.searchParams.set('sandboxId', serverSandboxInfo.sandboxID)
+      requestUrl.searchParams.set('sandboxId', lastFallbackData.sandboxID)
 
       const response = await fetch(requestUrl.toString(), {
         method: 'GET',
