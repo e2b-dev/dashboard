@@ -196,7 +196,8 @@ export const purchaseAddonAction = authActionClient
 
     if (!createRes.ok) {
       const text = await createRes.text()
-      return returnServerError(text ?? 'Failed to create order')
+
+      throw new Error(text ?? 'Failed to create order')
     }
 
     const createData: AddOnOrderCreateResponse = await createRes.json()
@@ -214,7 +215,8 @@ export const purchaseAddonAction = authActionClient
 
     if (!confirmRes.ok) {
       const text = await confirmRes.text()
-      return returnServerError(text ?? 'Failed to confirm order')
+
+      throw new Error(text ?? 'Failed to confirm order')
     }
 
     const confirmData: AddOnOrderConfirmResponse = await confirmRes.json()
