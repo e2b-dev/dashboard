@@ -17,13 +17,11 @@ import SandboxDetailsTitle from './title'
 
 interface SandboxDetailsHeaderProps {
   teamIdOrSlug: string
-  teamId: string
   state: SandboxInfo['state']
 }
 
 export default async function SandboxDetailsHeader({
   teamIdOrSlug,
-  teamId,
   state,
 }: SandboxDetailsHeaderProps) {
   const initialPollingInterval = (await cookies()).get(
