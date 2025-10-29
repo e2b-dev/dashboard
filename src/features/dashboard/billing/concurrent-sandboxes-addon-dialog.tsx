@@ -1,6 +1,5 @@
 'use client'
 
-import { MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS } from '@/configs/billing'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { confirmOrderAction } from '@/server/billing/billing-actions'
@@ -21,17 +20,23 @@ import { ArrowRight, CircleDollarSign } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useEffect, useRef } from 'react'
 
-interface AddOnPurchaseDialogProps {
+interface ConcurrentSandboxAddOnPurchaseDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  orderData: { id: string } | null
+  orderId: string
+  monthlyPriceCents: number
+  amountDueCents: number
+  currentConcurrentSandboxesLimit?: number
 }
 
-export function AddOnPurchaseDialog({
+export function ConcurrentSandboxAddOnPurchaseDialog({
   open,
   onOpenChange,
-  orderData,
-}: AddOnPurchaseDialogProps) {
+  orderId,
+  monthlyPriceCents,
+  amountDueCents,
+  currentConcurrentSandboxesLimit,
+}: ConcurrentSandboxAddOnPurchaseDialogProps) {
   const team = useSelectedTeam()
   const { toast } = useToast()
   const isConfirmingPayment = useRef(false)
@@ -42,7 +47,7 @@ export function AddOnPurchaseDialog({
     }
   }, [open])
 
-  const { execute: confirmOrder, status: confirmStatus } = useAction(
+  const { execute: confirmOrder, isTransitioning: isLoading } = useAction(
     confirmOrderAction,
     {
       onSuccess: async ({ data }) => {
@@ -121,18 +126,28 @@ export function AddOnPurchaseDialog({
   )
 
   const handlePurchase = () => {
-    if (!team || !orderData?.id) {
-      toast(defaultErrorToast('Order not ready'))
+    if (!team) {
+      toast(defaultErrorToast('Team not ready'))
       return
     }
 
     confirmOrder({
       teamId: team.id,
-      orderId: orderData.id,
+      orderId,
     })
   }
 
-  const isLoading = confirmStatus === 'executing'
+  const limitIncreaseText = currentConcurrentSandboxesLimit ? (
+    <>
+      Increases total concurrent sandbox limit from{' '}
+      <b>{currentConcurrentSandboxesLimit.toLocaleString()}</b> to{' '}
+      <b>{(currentConcurrentSandboxesLimit + 500).toLocaleString()}</b>
+    </>
+  ) : (
+    <>
+      Increases total concurrent sandbox limit by <b>500</b>
+    </>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -146,45 +161,45 @@ export function AddOnPurchaseDialog({
           </div>
         </div>
         <div className="p-3 md:p-6 flex-1 space-y-4">
-          {/* Hidden title for accessibility */}
           <DialogHeader>
             <DialogTitle>+500 Sandboxes Add-on</DialogTitle>
             <DialogDescription>
               <Badge variant="default" className="bg-bg-highlight uppercase">
-                ${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
+                ${monthlyPriceCents / 100}/mo
               </Badge>
             </DialogDescription>
           </DialogHeader>
 
-          {/* Benefits List */}
           <ul className="space-y-2 w-full">
-            {/* Bullet 1 - Increases limit */}
             <li className="flex items-start gap-2 text-left">
               <SandboxIcon className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
-              <p className="prose-body text-fg">
-                Increases total concurrent sandbox limit from 1,000 to 1,500
-              </p>
+              <p className="prose-body text-fg">{limitIncreaseText}</p>
             </li>
 
-            {/* Bullet 2 - Raises subscription */}
             <li className="flex items-start gap-2 text-left">
               <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
               <p className="prose-body text-fg">
-                Raises current subscription from $150/mo to $250/mo
+                Pay <b>${(amountDueCents / 100).toFixed(2)}</b> now
+              </p>
+            </li>
+
+            <li className="flex items-start gap-2 text-left">
+              <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+              <p className="prose-body text-fg">
+                Raises current subscription by <b>${monthlyPriceCents / 100}</b>
+                /MO
               </p>
             </li>
           </ul>
 
-          {/* CTA Button */}
           {!isLoading ? (
             <Button
               variant="default"
               size="lg"
               className="w-full justify-center uppercase"
               onClick={handlePurchase}
-              disabled={!orderData?.id}
             >
-              Add for +${MONTHLY_ADD_ON_500_SANDBOXES_PRICE_DOLLARS}/mo
+              Purchase
               <ArrowRight className="size-4" />
             </Button>
           ) : (
