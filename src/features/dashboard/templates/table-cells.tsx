@@ -298,7 +298,7 @@ export function EnvdVersionCell({
 
   const isNotV2Compatible =
     isVersionCompatible(
-      versionValue ?? INVALID_ENVD_VERSION,
+      versionValue ?? SDK_V2_MINIMAL_ENVD_VERSION,
       SDK_V2_MINIMAL_ENVD_VERSION
     ) === false
   return (
