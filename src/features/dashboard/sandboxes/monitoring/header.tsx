@@ -3,7 +3,7 @@ import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamMetricsMax } from '@/server/sandboxes/get-team-metrics-max'
-import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
+import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -111,7 +111,7 @@ export const ConcurrentSandboxes = async ({
       startDate: start,
       endDate: now,
     }),
-    getTeamTierLimits({ teamId }),
+    getTeamLimits({ teamId }),
   ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -179,7 +179,7 @@ export const MaxConcurrentSandboxes = async ({
       endDate: end,
       metric: 'concurrent_sandboxes',
     }),
-    getTeamTierLimits({ teamId }),
+    getTeamLimits({ teamId }),
   ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -200,7 +200,7 @@ export const MaxConcurrentSandboxes = async ({
       <span className="prose-value-big mt-1">
         {formatNumber(concurrentSandboxes)}
       </span>
-      {limit && (
+      {!!(limit) && (
         <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
           LIMIT: {formatNumber(limit)}
         </span>
