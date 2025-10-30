@@ -30,9 +30,13 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
     title: 'Members',
     type: 'default',
   },
-  '/dashboard/*/settings': {
-    title: 'Settings',
-    type: 'custom',
+  '/dashboard/*/keys': {
+    title: 'API Keys',
+    type: 'default',
+  },
+  '/dashboard/*/general': {
+    title: 'General',
+    type: 'default',
   },
   '/dashboard/*/billing': {
     title: 'Billing',
