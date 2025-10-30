@@ -24,6 +24,7 @@ export const TableRow = memo(function TableRow({ row }: TableRowProps) {
         row.original.sandboxID
       )}
       prefetch={false}
+      passHref
     >
       <DataTableRow
         key={row.id}

@@ -124,6 +124,15 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
 export const fallbackData: SandboxWithMetrics[] = []
 
 export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
+  // TODO: add actions column back in as soon as performance is stabilized
+  // {
+  //   id: 'actions',
+  //   enableSorting: false,
+  //   enableGlobalFilter: false,
+  //   enableResizing: false,
+  //   size: 35,
+  //   cell: ActionsCell,
+  // },
   {
     accessorKey: 'sandboxID',
     header: 'ID',
