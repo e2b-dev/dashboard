@@ -1,12 +1,14 @@
-import { ConcurrentSandboxAddonSection } from '@/features/dashboard/billing/concurrent-sandboxes-addon-section'
 import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
 import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
-import BillingTierCard from '@/features/dashboard/billing/tier-card'
+import { PlanSection } from '@/features/dashboard/billing/plan-section'
+import {
+  extractAddonData,
+  extractTierData,
+} from '@/features/dashboard/billing/utils'
 import { l } from '@/lib/clients/logger/logger'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getItems } from '@/server/billing/get-items'
 import { getTeamLimits } from '@/server/team/get-team-limits'
-import { TierLimits } from '@/types/billing'
 import ErrorBoundary from '@/ui/error'
 import Frame from '@/ui/frame'
 import {
@@ -29,19 +31,18 @@ export default async function BillingPage({
   const itemsRes = await getItems({ teamId })
   const limitsRes = await getTeamLimits({ teamId })
 
-  if (!itemsRes.data || itemsRes.serverError) {
+  // handle data loading errors
+  if (itemsRes.serverError) {
     l.error(
       {
         key: 'billing_page:failed_to_load_items',
-        context: {
-          serverError: itemsRes?.serverError,
-        },
+        context: { serverError: itemsRes.serverError },
       },
       'billing_page: Failed to load billing items'
     )
   }
 
-  if (!itemsRes?.data || !limitsRes?.data || itemsRes.serverError) {
+  if (!itemsRes?.data || !limitsRes?.data) {
     return (
       <ErrorBoundary
         error={
@@ -57,66 +58,9 @@ export default async function BillingPage({
     )
   }
 
-  const { tiers, addons } = itemsRes.data
-
-  const concurrentSandboxesAddonItem = addons.current?.find(
-    (a) => a.id === 'addon_500_sandboxes'
-  )
-
-  const pro = tiers.available.find((t) => t.id === 'pro_v1')
-  const base = tiers.available.find((t) => t.id === 'base_v1')
-
-  const selectedTier = tiers.available.find((t) => t.id === tiers.current)
-
-  const isOnProTier = selectedTier?.id === 'pro_v1'
-
-  const availableConcurrentSandboxAddOns = addons.available.find(
-    (a) => a.id === 'addon_500_sandboxes'
-  )
-
-  const isAbleToPurchaseConcurrentSandboxAddons =
-    isOnProTier && !!availableConcurrentSandboxAddOns
-
-  if (!selectedTier) {
-    l.error(
-      {
-        key: 'billing_page:missing_selected_tier',
-        context: {
-          currentTier: tiers.current,
-          availableTiers: tiers.available?.map((t) => t.id) || [],
-        },
-      },
-      'billing_page: Could not find selected tier in available tiers'
-    )
-  }
-
-  if (!pro || !base) {
-    l.error(
-      {
-        key: 'billing_page:missing_expected_tiers',
-        context: {
-          pro: !!pro,
-          base: !!base,
-          availableTiers: tiers.available?.map((t) => t.id) || [],
-        },
-      },
-      'billing_page: Dashboard expected tier including "pro" and one tier including "base", but found pro: ' +
-        !!pro +
-        ', base: ' +
-        !!base
-    )
-  }
-
-  const generateBaseLimitsFeatures = (limits?: TierLimits): string[] => {
-    if (!limits) return []
-    return [
-      `Up to ${limits.max_sandbox_duration_hours} hour${limits.max_sandbox_duration_hours ? 's' : ''} sandbox session length`,
-      `Up to ${limits.sandbox_concurrency} concurrently running sandboxes`,
-      `Up to ${limits.max_cpu} vCPUs per sandbox`,
-      `Up to ${(limits.max_ram_mib || 0) / 1024} GB RAM per sandbox`,
-      `${(limits.disk_size_mib || 0) / 1024} GB disk per sandbox`,
-    ]
-  }
+  // extract and validate billing data
+  const tierData = extractTierData(itemsRes.data)
+  const addonData = extractAddonData(itemsRes.data, tierData.selected?.id)
 
   return (
     <Frame
@@ -138,60 +82,11 @@ export default async function BillingPage({
             <CustomerPortalLink className="bg-bg w-fit" />
           </Suspense>
 
-          <div className="mt-3 flex flex-col gap-12 overflow-x-auto max-lg:mb-6 lg:flex-row">
-            {base && (
-              <BillingTierCard
-                tier={{
-                  id: base.id,
-                  name: 'Hobby',
-                  features: [
-                    'Community support',
-                    ...generateBaseLimitsFeatures(base.limits),
-                  ],
-                }}
-                addons={[]}
-                isSelected={base.id === selectedTier?.id}
-                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
-              />
-            )}
-            {pro && (
-              <BillingTierCard
-                tier={{
-                  id: 'pro_v1',
-                  name: 'Pro',
-                  features: [
-                    'Everything in the Hobby tier',
-                    ...generateBaseLimitsFeatures(pro.limits),
-                  ],
-                }}
-                addons={
-                  concurrentSandboxesAddonItem &&
-                  concurrentSandboxesAddonItem.quantity
-                    ? Array.from(
-                        { length: concurrentSandboxesAddonItem.quantity },
-                        (_, i) => ({
-                          label: `+500 Concurrent Sandboxes`,
-                          price_cents: concurrentSandboxesAddonItem.price_cents,
-                        })
-                      )
-                    : []
-                }
-                isSelectable
-                isSelected={pro.id === selectedTier?.id}
-                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
-                footer={
-                  isAbleToPurchaseConcurrentSandboxAddons ? (
-                    <ConcurrentSandboxAddonSection
-                      priceCents={availableConcurrentSandboxAddOns.price_cents}
-                      currentConcurrentSandboxesLimit={
-                        limitsRes.data?.concurrentInstances
-                      }
-                    />
-                  ) : undefined
-                }
-              />
-            )}
-          </div>
+          <PlanSection
+            tierData={tierData}
+            addonData={addonData}
+            limits={limitsRes.data}
+          />
         </CardContent>
       </Card>
 

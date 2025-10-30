@@ -8,6 +8,7 @@ import { Label } from '@/ui/primitives/label'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
+import { ADDON_500_SANDBOXES_ID } from './constants'
 
 interface ConcurrentSandboxAddonSectionProps {
   priceCents: number
@@ -61,7 +62,7 @@ export function ConcurrentSandboxAddonSection({
 
               createOrder({
                 teamId: team.id,
-                itemId: 'addon_500_sandboxes',
+                itemId: ADDON_500_SANDBOXES_ID,
               })
             }}
           >

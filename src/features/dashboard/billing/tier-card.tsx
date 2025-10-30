@@ -1,6 +1,5 @@
 'use client'
 
-import { MONTHLY_PRO_PRICE_DOLLARS } from '@/configs/billing'
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -15,6 +14,7 @@ interface BillingTierCardProps {
   tier: {
     id: string
     name: string
+    price_cents: number
     features: string[]
   }
   addons: {
@@ -63,8 +63,8 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
       })
     }
 
-    const isProTier = tier.id === 'pro_v1'
-    const tierPrice = isProTier ? `$${MONTHLY_PRO_PRICE_DOLLARS}/mo` : 'Free'
+    const tierPrice =
+      tier.price_cents > 0 ? `$${tier.price_cents / 100}/mo` : 'Free'
 
     return (
       <div

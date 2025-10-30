@@ -1,6 +1,7 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
 import { authActionClient } from '@/lib/clients/action'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { resolveTeamSlugInServerComponent } from '@/lib/utils/server'
@@ -165,7 +166,7 @@ export const redirectToCustomerPortal = authActionClient
 
 const CreateOrderParamsSchema = z.object({
   teamId: z.uuid(),
-  itemId: z.union([z.literal('addon_500_sandboxes')]),
+  itemId: z.union([z.literal(ADDON_500_SANDBOXES_ID)]),
 })
 
 export const createOrderAction = authActionClient
