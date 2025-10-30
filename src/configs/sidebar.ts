@@ -40,17 +40,6 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     icon: Container,
     activeMatch: `/dashboard/*/templates`,
   },
-  ...(INCLUDE_BILLING
-    ? [
-        {
-          label: 'Usage',
-          href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.USAGE(args.teamIdOrSlug!),
-          icon: Activity,
-          activeMatch: `/dashboard/*/usage/**`,
-        },
-      ]
-    : []),
   {
     label: 'Members',
     href: (args) => PROTECTED_URLS.MEMBERS(args.teamIdOrSlug!),
@@ -68,20 +57,28 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   ...(INCLUDE_BILLING
     ? [
         {
-          label: 'Billing',
+          label: 'Usage',
           href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.BILLING(args.teamIdOrSlug!),
-          icon: CreditCard,
-          group: 'expenses',
-          activeMatch: `/dashboard/*/billing/**`,
+            PROTECTED_URLS.USAGE(args.teamIdOrSlug!),
+          icon: Activity,
+          group: 'billing',
+          activeMatch: `/dashboard/*/usage/**`,
         },
         {
           label: 'Budget',
           href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.BUDGET(args.teamIdOrSlug!),
-          group: 'expenses',
+          group: 'billing',
           icon: DollarSign,
           activeMatch: `/dashboard/*/budget/**`,
+        },
+        {
+          label: 'Billing',
+          href: (args: SidebarNavArgs) =>
+            PROTECTED_URLS.BILLING(args.teamIdOrSlug!),
+          icon: CreditCard,
+          group: 'billing',
+          activeMatch: `/dashboard/*/billing/**`,
         },
       ]
     : []),
