@@ -5,7 +5,7 @@ import {
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
+import { getTeamLimits } from '@/server/team/get-team-limits'
 import { Suspense } from 'react'
 import { TeamMetricsChartsProvider } from '../charts-context'
 import ConcurrentChartClient from './concurrent-chart'
@@ -60,7 +60,7 @@ async function TeamMetricsChartsResolver({
       startDate: start,
       endDate: end,
     }),
-    getTeamTierLimits({ teamId }),
+    getTeamLimits({ teamId }),
   ])
 
   if (

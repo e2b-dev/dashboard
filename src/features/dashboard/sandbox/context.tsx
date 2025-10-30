@@ -54,18 +54,18 @@ export function SandboxProvider({
     isLoading: isSandboxInfoLoading,
     isValidating: isSandboxInfoValidating,
   } = useSWR<SandboxInfo | void>(
-    !serverSandboxInfo?.sandboxID
+    !lastFallbackData?.sandboxID
       ? null
-      : [`/api/sandbox/details`, serverSandboxInfo?.sandboxID],
+      : [`/api/sandbox/details`, lastFallbackData?.sandboxID],
     async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID) return
+      if (!lastFallbackData?.sandboxID) return
 
       const origin = document.location.origin
 
       const requestUrl = new URL(url, origin)
 
       requestUrl.searchParams.set('teamId', teamId)
-      requestUrl.searchParams.set('sandboxId', serverSandboxInfo.sandboxID)
+      requestUrl.searchParams.set('sandboxId', lastFallbackData.sandboxID)
 
       const response = await fetch(requestUrl.toString(), {
         method: 'GET',
@@ -102,21 +102,18 @@ export function SandboxProvider({
   )
 
   const { data: metricsData } = useSWR(
-    !serverSandboxInfo?.sandboxID
+    !lastFallbackData?.sandboxID
       ? null
-      : [
-          `/api/teams/${teamId}/sandboxes/metrics`,
-          serverSandboxInfo?.sandboxID,
-        ],
+      : [`/api/teams/${teamId}/sandboxes/metrics`, lastFallbackData?.sandboxID],
     async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID || !isRunning) return null
+      if (!lastFallbackData?.sandboxID || !isRunningState) return null
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sandboxIds: [serverSandboxInfo.sandboxID] }),
+        body: JSON.stringify({ sandboxIds: [lastFallbackData.sandboxID] }),
         cache: 'no-store',
       })
 
@@ -128,7 +125,7 @@ export function SandboxProvider({
 
       const data = (await response.json()) as MetricsResponse
 
-      return data.metrics[serverSandboxInfo.sandboxID]
+      return data.metrics[lastFallbackData.sandboxID]
     },
     {
       errorRetryInterval: 1000,
@@ -136,7 +133,9 @@ export function SandboxProvider({
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      refreshInterval: SANDBOXES_DETAILS_METRICS_POLLING_MS,
+      refreshInterval: isRunningState
+        ? SANDBOXES_DETAILS_METRICS_POLLING_MS
+        : 0,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     }

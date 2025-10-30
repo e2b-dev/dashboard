@@ -7,6 +7,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { isVersionCompatible } from '@/lib/utils/version'
 import {
   deleteTemplateAction,
   updateTemplateAction,
@@ -282,5 +283,38 @@ export function VisibilityCell({
     >
       {getValue() ? 'Public' : 'Private'}
     </span>
+  )
+}
+
+const INVALID_ENVD_VERSION = '0.0.1'
+const SDK_V2_MINIMAL_ENVD_VERSION = '0.2.0'
+
+export function EnvdVersionCell({
+  getValue,
+}: CellContext<Template | DefaultTemplate, unknown>) {
+  const valueString = getValue() as string
+  const versionValue =
+    valueString && valueString !== INVALID_ENVD_VERSION ? valueString : null
+
+  const isNotV2Compatible = versionValue
+    ? isVersionCompatible(versionValue, SDK_V2_MINIMAL_ENVD_VERSION) === false
+    : false
+  return (
+    <div
+      className={cn(
+        'text-fg-tertiary whitespace-nowrap font-mono flex flex-row gap-1.5',
+        {
+          'text-accent-error-highlight': isNotV2Compatible,
+        }
+      )}
+    >
+      {versionValue ?? 'N/A'}
+      {isNotV2Compatible && (
+        <HelpTooltip>
+          The envd version is not compatible with the SDK v2. To update the envd
+          version, you need to rebuild the template.
+        </HelpTooltip>
+      )}
+    </div>
   )
 }

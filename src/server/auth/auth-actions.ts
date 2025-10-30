@@ -12,35 +12,42 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
-import { Provider } from '@supabase/supabase-js'
 import { returnValidationErrors } from 'next-safe-action'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
+const SignInWithOAuthInputSchema = z.object({
+  provider: z.union([z.literal('github'), z.literal('google')]),
+  returnTo: relativeUrlSchema.optional(),
+})
+
 export const signInWithOAuthAction = actionClient
-  .schema(
-    z.object({
-      provider: z.string() as unknown as z.ZodType<Provider>,
-      returnTo: relativeUrlSchema.optional(),
-    })
-  )
+  .inputSchema(SignInWithOAuthInputSchema)
   .metadata({ actionName: 'signInWithOAuth' })
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
 
     const supabase = await createClient()
 
-    const origin = (await headers()).get('origin')
+    const headerStore = await headers()
+
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
 
     l.info(
       {
         key: 'sign_in_with_oauth_action:init',
-        provider,
-        returnTo,
+        context: {
+          provider,
+          returnTo,
+        },
       },
-      `Initializing OAuth sign-in with provider ${provider}`
+      `sign_in_with_oauth_action: initializing OAuth sign-in with provider: ${provider}`
     )
 
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -52,6 +59,17 @@ export const signInWithOAuthAction = actionClient
     })
 
     if (error) {
+      l.error(
+        {
+          key: 'sign_in_with_oauth_action:supabase_error',
+          context: {
+            provider,
+            returnTo,
+          },
+        },
+        `sign_in_with_oauth_action: supabase error: ${error.message}`
+      )
+
       const queryParams = returnTo ? { returnTo } : undefined
       throw encodedRedirect(
         'error',
@@ -61,16 +79,7 @@ export const signInWithOAuthAction = actionClient
       )
     }
 
-    if (data.url) {
-      redirect(data.url)
-    }
-
-    throw encodedRedirect(
-      'error',
-      AUTH_URLS.SIGN_IN,
-      'Something went wrong',
-      returnTo ? { returnTo } : undefined
-    )
+    throw redirect(data.url)
   })
 
 export const signUpAction = actionClient
@@ -78,7 +87,13 @@ export const signUpAction = actionClient
   .metadata({ actionName: 'signUp' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
     const supabase = await createClient()
-    const origin = (await headers()).get('origin') || ''
+    const headerStore = await headers()
+
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
 
     // basic security check, that password does not equal e-mail
     if (password && email && password.toLowerCase() === email.toLowerCase()) {
@@ -136,7 +151,11 @@ export const signInAction = actionClient
 
     const headerStore = await headers()
 
-    const origin = headerStore.get('origin') || ''
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
