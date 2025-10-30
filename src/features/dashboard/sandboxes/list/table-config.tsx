@@ -11,6 +11,7 @@ import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import posthog from 'posthog-js'
 import { serializeError } from 'serialize-error'
 import {
+  ActionsCell,
   CpuUsageCell,
   DiskUsageCell,
   IdCell,
@@ -124,6 +125,14 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
 export const fallbackData: SandboxWithMetrics[] = []
 
 export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
+  {
+    id: 'actions',
+    enableSorting: false,
+    enableGlobalFilter: false,
+    enableResizing: false,
+    size: 35,
+    cell: ActionsCell,
+  },
   {
     accessorKey: 'sandboxID',
     header: 'ID',

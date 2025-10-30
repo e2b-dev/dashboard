@@ -46,7 +46,7 @@ export default function KillButton({ className }: KillButtonProps) {
       open={open}
       onOpenChange={setOpen}
       title="Kill Sandbox"
-      description="Are you sure you want to kill this sandbox? This action cannot be undone."
+      description="Are you sure you want to kill this sandbox? The sandbox state will be lost and cannot be recovered."
       confirm="Kill Sandbox"
       trigger={
         <Button
