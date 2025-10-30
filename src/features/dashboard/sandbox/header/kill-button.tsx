@@ -2,7 +2,7 @@
 
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
-import { AlertDialog } from '@/ui/alert-dialog'
+import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { useAction } from 'next-safe-action/hooks'
@@ -42,7 +42,7 @@ export default function KillButton({ className }: KillButtonProps) {
   }
 
   return (
-    <AlertDialog
+    <AlertPopover
       open={open}
       onOpenChange={setOpen}
       title="Kill Sandbox"
