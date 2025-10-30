@@ -1,3 +1,4 @@
+import { SettingsIcon } from '@/ui/primitives/icons'
 import {
   Activity,
   Box,
@@ -9,7 +10,7 @@ import {
   UserRoundCog,
   Users,
 } from 'lucide-react'
-import { ForwardRefExoticComponent, RefAttributes } from 'react'
+import { ForwardRefExoticComponent, JSX, RefAttributes } from 'react'
 import { INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
@@ -20,9 +21,12 @@ type SidebarNavArgs = {
 export type SidebarNavItem = {
   label: string
   href: (args: SidebarNavArgs) => string
-  icon: ForwardRefExoticComponent<
-    Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
-  >
+  icon:
+    | ForwardRefExoticComponent<
+        Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
+      >
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | ((...args: any[]) => JSX.Element)
   group?: string
   activeMatch?: string
 }
@@ -40,20 +44,29 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     icon: Container,
     activeMatch: `/dashboard/*/templates`,
   },
+
+  {
+    label: 'General',
+    href: (args) => PROTECTED_URLS.GENERAL(args.teamIdOrSlug!),
+    icon: SettingsIcon,
+    group: 'team',
+    activeMatch: `/dashboard/*/general`,
+  },
+  {
+    label: 'API Keys',
+    href: (args) => PROTECTED_URLS.KEYS(args.teamIdOrSlug!),
+    icon: Key,
+    group: 'team',
+    activeMatch: `/dashboard/*/keys`,
+  },
   {
     label: 'Members',
     href: (args) => PROTECTED_URLS.MEMBERS(args.teamIdOrSlug!),
     icon: Users,
     group: 'team',
-    activeMatch: `/dashboard/*/members/**`,
+    activeMatch: `/dashboard/*/members`,
   },
-  {
-    label: 'Settings',
-    href: (args) => PROTECTED_URLS.SETTINGS(args.teamIdOrSlug!, 'general'),
-    icon: Key,
-    group: 'team',
-    activeMatch: `/dashboard/*/settings/**`,
-  },
+
   ...(INCLUDE_BILLING
     ? [
         {
