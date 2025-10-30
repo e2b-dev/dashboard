@@ -106,7 +106,7 @@ export function SandboxProvider({
       ? null
       : [`/api/teams/${teamId}/sandboxes/metrics`, lastFallbackData?.sandboxID],
     async ([url]) => {
-      if (!lastFallbackData?.sandboxID || !isRunning) return null
+      if (!lastFallbackData?.sandboxID || !isRunningState) return null
 
       const response = await fetch(url, {
         method: 'POST',
@@ -133,7 +133,9 @@ export function SandboxProvider({
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      refreshInterval: isRunning ? SANDBOXES_DETAILS_METRICS_POLLING_MS : 0,
+      refreshInterval: isRunningState
+        ? SANDBOXES_DETAILS_METRICS_POLLING_MS
+        : 0,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     }
