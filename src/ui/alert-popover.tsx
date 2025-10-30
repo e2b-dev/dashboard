@@ -15,6 +15,7 @@ interface AlertPopoverProps
   confirmProps?: React.ComponentPropsWithoutRef<typeof Button>
   popoverContentProps?: React.ComponentPropsWithoutRef<typeof PopoverContent>
   onConfirm: () => void
+  onCancel: () => void
 }
 
 export const AlertPopover: FC<AlertPopoverProps> = ({
@@ -27,12 +28,13 @@ export const AlertPopover: FC<AlertPopoverProps> = ({
   confirmProps,
   popoverContentProps,
   onConfirm,
+  onCancel,
   ...props
 }) => {
   return (
-    <Popover>
+    <Popover {...props}>
       {trigger && <PopoverTrigger asChild>{trigger}</PopoverTrigger>}
-      <PopoverContent side="bottom" align="center">
+      <PopoverContent side="bottom" align="center" {...popoverContentProps}>
         <div className="space-y-4 p-4">
           <div className="space-y-1">
             <h4 className="">{title}</h4>
@@ -42,15 +44,13 @@ export const AlertPopover: FC<AlertPopoverProps> = ({
           {children && <div>{children}</div>}
 
           <div className="flex items-center gap-2 justify-end">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={onCancel}>
               {cancel}
             </Button>
             <Button
               variant="error"
               size="sm"
-              onClick={() => {
-                onConfirm()
-              }}
+              onClick={onConfirm}
               {...confirmProps}
             >
               {confirm}

@@ -84,7 +84,12 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
           e.preventDefault()
         }}
       >
-        <Button variant="ghost" size="icon" className="text-fg-tertiary size-5">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-fg-tertiary size-5"
+          disabled={isKilling || sandbox.state !== 'running'}
+        >
           {isKilling ? (
             <Loader className="size-4" />
           ) : (

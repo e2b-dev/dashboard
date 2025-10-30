@@ -64,6 +64,7 @@ export default function KillButton({ className }: KillButtonProps) {
         loading: isExecuting,
       }}
       onConfirm={handleKill}
+      onCancel={() => setOpen(false)}
     />
   )
 }
