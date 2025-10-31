@@ -19,6 +19,17 @@ export function determineSamplingMode(timeframe: Timeframe): SamplingMode {
   return 'daily'
 }
 
+export function getSamplingModeStepMs(samplingMode: SamplingMode): number {
+  switch (samplingMode) {
+    case 'hourly':
+      return 60 * 60 * 1000
+    case 'daily':
+      return 24 * 60 * 60 * 1000
+    case 'weekly':
+      return 7 * 24 * 60 * 60 * 1000
+  }
+}
+
 export function processUsageData(
   hourlyData: UsageResponse['hour_usages'],
   samplingMode: SamplingMode

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { buildSeriesData, calculateYAxisMax } from '@/lib/utils/chart'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { EChartsOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { BarChart } from 'echarts/charts'
@@ -14,11 +14,9 @@ import {
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import { COMPUTE_CHART_CONFIGS } from '../constants'
-import { normalizeToStartOfSamplingPeriod } from '../sampling-utils'
 import type { ComputeUsageChartProps } from './types'
-import { formatAxisDate, transformComputeData } from './utils'
 
 echarts.use([
   BarChart,
@@ -30,11 +28,8 @@ echarts.use([
 ])
 
 function ComputeUsageChart({
-  startTime,
-  endTime,
   type,
   data,
-  samplingMode,
   className,
   onHover,
   onHoverEnd,
@@ -54,8 +49,6 @@ function ComputeUsageChart({
 
   const config = COMPUTE_CHART_CONFIGS[type]
 
-  const chartData = useMemo(() => transformComputeData(data), [data])
-
   const cssVars = useCssVars([
     config.barColorVar,
     '--stroke',
@@ -73,10 +66,10 @@ function ComputeUsageChart({
   const handleAxisPointer = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
-      const timestamp = params.value
+      const index = params.seriesData[0].dataIndex
 
-      if (timestamp && onHoverRef.current) {
-        onHoverRef.current(timestamp)
+      if (index !== undefined && onHoverRef.current) {
+        onHoverRef.current(index)
       }
 
       return ''
@@ -99,19 +92,10 @@ function ComputeUsageChart({
         const coordRange = area.coordRange
 
         if (coordRange && coordRange.length === 2 && onBrushEndRef.current) {
-          const startValue = coordRange[0]
-          const endValue = coordRange[1]
+          const startIndex = coordRange[0]
+          const endIndex = coordRange[1]
 
-          const normalizedStart = normalizeToStartOfSamplingPeriod(
-            Math.round(startValue),
-            samplingMode
-          )
-          const normalizedEnd = normalizeToStartOfSamplingPeriod(
-            Math.round(endValue),
-            samplingMode
-          )
-
-          onBrushEndRef.current(normalizedStart, normalizedEnd)
+          onBrushEndRef.current(startIndex, endIndex)
 
           chartInstanceRef.current?.dispatchAction({
             type: 'brush',
@@ -121,7 +105,7 @@ function ComputeUsageChart({
         }
       }
     },
-    [samplingMode]
+    []
   )
 
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
@@ -145,22 +129,10 @@ function ComputeUsageChart({
   }, [])
 
   const option = useMemo<EChartsOption>(() => {
-    const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
-    const seriesData = buildSeriesData(chartData)
-
-    // calculate tick interval based on sampling mode
-    const HOUR_MS = 60 * 60 * 1000
-    const DAY_MS = 24 * HOUR_MS
-    const WEEK_MS = 7 * DAY_MS
-
-    let minInterval: number
-    if (samplingMode === 'hourly') {
-      minInterval = HOUR_MS
-    } else if (samplingMode === 'weekly') {
-      minInterval = WEEK_MS
-    } else {
-      minInterval = DAY_MS
-    }
+    const yAxisMax = calculateAxisMax(
+      data.map((d) => d.y),
+      config.yAxisScaleFactor
+    )
 
     const seriesItem: SeriesOption = {
       id: config.id,
@@ -181,13 +153,13 @@ function ComputeUsageChart({
           color: barColor,
         },
       },
-      barCategoryGap: 3,
+      barCategoryGap: '15%',
       emphasis: {
         itemStyle: {
           opacity: 1,
         },
       },
-      data: seriesData.map((d) => d.value),
+      data: data.map((d) => d.y),
     }
 
     const series: EChartsOption['series'] = [seriesItem]
@@ -220,74 +192,76 @@ function ComputeUsageChart({
         left: 0,
         right: 0,
       },
-      xAxis: {
-        type: 'value',
-        minInterval,
-        axisPointer: {
-          show: true,
-          type: 'line',
-          lineStyle: { color: stroke, type: 'solid', width: 1 },
-          snap: false,
-          label: {
-            backgroundColor: 'transparent',
-            // only to get currently axis value
-            formatter: handleAxisPointer,
+      xAxis: [
+        {
+          type: 'category',
+          data: data.map((d) => d.x),
+          axisPointer: {
+            show: true,
+            type: 'line',
+            lineStyle: { color: stroke, type: 'solid', width: 1 },
+            snap: false,
+            label: {
+              backgroundColor: 'transparent',
+              // only to get currently axis value
+              formatter: handleAxisPointer,
+            },
+          },
+          axisLine: {
+            show: true,
+            lineStyle: { color: stroke },
+          },
+
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: {
+            show: true,
+            color: fgTertiary,
+            fontFamily: fontMono,
+            fontSize: 12,
+            formatter: (value: string, index: number) => {
+              // Only show labels for first and last data points
+              if (index === 0 || index === data.length - 1) {
+                return value
+              }
+              return ''
+            },
           },
         },
-        axisLine: {
-          show: true,
-          lineStyle: { color: stroke },
-        },
-        axisTick: { show: false },
-        splitLine: { show: false },
-        axisLabel: {
-          show: true,
-          color: fgTertiary,
-          fontFamily: fontMono,
-          fontSize: 12,
-          showMinLabel: true,
-          showMaxLabel: true,
-          formatter: (value: number) => {
-            return formatAxisDate(value)
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          min: 0,
+          max: yAxisMax,
+          interval: yAxisMax / 2,
+          axisLine: {
+            show: false,
           },
-          alignMaxLabel: 'right',
-          alignMinLabel: 'left',
+          axisTick: { show: false },
+          splitLine: {
+            show: true,
+            lineStyle: { color: stroke, type: 'dashed' },
+            interval: 0,
+          },
+          axisLabel: {
+            show: true,
+            color: fgTertiary,
+            fontFamily: fontMono,
+            fontSize: 12,
+            interval: 0,
+            formatter: config.yAxisFormatter,
+          },
+          axisPointer: {
+            show: false,
+          },
         },
-        // show no tick in-between, only start and end
-        interval: Number.MAX_SAFE_INTEGER,
-      },
-      yAxis: {
-        type: 'value',
-        min: 0,
-        max: yAxisMax,
-        interval: yAxisMax / 2,
-        axisLine: {
-          show: false,
-        },
-        axisTick: { show: false },
-        splitLine: {
-          show: true,
-          lineStyle: { color: stroke, type: 'dashed' },
-          interval: 0,
-        },
-        axisLabel: {
-          show: true,
-          color: fgTertiary,
-          fontFamily: fontMono,
-          fontSize: 12,
-          interval: 0,
-          formatter: config.yAxisFormatter,
-        },
-        axisPointer: {
-          show: false,
-        },
-      },
+      ],
       series,
     }
   }, [
-    chartData,
+    data,
     config,
-    samplingMode,
     barColor,
     bgInverted,
     stroke,
@@ -295,19 +269,6 @@ function ComputeUsageChart({
     fontMono,
     handleAxisPointer,
   ])
-
-  useEffect(() => {
-    const chart = chartInstanceRef.current
-
-    if (chart) {
-      chart.setOption({
-        xAxis: {
-          min: startTime,
-          max: endTime,
-        },
-      })
-    }
-  }, [option, startTime, endTime])
 
   return (
     <ReactEChartsCore
@@ -335,9 +296,7 @@ const MemoizedComputeUsageChart = memo(
       prevProps.type === nextProps.type &&
       prevProps.data === nextProps.data &&
       prevProps.samplingMode === nextProps.samplingMode &&
-      prevProps.className === nextProps.className &&
-      prevProps.startTime === nextProps.startTime &&
-      prevProps.endTime === nextProps.endTime
+      prevProps.className === nextProps.className
       // exclude onHover and onHoverEnd - they're handled via refs
     )
   }

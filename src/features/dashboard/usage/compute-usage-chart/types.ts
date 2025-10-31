@@ -1,5 +1,4 @@
-import { TimeSeriesPoint } from '@/lib/utils/time-series'
-import { SamplingMode } from '../types'
+import { ComputUsageAxisPoint, SamplingMode } from '../types'
 
 export type ComputeChartType = 'cost' | 'ram' | 'vcpu' | 'sandboxes'
 
@@ -7,12 +6,12 @@ export interface ComputeUsageChartProps {
   startTime?: number
   endTime?: number
   type: ComputeChartType
-  data: TimeSeriesPoint[]
+  data: ComputUsageAxisPoint[]
   samplingMode: SamplingMode
   className?: string
-  onHover?: (timestamp: number) => void
+  onHover?: (index: number) => void
   onHoverEnd?: () => void
-  onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
+  onBrushEnd?: (startIndex: number, endIndex: number) => void
 }
 
 export interface ComputeDataPoint {

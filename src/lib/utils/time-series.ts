@@ -1,5 +1,5 @@
 export interface TimeSeriesPoint {
-  x: number | Date
+  x: number
   y: number
 }
 
@@ -41,8 +41,11 @@ function generateEmptyPoint(x: number): TimeSeriesPoint {
  *
  * This function handles:
  * 1. Empty Data: Generates a complete empty-filled time series
- * 2. Sparse Data: Adds empty points to show periods of no activity
- * 3. Boundary Gaps: Pads with empty points at start/end of range
+ * 2. Anomalous Gaps: Fills all missing steps between data points when gap exceeds tolerance
+ * 3. Viewport Boundaries: Always fills from first/last data points to config.start/end boundaries
+ *
+ * Anomalous gap detection is based on actual data points, not viewport boundaries.
+ * Config start/end are used only as viewport limits, not for gap detection.
  *
  * CRITICAL: this logic is highly tested. do not modify without extensive testing
  */
@@ -58,26 +61,15 @@ export function fillTimeSeriesWithEmptyPoints(
 
   // Sort data by timestamp
   const sortedData = [...data].sort((a, b) => {
-    const timeA = typeof a.x === 'number' ? a.x : new Date(a.x).getTime()
-    const timeB = typeof b.x === 'number' ? b.x : new Date(b.x).getTime()
-    return timeA - timeB
+    return a.x - b.x
   })
 
   const result: TimeSeriesPoint[] = []
 
-  // Add start padding if needed
-  const firstTimestamp =
-    typeof sortedData[0]!.x === 'number'
-      ? sortedData[0]!.x
-      : new Date(sortedData[0]!.x).getTime()
-  const gapFromStart = firstTimestamp - start
-  if (isGapAnomalous(gapFromStart, step, anomalousGapTolerance)) {
-    result.push(generateEmptyPoint(start))
-
-    const prefixZeroTimestamp = firstTimestamp - step
-    if (prefixZeroTimestamp > start && prefixZeroTimestamp < firstTimestamp) {
-      result.push(generateEmptyPoint(prefixZeroTimestamp))
-    }
+  // fill backwards from first data point to config.start
+  const firstTimestamp = sortedData[0]!.x
+  for (let ts = firstTimestamp - step; ts >= start; ts -= step) {
+    result.push(generateEmptyPoint(ts))
   }
 
   // Add data points and fill gaps
@@ -88,64 +80,31 @@ export function fillTimeSeriesWithEmptyPoints(
     if (i === sortedData.length - 1) break
 
     const nextPoint = sortedData[i + 1]!
-    const currentTimestamp =
-      typeof currentPoint.x === 'number'
-        ? currentPoint.x
-        : new Date(currentPoint.x).getTime()
-    const nextTimestamp =
-      typeof nextPoint.x === 'number'
-        ? nextPoint.x
-        : new Date(nextPoint.x).getTime()
+    const currentTimestamp = currentPoint.x
+    const nextTimestamp = nextPoint.x
     const actualGap = nextTimestamp - currentTimestamp
 
     if (isGapAnomalous(actualGap, step, anomalousGapTolerance)) {
-      const suffixZeroTimestamp = currentTimestamp + step
-      if (
-        suffixZeroTimestamp < nextTimestamp &&
-        suffixZeroTimestamp > currentTimestamp
-      ) {
-        result.push(generateEmptyPoint(suffixZeroTimestamp))
-      }
-
-      const prefixZeroTimestamp = nextTimestamp - step
-      if (
-        prefixZeroTimestamp > currentTimestamp &&
-        prefixZeroTimestamp < nextTimestamp &&
-        prefixZeroTimestamp > suffixZeroTimestamp
-      ) {
-        result.push(generateEmptyPoint(prefixZeroTimestamp))
+      // fill all missing timestamps at step intervals
+      for (let ts = currentTimestamp + step; ts < nextTimestamp; ts += step) {
+        result.push(generateEmptyPoint(ts))
       }
     }
   }
 
-  // Add end padding if needed
-  const lastPoint = sortedData[sortedData.length - 1]!
-  const lastTimestamp =
-    typeof lastPoint.x === 'number'
-      ? lastPoint.x
-      : new Date(lastPoint.x).getTime()
-  const gapToEnd = end - lastTimestamp
-
-  // Add zeros at end if gap is significant (more than 2 steps)
-  if (gapToEnd >= step * 2) {
-    const suffixZeroTimestamp = lastTimestamp + step
-    if (suffixZeroTimestamp < end) {
-      result.push(generateEmptyPoint(suffixZeroTimestamp))
-    }
-
-    result.push(generateEmptyPoint(end - 1000))
+  // fill forwards from last data point to config.end
+  const lastTimestamp = sortedData[sortedData.length - 1]!.x
+  for (let ts = lastTimestamp + step; ts <= end; ts += step) {
+    result.push(generateEmptyPoint(ts))
   }
 
   // Sort and strip potential overfetching
   const sorted = result.sort((a, b) => {
-    const timeA = typeof a.x === 'number' ? a.x : new Date(a.x).getTime()
-    const timeB = typeof b.x === 'number' ? b.x : new Date(b.x).getTime()
-    return timeA - timeB
+    return a.x - b.x
   })
 
   return sorted.filter((d) => {
-    const timestamp = typeof d.x === 'number' ? d.x : new Date(d.x).getTime()
-    return timestamp >= start && timestamp <= end
+    return d.x >= start && d.x <= end
   })
 }
 

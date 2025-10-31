@@ -3,7 +3,6 @@
 import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader } from '@/ui/primitives/card'
-import { useCallback } from 'react'
 import ComputeUsageChart from './compute-usage-chart'
 import { useUsageCharts } from './usage-charts-context'
 import { UsageTimeRangeControls } from './usage-time-range-controls'
@@ -33,35 +32,18 @@ export function UsageMetricChart({
   timeRangeControlsClassName,
 }: UsageMetricChartProps) {
   const {
-    seriesData,
-    setHoveredTimestamp,
+    displayedData,
+    setHoveredIndex,
     timeframe,
     setTimeframe,
     displayValues,
     samplingMode,
+    onBrushEnd,
   } = useUsageCharts()
-
-  const handleBrushEnd = useCallback(
-    (start: number, end: number) => {
-      setTimeframe(start, end)
-    },
-    [setTimeframe]
-  )
-
-  const handleHover = useCallback(
-    (timestamp: number) => {
-      setHoveredTimestamp(timestamp)
-    },
-    [setHoveredTimestamp]
-  )
-
-  const handleHoverEnd = useCallback(() => {
-    setHoveredTimestamp(null)
-  }, [setHoveredTimestamp])
 
   const config = METRIC_CONFIGS[metric]
   const { displayValue, label, timestamp } = displayValues[metric]
-  const data = seriesData[metric]
+  const data = displayedData[metric]
 
   return (
     <Card className={cn('h-full flex flex-col', className)}>
@@ -88,11 +70,9 @@ export function UsageMetricChart({
             type={metric}
             data={data}
             samplingMode={samplingMode}
-            onHover={handleHover}
-            onHoverEnd={handleHoverEnd}
-            onBrushEnd={handleBrushEnd}
-            startTime={timeframe.start}
-            endTime={timeframe.end}
+            onHover={setHoveredIndex}
+            onHoverEnd={() => setHoveredIndex(null)}
+            onBrushEnd={onBrushEnd}
           />
         </div>
       </CardContent>

@@ -1,6 +1,9 @@
-import { TimeSeriesPoint } from '@/lib/utils/time-series'
-
 export type SamplingMode = 'hourly' | 'daily' | 'weekly'
+
+export interface ComputUsageAxisPoint {
+  x: string
+  y: number
+}
 
 export interface Timeframe {
   start: number
@@ -21,10 +24,10 @@ export interface MetricTotals {
 }
 
 export interface ComputeUsageSeriesData {
-  sandboxes: TimeSeriesPoint[]
-  cost: TimeSeriesPoint[]
-  vcpu: TimeSeriesPoint[]
-  ram: TimeSeriesPoint[]
+  sandboxes: ComputUsageAxisPoint[]
+  cost: ComputUsageAxisPoint[]
+  vcpu: ComputUsageAxisPoint[]
+  ram: ComputUsageAxisPoint[]
 }
 
 /**

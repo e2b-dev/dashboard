@@ -1,14 +1,9 @@
-import { TimeSeriesPoint } from './time-series'
-
-export function calculateYAxisMax(
-  data: TimeSeriesPoint[],
-  scaleFactor: number
-): number {
+export function calculateAxisMax(data: number[], scaleFactor: number): number {
   if (data.length === 0) return 1
 
   let max = 0
   for (let i = 0; i < data.length; i++) {
-    const y = data[i]!.y
+    const y = data[i]!
     if (y > max) max = y
   }
 
@@ -23,12 +18,4 @@ export function calculateYAxisMax(
   const calculatedMax = snapToAxis(max * scaleFactor)
 
   return Math.max(calculatedMax, 1)
-}
-
-export function buildSeriesData(
-  data: TimeSeriesPoint[]
-): Array<{ value: [number, number] }> {
-  return data.map((point) => ({
-    value: [point.x instanceof Date ? point.x.getTime() : point.x, point.y],
-  }))
 }
