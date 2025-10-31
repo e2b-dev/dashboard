@@ -270,7 +270,7 @@ function PaymentElementWrapper({
           clientSecret,
           customerSessionClientSecret,
           appearance,
-          loader: 'auto',
+          loader: 'never',
         }}
       >
         <PaymentElementForm onOpenChange={onOpenChange} isLoading={isLoading} />
@@ -333,7 +333,14 @@ function PaymentElementForm({
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <PaymentElement />
+      <PaymentElement
+        options={{
+          layout: {
+            type: 'tabs',
+            defaultCollapsed: true,
+          },
+        }}
+      />
       {!isProcessing ? (
         <Button
           type="submit"

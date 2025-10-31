@@ -23,8 +23,10 @@ export const ADDON_PURCHASE_MESSAGES = {
     loadingPaymentMethods: 'Loading your saved payment methods...',
   },
   error: {
+    // user-actionable: card authentication (3D Secure) failed
     cardAuthFailed:
       'Card authentication failed. Please try a different payment method.',
+    // generic error for all other failures (logged on our side)
     generic:
       'Something went wrong. Please try again or contact support if the issue persists.',
   },

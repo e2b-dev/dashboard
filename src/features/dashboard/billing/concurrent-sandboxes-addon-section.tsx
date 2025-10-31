@@ -2,6 +2,7 @@
 
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { formatCurrency } from '@/lib/utils/formatting'
 import { createOrderAction } from '@/server/billing/billing-actions'
 import { Button } from '@/ui/primitives/button'
 import { Label } from '@/ui/primitives/label'
@@ -49,7 +50,7 @@ export function ConcurrentSandboxAddonSection({
           <div className="flex-1">
             <p className="prose-body text-fg">+500 Concurrent Sandboxes</p>
             <p className="text-fg-tertiary prose-label mt-0.5 uppercase">
-              {`+$${(priceCents / 100).toFixed(2)}/mo`}
+              {`+${formatCurrency(priceCents / 100)}/mo`}
             </p>
           </div>
           {isCreateOrderLoading ? (

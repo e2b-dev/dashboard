@@ -3,6 +3,7 @@
 import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/formatting'
 import { redirectToCheckoutAction } from '@/server/billing/billing-actions'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -64,7 +65,9 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
     }
 
     const tierPrice =
-      tier.price_cents > 0 ? `$${tier.price_cents / 100}/mo` : 'Free'
+      tier.price_cents > 0
+        ? `${formatCurrency(tier.price_cents / 100)}/mo`
+        : 'Free'
 
     return (
       <div
@@ -111,7 +114,7 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
               >
                 <span className="text-fg-secondary">{addon.label}</span>
                 <span className="prose-body-highlight">
-                  ${addon.price_cents / 100}/mo
+                  {formatCurrency(addon.price_cents / 100)}/mo
                 </span>
               </div>
             ))}

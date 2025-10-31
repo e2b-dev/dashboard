@@ -335,3 +335,23 @@ export function combineDateTimeStrings(
   if (!date || !time) return null
   return tryParseDatetime(`${date} ${time}`)
 }
+
+/**
+ * Format a currency amount with the specified currency and locale
+ * @param amount - Amount to format
+ * @param currency - Currency to use (defaults to 'USD')
+ * @param locale - Locale to use (defaults to 'en-US')
+ * @returns Formatted currency string (e.g., "$100.00", "100.00 €")
+ */
+export function formatCurrency(
+  amount: number,
+  currency: string = 'USD',
+  locale: string = 'en-US'
+): string {
+  return Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount)
+}

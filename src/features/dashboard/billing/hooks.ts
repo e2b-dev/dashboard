@@ -10,6 +10,7 @@ const stripePromise = loadStripe(
 
 /**
  * Provides themed appearance configuration for Stripe Payment Element
+ * Matches design system: bg-highlight, stroke, stroke-active, fg, fg-tertiary
  */
 export function usePaymentElementAppearance() {
   const { resolvedTheme } = useTheme()
@@ -18,32 +19,129 @@ export function usePaymentElementAppearance() {
   return {
     theme: 'flat' as const,
     variables: {
+      // accent colors
       colorPrimary: isDark ? '#ff8800' : '#e56f00',
-      colorBackground: isDark ? '#1f1f1f' : '#f2f2f2',
-      colorText: isDark ? '#ffffff' : '#0a0a0a',
       colorDanger: isDark ? '#f54545' : '#ff4400',
       colorSuccess: isDark ? '#00d992' : '#00a670',
+
+      // backgrounds
+      colorBackground: isDark ? '#141414' : '#f5f5f5', // bg-1
+
+      // text
+      colorText: isDark ? '#ffffff' : '#0a0a0a', // fg
+      colorTextSecondary: isDark ? '#e6e6e6' : '#333333', // fg-secondary
+      colorTextPlaceholder: isDark ? '#848484' : '#707070', // fg-tertiary
+
+      // icons
+      colorIconCardError: isDark ? '#f54545' : '#ff4400',
+
+      // typography
       fontFamily:
         '"IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       fontSizeBase: '14px',
       fontLineHeight: '20px',
+      fontWeightNormal: '400',
+      fontWeightLight: '400',
+
+      // borders
       borderRadius: '6px',
-      colorTextPlaceholder: isDark ? '#848484' : '#707070',
-      colorIconCardError: isDark ? '#f54545' : '#ff4400',
+      spacingUnit: '4px',
     },
     rules: {
       '.Input': {
-        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6',
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2', // bg-highlight
+        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6', // stroke
+        padding: '10px 12px',
         boxShadow: 'none',
+        transition: 'border-color 150ms ease',
+      },
+      '.Input:hover': {
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
+        border: isDark ? '1px solid #383838' : '1px solid #c2c2c2',
       },
       '.Input:focus': {
-        border: isDark ? '1px solid #424242' : '1px solid #c2c2c2',
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
+        border: isDark ? '1px solid #424242' : '1px solid #c2c2c2', // stroke-active
         boxShadow: 'none',
+        outline: 'none',
+      },
+      '.Input::placeholder': {
+        color: isDark ? '#848484' : '#707070', // fg-tertiary
       },
       '.Label': {
         fontSize: '12px',
         fontWeight: '400',
+        color: isDark ? '#e6e6e6' : '#333333', // fg-secondary
         marginBottom: '6px',
+        textTransform: 'none',
+      },
+      '.Tab': {
+        backgroundColor: isDark ? '#141414' : '#f5f5f5', // bg-1
+        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6', // stroke
+        boxShadow: 'none',
+      },
+      '.Tab:hover': {
+        backgroundColor: isDark ? '#1f1f1f' : '#ebebeb',
+        border: isDark ? '1px solid #383838' : '1px solid #c2c2c2',
+      },
+      '.Tab--selected': {
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2', // bg-highlight
+        border: isDark ? '1px solid #424242' : '1px solid #c2c2c2', // stroke-active
+        boxShadow: 'none',
+      },
+      '.TabLabel': {
+        fontWeight: '400',
+        color: isDark ? '#ffffff' : '#0a0a0a',
+      },
+      '.TabIcon': {
+        fill: isDark ? '#848484' : '#707070',
+      },
+      '.TabIcon--selected': {
+        fill: isDark ? '#ffffff' : '#0a0a0a',
+      },
+      '.Block': {
+        backgroundColor: isDark ? '#141414' : '#f5f5f5', // bg-1
+        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6', // stroke
+      },
+      '.PickerItem': {
+        backgroundColor: isDark ? '#141414' : '#f5f5f5',
+        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6',
+        padding: '10px 12px',
+      },
+      '.PickerItem:hover': {
+        backgroundColor: isDark ? '#1f1f1f' : '#ebebeb',
+        border: isDark ? '1px solid #383838' : '1px solid #c2c2c2',
+      },
+      '.PickerItem--selected': {
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
+        border: isDark ? '1px solid #424242' : '1px solid #c2c2c2',
+      },
+      '.PickerItem--selected:hover': {
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
+      },
+      '.AccordionButton': {
+        backgroundColor: isDark ? '#141414' : '#f5f5f5',
+        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6',
+      },
+      '.AccordionButton:hover': {
+        backgroundColor: isDark ? '#1f1f1f' : '#ebebeb',
+        border: isDark ? '1px solid #383838' : '1px solid #c2c2c2',
+      },
+      '.AccordionButton--selected': {
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
+        border: isDark ? '1px solid #424242' : '1px solid #c2c2c2',
+      },
+      '.AccordionButton--selected:hover': {
+        backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
+      },
+      '.Spinner': {
+        color: isDark ? '#ff8800' : '#e56f00', // accent-main-highlight
+        borderColor: isDark
+          ? 'rgba(255, 136, 0, 0.3)'
+          : 'rgba(229, 111, 0, 0.3)',
+      },
+      '.RedirectText': {
+        color: isDark ? '#e6e6e6' : '#333333', // fg-secondary
       },
     },
   }
