@@ -23,7 +23,6 @@ import {
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
 import {
   AlertCircle,
   ArrowRight,
@@ -31,52 +30,14 @@ import {
   CreditCard,
 } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
-import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-)
-
-// stripe payment element appearance for fallback flow
-function usePaymentElementAppearance() {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-
-  return {
-    theme: 'flat' as const,
-    variables: {
-      colorPrimary: isDark ? '#ff8800' : '#e56f00',
-      colorBackground: isDark ? '#1f1f1f' : '#f2f2f2',
-      colorText: isDark ? '#ffffff' : '#0a0a0a',
-      colorDanger: isDark ? '#f54545' : '#ff4400',
-      colorSuccess: isDark ? '#00d992' : '#00a670',
-      fontFamily:
-        '"IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      fontSizeBase: '14px',
-      fontLineHeight: '20px',
-      borderRadius: '6px',
-      colorTextPlaceholder: isDark ? '#848484' : '#707070',
-      colorIconCardError: isDark ? '#f54545' : '#ff4400',
-    },
-    rules: {
-      '.Input': {
-        border: isDark ? '1px solid #292929' : '1px solid #d6d6d6',
-        boxShadow: 'none',
-      },
-      '.Input:focus': {
-        border: isDark ? '1px solid #424242' : '1px solid #c2c2c2',
-        boxShadow: 'none',
-      },
-      '.Label': {
-        fontSize: '12px',
-        fontWeight: '400',
-        marginBottom: '6px',
-      },
-    },
-  }
-}
+import { ADDON_PURCHASE_MESSAGES } from './constants'
+import {
+  stripePromise,
+  usePaymentConfirmation,
+  usePaymentElementAppearance,
+} from './hooks'
 
 interface ConcurrentSandboxAddOnPurchaseDialogProps {
   open: boolean
@@ -96,7 +57,6 @@ function DialogContent_Inner({
 }: Omit<ConcurrentSandboxAddOnPurchaseDialogProps, 'open'>) {
   const team = useSelectedTeam()
   const { toast } = useToast()
-  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [customerSessionClientSecret, setCustomerSessionClientSecret] =
@@ -109,143 +69,44 @@ function DialogContent_Inner({
       }
     },
     onError: ({ error }) => {
-      toast(
-        defaultErrorToast(
-          error.serverError ?? 'Something went wrong. Please try again.'
-        )
+      console.error(
+        '[Payment] Failed to get customer session:',
+        error.serverError
       )
+      toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
     },
   })
 
   const handleSwitchToPaymentElement = (clientSecret: string) => {
     if (!team) return
-
     setClientSecret(clientSecret)
     setShowPaymentForm(true)
-
-    // fetch customer session to show saved cards
     getCustomerSession({ teamId: team.id })
   }
+
+  const { confirmPayment, isConfirming } = usePaymentConfirmation({
+    onSuccess: () => onOpenChange(false),
+    onFallbackToPaymentElement: handleSwitchToPaymentElement,
+  })
 
   const { execute: confirmOrder, isPending: isLoading } = useAction(
     confirmOrderAction,
     {
       onSuccess: async ({ data }) => {
-        if (data?.client_secret && !isConfirmingPayment) {
-          setIsConfirmingPayment(true)
-
-          try {
-            const stripe = await stripePromise
-
-            if (!stripe) {
-              toast(
-                defaultErrorToast('Something went wrong. Please try again.')
-              )
-              setIsConfirmingPayment(false)
-              return
-            }
-
-            const { paymentIntent, error: retrieveError } =
-              await stripe.retrievePaymentIntent(data.client_secret)
-
-            if (retrieveError) {
-              console.error('Failed to retrieve payment intent:', retrieveError)
-              toast(
-                defaultErrorToast('Something went wrong. Please try again.')
-              )
-              // fallback to PaymentElement with saved cards
-              handleSwitchToPaymentElement(data.client_secret)
-              setIsConfirmingPayment(false)
-              return
-            }
-
-            if (paymentIntent.status === 'requires_payment_method') {
-              // fallback to PaymentElement with saved cards
-              handleSwitchToPaymentElement(data.client_secret)
-              setIsConfirmingPayment(false)
-              return
-            }
-
-            if (paymentIntent.status === 'requires_action') {
-              const { error: actionError } = await stripe.handleNextAction({
-                clientSecret: data.client_secret,
-              })
-
-              if (actionError) {
-                console.error('Failed to authenticate card:', actionError)
-                toast(
-                  defaultErrorToast(
-                    'Failed to authenticate card. Please try again or add a new payment method.'
-                  )
-                )
-                // fallback to PaymentElement with saved cards
-                handleSwitchToPaymentElement(data.client_secret)
-                setIsConfirmingPayment(false)
-                return
-              }
-
-              const { paymentIntent: finalIntent, error: finalError } =
-                await stripe.retrievePaymentIntent(data.client_secret)
-
-              if (finalError || finalIntent.status !== 'succeeded') {
-                console.error(
-                  'Failed to activate add-on. Please try again.',
-                  finalError?.message
-                )
-                toast(
-                  defaultErrorToast(
-                    'Failed to activate add-on. Please try again.'
-                  )
-                )
-                setIsConfirmingPayment(false)
-                return
-              }
-            } else if (paymentIntent.status !== 'succeeded') {
-              console.error(
-                'Final payment check failed:',
-                paymentIntent?.status
-              )
-              toast(
-                defaultErrorToast(
-                  'Failed to activate add-on. Please try again.'
-                )
-              )
-              setIsConfirmingPayment(false)
-              return
-            }
-
-            toast({
-              title: 'Add-on activated',
-              description:
-                '500 additional concurrent sandboxes have been added to your subscription',
-            })
-            onOpenChange(false)
-            setIsConfirmingPayment(false)
-          } catch (err) {
-            toast(defaultErrorToast('Failed to activate add-on'))
-            setIsConfirmingPayment(false)
-          }
+        if (data?.client_secret && !isConfirming) {
+          await confirmPayment(data.client_secret)
         }
       },
       onError: ({ error }) => {
-        toast(
-          defaultErrorToast(
-            error.serverError ?? 'Failed to upgrade subscription'
-          )
-        )
+        console.error('[Payment] Failed to confirm order:', error.serverError)
+        toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
       },
     }
   )
 
   const handlePurchase = () => {
-    if (!team) {
-      return
-    }
-
-    confirmOrder({
-      teamId: team.id,
-      orderId,
-    })
+    if (!team) return
+    confirmOrder({ teamId: team.id, orderId })
   }
 
   const limitIncreaseText = currentConcurrentSandboxesLimit ? (
@@ -260,33 +121,17 @@ function DialogContent_Inner({
     </>
   )
 
+  const isProcessing = isLoading || isConfirming
+
   return (
     <>
-      <div className="hidden w-32 border-r relative md:flex items-center justify-center overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <AsciiSandbox className="scale-85 text-fg-tertiary" />
-        </div>
-        <div className="p-1 bg-bg-1 relative z-10">
-          <SandboxIcon className="size-7 text-fg-tertiary" />
-        </div>
-      </div>
+      <DialogSidebar />
       <div className="p-5 flex-1 space-y-6 overflow-y-auto max-h-[calc(100svh-2rem)]">
         <DialogHeader>
           <DialogTitle>+500 Sandboxes Add-on</DialogTitle>
         </DialogHeader>
 
-        {showPaymentForm && (
-          <Alert
-            variant="warning"
-            className="animate-in fade-in slide-in-from-top-2 duration-300"
-          >
-            <AlertCircle className="size-4" />
-            <AlertDescription className="prose-label">
-              Payment authentication failed in the last attempt. Please select a
-              new payment method or enter the same card details again to retry.
-            </AlertDescription>
-          </Alert>
-        )}
+        {showPaymentForm && <PaymentAuthFailedAlert />}
 
         {showPaymentForm && customerSessionClientSecret && clientSecret ? (
           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
@@ -294,79 +139,125 @@ function DialogContent_Inner({
               clientSecret={clientSecret}
               customerSessionClientSecret={customerSessionClientSecret}
               onOpenChange={onOpenChange}
-              amountDueCents={amountDueCents}
-              isLoading={isLoading || isConfirmingPayment}
+              isLoading={isProcessing}
             />
           </div>
         ) : showPaymentForm ? (
-          <div className="flex items-center justify-center py-4 gap-2">
-            <Loader variant="slash" size="sm" />
-            <span className="prose-body text-fg-secondary">
-              Loading your saved payment methods...
-            </span>
-          </div>
+          <LoadingState
+            message={ADDON_PURCHASE_MESSAGES.loading.loadingPaymentMethods}
+          />
         ) : null}
 
-        <ul className="space-y-2 w-full">
-          <li className="flex items-start gap-2 text-left">
-            <SandboxIcon className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
-            <p className="prose-body text-fg">{limitIncreaseText}</p>
-          </li>
+        <AddonFeaturesList
+          limitIncreaseText={limitIncreaseText}
+          monthlyPriceCents={monthlyPriceCents}
+          amountDueCents={amountDueCents}
+        />
 
-          <li className="flex items-start gap-2 text-left">
-            <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
-            <p className="prose-body text-fg">
-              Raises current subscription by <b>${monthlyPriceCents / 100}</b>
-              /month
-            </p>
-          </li>
-
-          <li className="flex items-start gap-2 text-left">
-            <CreditCard className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
-            <p className="prose-body text-fg">
-              Pay <b>${(amountDueCents / 100).toFixed(2)}</b> now for the
-              remaining time of the month
-            </p>
-          </li>
-        </ul>
-
-        {!showPaymentForm && !isLoading && !isConfirmingPayment ? (
+        {!showPaymentForm && !isProcessing ? (
           <Button
             variant="default"
             size="lg"
             className="w-full justify-center"
             onClick={handlePurchase}
-            loading={isLoading || isConfirmingPayment}
-            disabled={isLoading || isConfirmingPayment}
+            loading={isProcessing}
+            disabled={isProcessing}
           >
             Increase Concurrency Limit
             <ArrowRight className="size-4" />
           </Button>
         ) : !showPaymentForm ? (
-          <div className="flex items-center justify-center py-3 gap-2">
-            <Loader variant="slash" size="sm" />
-            <span className="prose-body text-fg-secondary">
-              Processing subscription upgrade...
-            </span>
-          </div>
+          <LoadingState message={ADDON_PURCHASE_MESSAGES.loading.processing} />
         ) : null}
       </div>
     </>
   )
 }
 
-// payment element wrapper (fallback with saved cards)
+// decorative sidebar with sandbox icon
+function DialogSidebar() {
+  return (
+    <div className="hidden w-32 border-r relative md:flex items-center justify-center overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        <AsciiSandbox className="scale-85 text-fg-tertiary" />
+      </div>
+      <div className="p-1 bg-bg-1 relative z-10">
+        <SandboxIcon className="size-7 text-fg-tertiary" />
+      </div>
+    </div>
+  )
+}
+
+function PaymentAuthFailedAlert() {
+  return (
+    <Alert
+      variant="warning"
+      className="animate-in fade-in slide-in-from-top-2 duration-300"
+    >
+      <AlertCircle className="size-4" />
+      <AlertDescription className="prose-label">
+        Payment authentication failed in the last attempt. Please select a new
+        payment method or enter the same card details again to retry.
+      </AlertDescription>
+    </Alert>
+  )
+}
+
+function LoadingState({ message }: { message: string }) {
+  return (
+    <div className="flex items-center justify-center py-4 gap-2">
+      <Loader variant="slash" size="sm" />
+      <span className="prose-body text-fg-secondary">{message}</span>
+    </div>
+  )
+}
+
+interface AddonFeaturesListProps {
+  limitIncreaseText: React.ReactNode
+  monthlyPriceCents: number
+  amountDueCents: number
+}
+
+function AddonFeaturesList({
+  limitIncreaseText,
+  monthlyPriceCents,
+  amountDueCents,
+}: AddonFeaturesListProps) {
+  return (
+    <ul className="space-y-2 w-full">
+      <li className="flex items-start gap-2 text-left">
+        <SandboxIcon className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+        <p className="prose-body text-fg">{limitIncreaseText}</p>
+      </li>
+
+      <li className="flex items-start gap-2 text-left">
+        <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+        <p className="prose-body text-fg">
+          Raises current subscription by <b>${monthlyPriceCents / 100}</b>/month
+        </p>
+      </li>
+
+      <li className="flex items-start gap-2 text-left">
+        <CreditCard className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+        <p className="prose-body text-fg">
+          Pay <b>${(amountDueCents / 100).toFixed(2)}</b> now for the remaining
+          time of the month
+        </p>
+      </li>
+    </ul>
+  )
+}
+
+// wrapper for stripe elements with saved payment methods
 function PaymentElementWrapper({
   clientSecret,
   customerSessionClientSecret,
   onOpenChange,
-  amountDueCents,
   isLoading,
 }: {
   clientSecret: string
   customerSessionClientSecret: string
   onOpenChange: (open: boolean) => void
-  amountDueCents: number
   isLoading: boolean
 }) {
   const appearance = usePaymentElementAppearance()
@@ -382,24 +273,18 @@ function PaymentElementWrapper({
           loader: 'auto',
         }}
       >
-        <PaymentElementForm
-          onOpenChange={onOpenChange}
-          amountDueCents={amountDueCents}
-          isLoading={isLoading}
-        />
+        <PaymentElementForm onOpenChange={onOpenChange} isLoading={isLoading} />
       </Elements>
     </div>
   )
 }
 
-// payment element form component (fallback)
+// payment element form component (fallback for manual payment entry)
 function PaymentElementForm({
   onOpenChange,
-  amountDueCents,
   isLoading,
 }: {
   onOpenChange: (open: boolean) => void
-  amountDueCents: number
   isLoading: boolean
 }) {
   const stripe = useStripe()
@@ -412,7 +297,8 @@ function PaymentElementForm({
     e.preventDefault()
 
     if (!stripe || !elements) {
-      toast(defaultErrorToast('Failed to activate add-on'))
+      console.error('[Payment] Stripe or elements not loaded')
+      toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
       return
     }
 
@@ -424,45 +310,44 @@ function PaymentElementForm({
     })
 
     if (error) {
-      toast(defaultErrorToast(error.message ?? 'Failed to activate add-on'))
+      console.error('[Payment] Manual payment confirmation failed:', error)
+      toast(
+        defaultErrorToast(
+          error.message ?? ADDON_PURCHASE_MESSAGES.error.generic
+        )
+      )
       setIsConfirmingPayment(false)
       return
     }
 
     toast({
-      title: 'Add-on activated',
-      description:
-        '500 additional concurrent sandboxes have been added to your subscription',
+      title: ADDON_PURCHASE_MESSAGES.success.title,
+      description: ADDON_PURCHASE_MESSAGES.success.description,
     })
     onOpenChange(false)
     setIsConfirmingPayment(false)
-
-    // refresh to update billing history
     router.refresh()
   }
+
+  const isProcessing = isLoading || isConfirmingPayment
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <PaymentElement />
-      {!isLoading && !isConfirmingPayment ? (
+      {!isProcessing ? (
         <Button
           type="submit"
           variant="default"
           size="lg"
           className="w-full justify-center mt-6"
-          loading={isLoading || isConfirmingPayment}
-          disabled={!stripe || isLoading || isConfirmingPayment}
+          loading={isProcessing}
+          disabled={!stripe || isProcessing}
         >
           Increase Concurrency Limit
           <ArrowRight className="size-4" />
         </Button>
       ) : (
-        <div className="flex items-center justify-center py-3 gap-2">
-          <Loader variant="slash" size="sm" />
-          <span className="prose-body text-fg-secondary">
-            Buying additional sandboxes...
-          </span>
-        </div>
+        <LoadingState message={ADDON_PURCHASE_MESSAGES.loading.processing} />
       )}
     </form>
   )
