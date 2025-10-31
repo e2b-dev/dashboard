@@ -1,7 +1,5 @@
-import {
-  calculateYAxisMax,
-  transformMetrics,
-} from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import { calculateYAxisMax } from '@/lib/utils/chart'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
 import { describe, expect, it } from 'vitest'
 
