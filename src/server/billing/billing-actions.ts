@@ -240,3 +240,34 @@ export const confirmOrderAction = authActionClient
 
     return data
   })
+
+const GetCustomerSessionSchema = z.object({
+  teamId: z.uuid(),
+})
+
+export const getCustomerSessionAction = authActionClient
+  .schema(GetCustomerSessionSchema)
+  .metadata({ actionName: 'getCustomerSession' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/payment-methods/customer-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to fetch customer session')
+    }
+
+    const data = await res.json()
+    return data
+  })

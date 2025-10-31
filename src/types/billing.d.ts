@@ -46,6 +46,10 @@ interface AddOnOrderConfirmResponse {
   client_secret: string
 }
 
+interface PaymentMethodsCustomerSession {
+  client_secret: string
+}
+
 interface TierLimits {
   sandbox_concurrency: number
   max_cpu: number
@@ -92,6 +96,7 @@ export type {
   CreateTeamsResponse,
   CustomerPortalResponse,
   Invoice,
+  PaymentMethodsCustomerSession,
   TeamAddons,
   TeamItems,
   TeamTiers,

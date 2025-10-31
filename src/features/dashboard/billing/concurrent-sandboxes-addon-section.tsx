@@ -5,6 +5,7 @@ import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { createOrderAction } from '@/server/billing/billing-actions'
 import { Button } from '@/ui/primitives/button'
 import { Label } from '@/ui/primitives/label'
+import { Loader } from '@/ui/primitives/loader'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
@@ -43,7 +44,7 @@ export function ConcurrentSandboxAddonSection({
   return (
     <>
       <div className="border-stroke border-t py-4 px-5">
-        <Label className="mb-3 block">Available Add-ons</Label>
+        <Label className="mb-2 block">Available Add-ons</Label>
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex-1">
             <p className="prose-body text-fg">+500 Concurrent Sandboxes</p>
@@ -51,23 +52,31 @@ export function ConcurrentSandboxAddonSection({
               {`+$${(priceCents / 100).toFixed(2)}/mo`}
             </p>
           </div>
-          <Button
-            variant="default"
-            size="default"
-            className="w-full sm:w-auto sm:shrink-0"
-            loading={isCreateOrderLoading}
-            disabled={isCreateOrderLoading || !team}
-            onClick={() => {
-              if (!team) return
+          {isCreateOrderLoading ? (
+            <div className="flex items-center justify-center py-2 gap-2">
+              <Loader variant="slash" size="sm" />
+              <span className="prose-body text-fg-secondary">
+                Loading Details...
+              </span>
+            </div>
+          ) : (
+            <Button
+              variant="default"
+              size="default"
+              className="w-full sm:w-auto sm:shrink-0"
+              disabled={!team}
+              onClick={() => {
+                if (!team) return
 
-              createOrder({
-                teamId: team.id,
-                itemId: ADDON_500_SANDBOXES_ID,
-              })
-            }}
-          >
-            Buy Add-on
-          </Button>
+                createOrder({
+                  teamId: team.id,
+                  itemId: ADDON_500_SANDBOXES_ID,
+                })
+              }}
+            >
+              Buy Add-on
+            </Button>
+          )}
         </div>
       </div>
 

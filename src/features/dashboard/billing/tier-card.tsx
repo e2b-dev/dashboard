@@ -76,9 +76,9 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
       >
         <div className="mb-3 flex items-center justify-between px-5 pt-5 h-10">
           <h5>{tier.name}</h5>
-          {isSelectable && (
+          {isSelected && (
             <Badge size="lg" className="uppercase" variant="info">
-              Your Plan {'<<'}
+              Current Plan {'<<'}
             </Badge>
           )}
         </div>
@@ -103,13 +103,13 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
 
         {!!addons.length && (
           <div className="border-stroke border-t py-4 px-5 flex flex-col gap-1">
-            <Label>Bought Add-Ons</Label>
+            <Label className="mb-1 block">Bought Add-Ons</Label>
             {addons.map((addon, i) => (
               <div
                 key={`addon-${i}`}
                 className="flex items-center justify-between"
               >
-                <Label className="text-fg-tertiary">{addon.label}</Label>
+                <span className="text-fg-secondary">{addon.label}</span>
                 <span className="prose-body-highlight">
                   ${addon.price_cents / 100}/mo
                 </span>
