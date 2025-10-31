@@ -34,7 +34,11 @@ export async function resolveTeamForDashboard(
     COOKIE_KEYS.SELECTED_TEAM_SLUG
   )?.value
 
-  if (teamIdOrSlug && teamIdOrSlug !== 'account') {
+  const isTeamRoute =
+    !request.nextUrl.pathname.startsWith('/dashboard/inspect/sandbox/') &&
+    request.nextUrl.pathname !== '/dashboard/account'
+
+  if (teamIdOrSlug && isTeamRoute) {
     try {
       const teamId = await resolveTeamId(teamIdOrSlug)
       const hasAccess = await checkUserTeamAccess(userId, teamId)
@@ -79,10 +83,9 @@ export async function resolveTeamForDashboard(
       return {
         teamId: currentTeamId,
         teamSlug,
-        redirect:
-          teamIdOrSlug === 'account'
-            ? undefined
-            : PROTECTED_URLS.SANDBOXES(teamSlug || currentTeamId),
+        redirect: !isTeamRoute
+          ? undefined
+          : PROTECTED_URLS.SANDBOXES(teamSlug || currentTeamId),
       }
     }
   }
@@ -122,12 +125,9 @@ export async function resolveTeamForDashboard(
   return {
     teamId: defaultTeam.team_id,
     teamSlug: defaultTeam.team?.slug || undefined,
-    redirect:
-      teamIdOrSlug === 'account'
-        ? undefined
-        : PROTECTED_URLS.SANDBOXES(
-            defaultTeam.team?.slug || defaultTeam.team_id
-          ),
+    redirect: !isTeamRoute
+      ? undefined
+      : PROTECTED_URLS.SANDBOXES(defaultTeam.team?.slug || defaultTeam.team_id),
   }
 }
 
