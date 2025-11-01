@@ -66,7 +66,7 @@ export default function SandboxesTable({
 
   const {
     startedAtFilter,
-    templateIds,
+    templateFilters,
     cpuCount,
     memoryMB,
     rowPinning,
@@ -110,11 +110,11 @@ export default function SandboxesTable({
     }
 
     // Handle template filter
-    if (templateIds.length === 0) {
+    if (templateFilters.length === 0) {
       newFilters = newFilters.filter((f) => f.id !== 'template')
     } else {
       newFilters = newFilters.filter((f) => f.id !== 'template')
-      newFilters.push({ id: 'template', value: templateIds })
+      newFilters.push({ id: 'template', value: templateFilters })
     }
 
     // Handle CPU filter
@@ -136,7 +136,7 @@ export default function SandboxesTable({
     resetScroll()
     setColumnFilters(newFilters)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startedAtFilter, templateIds, cpuCount, memoryMB])
+  }, [startedAtFilter, templateFilters, cpuCount, memoryMB])
 
   React.useEffect(() => {
     resetScroll()

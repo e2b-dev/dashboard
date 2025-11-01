@@ -81,7 +81,7 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
 })
 
 const TemplateFilter = memo(function TemplateFilter() {
-  const { templateIds, setTemplateIds } = useSandboxTableStore()
+  const { templateFilters, setTemplateFilters } = useSandboxTableStore()
 
   const [localValue, setLocalValue] = React.useState('')
 
@@ -91,11 +91,11 @@ const TemplateFilter = memo(function TemplateFilter() {
 
   const handleSubmit = useCallback(() => {
     const trimmedValue = localValue.trim()
-    if (trimmedValue && !templateIds.includes(trimmedValue)) {
-      setTemplateIds([...templateIds, trimmedValue])
+    if (trimmedValue && !templateFilters.includes(trimmedValue)) {
+      setTemplateFilters([...templateFilters, trimmedValue])
       setLocalValue('')
     }
-  }, [localValue, templateIds, setTemplateIds])
+  }, [localValue, templateFilters, setTemplateFilters])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -244,21 +244,21 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   const {
     globalFilter,
     startedAtFilter,
-    templateIds,
+    templateFilters,
     cpuCount,
     memoryMB,
     setGlobalFilter,
     setStartedAtFilter,
-    setTemplateIds,
+    setTemplateFilters,
     setCpuCount,
     setMemoryMB,
   } = useSandboxTableStore()
 
   const handleTemplateFilterClick = useCallback(
-    (id: string) => {
-      setTemplateIds(templateIds.filter((t) => t !== id))
+    (filter: string) => {
+      setTemplateFilters(templateFilters.filter((t) => t !== filter))
     },
-    [templateIds, setTemplateIds]
+    [templateFilters, setTemplateFilters]
   )
 
   return (
@@ -317,13 +317,13 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
           onClick={() => setStartedAtFilter(undefined)}
         />
       )}
-      {templateIds.length > 0 &&
-        templateIds.map((id) => (
+      {templateFilters.length > 0 &&
+        templateFilters.map((filter) => (
           <TableFilterButton
-            key={id}
+            key={filter}
             label="Template"
-            value={id}
-            onClick={() => handleTemplateFilterClick(id)}
+            value={filter}
+            onClick={() => handleTemplateFilterClick(filter)}
           />
         ))}
       {cpuCount !== undefined && (
