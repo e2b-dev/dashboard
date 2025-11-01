@@ -226,12 +226,9 @@ export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
 
 export function TemplateCell({
   getValue,
-  table,
+  row,
 }: CellContext<SandboxWithMetrics, unknown>) {
-  const templateId = getValue() as string
-  const template: Template | undefined = table
-    .getState()
-    .templates?.find((t: Template) => t.templateID === templateId)
+  const templateIdentifier = row.original.alias || row.original.templateID
   const { selectedTeamSlug, selectedTeamId } = useServerContext()
   const router = useRouter()
 
@@ -245,13 +242,15 @@ export function TemplateCell({
         e.stopPropagation()
         e.preventDefault()
 
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
+        useTemplateTableStore
+          .getState()
+          .setGlobalFilter(row.original.templateID)
         router.push(
           PROTECTED_URLS.TEMPLATES(selectedTeamSlug ?? selectedTeamId)
         )
       }}
     >
-      {template?.aliases?.[0] ?? templateId}
+      {templateIdentifier}
       <ArrowUpRight className="size-3" />
     </Button>
   )
