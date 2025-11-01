@@ -225,10 +225,10 @@ export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
 }
 
 export function TemplateCell({
-  getValue,
   row,
+  getValue,
 }: CellContext<SandboxWithMetrics, unknown>) {
-  const templateIdentifier = row.original.alias || row.original.templateID
+  const templateIdentifier = getValue() as string
   const { selectedTeamSlug, selectedTeamId } = useServerContext()
   const router = useRouter()
 

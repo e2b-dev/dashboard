@@ -144,7 +144,7 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     enableGlobalFilter: true,
   },
   {
-    accessorKey: 'templateID',
+    accessorFn: (row) => row.alias || row.templateID,
     id: 'template',
     header: 'TEMPLATE',
     cell: TemplateCell,
