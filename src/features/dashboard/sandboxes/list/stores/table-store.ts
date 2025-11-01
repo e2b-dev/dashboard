@@ -32,7 +32,7 @@ interface SandboxTableState {
 
   // Filter state
   startedAtFilter: StartedAtFilter
-  templateIds: string[]
+  templateFilters: string[]
   cpuCount: number | undefined
   memoryMB: number | undefined
 }
@@ -45,7 +45,7 @@ interface SandboxTableActions {
 
   // Filter actions
   setStartedAtFilter: (filter: StartedAtFilter) => void
-  setTemplateIds: (ids: string[]) => void
+  setTemplateFilters: (filters: string[]) => void
   setCpuCount: (count: number | undefined) => void
   setMemoryMB: (mb: number | undefined) => void
   resetFilters: () => void
@@ -67,7 +67,7 @@ const initialState: SandboxTableState = {
 
   // Filter state
   startedAtFilter: undefined,
-  templateIds: [],
+  templateFilters: [],
   cpuCount: undefined,
   memoryMB: undefined,
 }
@@ -138,11 +138,11 @@ export const useSandboxTableStore = create<Store>()(
         })
       },
 
-      setTemplateIds: (templateIds) => {
-        set({ templateIds })
+      setTemplateFilters: (templateFilters) => {
+        set({ templateFilters })
         trackTableInteraction('filtered', {
           type: 'template',
-          count: templateIds.length,
+          count: templateFilters.length,
         })
       },
 
@@ -165,7 +165,7 @@ export const useSandboxTableStore = create<Store>()(
       resetFilters: () => {
         set({
           startedAtFilter: initialState.startedAtFilter,
-          templateIds: initialState.templateIds,
+          templateFilters: initialState.templateFilters,
           cpuCount: initialState.cpuCount,
           memoryMB: initialState.memoryMB,
           globalFilter: initialState.globalFilter,
