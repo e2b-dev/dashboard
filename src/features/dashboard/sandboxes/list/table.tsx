@@ -6,7 +6,7 @@ import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
-import { Sandbox, Template } from '@/types/api'
+import { Sandbox } from '@/types/api'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import ClientOnly from '@/ui/client-only'
 import { DataTable } from '@/ui/data-table'
@@ -42,13 +42,11 @@ const VIRTUAL_OVERSCAN = 8
 
 interface SandboxesTableProps {
   sandboxes: Sandbox[]
-  templates: Template[]
   initialMetrics: ClientSandboxesMetrics | null
 }
 
 export default function SandboxesTable({
   sandboxes,
-  templates,
   initialMetrics,
 }: SandboxesTableProps) {
   'use no memo'
@@ -155,7 +153,6 @@ export default function SandboxesTable({
       columnSizing,
       columnFilters,
       rowPinning,
-      templates,
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -215,11 +212,7 @@ export default function SandboxesTable({
 
   return (
     <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
-      <SandboxesHeader
-        searchInputRef={searchInputRef}
-        templates={templates}
-        table={table}
-      />
+      <SandboxesHeader searchInputRef={searchInputRef} table={table} />
 
       <div
         className={cn(
