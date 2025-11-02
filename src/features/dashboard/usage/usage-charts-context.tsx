@@ -147,23 +147,23 @@ export function UsageChartsProvider({
   const displayedData = useMemo<ComputeUsageSeriesData>(() => {
     return {
       sandboxes: seriesData.sandboxes.map((d) => ({
-        x: formatAxisDate(d.x),
+        x: formatAxisDate(d.x, samplingMode),
         y: d.y,
       })),
       cost: seriesData.cost.map((d) => ({
-        x: formatAxisDate(d.x),
+        x: formatAxisDate(d.x, samplingMode),
         y: d.y,
       })),
       vcpu: seriesData.vcpu.map((d) => ({
-        x: formatAxisDate(d.x),
+        x: formatAxisDate(d.x, samplingMode),
         y: d.y,
       })),
       ram: seriesData.ram.map((d) => ({
-        x: formatAxisDate(d.x),
+        x: formatAxisDate(d.x, samplingMode),
         y: d.y,
       })),
     }
-  }, [seriesData])
+  }, [seriesData, samplingMode])
 
   const totals = useMemo<MetricTotals>(
     () => calculateTotals(filteredSampledData),

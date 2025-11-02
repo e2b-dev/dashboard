@@ -20,7 +20,7 @@ export const INITIAL_TIMEFRAME_FALLBACK_RANGE_MS = 30 * 24 * 60 * 60 * 1000
 /**
  * Threshold in days for switching between sampling modes
  */
-export const HOURLY_SAMPLING_THRESHOLD_DAYS = 5
+export const HOURLY_SAMPLING_THRESHOLD_DAYS = 3
 export const WEEKLY_SAMPLING_THRESHOLD_DAYS = 60
 
 export const TIME_RANGE_PRESETS: TimeRangePreset[] = [
@@ -151,8 +151,6 @@ export const COMPUTE_CHART_CONFIGS: Record<
     name: 'Sandboxes',
     valueKey: 'count',
     barColorVar: '--accent-main-highlight',
-    areaFromVar: '--graph-area-accent-main-from',
-    areaToVar: '--graph-area-accent-main-to',
     yAxisScaleFactor: 1.8,
     yAxisFormatter: formatAxisNumber,
   },
@@ -161,8 +159,6 @@ export const COMPUTE_CHART_CONFIGS: Record<
     name: 'Cost',
     valueKey: 'total_cost',
     barColorVar: '--accent-positive-highlight',
-    areaFromVar: '--graph-area-accent-positive-from',
-    areaToVar: '--graph-area-accent-positive-to',
     yAxisScaleFactor: 1.8,
     yAxisFormatter: (value: number) => `$${formatAxisNumber(value)}`,
   },
@@ -171,8 +167,6 @@ export const COMPUTE_CHART_CONFIGS: Record<
     name: 'RAM Hours',
     valueKey: 'ram_gb_hours',
     barColorVar: '--bg-inverted',
-    areaFromVar: '--graph-area-fg-from',
-    areaToVar: '--graph-area-fg-to',
     yAxisScaleFactor: 1.8,
     yAxisFormatter: formatAxisNumber,
   },
@@ -181,8 +175,6 @@ export const COMPUTE_CHART_CONFIGS: Record<
     name: 'vCPU Hours',
     valueKey: 'vcpu_hours',
     barColorVar: '--bg-inverted',
-    areaFromVar: '--graph-area-fg-from',
-    areaToVar: '--graph-area-fg-to',
     yAxisScaleFactor: 1.8,
     yAxisFormatter: formatAxisNumber,
   },

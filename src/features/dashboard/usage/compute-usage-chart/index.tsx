@@ -182,8 +182,12 @@ function ComputeUsageChart({
           borderWidth: 1,
           borderColor: bgInverted,
         },
+        inBrush: {
+          opacity: 1,
+        },
         outOfBrush: {
           color: 'transparent',
+          opacity: 0.6,
         },
       },
       grid: {
@@ -211,7 +215,6 @@ function ComputeUsageChart({
             show: true,
             lineStyle: { color: stroke },
           },
-
           axisTick: { show: false },
           splitLine: { show: false },
           axisLabel: {
@@ -219,9 +222,15 @@ function ComputeUsageChart({
             color: fgTertiary,
             fontFamily: fontMono,
             fontSize: 12,
+            showMinLabel: true,
+            showMaxLabel: true,
+            alignMinLabel: 'center',
+            alignMaxLabel: 'center',
             formatter: (value: string, index: number) => {
-              // Only show labels for first and last data points
-              if (index === 0 || index === data.length - 1) {
+              const isStartOfPeriod = index === 0
+              const isEndOfPeriod = index === data.length - 1
+
+              if (isStartOfPeriod || isEndOfPeriod) {
                 return value
               }
               return ''

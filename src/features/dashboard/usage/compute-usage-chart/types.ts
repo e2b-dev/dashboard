@@ -25,8 +25,6 @@ export interface ComputeChartConfig {
   name: string
   valueKey: 'total_cost' | 'ram_gb_hours' | 'vcpu_hours' | 'count'
   barColorVar: string
-  areaFromVar: string
-  areaToVar: string
   yAxisScaleFactor: number
   yAxisFormatter: (value: number) => string
 }

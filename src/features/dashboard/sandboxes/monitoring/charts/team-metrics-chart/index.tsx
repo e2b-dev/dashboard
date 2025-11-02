@@ -1,7 +1,7 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { calculateYAxisMax } from '@/lib/utils/chart'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
@@ -180,7 +180,10 @@ function TeamMetricsChart({
   // build complete echarts option once
   const option = useMemo<EChartsOption>(() => {
     // calculate y-axis max based on data only
-    const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
+    const yAxisMax = calculateAxisMax(
+      chartData.map((d) => d.y),
+      config.yAxisScaleFactor
+    )
 
     const seriesData = buildSeriesData(chartData)
     const isLive = hasLiveData(chartData)
