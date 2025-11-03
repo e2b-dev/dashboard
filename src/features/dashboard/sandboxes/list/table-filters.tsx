@@ -90,7 +90,7 @@ const TemplateFilter = memo(function TemplateFilter() {
   }, [])
 
   const handleSubmit = useCallback(() => {
-    const trimmedValue = localValue.trim()
+    const trimmedValue = localValue.trim().toLowerCase()
     if (trimmedValue && !templateFilters.includes(trimmedValue)) {
       setTemplateFilters([...templateFilters, trimmedValue])
       setLocalValue('')
