@@ -257,6 +257,9 @@ function TeamMetricsChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
+      toolbox: {
+        show: false,
+      },
       brush: {
         brushType: 'lineX',
         brushMode: 'single',
