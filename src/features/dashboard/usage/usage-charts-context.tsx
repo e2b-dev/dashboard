@@ -22,7 +22,11 @@ import {
   formatHoveredValues,
   formatTotalValues,
 } from './display-utils'
-import { determineSamplingMode, processUsageData } from './sampling-utils'
+import {
+  determineSamplingMode,
+  normalizeToEndOfSamplingPeriod,
+  processUsageData,
+} from './sampling-utils'
 import {
   ComputeUsageSeriesData,
   DisplayValue,
@@ -222,10 +226,13 @@ export function UsageChartsProvider({
       setHoveredIndex(null)
       setTimeframe(
         seriesData.sandboxes[startIndex]!.x,
-        seriesData.sandboxes[endIndex]!.x
+        normalizeToEndOfSamplingPeriod(
+          seriesData.sandboxes[endIndex]!.x,
+          samplingMode
+        )
       )
     },
-    [seriesData.sandboxes, setTimeframe]
+    [seriesData.sandboxes, setTimeframe, samplingMode]
   )
 
   const value = useMemo(

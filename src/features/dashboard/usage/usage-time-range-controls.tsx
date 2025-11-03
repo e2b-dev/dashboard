@@ -16,6 +16,12 @@ import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { TIME_RANGE_PRESETS } from './constants'
+import {
+  determineSamplingMode,
+  normalizeToEndOfSamplingPeriod,
+  normalizeToStartOfSamplingPeriod,
+} from './sampling-utils'
+import { useUsageCharts } from './usage-charts-context'
 
 interface UsageTimeRangeControlsProps {
   timeframe: {
@@ -31,6 +37,7 @@ export function UsageTimeRangeControls({
   onTimeRangeChange,
   className,
 }: UsageTimeRangeControlsProps) {
+  const { samplingMode } = useUsageCharts()
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
 
   const selectedPresetId = useMemo(
@@ -63,28 +70,34 @@ export function UsageTimeRangeControls({
   }, [timeframe.start, timeframe.end])
 
   const handlePreviousRange = useCallback(() => {
+    const samplingMode = determineSamplingMode(timeframe)
+
     onTimeRangeChange(
-      timeframe.start - quarterOfRangeDuration,
-      timeframe.end - quarterOfRangeDuration
+      normalizeToStartOfSamplingPeriod(
+        timeframe.start - quarterOfRangeDuration,
+        samplingMode
+      ),
+      normalizeToEndOfSamplingPeriod(
+        timeframe.end - quarterOfRangeDuration,
+        samplingMode
+      )
     )
-  }, [
-    timeframe.start,
-    timeframe.end,
-    quarterOfRangeDuration,
-    onTimeRangeChange,
-  ])
+  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange])
 
   const handleNextRange = useCallback(() => {
+    const samplingMode = determineSamplingMode(timeframe)
+
     onTimeRangeChange(
-      timeframe.start + quarterOfRangeDuration,
-      timeframe.end + quarterOfRangeDuration
+      normalizeToStartOfSamplingPeriod(
+        timeframe.start + quarterOfRangeDuration,
+        samplingMode
+      ),
+      normalizeToEndOfSamplingPeriod(
+        timeframe.end + quarterOfRangeDuration,
+        samplingMode
+      )
     )
-  }, [
-    timeframe.start,
-    timeframe.end,
-    quarterOfRangeDuration,
-    onTimeRangeChange,
-  ])
+  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange])
 
   const handleTimeRangeApply = useCallback(
     (values: TimeRangeValues) => {
