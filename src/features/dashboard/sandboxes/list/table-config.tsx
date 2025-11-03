@@ -119,6 +119,24 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
   return true
 }
 
+export const templateFilter: FilterFn<SandboxWithMetrics> = (
+  row,
+  _,
+  value: string[]
+) => {
+  if (!value || value.length === 0) return true
+
+  const { alias, templateID } = row.original
+
+  // check if any filter value matches either alias or templateID
+  return value.some((filterValue) => {
+    return (
+      (alias && alias.toLowerCase() === filterValue.toLowerCase()) ||
+      (templateID && templateID.toLowerCase() === filterValue.toLowerCase())
+    )
+  })
+}
+
 // TABLE CONFIG
 
 export const fallbackData: SandboxWithMetrics[] = []
@@ -144,13 +162,13 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     enableGlobalFilter: true,
   },
   {
-    accessorKey: 'templateID',
+    accessorFn: (row) => row.alias || row.templateID,
     id: 'template',
     header: 'TEMPLATE',
     cell: TemplateCell,
     size: 250,
     minSize: 180,
-    filterFn: 'arrIncludesSome',
+    filterFn: templateFilter,
     enableGlobalFilter: true,
   },
   {
