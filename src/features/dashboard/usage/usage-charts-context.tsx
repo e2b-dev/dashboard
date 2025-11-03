@@ -108,9 +108,6 @@ export function UsageChartsProvider({
   // NOTE - this assumes that there would be either:
   // 1. a value in all metrics for the exact same hour
   // 2. no value in any metric for the exact same hour
-
-  // CHECK - whether this is a valid assumption
-  // if not, we should zero fill for each metric separately
   const zeroFilledTimeframeFilteredData = useMemo(() => {
     return fillTimeSeriesWithEmptyPoints<UsageResponse['hour_usages'][number]>(
       data.hour_usages,
