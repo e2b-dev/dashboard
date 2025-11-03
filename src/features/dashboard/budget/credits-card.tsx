@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Loader } from '@/ui/primitives/loader'
+import { Loader } from '@/ui/primitives/loader_d'
 import { Suspense } from 'react'
 import BillingCreditsContent from '../billing/credits-content'
 

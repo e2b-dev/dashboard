@@ -1,3 +1,5 @@
+import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
+
 interface Invoice {
   cost: number
   paid: boolean
@@ -39,10 +41,76 @@ interface CreateTeamsResponse {
   slug: string
 }
 
+interface AddOnOrderItem {
+  name: typeof ADDON_500_SANDBOXES_ID
+  quantity: number
+}
+
+interface AddOnOrderCreateResponse {
+  id: string
+  amount_due: number
+  items: AddOnOrderItem[]
+}
+
+interface AddOnOrderConfirmResponse {
+  client_secret: string
+}
+
+interface PaymentMethodsCustomerSession {
+  client_secret: string
+}
+
+interface TierLimits {
+  sandbox_concurrency: number
+  max_cpu: number
+  max_ram_mib: number
+  max_sandbox_duration_hours: number
+  disk_size_mib: number
+}
+
+interface TierInfo {
+  id: string
+  name: string
+  price_cents: number
+  limits?: TierLimits
+}
+
+interface AddonInfo {
+  id: string
+  name: string
+  price_cents: number
+  quantity?: number
+}
+
+interface TeamAddons {
+  current: AddonInfo[]
+  available: AddonInfo[]
+}
+
+interface TeamTiers {
+  current: string
+  available: TierInfo[]
+}
+
+interface TeamItems {
+  tiers: TeamTiers
+  addons: TeamAddons
+}
+
 export type {
+  AddonInfo,
+  AddOnOrderConfirmResponse,
+  AddOnOrderCreateResponse,
+  AddOnOrderItem,
   BillingLimit,
   CreateTeamsResponse,
   CustomerPortalResponse,
   Invoice,
+  PaymentMethodsCustomerSession,
+  TeamAddons,
+  TeamItems,
+  TeamTiers,
+  TierInfo,
+  TierLimits,
   UsageResponse,
 }
