@@ -12,8 +12,8 @@ export const PROTECTED_URLS = {
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
 
-  SETTINGS: (teamIdOrSlug: string, tab?: 'general' | 'keys') =>
-    `/dashboard/${teamIdOrSlug}/settings${tab ? `?tab=${tab}` : ''}`,
+  GENERAL: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/general`,
+  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
   SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>

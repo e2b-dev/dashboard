@@ -1,4 +1,3 @@
-import { Template } from '@/types/api'
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
@@ -14,13 +13,11 @@ import { SearchInput } from './table-search'
 
 interface SandboxesHeaderProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>
-  templates: Template[]
   table: SandboxesTable
 }
 
 export function SandboxesHeader({
   searchInputRef,
-  templates,
   table,
 }: SandboxesHeaderProps) {
   'use no memo'
@@ -73,7 +70,7 @@ export function SandboxesHeader({
         </div>
 
         <div className="flex flex-col gap-2">
-          <SandboxesTableFilters templates={templates} />
+          <SandboxesTableFilters />
         </div>
       </div>
     </header>
