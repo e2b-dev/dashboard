@@ -1,9 +1,5 @@
 import { ChartType, TeamMetricChartConfig } from './types'
 
-/**
- * Static chart configurations by type
- * These never change and can be referenced directly
- */
 export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
   concurrent: {
     id: 'concurrent-sandboxes',
@@ -24,22 +20,5 @@ export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
     yAxisScaleFactor: 1.75,
   },
 }
-
-// echarts static configuration that never changes
-export const STATIC_ECHARTS_CONFIG = {
-  backgroundColor: 'transparent',
-  animation: false,
-  toolbox: {
-    id: 'toolbox',
-    show: true,
-    iconStyle: { opacity: 0 },
-    showTitle: false,
-    feature: {
-      dataZoom: {
-        yAxisIndex: 'none',
-      },
-    },
-  },
-} as const
 
 export const LIVE_PADDING_MULTIPLIER = 1
