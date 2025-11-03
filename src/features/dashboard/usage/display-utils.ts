@@ -4,17 +4,16 @@ import {
   formatHour,
   formatNumber,
 } from '@/lib/utils/formatting'
-import { DisplayValue, SampledDataPoint, SamplingMode } from './types'
-
-function getCalendarWeekNumber(timestamp: number): number {
-  const date = new Date(timestamp)
-  const startOfYear = new Date(date.getFullYear(), 0, 1)
-  const days = Math.floor(
-    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
-  )
-  const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7)
-  return weekNumber
-}
+import {
+  determineSamplingMode,
+  normalizeToStartOfSamplingPeriod,
+} from './sampling-utils'
+import {
+  DisplayValue,
+  SampledDataPoint,
+  SamplingMode,
+  Timeframe,
+} from './types'
 
 /**
  * Format a timestamp to a human-readable date using Intl.DateTimeFormat
@@ -33,13 +32,11 @@ export function formatAxisDate(
         hour: 'numeric',
         hour12: true,
       }).format(new Date(timestamp))
-    case 'daily':
+    default:
       return new Intl.DateTimeFormat('en-US', {
         month: 'short',
         day: 'numeric',
       }).format(new Date(timestamp))
-    case 'weekly':
-      return `CW${getCalendarWeekNumber(timestamp)} ${new Date(timestamp).getFullYear()}`
   }
 }
 
@@ -52,7 +49,7 @@ export function formatHoveredValues(
   vcpuHours: number,
   ramGibHours: number,
   timestamp: number,
-  samplingMode: SamplingMode
+  timeframe: Timeframe
 ): {
   sandboxes: DisplayValue
   cost: DisplayValue
@@ -61,6 +58,20 @@ export function formatHoveredValues(
 } {
   let timestampLabel: string
   let label: string
+  const samplingMode = determineSamplingMode(timeframe)
+
+  // edge bucket keys match the hour containing the timeframe boundary
+  const normalizedStartTimestamp = normalizeToStartOfSamplingPeriod(
+    timeframe.start,
+    'hourly'
+  )
+  const normalizedEndTimestamp = normalizeToStartOfSamplingPeriod(
+    timeframe.end,
+    'hourly'
+  )
+
+  const timestampIsAtStartEdge = timestamp === normalizedStartTimestamp
+  const timestampIsAtEndEdge = timestamp === normalizedEndTimestamp
 
   switch (samplingMode) {
     case 'hourly':
@@ -68,15 +79,49 @@ export function formatHoveredValues(
       label = 'at'
       break
 
-    case 'weekly':
-      const weekEnd = getWeekEnd(timestamp)
-      timestampLabel = `CW${getCalendarWeekNumber(timestamp)}, ${formatDateRange(timestamp, weekEnd)}`
-      label = 'in'
+    case 'daily':
+      if (timestampIsAtStartEdge && timestampIsAtEndEdge) {
+        // both edges in same bucket - show precise range
+        timestampLabel = `${formatHour(normalizedStartTimestamp)} - ${formatHour(normalizedEndTimestamp)}`
+        label = 'during'
+      } else if (timestampIsAtStartEdge) {
+        // partial day at start - show from start hour to end of day
+        const endOfDay = new Date(timestamp)
+        endOfDay.setHours(23, 59, 59, 999)
+        timestampLabel = `${formatHour(timestamp)} - end of ${formatDay(timestamp)}`
+        label = 'during'
+      } else if (timestampIsAtEndEdge) {
+        // partial day at end - show from start of day to end hour
+        const startOfDay = new Date(timestamp)
+        startOfDay.setHours(0, 0, 0, 0)
+        timestampLabel = `${formatDay(timestamp)} - ${formatHour(timestamp)}`
+        label = 'during'
+      } else {
+        timestampLabel = formatDay(timestamp)
+        label = 'on'
+      }
       break
 
-    case 'daily':
-      timestampLabel = formatDay(timestamp)
-      label = 'on'
+    case 'weekly':
+      if (timestampIsAtStartEdge && timestampIsAtEndEdge) {
+        // both edges in same bucket - show precise range
+        timestampLabel = `${formatHour(normalizedStartTimestamp)} - ${formatHour(normalizedEndTimestamp)}`
+        label = 'during'
+      } else if (timestampIsAtStartEdge) {
+        // partial week at start - show from start hour to end of week
+        const weekEnd = getWeekEnd(timestamp)
+        timestampLabel = `${formatHour(timestamp)} - ${formatDay(weekEnd)}`
+        label = 'during'
+      } else if (timestampIsAtEndEdge) {
+        // partial week at end - show from start of week to end hour
+        const weekStart = getWeekStart(timestamp)
+        timestampLabel = `${formatDay(weekStart)} - ${formatHour(timestamp)}`
+        label = 'during'
+      } else {
+        const weekEnd = getWeekEnd(timestamp)
+        timestampLabel = formatDateRange(timestamp, weekEnd)
+        label = 'during week'
+      }
       break
   }
 
@@ -175,104 +220,27 @@ export function formatEmptyValues(): {
   }
 }
 
-export function roundToStartOfSamplingPeriod(
-  timestamp: number,
-  samplingMode: SamplingMode
-): number {
-  const date = new Date(timestamp)
-
-  switch (samplingMode) {
-    case 'hourly': {
-      const minute = date.getMinutes()
-      const thisHourStart = new Date(date)
-      thisHourStart.setMinutes(0, 0, 0)
-
-      const isSecondHalf = minute >= 30
-      if (isSecondHalf) {
-        const nextHourStart = new Date(thisHourStart)
-        nextHourStart.setHours(thisHourStart.getHours() + 1)
-        return nextHourStart.getTime()
-      }
-
-      return thisHourStart.getTime()
-    }
-
-    case 'daily': {
-      const hour = date.getHours()
-      const thisDayStart = new Date(date)
-      thisDayStart.setHours(0, 0, 0, 0)
-
-      const isSecondHalf = hour >= 12
-      if (isSecondHalf) {
-        const nextDayStart = new Date(thisDayStart)
-        nextDayStart.setDate(thisDayStart.getDate() + 1)
-        return nextDayStart.getTime()
-      }
-
-      return thisDayStart.getTime()
-    }
-
-    case 'weekly': {
-      const date = new Date(timestamp)
-      const dayOfWeek = date.getDay()
-      const hour = date.getHours()
-
-      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-
-      const thisWeekStart = new Date(date)
-      thisWeekStart.setDate(date.getDate() - daysFromMonday)
-      thisWeekStart.setHours(0, 0, 0, 0)
-
-      // determine if we're in the second half of the week (Thursday 00:00 onwards)
-      const isSecondHalf =
-        daysFromMonday >= 3 || (daysFromMonday === 3 && hour >= 12)
-
-      if (isSecondHalf) {
-        const nextWeekStart = new Date(thisWeekStart)
-        nextWeekStart.setDate(thisWeekStart.getDate() + 7)
-        return nextWeekStart.getTime()
-      }
-
-      return thisWeekStart.getTime()
-    }
-  }
-}
-
 /**
  * Gets the end timestamp (Sunday 23:59:59.999) for a given week start (Monday)
  */
 export function getWeekEnd(weekStart: number): number {
   const endDate = new Date(weekStart)
 
-  endDate.setDate(endDate.getDate() + 6) // add 6 days to Monday = Sunday
+  endDate.setDate(endDate.getDate() + 6)
+
   endDate.setHours(23, 59, 59, 999)
 
   return endDate.getTime()
 }
 
-export function findHoveredDataPoint(
-  sampledData: SampledDataPoint[],
-  hoveredTimestamp: number,
-  samplingMode: SamplingMode
-): SampledDataPoint {
-  const roundedTimestamp = roundToStartOfSamplingPeriod(
-    hoveredTimestamp,
-    samplingMode
-  )
+export function getWeekStart(weekEnd: number): number {
+  const startDate = new Date(weekEnd)
 
-  const existingPoint = sampledData.find(
-    (d) => d.timestamp === roundedTimestamp
-  )
+  // subtract 6 days from Sunday = Monday
+  startDate.setDate(startDate.getDate() - 6)
 
-  return (
-    existingPoint || {
-      timestamp: roundedTimestamp,
-      sandboxCount: 0,
-      cost: 0,
-      vcpuHours: 0,
-      ramGibHours: 0,
-    }
-  )
+  startDate.setHours(0, 0, 0, 0)
+  return startDate.getTime()
 }
 
 export function calculateTotals(sampledData: SampledDataPoint[]): {

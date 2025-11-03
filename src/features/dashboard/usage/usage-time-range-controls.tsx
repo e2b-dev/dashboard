@@ -150,7 +150,6 @@ export function UsageTimeRangeControls({
               endDateTime={new Date(timeframe.end).toISOString()}
               minDate={new Date('2023-01-01')}
               onApply={handleTimeRangeApply}
-              hideTime
               className="p-3 w-56 max-md:w-full"
             />
             <Separator

@@ -11,22 +11,18 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { formatAxisDate } from './compute-usage-chart/utils'
 import {
   INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS,
   INITIAL_TIMEFRAME_FALLBACK_RANGE_MS,
 } from './constants'
 import {
   calculateTotals,
+  formatAxisDate,
   formatEmptyValues,
   formatHoveredValues,
   formatTotalValues,
 } from './display-utils'
-import {
-  determineSamplingMode,
-  getSamplingModeStepMs,
-  processUsageData,
-} from './sampling-utils'
+import { determineSamplingMode, processUsageData } from './sampling-utils'
 import {
   ComputeUsageSeriesData,
   DisplayValue,
@@ -105,44 +101,57 @@ export function UsageChartsProvider({
     [timeframe]
   )
 
-  const samplingModeStepMs = useMemo(
-    () => getSamplingModeStepMs(samplingMode),
-    [samplingMode]
-  )
+  // NOTE - this assumes that there would be either:
+  // 1. a value in all metrics for the exact same hour
+  // 2. no value in any metric for the exact same hour
 
-  const filteredSampledData = useMemo(
-    () =>
-      processUsageData(data.hour_usages, samplingMode).filter(
-        (d) => d.timestamp >= timeframe.start && d.timestamp <= timeframe.end
-      ),
-    [data.hour_usages, samplingMode, timeframe]
-  )
+  // CHECK - whether this is a valid assumption
+  // if not, we should zero fill for each metric separately
+  const zeroFilledTimeframeFilteredData = useMemo(() => {
+    return fillTimeSeriesWithEmptyPoints<UsageResponse['hour_usages'][number]>(
+      data.hour_usages,
+      {
+        start: timeframe.start,
+        end: timeframe.end,
+        step: 60 * 60 * 1000, // hourly
+        timestampAccessorKey: 'timestamp',
+        emptyPointGenerator: (timestamp: number) => ({
+          timestamp,
+          sandbox_count: 0,
+          cpu_hours: 0,
+          ram_gib_hours: 0,
+          price_for_ram: 0,
+          price_for_cpu: 0,
+        }),
+      }
+    )
+  }, [data.hour_usages, timeframe])
 
-  const formatSeriesDataHelper = useCallback(
-    (key: 'sandboxCount' | 'cost' | 'vcpuHours' | 'ramGibHours') => {
-      return fillTimeSeriesWithEmptyPoints(
-        filteredSampledData.map((d) => ({
-          x: d.timestamp,
-          y: d[key as keyof typeof d],
-        })),
-        {
-          start: timeframe.start,
-          end: timeframe.end,
-          step: samplingModeStepMs,
-        }
-      )
-    },
-    [filteredSampledData, timeframe, samplingModeStepMs]
+  const sampledData = useMemo(
+    () => processUsageData(zeroFilledTimeframeFilteredData, timeframe),
+    [zeroFilledTimeframeFilteredData, timeframe]
   )
 
   const seriesData = useMemo(() => {
     return {
-      sandboxes: formatSeriesDataHelper('sandboxCount'),
-      cost: formatSeriesDataHelper('cost'),
-      vcpu: formatSeriesDataHelper('vcpuHours'),
-      ram: formatSeriesDataHelper('ramGibHours'),
+      sandboxes: sampledData.map((d) => ({
+        x: d.timestamp,
+        y: d.sandboxCount,
+      })),
+      cost: sampledData.map((d) => ({
+        x: d.timestamp,
+        y: d.cost,
+      })),
+      vcpu: sampledData.map((d) => ({
+        x: d.timestamp,
+        y: d.vcpuHours,
+      })),
+      ram: sampledData.map((d) => ({
+        x: d.timestamp,
+        y: d.ramGibHours,
+      })),
     }
-  }, [formatSeriesDataHelper])
+  }, [sampledData])
 
   const displayedData = useMemo<ComputeUsageSeriesData>(() => {
     return {
@@ -166,8 +175,8 @@ export function UsageChartsProvider({
   }, [seriesData, samplingMode])
 
   const totals = useMemo<MetricTotals>(
-    () => calculateTotals(filteredSampledData),
-    [filteredSampledData]
+    () => calculateTotals(sampledData),
+    [sampledData]
   )
 
   const displayValues = useMemo(() => {
@@ -181,24 +190,24 @@ export function UsageChartsProvider({
         seriesData.vcpu[hoveredIndex]!.y,
         seriesData.ram[hoveredIndex]!.y,
         seriesData.sandboxes[hoveredIndex]!.x,
-        samplingMode
+        timeframe
       )
     }
 
-    if (filteredSampledData.length === 0) {
+    if (sampledData.length === 0) {
       return formatEmptyValues()
     }
 
     return formatTotalValues(totals)
   }, [
     hoveredIndex,
-    filteredSampledData.length,
+    sampledData.length,
     totals,
     seriesData.sandboxes,
     seriesData.cost,
     seriesData.vcpu,
     seriesData.ram,
-    samplingMode,
+    timeframe,
   ])
 
   const setTimeframe = useCallback(

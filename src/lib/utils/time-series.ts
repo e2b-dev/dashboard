@@ -3,11 +3,13 @@ export interface TimeSeriesPoint {
   y: number
 }
 
-export interface FillTimeSeriesConfig {
+export interface FillTimeSeriesConfig<T> {
   start: number
   end: number
   step: number
   anomalousGapTolerance?: number
+  timestampAccessorKey: keyof T
+  emptyPointGenerator: (timestamp: number) => T
 }
 
 function isGapAnomalous(
@@ -18,22 +20,19 @@ function isGapAnomalous(
   return gapDuration > expectedStep * (1 + anomalousGapTolerance)
 }
 
-function generateEmptyTimeSeries(
+function generateEmptyTimeSeries<T>(
   start: number,
   end: number,
-  step: number
-): TimeSeriesPoint[] {
-  const result: TimeSeriesPoint[] = []
+  step: number,
+  emptyPointGenerator: (timestamp: number) => T
+): T[] {
+  const result: T[] = []
 
   for (let timestamp = start; timestamp < end; timestamp += step) {
-    result.push({ x: timestamp, y: 0 })
+    result.push(emptyPointGenerator(timestamp))
   }
 
   return result
-}
-
-function generateEmptyPoint(x: number): TimeSeriesPoint {
-  return { x, y: 0 }
 }
 
 /**
@@ -49,30 +48,39 @@ function generateEmptyPoint(x: number): TimeSeriesPoint {
  *
  * CRITICAL: this logic is highly tested. do not modify without extensive testing
  */
-export function fillTimeSeriesWithEmptyPoints(
-  data: TimeSeriesPoint[],
-  config: FillTimeSeriesConfig
-): TimeSeriesPoint[] {
-  const { start, end, step, anomalousGapTolerance = 0.5 } = config
+export function fillTimeSeriesWithEmptyPoints<T>(
+  data: T[],
+  config: FillTimeSeriesConfig<T>
+): T[] {
+  const {
+    start,
+    end,
+    step,
+    anomalousGapTolerance = 0.5,
+    timestampAccessorKey,
+    emptyPointGenerator,
+  } = config
 
   if (!data.length) {
-    return generateEmptyTimeSeries(start, end, step)
+    return generateEmptyTimeSeries(start, end, step, emptyPointGenerator)
   }
 
-  // Sort data by timestamp
+  // sort data by timestamp
   const sortedData = [...data].sort((a, b) => {
-    return a.x - b.x
+    const aTime = a[timestampAccessorKey] as number
+    const bTime = b[timestampAccessorKey] as number
+    return aTime - bTime
   })
 
-  const result: TimeSeriesPoint[] = []
+  const result: T[] = []
 
   // fill backwards from first data point to config.start
-  const firstTimestamp = sortedData[0]!.x
+  const firstTimestamp = sortedData[0]![timestampAccessorKey] as number
   for (let ts = firstTimestamp - step; ts >= start; ts -= step) {
-    result.push(generateEmptyPoint(ts))
+    result.push(emptyPointGenerator(ts))
   }
 
-  // Add data points and fill gaps
+  // add data points and fill gaps
   for (let i = 0; i < sortedData.length; i++) {
     const currentPoint = sortedData[i]!
     result.push(currentPoint)
@@ -80,31 +88,36 @@ export function fillTimeSeriesWithEmptyPoints(
     if (i === sortedData.length - 1) break
 
     const nextPoint = sortedData[i + 1]!
-    const currentTimestamp = currentPoint.x
-    const nextTimestamp = nextPoint.x
+    const currentTimestamp = currentPoint[timestampAccessorKey] as number
+    const nextTimestamp = nextPoint[timestampAccessorKey] as number
     const actualGap = nextTimestamp - currentTimestamp
 
     if (isGapAnomalous(actualGap, step, anomalousGapTolerance)) {
       // fill all missing timestamps at step intervals
       for (let ts = currentTimestamp + step; ts < nextTimestamp; ts += step) {
-        result.push(generateEmptyPoint(ts))
+        result.push(emptyPointGenerator(ts))
       }
     }
   }
 
   // fill forwards from last data point to config.end
-  const lastTimestamp = sortedData[sortedData.length - 1]!.x
+  const lastTimestamp = sortedData[sortedData.length - 1]![
+    timestampAccessorKey
+  ] as number
   for (let ts = lastTimestamp + step; ts <= end; ts += step) {
-    result.push(generateEmptyPoint(ts))
+    result.push(emptyPointGenerator(ts))
   }
 
-  // Sort and strip potential overfetching
+  // sort and strip potential overfetching
   const sorted = result.sort((a, b) => {
-    return a.x - b.x
+    const aTime = a[timestampAccessorKey] as number
+    const bTime = b[timestampAccessorKey] as number
+    return aTime - bTime
   })
 
   return sorted.filter((d) => {
-    return d.x >= start && d.x <= end
+    const timestamp = d[timestampAccessorKey] as number
+    return timestamp >= start && timestamp <= end
   })
 }
 
