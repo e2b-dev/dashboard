@@ -37,7 +37,6 @@ export function UsageTimeRangeControls({
   onTimeRangeChange,
   className,
 }: UsageTimeRangeControlsProps) {
-  const { samplingMode } = useUsageCharts()
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
 
   const selectedPresetId = useMemo(
