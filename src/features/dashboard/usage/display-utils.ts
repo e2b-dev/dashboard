@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils/formatting'
 import {
   determineSamplingMode,
+  normalizeToEndOfSamplingPeriod,
   normalizeToStartOfSamplingPeriod,
 } from './sampling-utils'
 import {
@@ -109,16 +110,16 @@ export function formatHoveredValues(
         label = 'during'
       } else if (timestampIsAtStartEdge) {
         // partial week at start - show from start hour to end of week
-        const weekEnd = getWeekEnd(timestamp)
+        const weekEnd = normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
         timestampLabel = `${formatHour(timestamp)} - ${formatDay(weekEnd)}`
         label = 'during'
       } else if (timestampIsAtEndEdge) {
         // partial week at end - show from start of week to end hour
-        const weekStart = getWeekStart(timestamp)
+        const weekStart = normalizeToStartOfSamplingPeriod(timestamp, 'weekly')
         timestampLabel = `${formatDay(weekStart)} - ${formatHour(timestamp)}`
         label = 'during'
       } else {
-        const weekEnd = getWeekEnd(timestamp)
+        const weekEnd = normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
         timestampLabel = formatDateRange(timestamp, weekEnd)
         label = 'during week'
       }
@@ -218,29 +219,6 @@ export function formatEmptyValues(): {
       timestamp: null,
     },
   }
-}
-
-/**
- * Gets the end timestamp (Sunday 23:59:59.999) for a given week start (Monday)
- */
-export function getWeekEnd(weekStart: number): number {
-  const endDate = new Date(weekStart)
-
-  endDate.setDate(endDate.getDate() + 6)
-
-  endDate.setHours(23, 59, 59, 999)
-
-  return endDate.getTime()
-}
-
-export function getWeekStart(weekEnd: number): number {
-  const startDate = new Date(weekEnd)
-
-  // subtract 6 days from Sunday = Monday
-  startDate.setDate(startDate.getDate() - 6)
-
-  startDate.setHours(0, 0, 0, 0)
-  return startDate.getTime()
 }
 
 export function calculateTotals(sampledData: SampledDataPoint[]): {
