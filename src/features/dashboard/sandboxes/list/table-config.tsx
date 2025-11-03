@@ -131,9 +131,8 @@ export const templateFilter: FilterFn<SandboxWithMetrics> = (
   // check if any filter value matches either alias or templateID
   return value.some((filterValue) => {
     return (
-      (alias && alias.toLowerCase().includes(filterValue.toLowerCase())) ||
-      (templateID &&
-        templateID.toLowerCase().includes(filterValue.toLowerCase()))
+      (alias && alias.toLowerCase() === filterValue.toLowerCase()) ||
+      (templateID && templateID.toLowerCase() === filterValue.toLowerCase())
     )
   })
 }
