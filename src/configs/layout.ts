@@ -7,6 +7,9 @@ import micromatch from 'micromatch'
 export interface DashboardLayoutConfig {
   title: string
   type: 'default' | 'custom'
+  custom?: {
+    includeHeaderBottomStyles: boolean
+  }
 }
 
 const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
@@ -24,7 +27,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
   },
   '/dashboard/*/usage': {
     title: 'Usage',
-    type: 'default',
+    type: 'custom',
+    custom: {
+      includeHeaderBottomStyles: true,
+    },
   },
   '/dashboard/*/members': {
     title: 'Members',

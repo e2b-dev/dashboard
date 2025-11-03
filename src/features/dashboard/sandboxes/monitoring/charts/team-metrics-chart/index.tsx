@@ -1,31 +1,26 @@
 'use client'
 
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { LineChart } from 'echarts/charts'
 import {
   AxisPointerComponent,
-  DataZoomComponent,
+  BrushComponent,
   GridComponent,
   MarkLineComponent,
   MarkPointComponent,
-  ToolboxComponent,
   TooltipComponent,
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
-import {
-  CHART_CONFIGS,
-  LIVE_PADDING_MULTIPLIER,
-  STATIC_ECHARTS_CONFIG,
-} from './constants'
+import { CHART_CONFIGS, LIVE_PADDING_MULTIPLIER } from './constants'
 import type { TeamMetricsChartProps } from './types'
 import {
   buildSeriesData,
-  calculateYAxisMax,
   createLimitLine,
   createLiveIndicators,
   createSplitLineInterval,
@@ -39,8 +34,7 @@ echarts.use([
   LineChart,
   GridComponent,
   TooltipComponent,
-  ToolboxComponent,
-  DataZoomComponent,
+  BrushComponent,
   MarkPointComponent,
   MarkLineComponent,
   AxisPointerComponent,
@@ -69,10 +63,12 @@ function TeamMetricsChart({
   // use refs for callbacks to avoid re-creating chart options
   const onTooltipValueChangeRef = useRef(onTooltipValueChange)
   const onHoverEndRef = useRef(onHoverEnd)
+  const onZoomEndRef = useRef(onZoomEnd)
 
   // keep refs up to date
   onTooltipValueChangeRef.current = onTooltipValueChange
   onHoverEndRef.current = onHoverEnd
+  onZoomEndRef.current = onZoomEnd
 
   const config = CHART_CONFIGS[type]
 
@@ -89,7 +85,6 @@ function TeamMetricsChart({
     config.areaToVar,
     '--stroke',
     '--fg-tertiary',
-    '--bg-inverted',
     '--font-mono',
     '--accent-error-highlight',
     '--accent-error-bg',
@@ -101,7 +96,6 @@ function TeamMetricsChart({
   const areaTo = cssVars[config.areaToVar] || '#000'
   const stroke = cssVars['--stroke'] || '#000'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
-  const bgInverted = cssVars['--bg-inverted'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
   const errorHighlight = cssVars['--accent-error-highlight'] || '#f00'
   const errorBg = cssVars['--accent-error-bg'] || '#fee'
@@ -131,29 +125,44 @@ function TeamMetricsChart({
     []
   )
 
-  const handleZoom = useCallback(
+  const handleBrushEnd = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
-      if (onZoomEnd && params.batch?.[0]) {
-        const { startValue, endValue } = params.batch[0]
-        if (startValue !== undefined && endValue !== undefined) {
-          onZoomEnd(Math.round(startValue), Math.round(endValue))
+      const areas = params.areas
+      if (areas && areas.length > 0) {
+        const coordRange = areas[0].coordRange
+
+        if (coordRange && coordRange.length === 2 && onZoomEndRef.current) {
+          const startValue = Math.round(coordRange[0])
+          const endValue = Math.round(coordRange[1])
+
+          onZoomEndRef.current(startValue, endValue)
+
+          // clears brush after selection
+          chartInstanceRef.current?.dispatchAction({
+            type: 'brush',
+            command: 'clear',
+            areas: [],
+          })
         }
       }
     },
-    [onZoomEnd]
+    []
   )
 
   // chart ready handler - stable reference
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
 
-    // activate datazoom
+    // Activate brush selection mode
     chart.dispatchAction(
       {
         type: 'takeGlobalCursor',
-        key: 'dataZoomSelect',
-        dataZoomSelectActive: true,
+        key: 'brush',
+        brushOption: {
+          brushType: 'lineX',
+          brushMode: 'single',
+        },
       },
       { flush: true }
     )
@@ -171,7 +180,10 @@ function TeamMetricsChart({
   // build complete echarts option once
   const option = useMemo<EChartsOption>(() => {
     // calculate y-axis max based on data only
-    const yAxisMax = calculateYAxisMax(chartData, config.yAxisScaleFactor)
+    const yAxisMax = calculateAxisMax(
+      chartData.map((d) => d.y),
+      config.yAxisScaleFactor
+    )
 
     const seriesData = buildSeriesData(chartData)
     const isLive = hasLiveData(chartData)
@@ -243,7 +255,20 @@ function TeamMetricsChart({
 
     // build complete option object
     return {
-      ...STATIC_ECHARTS_CONFIG,
+      backgroundColor: 'transparent',
+      animation: false,
+      brush: {
+        brushType: 'lineX',
+        brushMode: 'single',
+        xAxisIndex: 0,
+        brushLink: 'all',
+        brushStyle: {
+          borderWidth: 1,
+        },
+        outOfBrush: {
+          colorAlpha: 0.3,
+        },
+      },
       grid: {
         top: 10,
         right: 5,
@@ -336,22 +361,6 @@ function TeamMetricsChart({
           show: false,
         },
       },
-      toolbox: {
-        ...STATIC_ECHARTS_CONFIG.toolbox,
-        feature: {
-          dataZoom: {
-            yAxisIndex: 'none',
-            brushStyle: {
-              // background with 0.2 opacity
-              color: bgInverted,
-              opacity: 0.2,
-              borderType: 'solid',
-              borderWidth: 1,
-              borderColor: bgInverted,
-            },
-          },
-        },
-      },
       series,
     }
   }, [
@@ -366,7 +375,6 @@ function TeamMetricsChart({
     areaTo,
     stroke,
     fgTertiary,
-    bgInverted,
     fontMono,
     errorHighlight,
     errorBg,
@@ -385,7 +393,7 @@ function TeamMetricsChart({
       onChartReady={handleChartReady}
       className={className}
       onEvents={{
-        datazoom: handleZoom,
+        brushEnd: handleBrushEnd,
         globalout: handleGlobalOut,
       }}
     />

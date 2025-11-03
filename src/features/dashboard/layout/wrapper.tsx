@@ -30,7 +30,7 @@ export default function DashboardLayoutWrapper({
   }
 
   return (
-    <div className="flex-1 min-h-0 max-h-dvh w-full max-w-full overflow-hidden">
+    <div className="flex-1 min-h-0 max-h-dvh w-full max-w-full overflow-y-auto md:overflow-hidden">
       <CatchErrorBoundary
         classNames={{
           wrapper: 'h-full w-full',
