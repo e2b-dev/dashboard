@@ -1,3 +1,5 @@
+import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
+
 interface Invoice {
   cost: number
   paid: boolean
@@ -32,7 +34,7 @@ interface CreateTeamsResponse {
 }
 
 interface AddOnOrderItem {
-  name: 'addon_500_sandboxes'
+  name: typeof ADDON_500_SANDBOXES_ID
   quantity: number
 }
 

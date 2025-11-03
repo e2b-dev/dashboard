@@ -1,5 +1,5 @@
 // addon identifiers
-export const ADDON_500_SANDBOXES_ID = 'addon_500_sandboxes' as const
+export const ADDON_500_SANDBOXES_ID = 'addon_concurrency_500_sandboxes' as const
 
 // tier identifiers
 export const TIER_PRO_ID = 'pro_v1' as const
