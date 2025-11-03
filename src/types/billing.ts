@@ -26,6 +26,14 @@ interface UsageResponse {
     price_for_ram: number
     price_for_cpu: number
   }[]
+  hour_usages: {
+    timestamp: number
+    sandbox_count: number
+    cpu_hours: number
+    ram_gib_hours: number
+    price_for_ram: number
+    price_for_cpu: number
+  }[]
 }
 
 interface CreateTeamsResponse {
@@ -90,10 +98,10 @@ interface TeamItems {
 }
 
 export type {
+  AddonInfo,
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
   AddOnOrderItem,
-  AddonInfo,
   BillingLimit,
   CreateTeamsResponse,
   CustomerPortalResponse,
