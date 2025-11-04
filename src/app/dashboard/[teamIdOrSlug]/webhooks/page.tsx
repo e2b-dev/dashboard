@@ -44,7 +44,9 @@ export default async function WebhooksPage({
         </CardHeader>
 
         <CardContent>
-          <WebhooksTable params={params} />
+          <div className="w-full overflow-x-auto">
+            <WebhooksTable params={params} className="min-w-[900px]" />
+          </div>
         </CardContent>
       </Card>
     </Frame>
