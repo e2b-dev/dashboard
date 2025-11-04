@@ -15,7 +15,7 @@ import { DefaultTemplate } from '@/types/api.types'
 import { z } from 'zod'
 
 const GetTeamTemplatesSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getTeamTemplates = authActionClient

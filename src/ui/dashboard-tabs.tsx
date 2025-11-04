@@ -4,14 +4,9 @@ import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { ReactElement, ReactNode, useMemo } from 'react'
+import { memo, ReactElement, ReactNode, useCallback, useMemo } from 'react'
 
-type CoreDashboardTabElement = ReactElement<
-  DashboardTabProps,
-  typeof DashboardTab
->
-
-export type DashboardTabElement = CoreDashboardTabElement | false
+type DashboardTabElement = ReactElement<DashboardTabProps, typeof DashboardTab>
 
 export interface DashboardTabsProps {
   layoutKey: string
@@ -22,51 +17,48 @@ export interface DashboardTabsProps {
 
 // COMPONENT
 
-export function DashboardTabs({
+function DashboardTabsComponent({
   layoutKey,
   type,
   children,
   className,
 }: DashboardTabsProps) {
-  // ensure children is an array && remove falsy values
-  const tabChildren = useMemo(
-    () =>
-      (Array.isArray(children) ? children : [children]).filter(
-        Boolean
-      ) as CoreDashboardTabElement[],
-    [children]
-  )
-
   const searchParams = useSearchParams()
   const pathname = usePathname()
 
-  // build tab models once
-  const tabs = tabChildren.map((child) => ({
-    id: child.props.id,
-    label: child.props.label,
-    icon: child.props.icon,
-  }))
+  const tabs = useMemo(() => {
+    const tabChildren = Array.isArray(children) ? children : [children]
+    return tabChildren.map((child) => ({
+      id: child.props.id,
+      label: child.props.label,
+      icon: child.props.icon,
+    }))
+  }, [children])
 
-  // derive hrefs and active tab based on `type`
-  let hrefForId = (id: string) => ''
-  let activeTabId: string | undefined
+  const basePath = useMemo(() => {
+    if (type === 'query') return pathname
+    return inferBasePathForPathTabs(pathname, tabs)
+  }, [type, pathname, tabs])
 
-  if (type === 'query') {
-    const basePath = pathname
-    hrefForId = (id: string) => `${basePath}?tab=${id}`
-    const defaultTabId = tabs[0]?.id
-    activeTabId = searchParams.get('tab') || defaultTabId
-  } else {
-    const basePath = inferBasePathForPathTabs(pathname, tabs)
-    hrefForId = (id: string) => `${basePath}/${id}`
-    activeTabId =
-      tabs.find((tab) => pathname.endsWith(tab.id))?.id || tabs[0]?.id
-  }
+  const hrefForId = useCallback(
+    (id: string) => {
+      return type === 'query' ? `${basePath}?tab=${id}` : `${basePath}/${id}`
+    },
+    [type, basePath]
+  )
 
-  const tabsWithHrefs = tabs.map((tab) => ({
-    ...tab,
-    href: hrefForId(tab.id),
-  }))
+  const activeTabId = useMemo(() => {
+    if (type === 'query') {
+      const defaultTabId = tabs[0]?.id
+      return searchParams.get('tab') || defaultTabId
+    }
+    return tabs.find((tab) => pathname.endsWith(tab.id))?.id || tabs[0]?.id
+  }, [type, tabs, searchParams, pathname])
+
+  const tabsWithHrefs = useMemo(
+    () => tabs.map((tab) => ({ ...tab, href: hrefForId(tab.id) })),
+    [tabs, hrefForId]
+  )
 
   return (
     <Tabs
@@ -94,6 +86,35 @@ export function DashboardTabs({
     </Tabs>
   )
 }
+
+export const DashboardTabs = memo(DashboardTabsComponent, (prev, next) => {
+  if (
+    prev.layoutKey !== next.layoutKey ||
+    prev.type !== next.type ||
+    prev.className !== next.className
+  ) {
+    return false
+  }
+
+  const prevChildren = Array.isArray(prev.children)
+    ? prev.children
+    : [prev.children]
+  const nextChildren = Array.isArray(next.children)
+    ? next.children
+    : [next.children]
+
+  if (prevChildren.length !== nextChildren.length) return false
+
+  return prevChildren.every((prevChild, index) => {
+    const nextChild = nextChildren[index]
+    if (!nextChild) return false
+    return (
+      prevChild.props.id === nextChild.props.id &&
+      prevChild.props.label === nextChild.props.label &&
+      prevChild.props.icon === nextChild.props.icon
+    )
+  })
+})
 
 export interface DashboardTabProps {
   id: string

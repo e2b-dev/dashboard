@@ -24,10 +24,6 @@ export function transformMetricsToClientMetrics(
   )
 }
 
-// tolerance multiplier for matching time ranges to preset options
-// accounts for timing variations and data granularity
-export const TIMERANGE_MATCHING_TOLERANCE_MULTIPLIER = 1.5
-
 export function calculateStepForRange(startMs: number, endMs: number): number {
   const duration = endMs - startMs
   return calculateStepForDuration(duration)
@@ -55,12 +51,6 @@ export function calculateStepForDuration(durationMs: number): number {
   }
 }
 
-// FILL TEAM METRICS WITH ZEROS
-// core function for rendering data coming from the back-end into the charts
-
-/**
- * Creates a zero-valued team metrics data point for charts/visualizations.
- */
 function _createZeroMetricPoint(timestamp: number): ClientTeamMetrics[0] {
   return {
     timestamp,
@@ -69,9 +59,6 @@ function _createZeroMetricPoint(timestamp: number): ClientTeamMetrics[0] {
   }
 }
 
-/**
- * Generates a complete time series filled with zero values when no data exists.
- */
 function _generateEmptyTimeSeriesWithZeros(
   start: number,
   end: number,
@@ -87,7 +74,6 @@ function _generateEmptyTimeSeriesWithZeros(
   return result
 }
 
-// determines if a gap between timestamps is considered anomalous
 function _isGapAnomalous(
   gapDuration: number,
   expectedStep: number,
@@ -116,7 +102,10 @@ function _addStartPaddingZeros(
     result.push(_createZeroMetricPoint(start))
 
     const prefixZeroTimestamp = firstDataPoint.timestamp - step
-    if (prefixZeroTimestamp > start) {
+    if (
+      prefixZeroTimestamp > start &&
+      prefixZeroTimestamp < firstDataPoint.timestamp
+    ) {
       result.push(_createZeroMetricPoint(prefixZeroTimestamp))
     }
   }
@@ -136,32 +125,25 @@ function _fillIntermediateGapsWithZeros(
   const isAnomalousGap = _isGapAnomalous(actualGap, step, anomalousGapTolerance)
 
   if (isAnomalousGap) {
-    const hasDataBefore = currentIndex >= 1
-    const hasDataAfter = currentIndex + 1 < sortedData.length
+    const suffixZeroTimestamp = currentPoint.timestamp + step
+    if (
+      suffixZeroTimestamp < nextPoint.timestamp &&
+      suffixZeroTimestamp > currentPoint.timestamp
+    ) {
+      result.push(_createZeroMetricPoint(suffixZeroTimestamp))
+    }
 
-    // only fill gaps in the middle of data sequences, not at boundaries
-    if (hasDataBefore && hasDataAfter) {
-      const suffixZeroTimestamp = currentPoint.timestamp + step
-      if (
-        suffixZeroTimestamp < nextPoint.timestamp &&
-        suffixZeroTimestamp - currentPoint.timestamp >
-          TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS
-      ) {
-        result.push(_createZeroMetricPoint(suffixZeroTimestamp))
-      }
-
-      const prefixZeroTimestamp = nextPoint.timestamp - step
-      if (
-        prefixZeroTimestamp > currentPoint.timestamp &&
-        prefixZeroTimestamp < nextPoint.timestamp
-      ) {
-        result.push(_createZeroMetricPoint(prefixZeroTimestamp))
-      }
+    const prefixZeroTimestamp = nextPoint.timestamp - step
+    if (
+      prefixZeroTimestamp > currentPoint.timestamp &&
+      prefixZeroTimestamp < nextPoint.timestamp &&
+      prefixZeroTimestamp > suffixZeroTimestamp
+    ) {
+      result.push(_createZeroMetricPoint(prefixZeroTimestamp))
     }
   }
 }
 
-// determines if zero values should be added at the end of the time series
 function _shouldAddEndZeros(
   gapToEnd: number,
   step: number,
@@ -179,7 +161,6 @@ function _shouldAddEndZeros(
   )
 }
 
-// adds zero-valued data points at the end of the time series if there's a significant gap
 function _addEndPaddingZeros(
   result: ClientTeamMetrics,
   lastDataPoint: ClientTeamMetrics[0],
@@ -197,6 +178,14 @@ function _addEndPaddingZeros(
 
     result.push(_createZeroMetricPoint(end - 1000))
   }
+}
+
+function _stripPotentialOverfetching(
+  data: ClientTeamMetrics,
+  start: number,
+  end: number
+): ClientTeamMetrics {
+  return data.filter((d) => d.timestamp >= start && d.timestamp <= end)
 }
 
 /**
@@ -224,20 +213,24 @@ export function fillTeamMetricsWithZeros(
   step: number,
   anomalousGapTolerance: number = 0.25
 ): ClientTeamMetrics {
-  // handle empty data case: generate complete zero-filled time series
   if (!data.length) {
     return _generateEmptyTimeSeriesWithZeros(start, end, step)
   }
 
-  // handle single data point case: just return sorted data (no gaps to fill)
-  if (data.length < 2) {
-    return data.sort((a, b) => a.timestamp - b.timestamp)
-  }
-
-  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
+  let sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp)
   const result: ClientTeamMetrics = []
 
   _addStartPaddingZeros(result, sortedData, start, step, anomalousGapTolerance)
+
+  // handle single data point case: add the point and check for end padding
+  if (data.length === 1) {
+    const singlePoint = sortedData[0]!
+    result.push(singlePoint)
+    _addEndPaddingZeros(result, singlePoint, end, step, anomalousGapTolerance)
+    const sorted = result.sort((a, b) => a.timestamp - b.timestamp)
+
+    return _stripPotentialOverfetching(sorted, start, end)
+  }
 
   for (let i = 0; i < sortedData.length; i++) {
     const currentPoint = sortedData[i]!
@@ -259,5 +252,11 @@ export function fillTeamMetricsWithZeros(
   const lastDataPoint = sortedData[sortedData.length - 1]!
   _addEndPaddingZeros(result, lastDataPoint, end, step, anomalousGapTolerance)
 
-  return result.sort((a, b) => a.timestamp - b.timestamp)
+  // re-sort the data
+  sortedData = result.sort((a, b) => a.timestamp - b.timestamp)
+
+  // strip potential overfetching coming from the server functions
+  const strippedData = _stripPotentialOverfetching(sortedData, start, end)
+
+  return strippedData
 }

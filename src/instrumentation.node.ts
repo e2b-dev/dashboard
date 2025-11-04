@@ -44,11 +44,6 @@ const {
   VERCEL_REGION,
   VERCEL_DEPLOYMENT_ID,
   VERCEL_GIT_COMMIT_SHA,
-  VERCEL_GIT_COMMIT_MESSAGE,
-  VERCEL_GIT_COMMIT_AUTHOR_NAME,
-  VERCEL_GIT_REPO_SLUG,
-  VERCEL_GIT_REPO_OWNER,
-  VERCEL_GIT_PROVIDER,
 } = process.env
 
 const sdk = new NodeSDK({
@@ -71,19 +66,6 @@ const sdk = new NodeSDK({
     ...(VERCEL_GIT_COMMIT_SHA && {
       'vercel.git.commit_sha': VERCEL_GIT_COMMIT_SHA,
     }),
-    ...(VERCEL_GIT_COMMIT_MESSAGE && {
-      'vercel.git.commit_message': VERCEL_GIT_COMMIT_MESSAGE,
-    }),
-    ...(VERCEL_GIT_COMMIT_AUTHOR_NAME && {
-      'vercel.git.commit_author': VERCEL_GIT_COMMIT_AUTHOR_NAME,
-    }),
-    ...(VERCEL_GIT_REPO_SLUG && {
-      'vercel.git.repo_slug': VERCEL_GIT_REPO_SLUG,
-    }),
-    ...(VERCEL_GIT_REPO_OWNER && {
-      'vercel.git.repo_owner': VERCEL_GIT_REPO_OWNER,
-    }),
-    ...(VERCEL_GIT_PROVIDER && { 'vercel.git.provider': VERCEL_GIT_PROVIDER }),
   }),
   traceExporter: new OTLPTraceExporter({
     url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,

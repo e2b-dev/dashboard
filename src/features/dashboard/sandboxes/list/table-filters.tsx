@@ -1,15 +1,8 @@
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { formatCPUCores, formatMemory } from '@/lib/utils/formatting'
-import { Template } from '@/types/api.types'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/ui/primitives/command'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,10 +15,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { ListFilter } from 'lucide-react'
+import { ListFilter, Plus } from 'lucide-react'
 import * as React from 'react'
 import { memo, useCallback } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
@@ -86,44 +80,52 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
   )
 })
 
-interface TemplateFilterProps {
-  templates: Template[]
-}
+const TemplateFilter = memo(function TemplateFilter() {
+  const { templateFilters, setTemplateFilters } = useSandboxTableStore()
 
-const TemplateFilter = memo(function TemplateFilter({
-  templates,
-}: TemplateFilterProps) {
-  const { templateIds, setTemplateIds } = useSandboxTableStore()
+  const [localValue, setLocalValue] = React.useState('')
 
-  const handleSelect = useCallback(
-    (templateId: string) => {
-      if (templateIds.includes(templateId)) {
-        setTemplateIds(templateIds.filter((id) => id !== templateId))
-      } else {
-        setTemplateIds([...templateIds, templateId])
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(e.target.value)
+  }, [])
+
+  const handleSubmit = useCallback(() => {
+    const trimmedValue = localValue.trim().toLowerCase()
+    if (trimmedValue && !templateFilters.includes(trimmedValue)) {
+      setTemplateFilters([...templateFilters, trimmedValue])
+      setLocalValue('')
+    }
+  }, [localValue, templateFilters, setTemplateFilters])
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        handleSubmit()
       }
     },
-    [templateIds, setTemplateIds]
+    [handleSubmit]
   )
 
   return (
-    <Command>
-      <CommandInput placeholder="Search templates..." />
-      <CommandList>
-        {templates?.map((template) => (
-          <CommandItem
-            key={template.templateID}
-            onSelect={() => handleSelect(template.templateID)}
-            className={cn(
-              templateIds.includes(template.templateID) &&
-                'text-accent-main-highlight '
-            )}
-          >
-            {template.templateID}
-          </CommandItem>
-        ))}
-      </CommandList>
-    </Command>
+    <div className="w-80">
+      <div className="flex items-center gap-2">
+        <Input
+          value={localValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Enter template name or ID..."
+          className="w-full"
+        />
+        <Button
+          variant={'outline'}
+          onClick={handleSubmit}
+          disabled={!localValue.trim()}
+        >
+          <Plus className="size-3.5 min-w-3.5" />
+        </Button>
+      </div>
+    </div>
   )
 })
 
@@ -233,33 +235,30 @@ const ResourcesFilter = memo(function ResourcesFilter() {
 
 // Main component
 export interface SandboxesTableFiltersProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  templates: Template[]
-}
+  extends React.HTMLAttributes<HTMLDivElement> {}
 
 const SandboxesTableFilters = memo(function SandboxesTableFilters({
   className,
-  templates,
   ...props
 }: SandboxesTableFiltersProps) {
   const {
     globalFilter,
     startedAtFilter,
-    templateIds,
+    templateFilters,
     cpuCount,
     memoryMB,
     setGlobalFilter,
     setStartedAtFilter,
-    setTemplateIds,
+    setTemplateFilters,
     setCpuCount,
     setMemoryMB,
   } = useSandboxTableStore()
 
   const handleTemplateFilterClick = useCallback(
-    (id: string) => {
-      setTemplateIds(templateIds.filter((t) => t !== id))
+    (filter: string) => {
+      setTemplateFilters(templateFilters.filter((t) => t !== filter))
     },
-    [templateIds, setTemplateIds]
+    [templateFilters, setTemplateFilters]
   )
 
   return (
@@ -288,7 +287,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
               <DropdownMenuSubTrigger>Template</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
-                  <TemplateFilter templates={templates} />
+                  <TemplateFilter />
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
@@ -318,13 +317,13 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
           onClick={() => setStartedAtFilter(undefined)}
         />
       )}
-      {templateIds.length > 0 &&
-        templateIds.map((id) => (
+      {templateFilters.length > 0 &&
+        templateFilters.map((filter) => (
           <TableFilterButton
-            key={id}
+            key={filter}
             label="Template"
-            value={id}
-            onClick={() => handleTemplateFilterClick(id)}
+            value={filter}
+            onClick={() => handleTemplateFilterClick(filter)}
           />
         ))}
       {cpuCount !== undefined && (

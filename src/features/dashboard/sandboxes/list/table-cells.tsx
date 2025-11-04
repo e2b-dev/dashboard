@@ -4,12 +4,32 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
 import { useServerContext } from '@/features/dashboard/server-context'
 import { useTemplateTableStore } from '@/features/dashboard/templates/stores/table-store'
+import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
 import { parseUTCDateComponents } from '@/lib/utils/formatting'
+import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { Template } from '@/types/api.types'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/ui/primitives/dropdown-menu'
+import { Loader } from '@/ui/primitives/loader'
 import { CellContext } from '@tanstack/react-table'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, MoreVertical, Trash2 } from 'lucide-react'
+import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
 import { useSandboxMetricsStore } from './stores/metrics-store'
@@ -19,6 +39,104 @@ declare module '@tanstack/react-table' {
   interface TableState {
     templates?: Template[]
   }
+}
+
+export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
+  const sandbox = row.original
+  const selectedTeam = useSelectedTeam()
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const { execute: executeKillSandbox, isExecuting: isKilling } = useAction(
+    killSandboxAction,
+    {
+      onSuccess: () => {
+        toast(
+          defaultSuccessToast(`Sandbox ${sandbox.sandboxID} has been killed.`)
+        )
+        router.refresh()
+      },
+      onError: ({ error }) => {
+        toast(
+          defaultErrorToast(
+            error.serverError || 'Failed to kill sandbox. Please try again.'
+          )
+        )
+      },
+    }
+  )
+
+  const handleKill = () => {
+    if (!selectedTeam?.id) return
+
+    executeKillSandbox({
+      teamId: selectedTeam.id,
+      sandboxId: sandbox.sandboxID,
+    })
+  }
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger
+        asChild
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+        }}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-fg-tertiary size-5"
+          disabled={isKilling || sandbox.state !== 'running'}
+        >
+          {isKilling ? (
+            <Loader className="size-4" />
+          ) : (
+            <MoreVertical className="size-4" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Danger Zone</DropdownMenuLabel>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger variant="error">
+              <Trash2 className="!size-3" />
+              Kill
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <div className="space-y-3 p-3 max-w-xs">
+                  <div className="space-y-1">
+                    <h4>Confirm Kill</h4>
+                    <p className="prose-body text-fg-tertiary">
+                      Are you sure you want to kill this sandbox? This action
+                      cannot be undone.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 justify-end">
+                    <Button
+                      variant="error"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleKill()
+                      }}
+                      disabled={isKilling}
+                      loading={isKilling}
+                    >
+                      Kill Sandbox
+                    </Button>
+                  </div>
+                </div>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }
 
 type CpuUsageProps = { sandboxId: string; totalCpu?: number }
@@ -107,13 +225,10 @@ export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
 }
 
 export function TemplateCell({
+  row,
   getValue,
-  table,
 }: CellContext<SandboxWithMetrics, unknown>) {
-  const templateId = getValue() as string
-  const template: Template | undefined = table
-    .getState()
-    .templates?.find((t: Template) => t.templateID === templateId)
+  const templateIdentifier = getValue() as string
   const { selectedTeamSlug, selectedTeamId } = useServerContext()
   const router = useRouter()
 
@@ -127,13 +242,15 @@ export function TemplateCell({
         e.stopPropagation()
         e.preventDefault()
 
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
+        useTemplateTableStore
+          .getState()
+          .setGlobalFilter(row.original.templateID)
         router.push(
           PROTECTED_URLS.TEMPLATES(selectedTeamSlug ?? selectedTeamId)
         )
       }}
     >
-      {template?.aliases?.[0] ?? templateId}
+      {templateIdentifier}
       <ArrowUpRight className="size-3" />
     </Button>
   )

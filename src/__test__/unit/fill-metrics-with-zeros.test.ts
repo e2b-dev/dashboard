@@ -1,4 +1,4 @@
-import { fillTeamMetricsWithZeros } from '@/features/dashboard/sandboxes/monitoring/utils'
+import { fillTeamMetricsWithZeros } from '@/server/sandboxes/utils'
 import type { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { describe, expect, it } from 'vitest'
 
@@ -509,51 +509,72 @@ describe('fillTeamMetricsWithZeros', () => {
     it('should handle two data points with large gap between them', () => {
       const data: ClientTeamMetrics = [
         { timestamp: 1200000, concurrentSandboxes: 10, sandboxStartRate: 5 },
-        // large gap between points, but no sequence established
-        // Large gap between points, but no sequence established
         { timestamp: 1600000, concurrentSandboxes: 20, sandboxStartRate: 10 },
       ]
 
       const result = fillTeamMetricsWithZeros(
         data,
-        1000000, // start is far from first point (200000 gap, anomalous)
-        1800000, // end is far from last point (200000 gap, anomalous)
+        1000000,
+        1800000,
         100000,
         0.1
       )
 
-      // With only two points, middle gaps are not filled (no established pattern)
-      // But start/end gaps should be filled when anomalous
       expect(result.length).toBeGreaterThan(2)
 
-      // Should add zeros at start since first point is far from start boundary
       const startZeros = result.filter(
         (p) => p.timestamp < 1200000 && p.concurrentSandboxes === 0
       )
       expect(startZeros.length).toBeGreaterThan(0)
-      expect(startZeros[0]!.timestamp).toBe(1000000) // Start boundary zero
+      expect(startZeros[0]!.timestamp).toBe(1000000)
 
-      // Should add zeros at end since last point is far from end boundary
       const endZeros = result.filter(
         (p) => p.timestamp > 1600000 && p.concurrentSandboxes === 0
       )
       expect(endZeros.length).toBeGreaterThan(0)
 
-      // Original data points should be preserved
       const originalPoints = result.filter((p) => p.concurrentSandboxes > 0)
       expect(originalPoints).toHaveLength(2)
       expect(originalPoints[0]!.timestamp).toBe(1200000)
       expect(originalPoints[1]!.timestamp).toBe(1600000)
 
-      // Middle gap between the two points should NOT be filled
-      // (requires hasSequenceBefore which needs at least 3 points)
       const middleZeros = result.filter(
         (p) =>
           p.timestamp > 1200000 &&
           p.timestamp < 1600000 &&
           p.concurrentSandboxes === 0
       )
-      expect(middleZeros).toHaveLength(0)
+      expect(middleZeros.length).toBeGreaterThan(0)
+      expect(result.find((p) => p.timestamp === 1300000)).toBeDefined()
+      expect(result.find((p) => p.timestamp === 1500000)).toBeDefined()
+    })
+
+    it('should fill gap between first two points when more data follows', () => {
+      const data: ClientTeamMetrics = [
+        { timestamp: 1000000, concurrentSandboxes: 10, sandboxStartRate: 5 },
+        { timestamp: 1400000, concurrentSandboxes: 20, sandboxStartRate: 10 },
+        { timestamp: 1800000, concurrentSandboxes: 15, sandboxStartRate: 8 },
+        { timestamp: 2200000, concurrentSandboxes: 12, sandboxStartRate: 6 },
+      ]
+
+      const step = 100000
+      const result = fillTeamMetricsWithZeros(
+        data,
+        1000000,
+        2000000,
+        step,
+        0.25
+      )
+
+      const gapBetweenFirstTwo = result.filter(
+        (p) =>
+          p.timestamp > 1000000 &&
+          p.timestamp < 1400000 &&
+          p.concurrentSandboxes === 0
+      )
+      expect(gapBetweenFirstTwo.length).toBeGreaterThan(0)
+      expect(result.find((p) => p.timestamp === 1100000)).toBeDefined()
+      expect(result.find((p) => p.timestamp === 1300000)).toBeDefined()
     })
   })
 

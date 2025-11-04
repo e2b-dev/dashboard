@@ -5,3 +5,7 @@ export const INCLUDE_ARGUS = process.env.NEXT_PUBLIC_INCLUDE_ARGUS === '1'
 export const USE_MOCK_DATA =
   process.env.VERCEL_ENV !== 'production' &&
   process.env.NEXT_PUBLIC_MOCK_DATA === '1'
+
+export const INCLUDE_DASHBOARD_FEEDBACK_SURVEY =
+  process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID &&
+  process.env.NEXT_PUBLIC_POSTHOG_KEY

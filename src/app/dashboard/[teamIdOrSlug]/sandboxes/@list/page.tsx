@@ -2,10 +2,6 @@ import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
-import {
-  getDefaultTemplates,
-  getTeamTemplates,
-} from '@/server/templates/get-team-templates'
 import ErrorBoundary from '@/ui/error'
 
 interface PageProps {
@@ -27,27 +23,15 @@ interface PageContentProps {
 async function PageContent({ teamIdOrSlug }: PageContentProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const [sandboxesRes, templatesRes, defaultTemplateRes] = await Promise.all([
-    getTeamSandboxes({ teamId }),
-    getTeamTemplates({ teamId }),
-    getDefaultTemplates(),
-  ])
+  const sandboxesRes = await getTeamSandboxes({ teamId })
 
-  if (
-    !sandboxesRes?.data ||
-    sandboxesRes?.serverError ||
-    !templatesRes?.data?.templates ||
-    templatesRes?.serverError
-  ) {
+  if (!sandboxesRes?.data || sandboxesRes?.serverError) {
     return (
       <ErrorBoundary
         error={
           {
             name: 'Sandboxes Error',
-            message:
-              sandboxesRes?.serverError ??
-              templatesRes?.serverError ??
-              'Unknown error',
+            message: sandboxesRes?.serverError ?? 'Unknown error',
           } satisfies Error
         }
         description="Could not load sandboxes"
@@ -65,18 +49,11 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
   })
 
   const sandboxes = sandboxesRes.data.sandboxes
-  const templates = [
-    ...(defaultTemplateRes?.data?.templates
-      ? defaultTemplateRes.data.templates
-      : []),
-    ...templatesRes.data.templates,
-  ]
 
   return (
     <div className="flex flex-col h-full relative min-h-0 md:overflow-hidden">
       <SandboxesTable
         sandboxes={sandboxes}
-        templates={templates}
         initialMetrics={metricsRes?.data?.metrics || null}
       />
     </div>

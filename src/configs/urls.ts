@@ -12,8 +12,8 @@ export const PROTECTED_URLS = {
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
 
-  SETTINGS: (teamIdOrSlug: string, tab?: 'general' | 'keys') =>
-    `/dashboard/${teamIdOrSlug}/settings${tab ? `?tab=${tab}` : ''}`,
+  GENERAL: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/general`,
+  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
   SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
@@ -39,7 +39,7 @@ export const HELP_URLS = {
 
 export const BASE_URL = process.env.VERCEL_ENV
   ? process.env.VERCEL_ENV === 'production'
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    ? 'https://e2b.dev'
     : `https://${process.env.VERCEL_BRANCH_URL}`
   : 'http://localhost:3000'
 

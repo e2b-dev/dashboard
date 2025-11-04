@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "10.2.0 (e07807d)"
   }
   public: {
     Tables: {
@@ -37,41 +37,35 @@ export type Database = {
       }
       access_tokens: {
         Row: {
-          access_token: string
-          access_token_hash: string | null
-          access_token_length: number | null
-          access_token_mask: string | null
-          access_token_mask_prefix: string | null
-          access_token_mask_suffix: string | null
-          access_token_prefix: string | null
+          access_token_hash: string
+          access_token_length: number
+          access_token_mask_prefix: string
+          access_token_mask_suffix: string
+          access_token_prefix: string
           created_at: string
-          id: string | null
+          id: string
           name: string
           user_id: string
         }
         Insert: {
-          access_token?: string
-          access_token_hash?: string | null
-          access_token_length?: number | null
-          access_token_mask?: string | null
-          access_token_mask_prefix?: string | null
-          access_token_mask_suffix?: string | null
-          access_token_prefix?: string | null
+          access_token_hash: string
+          access_token_length: number
+          access_token_mask_prefix: string
+          access_token_mask_suffix: string
+          access_token_prefix: string
           created_at?: string
-          id?: string | null
+          id?: string
           name?: string
           user_id: string
         }
         Update: {
-          access_token?: string
-          access_token_hash?: string | null
-          access_token_length?: number | null
-          access_token_mask?: string | null
-          access_token_mask_prefix?: string | null
-          access_token_mask_suffix?: string | null
-          access_token_prefix?: string | null
+          access_token_hash?: string
+          access_token_length?: number
+          access_token_mask_prefix?: string
+          access_token_mask_suffix?: string
+          access_token_prefix?: string
           created_at?: string
-          id?: string | null
+          id?: string
           name?: string
           user_id?: string
         }
@@ -79,6 +73,76 @@ export type Database = {
           {
             foreignKeyName: "access_tokens_users_access_tokens"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      addons: {
+        Row: {
+          added_by: string
+          description: string | null
+          extra_concurrent_sandboxes: number
+          extra_concurrent_template_builds: number
+          extra_disk_mb: number
+          extra_max_ram_mb: number
+          extra_max_vcpu: number
+          id: string
+          idempotency_key: string | null
+          name: string
+          team_id: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          added_by: string
+          description?: string | null
+          extra_concurrent_sandboxes?: number
+          extra_concurrent_template_builds?: number
+          extra_disk_mb?: number
+          extra_max_ram_mb?: number
+          extra_max_vcpu?: number
+          id?: string
+          idempotency_key?: string | null
+          name: string
+          team_id: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          added_by?: string
+          description?: string | null
+          extra_concurrent_sandboxes?: number
+          extra_concurrent_template_builds?: number
+          extra_disk_mb?: number
+          extra_max_ram_mb?: number
+          extra_max_vcpu?: number
+          id?: string
+          idempotency_key?: string | null
+          name?: string
+          team_id?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addons_teams_addons"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_limits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addons_teams_addons"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addons_users_addons"
+            columns: ["added_by"]
             isOneToOne: false
             referencedRelation: "auth_users"
             referencedColumns: ["id"]
@@ -137,10 +201,10 @@ export type Database = {
       }
       env_builds: {
         Row: {
-          cluster_node_id: string | null
+          cluster_node_id: string
           created_at: string
           dockerfile: string | null
-          env_id: string | null
+          env_id: string
           envd_version: string | null
           finished_at: string | null
           firecracker_version: string
@@ -149,18 +213,19 @@ export type Database = {
           kernel_version: string
           ram_mb: number
           ready_cmd: string | null
-          reason: string | null
+          reason: Json
           start_cmd: string | null
           status: string
           total_disk_size_mb: number | null
           updated_at: string
           vcpu: number
+          version: string | null
         }
         Insert: {
-          cluster_node_id?: string | null
+          cluster_node_id: string
           created_at?: string
           dockerfile?: string | null
-          env_id?: string | null
+          env_id: string
           envd_version?: string | null
           finished_at?: string | null
           firecracker_version: string
@@ -169,18 +234,19 @@ export type Database = {
           kernel_version?: string
           ram_mb: number
           ready_cmd?: string | null
-          reason?: string | null
+          reason?: Json
           start_cmd?: string | null
           status?: string
           total_disk_size_mb?: number | null
           updated_at: string
           vcpu: number
+          version?: string | null
         }
         Update: {
-          cluster_node_id?: string | null
+          cluster_node_id?: string
           created_at?: string
           dockerfile?: string | null
-          env_id?: string | null
+          env_id?: string
           envd_version?: string | null
           finished_at?: string | null
           firecracker_version?: string
@@ -189,12 +255,13 @@ export type Database = {
           kernel_version?: string
           ram_mb?: number
           ready_cmd?: string | null
-          reason?: string | null
+          reason?: Json
           start_cmd?: string | null
           status?: string
           total_disk_size_mb?: number | null
           updated_at?: string
           vcpu?: number
+          version?: string | null
         }
         Relationships: [
           {
@@ -278,6 +345,13 @@ export type Database = {
             foreignKeyName: "envs_teams_envs"
             columns: ["team_id"]
             isOneToOne: false
+            referencedRelation: "team_limits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "envs_teams_envs"
+            columns: ["team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -290,69 +364,119 @@ export type Database = {
           },
         ]
       }
-      schema_migrations: {
+      feedback: {
         Row: {
-          dirty: boolean
-          version: number
+          created_at: string | null
+          email: string | null
+          id: number
+          text: string | null
+          user_id: string | null
         }
         Insert: {
-          dirty: boolean
-          version: number
+          created_at?: string | null
+          email?: string | null
+          id?: number
+          text?: string | null
+          user_id?: string | null
         }
         Update: {
-          dirty?: boolean
-          version?: number
+          created_at?: string | null
+          email?: string | null
+          id?: number
+          text?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snapshots: {
         Row: {
           allow_internet_access: boolean | null
+          auto_pause: boolean
           base_env_id: string
           created_at: string | null
           env_id: string
           env_secure: boolean
           id: string
           metadata: Json | null
-          origin_node_id: string | null
+          origin_node_id: string
           sandbox_id: string
           sandbox_started_at: string
+          team_id: string
         }
         Insert: {
           allow_internet_access?: boolean | null
+          auto_pause?: boolean
           base_env_id: string
           created_at?: string | null
           env_id: string
           env_secure?: boolean
           id?: string
           metadata?: Json | null
-          origin_node_id?: string | null
+          origin_node_id: string
           sandbox_id: string
-          sandbox_started_at: string
+          sandbox_started_at?: string
+          team_id: string
         }
         Update: {
           allow_internet_access?: boolean | null
+          auto_pause?: boolean
           base_env_id?: string
           created_at?: string | null
           env_id?: string
           env_secure?: boolean
           id?: string
           metadata?: Json | null
-          origin_node_id?: string | null
+          origin_node_id?: string
           sandbox_id?: string
           sandbox_started_at?: string
+          team_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_snapshots_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_limits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_snapshots_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snapshots_envs_base_env_id"
+            columns: ["base_env_id"]
+            isOneToOne: false
+            referencedRelation: "envs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snapshots_envs_env_id"
+            columns: ["env_id"]
+            isOneToOne: false
+            referencedRelation: "envs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_api_keys: {
         Row: {
-          api_key: string
-          api_key_hash: string | null
-          api_key_length: number | null
-          api_key_mask: string | null
-          api_key_mask_prefix: string | null
-          api_key_mask_suffix: string | null
-          api_key_prefix: string | null
+          api_key_hash: string
+          api_key_length: number
+          api_key_mask_prefix: string
+          api_key_mask_suffix: string
+          api_key_prefix: string
           created_at: string
           created_by: string | null
           id: string
@@ -362,13 +486,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          api_key?: string
-          api_key_hash?: string | null
-          api_key_length?: number | null
-          api_key_mask?: string | null
-          api_key_mask_prefix?: string | null
-          api_key_mask_suffix?: string | null
-          api_key_prefix?: string | null
+          api_key_hash: string
+          api_key_length: number
+          api_key_mask_prefix: string
+          api_key_mask_suffix: string
+          api_key_prefix: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -378,13 +500,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          api_key?: string
-          api_key_hash?: string | null
-          api_key_length?: number | null
-          api_key_mask?: string | null
-          api_key_mask_prefix?: string | null
-          api_key_mask_suffix?: string | null
-          api_key_prefix?: string | null
+          api_key_hash?: string
+          api_key_length?: number
+          api_key_mask_prefix?: string
+          api_key_mask_suffix?: string
+          api_key_prefix?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -394,6 +514,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "team_api_keys_teams_team_api_keys"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_limits"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "team_api_keys_teams_team_api_keys"
             columns: ["team_id"]
@@ -419,6 +546,7 @@ export type Database = {
           id: string
           is_banned: boolean
           is_blocked: boolean
+          is_default: boolean | null
           name: string
           profile_picture_url: string | null
           slug: string
@@ -432,6 +560,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
+          is_default?: boolean | null
           name: string
           profile_picture_url?: string | null
           slug: string
@@ -445,6 +574,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
+          is_default?: boolean | null
           name?: string
           profile_picture_url?: string | null
           slug?: string
@@ -470,6 +600,7 @@ export type Database = {
       tiers: {
         Row: {
           concurrent_instances: number
+          concurrent_template_builds: number
           disk_mb: number
           id: string
           max_length_hours: number
@@ -479,6 +610,7 @@ export type Database = {
         }
         Insert: {
           concurrent_instances: number
+          concurrent_template_builds?: number
           disk_mb?: number
           id: string
           max_length_hours: number
@@ -488,6 +620,7 @@ export type Database = {
         }
         Update: {
           concurrent_instances?: number
+          concurrent_template_builds?: number
           disk_mb?: number
           id?: string
           max_length_hours?: number
@@ -534,6 +667,13 @@ export type Database = {
             foreignKeyName: "users_teams_teams_teams"
             columns: ["team_id"]
             isOneToOne: false
+            referencedRelation: "team_limits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_teams_teams_teams"
+            columns: ["team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -563,39 +703,42 @@ export type Database = {
         }
         Relationships: []
       }
+      team_limits: {
+        Row: {
+          concurrent_sandboxes: number | null
+          concurrent_template_builds: number | null
+          disk_mb: number | null
+          id: string | null
+          max_length_hours: number | null
+          max_ram_mb: number | null
+          max_vcpu: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      append_array: {
+        Args: { id: string; new_element: Json }
+        Returns: undefined
+      }
       extra_for_post_user_signup: {
         Args: { team_id: string; user_id: string }
         Returns: undefined
       }
-      generate_access_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_team_api_key: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_team_slug: {
-        Args: { name: string }
-        Returns: string
-      }
+      generate_access_token: { Args: never; Returns: string }
+      generate_sandbox_video_stream_token: { Args: never; Returns: string }
+      generate_team_api_key: { Args: never; Returns: string }
+      generate_team_slug: { Args: { name: string }; Returns: string }
+      get_project_user_ids: { Args: never; Returns: string[] }
       is_member_of_team: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
+      temp_create_access_token: { Args: never; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      deployment_state: "generating" | "deploying" | "finished" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -722,6 +865,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      deployment_state: ["generating", "deploying", "finished", "error"],
+    },
   },
 } as const

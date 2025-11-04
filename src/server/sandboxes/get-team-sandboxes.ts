@@ -11,7 +11,7 @@ import { Sandbox } from '@/types/api.types'
 import { z } from 'zod'
 
 const GetTeamSandboxesSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const getTeamSandboxes = authActionClient

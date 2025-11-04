@@ -29,7 +29,8 @@ export default function RefreshControl({
     initialPollingInterval ?? pollingIntervals[2]!.value
   )
 
-  const { refetchSandboxInfo, isSandboxInfoLoading } = useSandboxContext()
+  const { refetchSandboxInfo, isSandboxInfoLoading, isRunning } =
+    useSandboxContext()
 
   const handleIntervalChange = useCallback(
     async (interval: PollingInterval) => {
@@ -54,7 +55,7 @@ export default function RefreshControl({
   return (
     <PollingButton
       intervals={pollingIntervals}
-      pollingInterval={pollingInterval}
+      pollingInterval={isRunning ? pollingInterval : 0}
       onIntervalChange={handleIntervalChange}
       isPolling={isSandboxInfoLoading}
       onRefresh={refetchSandboxInfo}
