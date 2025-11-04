@@ -12,7 +12,7 @@ import {
   Users,
 } from 'lucide-react'
 import { ForwardRefExoticComponent, JSX, RefAttributes } from 'react'
-import { INCLUDE_BILLING } from './flags'
+import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
 type SidebarNavArgs = {
@@ -48,13 +48,18 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   },
 
   // Integrations
-  {
-    label: 'Webhooks',
-    group: 'integrations',
-    href: (args) => PROTECTED_URLS.WEBHOOKS(args.teamIdOrSlug!),
-    icon: WebhookIcon,
-    activeMatch: `/dashboard/*/webhooks`,
-  },
+  ...(INCLUDE_ARGUS
+    ? [
+        {
+          label: 'Webhooks',
+          group: 'integrations',
+          href: (args: SidebarNavArgs) =>
+            PROTECTED_URLS.WEBHOOKS(args.teamIdOrSlug!),
+          icon: WebhookIcon,
+          activeMatch: `/dashboard/*/webhooks`,
+        },
+      ]
+    : []),
 
   // Team
   {

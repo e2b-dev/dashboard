@@ -1,3 +1,4 @@
+import { INCLUDE_ARGUS } from '@/configs/flags'
 import WebhookAddEditDialog from '@/features/dashboard/settings/webhooks/add-edit-dialog'
 import WebhooksTable from '@/features/dashboard/settings/webhooks/table'
 import Frame from '@/ui/frame'
@@ -9,6 +10,7 @@ import {
   CardHeader,
 } from '@/ui/primitives/card'
 import { Plus } from 'lucide-react'
+import { notFound } from 'next/navigation'
 
 interface WebhooksPageClientProps {
   params: Promise<{
@@ -19,6 +21,10 @@ interface WebhooksPageClientProps {
 export default async function WebhooksPage({
   params,
 }: WebhooksPageClientProps) {
+  if (!INCLUDE_ARGUS) {
+    return notFound()
+  }
+
   return (
     <Frame
       classNames={{
