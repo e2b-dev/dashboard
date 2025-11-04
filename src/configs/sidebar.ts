@@ -52,7 +52,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     ? [
         {
           label: 'Webhooks',
-          group: 'integrations',
+          group: 'integration',
           href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.WEBHOOKS(args.teamIdOrSlug!),
           icon: WebhookIcon,
