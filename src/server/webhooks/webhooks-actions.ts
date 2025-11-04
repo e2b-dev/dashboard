@@ -75,17 +75,16 @@ export const upsertWebhookAction = authActionClient
           key: isEdit
             ? 'update_webhook:infra_error'
             : 'create_webhook:infra_error',
-          status,
           error: response.error,
           team_id: teamId,
           user_id: session.user.id,
           context: {
+            status,
             teamId,
             mode,
             name,
             url,
             events,
-            signatureSecret,
           },
         },
         `Failed to ${isEdit ? 'update' : 'create'} webhook: ${status}: ${response.error.message}`
@@ -181,11 +180,11 @@ export const updateWebhookSecretAction = authActionClient
       l.error(
         {
           key: 'update_webhook_secret:infra_error',
-          status,
           error: response.error,
           team_id: teamId,
           user_id: session.user.id,
           context: {
+            status,
             teamId,
             webhookId,
           },
