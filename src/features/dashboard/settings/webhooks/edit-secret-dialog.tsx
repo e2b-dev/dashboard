@@ -44,7 +44,7 @@ export default function WebhookEditSecretDialog({
 
   const [open, setOpen] = useState(false)
 
-  const webhookName = (webhook as Webhook & { name?: string })?.name
+  const webhookName = webhook?.name
 
   const {
     form,
