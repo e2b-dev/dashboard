@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const WebhookUrlSchema = z.url('Must be a valid URL').trim()
+const WebhookUrlSchema = z.httpUrl('Must be a valid URL').trim()
 const WebhookSecretSchema = z
   .string()
   .min(32, 'Secret must be at least 32 characters')
