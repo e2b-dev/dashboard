@@ -100,7 +100,6 @@ components:
         - version
         - type
         - timestamp
-        - sandboxUptimeSecs
         - sandboxId
         - sandboxExecutionId
         - sandboxTemplateId
