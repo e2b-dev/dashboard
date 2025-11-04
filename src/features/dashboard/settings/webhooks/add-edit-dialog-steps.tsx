@@ -61,12 +61,22 @@ export function WebhookAddEditDialogSteps({
 
   const [copied, setCopied] = useState(false)
 
-  // sync secret with form state
+  // sync secret with form state and validation
   useEffect(() => {
     if (secretType === 'pre-generated') {
-      form.setValue('signatureSecret', preGeneratedSecret)
+      // set pre-generated secret and trigger validation to clear any errors
+      form.setValue('signatureSecret', preGeneratedSecret, {
+        shouldValidate: true,
+        shouldDirty: true,
+      })
+      // explicitly clear any errors since pre-generated is always valid
+      form.clearErrors('signatureSecret')
     } else {
-      form.setValue('signatureSecret', '')
+      // clear for custom input
+      form.setValue('signatureSecret', '', {
+        shouldValidate: false,
+        shouldDirty: false,
+      })
     }
   }, [secretType, preGeneratedSecret, form])
 
