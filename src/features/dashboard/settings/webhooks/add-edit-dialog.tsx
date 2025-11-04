@@ -66,7 +66,7 @@ export default function WebhookAddEditDialog({
         teamId: selectedTeam!.id,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
-        name: (webhook as Webhook & { name?: string })?.name || '',
+        name: webhook?.name || '',
         url: webhook?.url || '',
         events: webhook?.events || [],
         // only include signatureSecret in add mode
@@ -76,7 +76,7 @@ export default function WebhookAddEditDialog({
         teamId: selectedTeam!.id,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
-        name: (webhook as Webhook & { name?: string })?.name || '',
+        name: webhook?.name || '',
         url: webhook?.url || '',
         events: webhook?.events || [],
         // only include signatureSecret in add mode
