@@ -1,14 +1,14 @@
-import * as React from "react";
-import styled, { css } from "styled-components";
+import * as React from 'react'
+import styled, { css } from 'styled-components'
 
 interface LoaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "slash" | "square";
-  size?: "sm" | "md" | "lg" | "xl";
+  variant?: 'slash' | 'square'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
 interface StyledLoaderProps {
-  $variant: string;
-  $size: string;
+  $variant: string
+  $size: string
 }
 
 const StyledLoader = styled.div<StyledLoaderProps>`
@@ -19,80 +19,80 @@ const StyledLoader = styled.div<StyledLoaderProps>`
 
   ${({ $size }: StyledLoaderProps) => {
     switch ($size) {
-      case "sm":
+      case 'sm':
         return css`
           font-size: 0.875rem;
-        `;
-      case "lg":
+        `
+      case 'lg':
         return css`
           font-size: 1.125rem;
-        `;
-      case "xl":
+        `
+      case 'xl':
         return css`
           font-size: 1.5rem;
-        `;
+        `
       default:
         return css`
           font-size: 1rem;
-        `;
+        `
     }
   }}
 
   .loader-content::before {
     ${({ $variant }: StyledLoaderProps) => {
       switch ($variant) {
-        case "slash":
+        case 'slash':
           return css`
-            content: "|";
+            content: '|';
             animation: slashAnimation 0.4s linear infinite;
-          `;
+          `
         default:
           return css`
-            content: "◰";
+            content: '◰';
             animation: squareAnimation 0.4s linear infinite;
-          `;
+          `
       }
     }}
   }
-`;
+`
 
 const Loader = React.forwardRef<HTMLDivElement, LoaderProps>(
-  ({ className, variant = "square", size = "md", ...props }, ref) => {
+  ({ className, variant = 'square', size = 'md', ...props }, ref) => {
     return (
       <>
         <style jsx global>{`
           @keyframes slashAnimation {
             0% {
-              content: "|";
+              content: '|';
             }
             25% {
-              content: "/";
+              content: '/';
             }
             50% {
-              content: "-";
+              content: '-';
             }
             75% {
-              content: "\\";
+              content: '\\';
             }
             100% {
-              content: "|";
+              content: '|';
             }
           }
           @keyframes squareAnimation {
             0% {
-              content: "◰";
+              content: '◰';
             }
             25% {
-              content: "◳";
+              content: '◳';
             }
             50% {
-              content: "◲";
+              content: '◲';
             }
             75% {
-              content: "◱";
+              content: '◱';
             }
             100% {
-              content: "◰";
+              content: '◰';
             }
           }
         `}</style>
@@ -106,9 +106,9 @@ const Loader = React.forwardRef<HTMLDivElement, LoaderProps>(
           <span className="loader-content" />
         </StyledLoader>
       </>
-    );
+    )
   }
-);
-Loader.displayName = "Loader";
+)
+Loader.displayName = 'Loader'
 
-export { Loader };
+export { Loader }
