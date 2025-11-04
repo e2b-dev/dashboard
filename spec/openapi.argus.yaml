@@ -96,6 +96,7 @@ components:
     SandboxEvent:
       description: Sandbox event
       required:
+        - id
         - version
         - type
         - timestamp
@@ -106,6 +107,10 @@ components:
         - sandboxBuildId
         - sandboxTeamId
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Event unique identifier
         version:
           type: string
           description: Event structure version
@@ -147,6 +152,7 @@ components:
           description: Unique identifier for the sandbox build
         sandboxTeamId:
           type: string
+          format: uuid
           description: Team identifier associated with the sandbox
 
     WebhookCreate:
@@ -173,7 +179,7 @@ components:
           type: string
           description: Secret used to sign the webhook payloads
 
-    WebhookCreateResponse:
+    WebhookCreation:
       description: Webhook creation response
       required:
         - id
@@ -385,14 +391,13 @@ paths:
               $ref: "#/components/schemas/WebhookCreate"
       responses:
         "201":
-          description: Successfully returned all webhooks
+          description: Successfully created webhook.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/WebhookCreateResponse"
+                $ref: "#/components/schemas/WebhookCreation"
+        "400":
+          $ref: "#/components/responses/400"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -408,8 +413,8 @@ paths:
           - Supabase1TokenAuth: []
             Supabase2TeamAuth: []
         responses:
-          "201":
-            description: Successfully registered webhook.
+          "200":
+            description: List of registered webhooks.
             content:
               application/json:
                 schema:
@@ -471,6 +476,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebhookDetail"
+        "400":
+          $ref: "#/components/responses/400"
         "404":
           $ref: "#/components/responses/404"
         "401":

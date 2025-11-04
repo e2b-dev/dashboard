@@ -2,7 +2,7 @@ import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
-import { TeamItems } from '@/types/billing'
+import { TeamItems } from '@/types/billing.types'
 import { z } from 'zod'
 
 const GetItemsParamsSchema = z.object({

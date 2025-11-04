@@ -98,7 +98,7 @@ export const upsertWebhookAction = authActionClient
       COOKIE_KEYS.SELECTED_TEAM_SLUG
     )?.value
 
-    revalidatePath(`/dashboard/${teamSlug}/settings?tab=webhooks`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
   })
@@ -147,7 +147,7 @@ export const deleteWebhookAction = authActionClient
       COOKIE_KEYS.SELECTED_TEAM_SLUG
     )?.value
 
-    revalidatePath(`/dashboard/${teamSlug}/settings?tab=webhooks`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
   })
@@ -200,7 +200,7 @@ export const updateWebhookSecretAction = authActionClient
       COOKIE_KEYS.SELECTED_TEAM_SLUG
     )?.value
 
-    revalidatePath(`/dashboard/${teamSlug}/settings?tab=webhooks`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
   })

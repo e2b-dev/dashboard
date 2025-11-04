@@ -1,4 +1,4 @@
-import { UsageResponse } from '@/types/billing'
+import { UsageResponse } from '@/types/billing.types'
 import { startOfISOWeek } from 'date-fns'
 import {
   HOURLY_SAMPLING_THRESHOLD_DAYS,

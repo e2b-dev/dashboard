@@ -179,6 +179,11 @@ export interface components {
         };
         /** @description Sandbox event */
         SandboxEvent: {
+            /**
+             * Format: uuid
+             * @description Event unique identifier
+             */
+            id: string;
             /** @description Event structure version */
             version: string;
             /** @description Event name */
@@ -220,7 +225,10 @@ export interface components {
              * @description Unique identifier for the sandbox build
              */
             sandboxBuildId: string;
-            /** @description Team identifier associated with the sandbox */
+            /**
+             * Format: uuid
+             * @description Team identifier associated with the sandbox
+             */
             sandboxTeamId: string;
         };
         /** @description Configuration for registering new webhooks */
@@ -235,7 +243,7 @@ export interface components {
             signatureSecret: string;
         };
         /** @description Webhook creation response */
-        WebhookCreateResponse: {
+        WebhookCreation: {
             /** @description Webhook unique identifier */
             id: string;
             /** @description Webhook user friendly name */
@@ -348,8 +356,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successfully registered webhook. */
-            201: {
+            /** @description List of registered webhooks. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -375,15 +383,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successfully returned all webhooks */
+            /** @description Successfully created webhook. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WebhookCreateResponse"][];
+                    "application/json": components["schemas"]["WebhookCreation"];
                 };
             };
+            400: components["responses"]["400"];
             401: components["responses"]["401"];
             404: components["responses"]["404"];
             500: components["responses"]["500"];
@@ -461,6 +470,7 @@ export interface operations {
                     "application/json": components["schemas"]["WebhookDetail"];
                 };
             };
+            400: components["responses"]["400"];
             401: components["responses"]["401"];
             404: components["responses"]["404"];
             500: components["responses"]["500"];
