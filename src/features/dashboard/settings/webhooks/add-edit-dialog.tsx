@@ -19,6 +19,7 @@ import {
 } from '@/ui/primitives/dialog'
 import { Form } from '@/ui/primitives/form'
 import { CheckIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { PlusIcon } from 'lucide-react'
@@ -51,21 +52,34 @@ export default function WebhookAddEditDialog({
   const [currentStep, setCurrentStep] = useState(1)
 
   const isEditMode = mode === 'edit'
-  const totalSteps = 2
+  const totalSteps = isEditMode ? 1 : 2
 
   const {
     form,
     resetFormAndAction,
     handleSubmitWithAction,
-    action: { isExecuting },
+    action: { isPending: isLoading },
   } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
     formProps: {
       defaultValues: {
-        teamId: selectedTeam?.id,
+        teamId: selectedTeam!.id,
+        webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: (webhook as Webhook & { name?: string })?.name || '',
         url: webhook?.url || '',
         events: webhook?.events || [],
+        // only include signatureSecret in add mode
+        ...(isEditMode ? {} : { signatureSecret: '' }),
+      },
+      values: {
+        teamId: selectedTeam!.id,
+        webhookId: isEditMode ? webhook?.id : undefined,
+        mode,
+        name: (webhook as Webhook & { name?: string })?.name || '',
+        url: webhook?.url || '',
+        events: webhook?.events || [],
+        // only include signatureSecret in add mode
+        ...(isEditMode ? {} : { signatureSecret: '' }),
       },
     },
     actionProps: {
@@ -150,12 +164,14 @@ export default function WebhookAddEditDialog({
           <DialogTitle>
             {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
           </DialogTitle>
-          {/* Step Counter */}
-          <div className="flex items-center gap-2">
-            <span className="text-fg-tertiary prose-label uppercase">
-              Step {currentStep} / {totalSteps}
-            </span>
-          </div>
+          {/* Step Counter - only show in add mode */}
+          {!isEditMode && (
+            <div className="flex items-center gap-2">
+              <span className="text-fg-tertiary prose-label uppercase">
+                Step {currentStep} / {totalSteps}
+              </span>
+            </div>
+          )}
         </DialogHeader>
 
         <Form {...form}>
@@ -168,7 +184,7 @@ export default function WebhookAddEditDialog({
               <WebhookAddEditDialogSteps
                 currentStep={currentStep}
                 form={form}
-                isExecuting={isExecuting}
+                isLoading={isLoading}
                 selectedEvents={selectedEvents}
                 allEventsSelected={allEventsSelected}
                 handleAllToggle={handleAllToggle}
@@ -177,45 +193,52 @@ export default function WebhookAddEditDialog({
             </div>
 
             <DialogFooter>
-              {currentStep === 1 ? (
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={isExecuting || selectedEvents.length === 0}
-                  className="w-full"
-                >
-                  Next
-                </Button>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-2 gap-2 w-full">
+                  <Loader variant="slash" size="sm" />
+                  <span className="prose-body text-fg-secondary">
+                    {isEditMode ? 'Saving Changes...' : 'Adding Webhook...'}
+                  </span>
+                </div>
               ) : (
                 <>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleBack}
-                    disabled={isExecuting}
-                    className="w-full"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isExecuting}
-                    loading={isExecuting}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    {isEditMode ? (
-                      <>
-                        <CheckIcon className="size-4" />
-                        Confirm
-                      </>
-                    ) : (
-                      <>
-                        <PlusIcon className="size-4" />
-                        Add
-                      </>
-                    )}
-                  </Button>
+                  {/* Edit mode: show submit button directly */}
+                  {isEditMode ? (
+                    <Button type="submit" className="w-full">
+                      <CheckIcon className="size-4" />
+                      Confirm
+                    </Button>
+                  ) : (
+                    /* Add mode: show next/back navigation */
+                    <>
+                      {currentStep === 1 ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleNext}
+                          disabled={selectedEvents.length === 0}
+                          className="w-full"
+                        >
+                          Next
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={handleBack}
+                            className="w-full"
+                          >
+                            Back
+                          </Button>
+                          <Button type="submit" className="w-full">
+                            <PlusIcon className="size-4" />
+                            Add
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  )}
                 </>
               )}
             </DialogFooter>

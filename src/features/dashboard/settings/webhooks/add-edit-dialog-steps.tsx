@@ -26,7 +26,7 @@ import { WEBHOOK_EVENTS, WEBHOOK_EXAMPLE_PAYLOAD } from './constants'
 type WebhookAddEditDialogStepsProps = {
   currentStep: number
   form: UseFormReturn<UpsertWebhookSchemaType>
-  isExecuting: boolean
+  isLoading: boolean
   selectedEvents: string[]
   allEventsSelected: boolean
   handleAllToggle: () => void
@@ -36,7 +36,7 @@ type WebhookAddEditDialogStepsProps = {
 export function WebhookAddEditDialogSteps({
   currentStep,
   form,
-  isExecuting,
+  isLoading,
   selectedEvents,
   allEventsSelected,
   handleAllToggle,
@@ -97,7 +97,7 @@ export function WebhookAddEditDialogSteps({
                 <FormControl>
                   <Input
                     placeholder="Example webhook"
-                    disabled={isExecuting}
+                    disabled={isLoading}
                     className="min-w-0"
                     {...field}
                   />
@@ -117,7 +117,7 @@ export function WebhookAddEditDialogSteps({
                 <FormControl>
                   <Input
                     placeholder="https://example.com/postreceive"
-                    disabled={isExecuting}
+                    disabled={isLoading}
                     className="min-w-0"
                     {...field}
                   />
@@ -144,7 +144,7 @@ export function WebhookAddEditDialogSteps({
                         id="event-all"
                         checked={allEventsSelected}
                         onCheckedChange={handleAllToggle}
-                        disabled={isExecuting}
+                        disabled={isLoading}
                       />
                       <Label
                         htmlFor="event-all"
@@ -163,7 +163,7 @@ export function WebhookAddEditDialogSteps({
                           id={`event-${event}`}
                           checked={selectedEvents.includes(event)}
                           onCheckedChange={() => handleEventToggle(event)}
-                          disabled={isExecuting}
+                          disabled={isLoading}
                         />
                         <Label
                           htmlFor={`event-${event}`}
@@ -260,14 +260,14 @@ export function WebhookAddEditDialogSteps({
                         <Input
                           {...field}
                           readOnly
-                          disabled={isExecuting}
+                          disabled={isLoading}
                           className="flex-1 min-w-0"
                         />
                       </FormControl>
                       <Button
                         type="button"
                         onClick={handleCopy}
-                        disabled={isExecuting}
+                        disabled={isLoading}
                         className="shrink-0"
                       >
                         <CopyIcon className="size-4" />
@@ -296,7 +296,7 @@ export function WebhookAddEditDialogSteps({
                     <FormControl>
                       <Input
                         placeholder="Enter your custom secret"
-                        disabled={isExecuting}
+                        disabled={isLoading}
                         className="min-w-0"
                         {...field}
                       />
