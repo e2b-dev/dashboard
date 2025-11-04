@@ -44,7 +44,7 @@ export default function WebhookEditSecretDialog({
 
   const [open, setOpen] = useState(false)
 
-  const webhookName = webhook?.name
+  const webhookName = webhook.name
 
   const {
     form,
@@ -101,11 +101,7 @@ export default function WebhookEditSecretDialog({
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {webhookName
-              ? `Edit '${webhookName}' Secret`
-              : 'Edit Webhook Secret'}
-          </DialogTitle>
+          <DialogTitle>Edit '{webhookName}'s Secret</DialogTitle>
           <p className="text-fg-tertiary prose-body pt-2">
             Replacing the secret will deactivate the current one. Make sure to
             update any systems using it.

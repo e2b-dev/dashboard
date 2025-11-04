@@ -53,14 +53,14 @@ export default function WebhookDeleteDialog({
     }
   }
 
-  const webhookName = (webhook as Webhook & { name?: string })?.name
+  const webhookName = webhook.name
 
   return (
     <AlertDialog
       open={open}
       onOpenChange={handleOpenChange}
       trigger={trigger}
-      title={webhookName ? `Delete '${webhookName}'` : 'Delete Webhook'}
+      title={`Delete '${webhookName}'`}
       description={`You will no longer receive events at ${webhook.url}`}
       confirm={
         isDeleting ? (
