@@ -9,11 +9,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
-import { MoreHorizontal, Webhook as WebhookIcon } from 'lucide-react'
+import {
+  Lock,
+  MoreHorizontal,
+  Pencil,
+  Webhook as WebhookIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import WebhookAddEditDialog from './add-edit-dialog'
 import WebhookDeleteDialog from './delete-dialog'
+import WebhookEditSecretDialog from './edit-secret-dialog'
 import { Webhook } from './types'
 
 interface WebhookTableRowProps {
@@ -101,15 +108,21 @@ export default function WebhookTableRow({
             <DropdownMenuGroup>
               <WebhookAddEditDialog mode="edit" webhook={webhook}>
                 <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  Edit
+                  <Pencil className="size-4 text-fg-tertiary" /> Edit
                 </DropdownMenuItem>
               </WebhookAddEditDialog>
+              <WebhookEditSecretDialog webhook={webhook}>
+                <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+                  <Lock className="size-4 text-fg-tertiary" /> Change Secret
+                </DropdownMenuItem>
+              </WebhookEditSecretDialog>
               <WebhookDeleteDialog webhook={webhook}>
                 <DropdownMenuItem
                   inset
                   variant="error"
                   onSelect={(e) => e.preventDefault()}
                 >
+                  <TrashIcon className="size-4" />
                   Delete
                 </DropdownMenuItem>
               </WebhookDeleteDialog>

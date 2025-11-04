@@ -1,6 +1,10 @@
 import { z } from 'zod'
 
 const WebhookUrlSchema = z.url('Must be a valid URL').trim()
+const WebhookSecretSchema = z
+  .string()
+  .min(32, 'Secret must be at least 32 characters')
+  .trim()
 
 export const UpsertWebhookSchema = z
   .object({
@@ -10,11 +14,7 @@ export const UpsertWebhookSchema = z
     name: z.string().min(1, 'Name is required').trim(),
     url: WebhookUrlSchema,
     events: z.array(z.string().min(1, 'At least one event is required')),
-    signatureSecret: z
-      .string()
-      .min(32, 'Secret must be at least 32 characters')
-      .trim()
-      .optional(),
+    signatureSecret: WebhookSecretSchema.optional(),
     enabled: z.boolean().optional().default(true),
   })
   .refine(
@@ -36,5 +36,14 @@ export const DeleteWebhookSchema = z.object({
   webhookId: z.uuid(),
 })
 
+export const UpdateWebhookSecretSchema = z.object({
+  teamId: z.uuid(),
+  webhookId: z.uuid(),
+  signatureSecret: WebhookSecretSchema,
+})
+
 export type UpsertWebhookSchemaType = z.input<typeof UpsertWebhookSchema>
 export type DeleteWebhookSchemaType = z.input<typeof DeleteWebhookSchema>
+export type UpdateWebhookSecretSchemaType = z.input<
+  typeof UpdateWebhookSecretSchema
+>

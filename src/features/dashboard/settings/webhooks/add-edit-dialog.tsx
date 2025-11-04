@@ -61,6 +61,7 @@ export default function WebhookAddEditDialog({
     action: { isPending: isLoading },
   } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
     formProps: {
+      mode: 'onChange',
       defaultValues: {
         teamId: selectedTeam!.id,
         webhookId: isEditMode ? webhook?.id : undefined,
@@ -115,10 +116,28 @@ export default function WebhookAddEditDialog({
     resetFormAndAction()
   }
 
+  // watch fields to trigger reactive updates
+  const name = form.watch('name')
+  const url = form.watch('url')
   const selectedEvents = form.watch('events') || []
+  const signatureSecret = form.watch('signatureSecret')
+
   const allEventsSelected =
     selectedEvents.length === WEBHOOK_EVENTS.length &&
     WEBHOOK_EVENTS.every((event) => selectedEvents.includes(event))
+
+  const { errors } = form.formState
+
+  const isStep1Valid =
+    !errors.name &&
+    !errors.url &&
+    !errors.events &&
+    selectedEvents.length > 0 &&
+    name.trim().length > 0 &&
+    url.trim().length > 0
+
+  const isStep2Valid =
+    !errors.signatureSecret && signatureSecret && signatureSecret.length >= 32
 
   const handleAllToggle = () => {
     if (allEventsSelected) {
@@ -204,7 +223,11 @@ export default function WebhookAddEditDialog({
                 <>
                   {/* Edit mode: show submit button directly */}
                   {isEditMode ? (
-                    <Button type="submit" className="w-full">
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={!isStep1Valid}
+                    >
                       <CheckIcon className="size-4" />
                       Confirm
                     </Button>
@@ -216,7 +239,7 @@ export default function WebhookAddEditDialog({
                           type="button"
                           variant="outline"
                           onClick={handleNext}
-                          disabled={selectedEvents.length === 0}
+                          disabled={!isStep1Valid}
                           className="w-full"
                         >
                           Next
@@ -231,7 +254,11 @@ export default function WebhookAddEditDialog({
                           >
                             Back
                           </Button>
-                          <Button type="submit" className="w-full">
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={!isStep2Valid}
+                          >
                             <PlusIcon className="size-4" />
                             Add
                           </Button>

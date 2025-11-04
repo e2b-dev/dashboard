@@ -60,7 +60,7 @@ export default function WebhookDeleteDialog({
       open={open}
       onOpenChange={handleOpenChange}
       trigger={trigger}
-      title={webhookName ? `Delete "${webhookName}"?` : 'DELETE WEBHOOK?'}
+      title={webhookName ? `Delete '${webhookName}'` : 'Delete Webhook'}
       description={`You will no longer receive events at ${webhook.url}`}
       confirm={
         isDeleting ? (

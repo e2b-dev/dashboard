@@ -8,7 +8,11 @@ import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
-import { DeleteWebhookSchema, UpsertWebhookSchema } from './schema'
+import {
+  DeleteWebhookSchema,
+  UpdateWebhookSecretSchema,
+  UpsertWebhookSchema,
+} from './schema'
 
 // Upsert Webhook (Create or Update)
 
@@ -47,7 +51,7 @@ export const upsertWebhookAction = authActionClient
             url,
             events,
             enabled,
-            signatureSecret,
+            ...(signatureSecret ? { signatureSecret } : {}),
           },
         })
       : await infra.POST('/events/webhooks', {
@@ -59,7 +63,7 @@ export const upsertWebhookAction = authActionClient
             url,
             events,
             enabled,
-            signatureSecret,
+            signatureSecret: signatureSecret!,
           },
         })
 
@@ -134,6 +138,59 @@ export const deleteWebhookAction = authActionClient
           },
         },
         `Failed to delete webhook: ${status}: ${response.error.message}`
+      )
+
+      return handleDefaultInfraError(status)
+    }
+
+    const teamSlug = (await cookies()).get(
+      COOKIE_KEYS.SELECTED_TEAM_SLUG
+    )?.value
+
+    revalidatePath(`/dashboard/${teamSlug}/settings?tab=webhooks`, 'page')
+
+    return { success: true }
+  })
+
+// Update Webhook Secret
+
+export const updateWebhookSecretAction = authActionClient
+  .schema(UpdateWebhookSecretSchema)
+  .metadata({ actionName: 'updateWebhookSecret' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId, webhookId, signatureSecret } = parsedInput
+    const { session } = ctx
+
+    const accessToken = session.access_token
+
+    const response = await infra.PATCH('/events/webhooks/{webhookID}', {
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+      params: {
+        path: { webhookID: webhookId },
+      },
+      body: {
+        signatureSecret,
+      },
+    })
+
+    if (response.error) {
+      const status = response.response.status
+
+      l.error(
+        {
+          key: 'update_webhook_secret:infra_error',
+          status,
+          error: response.error,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            teamId,
+            webhookId,
+          },
+        },
+        `Failed to update webhook secret: ${status}: ${response.error.message}`
       )
 
       return handleDefaultInfraError(status)
