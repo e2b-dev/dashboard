@@ -7,7 +7,7 @@ interface WebhooksEmptyProps {
 
 export default function WebhooksEmpty({ error }: WebhooksEmptyProps) {
   return (
-    <div className="h-36 w-full border gap-2 relative flex justify-center items-center p-6">
+    <div className="h-36 w-full gap-2 relative flex justify-center items-center p-6">
       <WebhookIcon
         className={cn('size-5', error && 'text-accent-error-highlight')}
       />

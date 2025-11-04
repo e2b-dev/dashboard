@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CopyIcon, WarningIcon } from '@/ui/primitives/icons'
+import { CopyIcon, ExternalLinkIcon, WarningIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
@@ -21,7 +21,11 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
-import { WEBHOOK_EVENTS, WEBHOOK_EXAMPLE_PAYLOAD } from './constants'
+import {
+  WEBHOOK_EVENTS,
+  WEBHOOK_EXAMPLE_PAYLOAD,
+  WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
+} from './constants'
 
 type WebhookAddEditDialogStepsProps = {
   currentStep: number
@@ -217,12 +221,25 @@ export function WebhookAddEditDialogSteps({
           className="flex flex-col gap-4"
         >
           {/* Section Title and Description */}
-          <div className="flex flex-col gap-1">
-            <p className="text-fg-secondary prose-label uppercase">Secret</p>
-            <p className="text-fg-tertiary prose-body">
-              A secret verifies that webhooks are from us and untampered. Use
-              our pre-generated one or add your own.
+          <div className="flex flex-col gap-2">
+            <p className="text-fg-secondary prose-label uppercase">
+              Signature Secret
             </p>
+            <p className="text-fg-tertiary prose-body">
+              This secret is used to verify webhook authenticity. Each request
+              includes an <code className="text-fg">x-e2b-signature</code>{' '}
+              header generated with HMAC SHA-256. Validate this in your endpoint
+              to ensure requests are from E2B and untampered.
+            </p>
+            <a
+              href={WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fg-link hover:text-fg-link-hover prose-body inline-flex items-center gap-1 w-fit"
+            >
+              View validation examples
+              <ExternalLinkIcon className="size-3" />
+            </a>
           </div>
 
           {/* Tabs */}
@@ -274,11 +291,11 @@ export function WebhookAddEditDialogSteps({
                         {copied ? 'Copied' : 'Copy'}
                       </Button>
                     </div>
-                    <div className="flex gap-2 items-center">
-                      <WarningIcon className="size-4 text-accent-warning-highlight shrink-0" />
+                    <div className="flex gap-2 items-start">
+                      <WarningIcon className="size-4 text-accent-warning-highlight shrink-0 mt-0.5" />
                       <p className="text-fg-secondary prose-body">
-                        Copy and store it now. You won't be able to view it
-                        again.
+                        Store this secret securely. You won't be able to view it
+                        again after creating the webhook.
                       </p>
                     </div>
                   </div>

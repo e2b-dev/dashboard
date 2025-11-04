@@ -23,3 +23,6 @@ export const WEBHOOK_EXAMPLE_PAYLOAD = `{
 
 // Payload structure may vary by event type. 
 // See docs for full schema.`
+
+export const WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL =
+  'https://e2b.dev/docs/sandbox/lifecycle-events-webhooks#webhook-request-headers'
