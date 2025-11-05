@@ -179,7 +179,7 @@ export default function WebhookAddEditDialog({
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="overflow-y-auto max-h-[calc(100svh-2rem)]">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
