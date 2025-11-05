@@ -113,7 +113,7 @@ export default function WebhookTableRow({
               </WebhookAddEditDialog>
               <WebhookEditSecretDialog webhook={webhook}>
                 <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  <Lock className="size-4 text-fg-tertiary" /> Change Secret
+                  <Lock className="size-4 text-fg-tertiary" /> Rotate Secret
                 </DropdownMenuItem>
               </WebhookEditSecretDialog>
               <WebhookDeleteDialog webhook={webhook}>

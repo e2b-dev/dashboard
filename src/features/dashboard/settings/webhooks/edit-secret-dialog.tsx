@@ -65,13 +65,13 @@ export default function WebhookEditSecretDialog({
       },
       actionProps: {
         onSuccess: () => {
-          toast(defaultSuccessToast('Webhook secret updated successfully'))
+          toast(defaultSuccessToast('Webhook secret rotated successfully'))
           handleDialogChange(false)
         },
         onError: ({ error }) => {
           toast(
             defaultErrorToast(
-              error.serverError || 'Failed to update webhook secret'
+              error.serverError || 'Failed to rotate webhook secret'
             )
           )
         },
@@ -101,11 +101,35 @@ export default function WebhookEditSecretDialog({
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit '{webhookName}'s Secret</DialogTitle>
-          <p className="text-fg-tertiary prose-body pt-2">
-            Replacing the secret will deactivate the current one. Make sure to
-            update any systems using it.
-          </p>
+          <DialogTitle>
+            Rotate Secret for {webhookName ? `"${webhookName}"` : 'Webhook'}
+          </DialogTitle>
+          <div className="flex flex-col gap-3 pt-2">
+            <p className="text-fg-tertiary prose-body">
+              <strong className="text-fg-secondary">Important:</strong> E2B
+              sends only one signature secret at a time. Once you change it, the
+              old secret immediately stops working.
+            </p>
+            <div className="flex flex-col gap-2">
+              <p className="text-fg-secondary prose-body font-medium">
+                To rotate safely without downtime:
+              </p>
+              <ol className="text-fg-tertiary prose-body list-decimal list-inside space-y-1 pl-1">
+                <li>Generate a new custom secret</li>
+                <li>
+                  Update your endpoint to accept{' '}
+                  <strong className="text-fg">both</strong> current and new
+                  custom secrets
+                </li>
+                <li>Deploy your changes</li>
+                <li>
+                  Then roll confirm your new custom secret here — E2B will start
+                  using the new secret
+                </li>
+                <li>Remove old secret validation from your code later</li>
+              </ol>
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
@@ -142,7 +166,7 @@ export default function WebhookEditSecretDialog({
               {isLoading ? (
                 <div className="flex items-center justify-center py-2 gap-2 w-full">
                   <Loader variant="slash" size="sm" />
-                  <span>Updating Secret...</span>
+                  <span>Rotating Secret...</span>
                 </div>
               ) : (
                 <Button
