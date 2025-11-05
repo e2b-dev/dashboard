@@ -1,6 +1,6 @@
 import { COOKIE_KEYS } from '@/configs/keys'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { SandboxInfo } from '@/types/api'
+import { SandboxInfo } from '@/types/api.types'
 import { ChevronLeftIcon } from 'lucide-react'
 import { cookies } from 'next/headers'
 import Link from 'next/link'

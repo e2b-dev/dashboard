@@ -36,7 +36,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
               </CardDescription>
             </div>
 
-            <CreateApiKeyDialog params={params}>
+            <CreateApiKeyDialog>
               <Button className="w-full sm:w-auto sm:self-start">
                 <Plus className="size-4" /> CREATE KEY
               </Button>

@@ -2,7 +2,7 @@ import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
-import { BillingLimit } from '@/types/billing'
+import { BillingLimit } from '@/types/billing.types'
 import { z } from 'zod'
 
 const GetBillingLimitsParamsSchema = z.object({

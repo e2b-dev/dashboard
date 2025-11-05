@@ -9,7 +9,7 @@ import {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
   CustomerPortalResponse,
-} from '@/types/billing'
+} from '@/types/billing.types'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'

@@ -11,7 +11,7 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { DefaultTemplate } from '@/types/api'
+import { DefaultTemplate } from '@/types/api.types'
 import { z } from 'zod'
 
 const GetTeamTemplatesSchema = z.object({

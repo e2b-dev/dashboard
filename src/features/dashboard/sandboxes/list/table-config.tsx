@@ -1,6 +1,6 @@
 'use client'
 
-import { Sandbox } from '@/types/api'
+import { Sandbox } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'

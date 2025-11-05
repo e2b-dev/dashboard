@@ -12,7 +12,7 @@ import {
   deleteTemplateAction,
   updateTemplateAction,
 } from '@/server/templates/templates-actions'
-import { DefaultTemplate, Template } from '@/types/api'
+import { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'

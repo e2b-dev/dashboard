@@ -1,4 +1,4 @@
-import { SettingsIcon } from '@/ui/primitives/icons'
+import { WebhookIcon } from '@/ui/primitives/icons'
 import {
   Activity,
   Box,
@@ -7,11 +7,12 @@ import {
   DollarSign,
   Key,
   LucideProps,
+  Settings,
   UserRoundCog,
   Users,
 } from 'lucide-react'
 import { ForwardRefExoticComponent, JSX, RefAttributes } from 'react'
-import { INCLUDE_BILLING } from './flags'
+import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
 type SidebarNavArgs = {
@@ -32,6 +33,7 @@ export type SidebarNavItem = {
 }
 
 export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
+  // Base
   {
     label: 'Sandboxes',
     href: (args) => PROTECTED_URLS.SANDBOXES(args.teamIdOrSlug!),
@@ -45,10 +47,25 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     activeMatch: `/dashboard/*/templates`,
   },
 
+  // Integrations
+  ...(INCLUDE_ARGUS
+    ? [
+        {
+          label: 'Webhooks',
+          group: 'integration',
+          href: (args: SidebarNavArgs) =>
+            PROTECTED_URLS.WEBHOOKS(args.teamIdOrSlug!),
+          icon: WebhookIcon,
+          activeMatch: `/dashboard/*/webhooks`,
+        },
+      ]
+    : []),
+
+  // Team
   {
     label: 'General',
     href: (args) => PROTECTED_URLS.GENERAL(args.teamIdOrSlug!),
-    icon: SettingsIcon,
+    icon: Settings,
     group: 'team',
     activeMatch: `/dashboard/*/general`,
   },
@@ -67,6 +84,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     activeMatch: `/dashboard/*/members`,
   },
 
+  // Billing
   ...(INCLUDE_BILLING
     ? [
         {

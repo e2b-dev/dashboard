@@ -1,7 +1,7 @@
 'use client'
 
 import { fillTimeSeriesWithEmptyPoints } from '@/lib/utils/time-series'
-import { UsageResponse } from '@/types/billing'
+import { UsageResponse } from '@/types/billing.types'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import {
   createContext,

@@ -43,16 +43,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface CreateApiKeyDialogProps {
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
   children?: ReactNode
 }
 
-const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
-  params,
-  children,
-}) => {
+const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
   'use no memo'
 
   const selectedTeam = useSelectedTeam()

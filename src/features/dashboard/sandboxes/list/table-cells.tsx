@@ -12,7 +12,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { parseUTCDateComponents } from '@/lib/utils/formatting'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
-import { Template } from '@/types/api'
+import { Template } from '@/types/api.types'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
 import {

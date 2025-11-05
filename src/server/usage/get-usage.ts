@@ -3,7 +3,7 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient } from '@/lib/clients/action'
 import { returnServerError } from '@/lib/utils/action'
-import { UsageResponse } from '@/types/billing'
+import { UsageResponse } from '@/types/billing.types'
 import { z } from 'zod'
 
 const GetUsageAuthActionSchema = z.object({

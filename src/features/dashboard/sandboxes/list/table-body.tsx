@@ -1,4 +1,4 @@
-import { Sandbox } from '@/types/api'
+import { Sandbox } from '@/types/api.types'
 import { DataTableBody } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'

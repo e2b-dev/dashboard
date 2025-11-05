@@ -7,7 +7,7 @@ import { authActionClient } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { Sandbox } from '@/types/api'
+import { Sandbox } from '@/types/api.types'
 import { z } from 'zod'
 
 const GetTeamSandboxesSchema = z.object({

@@ -13,6 +13,7 @@ export interface DashboardLayoutConfig {
 }
 
 const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
+  // base
   '/dashboard/*/sandboxes': {
     title: 'Sandboxes',
     type: 'custom',
@@ -25,6 +26,20 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
     title: 'Templates',
     type: 'custom',
   },
+
+  // integrations
+  '/dashboard/*/webhooks': {
+    title: 'Webhooks',
+    type: 'default',
+  },
+
+  // team
+  '/dashboard/*/(general|keys|members)': {
+    title: 'General',
+    type: 'default',
+  },
+
+  // billing
   '/dashboard/*/usage': {
     title: 'Usage',
     type: 'custom',
@@ -32,26 +47,11 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
       includeHeaderBottomStyles: true,
     },
   },
-  '/dashboard/*/members': {
-    title: 'Members',
-    type: 'default',
-  },
-  '/dashboard/*/keys': {
-    title: 'API Keys',
-    type: 'default',
-  },
-  '/dashboard/*/general': {
-    title: 'General',
-    type: 'default',
-  },
-  '/dashboard/*/billing': {
-    title: 'Billing',
-    type: 'default',
-  },
-  '/dashboard/*/budget': {
+  '/dashboard/*/(budget|billing)': {
     title: 'Budget',
     type: 'default',
   },
+
   '/dashboard/account': {
     title: 'Account',
     type: 'default',

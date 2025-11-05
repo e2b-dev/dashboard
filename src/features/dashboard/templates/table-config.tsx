@@ -1,6 +1,6 @@
 'use client'
 
-import { DefaultTemplate, Template } from '@/types/api'
+import { DefaultTemplate, Template } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ColumnDef,

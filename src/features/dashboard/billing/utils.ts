@@ -1,5 +1,5 @@
 import { l } from '@/lib/clients/logger/logger'
-import { TeamItems, TierLimits } from '@/types/billing'
+import { TeamItems, TierLimits } from '@/types/billing.types'
 import { ADDON_500_SANDBOXES_ID, TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { BillingAddonData, BillingTierData } from './types'
 

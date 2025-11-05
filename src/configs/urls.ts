@@ -24,6 +24,8 @@ export const PROTECTED_URLS = {
   SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
 
+  WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
+
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
