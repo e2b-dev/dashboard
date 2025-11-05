@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Loader } from '@/ui/primitives/loader'
+import { Loader } from '@/ui/primitives/loader_d'
 import { Textarea } from '@/ui/primitives/textarea'
 import { SurveyQuestion as PostHogSurveyQuestion, Survey } from 'posthog-js'
 import { useCallback, useMemo, useState } from 'react'

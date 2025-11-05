@@ -1,4 +1,5 @@
 import { COOKIE_KEYS } from '@/configs/keys'
+import { METADATA } from '@/configs/metadata'
 import { DashboardTitleProvider } from '@/features/dashboard/dashboard-title-provider'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import { ServerContextProvider } from '@/features/dashboard/server-context'
@@ -10,20 +11,19 @@ import {
 import { getSessionInsecure } from '@/server/auth/get-session'
 import { getUserTeams } from '@/server/team/get-team'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
-import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
-import { Suspense } from 'react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
   header?: React.ReactNode
 }
 
-export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
+export const metadata = {
+  title: METADATA.title,
+  description: METADATA.description,
+  openGraph: METADATA.openGraph,
+  twitter: METADATA.twitter,
+  robots: 'noindex, nofollow',
 }
 
 export default async function DashboardLayout({
@@ -67,19 +67,14 @@ export default async function DashboardLayout({
           <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
             <Sidebar />
             <SidebarInset>
-              <DashboardLayoutView
-                teamIdOrSlug={teamSlug}
-                headerInjectable={headerInjectable}
-              >
+              <DashboardLayoutView headerInjectable={headerInjectable}>
                 {page}
               </DashboardLayoutView>
             </SidebarInset>
           </div>
         </div>
       </SidebarProvider>
-      <Suspense fallback={null}>
-        <DashboardTitleProvider />
-      </Suspense>
+      <DashboardTitleProvider />
     </ServerContextProvider>
   )
 }

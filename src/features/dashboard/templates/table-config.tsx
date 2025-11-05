@@ -1,6 +1,6 @@
 'use client'
 
-import { DefaultTemplate, Template } from '@/types/api'
+import { DefaultTemplate, Template } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ColumnDef,
@@ -16,6 +16,7 @@ import {
   ActionsCell,
   CpuCell,
   CreatedAtCell,
+  EnvdVersionCell,
   MemoryCell,
   TemplateIdCell,
   TemplateNameCell,
@@ -137,6 +138,14 @@ export const useColumns = (deps: unknown[]) => {
         cell: VisibilityCell,
         enableSorting: false,
         filterFn: 'equals',
+      },
+      {
+        accessorKey: 'envdVersion',
+        header: 'Envd Version',
+        size: 125,
+        minSize: 70,
+        cell: EnvdVersionCell,
+        enableSorting: false,
       },
     ],
     deps

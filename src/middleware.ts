@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { l } from './lib/clients/logger/logger'
+import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
 import {
   getAuthRedirect,
@@ -14,6 +15,22 @@ import {
 
 export async function middleware(request: NextRequest) {
   try {
+    // Redirects, that require custom headers
+    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
+    const middlewareRedirect = getMiddlewareRedirectFromPath(
+      request.nextUrl.pathname
+    )
+
+    if (middlewareRedirect) {
+      const headers = new Headers(middlewareRedirect.headers)
+      const url = new URL(middlewareRedirect.destination, request.url)
+
+      return NextResponse.redirect(url, {
+        status: middlewareRedirect.statusCode,
+        headers,
+      })
+    }
+
     // Catch-all route rewrite paths should not be handled by middleware
     // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
     const { config: routeRewriteConfig } = getRewriteForPath(
@@ -28,16 +45,19 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if the path should be rewritten by middleware
-    const { config: middlewareRewriteConfig } = getRewriteForPath(
-      request.nextUrl.pathname,
-      'middleware'
-    )
+    const { config: middlewareRewriteConfig, rule: middlewareRewriteRule } =
+      getRewriteForPath(request.nextUrl.pathname, 'middleware')
 
     if (middlewareRewriteConfig) {
       const rewriteUrl = new URL(request.url)
       rewriteUrl.hostname = middlewareRewriteConfig.domain
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
+      if (middlewareRewriteRule && middlewareRewriteRule.pathPreprocessor) {
+        rewriteUrl.pathname = middlewareRewriteRule.pathPreprocessor(
+          rewriteUrl.pathname
+        )
+      }
 
       const headers = new Headers(request.headers)
 
@@ -45,11 +65,19 @@ export async function middleware(request: NextRequest) {
         headers.set('x-e2b-should-index', '1')
       }
 
-      return NextResponse.rewrite(rewriteUrl, {
+      const response = NextResponse.rewrite(rewriteUrl, {
         request: {
           headers,
         },
       })
+
+      if (ALLOW_SEO_INDEXING) {
+        response.headers.set('X-Robots-Tag', 'index, follow')
+      } else {
+        response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+      }
+
+      return response
     }
 
     // Setup response and Supabase client
@@ -114,6 +142,6 @@ export const config = {
      * - vercel analytics route
      * - posthog routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/|mintlify-assets/|_mintlify/).*)',
   ],
 }

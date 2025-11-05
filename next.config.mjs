@@ -1,3 +1,6 @@
+// NOTE: related to src/configs/rewrites.ts
+export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
+
 /** @type {import('next').NextConfig} */
 const config = {
   eslint: {
@@ -32,22 +35,30 @@ const config = {
           value: 'SAMEORIGIN',
         },
       ],
-    },
+    }, 
   ],
-  rewrites: async () => [
-    {
-      source: '/ingest/static/:path*',
-      destination: 'https://us-assets.i.posthog.com/static/:path*',
-    },
-    {
-      source: '/ingest/:path*',
-      destination: 'https://us.i.posthog.com/:path*',
-    },
-    {
-      source: '/ingest/decide',
-      destination: 'https://us.i.posthog.com/decide',
-    },
-  ],
+  rewrites: async () => ({
+    beforeFiles: [
+      {
+        source: "/ph-proxy/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ph-proxy/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+
+      // Asset rewrites for Mintlify
+      {
+        source: '/mintlify-assets/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/:path*`,
+      },
+      {
+        source: '/_mintlify/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`, 
+      },
+    ],
+  }),
   redirects: async () => [
     {
       source: '/docs/api/cli',
@@ -69,28 +80,6 @@ const config = {
       source: '/ai-agents/:path*',
       destination: '/',
       permanent: true,
-    },
-    // Campaigns
-    {
-      source: '/start',
-      destination:
-        '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=start_ooh',
-      permanent: false,
-      statusCode: 302,
-    },
-    {
-      source: '/machines',
-      destination:
-        '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
-      permanent: false,
-      statusCode: 302,
-    },
-    {
-      source: '/humans',
-      destination:
-        '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=humans_ooh',
-      permanent: false,
-      statusCode: 302,
     },
   ],
   skipTrailingSlashRedirect: true,

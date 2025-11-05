@@ -6,7 +6,7 @@ import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 
 export const GetSandboxDetailsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   sandboxId: z.string(),
 })
 
@@ -32,17 +32,19 @@ export const getSandboxDetails = authActionClient
     if (res.error) {
       const status = res.response.status
 
-      l.error({
-        key: 'get_sandbox_details:infra_error',
-        message: res.error.message,
-        error: res.error,
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          status,
-          sandboxId,
+      l.error(
+        {
+          key: 'get_sandbox_details:infra_error',
+          error: `${status}: ${res.error.message}`,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status,
+            sandboxId,
+          },
         },
-      })
+        `Failed to get sandbox details: ${res.error.message}`
+      )
 
       if (status === 404) {
         return returnServerError('SANDBOX_NOT_FOUND')

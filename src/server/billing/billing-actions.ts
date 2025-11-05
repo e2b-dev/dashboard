@@ -1,9 +1,15 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
 import { authActionClient } from '@/lib/clients/action'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
-import { CustomerPortalResponse } from '@/types/billing'
+import { resolveTeamSlugInServerComponent } from '@/lib/utils/server'
+import {
+  AddOnOrderConfirmResponse,
+  AddOnOrderCreateResponse,
+  CustomerPortalResponse,
+} from '@/types/billing.types'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -12,7 +18,7 @@ import { z } from 'zod'
 // Checkout
 
 const RedirectToCheckoutParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   tierId: z.string(),
 })
 
@@ -57,7 +63,7 @@ function typeToKey(type: 'limit' | 'alert') {
 }
 
 const SetLimitParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   type: z.enum(['limit', 'alert']),
   value: z.number().min(1),
 })
@@ -92,7 +98,7 @@ export const setLimitAction = authActionClient
   })
 
 const ClearLimitParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
   type: z.enum(['limit', 'alert']),
 })
 
@@ -125,7 +131,7 @@ export const clearLimitAction = authActionClient
 // CUSTOMER PORTAL
 
 const RedirectToCustomerPortalParamsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamId: z.uuid(),
 })
 
 export const redirectToCustomerPortal = authActionClient
@@ -154,4 +160,114 @@ export const redirectToCustomerPortal = authActionClient
     const data = (await res.json()) as CustomerPortalResponse
 
     throw redirect(data.url)
+  })
+
+// ORDERS - Addon Purchase
+
+const CreateOrderParamsSchema = z.object({
+  teamId: z.uuid(),
+  itemId: z.union([z.literal(ADDON_500_SANDBOXES_ID)]),
+})
+
+export const createOrderAction = authActionClient
+  .schema(CreateOrderParamsSchema)
+  .metadata({ actionName: 'createOrder' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId, itemId } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              name: itemId,
+              quantity: 1,
+            },
+          ],
+        }),
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to create order')
+    }
+
+    const data: AddOnOrderCreateResponse = await res.json()
+
+    return data
+  })
+
+const ConfirmOrderParamsSchema = z.object({
+  teamId: z.uuid(),
+  orderId: z.uuid(),
+})
+
+export const confirmOrderAction = authActionClient
+  .schema(ConfirmOrderParamsSchema)
+  .metadata({ actionName: 'confirmOrder' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId, orderId } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${orderId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to confirm order')
+    }
+
+    const data: AddOnOrderConfirmResponse = await res.json()
+
+    const slug = await resolveTeamSlugInServerComponent()
+    revalidatePath(`/dashboard/${slug}/billing`, 'page')
+
+    return data
+  })
+
+const GetCustomerSessionSchema = z.object({
+  teamId: z.uuid(),
+})
+
+export const getCustomerSessionAction = authActionClient
+  .schema(GetCustomerSessionSchema)
+  .metadata({ actionName: 'getCustomerSession' })
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamId } = parsedInput
+    const { session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/payment-methods/customer-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to fetch customer session')
+    }
+
+    const data = await res.json()
+    return data
   })

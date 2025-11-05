@@ -56,10 +56,89 @@ export function formatCompactDate(timestamp: number): string {
   const date = new Date(timestamp)
 
   if (isThisYear(date)) {
-    return format(date, 'MMM d, h:mm a zzz')
+    return format(date, 'MMM d, h:mm:ss a zzz')
   }
 
-  return format(date, 'yyyy MMM d, h:mm a zzz')
+  return format(date, 'yyyy MMM d, h:mm:ss a zzz')
+}
+
+export function formatDay(timestamp: number): string {
+  if (isThisYear(timestamp)) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }).format(timestamp)
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(timestamp)
+}
+
+/**
+ * Format a timestamp to show date and hour (for hourly aggregations)
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns Formatted string (e.g., "Jan 5, 2pm" or "Jan 5, 2024, 2pm")
+ */
+export function formatHour(timestamp: number): string {
+  const date = new Date(timestamp)
+  const hour = date.getHours()
+  const ampm = hour >= 12 ? 'pm' : 'am'
+  const hour12 = hour % 12 || 12
+
+  if (isThisYear(timestamp)) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }).format(timestamp) + `, ${hour12}${ampm}`
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(timestamp) + `, ${hour12}${ampm}`
+}
+
+/**
+ * Format a date range (e.g., for weekly aggregations)
+ * @param startTimestamp - Start of the range in milliseconds
+ * @param endTimestamp - End of the range in milliseconds
+ * @returns Formatted date range string (e.g., "Jan 1 - Jan 7" or "Dec 26, 2023 - Jan 1, 2024")
+ */
+export function formatDateRange(
+  startTimestamp: number,
+  endTimestamp: number
+): string {
+  const startDate = new Date(startTimestamp)
+  const endDate = new Date(endTimestamp)
+
+  const startYear = startDate.getFullYear()
+  const endYear = endDate.getFullYear()
+  const startMonth = startDate.getMonth()
+  const endMonth = endDate.getMonth()
+  const sameYear = startYear === endYear
+  const sameMonth = sameYear && startMonth === endMonth
+
+  const startFormat = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+
+  const endFormat = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: isThisYear(endDate) ? undefined : 'numeric',
+  })
+
+  if (sameMonth) {
+    return `${startFormat.format(startDate)} - ${endDate.getDate()}`
+  }
+
+  return `${startFormat.format(startDate)} - ${endFormat.format(endDate)}`
 }
 
 /**
@@ -141,7 +220,9 @@ export function formatAveragingPeriod(stepMs: number): string {
  * @returns Formatted number string
  */
 export function formatNumber(value: number, locale: string = 'en-US'): string {
-  return value.toLocaleString(locale)
+  return value.toLocaleString(locale, {
+    maximumFractionDigits: 0,
+  })
 }
 
 /**
@@ -210,6 +291,10 @@ export function formatAxisNumber(
       maximumFractionDigits: 0,
     })
     return formatter.format(value)
+  }
+
+  if (value < 1 && value > 0) {
+    return value.toFixed(2)
   }
 
   return formatNumber(value, locale)
@@ -332,4 +417,24 @@ export function combineDateTimeStrings(
 ): Date | null {
   if (!date || !time) return null
   return tryParseDatetime(`${date} ${time}`)
+}
+
+/**
+ * Format a currency amount with the specified currency and locale
+ * @param amount - Amount to format
+ * @param currency - Currency to use (defaults to 'USD')
+ * @param locale - Locale to use (defaults to 'en-US')
+ * @returns Formatted currency string (e.g., "$100.00", "100.00 €")
+ */
+export function formatCurrency(
+  amount: number,
+  currency: string = 'USD',
+  locale: string = 'en-US'
+): string {
+  return Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount)
 }

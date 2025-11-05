@@ -11,21 +11,25 @@ export const PROTECTED_URLS = {
   ACCOUNT_SETTINGS: '/dashboard/account',
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
-  TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
+
+  GENERAL: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/general`,
+  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
+  MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
   SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
-    `/dashboard/${teamIdOrSlug}/sandboxes?tab=${tab ?? 'monitoring'}`,
+    `/dashboard/${teamIdOrSlug}/sandboxes${tab ? `?tab=${tab}` : '?tab=monitoring'}`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
   SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
 
+  WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
+
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
-  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   RESET_PASSWORD: '/dashboard/account',
 }
 
@@ -37,7 +41,7 @@ export const HELP_URLS = {
 
 export const BASE_URL = process.env.VERCEL_ENV
   ? process.env.VERCEL_ENV === 'production'
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    ? 'https://e2b.dev'
     : `https://${process.env.VERCEL_BRANCH_URL}`
   : 'http://localhost:3000'
 

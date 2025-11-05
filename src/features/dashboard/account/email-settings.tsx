@@ -35,7 +35,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 const formSchema = z.object({
-  email: z.string().email('Invalid e-mail address'),
+  email: z.email('Invalid e-mail address'),
 })
 
 type FormValues = z.infer<typeof formSchema>

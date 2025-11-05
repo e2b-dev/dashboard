@@ -48,7 +48,7 @@ export const AlertDialog: FC<AlertDialogProps> = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        {children && <div className="py-4">{children}</div>}
+        {children && <div className="py-2">{children}</div>}
         <DialogFooter className={cn(!children && 'border-t-0')}>
           <DialogClose asChild>
             <Button variant="outline">{cancel}</Button>

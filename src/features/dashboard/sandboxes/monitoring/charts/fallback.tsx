@@ -18,7 +18,9 @@ export default function ChartFallback({
       <span className="prose-label-highlight uppercase">{title}</span>
       <div className="inline-flex items-end gap-3 mt-2">
         <Skeleton className="w-16 h-8 bg-bg-highlight" />
-        <span className="label-tertiary">{subtitle}</span>
+        <span className="text-fg-tertiary prose-label uppercase">
+          {subtitle}
+        </span>
       </div>
       <ChartPlaceholder
         isLoading
