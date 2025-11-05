@@ -46,6 +46,10 @@ interface UsageChartsContextValue {
     vcpu: DisplayValue
     ram: DisplayValue
   }
+  fullscreenMetric: 'sandboxes' | 'cost' | 'vcpu' | 'ram' | null
+  setFullscreenMetric: (
+    metric: 'sandboxes' | 'cost' | 'vcpu' | 'ram' | null
+  ) => void
 }
 
 const UsageChartsContext = createContext<UsageChartsContextValue | undefined>(
@@ -74,6 +78,9 @@ export function UsageChartsProvider({
   })
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [fullscreenMetric, setFullscreenMetric] = useState<
+    'sandboxes' | 'cost' | 'vcpu' | 'ram' | null
+  >(null)
 
   // DERIVED STATE
 
@@ -232,6 +239,8 @@ export function UsageChartsProvider({
       totals,
       samplingMode,
       displayValues,
+      fullscreenMetric,
+      setFullscreenMetric,
     }),
     [
       displayedData,
@@ -241,6 +250,7 @@ export function UsageChartsProvider({
       totals,
       samplingMode,
       displayValues,
+      fullscreenMetric,
     ]
   )
 
