@@ -11,10 +11,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import {
-  INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS,
-  INITIAL_TIMEFRAME_FALLBACK_RANGE_MS,
-} from './constants'
+import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {
   calculateTotals,
   formatAxisDate,
@@ -49,6 +46,10 @@ interface UsageChartsContextValue {
     vcpu: DisplayValue
     ram: DisplayValue
   }
+  fullscreenMetric: 'sandboxes' | 'cost' | 'vcpu' | 'ram' | null
+  setFullscreenMetric: (
+    metric: 'sandboxes' | 'cost' | 'vcpu' | 'ram' | null
+  ) => void
 }
 
 const UsageChartsContext = createContext<UsageChartsContextValue | undefined>(
@@ -77,20 +78,16 @@ export function UsageChartsProvider({
   })
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [fullscreenMetric, setFullscreenMetric] = useState<
+    'sandboxes' | 'cost' | 'vcpu' | 'ram' | null
+  >(null)
 
   // DERIVED STATE
 
   const defaultRange = useMemo(() => {
     const now = Date.now()
-
-    if (data.hour_usages && data.hour_usages.length > 0) {
-      const firstTimestamp = data.hour_usages[0]!.timestamp
-      const start = firstTimestamp - INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS
-      return { start, end: now }
-    }
-
     return { start: now - INITIAL_TIMEFRAME_FALLBACK_RANGE_MS, end: now }
-  }, [data])
+  }, [])
 
   const timeframe = useMemo(
     () => ({
@@ -242,6 +239,8 @@ export function UsageChartsProvider({
       totals,
       samplingMode,
       displayValues,
+      fullscreenMetric,
+      setFullscreenMetric,
     }),
     [
       displayedData,
@@ -251,6 +250,7 @@ export function UsageChartsProvider({
       totals,
       samplingMode,
       displayValues,
+      fullscreenMetric,
     ]
   )
 

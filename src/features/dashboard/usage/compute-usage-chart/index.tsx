@@ -141,19 +141,19 @@ function ComputeUsageChart({
       itemStyle: {
         color: 'transparent',
         borderColor: barColor,
-        borderWidth: 0.3,
+        borderWidth: 0.25,
         borderCap: 'square',
-        opacity: 1,
+        opacity: 0.8,
         decal: {
           symbol: 'line',
-          symbolSize: 1.5,
+          symbolSize: 0.8,
           rotation: -Math.PI / 4,
           dashArrayX: [1, 0],
-          dashArrayY: [2, 4],
+          dashArrayY: [1, 1.5],
           color: barColor,
         },
       },
-      barCategoryGap: '15%',
+      barCategoryGap: '28%',
       emphasis: {
         itemStyle: {
           opacity: 1,

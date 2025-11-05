@@ -6,12 +6,6 @@ import {
 } from './compute-usage-chart/types'
 
 /**
- * Initial timeframe prefix in milliseconds (3 days)
- * Used to set the default time range for displaying usage data
- */
-export const INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS = 3 * 24 * 60 * 60 * 1000
-
-/**
  * Default fallback range in milliseconds (30 days)
  * Used when no data is available to determine the appropriate range
  */
