@@ -3,7 +3,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { checkUserTeamAuthorization } from '@/lib/utils/server'
-import { middleware } from '@/proxy'
+import { proxy } from '@/proxy'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -166,7 +166,7 @@ describe('Middleware Integration Tests', () => {
       })
 
       // Execute: Run the middleware with the unauthenticated request
-      await middleware(request)
+      await proxy(request)
 
       // Verify: Check that a redirect to sign-in page occurred
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
@@ -208,8 +208,8 @@ describe('Middleware Integration Tests', () => {
           }) as unknown as ReturnType<typeof supabaseAdmin.from>
       )
 
-      // Execute: Run the middleware with the authenticated request
-      await middleware(request)
+      // Execute: Run the proxy with the authenticated request
+      await proxy(request)
 
       // Verify: Check that user is redirected to their default team
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
@@ -237,8 +237,8 @@ describe('Middleware Integration Tests', () => {
       // Setup: User has no access to the tampered team
       vi.mocked(checkUserTeamAuthorization).mockResolvedValue(false)
 
-      // Execute: Run the middleware with the tampered request
-      await middleware(request)
+      // Execute: Run the proxy with the tampered request
+      await proxy(request)
 
       // Verify: User is redirected away from the tampered team
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
@@ -268,8 +268,8 @@ describe('Middleware Integration Tests', () => {
         return Promise.resolve(null)
       })
 
-      // Execute: Run the middleware with the request
-      await middleware(request)
+      // Execute: Run the proxy with the request
+      await proxy(request)
 
       // Verify: Database check was skipped due to cache hit
       expect(checkUserTeamAuthorization).not.toHaveBeenCalled()
@@ -312,8 +312,8 @@ describe('Middleware Integration Tests', () => {
           }) as unknown as ReturnType<typeof supabaseAdmin.from>
       )
 
-      // Execute: Run the middleware with the request
-      await middleware(request)
+      // Execute: Run the proxy with the request
+      await proxy(request)
 
       // Verify: User is redirected to their default team
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
@@ -348,8 +348,8 @@ describe('Middleware Integration Tests', () => {
           }) as unknown as ReturnType<typeof supabaseAdmin.from>
       )
 
-      // Execute: Run the middleware with the request
-      await middleware(request)
+      // Execute: Run the proxy with the request
+      await proxy(request)
 
       // Verify: User is redirected to the new team page
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
@@ -388,8 +388,8 @@ describe('Middleware Integration Tests', () => {
           }) as unknown as ReturnType<typeof supabaseAdmin.from>
       )
 
-      // Execute: Run the middleware with the request
-      await middleware(request)
+      // Execute: Run the proxy with the request
+      await proxy(request)
 
       // Verify: User is redirected to home on error
       const redirectCalls = vi.mocked(NextResponse.redirect).mock.calls
