@@ -37,9 +37,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# fuma-docs
-/.source
-
 CLAUDE.md
 
 # tooling
