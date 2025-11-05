@@ -1,4 +1,5 @@
 import {
+  formatCurrency,
   formatDateRange,
   formatDay,
   formatHour,
@@ -133,7 +134,7 @@ export function formatHoveredValues(
       timestamp: timestampLabel,
     },
     cost: {
-      displayValue: `$${cost.toFixed(2)}`,
+      displayValue: formatCurrency(cost),
       label,
       timestamp: timestampLabel,
     },
@@ -171,7 +172,7 @@ export function formatTotalValues(totals: {
       timestamp: null,
     },
     cost: {
-      displayValue: `$${totals.cost.toFixed(2)}`,
+      displayValue: formatCurrency(totals.cost),
       label: 'total over range',
       timestamp: null,
     },
