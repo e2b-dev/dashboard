@@ -68,11 +68,10 @@ function UsageMetricChartContent({
           <UsageTimeRangeControls
             timeframe={timeframe}
             onTimeRangeChange={setTimeframe}
-            className={cn(
-              'max-lg:self-start',
-              isFullscreen ? '' : timeRangeControlsClassName,
-              isFullscreen ? 'mr-8' : ''
-            )}
+            className={cn('max-lg:self-start', {
+              [timeRangeControlsClassName ?? '']: !isFullscreen,
+              'mr-8': isFullscreen,
+            })}
           />
         </div>
         <AnimatedMetricDisplay
