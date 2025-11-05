@@ -75,7 +75,7 @@ function DialogContent({
         {!hideClose && (
           <DialogPrimitive.Close
             className={cn(
-              `ring-offset-bg focus:ring-ring data-[state=open]:text-fg-tertiary absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
+              `ring-offset-bg cursor-pointer focus:ring-ring data-[state=open]:text-fg-tertiary absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
               closeButtonClassName
             )}
           >
