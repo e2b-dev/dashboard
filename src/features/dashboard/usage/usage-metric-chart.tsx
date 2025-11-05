@@ -9,12 +9,7 @@ import {
   CardHeader,
   cardVariants,
 } from '@/ui/primitives/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-} from '@/ui/primitives/dialog'
+import { Dialog, DialogContent } from '@/ui/primitives/dialog'
 import { DialogTitle } from '@radix-ui/react-dialog'
 import { Maximize2 } from 'lucide-react'
 import { useState } from 'react'
@@ -78,7 +73,8 @@ export function UsageMetricChart({
             onTimeRangeChange={setTimeframe}
             className={cn(
               'max-lg:self-start',
-              forceShowControls ? '' : timeRangeControlsClassName
+              forceShowControls ? '' : timeRangeControlsClassName,
+              forceShowControls ? 'mr-8' : ''
             )}
           />
         </div>
@@ -134,20 +130,18 @@ export function UsageMetricChart({
           open={isFullscreen}
           onOpenChange={(open) => !open && setFullscreenMetric(null)}
         >
-          <DialogPortal>
-            <DialogTitle className="sr-only">
-              {METRIC_CONFIGS[metric].title}
-            </DialogTitle>
-            <DialogOverlay />
-            <DialogContent
-              className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full border-0 p-0"
-              hideClose
-            >
-              <Card className="h-full flex flex-col border-0">
-                {renderChartContent(true)}
-              </Card>
-            </DialogContent>
-          </DialogPortal>
+          <DialogTitle className="sr-only">
+            {METRIC_CONFIGS[metric].title}
+          </DialogTitle>
+          <DialogContent
+            className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full border-0 p-0"
+            hideClose={false}
+            closeButtonClassName="top-7.5 right-6.5"
+          >
+            <Card className="h-full flex flex-col border-0">
+              {renderChartContent(true)}
+            </Card>
+          </DialogContent>
         </Dialog>
       )}
     </>

@@ -49,12 +49,14 @@ function DialogOverlay({
 interface DialogContentProps
   extends React.ComponentProps<typeof DialogPrimitive.Content> {
   hideClose?: boolean
+  closeButtonClassName?: string
 }
 
 function DialogContent({
   className,
   children,
   hideClose,
+  closeButtonClassName,
   ...props
 }: DialogContentProps) {
   return (
@@ -71,7 +73,12 @@ function DialogContent({
       >
         {children}
         {!hideClose && (
-          <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg- data-[state=open]:text-muted-foreground absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+          <DialogPrimitive.Close
+            className={cn(
+              `ring-offset-bg focus:ring-ring data-[state=open]:text-fg-tertiary absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
+              closeButtonClassName
+            )}
+          >
             <XIcon />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
