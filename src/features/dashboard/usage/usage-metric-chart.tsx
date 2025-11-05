@@ -30,17 +30,17 @@ const METRIC_CONFIGS: Record<UsageMetricType, MetricConfig> = {
   ram: { title: 'RAM Hours' },
 }
 
-interface UsageMetricChartProps {
+interface UsageMetricChartContentProps {
   metric: UsageMetricType
-  className?: string
   timeRangeControlsClassName?: string
+  isFullscreen?: boolean
 }
 
-export function UsageMetricChart({
+function UsageMetricChartContent({
   metric,
-  className,
   timeRangeControlsClassName,
-}: UsageMetricChartProps) {
+  isFullscreen,
+}: UsageMetricChartContentProps) {
   const {
     displayedData,
     setHoveredIndex,
@@ -49,7 +49,6 @@ export function UsageMetricChart({
     displayValues,
     samplingMode,
     onBrushEnd,
-    fullscreenMetric,
     setFullscreenMetric,
   } = useUsageCharts()
 
@@ -59,9 +58,7 @@ export function UsageMetricChart({
   const { displayValue, label, timestamp } = displayValues[metric]
   const data = displayedData[metric]
 
-  const isFullscreen = fullscreenMetric === metric
-
-  const renderChartContent = (forceShowControls = false) => (
+  return (
     <>
       <CardHeader className="space-y-2">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-2">
@@ -73,8 +70,8 @@ export function UsageMetricChart({
             onTimeRangeChange={setTimeframe}
             className={cn(
               'max-lg:self-start',
-              forceShowControls ? '' : timeRangeControlsClassName,
-              forceShowControls ? 'mr-8' : ''
+              isFullscreen ? '' : timeRangeControlsClassName,
+              isFullscreen ? 'mr-8' : ''
             )}
           />
         </div>
@@ -116,12 +113,32 @@ export function UsageMetricChart({
       </CardContent>
     </>
   )
+}
+
+interface UsageMetricChartProps {
+  metric: UsageMetricType
+  timeRangeControlsClassName?: string
+  className?: string
+}
+
+export function UsageMetricChart({
+  metric,
+  className,
+  timeRangeControlsClassName,
+}: UsageMetricChartProps) {
+  const { fullscreenMetric, setFullscreenMetric } = useUsageCharts()
+
+  const isFullscreen = fullscreenMetric === metric
 
   return (
     <>
       {!isFullscreen && (
         <Card className={cn('h-full flex flex-col', className)}>
-          {renderChartContent(false)}
+          <UsageMetricChartContent
+            metric={metric}
+            timeRangeControlsClassName={timeRangeControlsClassName}
+            isFullscreen={isFullscreen}
+          />
         </Card>
       )}
 
@@ -139,7 +156,11 @@ export function UsageMetricChart({
               {METRIC_CONFIGS[metric].title}
             </DialogTitle>
             <Card className="h-full flex flex-col border-0">
-              {renderChartContent(true)}
+              <UsageMetricChartContent
+                metric={metric}
+                timeRangeControlsClassName={timeRangeControlsClassName}
+                isFullscreen={isFullscreen}
+              />
             </Card>
           </DialogContent>
         </Dialog>
