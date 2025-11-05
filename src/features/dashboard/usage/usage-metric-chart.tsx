@@ -130,13 +130,14 @@ export function UsageMetricChart({
           open={isFullscreen}
           onOpenChange={(open) => !open && setFullscreenMetric(null)}
         >
-          <DialogTitle className="sr-only">
-            {METRIC_CONFIGS[metric].title}
-          </DialogTitle>
           <DialogContent
             className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full border-0 p-0"
             closeButtonClassName="top-7.5 right-6.5"
           >
+            {/* title just here to avoid accessibility dev error from radix */}
+            <DialogTitle className="sr-only">
+              {METRIC_CONFIGS[metric].title}
+            </DialogTitle>
             <Card className="h-full flex flex-col border-0">
               {renderChartContent(true)}
             </Card>
