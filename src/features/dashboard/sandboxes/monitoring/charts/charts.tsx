@@ -1,7 +1,3 @@
-import {
-  SandboxesMonitoringPageParams,
-  SandboxesMonitoringPageSearchParams,
-} from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
 import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -13,8 +9,8 @@ import ChartFallback from './fallback'
 import StartRateChartClient from './startrate-chart'
 
 interface TeamMetricsChartsProps {
-  params: Promise<SandboxesMonitoringPageParams>
-  searchParams: Promise<SandboxesMonitoringPageSearchParams>
+  params: Promise<{ teamIdOrSlug: string }>
+  searchParams: Promise<{ start?: string; end?: string }>
 }
 
 export function TeamMetricsCharts({

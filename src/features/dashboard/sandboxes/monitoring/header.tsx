@@ -1,4 +1,4 @@
-import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
+import { MonitoringContentParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/components/monitoring-content'
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -51,7 +51,7 @@ function BaseErrorTooltip({ children }: { children: React.ReactNode }) {
 export default function SandboxesMonitoringHeader({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) {
   return (
     <div className="flex md:flex-row flex-col items-center border-b w-full max-md:py-2">
@@ -96,7 +96,7 @@ export default function SandboxesMonitoringHeader({
 export const ConcurrentSandboxes = async ({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
@@ -134,7 +134,7 @@ export const ConcurrentSandboxes = async ({
 export const SandboxesStartRate = async ({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
@@ -164,7 +164,7 @@ export const SandboxesStartRate = async ({
 export const MaxConcurrentSandboxes = async ({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
@@ -200,7 +200,7 @@ export const MaxConcurrentSandboxes = async ({
       <span className="prose-value-big mt-1">
         {formatNumber(concurrentSandboxes)}
       </span>
-      {!!(limit) && (
+      {!!limit && (
         <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
           LIMIT: {formatNumber(limit)}
         </span>
