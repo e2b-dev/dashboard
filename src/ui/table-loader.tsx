@@ -12,14 +12,12 @@ interface TableLoaderProps {
 export function TableLoader({ colSpan = 100, className }: TableLoaderProps) {
   return (
     <TableRow className={className}>
-      <TableCell
-        colSpan={colSpan}
-        className={cn(
-          'flex h-48 w-full items-center justify-center text-center',
-          className
-        )}
-      >
-        <Loader />
+      <TableCell colSpan={colSpan} className="h-48">
+        <div
+          className={cn('flex w-full items-center justify-center', className)}
+        >
+          <Loader />
+        </div>
       </TableCell>
     </TableRow>
   )
