@@ -135,7 +135,6 @@ export function UsageMetricChart({
           </DialogTitle>
           <DialogContent
             className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full border-0 p-0"
-            hideClose={false}
             closeButtonClassName="top-7.5 right-6.5"
           >
             <Card className="h-full flex flex-col border-0">
