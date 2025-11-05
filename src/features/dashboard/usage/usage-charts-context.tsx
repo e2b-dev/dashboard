@@ -11,10 +11,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import {
-  INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS,
-  INITIAL_TIMEFRAME_FALLBACK_RANGE_MS,
-} from './constants'
+import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {
   calculateTotals,
   formatAxisDate,
@@ -82,15 +79,8 @@ export function UsageChartsProvider({
 
   const defaultRange = useMemo(() => {
     const now = Date.now()
-
-    if (data.hour_usages && data.hour_usages.length > 0) {
-      const firstTimestamp = data.hour_usages[0]!.timestamp
-      const start = firstTimestamp - INITIAL_TIMEFRAME_DATA_POINT_PREFIX_MS
-      return { start, end: now }
-    }
-
     return { start: now - INITIAL_TIMEFRAME_FALLBACK_RANGE_MS, end: now }
-  }, [data])
+  }, [])
 
   const timeframe = useMemo(
     () => ({
