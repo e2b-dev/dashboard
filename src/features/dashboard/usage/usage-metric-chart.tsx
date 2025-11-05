@@ -131,39 +131,35 @@ export function UsageMetricChart({
 
   return (
     <>
-      {!isFullscreen && (
-        <Card className={cn('h-full flex flex-col', className)}>
-          <UsageMetricChartContent
-            metric={metric}
-            timeRangeControlsClassName={timeRangeControlsClassName}
-            isFullscreen={isFullscreen}
-          />
-        </Card>
-      )}
+      <Card className={cn('h-full flex flex-col', className)}>
+        <UsageMetricChartContent
+          metric={metric}
+          timeRangeControlsClassName={timeRangeControlsClassName}
+          isFullscreen={false}
+        />
+      </Card>
 
-      {isFullscreen && (
-        <Dialog
-          open={isFullscreen}
-          onOpenChange={(open) => !open && setFullscreenMetric(null)}
+      <Dialog
+        open={isFullscreen}
+        onOpenChange={(open) => !open && setFullscreenMetric(null)}
+      >
+        <DialogContent
+          className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full p-0"
+          closeButtonClassName="top-7.5 right-6.5"
         >
-          <DialogContent
-            className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full border-0 p-0"
-            closeButtonClassName="top-7.5 right-6.5"
-          >
-            {/* title just here to avoid accessibility dev error from radix */}
-            <DialogTitle className="sr-only">
-              {METRIC_CONFIGS[metric].title}
-            </DialogTitle>
-            <Card className="h-full flex flex-col border-0">
-              <UsageMetricChartContent
-                metric={metric}
-                timeRangeControlsClassName={timeRangeControlsClassName}
-                isFullscreen={isFullscreen}
-              />
-            </Card>
-          </DialogContent>
-        </Dialog>
-      )}
+          {/* title just here to avoid accessibility dev error from radix */}
+          <DialogTitle className="sr-only">
+            {METRIC_CONFIGS[metric].title}
+          </DialogTitle>
+          <Card className="h-full flex flex-col border-0">
+            <UsageMetricChartContent
+              metric={metric}
+              timeRangeControlsClassName={timeRangeControlsClassName}
+              isFullscreen={true}
+            />
+          </Card>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
