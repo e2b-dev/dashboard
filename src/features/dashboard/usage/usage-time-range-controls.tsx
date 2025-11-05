@@ -21,7 +21,6 @@ import {
   normalizeToEndOfSamplingPeriod,
   normalizeToStartOfSamplingPeriod,
 } from './sampling-utils'
-import { useUsageCharts } from './usage-charts-context'
 
 interface UsageTimeRangeControlsProps {
   timeframe: {
@@ -51,12 +50,19 @@ export function UsageTimeRangeControls({
   )
 
   const rangeLabel = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat('en-US', {
+    const opt: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+    }
+
+    const firstFormatter = new Intl.DateTimeFormat('en-US', opt)
+
+    const lastFormatter = new Intl.DateTimeFormat('en-US', {
+      ...opt,
+      timeZoneName: 'short',
     })
-    return `${formatter.format(timeframe.start)} - ${formatter.format(timeframe.end)}`
+    return `${firstFormatter.format(timeframe.start)} - ${lastFormatter.format(timeframe.end)}`
   }, [timeframe.start, timeframe.end])
 
   const rangeCopyValue = useMemo(
