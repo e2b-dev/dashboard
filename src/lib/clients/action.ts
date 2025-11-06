@@ -100,8 +100,7 @@ export const actionClient = createSafeActionClient({
     s.setAttribute('user_id', baseLogPayload.user_id)
   }
 
-  const error =
-    result.serverError || result.validationErrors || result.success === false
+  const error = result.serverError || result.validationErrors
 
   if (error) {
     s.setStatus({ code: SpanStatusCode.ERROR })

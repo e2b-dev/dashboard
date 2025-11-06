@@ -7,9 +7,13 @@ import micromatch from 'micromatch'
 export interface DashboardLayoutConfig {
   title: string
   type: 'default' | 'custom'
+  custom?: {
+    includeHeaderBottomStyles: boolean
+  }
 }
 
 const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
+  // base
   '/dashboard/*/sandboxes': {
     title: 'Sandboxes',
     type: 'custom',
@@ -22,26 +26,32 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
     title: 'Templates',
     type: 'custom',
   },
+
+  // integrations
+  '/dashboard/*/webhooks': {
+    title: 'Webhooks',
+    type: 'default',
+  },
+
+  // team
+  '/dashboard/*/(general|keys|members)': {
+    title: 'General',
+    type: 'default',
+  },
+
+  // billing
   '/dashboard/*/usage': {
     title: 'Usage',
-    type: 'default',
-  },
-  '/dashboard/*/members': {
-    title: 'Members',
-    type: 'default',
-  },
-  '/dashboard/*/settings': {
-    title: 'Settings',
     type: 'custom',
+    custom: {
+      includeHeaderBottomStyles: true,
+    },
   },
-  '/dashboard/*/billing': {
-    title: 'Billing',
-    type: 'default',
-  },
-  '/dashboard/*/budget': {
+  '/dashboard/*/(budget|billing)': {
     title: 'Budget',
     type: 'default',
   },
+
   '/dashboard/account': {
     title: 'Account',
     type: 'default',

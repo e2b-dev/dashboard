@@ -3,7 +3,7 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { Invoice } from '@/types/billing'
+import { Invoice } from '@/types/billing.types'
 import { z } from 'zod'
 
 const GetInvoicesParamsSchema = z.object({

@@ -9,7 +9,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
 import { deleteApiKeyAction } from '@/server/keys/key-actions'
-import { TeamAPIKey } from '@/types/api'
+import { TeamAPIKey } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import {

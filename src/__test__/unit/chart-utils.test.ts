@@ -1,7 +1,5 @@
-import {
-  calculateYAxisMax,
-  transformMetrics,
-} from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { ClientTeamMetric } from '@/types/sandboxes.types'
 import { describe, expect, it } from 'vitest'
 
@@ -14,29 +12,44 @@ describe('team-metrics-chart-utils', () => {
         { x: 3, y: 60 },
       ]
       // max = 100, scale = 1.25 → 125 → snap to 150
-      expect(calculateYAxisMax(data, 1.25)).toBe(150)
+      expect(
+        calculateAxisMax(
+          data.map((d) => d.y),
+          1.25
+        )
+      ).toBe(150)
     })
 
     it('should use custom scale factor', () => {
       const data = [{ x: 1, y: 100 }]
       // max = 100, scale = 1.5 → 150
-      expect(calculateYAxisMax(data, 1.5)).toBe(150)
+      expect(
+        calculateAxisMax(
+          data.map((d) => d.y),
+          1.5
+        )
+      ).toBe(150)
     })
 
     it('should snap to nice values for different ranges', () => {
       // small values < 10
-      expect(calculateYAxisMax([{ x: 1, y: 5 }], 1.5)).toBe(8) // 7.5 → ceil to 8
+      expect(calculateAxisMax([5], 1.5)).toBe(8) // 7.5 → ceil to 8
 
       // values 10-100
-      expect(calculateYAxisMax([{ x: 1, y: 50 }], 1.5)).toBe(80) // 75 → snap to 80
+      expect(calculateAxisMax([50], 1.5)).toBe(80) // 75 → snap to 80
 
       // values 100-1000
-      expect(calculateYAxisMax([{ x: 1, y: 500 }], 1.5)).toBe(750) // 750 → snap to 750
+      expect(calculateAxisMax([500], 1.5)).toBe(750) // 750 → snap to 750
     })
 
     it('should return default for empty data', () => {
       const data: Array<{ x: number; y: number }> = []
-      expect(calculateYAxisMax(data, 1.25)).toBe(1)
+      expect(
+        calculateAxisMax(
+          data.map((d) => d.y),
+          1.25
+        )
+      ).toBe(1)
     })
   })
 

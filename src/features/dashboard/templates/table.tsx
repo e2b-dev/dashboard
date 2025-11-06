@@ -3,7 +3,7 @@
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
-import { DefaultTemplate, Template } from '@/types/api'
+import { DefaultTemplate, Template } from '@/types/api.types'
 import ClientOnly from '@/ui/client-only'
 import {
   DataTable,

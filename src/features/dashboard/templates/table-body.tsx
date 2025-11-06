@@ -1,4 +1,4 @@
-import { Template } from '@/types/api'
+import { Template } from '@/types/api.types'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'

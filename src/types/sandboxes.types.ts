@@ -1,4 +1,4 @@
-import { TeamMetric } from './api'
+import { TeamMetric } from './api.types'
 
 export type ClientSandboxMetric = {
   cpuCount: number

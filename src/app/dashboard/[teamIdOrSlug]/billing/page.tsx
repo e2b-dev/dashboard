@@ -1,7 +1,14 @@
-import { TIERS } from '@/configs/tiers'
 import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
 import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
-import BillingTierCard from '@/features/dashboard/billing/tier-card'
+import { PlanSection } from '@/features/dashboard/billing/plan-section'
+import {
+  extractAddonData,
+  extractTierData,
+} from '@/features/dashboard/billing/utils'
+import { l } from '@/lib/clients/logger/logger'
+import { getItems } from '@/server/billing/get-items'
+import { getTeamLimits } from '@/server/team/get-team-limits'
+import ErrorBoundary from '@/ui/error'
 import Frame from '@/ui/frame'
 import {
   Card,
@@ -11,11 +18,47 @@ import {
   CardTitle,
 } from '@/ui/primitives/card'
 
-export default function BillingPage({
+export default async function BillingPage({
   params,
 }: {
   params: Promise<{ teamIdOrSlug: string }>
 }) {
+  const { teamIdOrSlug } = await params
+
+  const itemsRes = await getItems({ teamIdOrSlug })
+  const limitsRes = await getTeamLimits({ teamIdOrSlug })
+
+  // handle data loading errors
+  if (itemsRes.serverError) {
+    l.error(
+      {
+        key: 'billing_page:failed_to_load_items',
+        context: { serverError: itemsRes.serverError },
+      },
+      'billing_page: Failed to load billing items'
+    )
+  }
+
+  if (!itemsRes?.data || !limitsRes?.data) {
+    return (
+      <ErrorBoundary
+        error={
+          {
+            name: 'Billing Error',
+            message:
+              itemsRes?.serverError ??
+              'Failed to load billing information. Please contact support.',
+          } satisfies Error
+        }
+        description="Could not load billing information"
+      />
+    )
+  }
+
+  // extract and validate billing data
+  const tierData = extractTierData(itemsRes.data)
+  const addonData = extractAddonData(itemsRes.data, tierData.selected?.id)
+
   return (
     <Frame
       classNames={{
@@ -34,16 +77,11 @@ export default function BillingPage({
         <CardContent>
           <CustomerPortalLink className="bg-bg w-fit" />
 
-          <div className="mt-3 flex flex-col gap-12 overflow-x-auto max-lg:mb-6 lg:flex-row">
-            {TIERS.map((tier) => (
-              <BillingTierCard
-                key={tier.id}
-                tier={tier}
-                isHighlighted={tier.id === 'pro_v1'}
-                className="min-w-[280px] shadow-xl lg:w-1/2 xl:min-w-0 flex-1"
-              />
-            ))}
-          </div>
+          <PlanSection
+            tierData={tierData}
+            addonData={addonData}
+            limits={limitsRes.data}
+          />
         </CardContent>
       </Card>
 

@@ -3,7 +3,7 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { BillingLimit } from '@/types/billing'
+import { BillingLimit } from '@/types/billing.types'
 import { z } from 'zod'
 
 const GetBillingLimitsParamsSchema = z.object({

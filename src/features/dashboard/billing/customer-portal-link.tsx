@@ -3,7 +3,7 @@
 import { redirectToCustomerPortal } from '@/server/billing/billing-actions'
 import ExternalIcon from '@/ui/external-icon'
 import { Button } from '@/ui/primitives/button'
-import { Loader } from '@/ui/primitives/loader'
+import { Loader } from '@/ui/primitives/loader_d'
 import { useAction } from 'next-safe-action/hooks'
 import { useParams } from 'next/navigation'
 

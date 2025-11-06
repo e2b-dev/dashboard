@@ -1,9 +1,10 @@
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { SandboxInfo } from '@/types/api'
+import { SandboxInfo } from '@/types/api.types'
 import { ChevronLeftIcon } from 'lucide-react'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import KillButton from './kill-button'
 import Metadata from './metadata'
 import RanFor from './ran-for'
 import RefreshControl from './refresh'
@@ -81,14 +82,17 @@ export default async function SandboxDetailsHeader({
           </Link>
           <SandboxDetailsTitle />
         </div>
-        <RefreshControl
-          initialPollingInterval={
-            initialPollingInterval
-              ? parseInt(initialPollingInterval)
-              : undefined
-          }
-          className="pt-4 sm:pt-0"
-        />
+        <div className="flex items-center gap-2 pt-4 sm:pt-0">
+          <RefreshControl
+            initialPollingInterval={
+              initialPollingInterval
+                ? parseInt(initialPollingInterval)
+                : undefined
+            }
+            className="order-2 sm:order-1"
+          />
+          <KillButton className="order-1 sm:order-2" />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-5 md:gap-7">

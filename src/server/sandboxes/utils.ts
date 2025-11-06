@@ -1,5 +1,5 @@
 import { TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS } from '@/configs/intervals'
-import { SandboxesMetricsRecord } from '@/types/api'
+import { SandboxesMetricsRecord } from '@/types/api.types'
 import {
   ClientSandboxesMetrics,
   ClientTeamMetrics,

@@ -1,5 +1,10 @@
 import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
-import { DefaultTemplate, Sandbox, Sandboxes, Template } from '@/types/api'
+import {
+  DefaultTemplate,
+  Sandbox,
+  Sandboxes,
+  Template,
+} from '@/types/api.types'
 import {
   ClientSandboxesMetrics,
   ClientTeamMetrics,

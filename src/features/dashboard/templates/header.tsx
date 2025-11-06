@@ -1,4 +1,4 @@
-import { Template } from '@/types/api'
+import { Template } from '@/types/api.types'
 import { Badge } from '@/ui/primitives/badge'
 import { Table } from '@tanstack/react-table'
 import { Hexagon, ListFilter } from 'lucide-react'

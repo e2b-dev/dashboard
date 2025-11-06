@@ -2,7 +2,7 @@
 
 import { SandboxesListResponse } from '@/app/api/teams/[teamId]/sandboxes/list/types'
 import { SWR_KEYS } from '@/configs/keys'
-import { Sandboxes } from '@/types/api'
+import { Sandboxes } from '@/types/api.types'
 import useSWR from 'swr'
 import { useDashboard } from '../../../context'
 

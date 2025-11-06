@@ -15,8 +15,9 @@ export const PROTECTED_URLS = {
 
   RESOLVED_ACCOUNT_SETTINGS: (teamIdOrSlug: string) =>
     `/dashboard/${teamIdOrSlug}/account`,
-  SETTINGS: (teamIdOrSlug: string, tab?: 'general' | 'keys') =>
-    `/dashboard/${teamIdOrSlug}/settings${tab ? `?tab=${tab}` : ''}`,
+
+  GENERAL: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/general`,
+  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
   SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
@@ -26,6 +27,8 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
   SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
+
+  WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
 
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,

@@ -1,9 +1,9 @@
-import { SandboxesMonitoringPageParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/@monitoring/page'
+import { MonitoringContentParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/components/monitoring-content'
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamMetricsMax } from '@/server/sandboxes/get-team-metrics-max'
-import { getTeamTierLimits } from '@/server/team/get-team-tier-limits'
+import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -51,7 +51,7 @@ function BaseErrorTooltip({ children }: { children: React.ReactNode }) {
 export default function SandboxesMonitoringHeader({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) {
   return (
     <div className="flex md:flex-row flex-col items-center border-b w-full max-md:py-2">
@@ -96,7 +96,7 @@ export default function SandboxesMonitoringHeader({
 export const ConcurrentSandboxes = async ({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
 
@@ -104,13 +104,13 @@ export const ConcurrentSandboxes = async ({
   const now = getNowMemo()
   const start = now - 60_000
 
-  const [teamMetricsResult, tierLimits] = await Promise.all([
+  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
     getTeamMetrics({
       teamIdOrSlug,
       startDate: start,
       endDate: now,
     }),
-    getTeamTierLimits({ teamIdOrSlug }),
+    getTeamLimits({ teamIdOrSlug }),
   ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -125,7 +125,7 @@ export const ConcurrentSandboxes = async ({
   return (
     <ConcurrentSandboxesClient
       initialData={teamMetricsResult.data}
-      limit={tierLimits?.data?.concurrentInstances}
+      limit={teamLimitsResult?.data?.concurrentInstances}
     />
   )
 }
@@ -133,7 +133,7 @@ export const ConcurrentSandboxes = async ({
 export const SandboxesStartRate = async ({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
 
@@ -162,21 +162,21 @@ export const SandboxesStartRate = async ({
 export const MaxConcurrentSandboxes = async ({
   params,
 }: {
-  params: Promise<SandboxesMonitoringPageParams>
+  params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
 
   const end = Date.now()
   const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
-  const [teamMetricsResult, tierLimits] = await Promise.all([
+  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
     getTeamMetricsMax({
       teamIdOrSlug,
       startDate: start,
       endDate: end,
       metric: 'concurrent_sandboxes',
     }),
-    getTeamTierLimits({ teamIdOrSlug }),
+    getTeamLimits({ teamIdOrSlug }),
   ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -188,7 +188,7 @@ export const MaxConcurrentSandboxes = async ({
     )
   }
 
-  const limit = tierLimits?.data?.concurrentInstances
+  const limit = teamLimitsResult?.data?.concurrentInstances
 
   const concurrentSandboxes = teamMetricsResult.data.value
 
@@ -197,7 +197,7 @@ export const MaxConcurrentSandboxes = async ({
       <span className="prose-value-big mt-1">
         {formatNumber(concurrentSandboxes)}
       </span>
-      {limit && (
+      {!!limit && (
         <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
           LIMIT: {formatNumber(limit)}
         </span>

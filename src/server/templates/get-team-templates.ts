@@ -15,8 +15,8 @@ import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { DefaultTemplate } from '@/types/api'
-import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
+import { DefaultTemplate } from '@/types/api.types'
+import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import getTeamTemplatesMemo from './get-team-templates-memo'
 
@@ -70,8 +70,8 @@ export const getDefaultTemplates = actionClient
   .metadata({ serverFunctionName: 'getDefaultTemplates' })
   .action(async () => {
     'use cache'
-    unstable_cacheLife('hours')
-    unstable_cacheTag(CACHE_TAGS.DEFAULT_TEMPLATES)
+    cacheLife('hours')
+    cacheTag(CACHE_TAGS.DEFAULT_TEMPLATES)
 
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))

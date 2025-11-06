@@ -8,7 +8,7 @@ import { kv } from '@/lib/clients/kv'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
 import { E2BError } from '@/types/errors'
-import { unstable_cacheLife, unstable_cacheTag } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
 import { serializeError } from 'serialize-error'
@@ -65,8 +65,8 @@ export async function checkUserTeamAuthorization(
   teamIdOrSlug: string
 ) {
   'use cache'
-  unstable_cacheLife('minutes')
-  unstable_cacheTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamIdOrSlug))
+  cacheLife('minutes')
+  cacheTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamIdOrSlug))
 
   const teamId = await getTeamIdFromSegment(teamIdOrSlug)
 

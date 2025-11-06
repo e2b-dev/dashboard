@@ -1,10 +1,15 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
-import { CustomerPortalResponse } from '@/types/billing'
+import {
+  AddOnOrderConfirmResponse,
+  AddOnOrderCreateResponse,
+  CustomerPortalResponse,
+} from '@/types/billing.types'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -159,4 +164,115 @@ export const redirectToCustomerPortal = authActionClient
     const data = (await res.json()) as CustomerPortalResponse
 
     throw redirect(data.url)
+  })
+
+// ORDERS - Addon Purchase
+
+const CreateOrderParamsSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  itemId: z.union([z.literal(ADDON_500_SANDBOXES_ID)]),
+})
+
+export const createOrderAction = authActionClient
+  .schema(CreateOrderParamsSchema)
+  .metadata({ actionName: 'createOrder' })
+  .use(withTeamIdResolution)
+  .action(async ({ parsedInput, ctx }) => {
+    const { itemId } = parsedInput
+    const { session, teamId } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              name: itemId,
+              quantity: 1,
+            },
+          ],
+        }),
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to create order')
+    }
+
+    const data: AddOnOrderCreateResponse = await res.json()
+
+    return data
+  })
+
+const ConfirmOrderParamsSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  orderId: z.uuid(),
+})
+
+export const confirmOrderAction = authActionClient
+  .schema(ConfirmOrderParamsSchema)
+  .metadata({ actionName: 'confirmOrder' })
+  .use(withTeamIdResolution)
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamIdOrSlug, orderId } = parsedInput
+    const { teamId, session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${orderId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to confirm order')
+    }
+
+    const data: AddOnOrderConfirmResponse = await res.json()
+
+    revalidatePath(`/dashboard/${teamIdOrSlug}/billing`, 'page')
+
+    return data
+  })
+
+const GetCustomerSessionSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
+})
+
+export const getCustomerSessionAction = authActionClient
+  .schema(GetCustomerSessionSchema)
+  .metadata({ actionName: 'getCustomerSession' })
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { teamId, session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/payment-methods/customer-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text ?? 'Failed to fetch customer session')
+    }
+
+    const data = await res.json()
+    return data
   })

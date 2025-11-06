@@ -56,6 +56,7 @@ export interface TimeInputProps {
   className?: string
   minDate?: Date
   maxDate?: Date
+  hideTime?: boolean
 }
 
 export const TimeInput = memo(function TimeInput({
@@ -69,6 +70,7 @@ export const TimeInput = memo(function TimeInput({
   className,
   minDate,
   maxDate,
+  hideTime = false,
 }: TimeInputProps) {
   const [dateOpen, setDateOpen] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
@@ -170,6 +172,7 @@ export const TimeInput = memo(function TimeInput({
           <Calendar
             mode="single"
             selected={selectedDate || undefined}
+            defaultMonth={selectedDate || undefined}
             onSelect={handleDateSelect}
             minDate={minDate}
             maxDate={maxDate}
@@ -178,7 +181,8 @@ export const TimeInput = memo(function TimeInput({
         </PopoverContent>
       </Popover>
 
-      <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+      {!hideTime && (
+        <Popover open={timeOpen} onOpenChange={setTimeOpen}>
         <div className="relative flex-1">
           <Input
             type="text"
@@ -258,6 +262,7 @@ export const TimeInput = memo(function TimeInput({
           </div>
         </PopoverContent>
       </Popover>
+      )}
     </div>
   )
 })

@@ -2,7 +2,7 @@
 
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_METRICS_DATA } from '@/configs/mock-data'
-import { Sandboxes } from '@/types/api'
+import { Sandboxes } from '@/types/api.types'
 import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { useMemo } from 'react'
 import useSWR from 'swr'

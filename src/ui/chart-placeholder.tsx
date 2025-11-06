@@ -1,9 +1,5 @@
 "use client"
 
-import {
-  chartConfig,
-  commonChartProps,
-} from '@/features/dashboard/usage/chart-config'
 import { cn } from '@/lib/utils'
 import {
   ChartContainer,
@@ -53,7 +49,7 @@ export function ChartPlaceholder({
       }
     >
       <ChartContainer
-        config={chartConfig}
+        config={{}}
         className={cn(
           'h-50 w-full',
           classNames?.container,
@@ -63,7 +59,7 @@ export function ChartPlaceholder({
           'after:from-(--placeholder-bg) after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-16 after:bg-gradient-to-t after:to-transparent'
         )}
       >
-        <AreaChart data={mockData} {...commonChartProps}>
+        <AreaChart data={mockData}>
           <defs>
             {isLoading ? (
               <linearGradient
