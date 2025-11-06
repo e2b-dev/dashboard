@@ -28,6 +28,8 @@ export async function GET(request: NextRequest): Promise<Response> {
   // This issue does only seem to occur in Vercel Production builds, not in local development or preview deployments.
 
   // NOTE - Not sure if this is a bug or intended from the Next.js team, but it is what it is.
+  // We need to handle this case because @rewrites.ts has a config for rewriting "/" (index),
+  // and without this normalization, we would get a 404 in production when Next.js aliases "/" to "/index".
   if (url.pathname === '/index') {
     url.pathname = '/'
   }
