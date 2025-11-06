@@ -18,6 +18,8 @@ export const dynamicParams = false
 const REVALIDATE_TIME = 29
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const url = new URL(request.url)
+
   // Next.js (versions > 15.3.0) can alias the root path ("/") in `request.url` to
   // the corresponding file path (e.g., "/index") during internal processing.
   // This is a hotfix to normalize the pathname back to "/". We previously tried
@@ -26,18 +28,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   // This issue does only seem to occur in Vercel Production builds, not in local development or preview deployments.
 
   // NOTE - Not sure if this is a bug or intended from the Next.js team, but it is what it is.
-  const url = new URL(request.url)
-
-  // Hotfix: normalize "/index" back to "/"
   if (url.pathname === '/index') {
     url.pathname = '/'
   }
-
-  console.log('[REWRITE_ROUTE] Start', {
-    pathname: url.pathname,
-    hostname: url.hostname,
-    fullUrl: request.url,
-  })
 
   const requestHostname = url.hostname
 
@@ -49,46 +42,18 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   const { config, rule } = getRewriteForPath(url.pathname, 'route')
 
-  console.log('[REWRITE_ROUTE] Rewrite config match', {
-    hasConfig: !!config,
-    domain: config?.domain,
-    matchedRulePath: rule?.path,
-    hasPathPreprocessor: !!(rule && rule.pathPreprocessor),
-  })
-
   if (config) {
     if (rule && rule.pathPreprocessor) {
-      const originalPathname = url.pathname
       url.pathname = rule.pathPreprocessor(url.pathname)
-      console.log('[REWRITE_ROUTE] Path preprocessed', {
-        original: originalPathname,
-        processed: url.pathname,
-      })
     }
     updateUrlHostname(config.domain)
-    console.log('[REWRITE_ROUTE] Hostname updated', {
-      from: requestHostname,
-      to: config.domain,
-    })
   }
 
   try {
     const notFound = url.hostname === requestHostname
 
-    console.log('[REWRITE_ROUTE] Not found check', {
-      notFound,
-      urlHostname: url.hostname,
-      requestHostname,
-    })
-
     // if hostname did not change, we want to make sure it does not cache the route based on the build times hostname (127.0.0.1:3000)
     const fetchUrl = notFound ? `${BASE_URL}/not-found` : url.toString()
-
-    console.log('[REWRITE_ROUTE] Fetching', {
-      fetchUrl,
-      notFound,
-      cacheStrategy: notFound ? 'no-store' : `revalidate: ${REVALIDATE_TIME}`,
-    })
 
     const res = await fetch(fetchUrl, {
       headers: new Headers(request.headers),
@@ -103,27 +68,11 @@ export async function GET(request: NextRequest): Promise<Response> {
           }),
     })
 
-    console.log('[REWRITE_ROUTE] Fetch complete', {
-      status: res.status,
-      statusText: res.statusText,
-      contentType: res.headers.get('Content-Type'),
-      contentLength: res.headers.get('Content-Length'),
-    })
-
     const contentType = res.headers.get('Content-Type')
     const newHeaders = new Headers(res.headers)
 
     if (contentType?.startsWith('text/html')) {
-      console.log('[REWRITE_ROUTE] Processing HTML response', {
-        htmlLength: 'fetching...',
-      })
-
       let html = await res.text()
-
-      console.log('[REWRITE_ROUTE] HTML fetched', {
-        htmlLength: html.length,
-        hasConfig: !!config,
-      })
 
       // remove content-encoding header to ensure proper rendering
       newHeaders.delete('content-encoding')
@@ -132,22 +81,12 @@ export async function GET(request: NextRequest): Promise<Response> {
       if (config) {
         const rewrittenPrefix = `https://${config.domain}`
 
-        console.log('[REWRITE_ROUTE] Rewriting HTML content', {
-          pathname: url.pathname,
-          allowIndexing: ALLOW_SEO_INDEXING,
-          hrefPrefixes: [rewrittenPrefix, 'https://e2b.dev'],
-        })
-
         html = rewriteContentPagesHtml(html, {
           seo: {
             pathname: url.pathname,
             allowIndexing: ALLOW_SEO_INDEXING,
           },
           hrefPrefixes: [rewrittenPrefix, 'https://e2b.dev'],
-        })
-
-        console.log('[REWRITE_ROUTE] HTML rewrite complete', {
-          newHtmlLength: html.length,
         })
       }
 
@@ -157,26 +96,11 @@ export async function GET(request: NextRequest): Promise<Response> {
         headers: newHeaders,
       })
 
-      console.log('[REWRITE_ROUTE] Returning HTML response', {
-        status: modifiedResponse.status,
-        notFound,
-      })
-
       return modifiedResponse
     }
 
-    console.log('[REWRITE_ROUTE] Returning non-HTML response', {
-      contentType,
-      status: res.status,
-    })
-
     return res
   } catch (error) {
-    console.error('[REWRITE_ROUTE] Error caught', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-
     l.error({
       key: 'url_rewrite:unexpected_error',
       error: serializeError(error),
