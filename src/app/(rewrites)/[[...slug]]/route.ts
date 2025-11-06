@@ -13,6 +13,7 @@ import { serializeError } from 'serialize-error'
 export const revalidate = 30
 export const runtime = 'nodejs'
 // all paths that are not in generateStaticParams will be 404
+export const dynamic = 'force-static'
 export const dynamicParams = false
 
 const REVALIDATE_TIME = 29
