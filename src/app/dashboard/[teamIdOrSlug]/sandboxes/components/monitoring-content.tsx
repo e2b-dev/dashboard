@@ -1,24 +1,24 @@
 import { TeamMetricsCharts } from '@/features/dashboard/sandboxes/monitoring/charts/charts'
 import SandboxesMonitoringHeader from '@/features/dashboard/sandboxes/monitoring/header'
 
-export interface SandboxesMonitoringPageParams {
+export interface MonitoringContentParams {
   teamIdOrSlug: string
 }
 
-export interface SandboxesMonitoringPageSearchParams {
+export interface MonitoringContentSearchParams {
   start?: string
   end?: string
 }
 
-interface SandboxesMonitoringPageProps {
-  params: Promise<SandboxesMonitoringPageParams>
-  searchParams: Promise<SandboxesMonitoringPageSearchParams>
+interface MonitoringContentProps {
+  params: Promise<MonitoringContentParams>
+  searchParams: Promise<MonitoringContentSearchParams>
 }
 
-export default function SandboxesMonitoringPage({
+export default function MonitoringContent({
   params,
   searchParams,
-}: SandboxesMonitoringPageProps) {
+}: MonitoringContentProps) {
   return (
     <div className="flex flex-col h-full relative min-h-0 max-md:overflow-y-auto">
       <SandboxesMonitoringHeader params={params} />
@@ -28,3 +28,4 @@ export default function SandboxesMonitoringPage({
     </div>
   )
 }
+

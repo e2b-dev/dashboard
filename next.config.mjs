@@ -3,13 +3,9 @@ export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
 
 /** @type {import('next').NextConfig} */
 const config = {
-  eslint: {
-    dirs: ['src', 'scripts'], // Only run ESLint on these directories during production builds
-  },
   reactStrictMode: true,
+  reactCompiler: true,
   experimental: {
-    reactCompiler: true,
-    ppr: true,
     staleTimes: {
       dynamic: 180,
       static: 180,
@@ -17,22 +13,15 @@ const config = {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    clientSegmentCache: true,
   },
   logging: {
     fetches: {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['pino', 'pino-loki'],
+  serverExternalPackages: ['pino'],
   trailingSlash: false,
-  webpack: (config) => {
-    config.module.rules.push({
-      test: /\.node$/,
-      use: 'node-loader',
-    })
-
-    return config
-  },
   headers: async () => [
     {
       source: '/(.*)',

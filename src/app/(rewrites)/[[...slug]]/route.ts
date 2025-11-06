@@ -18,6 +18,20 @@ const REVALIDATE_TIME = 900 // 15 minutes ttl
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
 
+  // Next.js (versions > 15.3.0) can alias the root path ("/") in `request.url` to
+  // the corresponding file path (e.g., "/index") during internal processing.
+  // This is a hotfix to normalize the pathname back to "/". We previously tried
+  // using `request.nextUrl.pathname` to preserve the original client-requested URL,
+  // but that approach did not work as well in practice.
+  // This issue does only seem to occur in Vercel Production builds, not in local development or preview deployments.
+
+  // NOTE - Not sure if this is a bug or intended from the Next.js team, but it is what it is.
+  // We need to handle this case because @rewrites.ts has a config for rewriting "/" (index),
+  // and without this normalization, we would get a 404 in production when Next.js aliases "/" to "/index".
+  if (url.pathname === '/index') {
+    url.pathname = '/'
+  }
+
   const requestHostname = url.hostname
 
   const updateUrlHostname = (newHostname: string) => {
@@ -110,7 +124,7 @@ export async function generateStaticParams() {
       const url = new URL(entry.url)
       const pathname = url.pathname
 
-      // Check if this path matches any rule in ROUTE_REWRITE_CONFIG
+      // check if this path matches any rule in ROUTE_REWRITE_CONFIG
       for (const domainConfig of ROUTE_REWRITE_CONFIG) {
         const isIndex = pathname === '/' || pathname === ''
         const matchingRule = domainConfig.rules.find((rule) => {
@@ -130,13 +144,14 @@ export async function generateStaticParams() {
       return false
     })
     .map((entry) => {
-      // Map the filtered entries to slug format
+      // map the filtered entries to slug format
       const url = new URL(entry.url)
       const pathname = url.pathname
       const pathSegments = pathname
         .split('/')
         .filter((segment) => segment !== '')
-      return { slug: pathSegments.length > 0 ? pathSegments : undefined }
+
+      return { slug: pathSegments }
     })
 
   return slugs

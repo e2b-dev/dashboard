@@ -42,20 +42,6 @@
     --protected-navbar-height: 52px;
     --protected-sidebar-width: 256px;
   }
-
-  /* Fumadocs
-
-  --fd-nav-height: var(--public-nav-height) !important;
-  --fd-sidebar-width: var(--protected-sidebar-width) !important;
-
-  --fd-background: var(--bg);
-  --fd-foreground: var(--fg);
-
-  --fd-muted: var(--bg-1);
-  --fd-muted-foreground: var(--fg-500);
-
-  --fd-accent: var(--bg-1);
-  --fd-accent-foreground: var(--fg); */
 }
 
 /* Theme Variables */
@@ -378,25 +364,6 @@
     'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
   --font-fira-code: 'Fira Code', monospace;
-
-  /* Fumadocs
-    --color-fd-background: var(--bg);
-    --color-fd-foreground: var(--fg);
-    --color-fd-muted: var(--bg-1);
-    --color-fd-muted-foreground: var(--fg-300);
-    --color-fd-popover: var(--bg);
-    --color-fd-popover-foreground: var(--fg);
-    --color-fd-card: var(--bg);
-    --color-fd-card-foreground: var(--fg);
-    --color-fd-border: var(--border);
-    --color-fd-primary: var(--accent);
-    --color-fd-primary-foreground: var(--accent-fg);
-    --color-fd-secondary: var(--bg-1);
-    --color-fd-secondary-foreground: var(--fg);
-    --color-fd-accent: var(--bg-1);
-    --color-fd-accent-foreground: var(--fg);
-    --color-fd-ring: var(--ring);
-  */
 
   /* Animations */
   @keyframes accordion-down {

@@ -4,23 +4,13 @@ import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
 import ErrorBoundary from '@/ui/error'
 
-interface PageProps {
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
-}
-
-export default async function Page({ params }: PageProps) {
-  const { teamIdOrSlug } = await params
-
-  return <PageContent teamIdOrSlug={teamIdOrSlug} />
-}
-
-interface PageContentProps {
+interface ListContentProps {
   teamIdOrSlug: string
 }
 
-async function PageContent({ teamIdOrSlug }: PageContentProps) {
+export default async function ListContent({
+  teamIdOrSlug,
+}: ListContentProps) {
   const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const sandboxesRes = await getTeamSandboxes({ teamId })
@@ -59,3 +49,4 @@ async function PageContent({ teamIdOrSlug }: PageContentProps) {
     </div>
   )
 }
+

@@ -13,7 +13,7 @@ import {
   resolveTeamForDashboard,
 } from './server/middleware'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   try {
     // Redirects, that require custom headers
     // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
