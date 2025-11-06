@@ -18,7 +18,14 @@ export const dynamicParams = false
 const REVALIDATE_TIME = 29
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const url = request.nextUrl
+  // Next.js (versions > 15.3.0) can alias the root path ("/") in `request.url` to
+  // the corresponding file path (e.g., "/index") during internal processing.
+  // The `request.nextUrl.pathname` property, however, preserves the original
+  // client-requested URL pathname, which is essential for accurate URL parsing
+  // in certain middleware logic.
+
+  // NOTE - Not sure if this is a bug or intended from the Next.js team, but it is what it is.
+  const url = new URL(request.nextUrl.pathname, request.url)
 
   console.log('[REWRITE_ROUTE] Start', {
     pathname: url.pathname,
@@ -180,14 +187,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 }
 
 export async function generateStaticParams() {
-  console.log('[REWRITE_ROUTE] generateStaticParams started')
-
   const sitemapEntries = await sitemap()
-
-  console.log('[REWRITE_ROUTE] Sitemap entries', {
-    totalEntries: sitemapEntries.length,
-    sampleUrls: sitemapEntries.slice(0, 5).map((e) => e.url),
-  })
 
   const slugs = sitemapEntries
     .filter((entry) => {
@@ -208,12 +208,6 @@ export async function generateStaticParams() {
         })
 
         if (matchingRule) {
-          console.log('[REWRITE_ROUTE] Matched path', {
-            pathname,
-            isIndex,
-            rulePath: matchingRule.path,
-            domain: domainConfig.domain,
-          })
           return true
         }
       }
@@ -230,19 +224,8 @@ export async function generateStaticParams() {
       // for index, this means the slug is an empty array
       const result = { slug: pathSegments }
 
-      console.log('[REWRITE_ROUTE] Generated param', {
-        pathname,
-        slug: result.slug,
-        isIndex: result.slug.length === 0,
-      })
-
       return result
     })
-
-  console.log('[REWRITE_ROUTE] generateStaticParams complete', {
-    totalParams: slugs.length,
-    params: slugs,
-  })
 
   return slugs
 }
