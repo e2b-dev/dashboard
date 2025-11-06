@@ -1,4 +1,4 @@
-import { MonitoringContentParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/components/monitoring-content'
+import { MonitoringContentParams } from '@/features/dashboard/sandboxes/monitoring/content'
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
