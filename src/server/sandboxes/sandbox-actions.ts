@@ -1,11 +1,13 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
+import { updateTag } from 'next/cache'
 import { z } from 'zod'
 
 const KillSandboxSchema = z.object({
@@ -55,4 +57,17 @@ export const killSandboxAction = authActionClient
 
       return returnServerError('Failed to kill sandbox')
     }
+  })
+
+const RevalidateSandboxesSchema = z.object({
+  teamId: z.uuid(),
+})
+
+export const revalidateSandboxes = authActionClient
+  .metadata({ serverFunctionName: 'revalidateSandboxes' })
+  .inputSchema(RevalidateSandboxesSchema)
+  .action(async ({ parsedInput }) => {
+    const { teamId } = parsedInput
+
+    updateTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(teamId))
   })

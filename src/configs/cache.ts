@@ -9,6 +9,7 @@ export const CACHE_TAGS = {
   TEAM_ID_FROM_SEGMENT: (segment: string) => `team-id-from-segment-${segment}`,
   TEAM_TIER_LIMITS: (teamId: string) => `team-tier-limits-${teamId}`,
   TEAM_TEMPLATES: (teamId: string) => `team-templates-${teamId}`,
+  TEAM_SANDBOXES_LIST: (teamId: string) => `team-sandboxes-list-${teamId}`,
   TEAM_USAGE: (teamId: string) => `team-usage-${teamId}`,
   TEAM_API_KEYS: (teamId: string) => `team-api-keys-${teamId}`,
   TEAM_METRICS: (teamId: string, startMs: number, endMs: number) =>

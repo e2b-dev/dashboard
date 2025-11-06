@@ -7,6 +7,7 @@ const config = {
   reactCompiler: true,
   experimental: {
     useCache: true,
+    turbopackFileSystemCacheForDev: true,
     clientSegmentCache: true,
     serverActions: {
       bodySizeLimit: '5mb',

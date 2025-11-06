@@ -1,7 +1,9 @@
+import { revalidateSandboxes } from '@/server/sandboxes/sandbox-actions'
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
-import { useSandboxes } from './hooks/use-sandboxes'
+import { useAction } from 'next-safe-action/hooks'
+import { useDashboard } from '../../context'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -21,11 +23,17 @@ export function SandboxesHeader({
 }: SandboxesHeaderProps) {
   'use no memo'
 
+  const { team } = useDashboard()
+
   const { pollingInterval, setPollingInterval } = useSandboxTableStore()
-  const { mutate, isLoading } = useSandboxes({})
+
+  const { execute: revalidateSandboxesAction, isPending } =
+    useAction(revalidateSandboxes)
 
   const handleRefresh = () => {
-    mutate()
+    if (!team) return
+
+    revalidateSandboxesAction({ teamId: team.id })
   }
 
   const hasActiveFilters = () => {
@@ -46,7 +54,7 @@ export function SandboxesHeader({
               pollingInterval={pollingInterval}
               onIntervalChange={setPollingInterval}
               onRefresh={handleRefresh}
-              isPolling={isLoading}
+              isPolling={isPending}
             />
           </div>
 
