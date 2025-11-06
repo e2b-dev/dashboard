@@ -12,10 +12,8 @@ import { serializeError } from 'serialize-error'
 
 export const revalidate = 900
 export const dynamic = 'force-static'
-// all paths that are not in generateStaticParams will be 404
-export const dynamicParams = false
 
-const REVALIDATE_TIME = 899
+const REVALIDATE_TIME = 900 // 15 minutes ttl
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
@@ -153,10 +151,7 @@ export async function generateStaticParams() {
         .split('/')
         .filter((segment) => segment !== '')
 
-      // for index, this means the slug is an empty array
-      const result = { slug: pathSegments }
-
-      return result
+      return { slug: pathSegments }
     })
 
   return slugs
