@@ -18,6 +18,7 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
     domain: LANDING_PAGE_DOMAIN,
     rules: [
       { path: '/' },
+      { path: '/index', pathPreprocessor: () => '/' },
       { path: '/terms' },
       { path: '/privacy' },
       { path: '/pricing' },
