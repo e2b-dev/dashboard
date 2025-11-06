@@ -11,15 +11,14 @@ import { NextRequest } from 'next/server'
 import { serializeError } from 'serialize-error'
 
 export const revalidate = 30
-export const runtime = 'nodejs'
-// all paths that are not in generateStaticParams will be 404
 export const dynamic = 'force-static'
+// all paths that are not in generateStaticParams will be 404
 export const dynamicParams = false
 
 const REVALIDATE_TIME = 29
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const url = new URL(request.url)
+  const url = request.nextUrl
 
   console.log('[REWRITE_ROUTE] Start', {
     pathname: url.pathname,
