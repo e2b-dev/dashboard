@@ -38,10 +38,10 @@ export default function SandboxInspectIncompatible({
       team_id: teamIdOrSlug,
       template_name_or_id: templateNameOrId,
     })
-  }, [trackInteraction, teamIdOrSlug])
+  }, [trackInteraction, teamIdOrSlug, templateNameOrId])
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
+    <div className="flex flex-1 min-h-0 max-md:absolute max-md:inset-0 w-full max-md: flex-col items-center justify-center p-4 md:justify-center">
       <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
         <AsciiBackgroundPattern className="w-1/2" />
         <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
