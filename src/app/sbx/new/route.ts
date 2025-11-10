@@ -23,8 +23,6 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const defaultTeam = await getDefaultTeam(data.user.id)
-
     const session = await getSessionInsecure(supabase)
 
     if (!session) {
@@ -36,6 +34,8 @@ export const GET = async (req: NextRequest) => {
         new URL(`${AUTH_URLS.SIGN_IN}?${params.toString()}`, req.url)
       )
     }
+
+    const defaultTeam = await getDefaultTeam(data.user.id)
 
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
