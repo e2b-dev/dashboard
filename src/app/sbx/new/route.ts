@@ -15,7 +15,7 @@ export const GET = async (req: NextRequest) => {
 
     if (error || !data.user) {
       const params = new URLSearchParams({
-        returnTo: req.url,
+        returnTo: new URL(req.url).pathname,
       })
 
       return NextResponse.redirect(
@@ -44,7 +44,7 @@ export const GET = async (req: NextRequest) => {
 
     if (!session) {
       const params = new URLSearchParams({
-        returnTo: req.url,
+        returnTo: new URL(req.url).pathname,
       })
 
       return NextResponse.redirect(
@@ -55,7 +55,7 @@ export const GET = async (req: NextRequest) => {
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session?.access_token, defaultTeam.id),
+        ...SUPABASE_AUTH_HEADERS(session.access_token, defaultTeam.id),
       },
     })
 
