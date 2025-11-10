@@ -25,21 +25,6 @@ export const GET = async (req: NextRequest) => {
 
     const defaultTeam = await getDefaultTeam(data.user.id)
 
-    // unexpected state - sign out and redirect to sign-in
-    if (!defaultTeam) {
-      await supabase.auth.signOut()
-
-      l.error(
-        {
-          key: 'sbx_new:unexpected_state',
-          user_id: data.user.id,
-        },
-        `No default team found for user: ${data.user.id}`
-      )
-
-      return NextResponse.redirect(new URL(req.url).origin)
-    }
-
     const session = await getSessionInsecure(supabase)
 
     if (!session) {
