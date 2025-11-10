@@ -1,4 +1,3 @@
-import { MonitoringContentParams } from '@/features/dashboard/sandboxes/monitoring/content'
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -14,6 +13,10 @@ import {
   SandboxesStartRateClient,
 } from './header.client'
 import { MAX_DAYS_AGO } from './time-picker/constants'
+
+interface MonitoringContentParams {
+  teamIdOrSlug: string
+}
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (

@@ -5,19 +5,11 @@ import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { l } from './lib/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
-import { getAuthRedirect } from './server/middleware'
+import { getAuthRedirect } from './server/proxy'
 
 export async function proxy(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname
-
-    l.debug(
-      {
-        key: 'middleware:start',
-        pathname,
-      },
-      'middleware - start'
-    )
 
     // Redirects, that require custom headers
     // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
@@ -40,15 +32,6 @@ export async function proxy(request: NextRequest) {
     const { config: routeRewriteConfig } = getRewriteForPath(pathname, 'route')
 
     if (routeRewriteConfig) {
-      l.debug(
-        {
-          key: 'middleware:route_rewrite',
-          pathname,
-          config: routeRewriteConfig,
-        },
-        'middleware - route rewrite'
-      )
-
       return NextResponse.next({
         request,
       })
@@ -59,15 +42,6 @@ export async function proxy(request: NextRequest) {
       getRewriteForPath(pathname, 'middleware')
 
     if (middlewareRewriteConfig) {
-      l.debug(
-        {
-          key: 'middleware:middleware_rewrite',
-          pathname,
-          domain: middlewareRewriteConfig.domain,
-        },
-        'middleware - middleware rewrite'
-      )
-
       const rewriteUrl = new URL(request.url)
       rewriteUrl.hostname = middlewareRewriteConfig.domain
       rewriteUrl.protocol = 'https'
@@ -99,7 +73,6 @@ export async function proxy(request: NextRequest) {
       return response
     }
 
-    // Setup response and Supabase client
     const response = NextResponse.next({
       request,
     })
@@ -123,60 +96,14 @@ export async function proxy(request: NextRequest) {
 
     const { error, data } = await supabase.auth.getUser()
 
-    l.debug(
-      {
-        key: 'middleware:user_auth',
-        pathname,
-        hasUser: !!data?.user,
-        userId: data?.user?.id,
-        hasError: !!error,
-      },
-      'middleware - user auth'
-    )
+    const isAuthenticated = !error && !!data?.user
 
-    // Handle authentication redirects
-    const authRedirect = getAuthRedirect(request, !error)
+    const authRedirect = getAuthRedirect(request, isAuthenticated)
+
     if (authRedirect) {
-      l.debug(
-        {
-          key: 'middleware:auth_redirect',
-          pathname,
-          redirectTo: authRedirect.headers.get('location'),
-        },
-        'middleware - auth redirect'
-      )
       return authRedirect
     }
 
-    // // Early return for non-dashboard routes or no user
-    // if (!data?.user || !isDashboardRoute(pathname)) {
-    //   l.debug({
-    //     key: 'middleware:early_return',
-    //     pathname,
-    //     isDashboard: isDashboardRoute(pathname),
-    //     hasUser: !!data?.user,
-    //   })
-    //   return response
-    // }
-
-    // // Handle team resolution for all dashboard routes
-    // const teamResult = await resolveTeamForDashboard(request, data.user.id)
-
-    // l.debug(
-    //   {
-    //     key: 'middleware:team_resolution',
-    //     userId: data.user.id,
-    //     context: {
-    //       pathname,
-    //       teamResult: teamResult,
-    //       teamIdOrSlug: request.nextUrl.pathname.split('/')[2],
-    //     },
-    //   },
-    //   'middleware - resolved team for dashboard'
-    // )
-
-    // // Process team resolution result
-    // return handleTeamResolution(request, response, teamResult)
     return response
   } catch (error) {
     l.error(

@@ -27,11 +27,7 @@ export default async function SandboxLayout({
   }
 
   return (
-    <SandboxProvider
-      teamId={teamIdOrSlug}
-      serverSandboxInfo={res?.data}
-      isRunning={exists}
-    >
+    <SandboxProvider serverSandboxInfo={res?.data} isRunning={exists}>
       <SandboxLayoutClient
         teamIdOrSlug={teamIdOrSlug}
         header={

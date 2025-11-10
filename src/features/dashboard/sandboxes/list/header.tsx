@@ -3,7 +3,7 @@ import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
-import { useDashboard } from '../../context'
+import { useParams } from 'next/navigation'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -23,7 +23,7 @@ export function SandboxesHeader({
 }: SandboxesHeaderProps) {
   'use no memo'
 
-  const { team } = useDashboard()
+  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
 
   const { pollingInterval, setPollingInterval } = useSandboxTableStore()
 
@@ -31,9 +31,9 @@ export function SandboxesHeader({
     useAction(revalidateSandboxes)
 
   const handleRefresh = () => {
-    if (!team) return
+    if (!teamIdOrSlug) return
 
-    revalidateSandboxesAction({ teamId: team.id })
+    revalidateSandboxesAction({ teamIdOrSlug })
   }
 
   const hasActiveFilters = () => {
@@ -66,7 +66,7 @@ export function SandboxesHeader({
             {showFilteredRowCount && (
               <Badge size="lg" variant="info" className="uppercase">
                 {table.getFilteredRowModel().rows.length} filtered
-                <ListFilter className="size-3 !stroke-[3px]" />
+                <ListFilter className="size-3 stroke-[3px]!" />
               </Badge>
             )}
           </div>

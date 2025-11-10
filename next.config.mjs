@@ -13,13 +13,6 @@ const config = {
       bodySizeLimit: '5mb',
     },
     authInterrupts: true,
-    cacheLife: {
-      teamSettings: {
-        stale: 180,
-        revalidate: 3600,
-        expire: 86400,
-      },
-    }
   },
   logging: {
     fetches: {

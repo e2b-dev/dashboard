@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
@@ -10,7 +9,6 @@ import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { Sandbox } from '@/types/api.types'
-import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 
 const GetTeamSandboxesSchema = z.object({
@@ -27,10 +25,6 @@ export const getTeamSandboxes = authActionClient
     }): Promise<{
       sandboxes: Sandbox[]
     }> => {
-      'use cache'
-      cacheTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(ctx.teamId))
-      cacheLife('seconds')
-
       const { session, teamId } = ctx
 
       if (USE_MOCK_DATA) {

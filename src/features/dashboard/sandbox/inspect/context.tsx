@@ -204,11 +204,11 @@ export function SandboxInspectProvider({
         trackInteraction('downloaded_file', { path })
       },
     }),
-    [isRunning, sandboxManagerRef.current, storeRef.current, trackInteraction]
+    [isRunning, trackInteraction]
   )
 
   const connectSandbox = useCallback(async () => {
-    if (!storeRef.current || !sandboxInfo) return
+    if (!storeRef.current || !sandboxInfo || !teamId) return
 
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
@@ -225,7 +225,7 @@ export function SandboxInspectProvider({
     const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(data.session?.access_token, teamId),
+        ...SUPABASE_AUTH_HEADERS(data.session.access_token, teamId),
       },
     })
 
@@ -241,7 +241,7 @@ export function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [sandboxInfo?.sandboxID, teamId, rootPath, router, trackInteraction])
+  }, [sandboxInfo, teamId, rootPath, trackInteraction, router])
 
   // handle sandbox connection / disconnection
   useEffect(() => {
@@ -259,7 +259,14 @@ export function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [isRunning, connectSandbox, trackInteraction])
+  }, [
+    isRunning,
+    connectSandbox,
+    trackInteraction,
+    teamId,
+    sandboxInfo?.sandboxID,
+    rootPath,
+  ])
 
   if (!storeRef.current || !sandboxInfo) {
     return null // should never happen, but satisfies type-checker

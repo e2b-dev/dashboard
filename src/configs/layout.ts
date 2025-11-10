@@ -14,7 +14,7 @@ export interface DashboardLayoutConfig {
 
 const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
   // base
-  '/dashboard/*/sandboxes': {
+  '/dashboard/*/sandboxes/*': {
     title: 'Sandboxes',
     type: 'custom',
   },

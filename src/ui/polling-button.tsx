@@ -71,7 +71,11 @@ export function PollingButton({
     {
       refreshInterval: pollingInterval * 1000,
       refreshWhenHidden: false,
-      revalidateOnFocus: true,
+      refreshWhenOffline: false,
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnMount: false,
+      revalidateOnReconnect: false,
     }
   )
 

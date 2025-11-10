@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react'
 import useSWR from 'swr'
+import { useDashboard } from '../context'
 
 interface SandboxContextValue {
   sandboxInfo?: SandboxInfo
@@ -35,16 +36,16 @@ export function useSandboxContext() {
 interface SandboxProviderProps {
   children: ReactNode
   serverSandboxInfo?: SandboxInfo
-  teamId: string
   isRunning: boolean
 }
 
 export function SandboxProvider({
   children,
   serverSandboxInfo,
-  teamId,
   isRunning,
 }: SandboxProviderProps) {
+  const { team } = useDashboard()
+
   const [isRunningState, setIsRunningState] = useState(isRunning)
   const [lastFallbackData, setLastFallbackData] = useState(serverSandboxInfo)
 
@@ -56,16 +57,16 @@ export function SandboxProvider({
   } = useSWR<SandboxInfo | void>(
     !lastFallbackData?.sandboxID
       ? null
-      : [`/api/sandbox/details`, lastFallbackData?.sandboxID],
-    async ([url]) => {
-      if (!lastFallbackData?.sandboxID) return
+      : [`/api/sandbox/details`, lastFallbackData?.sandboxID, team?.id],
+    async ([url, sandboxId, teamId]: [string, string, string]) => {
+      if (!sandboxId || !teamId) return
 
       const origin = document.location.origin
 
       const requestUrl = new URL(url, origin)
 
       requestUrl.searchParams.set('teamId', teamId)
-      requestUrl.searchParams.set('sandboxId', lastFallbackData.sandboxID)
+      requestUrl.searchParams.set('sandboxId', sandboxId)
 
       const response = await fetch(requestUrl.toString(), {
         method: 'GET',
@@ -102,18 +103,23 @@ export function SandboxProvider({
   )
 
   const { data: metricsData } = useSWR(
-    !lastFallbackData?.sandboxID
+    !lastFallbackData?.sandboxID || !team?.id
       ? null
-      : [`/api/teams/${teamId}/sandboxes/metrics`, lastFallbackData?.sandboxID],
-    async ([url]) => {
-      if (!lastFallbackData?.sandboxID || !isRunningState) return null
+      : [
+          `/api/teams/${team.id}/sandboxes/metrics`,
+          lastFallbackData?.sandboxID,
+        ],
+    async (params) => {
+      const [url, sandboxId] = params
+
+      if (!sandboxId || !isRunningState) return null
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sandboxIds: [lastFallbackData.sandboxID] }),
+        body: JSON.stringify({ sandboxIds: [sandboxId] }),
         cache: 'no-store',
       })
 
@@ -125,7 +131,7 @@ export function SandboxProvider({
 
       const data = (await response.json()) as MetricsResponse
 
-      return data.metrics[lastFallbackData.sandboxID]
+      return data.metrics[sandboxId]
     },
     {
       errorRetryInterval: 1000,

@@ -20,8 +20,12 @@ export const PROTECTED_URLS = {
   KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
   MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
-  SANDBOXES: (teamIdOrSlug: string, tab?: 'list' | 'monitoring') =>
-    `/dashboard/${teamIdOrSlug}/sandboxes${tab ? `?tab=${tab}` : '?tab=monitoring'}`,
+  SANDBOXES: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/monitoring`,
+  SANDBOXES_MONITORING: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/monitoring`,
+  SANDBOXES_LIST: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/list`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
