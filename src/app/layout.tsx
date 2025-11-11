@@ -11,13 +11,11 @@ import Head from 'next/head'
 import { Suspense } from 'react'
 import { Body } from './body'
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  'use cache'
-
   return (
     <html lang="en" suppressHydrationWarning>
       <Head>

@@ -22,7 +22,7 @@ export const getUsage = authActionClient
 
     const { teamId } = ctx
 
-    cacheLife('default')
+    cacheLife('hours')
     cacheTag(CACHE_TAGS.TEAM_USAGE(teamId))
 
     const accessToken = ctx.session.access_token

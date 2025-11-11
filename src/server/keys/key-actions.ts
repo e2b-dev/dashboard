@@ -1,12 +1,13 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 
 // Create API Key
@@ -54,7 +55,8 @@ export const createApiKeyAction = authActionClient
       return returnServerError('Failed to create API Key')
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')
+    updateTag(CACHE_TAGS.TEAM_API_KEYS(parsedInput.teamIdOrSlug))
+    revalidatePath(`/dashboard/${parsedInput.teamIdOrSlug}/keys`, 'page')
 
     return {
       createdApiKey: res.data,
@@ -104,5 +106,6 @@ export const deleteApiKeyAction = authActionClient
       return returnServerError('Failed to delete API Key')
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/keys`, 'page')
+    updateTag(CACHE_TAGS.TEAM_API_KEYS(parsedInput.teamIdOrSlug))
+    revalidatePath(`/dashboard/${parsedInput.teamIdOrSlug}/keys`, 'page')
   })

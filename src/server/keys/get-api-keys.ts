@@ -18,10 +18,10 @@ export const getTeamApiKeys = authActionClient
   .schema(GetApiKeysSchema)
   .metadata({ serverFunctionName: 'getTeamApiKeys' })
   .use(withTeamIdResolution)
-  .action(async ({ ctx }) => {
+  .action(async ({ ctx, parsedInput }) => {
     'use cache'
     cacheLife('default')
-    cacheTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
+    cacheTag(CACHE_TAGS.TEAM_API_KEYS(parsedInput.teamIdOrSlug))
 
     const { session, teamId } = ctx
 

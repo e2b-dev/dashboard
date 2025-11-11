@@ -8,8 +8,6 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow',
 }
 
-export default async function NotFoundShell() {
-  'use cache'
-
+export default function NotFoundShell() {
   return <NotFound />
 }

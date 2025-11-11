@@ -70,7 +70,7 @@ export const getDefaultTemplates = actionClient
   .metadata({ serverFunctionName: 'getDefaultTemplates' })
   .action(async () => {
     'use cache'
-    cacheLife('hours')
+    cacheLife('default')
     cacheTag(CACHE_TAGS.DEFAULT_TEMPLATES)
 
     if (USE_MOCK_DATA) {
