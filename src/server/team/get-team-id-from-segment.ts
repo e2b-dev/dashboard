@@ -29,7 +29,7 @@ export const getTeamIdFromSegment = async (segment: string) => {
   }
 
   if (z.uuid().safeParse(segment).success) {
-    // make sure this uuid belongs to a team and is not it's slug
+    // make sure this uuid is a valid teamId and is not it's slug
     const { data } = await supabaseAdmin
       .from('teams')
       .select('id')
