@@ -127,12 +127,12 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
   })
 
   return (
-    <ClientOnly className="flex h-full flex-col p-3 md:p-6">
+    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
       <TemplatesHeader table={table} />
 
       <div
         className={cn(
-          'bg-bg mt-4 flex-1 overflow-x-auto md:max-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+          'bg-bg flex-1 mt-4 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >

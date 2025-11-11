@@ -5,27 +5,9 @@ import {
 } from '@/server/templates/get-team-templates'
 import ErrorBoundary from '@/ui/error'
 
-interface PageProps {
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
-}
-
-export default function Page({ params }: PageProps) {
-  return (
-    <div className="flex flex-1 flex-col">
-      <PageContent params={params} />
-    </div>
-  )
-}
-
-interface PageContentProps {
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
-}
-
-async function PageContent({ params }: PageContentProps) {
+export default async function Page({
+  params,
+}: PageProps<'/dashboard/[teamIdOrSlug]/templates'>) {
   const { teamIdOrSlug } = await params
 
   const res = await getTeamTemplates({

@@ -9,8 +9,9 @@ import { getTeam } from '@/server/team/get-team'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { unauthorized } from 'next/navigation'
+import { Metadata } from 'next/types'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Dashboard - E2B',
   description: METADATA.description,
   openGraph: METADATA.openGraph,

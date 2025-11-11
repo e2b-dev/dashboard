@@ -1,27 +1,13 @@
-import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
 import ErrorBoundary from '@/ui/error'
-import { Suspense } from 'react'
 
-interface ListPageProps {
-  params: Promise<{ teamIdOrSlug: string }>
-}
-
-export default async function ListPage({ params }: ListPageProps) {
+export default async function ListPage({
+  params,
+}: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes/list'>) {
   const { teamIdOrSlug } = await params
 
-  return (
-    <div className="flex flex-col h-full relative min-h-0 md:overflow-hidden">
-      <Suspense fallback={<LoadingLayout />}>
-        <ListContent teamIdOrSlug={teamIdOrSlug} />
-      </Suspense>
-    </div>
-  )
-}
-
-async function ListContent({ teamIdOrSlug }: { teamIdOrSlug: string }) {
   const sandboxesRes = await getTeamSandboxes({ teamIdOrSlug })
 
   if (!sandboxesRes?.data || sandboxesRes?.serverError) {
