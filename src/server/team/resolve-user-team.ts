@@ -3,7 +3,7 @@ import 'server-cli-only'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { getTeamMetadataFromCookiesMemo } from '@/lib/utils/server'
+import { getTeamMetadataFromCookies } from '@/lib/utils/server'
 import { cookies } from 'next/headers'
 import { serializeError } from 'serialize-error'
 import { ResolvedTeam } from './types'
@@ -31,63 +31,21 @@ export async function resolveUserTeam(
   const cookieTeamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
   const cookieTeamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
 
-  l.debug(
-    {
-      key: 'resolve_user_team:start',
-      userId,
-      urlSegment,
-      hasCookieTeamId: !!cookieTeamId,
-      hasCookieTeamSlug: !!cookieTeamSlug,
-    },
-    'Starting team resolution'
-  )
-
   // If we have a URL segment, try to validate against cookie metadata
   if (urlSegment) {
-    const metadata = await getTeamMetadataFromCookiesMemo(urlSegment)
+    const metadata = await getTeamMetadataFromCookies(urlSegment)
 
     if (metadata) {
-      l.debug(
-        {
-          key: 'resolve_user_team:url_cookies_success',
-          userId,
-          teamId: metadata.id,
-          teamSlug: metadata.slug,
-          urlSegment,
-        },
-        'Resolved team from URL + cookie metadata'
-      )
-
       return {
         id: metadata.id,
         slug: metadata.slug,
         source: 'url-cookies',
       }
     }
-
-    l.debug(
-      {
-        key: 'resolve_user_team:url_cookies_invalid',
-        urlSegment,
-        cookieTeamId,
-        cookieTeamSlug,
-      },
-      'Cookie metadata invalid for URL segment, falling back to DB'
-    )
   }
 
   // If we have cookies but no valid URL match, still use them if available
   if (cookieTeamId && cookieTeamSlug) {
-    l.debug(
-      {
-        key: 'resolve_user_team:cookies_success',
-        userId,
-        teamId: cookieTeamId,
-        teamSlug: cookieTeamSlug,
-      },
-      'Resolved team from cookies only'
-    )
-
     return {
       id: cookieTeamId,
       slug: cookieTeamSlug,
@@ -96,14 +54,6 @@ export async function resolveUserTeam(
   }
 
   // No valid cookies, query database
-  l.debug(
-    {
-      key: 'resolve_user_team:querying_db',
-      userId,
-    },
-    'No valid cookies, querying database for user teams'
-  )
-
   const { data: teamsData, error } = await supabaseAdmin
     .from('users_teams')
     .select(
@@ -131,13 +81,6 @@ export async function resolveUserTeam(
   }
 
   if (!teamsData || teamsData.length === 0) {
-    l.debug(
-      {
-        key: 'resolve_user_team:no_teams',
-        userId,
-      },
-      'No teams found for user'
-    )
     return null
   }
 
@@ -145,16 +88,6 @@ export async function resolveUserTeam(
   const defaultTeam = teamsData.find((t) => t.is_default)
 
   if (defaultTeam?.team) {
-    l.debug(
-      {
-        key: 'resolve_user_team:default_db_success',
-        userId,
-        teamId: defaultTeam.team_id,
-        teamSlug: defaultTeam.team.slug,
-      },
-      'Resolved team from database (default team)'
-    )
-
     return {
       id: defaultTeam.team_id,
       slug: defaultTeam.team.slug || defaultTeam.team_id,
@@ -166,16 +99,6 @@ export async function resolveUserTeam(
   const firstTeam = teamsData[0]!
 
   if (firstTeam?.team) {
-    l.debug(
-      {
-        key: 'resolve_user_team:first_db_success',
-        userId,
-        teamId: firstTeam.team_id,
-        teamSlug: firstTeam.team.slug,
-      },
-      'Resolved team from database (first team)'
-    )
-
     return {
       id: firstTeam.team_id,
       slug: firstTeam.team.slug || firstTeam.team_id,
