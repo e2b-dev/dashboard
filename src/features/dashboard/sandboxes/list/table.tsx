@@ -75,7 +75,6 @@ export default function SandboxesTable({
     setSorting,
     setGlobalFilter,
     setRowPinning,
-    pollingInterval,
   } = useSandboxTableStore()
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
