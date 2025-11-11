@@ -1,1 +1,3 @@
-export { default } from './list/page'
+export default function ListPage() {
+  return null
+}

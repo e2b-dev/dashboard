@@ -1,1 +1,3 @@
-export { default } from './monitoring/page'
+export default function MonitoringPage() {
+  return null
+}

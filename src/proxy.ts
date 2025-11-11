@@ -94,10 +94,12 @@ export async function proxy(request: NextRequest) {
       }
     )
 
+    // checks/refreshes auth session
     const { error, data } = await supabase.auth.getUser()
 
     const isAuthenticated = !error && !!data?.user
 
+    // if user is not authenticated, redirects to sign-in
     const authRedirect = getAuthRedirect(request, isAuthenticated)
 
     if (authRedirect) {
@@ -117,7 +119,8 @@ export async function proxy(request: NextRequest) {
       },
       'middleware - unexpected error'
     )
-    // Return a basic response to avoid infinite loops
+
+    // return a basic response to avoid infinite loops
     return NextResponse.next({
       request,
     })
