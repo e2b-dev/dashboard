@@ -29,6 +29,7 @@ export const getTeamIdFromSegment = async (segment: string) => {
   }
 
   if (z.uuid().safeParse(segment).success) {
+    // FIXME: should check for the case if this is a slug which has the same format as a uuid, before returning
     return segment
   }
 
