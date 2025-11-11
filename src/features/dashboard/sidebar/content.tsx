@@ -37,7 +37,7 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 
 export default function DashboardSidebarContent() {
   const { team } = useDashboard()
-  const selectedTeamIdentifier = team?.slug ?? team?.id
+  const selectedTeamIdentifier = team.slug ?? team.id
 
   const pathname = usePathname()
   const isMobile = useIsMobile()

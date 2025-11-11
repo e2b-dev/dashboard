@@ -56,8 +56,6 @@ const BillingTierCard = forwardRef<HTMLDivElement, BillingTierCardProps>(
       })
 
     const handleRedirectToCheckout = () => {
-      if (!team) return
-
       redirectToCheckout({
         teamIdOrSlug: team.id,
         tierId: tier.id,

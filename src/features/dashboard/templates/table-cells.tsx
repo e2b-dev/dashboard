@@ -92,10 +92,6 @@ export function ActionsCell({
   )
 
   const togglePublish = async () => {
-    if (!team) {
-      return
-    }
-
     executeUpdateTemplate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
@@ -106,10 +102,6 @@ export function ActionsCell({
   }
 
   const deleteTemplate = async () => {
-    if (!team) {
-      return
-    }
-
     executeDeleteTemplate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,

@@ -33,7 +33,7 @@ export default function KillButton({ className }: KillButtonProps) {
   })
 
   const handleKill = () => {
-    if (!sandboxInfo?.sandboxID || !isRunning || !team?.id) return
+    if (!sandboxInfo?.sandboxID || !isRunning) return
 
     execute({
       teamIdOrSlug: team.id,

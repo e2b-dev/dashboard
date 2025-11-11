@@ -26,7 +26,6 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { AnimatePresence, motion } from 'motion/react'
@@ -52,8 +51,8 @@ export function NameCard({ className }: NameCardProps) {
     {
       formProps: {
         defaultValues: {
-          teamIdOrSlug: team?.id ?? '',
-          name: team?.name ?? '',
+          teamIdOrSlug: team.id,
+          name: team.name,
         },
       },
       actionProps: {
@@ -97,59 +96,55 @@ export function NameCard({ className }: NameCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="py-0 max-h-full">
-        {team ? (
-          <Form {...form}>
-            <form
-              onSubmit={handleSubmitWithAction}
-              className="flex max-w-sm gap-2 mt-auto"
+        <Form {...form}>
+          <form
+            onSubmit={handleSubmitWithAction}
+            className="flex max-w-sm gap-2 mt-auto"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="flex-1 gap-1 p-0">
+                  <FormControl>
+                    <Input placeholder="Acme, Inc." {...field} />
+                  </FormControl>
+                  <AnimatePresence initial={false}>
+                    {team.transformed_default_name && (
+                      <motion.span
+                        className="text-fg-tertiary ml-0.5 text-xs"
+                        animate={{
+                          opacity: 1,
+                          filter: 'blur(0px)',
+                          height: 'auto',
+                        }}
+                        exit={{ opacity: 0, filter: 'blur(4px)', height: 0 }}
+                        transition={{
+                          duration: 0.4,
+                          ease: exponentialSmoothing(3),
+                        }}
+                      >
+                        Seen as -{' '}
+                        <span className="text-accent-info-highlight">
+                          {team.transformed_default_name}
+                        </span>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  <FormMessage className="mt-1" />
+                </FormItem>
+              )}
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              loading={isExecuting}
+              disabled={watch('name') === optimisticState?.team?.name}
             >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="flex-1 gap-1 p-0">
-                    <FormControl>
-                      <Input placeholder="Acme, Inc." {...field} />
-                    </FormControl>
-                    <AnimatePresence initial={false}>
-                      {team.transformed_default_name && (
-                        <motion.span
-                          className="text-fg-tertiary ml-0.5 text-xs"
-                          animate={{
-                            opacity: 1,
-                            filter: 'blur(0px)',
-                            height: 'auto',
-                          }}
-                          exit={{ opacity: 0, filter: 'blur(4px)', height: 0 }}
-                          transition={{
-                            duration: 0.4,
-                            ease: exponentialSmoothing(3),
-                          }}
-                        >
-                          Seen as -{' '}
-                          <span className="text-accent-info-highlight">
-                            {team.transformed_default_name}
-                          </span>
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                    <FormMessage className="mt-1" />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                variant="outline"
-                loading={isExecuting}
-                disabled={watch('name') === optimisticState?.team?.name}
-              >
-                Save
-              </Button>
-            </form>
-          </Form>
-        ) : (
-          <Skeleton className="h-8 w-[17rem]" />
-        )}
+              Save
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )

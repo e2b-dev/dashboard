@@ -41,7 +41,7 @@ export function useSandboxesMetrics({
 
   const { data, error, isLoading } = useSWR<MetricsResponse>(
     debouncedSandboxIds.length > 0
-      ? [`/api/teams/${team?.id}/sandboxes/metrics`, debouncedSandboxIds]
+      ? [`/api/teams/${team.id}/sandboxes/metrics`, debouncedSandboxIds]
       : null,
     async ([url, ids]: [string, string[]]) => {
       if (ids.length === 0) {

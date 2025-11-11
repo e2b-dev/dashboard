@@ -43,7 +43,7 @@ export function TeamMetricsChartsProvider({
   )
 
   const { data, error, isLoading, isValidating } = useSWR<TeamMetricsResponse>(
-    [`/api/teams/${team?.id}/metrics`, timeframe.start, timeframe.end],
+    [`/api/teams/${team.id}/metrics`, timeframe.start, timeframe.end],
     async ([url, start, end]: [string, number, number]) => {
       const response = await fetch(url, {
         method: 'POST',

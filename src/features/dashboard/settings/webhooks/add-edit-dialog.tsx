@@ -62,9 +62,9 @@ export default function WebhookAddEditDialog({
   } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
     formProps: {
       mode: 'onChange',
-      disabled: !team?.id,
+      disabled: !team.id,
       defaultValues: {
-        teamIdOrSlug: team?.id,
+        teamIdOrSlug: team.id,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -74,7 +74,7 @@ export default function WebhookAddEditDialog({
         ...(isEditMode ? {} : { signatureSecret: '' }),
       },
       values: {
-        teamIdOrSlug: team?.id || '',
+        teamIdOrSlug: team.id,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',

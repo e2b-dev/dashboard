@@ -66,8 +66,6 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
   )
 
   const handleKill = () => {
-    if (!team) return
-
     executeKillSandbox({
       teamIdOrSlug: team.id,
       sandboxId: sandbox.sandboxID,
@@ -230,8 +228,6 @@ export function TemplateCell({
   const templateIdentifier = getValue() as string
   const { team } = useDashboard()
   const router = useRouter()
-
-  if (!team) return null
 
   return (
     <Button

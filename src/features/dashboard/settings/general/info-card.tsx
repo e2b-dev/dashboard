@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Skeleton } from '@/ui/primitives/skeleton'
 
 interface InfoCardProps {
   className?: string
@@ -28,26 +27,18 @@ export function InfoCard({ className }: InfoCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {team ? (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="info">E-Mail</Badge>
-              <span>{team.email}</span>
-              <CopyButton
-                value={team.email}
-                variant="ghost"
-                className="size-5"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge>Team ID</Badge>
-              <span>{team.id}</span>
-              <CopyButton value={team.id} variant="ghost" className="size-5" />
-            </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="info">E-Mail</Badge>
+            <span>{team.email}</span>
+            <CopyButton value={team.email} variant="ghost" className="size-5" />
           </div>
-        ) : (
-          <Skeleton className="h-10 w-[17rem]" />
-        )}
+          <div className="flex items-center gap-2">
+            <Badge>Team ID</Badge>
+            <span>{team.id}</span>
+            <CopyButton value={team.id} variant="ghost" className="size-5" />
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

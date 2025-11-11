@@ -43,7 +43,7 @@ export function SandboxInspectProvider({
   seedEntries,
 }: SandboxInspectProviderProps) {
   const { team } = useDashboard()
-  const teamId = team?.id
+  const teamId = team.id
 
   const { sandboxInfo, isRunning } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)

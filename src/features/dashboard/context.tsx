@@ -5,10 +5,10 @@ import { User } from '@supabase/supabase-js'
 import { createContext, ReactNode, useContext, useState } from 'react'
 
 interface DashboardContextValue {
-  team: ClientTeam | null
+  team: ClientTeam
   user: User
 
-  setTeam: (team: ClientTeam | null) => void
+  setTeam: (team: ClientTeam) => void
   setUser: (user: User) => void
 }
 
@@ -18,7 +18,7 @@ const DashboardContext = createContext<DashboardContextValue | undefined>(
 
 interface DashboardContextProviderProps {
   children: ReactNode
-  initialTeam: ClientTeam | null
+  initialTeam: ClientTeam
   initialUser: User
 }
 

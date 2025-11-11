@@ -57,7 +57,7 @@ export function SandboxProvider({
   } = useSWR<SandboxInfo | void>(
     !lastFallbackData?.sandboxID
       ? null
-      : [`/api/sandbox/details`, lastFallbackData?.sandboxID, team?.id],
+      : [`/api/sandbox/details`, lastFallbackData?.sandboxID, team.id],
     async ([url, sandboxId, teamId]: [string, string, string]) => {
       if (!sandboxId || !teamId) return
 
@@ -103,7 +103,7 @@ export function SandboxProvider({
   )
 
   const { data: metricsData } = useSWR(
-    !lastFallbackData?.sandboxID || !team?.id
+    !lastFallbackData?.sandboxID
       ? null
       : [
           `/api/teams/${team.id}/sandboxes/metrics`,

@@ -54,7 +54,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   )
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && team?.id) {
+    if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
 
       const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
@@ -99,14 +99,14 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
           className={cn(
             'relative h-24 w-24',
             {
-              'border-none drop-shadow-lg filter': team?.profile_picture_url,
+              'border-none drop-shadow-lg filter': team.profile_picture_url,
             },
             className
           )}
         >
           <AvatarImage
-            src={team?.profile_picture_url || ''}
-            alt={`${team?.name}'s profile picture`}
+            src={team.profile_picture_url || ''}
+            alt={`${team.name}'s profile picture`}
           />
           <AvatarFallback className="bg-bg-hover relative text-2xl ">
             <ImagePlusIcon className="text-fg-tertiary" />

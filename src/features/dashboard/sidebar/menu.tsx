@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -49,42 +48,32 @@ export default function DashboardSidebarMenu({
                 className
               )}
             >
-              {team ? (
-                <>
-                  <Avatar
-                    className={cn(
-                      'shrink-0 transition-all duration-100 ease-in-out',
-                      'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
-                      {
-                        'drop-shadow-sm filter': team?.profile_picture_url,
-                      }
-                    )}
-                  >
-                    <AvatarImage
-                      src={team?.profile_picture_url || undefined}
-                      className="group-data-[collapsible=icon]:size-full object-cover object-center"
-                    />
-                    <AvatarFallback className="bg-bg-hover border-0">
-                      {team?.name?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left  leading-tight">
-                    <span className="text-fg-tertiary font-mono truncate prose-label">
-                      TEAM
-                    </span>
-                    {team ? (
-                      <span className="text-fg truncate prose-body-highlight normal-case">
-                        {team.transformed_default_name || team.name}
-                      </span>
-                    ) : (
-                      <Skeleton className="h-4 w-full" />
-                    )}
-                  </div>
-                  <ChevronsUpDown className="text-fg-tertiary ml-auto size-4" />
-                </>
-              ) : (
-                <Skeleton className="h-14 w-full" />
-              )}
+              <Avatar
+                className={cn(
+                  'shrink-0 transition-all duration-100 ease-in-out',
+                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
+                  {
+                    'drop-shadow-sm filter': team.profile_picture_url,
+                  }
+                )}
+              >
+                <AvatarImage
+                  src={team.profile_picture_url || undefined}
+                  className="group-data-[collapsible=icon]:size-full object-cover object-center"
+                />
+                <AvatarFallback className="bg-bg-hover border-0">
+                  {team.name?.charAt(0).toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left  leading-tight">
+                <span className="text-fg-tertiary font-mono truncate prose-label">
+                  TEAM
+                </span>
+                <span className="text-fg truncate prose-body-highlight normal-case">
+                  {team.transformed_default_name || team.name}
+                </span>
+              </div>
+              <ChevronsUpDown className="text-fg-tertiary ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

@@ -57,10 +57,6 @@ export default function MemberTableRow({
   )
 
   const handleRemoveMember = async (userId: string) => {
-    if (!team) {
-      return
-    }
-
     removeMember({
       teamIdOrSlug: team.id,
       userId,

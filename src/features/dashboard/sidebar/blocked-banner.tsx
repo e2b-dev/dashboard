@@ -20,12 +20,12 @@ export default function TeamBlockageAlert({
   const router = useRouter()
 
   const isBillingLimit = useMemo(
-    () => team?.blocked_reason?.toLowerCase().includes('billing limit'),
-    [team?.blocked_reason]
+    () => team.blocked_reason?.toLowerCase().includes('billing limit'),
+    [team.blocked_reason]
   )
   const handleClick = () => {
     if (isBillingLimit) {
-      router.push(PROTECTED_URLS.BUDGET(team?.slug ?? ''))
+      router.push(PROTECTED_URLS.BUDGET(team.slug))
       return
     }
 
@@ -34,12 +34,12 @@ export default function TeamBlockageAlert({
 
   return (
     <AnimatePresence mode="wait">
-      {team?.is_blocked && (
+      {team.is_blocked && (
         <SidebarMenuItem className={cn(className)}>
           <SidebarMenuButton
             variant="error"
             tooltip={{
-              children: team?.blocked_reason ?? 'Team is blocked',
+              children: team.blocked_reason ?? 'Team is blocked',
               className:
                 'bg-accent-error-bg text-accent-error-highlight border-accent-error-bg',
             }}
@@ -60,9 +60,9 @@ export default function TeamBlockageAlert({
                 <span className="prose-headline-small uppercase">
                   Team is Blocked
                 </span>
-                {team?.blocked_reason && (
+                {team.blocked_reason && (
                   <span className="text-accent-error-highlight/80 ml-0.25 truncate text-xs">
-                    {team?.blocked_reason}
+                    {team.blocked_reason}
                   </span>
                 )}
               </div>
