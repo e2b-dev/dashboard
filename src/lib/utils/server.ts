@@ -2,14 +2,8 @@ import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
-import { KV_KEYS } from '@/configs/keys'
-import { kv } from '@/lib/clients/kv'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
-import { E2BError } from '@/types/errors'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
-import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { infra } from '../clients/api'
 import { l } from '../clients/logger/logger'
@@ -50,100 +44,6 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   }
 
   return res.data
-}
-
-// TODO: we should probably add some team permission system here
-
-/*
- *  This function checks if a user is authorized to access a team.
- *  If the user is not authorized, it returns false.
- */
-export async function checkUserTeamAuthorization(
-  userId: string,
-  teamIdOrSlug: string
-) {
-  const teamId = await getTeamIdFromSegment(teamIdOrSlug)
-
-  if (!teamId) {
-    return null
-  }
-
-  const { data: userTeamsRelationData, error: userTeamsRelationError } =
-    await supabaseAdmin
-      .from('users_teams')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('team_id', teamId)
-
-  if (userTeamsRelationError) {
-    l.error(
-      {
-        key: 'check_user_team_authorization:failed_to_fetch_users_teams_relation',
-        error: serializeError(userTeamsRelationError),
-        context: {
-          userId,
-          teamId,
-        },
-      },
-      `Failed to fetch users_teams relation (user: ${userId}, team: ${teamId})`
-    )
-
-    return null
-  }
-
-  return !!userTeamsRelationData.length
-}
-
-/**
- * Resolves a team identifier (UUID or slug) to a team ID.
- * If the input is a valid UUID, returns it directly.
- * If it's a slug, attempts to resolve it to an ID using Redis cache first, then database.
- *
- * @param identifier - Team UUID or slug
- * @returns Promise<string> - Resolved team ID
- * @throws E2BError if team not found or identifier invalid
- */
-export async function resolveTeamId(identifier: string): Promise<string> {
-  // If identifier is UUID, return directly
-  if (z.uuid().safeParse(identifier).success) {
-    return identifier
-  }
-
-  // Try to get from cache first
-  const cacheKey = KV_KEYS.TEAM_SLUG_TO_ID(identifier)
-  const cachedId = await kv.get<string>(cacheKey)
-
-  if (cachedId) return cachedId
-
-  // Not in cache or invalid cache, query database
-  const { data: team, error } = await supabaseAdmin
-    .from('teams')
-    .select('id')
-    .eq('slug', identifier)
-    .single()
-
-  if (error || !team) {
-    l.error(
-      {
-        key: 'resolve_team_id:failed_to_resolve_team_id_from_slug',
-        message: error.message,
-        error: serializeError(error),
-        context: {
-          identifier,
-        },
-      },
-      'Failed to resolve team ID from slug'
-    )
-
-    throw new E2BError('INVALID_PARAMETERS', 'Invalid team identifier')
-  }
-  // Cache the result
-  await Promise.all([
-    kv.set(cacheKey, team.id, { ex: 60 * 60 }), // 1 hour
-    kv.set(KV_KEYS.TEAM_ID_TO_SLUG(team.id), identifier, { ex: 60 * 60 }),
-  ])
-
-  return team.id
 }
 
 /**

@@ -18,7 +18,7 @@ import { useDashboard } from '../context'
 export default function DashboardSidebarMenuTeams() {
   const pathname = usePathname()
 
-  const { user, team: selectedTeam, setTeam } = useDashboard()
+  const { user, team: selectedTeam } = useDashboard()
 
   useTeamCookieManager()
 
@@ -59,16 +59,6 @@ export default function DashboardSidebarMenuTeams() {
     [pathname]
   )
 
-  const handleTeamChange = useCallback(
-    (value: string) => {
-      const team = teams?.find((t) => t.id === value)
-      if (team) {
-        setTeam(team)
-      }
-    },
-    [teams, setTeam]
-  )
-
   if (isLoading) {
     return (
       <>
@@ -91,10 +81,7 @@ export default function DashboardSidebarMenuTeams() {
   }
 
   return (
-    <DropdownMenuRadioGroup
-      value={selectedTeam?.id}
-      onValueChange={handleTeamChange}
-    >
+    <DropdownMenuRadioGroup value={selectedTeam?.id}>
       {user?.email && (
         <DropdownMenuLabel className="mb-2">{user.email}</DropdownMenuLabel>
       )}
