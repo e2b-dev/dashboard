@@ -1,11 +1,4 @@
-/**
- * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
- * 1. You want to modify request context (see Part 1).
- * 2. You want to create a new middleware or type of procedure (see Part 3).
- *
- * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
- * need to use are documented accordingly near the end.
- */
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import {
   createServerClient,
   parseCookieHeader,
@@ -13,10 +6,13 @@ import {
 } from '@supabase/ssr'
 import { User } from '@supabase/supabase-js'
 import { initTRPC, TRPCError } from '@trpc/server'
+import { unauthorized } from 'next/navigation'
 import superjson from 'superjson'
-import { flattenError, ZodError } from 'zod'
+import z, { flattenError, ZodError } from 'zod'
+import checkUserTeamAuth from '../auth/check-user-team-auth'
 import { getSessionInsecure } from '../auth/get-session'
 import getUserByToken from '../auth/get-user-by-token'
+import { getTeamIdFromSegment } from '../team/get-team-id-from-segment'
 
 const createSupabaseServerClient = (headers: Headers) => {
   return createServerClient(
@@ -99,3 +95,29 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     },
   })
 })
+export const teamProcedure = protectedProcedure
+  .input(
+    z.object({
+      teamIdOrSlug: TeamIdOrSlugSchema,
+    })
+  )
+  .use(async ({ ctx, next, input }) => {
+    const teamId = await getTeamIdFromSegment(input.teamIdOrSlug)
+
+    if (!teamId) {
+      throw unauthorized()
+    }
+
+    const isAuthorized = await checkUserTeamAuth(ctx.user.id, teamId)
+
+    if (!isAuthorized) {
+      throw unauthorized()
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        teamId,
+      },
+    })
+  })

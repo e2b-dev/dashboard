@@ -1,8 +1,8 @@
-import { postRouter } from '@/server/api/routers/post'
 import { createCallerFactory, createTRPCRouter } from '@/server/api/trpc'
+import { sandboxesRouter } from './routers/sandboxes'
 
 export const trpcAppRouter = createTRPCRouter({
-  post: postRouter,
+  sandboxes: sandboxesRouter,
 })
 
 export type TRPCAppRouter = typeof trpcAppRouter
