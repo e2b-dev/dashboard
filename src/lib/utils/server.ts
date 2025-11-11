@@ -46,105 +46,28 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   return res.data
 }
 
-/**
- * Resolves team metadata from cookies.
- * If no metadata is found, it redirects to the dashboard.
- */
-export const getTeamMetadataFromCookiesCache = cache(
-  async (
-    teamIdOrSlug: string,
-    cookieTeamId: string,
-    cookieTeamSlug: string
-  ) => {
-    const isSensical =
-      cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
-    const isUUID = z.uuid().safeParse(cookieTeamId).success
-
-    l.debug(
-      {
-        key: 'get_team_metadata_from_cookies:validation',
-        teamIdOrSlug,
-        cookieTeamId,
-        cookieTeamSlug,
-        isSensical,
-        isUUID,
-      },
-      'validating team metadata'
-    )
-
-    if (isUUID && isSensical) {
-      l.debug(
-        {
-          key: 'get_team_metadata_from_cookies:success',
-          teamIdOrSlug,
-          cookieTeamId,
-          cookieTeamSlug,
-        },
-        'successfully resolved team metadata from cookies'
-      )
-      return {
-        id: cookieTeamId,
-        slug: cookieTeamSlug,
-      }
-    }
-
-    l.debug(
-      {
-        key: 'get_team_metadata_from_cookies:invalid_data',
-        teamIdOrSlug,
-        cookieTeamId,
-        cookieTeamSlug,
-        isSensical,
-        isUUID,
-      },
-      'invalid team data, returning null'
-    )
-    return null
-  }
-)
-
-export const getTeamMetadataFromCookiesMemo = async (teamIdOrSlug: string) => {
+export const getTeamMetadataFromCookies = async (teamIdOrSlug: string) => {
   const cookiesStore = await cookies()
-
-  l.debug(
-    {
-      key: 'get_team_metadata_from_cookies:start',
-      cookiesStore: cookiesStore.getAll(),
-    },
-    'resolving team metadata from cookies'
-  )
 
   const cookieTeamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
   const cookieTeamSlug = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
 
-  l.debug(
-    {
-      key: 'get_team_metadata_from_cookies:start',
-      hasId: !!cookieTeamId,
-      hasSlug: !!cookieTeamSlug,
-      cookieTeamId,
-      cookieTeamSlug,
-    },
-    'resolving team metadata from cookies'
-  )
-
   if (!cookieTeamId || !cookieTeamSlug) {
-    l.debug(
-      {
-        key: 'get_team_metadata_from_cookies:missing_data',
-        hasId: !!cookieTeamId,
-        hasSlug: !!cookieTeamSlug,
-      },
-      'missing team data in cookies, returning null'
-    )
     return null
   }
 
-  return getTeamMetadataFromCookiesCache(
-    teamIdOrSlug,
-    cookieTeamId,
-    cookieTeamSlug
-  )
+  const isSensical =
+    cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
+  const isUUID = z.uuid().safeParse(cookieTeamId).success
+
+  if (isUUID && isSensical) {
+    return {
+      id: cookieTeamId,
+      slug: cookieTeamSlug,
+    }
+  }
+
+  return null
 }
 
 /**
