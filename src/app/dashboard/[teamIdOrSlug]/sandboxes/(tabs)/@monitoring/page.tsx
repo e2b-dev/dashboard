@@ -4,7 +4,7 @@ import SandboxesMonitoringHeader from '@/features/dashboard/sandboxes/monitoring
 export default async function MonitoringPage({
   params,
   searchParams,
-}: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes/monitoring'> & {
+}: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'> & {
   searchParams: Promise<{ start?: string; end?: string }>
 }) {
   return (

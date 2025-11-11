@@ -10,7 +10,7 @@ export default async function SandboxesLayout({
 }) {
   return (
     <DashboardTabs
-      type="path"
+      type="query"
       layoutKey="tabs-indicator-sandboxes"
       className="mt-2 md:mt-3"
     >

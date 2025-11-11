@@ -5,7 +5,7 @@ import ErrorBoundary from '@/ui/error'
 
 export default async function ListPage({
   params,
-}: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes/list'>) {
+}: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'>) {
   const { teamIdOrSlug } = await params
 
   const sandboxesRes = await getTeamSandboxes({ teamIdOrSlug })

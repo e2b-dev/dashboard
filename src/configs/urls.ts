@@ -21,11 +21,11 @@ export const PROTECTED_URLS = {
   MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
 
   SANDBOXES: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/monitoring`,
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=monitoring`,
   SANDBOXES_MONITORING: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/monitoring`,
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=monitoring`,
   SANDBOXES_LIST: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/list`,
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=list`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
