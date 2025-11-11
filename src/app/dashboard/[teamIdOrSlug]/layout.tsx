@@ -4,6 +4,7 @@ import { AUTH_URLS } from '@/configs/urls'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import DashboardLayoutView from '@/features/dashboard/layout/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
+import { l } from '@/lib/clients/logger/logger'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
 import { getTeam } from '@/server/team/get-team'
@@ -11,6 +12,7 @@ import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 import { cookies } from 'next/headers'
 import { redirect, unauthorized } from 'next/navigation'
 import { Metadata } from 'next/types'
+import { serializeError } from 'serialize-error'
 
 export const metadata: Metadata = {
   title: 'Dashboard - E2B',
@@ -48,6 +50,17 @@ export default async function DashboardLayout({
   const team = teamRes?.data
 
   if (!team) {
+    l.warn(
+      {
+        key: 'dashboard_layout:team_not_resolved',
+        user_id: data.user.id,
+        error: serializeError(teamRes?.serverError),
+        context: {
+          teamIdOrSlug,
+        },
+      },
+      `dashboard_layout:team_not_resolved - team not resolved for user (${data.user.id}) when accessing team (${teamIdOrSlug}) in dashboard layout`
+    )
     throw unauthorized()
   }
 
