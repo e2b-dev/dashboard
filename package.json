@@ -85,6 +85,7 @@
     "@trpc/client": "^11.7.1",
     "@trpc/react-query": "^11.7.1",
     "@trpc/server": "^11.7.1",
+    "@trpc/tanstack-react-query": "^11.7.1",
     "@types/mdx": "^2.0.13",
     "@types/micromatch": "^4.0.9",
     "@vercel/analytics": "^1.5.0",

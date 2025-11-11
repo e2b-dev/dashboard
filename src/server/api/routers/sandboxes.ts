@@ -5,6 +5,8 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createInfraTRPCError } from '@/lib/utils/trpc'
 import { createTRPCRouter, teamProcedure } from '@/server/api/trpc'
+import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
+import { z } from 'zod'
 
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
@@ -47,8 +49,64 @@ export const sandboxesRouter = createTRPCRouter({
       throw createInfraTRPCError(status)
     }
 
-    return sandboxesRes.data
+    return {
+      sandboxes: sandboxesRes.data,
+    }
   }),
+
+  getSandboxesMetrics: teamProcedure
+    .input(
+      z.object({
+        sandboxIds: z.array(z.string()),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { sandboxIds } = input
+
+      if (sandboxIds.length === 0 || USE_MOCK_DATA) {
+        return {
+          metrics: {},
+        }
+      }
+
+      const infraRes = await infra.GET('/sandboxes/metrics', {
+        params: {
+          query: {
+            sandbox_ids: sandboxIds,
+          },
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+        cache: 'no-store',
+      })
+
+      if (infraRes.error) {
+        const status = infraRes.response.status
+
+        l.error({
+          key: 'get_team_sandboxes:infra_error',
+          message: infraRes.error.message,
+          error: infraRes.error,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status,
+            sandboxIds,
+            path: '/sandboxes/metrics',
+          },
+        })
+
+        throw createInfraTRPCError(status)
+      }
+
+      const metrics = transformMetricsToClientMetrics(infraRes.data.sandboxes)
+
+      return {
+        metrics,
+      }
+    }),
 
   // MUTATIONS
 })

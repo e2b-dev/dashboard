@@ -6,8 +6,7 @@ import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
-import { Sandbox } from '@/types/api.types'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import { trpc } from '@/trpc/react'
 import ClientOnly from '@/ui/client-only'
 import { DataTable } from '@/ui/data-table'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
@@ -23,6 +22,7 @@ import {
 import { subHours } from 'date-fns'
 import React, { useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import { useDashboard } from '../../context'
 import { SandboxesHeader } from './header'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { TableBody } from './table-body'
@@ -40,20 +40,13 @@ const VIRTUAL_OVERSCAN = 8
 
 // metrics fetched via useSandboxesMetrics
 
-interface SandboxesTableProps {
-  initialSandboxes: Sandbox[]
-  initialMetrics: ClientSandboxesMetrics | null
-}
-
-export default function SandboxesTable({
-  initialSandboxes,
-  initialMetrics,
-}: SandboxesTableProps) {
+export default function SandboxesTable() {
   'use no memo'
 
   const isMounted = useIsMounted()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { team } = useDashboard()
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
     'sandboxes:columnSizing',
@@ -63,6 +56,11 @@ export default function SandboxesTable({
       serializer: (value) => JSON.stringify(value),
     }
   )
+
+  const [data, { refetch, isRefetching }] =
+    trpc.sandboxes.getSandboxes.useSuspenseQuery({
+      teamIdOrSlug: team.id,
+    })
 
   const {
     startedAtFilter,
@@ -144,7 +142,7 @@ export default function SandboxesTable({
 
   const table = useReactTable({
     columns: COLUMNS,
-    data: initialSandboxes,
+    data: data.sandboxes,
     state: {
       globalFilter,
       sorting,
@@ -204,13 +202,17 @@ export default function SandboxesTable({
 
   useSandboxesMetrics({
     sandboxes: memoizedVisualRows,
-    initialMetrics,
     pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
 
   return (
     <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
-      <SandboxesHeader searchInputRef={searchInputRef} table={table} />
+      <SandboxesHeader
+        searchInputRef={searchInputRef}
+        table={table}
+        onRefresh={refetch}
+        isRefreshing={isRefetching}
+      />
 
       <div
         className={cn(
@@ -233,7 +235,7 @@ export default function SandboxesTable({
               state={table.getState()}
             />
             <TableBody
-              sandboxes={initialSandboxes}
+              sandboxes={data.sandboxes}
               table={table}
               visualRows={visualRows}
               virtualizedTotalHeight={virtualizedTotalHeight}
