@@ -1,8 +1,8 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { COOKIE_KEYS } from '@/configs/keys'
-import { authActionClient } from '@/lib/clients/action'
+import { COOKIE_KEYS } from '@/configs/cookies'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
@@ -22,18 +22,11 @@ import {
 export const upsertWebhookAction = authActionClient
   .schema(UpsertWebhookSchema)
   .metadata({ actionName: 'upsertWebhook' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const {
-      teamId,
-      mode,
-      webhookId,
-      name,
-      url,
-      events,
-      signatureSecret,
-      enabled,
-    } = parsedInput
-    const { session } = ctx
+    const { mode, webhookId, name, url, events, signatureSecret, enabled } =
+      parsedInput
+    const { session, teamId } = ctx
 
     const accessToken = session.access_token
     const isEdit = mode === 'edit'

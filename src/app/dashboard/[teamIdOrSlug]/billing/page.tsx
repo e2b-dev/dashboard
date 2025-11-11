@@ -6,7 +6,6 @@ import {
   extractTierData,
 } from '@/features/dashboard/billing/utils'
 import { l } from '@/lib/clients/logger/logger'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getItems } from '@/server/billing/get-items'
 import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorBoundary from '@/ui/error'
@@ -18,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Suspense } from 'react'
 
 export default async function BillingPage({
   params,
@@ -26,10 +24,9 @@ export default async function BillingPage({
   params: Promise<{ teamIdOrSlug: string }>
 }) {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
-  const itemsRes = await getItems({ teamId })
-  const limitsRes = await getTeamLimits({ teamId })
+  const itemsRes = await getItems({ teamIdOrSlug })
+  const limitsRes = await getTeamLimits({ teamIdOrSlug })
 
   // handle data loading errors
   if (itemsRes.serverError) {
@@ -78,9 +75,7 @@ export default async function BillingPage({
         </CardHeader>
 
         <CardContent>
-          <Suspense fallback={null}>
-            <CustomerPortalLink className="bg-bg w-fit" />
-          </Suspense>
+          <CustomerPortalLink className="bg-bg w-fit" />
 
           <PlanSection
             tierData={tierData}
@@ -100,7 +95,7 @@ export default async function BillingPage({
 
         <CardContent>
           <div className="w-full overflow-x-auto">
-            <BillingInvoicesTable teamId={teamId} />
+            <BillingInvoicesTable params={params} />
           </div>
         </CardContent>
       </Card>

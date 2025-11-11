@@ -1,29 +1,35 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
-import { actionClient, authActionClient } from '@/lib/clients/action'
-import { infra } from '@/lib/clients/api'
+import {
+  actionClient,
+  authActionClient,
+  withTeamIdResolution,
+} from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { DefaultTemplate } from '@/types/api.types'
+import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
+import getTeamTemplatesMemo from './get-team-templates-memo'
 
 const GetTeamTemplatesSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamTemplates = authActionClient
-  .schema(GetTeamTemplatesSchema)
   .metadata({ serverFunctionName: 'getTeamTemplates' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
-    const { session } = ctx
+  .schema(GetTeamTemplatesSchema)
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { session, teamId } = ctx
 
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -32,16 +38,10 @@ export const getTeamTemplates = authActionClient
       }
     }
 
-    const res = await infra.GET('/templates', {
-      params: {
-        query: {
-          teamID: teamId,
-        },
-      },
-      headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
-      },
-    })
+    const userId = session.user.id
+    const accessToken = session.access_token
+
+    const res = await getTeamTemplatesMemo(teamId, accessToken)
 
     if (res.error) {
       const status = res.response.status
@@ -50,7 +50,7 @@ export const getTeamTemplates = authActionClient
           key: 'get_team_templates:infra_error',
           error: res.error,
           team_id: teamId,
-          user_id: session.user.id,
+          user_id: userId,
           context: {
             status,
           },
@@ -69,6 +69,10 @@ export const getTeamTemplates = authActionClient
 export const getDefaultTemplates = actionClient
   .metadata({ serverFunctionName: 'getDefaultTemplates' })
   .action(async () => {
+    'use cache'
+    cacheLife('default')
+    cacheTag(CACHE_TAGS.DEFAULT_TEMPLATES)
+
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       return {

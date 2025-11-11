@@ -6,14 +6,13 @@ const config = {
   reactStrictMode: true,
   reactCompiler: true,
   experimental: {
-    staleTimes: {
-      dynamic: 180,
-      static: 180,
-    },
+    useCache: true,
+    turbopackFileSystemCacheForDev: true,
+    clientSegmentCache: true,
     serverActions: {
       bodySizeLimit: '5mb',
     },
-    clientSegmentCache: true,
+    authInterrupts: true,
   },
   logging: {
     fetches: {

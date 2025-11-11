@@ -1,19 +1,14 @@
 import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamSandboxes } from '@/server/sandboxes/get-team-sandboxes'
 import { getTeamSandboxesMetrics } from '@/server/sandboxes/get-team-sandboxes-metrics'
 import ErrorBoundary from '@/ui/error'
 
-interface ListContentProps {
-  teamIdOrSlug: string
-}
+export default async function ListPage({
+  params,
+}: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'>) {
+  const { teamIdOrSlug } = await params
 
-export default async function ListContent({
-  teamIdOrSlug,
-}: ListContentProps) {
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
-  const sandboxesRes = await getTeamSandboxes({ teamId })
+  const sandboxesRes = await getTeamSandboxes({ teamIdOrSlug })
 
   if (!sandboxesRes?.data || sandboxesRes?.serverError) {
     return (
@@ -32,7 +27,7 @@ export default async function ListContent({
   const maxSandboxesToFetchInitially = 100
 
   const metricsRes = await getTeamSandboxesMetrics({
-    teamId,
+    teamIdOrSlug,
     sandboxIds: sandboxesRes.data.sandboxes
       .map((sandbox) => sandbox.sandboxID)
       .slice(0, maxSandboxesToFetchInitially),
@@ -41,12 +36,9 @@ export default async function ListContent({
   const sandboxes = sandboxesRes.data.sandboxes
 
   return (
-    <div className="flex flex-col h-full relative min-h-0 md:overflow-hidden">
-      <SandboxesTable
-        sandboxes={sandboxes}
-        initialMetrics={metricsRes?.data?.metrics || null}
-      />
-    </div>
+    <SandboxesTable
+      initialSandboxes={sandboxes}
+      initialMetrics={metricsRes?.data?.metrics || null}
+    />
   )
 }
-

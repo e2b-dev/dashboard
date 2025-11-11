@@ -1,23 +1,27 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { CACHE_TAGS } from '@/configs/cache'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
+import { updateTag } from 'next/cache'
 import { z } from 'zod'
 
 const KillSandboxSchema = z.object({
-  teamId: z.uuid({ message: 'Team ID is required' }),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   sandboxId: z.string().min(1, 'Sandbox ID is required'),
 })
 
 export const killSandboxAction = authActionClient
   .schema(KillSandboxSchema)
   .metadata({ actionName: 'killSandbox' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, sandboxId } = parsedInput
-    const { session } = ctx
+    const { sandboxId } = parsedInput
+    const { session, teamId } = ctx
 
     const res = await infra.DELETE('/sandboxes/{sandboxID}', {
       headers: {
@@ -53,4 +57,18 @@ export const killSandboxAction = authActionClient
 
       return returnServerError('Failed to kill sandbox')
     }
+  })
+
+const RevalidateSandboxesSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
+})
+
+export const revalidateSandboxes = authActionClient
+  .metadata({ serverFunctionName: 'revalidateSandboxes' })
+  .inputSchema(RevalidateSandboxesSchema)
+  .use(withTeamIdResolution)
+  .action(async ({ parsedInput }) => {
+    const { teamIdOrSlug } = parsedInput
+
+    updateTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(teamIdOrSlug))
   })

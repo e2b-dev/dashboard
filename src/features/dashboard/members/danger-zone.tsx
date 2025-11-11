@@ -31,7 +31,7 @@ export function DangerZone({ teamId }: DangerZoneProps) {
 }
 
 async function DangerZoneContent({ teamId }: { teamId: string }) {
-  const res = await getTeam({ teamId })
+  const res = await getTeam({ teamIdOrSlug: teamId })
 
   if (!res?.data || res.serverError || res.validationErrors) {
     return (

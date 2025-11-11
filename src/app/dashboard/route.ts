@@ -1,9 +1,9 @@
-import { COOKIE_KEYS } from '@/configs/keys'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
-import { cookies } from 'next/headers'
+import { setTeamCookies } from '@/lib/utils/cookies'
+import { resolveUserTeam } from '@/server/team/resolve-user-team'
 import { NextRequest, NextResponse } from 'next/server'
 
 const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
@@ -24,62 +24,91 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
 
-  if (!tab || !TAB_URL_MAP[tab]) {
-    // default to dashboard if no valid tab
-    return NextResponse.redirect(new URL(PROTECTED_URLS.DASHBOARD, request.url))
-  }
+  l.debug(
+    {
+      key: 'dashboard_route:start',
+      tab,
+      url: request.url,
+    },
+    'dashboard route - start'
+  )
 
-  // get the user
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.getUser()
 
+  l.debug(
+    {
+      key: 'dashboard_route:user_auth',
+      hasUser: !!data?.user,
+      userId: data?.user?.id,
+      hasError: !!error,
+    },
+    'dashboard route - user auth'
+  )
+
   if (error || !data.user) {
-    // redirect to sign-in if not authenticated
+    l.debug(
+      {
+        key: 'dashboard_route:auth_redirect',
+        redirectTo: '/sign-in',
+      },
+      'dashboard route - auth redirect'
+    )
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
-  const cookieStore = await cookies()
 
-  // resolve team ID (first try cookie, then fetch default)
-  let teamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
-  let teamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
+  const team = await resolveUserTeam(data.user.id)
 
-  if (!teamId) {
-    // no team in cookie, fetch user's default team
-    const { data: teamsData } = await supabaseAdmin
-      .from('users_teams')
-      .select(
-        `
-        team_id,
-        is_default,
-        team:teams(*)
-      `
-      )
-      .eq('user_id', data.user.id)
+  if (!team) {
+    l.debug(
+      {
+        key: 'dashboard_route:no_teams',
+        userId: data.user.id,
+      },
+      'dashboard route - no teams found, redirecting to sign-in'
+    )
 
-    if (!teamsData?.length) {
-      // UNEXPECTED STATE - sign out and redirect to sign-in
-      await supabase.auth.signOut()
+    // UNEXPECTED STATE - sign out and redirect to sign-in
+    await supabase.auth.signOut()
 
-      const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
+    const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
 
-      return encodedRedirect(
-        'error',
-        signInUrl.toString(),
-        'No personal team found. Please contact support.'
-      )
-    }
-
-    // use default team or first team
-    const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]!
-    teamId = defaultTeam.team_id
-    teamSlug = defaultTeam.team?.slug || defaultTeam.team_id
+    return encodedRedirect(
+      'error',
+      signInUrl.toString(),
+      'No personal team found. Please contact support.'
+    )
   }
 
-  // build the redirect URL using the tab mapping
-  const urlGenerator = TAB_URL_MAP[tab]
-  const redirectPath = urlGenerator(teamSlug || teamId)
+  l.debug(
+    {
+      key: 'dashboard_route:team_resolved',
+      teamId: team.id,
+      teamSlug: team.slug,
+      source: team.source,
+    },
+    'dashboard route - team resolved'
+  )
 
-  // redirect to the appropriate dashboard section
+  // Set team cookies for persistence
+  await setTeamCookies(team.id, team.slug)
+
+  // Determine redirect path based on tab parameter
+  const urlGenerator = tab ? TAB_URL_MAP[tab] : null
+  const redirectPath = urlGenerator
+    ? urlGenerator(team.slug || team.id)
+    : PROTECTED_URLS.SANDBOXES(team.slug || team.id)
+
+  l.debug(
+    {
+      key: 'dashboard_route:redirect',
+      tab,
+      redirectPath,
+      teamIdentifier: team.slug || team.id,
+    },
+    'dashboard route - redirecting to tab'
+  )
+
   return NextResponse.redirect(new URL(redirectPath, request.url))
 }

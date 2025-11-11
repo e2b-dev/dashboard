@@ -19,7 +19,7 @@ interface MemberTableProps {
   className?: string
 }
 
-const MemberTable: FC<MemberTableProps> = async ({ params, className }) => {
+const MemberTable: FC<MemberTableProps> = ({ params, className }) => {
   return (
     <Table className={cn('min-w-[800px]', className)}>
       <TableHeader>

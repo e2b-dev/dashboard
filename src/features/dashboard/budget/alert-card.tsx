@@ -1,8 +1,8 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { BillingLimit } from '@/types/billing.types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
+import { useDashboard } from '../context'
 import LimitForm from './limit-form'
 
 interface AlertCardProps {
@@ -11,7 +11,7 @@ interface AlertCardProps {
 }
 
 export default function AlertCard({ className, value }: AlertCardProps) {
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
 
   if (!team) return null
 

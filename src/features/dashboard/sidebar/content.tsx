@@ -1,13 +1,12 @@
 'use client'
 
 import { SIDEBAR_MAIN_LINKS, SidebarNavItem } from '@/configs/sidebar'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
 import micromatch from 'micromatch'
-import Link from 'next/link'
 import { useMemo } from 'react'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarContent,
@@ -19,6 +18,7 @@ import {
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { usePathname } from 'next/navigation'
+import { useDashboard } from '../context'
 
 type GroupedLinks = {
   [key: string]: SidebarNavItem[]
@@ -36,8 +36,9 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 }
 
 export default function DashboardSidebarContent() {
-  const selectedTeam = useSelectedTeam()
-  const selectedTeamIdentifier = selectedTeam?.slug ?? selectedTeam?.id
+  const { team } = useDashboard()
+  const selectedTeamIdentifier = team.slug ?? team.id
+
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
@@ -73,10 +74,8 @@ export default function DashboardSidebarContent() {
                     asChild
                     tooltip={item.label}
                   >
-                    <Link
-                      suppressHydrationWarning
+                    <HoverPrefetchLink
                       href={href}
-                      prefetch
                       onClick={
                         isMobile
                           ? () => {
@@ -93,7 +92,7 @@ export default function DashboardSidebarContent() {
                         )}
                       />
                       <span>{item.label}</span>
-                    </Link>
+                    </HoverPrefetchLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )

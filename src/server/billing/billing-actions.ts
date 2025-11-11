@@ -2,9 +2,9 @@
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
-import { resolveTeamSlugInServerComponent } from '@/lib/utils/server'
 import {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -18,16 +18,17 @@ import { z } from 'zod'
 // Checkout
 
 const RedirectToCheckoutParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   tierId: z.string(),
 })
 
 export const redirectToCheckoutAction = authActionClient
   .schema(RedirectToCheckoutParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'redirectToCheckout' })
   .action(async ({ parsedInput, ctx }) => {
-    const { session } = ctx
-    const { teamId, tierId } = parsedInput
+    const { teamId, session } = ctx
+    const { tierId } = parsedInput
 
     const accessToken = session.access_token
 
@@ -63,17 +64,18 @@ function typeToKey(type: 'limit' | 'alert') {
 }
 
 const SetLimitParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   type: z.enum(['limit', 'alert']),
   value: z.number().min(1),
 })
 
 export const setLimitAction = authActionClient
   .schema(SetLimitParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'setLimit' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, type, value } = parsedInput
-    const { session } = ctx
+    const { type, value } = parsedInput
+    const { session, teamId } = ctx
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/billing-limits`,
@@ -98,16 +100,17 @@ export const setLimitAction = authActionClient
   })
 
 const ClearLimitParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   type: z.enum(['limit', 'alert']),
 })
 
 export const clearLimitAction = authActionClient
   .schema(ClearLimitParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'clearLimit' })
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, type } = parsedInput
-    const { session } = ctx
+    const { session, teamId } = ctx
+    const { type } = parsedInput
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/billing-limits/${typeToKey(type)}`,
@@ -131,14 +134,15 @@ export const clearLimitAction = authActionClient
 // CUSTOMER PORTAL
 
 const RedirectToCustomerPortalParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const redirectToCustomerPortal = authActionClient
   .schema(RedirectToCustomerPortalParamsSchema)
+  .use(withTeamIdResolution)
   .metadata({ actionName: 'redirectToCustomerPortal' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
+  .action(async ({ ctx }) => {
+    const { teamId } = ctx
     const { session } = ctx
 
     const origin = (await headers()).get('origin')
@@ -165,16 +169,17 @@ export const redirectToCustomerPortal = authActionClient
 // ORDERS - Addon Purchase
 
 const CreateOrderParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   itemId: z.union([z.literal(ADDON_500_SANDBOXES_ID)]),
 })
 
 export const createOrderAction = authActionClient
   .schema(CreateOrderParamsSchema)
   .metadata({ actionName: 'createOrder' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, itemId } = parsedInput
-    const { session } = ctx
+    const { itemId } = parsedInput
+    const { session, teamId } = ctx
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/orders`,
@@ -206,16 +211,17 @@ export const createOrderAction = authActionClient
   })
 
 const ConfirmOrderParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   orderId: z.uuid(),
 })
 
 export const confirmOrderAction = authActionClient
   .schema(ConfirmOrderParamsSchema)
   .metadata({ actionName: 'confirmOrder' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, orderId } = parsedInput
-    const { session } = ctx
+    const { teamIdOrSlug, orderId } = parsedInput
+    const { teamId, session } = ctx
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/orders/${orderId}`,
@@ -235,22 +241,21 @@ export const confirmOrderAction = authActionClient
 
     const data: AddOnOrderConfirmResponse = await res.json()
 
-    const slug = await resolveTeamSlugInServerComponent()
-    revalidatePath(`/dashboard/${slug}/billing`, 'page')
+    revalidatePath(`/dashboard/${teamIdOrSlug}/billing`, 'page')
 
     return data
   })
 
 const GetCustomerSessionSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getCustomerSessionAction = authActionClient
   .schema(GetCustomerSessionSchema)
   .metadata({ actionName: 'getCustomerSession' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
-    const { session } = ctx
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { teamId, session } = ctx
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/payment-methods/customer-session`,

@@ -1,6 +1,5 @@
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
 import { UsageMetricChart } from '@/features/dashboard/usage/usage-metric-chart'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getUsage } from '@/server/usage/get-usage'
 import ErrorBoundary from '@/ui/error'
 import Frame from '@/ui/frame'
@@ -11,9 +10,7 @@ export default async function UsagePage({
   params: Promise<{ teamIdOrSlug: string }>
 }) {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
-  const result = await getUsage({ teamId })
+  const result = await getUsage({ teamIdOrSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     return (
@@ -32,7 +29,7 @@ export default async function UsagePage({
   return (
     <UsageChartsProvider data={result.data}>
       <div className="flex-1 overflow-y-auto max-h-full min-h-0">
-        <div className="container mx-auto p-0 md:p-8 2xl:p-24 w-full max-w-[1800px]">
+        <div className="container mx-auto p-0 md:p-8 2xl:p-24 max-w-[1800px]">
           <Frame
             classNames={{
               wrapper: 'w-full lg:h-[75vh] lg:min-h-[700px]',

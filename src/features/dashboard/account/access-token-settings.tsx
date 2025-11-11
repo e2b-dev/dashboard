@@ -1,6 +1,5 @@
 'use client'
 
-import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
 import {
   Card,
@@ -10,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
+import { useDashboard } from '../context'
 import UserAccessToken from './user-access-token'
 
 interface AccessTokenSettingsProps {
@@ -17,7 +17,7 @@ interface AccessTokenSettingsProps {
 }
 
 export function AccessTokenSettings({ className }: AccessTokenSettingsProps) {
-  const { user } = useUser()
+  const { user } = useDashboard()
 
   if (!user) return null
 

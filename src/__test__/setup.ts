@@ -5,6 +5,10 @@ import { vi } from 'vitest'
 const projectDir = process.cwd()
 loadEnvConfig(projectDir)
 
+// mock server-only to prevent vitest errors
+vi.mock('server-only', () => ({}))
+vi.mock('server-cli-only', () => ({}))
+
 // default mocks
 vi.mock('@/lib/clients/logger', () => ({
   l: {

@@ -1,22 +1,26 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { Sandbox } from '@/types/api.types'
+import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 
 const GetTeamSandboxesSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamSandboxes = authActionClient
-  .schema(GetTeamSandboxesSchema)
   .metadata({ serverFunctionName: 'getTeamSandboxes' })
+  .schema(GetTeamSandboxesSchema)
+  .use(withTeamIdResolution)
   .action(
     async ({
       parsedInput,
@@ -24,8 +28,11 @@ export const getTeamSandboxes = authActionClient
     }): Promise<{
       sandboxes: Sandbox[]
     }> => {
-      const { teamId } = parsedInput
-      const { session } = ctx
+      'use cache'
+      cacheLife('seconds')
+      cacheTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(parsedInput.teamIdOrSlug))
+
+      const { session, teamId } = ctx
 
       if (USE_MOCK_DATA) {
         await new Promise((resolve) => setTimeout(resolve, 200))
@@ -62,20 +69,6 @@ export const getTeamSandboxes = authActionClient
 
         return handleDefaultInfraError(status)
       }
-
-      l.info(
-        {
-          key: 'get_team_sandboxes:success',
-          team_id: teamId,
-          user_id: session.user.id,
-          context: {
-            status: sandboxesRes.response.status,
-            path: '/sandboxes',
-            sandbox_count: sandboxesRes.data.length,
-          },
-        },
-        `Successfully fetched team sandboxes`
-      )
 
       return {
         sandboxes: sandboxesRes.data,

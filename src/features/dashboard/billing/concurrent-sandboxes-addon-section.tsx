@@ -1,6 +1,5 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { createOrderAction } from '@/server/billing/billing-actions'
@@ -9,6 +8,7 @@ import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
+import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
 import { ADDON_500_SANDBOXES_ID } from './constants'
 
@@ -21,7 +21,7 @@ export function ConcurrentSandboxAddonSection({
   priceCents,
   currentConcurrentSandboxesLimit,
 }: ConcurrentSandboxAddonSectionProps) {
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
   const { toast } = useToast()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -70,7 +70,7 @@ export function ConcurrentSandboxAddonSection({
                 if (!team) return
 
                 createOrder({
-                  teamId: team.id,
+                  teamIdOrSlug: team.id,
                   itemId: ADDON_500_SANDBOXES_ID,
                 })
               }}

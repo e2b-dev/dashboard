@@ -1,3 +1,4 @@
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { z } from 'zod'
 
 const WebhookUrlSchema = z.httpUrl('Must be a valid URL').trim()
@@ -8,7 +9,7 @@ const WebhookSecretSchema = z
 
 export const UpsertWebhookSchema = z
   .object({
-    teamId: z.uuid(),
+    teamIdOrSlug: TeamIdOrSlugSchema,
     mode: z.enum(['add', 'edit']),
     webhookId: z.uuid().optional(),
     name: z.string().min(1, 'Name is required').trim(),

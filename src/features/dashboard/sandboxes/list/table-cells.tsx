@@ -2,9 +2,7 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { useServerContext } from '@/features/dashboard/server-context'
 import { useTemplateTableStore } from '@/features/dashboard/templates/stores/table-store'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -32,6 +30,7 @@ import { ArrowUpRight, MoreVertical, Trash2 } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
+import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import { SandboxWithMetrics } from './table-config'
 
@@ -43,7 +42,7 @@ declare module '@tanstack/react-table' {
 
 export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
   const sandbox = row.original
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -67,10 +66,8 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
   )
 
   const handleKill = () => {
-    if (!selectedTeam?.id) return
-
     executeKillSandbox({
-      teamId: selectedTeam.id,
+      teamIdOrSlug: team.id,
       sandboxId: sandbox.sandboxID,
     })
   }
@@ -229,10 +226,8 @@ export function TemplateCell({
   getValue,
 }: CellContext<SandboxWithMetrics, unknown>) {
   const templateIdentifier = getValue() as string
-  const { selectedTeamSlug, selectedTeamId } = useServerContext()
+  const { team } = useDashboard()
   const router = useRouter()
-
-  if (!selectedTeamSlug || !selectedTeamId) return null
 
   return (
     <Button
@@ -245,9 +240,7 @@ export function TemplateCell({
         useTemplateTableStore
           .getState()
           .setGlobalFilter(row.original.templateID)
-        router.push(
-          PROTECTED_URLS.TEMPLATES(selectedTeamSlug ?? selectedTeamId)
-        )
+        router.push(PROTECTED_URLS.TEMPLATES(team.slug ?? team.id))
       }}
     >
       {templateIdentifier}

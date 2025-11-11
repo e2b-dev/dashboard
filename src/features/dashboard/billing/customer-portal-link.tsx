@@ -1,11 +1,11 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { redirectToCustomerPortal } from '@/server/billing/billing-actions'
 import ExternalIcon from '@/ui/external-icon'
 import { Button } from '@/ui/primitives/button'
 import { Loader } from '@/ui/primitives/loader_d'
 import { useAction } from 'next-safe-action/hooks'
+import { useParams } from 'next/navigation'
 
 interface CustomerPortalLinkProps {
   className?: string
@@ -14,15 +14,13 @@ interface CustomerPortalLinkProps {
 export default function CustomerPortalLink({
   className,
 }: CustomerPortalLinkProps) {
-  const team = useSelectedTeam()
+  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
 
   const { isTransitioning, execute } = useAction(redirectToCustomerPortal)
 
-  if (!team) return null
-
   return (
     <Button
-      onClick={() => execute({ teamId: team.id })}
+      onClick={() => execute({ teamIdOrSlug })}
       disabled={isTransitioning}
       variant="outline"
       size="lg"

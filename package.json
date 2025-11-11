@@ -6,7 +6,7 @@
     "<<<<<<< Next.js": "",
     "dev": "bun scripts:check-app-env && next dev --turbopack | pino-pretty --colorize",
     "build": "next build --turbopack",
-    "start": "next start",
+    "start": "next start | pino-pretty --colorize",
     "preview": "next build --turbopack && next start | pino-pretty --colorize",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

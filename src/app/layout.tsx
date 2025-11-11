@@ -9,7 +9,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Head from 'next/head'
 import { Suspense } from 'react'
-import { Body } from './layout.client'
+import { Body } from './body'
 
 export default function RootLayout({
   children,

@@ -4,15 +4,16 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_TEAM_METRICS_MAX_DATA } from '@/configs/mock-data'
 import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { z } from 'zod'
 
 export const GetTeamMetricsMaxSchema = z
   .object({
-    teamId: z.uuid(),
+    teamIdOrSlug: TeamIdOrSlugSchema,
     startDate: z
       .number()
       .int()
@@ -48,16 +49,12 @@ export const GetTeamMetricsMaxSchema = z
   )
 
 export const getTeamMetricsMax = authActionClient
-  .schema(GetTeamMetricsMaxSchema)
   .metadata({ serverFunctionName: 'getTeamMetricsMax' })
+  .schema(GetTeamMetricsMaxSchema)
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { session } = ctx
-    const {
-      teamId,
-      startDate: startDateMs,
-      endDate: endDateMs,
-      metric,
-    } = parsedInput
+    const { session, teamId } = ctx
+    const { startDate: startDateMs, endDate: endDateMs, metric } = parsedInput
 
     if (USE_MOCK_DATA) {
       return MOCK_TEAM_METRICS_MAX_DATA(startDateMs, endDateMs, metric)

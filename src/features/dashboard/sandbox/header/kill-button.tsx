@@ -1,6 +1,5 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
@@ -8,6 +7,7 @@ import { TrashIcon } from '@/ui/primitives/icons'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 
 interface KillButtonProps {
@@ -17,7 +17,7 @@ interface KillButtonProps {
 export default function KillButton({ className }: KillButtonProps) {
   const [open, setOpen] = useState(false)
   const { sandboxInfo, refetchSandboxInfo, isRunning } = useSandboxContext()
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
 
   const { execute, isExecuting } = useAction(killSandboxAction, {
     onSuccess: async () => {
@@ -33,10 +33,10 @@ export default function KillButton({ className }: KillButtonProps) {
   })
 
   const handleKill = () => {
-    if (!sandboxInfo?.sandboxID || !isRunning || !selectedTeam?.id) return
+    if (!sandboxInfo?.sandboxID || !isRunning) return
 
     execute({
-      teamId: selectedTeam.id,
+      teamIdOrSlug: team.id,
       sandboxId: sandboxInfo.sandboxID,
     })
   }

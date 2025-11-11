@@ -41,12 +41,12 @@ const VIRTUAL_OVERSCAN = 8
 // metrics fetched via useSandboxesMetrics
 
 interface SandboxesTableProps {
-  sandboxes: Sandbox[]
+  initialSandboxes: Sandbox[]
   initialMetrics: ClientSandboxesMetrics | null
 }
 
 export default function SandboxesTable({
-  sandboxes,
+  initialSandboxes,
   initialMetrics,
 }: SandboxesTableProps) {
   'use no memo'
@@ -142,11 +142,9 @@ export default function SandboxesTable({
     resetScroll()
   }, [sorting, globalFilter])
 
-  const tableData = useMemo(() => sandboxes, [sandboxes])
-
   const table = useReactTable({
     columns: COLUMNS,
-    data: tableData,
+    data: initialSandboxes,
     state: {
       globalFilter,
       sorting,
@@ -235,7 +233,7 @@ export default function SandboxesTable({
               state={table.getState()}
             />
             <TableBody
-              sandboxes={sandboxes}
+              sandboxes={initialSandboxes}
               table={table}
               visualRows={visualRows}
               virtualizedTotalHeight={virtualizedTotalHeight}

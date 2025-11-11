@@ -1,6 +1,5 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { createApiKeyAction } from '@/server/keys/key-actions'
 import CopyButton from '@/ui/copy-button'
@@ -27,6 +26,7 @@ import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
+import { useParams } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
 import { FC, ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -49,7 +49,7 @@ interface CreateApiKeyDialogProps {
 const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
   'use no memo'
 
-  const selectedTeam = useSelectedTeam()
+  const { teamIdOrSlug } = useParams() as { teamIdOrSlug: string }
 
   const [open, setOpen] = useState(false)
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null)
@@ -97,14 +97,9 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
         {!createdApiKey ? (
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((values) => {
-                if (!selectedTeam) return
-
-                createApiKey({
-                  teamId: selectedTeam.id,
-                  name: values.name,
-                })
-              })}
+              onSubmit={form.handleSubmit((values) =>
+                createApiKey({ teamIdOrSlug, name: values.name })
+              )}
               className="flex flex-col gap-6"
             >
               <FormField
@@ -129,11 +124,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
               />
 
               <DialogFooter>
-                <Button
-                  type="submit"
-                  loading={isPending}
-                  disabled={!selectedTeam?.id}
-                >
+                <Button type="submit" loading={isPending}>
                   Create Key
                 </Button>
               </DialogFooter>

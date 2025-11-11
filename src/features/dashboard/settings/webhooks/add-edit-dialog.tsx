@@ -1,6 +1,5 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -24,6 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
+import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
 import { WEBHOOK_EVENTS } from './constants'
 import { Webhook } from './types'
@@ -47,7 +47,7 @@ export default function WebhookAddEditDialog({
 }: WebhookAddEditDialogProps) {
   'use no memo'
 
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
 
@@ -62,9 +62,9 @@ export default function WebhookAddEditDialog({
   } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
     formProps: {
       mode: 'onChange',
-      disabled: !selectedTeam?.id,
+      disabled: !team.id,
       defaultValues: {
-        teamId: selectedTeam?.id,
+        teamIdOrSlug: team.id,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -74,7 +74,7 @@ export default function WebhookAddEditDialog({
         ...(isEditMode ? {} : { signatureSecret: '' }),
       },
       values: {
-        teamId: selectedTeam?.id || '',
+        teamIdOrSlug: team.id,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -198,7 +198,7 @@ export default function WebhookAddEditDialog({
           <form onSubmit={handleSubmitWithAction} className="min-w-0">
             {/* Hidden fields */}
             <input type="hidden" {...form.register('mode')} />
-            <input type="hidden" {...form.register('teamId')} />
+            <input type="hidden" {...form.register('teamIdOrSlug')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0 overflow-hidden min-h-[350px]">
               <WebhookAddEditDialogSteps

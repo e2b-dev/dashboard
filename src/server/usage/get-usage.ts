@@ -1,20 +1,30 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { CACHE_TAGS } from '@/configs/cache'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 import { UsageResponse } from '@/types/billing.types'
+import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 
 const GetUsageAuthActionSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getUsage = authActionClient
   .schema(GetUsageAuthActionSchema)
   .metadata({ serverFunctionName: 'getUsage' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    'use cache'
+
+    const { teamId } = ctx
+
+    cacheLife('hours')
+    cacheTag(CACHE_TAGS.TEAM_USAGE(teamId))
+
     const accessToken = ctx.session.access_token
 
     const response = await fetch(

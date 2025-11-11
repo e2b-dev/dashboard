@@ -5,16 +5,12 @@ import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { l } from './lib/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
-import {
-  getAuthRedirect,
-  getUserSession,
-  handleTeamResolution,
-  isDashboardRoute,
-  resolveTeamForDashboard,
-} from './server/middleware'
+import { getAuthRedirect } from './server/proxy'
 
 export async function proxy(request: NextRequest) {
   try {
+    const pathname = request.nextUrl.pathname
+
     // Redirects, that require custom headers
     // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
     const middlewareRedirect = getMiddlewareRedirectFromPath(
@@ -33,10 +29,7 @@ export async function proxy(request: NextRequest) {
 
     // Catch-all route rewrite paths should not be handled by middleware
     // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
-    const { config: routeRewriteConfig } = getRewriteForPath(
-      request.nextUrl.pathname,
-      'route'
-    )
+    const { config: routeRewriteConfig } = getRewriteForPath(pathname, 'route')
 
     if (routeRewriteConfig) {
       return NextResponse.next({
@@ -46,7 +39,7 @@ export async function proxy(request: NextRequest) {
 
     // Check if the path should be rewritten by middleware
     const { config: middlewareRewriteConfig, rule: middlewareRewriteRule } =
-      getRewriteForPath(request.nextUrl.pathname, 'middleware')
+      getRewriteForPath(pathname, 'middleware')
 
     if (middlewareRewriteConfig) {
       const rewriteUrl = new URL(request.url)
@@ -80,7 +73,6 @@ export async function proxy(request: NextRequest) {
       return response
     }
 
-    // Setup response and Supabase client
     const response = NextResponse.next({
       request,
     })
@@ -102,28 +94,33 @@ export async function proxy(request: NextRequest) {
       }
     )
 
-    const { error, data } = await getUserSession(supabase)
+    // checks/refreshes auth session
+    const { error, data } = await supabase.auth.getUser()
 
-    // Handle authentication redirects
-    const authRedirect = getAuthRedirect(request, !error)
-    if (authRedirect) return authRedirect
+    const isAuthenticated = !error && !!data?.user
 
-    // Early return for non-dashboard routes or no user
-    if (!data?.user || !isDashboardRoute(request.nextUrl.pathname)) {
-      return response
+    // if user is not authenticated, redirects to sign-in
+    const authRedirect = getAuthRedirect(request, isAuthenticated)
+
+    if (authRedirect) {
+      return authRedirect
     }
 
-    // Handle team resolution for all dashboard routes
-    const teamResult = await resolveTeamForDashboard(request, data.user.id)
-
-    // Process team resolution result
-    return handleTeamResolution(request, response, teamResult)
+    return response
   } catch (error) {
-    l.error({
-      key: 'middleware:unexpected_error',
-      error: serializeError(error),
-    })
-    // Return a basic response to avoid infinite loops
+    l.error(
+      {
+        key: 'middleware:unexpected_error',
+        error: serializeError(error),
+        context: {
+          pathname: request.nextUrl.pathname,
+          teamIdOrSlug: request.nextUrl.pathname.split('/')[2],
+        },
+      },
+      'middleware - unexpected error'
+    )
+
+    // return a basic response to avoid infinite loops
     return NextResponse.next({
       request,
     })

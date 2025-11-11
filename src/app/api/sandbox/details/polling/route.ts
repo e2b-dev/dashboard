@@ -1,6 +1,6 @@
 'use server'
 
-import { COOKIE_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
 
@@ -14,12 +14,7 @@ export async function POST(request: Request) {
     cookieStore.set(
       COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL,
       body.interval.toString(),
-      {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      }
+      COOKIE_OPTIONS[COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL]
     )
 
     return Response.json({ interval: body.interval })

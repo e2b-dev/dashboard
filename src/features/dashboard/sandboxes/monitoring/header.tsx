@@ -1,6 +1,5 @@
-import { MonitoringContentParams } from '@/app/dashboard/[teamIdOrSlug]/sandboxes/components/monitoring-content'
 import { formatNumber } from '@/lib/utils/formatting'
-import { getNowMemo, resolveTeamIdInServerComponent } from '@/lib/utils/server'
+import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamMetricsMax } from '@/server/sandboxes/get-team-metrics-max'
 import { getTeamLimits } from '@/server/team/get-team-limits'
@@ -14,6 +13,10 @@ import {
   SandboxesStartRateClient,
 } from './header.client'
 import { MAX_DAYS_AGO } from './time-picker/constants'
+
+interface MonitoringContentParams {
+  teamIdOrSlug: string
+}
 
 function BaseCard({ children }: { children: React.ReactNode }) {
   return (
@@ -99,19 +102,18 @@ export const ConcurrentSandboxes = async ({
   params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   // use request-consistent timestamp for cache deduplication
   const now = getNowMemo()
   const start = now - 60_000
 
-  const [teamMetricsResult, tierLimits] = await Promise.all([
+  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
     getTeamMetrics({
-      teamId,
+      teamIdOrSlug,
       startDate: start,
       endDate: now,
     }),
-    getTeamLimits({ teamId }),
+    getTeamLimits({ teamIdOrSlug }),
   ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -126,7 +128,7 @@ export const ConcurrentSandboxes = async ({
   return (
     <ConcurrentSandboxesClient
       initialData={teamMetricsResult.data}
-      limit={tierLimits?.data?.concurrentInstances}
+      limit={teamLimitsResult?.data?.concurrentInstances}
     />
   )
 }
@@ -137,14 +139,13 @@ export const SandboxesStartRate = async ({
   params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   // use same request-consistent timestamp as ConcurrentSandboxes
   const now = getNowMemo()
   const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
-    teamId,
+    teamIdOrSlug,
     startDate: start,
     endDate: now,
   })
@@ -167,19 +168,18 @@ export const MaxConcurrentSandboxes = async ({
   params: Promise<MonitoringContentParams>
 }) => {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
 
   const end = Date.now()
   const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
-  const [teamMetricsResult, tierLimits] = await Promise.all([
+  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
     getTeamMetricsMax({
-      teamId,
+      teamIdOrSlug,
       startDate: start,
       endDate: end,
       metric: 'concurrent_sandboxes',
     }),
-    getTeamLimits({ teamId }),
+    getTeamLimits({ teamIdOrSlug }),
   ])
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
@@ -191,7 +191,7 @@ export const MaxConcurrentSandboxes = async ({
     )
   }
 
-  const limit = tierLimits?.data?.concurrentInstances
+  const limit = teamLimitsResult?.data?.concurrentInstances
 
   const concurrentSandboxes = teamMetricsResult.data.value
 

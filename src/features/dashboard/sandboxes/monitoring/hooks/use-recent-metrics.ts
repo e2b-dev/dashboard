@@ -3,7 +3,7 @@
 import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { SWR_KEYS } from '@/configs/keys'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { useDashboard } from '@/features/dashboard/context'
 import { usePathname } from 'next/navigation'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
@@ -33,7 +33,7 @@ interface UseRecentMetricsOptions {
 export function useRecentMetrics({
   initialData,
 }: UseRecentMetricsOptions = {}) {
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const pathname = usePathname()
 
   const [timeframeParams] = useQueryStates(
@@ -61,19 +61,19 @@ export function useRecentMetrics({
     ]
   )
 
-  const swrKey = selectedTeam
+  const swrKey: readonly [string | null, string | null, ...unknown[]] = team
     ? shouldSyncWithTimeframe
       ? [
-          ...SWR_KEYS.TEAM_METRICS_RECENT(selectedTeam.id),
+          ...SWR_KEYS.TEAM_METRICS_RECENT(team.id),
           timeframeParams.start,
           timeframeParams.end,
         ]
-      : SWR_KEYS.TEAM_METRICS_RECENT(selectedTeam.id)
-    : null
+      : SWR_KEYS.TEAM_METRICS_RECENT(team.id)
+    : [null, null]
 
   return useSWR<TeamMetricsResponse | undefined>(
     swrKey,
-    async ([url, teamId]: readonly [string, string, ...unknown[]]) => {
+    async ([url, teamId]: typeof swrKey) => {
       if (!url || !teamId) return
 
       const fetchEnd = Date.now()

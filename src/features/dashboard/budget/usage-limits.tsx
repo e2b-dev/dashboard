@@ -6,14 +6,16 @@ import LimitCard from './limit-card'
 
 interface UsageLimitsProps {
   className?: string
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
 }
 
 export default async function UsageLimits({
   className,
-  teamId,
+  params,
 }: UsageLimitsProps) {
-  const res = await getBillingLimits({ teamId })
+  const { teamIdOrSlug } = await params
+
+  const res = await getBillingLimits({ teamIdOrSlug })
 
   if (!res?.data || res.serverError || res.validationErrors) {
     return (

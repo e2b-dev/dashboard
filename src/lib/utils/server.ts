@@ -1,53 +1,13 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { kv } from '@/lib/clients/kv'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { createClient } from '@/lib/clients/supabase/server'
-import { getSessionInsecure } from '@/server/auth/get-session'
-import { E2BError, UnauthenticatedError } from '@/types/errors'
-import { unstable_noStore } from 'next/cache'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { cache } from 'react'
-import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { infra } from '../clients/api'
 import { l } from '../clients/logger/logger'
 import { returnServerError } from './action'
-
-/*
- *  This function checks if the user is authenticated and returns the user and the supabase client.
- *  If the user is not authenticated, it throws an error.
- *
- *  @params request - an optional NextRequest object to create a supabase client for route handlers
- */
-export async function checkAuthenticated() {
-  const supabase = await createClient()
-
-  // retrieve session from storage medium (cookies)
-  // if no stored session found, not authenticated
-
-  // it's fine to use the "insecure" cookie session here, since we only use it for quick denial and do a proper auth check (auth.getUser) afterwards.
-  const session = await getSessionInsecure(supabase)
-
-  if (!session) {
-    throw UnauthenticatedError()
-  }
-
-  // now retrieve user from supabase to use further
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    throw UnauthenticatedError()
-  }
-
-  return { user, session, supabase }
-}
 
 /*
  *  This function generates an e2b user access token for a given user.
@@ -65,17 +25,20 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   })
 
   if (res.error) {
-    l.error({
-      key: 'GENERATE_E2B_USER_ACCESS_TOKEN:INFRA_ERROR',
-      message: res.error.message,
-      error: res.error,
-      context: {
-        status: res.response.status,
-        method: 'POST',
-        path: '/access-tokens',
-        name: TOKEN_NAME,
+    l.error(
+      {
+        key: 'GENERATE_E2B_USER_ACCESS_TOKEN:INFRA_ERROR',
+        message: res.error.message,
+        error: res.error,
+        context: {
+          status: res.response.status,
+          method: 'POST',
+          path: '/access-tokens',
+          name: TOKEN_NAME,
+        },
       },
-    })
+      'Failed to generate e2b user access token'
+    )
 
     return returnServerError(`Failed to generate e2b user access token`)
   }
@@ -83,157 +46,105 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   return res.data
 }
 
-// TODO: we should probably add some team permission system here
-
-/*
- *  This function checks if a user is authorized to access a team.
- *  If the user is not authorized, it returns false.
- */
-export async function checkUserTeamAuthorization(
-  userId: string,
-  teamId: string
-) {
-  if (
-    !z.uuid().safeParse(userId).success ||
-    !z.uuid().safeParse(teamId).success
-  ) {
-    return false
-  }
-
-  const { data: userTeamsRelationData, error: userTeamsRelationError } =
-    await supabaseAdmin
-      .from('users_teams')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('team_id', teamId)
-
-  if (userTeamsRelationError) {
-    throw new Error(
-      `Failed to fetch users_teams relation (user: ${userId}, team: ${teamId})`
-    )
-  }
-
-  return !!userTeamsRelationData.length
-}
-
 /**
- * Forces a component to be dynamically rendered at runtime.
- * This opts out of Partial Prerendering (PPR) for the component and its children.
- *
- * Use this when you need to ensure a component is rendered at request time,
- * for example when dealing with user authentication or dynamic data that
- * must be fresh on every request.
- *
- * IMPORTANT: When used in PPR scopes, this must be called before any try-catch blocks
- * to properly opt out of static optimization. Placing it inside try-catch blocks
- * may result in unexpected behavior.
- *
- * @example
- * // Correct usage - before try-catch
- * bailOutFromPPR();
- * try {
- *   // dynamic code
- * } catch (e) {}
- *
- * @see https://nextjs.org/docs/app/api-reference/functions/cookies
+ * Resolves team metadata from cookies.
+ * If no metadata is found, it redirects to the dashboard.
  */
-export function bailOutFromPPR() {
-  unstable_noStore()
-}
+export const getTeamMetadataFromCookiesCache = cache(
+  async (
+    teamIdOrSlug: string,
+    cookieTeamId: string,
+    cookieTeamSlug: string
+  ) => {
+    const isSensical =
+      cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
+    const isUUID = z.uuid().safeParse(cookieTeamId).success
 
-/**
- * Resolves a team identifier (UUID or slug) to a team ID.
- * If the input is a valid UUID, returns it directly.
- * If it's a slug, attempts to resolve it to an ID using Redis cache first, then database.
- *
- * @param identifier - Team UUID or slug
- * @returns Promise<string> - Resolved team ID
- * @throws E2BError if team not found or identifier invalid
- */
-export async function resolveTeamId(identifier: string): Promise<string> {
-  // If identifier is UUID, return directly
-  if (z.uuid().safeParse(identifier).success) {
-    return identifier
-  }
-
-  // Try to get from cache first
-  const cacheKey = KV_KEYS.TEAM_SLUG_TO_ID(identifier)
-  const cachedId = await kv.get<string>(cacheKey)
-
-  if (cachedId) return cachedId
-
-  // Not in cache or invalid cache, query database
-  const { data: team, error } = await supabaseAdmin
-    .from('teams')
-    .select('id')
-    .eq('slug', identifier)
-    .single()
-
-  if (error || !team) {
-    l.error({
-      key: 'resolve_team_id:failed_to_resolve_team_id_from_slug',
-      message: error.message,
-      error: serializeError(error),
-      context: {
-        identifier,
+    l.debug(
+      {
+        key: 'get_team_metadata_from_cookies:validation',
+        teamIdOrSlug,
+        cookieTeamId,
+        cookieTeamSlug,
+        isSensical,
+        isUUID,
       },
-    })
+      'validating team metadata'
+    )
 
-    throw new E2BError('INVALID_PARAMETERS', 'Invalid team identifier')
-  }
-  // Cache the result
-  await Promise.all([
-    kv.set(cacheKey, team.id, { ex: 60 * 60 }), // 1 hour
-    kv.set(KV_KEYS.TEAM_ID_TO_SLUG(team.id), identifier, { ex: 60 * 60 }),
-  ])
-
-  return team.id
-}
-
-/**
- * Resolves a team identifier (UUID or slug) to a team ID.
- * If the input is a valid UUID, returns it directly.
- * If it's a slug, attempts to resolve it to an ID using Redis cache first, then database.
- *
- * @param identifier - Team UUID or slug
- * @returns Promise<string> - Resolved team ID
- */
-export async function resolveTeamIdInServerComponent(identifier?: string) {
-  const cookiesStore = await cookies()
-
-  let teamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
-
-  if (!teamId) {
-    if (!identifier) {
-      throw redirect(PROTECTED_URLS.DASHBOARD)
+    if (isUUID && isSensical) {
+      l.debug(
+        {
+          key: 'get_team_metadata_from_cookies:success',
+          teamIdOrSlug,
+          cookieTeamId,
+          cookieTeamSlug,
+        },
+        'successfully resolved team metadata from cookies'
+      )
+      return {
+        id: cookieTeamId,
+        slug: cookieTeamSlug,
+      }
     }
 
-    // Middleware should prevent this case, but just in case
-    teamId = await resolveTeamId(identifier)
-    cookiesStore.set(COOKIE_KEYS.SELECTED_TEAM_ID, teamId)
-
-    l.info({
-      key: 'resolve_team_id_in_server_component:resolving_team_id_from_data_sources',
-      team_id: teamId,
-      context: {
-        identifier,
+    l.debug(
+      {
+        key: 'get_team_metadata_from_cookies:invalid_data',
+        teamIdOrSlug,
+        cookieTeamId,
+        cookieTeamSlug,
+        isSensical,
+        isUUID,
       },
-    })
+      'invalid team data, returning null'
+    )
+    return null
   }
+)
 
-  return teamId
-}
-
-/**
- * Resolves a team slug from cookies.
- * If no slug is found, it returns null.
- *
- *
- */
-export async function resolveTeamSlugInServerComponent() {
+export const getTeamMetadataFromCookiesMemo = async (teamIdOrSlug: string) => {
   const cookiesStore = await cookies()
 
-  return cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
+  l.debug(
+    {
+      key: 'get_team_metadata_from_cookies:start',
+      cookiesStore: cookiesStore.getAll(),
+    },
+    'resolving team metadata from cookies'
+  )
+
+  const cookieTeamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
+  const cookieTeamSlug = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
+
+  l.debug(
+    {
+      key: 'get_team_metadata_from_cookies:start',
+      hasId: !!cookieTeamId,
+      hasSlug: !!cookieTeamSlug,
+      cookieTeamId,
+      cookieTeamSlug,
+    },
+    'resolving team metadata from cookies'
+  )
+
+  if (!cookieTeamId || !cookieTeamSlug) {
+    l.debug(
+      {
+        key: 'get_team_metadata_from_cookies:missing_data',
+        hasId: !!cookieTeamId,
+        hasSlug: !!cookieTeamSlug,
+      },
+      'missing team data in cookies, returning null'
+    )
+    return null
+  }
+
+  return getTeamMetadataFromCookiesCache(
+    teamIdOrSlug,
+    cookieTeamId,
+    cookieTeamSlug
+  )
 }
 
 /**

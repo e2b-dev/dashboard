@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { USE_MOCK_DATA } from '@/configs/flags'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 import getTeamLimitsMemo from './get-team-limits-memo'
@@ -22,16 +23,16 @@ const MOCK_TIER_LIMITS: TeamLimits = {
   maxVcpu: 32,
 }
 
-const GetTeamTierLimitsSchema = z.object({
-  teamId: z.uuid(),
+const GetTeamLimitsSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamLimits = authActionClient
-  .schema(GetTeamTierLimitsSchema)
+  .schema(GetTeamLimitsSchema)
   .metadata({ serverFunctionName: 'getTeamLimits' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { user } = ctx
-    const { teamId } = parsedInput
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { user, teamId } = ctx
 
     if (USE_MOCK_DATA) {
       return MOCK_TIER_LIMITS

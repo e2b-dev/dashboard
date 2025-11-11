@@ -1,6 +1,5 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -32,6 +31,7 @@ import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../common/resource-usage'
+import { useDashboard } from '../context'
 
 function E2BTemplateBadge() {
   return (
@@ -48,7 +48,7 @@ export function ActionsCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const { toast } = useToast()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
@@ -92,11 +92,8 @@ export function ActionsCell({
   )
 
   const togglePublish = async () => {
-    if (!selectedTeam) {
-      return
-    }
-
     executeUpdateTemplate({
+      teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
       props: {
         Public: !template.public,
@@ -105,11 +102,8 @@ export function ActionsCell({
   }
 
   const deleteTemplate = async () => {
-    if (!selectedTeam) {
-      return
-    }
-
     executeDeleteTemplate({
+      teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
     })
   }

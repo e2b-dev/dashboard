@@ -1,20 +1,21 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { Invoice } from '@/types/billing.types'
 import { z } from 'zod'
 
 const GetInvoicesParamsSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getInvoices = authActionClient
   .schema(GetInvoicesParamsSchema)
   .metadata({ serverFunctionName: 'getInvoices' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
-    const { session } = ctx
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { teamId, session } = ctx
 
     const res = await fetch(
       `${process.env.BILLING_API_URL}/teams/${teamId}/invoices`,

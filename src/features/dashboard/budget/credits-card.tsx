@@ -5,16 +5,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Loader } from '@/ui/primitives/loader_d'
-import { Suspense } from 'react'
 import BillingCreditsContent from '../billing/credits-content'
 
 interface CreditsCardProps {
-  teamId: string
+  params: Promise<{ teamIdOrSlug: string }>
   className?: string
 }
 
-export default function CreditsCard({ teamId, className }: CreditsCardProps) {
+export default async function CreditsCard({
+  params,
+  className,
+}: CreditsCardProps) {
   return (
     <Card className={className}>
       <CardHeader>
@@ -25,9 +26,7 @@ export default function CreditsCard({ teamId, className }: CreditsCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="max-w-[500px] text-xs">
-        <Suspense fallback={<Loader className="text-xl" />}>
-          <BillingCreditsContent teamId={teamId} />
-        </Suspense>
+        <BillingCreditsContent params={params} />
       </CardContent>
     </Card>
   )

@@ -1,4 +1,3 @@
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getWebhooks } from '@/server/webhooks/get-webhooks'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import WebhooksEmpty from './empty'
@@ -14,9 +13,7 @@ export default async function TableBodyContent({
   params,
 }: TableBodyContentProps) {
   const { teamIdOrSlug } = await params
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
-  const webhooksResult = await getWebhooks({ teamId })
+  const webhooksResult = await getWebhooks({ teamIdOrSlug })
 
   // undefined data indicates execution error so we disable the controls
   const hasError = webhooksResult?.data === undefined

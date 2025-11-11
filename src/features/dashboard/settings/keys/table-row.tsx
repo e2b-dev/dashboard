@@ -1,7 +1,7 @@
 'use client'
 
 import { API_KEYS_LAST_USED_FIRST_COLLECTION_DATE } from '@/configs/versioning'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -38,7 +38,7 @@ export default function ApiKeyTableRow({
   className,
 }: TableRowProps) {
   const { toast } = useToast()
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState(-1)
   const [dropDownOpen, setDropDownOpen] = useState(false)
@@ -62,12 +62,8 @@ export default function ApiKeyTableRow({
   )
 
   const deleteKey = () => {
-    if (!selectedTeam) {
-      return
-    }
-
     executeDeleteKey({
-      teamId: selectedTeam.id,
+      teamIdOrSlug: team.id,
       apiKeyId: apiKey.id,
     })
   }

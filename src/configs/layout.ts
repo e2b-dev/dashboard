@@ -52,7 +52,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
     type: 'default',
   },
 
-  '/dashboard/account': {
+  '/dashboard/*/account': {
     title: 'Account',
     type: 'default',
   },

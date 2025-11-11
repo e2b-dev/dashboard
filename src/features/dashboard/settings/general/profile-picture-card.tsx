@@ -1,7 +1,7 @@
 'use client'
 
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -22,7 +22,7 @@ interface ProfilePictureCardProps {
 }
 
 export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -54,7 +54,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   )
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && team?.id) {
+    if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
 
       const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
@@ -77,7 +77,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
       formData.append('image', file)
 
       uploadProfilePicture({
-        teamId: team.id,
+        teamIdOrSlug: team.id,
         image: file,
       })
     }
@@ -99,14 +99,14 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
           className={cn(
             'relative h-24 w-24',
             {
-              'border-none drop-shadow-lg filter': team?.profile_picture_url,
+              'border-none drop-shadow-lg filter': team.profile_picture_url,
             },
             className
           )}
         >
           <AvatarImage
-            src={team?.profile_picture_url || ''}
-            alt={`${team?.name}'s profile picture`}
+            src={team.profile_picture_url || ''}
+            alt={`${team.name}'s profile picture`}
           />
           <AvatarFallback className="bg-bg-hover relative text-2xl ">
             <ImagePlusIcon className="text-fg-tertiary" />

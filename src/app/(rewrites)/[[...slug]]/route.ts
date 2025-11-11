@@ -1,4 +1,4 @@
-import sitemap from '@/app/sitemap'
+import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { BASE_URL } from '@/configs/urls'
@@ -10,8 +10,8 @@ import {
 import { NextRequest } from 'next/server'
 import { serializeError } from 'serialize-error'
 
-export const revalidate = 900
 export const dynamic = 'force-static'
+export const revalidate = 900
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
 
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 }
 
 export async function generateStaticParams() {
-  const sitemapEntries = await sitemap()
+  const sitemapEntries = await constructSitemap()
 
   const slugs = sitemapEntries
     .filter((entry) => {

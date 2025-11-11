@@ -1,6 +1,5 @@
 'use client'
 
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import {
   confirmOrderAction,
@@ -32,6 +31,7 @@ import {
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useDashboard } from '../context'
 import { ADDON_PURCHASE_MESSAGES } from './constants'
 import {
   stripePromise,
@@ -55,33 +55,36 @@ function DialogContent_Inner({
   amountDueCents,
   currentConcurrentSandboxesLimit,
 }: Omit<ConcurrentSandboxAddOnPurchaseDialogProps, 'open'>) {
-  const team = useSelectedTeam()
+  const { team } = useDashboard()
   const { toast } = useToast()
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [customerSessionClientSecret, setCustomerSessionClientSecret] =
     useState<string | null>(null)
 
-  const { execute: getCustomerSession } = useAction(getCustomerSessionAction, {
-    onSuccess: ({ data }) => {
-      if (data?.client_secret) {
-        setCustomerSessionClientSecret(data.client_secret)
-      }
-    },
-    onError: ({ error }) => {
-      console.error(
-        '[Payment] Failed to get customer session:',
-        error.serverError
-      )
-      toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
-    },
-  })
+  const { execute: createCustomerSession } = useAction(
+    getCustomerSessionAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data?.client_secret) {
+          setCustomerSessionClientSecret(data.client_secret)
+        }
+      },
+      onError: ({ error }) => {
+        console.error(
+          '[Payment] Failed to get customer session:',
+          error.serverError
+        )
+        toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
+      },
+    }
+  )
 
   const handleSwitchToPaymentElement = (clientSecret: string) => {
     if (!team) return
     setClientSecret(clientSecret)
     setShowPaymentForm(true)
-    getCustomerSession({ teamId: team.id })
+    createCustomerSession({ teamIdOrSlug: team.id })
   }
 
   const { confirmPayment, isConfirming } = usePaymentConfirmation({
@@ -106,7 +109,8 @@ function DialogContent_Inner({
 
   const handlePurchase = () => {
     if (!team) return
-    confirmOrder({ teamId: team.id, orderId })
+
+    confirmOrder({ teamIdOrSlug: team.id, orderId })
   }
 
   const limitIncreaseText = currentConcurrentSandboxesLimit ? (

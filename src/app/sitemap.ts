@@ -227,15 +227,7 @@ async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
   }
 }
 
-/**
- * Main sitemap generation function that Next.js calls
- *
- * Fetches and merges sitemaps from all configured sites,
- * deduplicates entries, and returns a sorted list of URLs
- *
- * @returns Complete sitemap for the E2B website
- */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export const constructSitemap = async (): Promise<MetadataRoute.Sitemap> => {
   // Return empty sitemap if SEO indexing is not allowed
   if (!ALLOW_SEO_INDEXING) {
     return []
@@ -268,4 +260,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Sort all unique URLs alphabetically
   return uniqueSitemap.sort((a, b) => a.url.localeCompare(b.url))
+}
+
+/**
+ * Main sitemap generation function that Next.js calls
+ *
+ * Fetches and merges sitemaps from all configured sites,
+ * deduplicates entries, and returns a sorted list of URLs
+ *
+ * @returns Complete sitemap for the E2B website
+ */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return await constructSitemap()
 }

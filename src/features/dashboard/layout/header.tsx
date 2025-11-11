@@ -9,12 +9,12 @@ import { usePathname } from 'next/navigation'
 
 interface DashboardLayoutHeaderProps {
   className?: string
-  headerInjectable?: React.ReactNode
+  children?: React.ReactNode
 }
 
 export default function DashboardLayoutHeader({
   className,
-  headerInjectable,
+  children,
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
@@ -39,8 +39,7 @@ export default function DashboardLayoutHeader({
 
         <h1 className="mr-auto align-middle">{config.title}</h1>
 
-        {/* custom content if provided via parallel route */}
-        {headerInjectable && <>{headerInjectable}</>}
+        {children}
 
         <ClientOnly>
           <ThemeSwitcher />

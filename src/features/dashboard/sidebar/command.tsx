@@ -2,7 +2,6 @@
 
 import { SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
 import useKeydown from '@/lib/hooks/use-keydown'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
 import {
   CommandDialog,
@@ -21,6 +20,7 @@ import {
 import { ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useDashboard } from '../context'
 
 interface DashboardSidebarCommandProps {
   className?: string
@@ -30,7 +30,7 @@ export default function DashboardSidebarCommand({
   className,
 }: DashboardSidebarCommandProps) {
   const [open, setOpen] = useState(false)
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const router = useRouter()
 
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
@@ -81,8 +81,7 @@ export default function DashboardSidebarCommand({
                 onSelect={() => {
                   router.push(
                     link.href({
-                      teamIdOrSlug:
-                        selectedTeam?.slug ?? selectedTeam?.id ?? undefined,
+                      teamIdOrSlug: team.slug ?? team.id,
                     })
                   )
                   setOpen(false)

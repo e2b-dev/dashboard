@@ -1,5 +1,4 @@
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamLimits } from '@/server/team/get-team-limits'
 import { Suspense } from 'react'
@@ -41,8 +40,6 @@ async function TeamMetricsChartsResolver({
   const { teamIdOrSlug } = await params
   const { start: startParam, end: endParam } = await searchParams
 
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-
   // parse start/end from URL params with defaults
   const now = Date.now()
   const start = startParam
@@ -52,11 +49,11 @@ async function TeamMetricsChartsResolver({
 
   const [teamMetricsResult, tierLimitsResult] = await Promise.all([
     getTeamMetrics({
-      teamId,
+      teamIdOrSlug,
       startDate: start,
       endDate: end,
     }),
-    getTeamLimits({ teamId }),
+    getTeamLimits({ teamIdOrSlug }),
   ])
 
   if (
@@ -88,10 +85,7 @@ async function TeamMetricsChartsResolver({
   const concurrentInstancesLimit = tierLimitsResult?.data?.concurrentInstances
 
   return (
-    <TeamMetricsChartsProvider
-      teamId={teamId}
-      initialData={teamMetricsResult.data}
-    >
+    <TeamMetricsChartsProvider initialData={teamMetricsResult.data}>
       <ConcurrentChartClient
         concurrentInstancesLimit={concurrentInstancesLimit}
       />

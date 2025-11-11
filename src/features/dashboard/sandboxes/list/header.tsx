@@ -1,8 +1,9 @@
+import { revalidateSandboxes } from '@/server/sandboxes/sandbox-actions'
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useAction } from 'next-safe-action/hooks'
+import { useParams } from 'next/navigation'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -22,15 +23,17 @@ export function SandboxesHeader({
 }: SandboxesHeaderProps) {
   'use no memo'
 
-  const { pollingInterval, setPollingInterval } = useSandboxTableStore()
-  const [isRefreshing, startRefreshTransition] = useTransition()
+  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
 
-  const router = useRouter()
+  const { pollingInterval, setPollingInterval } = useSandboxTableStore()
+
+  const { execute: revalidateSandboxesAction, isPending } =
+    useAction(revalidateSandboxes)
 
   const handleRefresh = () => {
-    startRefreshTransition(() => {
-      router.refresh()
-    })
+    if (!teamIdOrSlug) return
+
+    revalidateSandboxesAction({ teamIdOrSlug })
   }
 
   const hasActiveFilters = () => {
@@ -51,7 +54,7 @@ export function SandboxesHeader({
               pollingInterval={pollingInterval}
               onIntervalChange={setPollingInterval}
               onRefresh={handleRefresh}
-              isPolling={isRefreshing}
+              isPolling={isPending}
             />
           </div>
 
@@ -63,7 +66,7 @@ export function SandboxesHeader({
             {showFilteredRowCount && (
               <Badge size="lg" variant="info" className="uppercase">
                 {table.getFilteredRowModel().rows.length} filtered
-                <ListFilter className="size-3 !stroke-[3px]" />
+                <ListFilter className="size-3 stroke-[3px]!" />
               </Badge>
             )}
           </div>

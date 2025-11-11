@@ -1,4 +1,4 @@
-import { COOKIE_KEYS } from '@/configs/keys'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api.types'
 import { ChevronLeftIcon } from 'lucide-react'
@@ -72,8 +72,8 @@ export default async function SandboxDetailsHeader({
       <div className="flex flex-col sm:gap-2 md:gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
           <Link
-            href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug, 'list')}
-            className="!text-fg-tertiary hover:!text-fg flex items-center gap-1 prose-body-highlight transition-colors"
+            href={PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug)}
+            className="text-fg-tertiary! hover:text-fg! flex items-center gap-1 prose-body-highlight transition-colors"
             prefetch
             shallow
           >

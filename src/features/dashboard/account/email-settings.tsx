@@ -6,7 +6,6 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { getUserProviders } from '@/lib/utils/auth'
 import { updateUserAction } from '@/server/user/user-actions'
@@ -33,6 +32,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useDashboard } from '../context'
 
 const formSchema = z.object({
   email: z.email('Invalid e-mail address'),
@@ -47,7 +47,7 @@ interface EmailSettingsProps {
 export function EmailSettings({ className }: EmailSettingsProps) {
   'use no memo'
 
-  const { user } = useUser()
+  const { user } = useDashboard()
   const searchParams = useSearchParams()
   const { toast } = useToast()
 
