@@ -1,4 +1,4 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { CACHE_TAGS } from '@/configs/cache'
 import { l } from '@/lib/clients/logger/logger'
@@ -29,7 +29,16 @@ export const getTeamIdFromSegment = async (segment: string) => {
   }
 
   if (z.uuid().safeParse(segment).success) {
-    return segment
+    // make sure this uuid is a valid teamId and is not it's slug
+    const { data } = await supabaseAdmin
+      .from('teams')
+      .select('id')
+      .not('slug', 'eq', segment)
+      .eq('id', segment)
+
+    if (data?.length) {
+      return data[0]!.id
+    }
   }
 
   const { data, error } = await supabaseAdmin
