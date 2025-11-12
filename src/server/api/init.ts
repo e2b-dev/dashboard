@@ -1,18 +1,14 @@
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import {
   createServerClient,
   parseCookieHeader,
   serializeCookieHeader,
 } from '@supabase/ssr'
 import { User } from '@supabase/supabase-js'
-import { initTRPC, TRPCError } from '@trpc/server'
-import { unauthorized } from 'next/navigation'
+import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
-import z, { flattenError, ZodError } from 'zod'
-import checkUserTeamAuth from '../auth/check-user-team-auth'
+import { flattenError, ZodError } from 'zod'
 import { getSessionInsecure } from '../auth/get-session'
 import getUserByToken from '../auth/get-user-by-token'
-import { getTeamIdFromSegment } from '../team/get-team-id-from-segment'
 
 const createSupabaseServerClient = (headers: Headers) => {
   return createServerClient(
@@ -40,6 +36,11 @@ const createSupabaseServerClient = (headers: Headers) => {
   )
 }
 
+/**
+ * TRPC Context Factory
+ *
+ * Factory function that creates a TRPC context. If a session exists, we are trying resolve the correct user data.
+ */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const supabase = createSupabaseServerClient(opts.headers)
 
@@ -59,11 +60,12 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   return {
     session,
     user,
+    supabase,
     ...opts,
   }
 }
 
-const t = initTRPC.context<typeof createTRPCContext>().create({
+export const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -79,45 +81,3 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 
 export const createCallerFactory = t.createCallerFactory
 export const createTRPCRouter = t.router
-
-// PROCEDURES
-
-export const publicProcedure = t.procedure
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.user || !ctx.session) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
-
-  return next({
-    ctx: {
-      session: ctx.session,
-      user: ctx.user,
-    },
-  })
-})
-export const teamProcedure = protectedProcedure
-  .input(
-    z.object({
-      teamIdOrSlug: TeamIdOrSlugSchema,
-    })
-  )
-  .use(async ({ ctx, next, input }) => {
-    const teamId = await getTeamIdFromSegment(input.teamIdOrSlug)
-
-    if (!teamId) {
-      throw unauthorized()
-    }
-
-    const isAuthorized = await checkUserTeamAuth(ctx.user.id, teamId)
-
-    if (!isAuthorized) {
-      throw unauthorized()
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        teamId,
-      },
-    })
-  })

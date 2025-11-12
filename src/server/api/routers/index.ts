@@ -1,5 +1,5 @@
-import { createCallerFactory, createTRPCRouter } from '@/server/api/trpc'
-import { sandboxesRouter } from './routers/sandboxes'
+import { createCallerFactory, createTRPCRouter } from '../init'
+import { sandboxesRouter } from './sandboxes'
 
 export const trpcAppRouter = createTRPCRouter({
   sandboxes: sandboxesRouter,

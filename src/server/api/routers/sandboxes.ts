@@ -3,14 +3,15 @@ import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { createInfraTRPCError } from '@/lib/utils/trpc'
-import { createTRPCRouter, teamProcedure } from '@/server/api/trpc'
 import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { z } from 'zod'
+import { apiError } from '../errors'
+import { createTRPCRouter } from '../init'
+import { protectedTeamProcedure } from '../procedures'
 
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
-  getSandboxes: teamProcedure.query(async ({ ctx }) => {
+  getSandboxes: protectedTeamProcedure.query(async ({ ctx }) => {
     const { session, teamId } = ctx
 
     if (USE_MOCK_DATA) {
@@ -46,7 +47,7 @@ export const sandboxesRouter = createTRPCRouter({
         `Failed to get team sandboxes: ${sandboxesRes.error.message}`
       )
 
-      throw createInfraTRPCError(status)
+      throw apiError(status)
     }
 
     return {
@@ -54,7 +55,7 @@ export const sandboxesRouter = createTRPCRouter({
     }
   }),
 
-  getSandboxesMetrics: teamProcedure
+  getSandboxesMetrics: protectedTeamProcedure
     .input(
       z.object({
         sandboxIds: z.array(z.string()),
@@ -98,7 +99,7 @@ export const sandboxesRouter = createTRPCRouter({
           },
         })
 
-        throw createInfraTRPCError(status)
+        throw apiError(status)
       }
 
       const metrics = transformMetricsToClientMetrics(infraRes.data.sandboxes)

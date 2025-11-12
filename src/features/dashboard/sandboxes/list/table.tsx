@@ -57,10 +57,9 @@ export default function SandboxesTable() {
     }
   )
 
-  const [data, { refetch, isRefetching }] =
-    trpc.sandboxes.getSandboxes.useSuspenseQuery({
-      teamIdOrSlug: team.id,
-    })
+  const [data, { refetch }] = trpc.sandboxes.getSandboxes.useSuspenseQuery({
+    teamIdOrSlug: team.id,
+  })
 
   const {
     startedAtFilter,
