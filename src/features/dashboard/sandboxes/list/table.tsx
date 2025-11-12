@@ -211,7 +211,6 @@ export default function SandboxesTable() {
         searchInputRef={searchInputRef}
         table={table}
         onRefresh={refetch}
-        isRefreshing={isRefetching}
       />
 
       <div

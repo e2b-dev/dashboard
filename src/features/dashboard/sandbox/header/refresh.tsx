@@ -55,9 +55,8 @@ export default function RefreshControl({
   return (
     <PollingButton
       intervals={pollingIntervals}
-      pollingInterval={isRunning ? pollingInterval : 0}
+      interval={isRunning ? pollingInterval : 0}
       onIntervalChange={handleIntervalChange}
-      isPolling={isSandboxInfoLoading}
       onRefresh={refetchSandboxInfo}
       className={className}
     />
