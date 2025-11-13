@@ -138,9 +138,10 @@ export const startTelemetryMiddleware = t.middleware(
  * - Any other attributes added to ctx by downstream middlewares
  */
 export const endTelemetryMiddleware = t.middleware(
-  async ({ ctx, next, input }) => {
+  async ({ ctx, next, getRawInput }) => {
     // call next() first - execution resumes here after everything downstream completes
     const result = await next()
+    const rawInput = await getRawInput()
 
     const telemetry =
       'telemetry' in ctx ? (ctx.telemetry as TelemetryState) : undefined
@@ -210,7 +211,7 @@ export const endTelemetryMiddleware = t.middleware(
               'trpc.router.name': routerName,
               'trpc.procedure.type': procedureType,
               'trpc.procedure.name': procedureName,
-              'trpc.procedure.input': input,
+              'trpc.procedure.input': rawInput,
               'trpc.procedure.duration_ms': durationMs,
 
               error: serializeError(error.cause),
@@ -231,7 +232,7 @@ export const endTelemetryMiddleware = t.middleware(
             'trpc.router.name': routerName,
             'trpc.procedure.type': procedureType,
             'trpc.procedure.name': procedureName,
-            'trpc.procedure.input': input,
+            'trpc.procedure.input': rawInput,
             'trpc.procedure.duration_ms': durationMs,
 
             error: serializeError(error),
@@ -253,7 +254,7 @@ export const endTelemetryMiddleware = t.middleware(
           'trpc.router.name': routerName,
           'trpc.procedure.type': procedureType,
           'trpc.procedure.name': procedureName,
-          'trpc.procedure.input': input,
+          'trpc.procedure.input': rawInput,
           'trpc.procedure.duration_ms': durationMs,
         },
         `[tRPC] ${routerName}.${procedureName} succeeded in ${durationMs}ms`
