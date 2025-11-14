@@ -1,5 +1,7 @@
+import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { Suspense } from 'react'
 
 export default async function ListPage({
   params,
@@ -14,7 +16,9 @@ export default async function ListPage({
 
   return (
     <HydrateClient>
-      <SandboxesTable />
+      <Suspense fallback={<LoadingLayout />}>
+        <SandboxesTable />
+      </Suspense>
     </HydrateClient>
   )
 }

@@ -19,6 +19,7 @@ export interface PollingButtonProps {
   interval: number
   onIntervalChange: (interval: number) => void
   onRefresh: () => Promise<void> | void
+  isRefreshing?: boolean
   intervals: PollingInterval[]
   className?: string
 }
@@ -34,6 +35,7 @@ export function PollingButton({
   interval,
   onIntervalChange,
   onRefresh,
+  isRefreshing: isRefreshingProp,
   intervals,
   className,
 }: PollingButtonProps) {
@@ -47,6 +49,8 @@ export function PollingButton({
     onIntervalChange(Number(value))
   }
 
+  const concatenatedIsRefreshing = isRefreshingProp || isRefreshing
+
   return (
     <div className={cn('flex h-6 items-center gap-1 px-0', className)}>
       <Button
@@ -54,9 +58,11 @@ export function PollingButton({
         size="sm"
         onClick={refresh}
         className="text-fg-tertiary h-6"
-        disabled={isRefreshing}
+        disabled={concatenatedIsRefreshing}
       >
-        <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
+        <RefreshCw
+          className={cn('size-3.5', concatenatedIsRefreshing && 'animate-spin')}
+        />
       </Button>
 
       <Separator orientation="vertical" className="h-5" />

@@ -13,12 +13,14 @@ interface SandboxesHeaderProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>
   table: SandboxesTable
   onRefresh: () => void
+  isRefreshing: boolean
 }
 
 export function SandboxesHeader({
   searchInputRef,
   table,
   onRefresh,
+  isRefreshing,
 }: SandboxesHeaderProps) {
   'use no memo'
 
@@ -42,6 +44,7 @@ export function SandboxesHeader({
               interval={pollingInterval}
               onIntervalChange={setPollingInterval}
               onRefresh={onRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
 

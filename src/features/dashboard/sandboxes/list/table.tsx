@@ -63,10 +63,16 @@ export default function SandboxesTable() {
     }
   )
 
-  const { data, refetch } = useSuspenseQuery(
-    trpc.sandboxes.getSandboxes.queryOptions({
-      teamIdOrSlug,
-    })
+  const { data, refetch, isFetching } = useSuspenseQuery(
+    trpc.sandboxes.getSandboxes.queryOptions(
+      {
+        teamIdOrSlug,
+      },
+      {
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+      }
+    )
   )
 
   const {
@@ -218,6 +224,7 @@ export default function SandboxesTable() {
         searchInputRef={searchInputRef}
         table={table}
         onRefresh={refetch}
+        isRefreshing={isFetching}
       />
 
       <div
