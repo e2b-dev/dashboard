@@ -8,7 +8,7 @@ export default async function ListPage({
 }: PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'>) {
   const { teamIdOrSlug } = await params
 
-  prefetch(
+  await prefetch(
     trpc.sandboxes.getSandboxes.queryOptions({
       teamIdOrSlug,
     })
