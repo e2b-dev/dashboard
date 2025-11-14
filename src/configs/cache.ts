@@ -2,8 +2,8 @@
  * Centralized cache tag configuration for Next.js "use cache" directive.
  */
 export const CACHE_TAGS = {
-  USER_TEAM_AUTHORIZATION: (userId: string, teamIdOrSlug: string) =>
-    `user-team-authorization-${userId}-${teamIdOrSlug}`,
+  USER_TEAM_AUTHORIZATION: (userId: string, teamId: string) =>
+    `user-team-authorization-${userId}-${teamId}`,
   USER_TEAMS: (userId: string) => `user-teams-${userId}`,
 
   TEAM_ID_FROM_SEGMENT: (segment: string) => `team-id-from-segment-${segment}`,
