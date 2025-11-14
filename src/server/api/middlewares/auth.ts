@@ -18,14 +18,10 @@ const createSupabaseServerClient = (headers: Headers) => {
           return parseCookieHeader(headers.get('cookie') ?? '')
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
+          cookiesToSet.forEach(({ name, value, options }) =>
             headers.append(
               'Set-Cookie',
-              serializeCookieHeader(name, value, {
-                httpOnly: false,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
-              })
+              serializeCookieHeader(name, value, options)
             )
           )
         },

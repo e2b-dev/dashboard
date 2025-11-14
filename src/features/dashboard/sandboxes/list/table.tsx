@@ -6,10 +6,11 @@ import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
-import { trpc } from '@/trpc/react'
+import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
 import { DataTable } from '@/ui/data-table'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
   ColumnSizingState,
@@ -47,6 +48,7 @@ export default function SandboxesTable() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { team } = useDashboard()
+  const trpc = useTRPC()
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
     'sandboxes:columnSizing',
@@ -57,9 +59,11 @@ export default function SandboxesTable() {
     }
   )
 
-  const [data, { refetch }] = trpc.sandboxes.getSandboxes.useSuspenseQuery({
-    teamIdOrSlug: team.id,
-  })
+  const { data, refetch } = useSuspenseQuery(
+    trpc.sandboxes.getSandboxes.queryOptions({
+      teamIdOrSlug: team.id,
+    })
+  )
 
   const {
     startedAtFilter,

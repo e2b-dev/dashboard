@@ -29,6 +29,7 @@
     "<<<<<<< Development": "",
     "shad": "bunx shadcn@canary",
     "test:development:traffic": "vitest run src/__test__/development/traffic.test.ts",
+    "clean": "rm -rf .next node_modules && bun install",
     "<<<<<<< Testing": "",
     "test:run": "bun scripts:check-all-env && vitest run",
     "test:integration": "bun scripts:check-app-env && vitest run src/__test__/integration/",

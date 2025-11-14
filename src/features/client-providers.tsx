@@ -1,6 +1,6 @@
 'use client'
 
-import { TRPCReactProvider } from '@/trpc/react'
+import { TRPCReactProvider } from '@/trpc/client'
 import { Toaster } from '@/ui/primitives/sonner'
 import { ToastProvider } from '@/ui/primitives/toast'
 import { TooltipProvider } from '@/ui/primitives/tooltip'

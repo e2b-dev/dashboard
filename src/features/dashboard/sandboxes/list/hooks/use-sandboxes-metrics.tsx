@@ -1,7 +1,8 @@
 'use client'
 
-import { trpc } from '@/trpc/react'
+import { useTRPC } from '@/trpc/client'
 import { Sandboxes } from '@/types/api.types'
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
 import { useDashboard } from '../../../context'
@@ -19,6 +20,7 @@ export function useSandboxesMetrics({
   debounceDelay = 1000,
 }: UseSandboxesMetricsProps) {
   const { team } = useDashboard()
+  const trpc = useTRPC()
 
   const sandboxIds = useMemo(
     () => sandboxes.map((sbx) => sbx.sandboxID),
@@ -29,8 +31,8 @@ export function useSandboxesMetrics({
 
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
 
-  const { data, error, isLoading } =
-    trpc.sandboxes.getSandboxesMetrics.useQuery(
+  const { data, error, isLoading } = useQuery(
+    trpc.sandboxes.getSandboxesMetrics.queryOptions(
       {
         teamIdOrSlug: team.slug,
         sandboxIds: debouncedSandboxIds,
@@ -44,6 +46,7 @@ export function useSandboxesMetrics({
         refetchIntervalInBackground: false,
       }
     )
+  )
 
   useEffect(() => {
     if (data?.metrics) {
