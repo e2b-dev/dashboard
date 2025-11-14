@@ -1,4 +1,4 @@
-import checkUserTeamAuthorization from '@/server/auth/check-user-team-auth'
+import checkUserTeamAuthCached from '@/server/auth/check-user-team-auth-cached'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
 import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
@@ -233,7 +233,7 @@ export const withTeamIdResolution = createMiddleware<{
     throw unauthorized()
   }
 
-  const isAuthorized = await checkUserTeamAuthorization(ctx.user.id, teamId)
+  const isAuthorized = await checkUserTeamAuthCached(ctx.user.id, teamId)
 
   if (!isAuthorized) {
     l.warn(

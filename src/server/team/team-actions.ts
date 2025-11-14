@@ -1,6 +1,7 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
@@ -10,7 +11,7 @@ import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
 import { CreateTeamsResponse } from '@/types/billing.types'
 import { returnValidationErrors } from 'next-safe-action'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { after } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
@@ -96,6 +97,9 @@ export const addTeamMemberAction = authActionClient
       )
     }
 
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(user.id, teamId), {
+      expire: 0,
+    })
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 
@@ -153,6 +157,9 @@ export const removeTeamMemberAction = authActionClient
       throw removeError
     }
 
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(user.id, teamId), {
+      expire: 0,
+    })
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 

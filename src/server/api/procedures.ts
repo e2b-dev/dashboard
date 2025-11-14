@@ -2,7 +2,7 @@ import { getTracer } from '@/lib/clients/tracer'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import z from 'zod'
-import checkUserTeamAuth from '../auth/check-user-team-auth'
+import checkUserTeamAuthCached from '../auth/check-user-team-auth-cached'
 import { getTeamIdFromSegment } from '../team/get-team-id-from-segment'
 import { forbiddenTeamAccessError } from './errors'
 import { t } from './init'
@@ -93,7 +93,7 @@ export const protectedTeamProcedure = t.procedure
       const isAuthorized = await context.with(
         trace.setSpan(context.active(), span),
         async () => {
-          return await checkUserTeamAuth(ctx.user.id, teamId)
+          return await checkUserTeamAuthCached(ctx.user.id, teamId)
         }
       )
 

@@ -21,9 +21,9 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
+import { useParams } from 'next/navigation'
 import React, { useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import { useDashboard } from '../../context'
 import { SandboxesHeader } from './header'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { TableBody } from './table-body'
@@ -47,7 +47,11 @@ export default function SandboxesTable() {
   const isMounted = useIsMounted()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { team } = useDashboard()
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'>['params']>
+    >()
+
   const trpc = useTRPC()
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
@@ -61,7 +65,7 @@ export default function SandboxesTable() {
 
   const { data, refetch } = useSuspenseQuery(
     trpc.sandboxes.getSandboxes.queryOptions({
-      teamIdOrSlug: team.id,
+      teamIdOrSlug,
     })
   )
 
