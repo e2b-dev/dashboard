@@ -58,9 +58,9 @@ export function usePolling({
     return () => clearInterval(timer)
   }, [intervalSeconds, enabled, isTabVisible, handleRefresh])
 
-  // countdown timer (only when tab is visible)
+  // countdown timer (only when tab is visible and enabled)
   useEffect(() => {
-    if (!isTabVisible || intervalSeconds === 0) return
+    if (!enabled || !isTabVisible || intervalSeconds === 0) return
 
     const countdown = setInterval(() => {
       setRemainingSeconds((prev) => {
@@ -70,7 +70,7 @@ export function usePolling({
     }, 1000)
 
     return () => clearInterval(countdown)
-  }, [intervalSeconds, isTabVisible])
+  }, [intervalSeconds, enabled, isTabVisible])
 
   // reset countdown when interval changes
   useEffect(() => {
