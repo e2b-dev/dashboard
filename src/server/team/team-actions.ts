@@ -66,7 +66,7 @@ export const addTeamMemberAction = authActionClient
 
     const existingUser = existingUsers?.[0]
 
-    if (!existingUser) {
+    if (!existingUser || !existingUser.id) {
       return returnServerError(
         'User with this email address does not exist. Please ask them to sign up first and try again.'
       )
@@ -76,7 +76,7 @@ export const addTeamMemberAction = authActionClient
       .from('users_teams')
       .select('*')
       .eq('team_id', teamId)
-      .eq('user_id', existingUser.id!)
+      .eq('user_id', existingUser.id)
       .single()
 
     if (existingTeamMember) {
@@ -87,7 +87,7 @@ export const addTeamMemberAction = authActionClient
       .from('users_teams')
       .insert({
         team_id: teamId,
-        user_id: existingUser.id!,
+        user_id: existingUser.id,
         added_by: user.id,
       })
 
@@ -97,7 +97,7 @@ export const addTeamMemberAction = authActionClient
       )
     }
 
-    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(user.id, teamId), {
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(existingUser.id, teamId), {
       expire: 0,
     })
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
@@ -157,7 +157,7 @@ export const removeTeamMemberAction = authActionClient
       throw removeError
     }
 
-    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(user.id, teamId), {
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamId), {
       expire: 0,
     })
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')

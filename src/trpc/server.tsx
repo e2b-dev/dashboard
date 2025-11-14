@@ -56,8 +56,7 @@ export const trpc = createTRPCOptionsProxy({
  * @example
  * ```tsx
  * // In a Server Component
- * const caller = await trpcCaller()
- * const posts = await caller.posts.getAll({ limit: 10 })
+ * const posts = await trpcCaller.posts.getAll({ limit: 10 })
  * ```
  */
 export const trpcCaller = createTRPCCaller(createContext)
