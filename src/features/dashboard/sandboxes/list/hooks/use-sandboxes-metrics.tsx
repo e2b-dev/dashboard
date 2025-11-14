@@ -1,5 +1,6 @@
 'use client'
 
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useTRPC } from '@/trpc/client'
 import { Sandboxes } from '@/types/api.types'
 import { useQuery } from '@tanstack/react-query'
@@ -16,7 +17,7 @@ interface UseSandboxesMetricsProps {
 
 export function useSandboxesMetrics({
   sandboxes,
-  pollingInterval,
+  pollingInterval = SANDBOXES_METRICS_POLLING_MS,
   debounceDelay = 1000,
 }: UseSandboxesMetricsProps) {
   const { team } = useDashboard()

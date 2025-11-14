@@ -1,6 +1,5 @@
 'use client'
 
-import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
@@ -215,7 +214,6 @@ export default function SandboxesTable() {
 
   useSandboxesMetrics({
     sandboxes: memoizedVisualRows,
-    pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
 
   return (
