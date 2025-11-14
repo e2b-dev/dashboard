@@ -1,5 +1,7 @@
+import { getTracer } from '@/lib/clients/tracer'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import {
   createServerClient,
   parseCookieHeader,
@@ -31,27 +33,55 @@ const createSupabaseServerClient = (headers: Headers) => {
 }
 
 export const authMiddleware = t.middleware(async ({ ctx, next }) => {
-  const supabase = createSupabaseServerClient(ctx.headers)
+  const tracer = getTracer()
 
-  const session = await getSessionInsecure(supabase)
+  const span = tracer.startSpan('trpc.middleware.auth')
+  span.setAttribute('trpc.middleware.name', 'auth')
 
-  if (!session) {
-    throw unauthorizedUserError()
+  try {
+    const supabase = createSupabaseServerClient(ctx.headers)
+
+    const session = await context.with(
+      trace.setSpan(context.active(), span),
+      async () => {
+        return await getSessionInsecure(supabase)
+      }
+    )
+
+    if (!session) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: 'session not found',
+      })
+
+      throw unauthorizedUserError()
+    }
+
+    const {
+      data: { user },
+    } = await context.with(trace.setSpan(context.active(), span), async () => {
+      return await getUserByToken(session.access_token)
+    })
+
+    if (!user) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: 'user not found for session',
+      })
+
+      throw unauthorizedUserError()
+    }
+
+    span.setStatus({ code: SpanStatusCode.OK })
+
+    return next({
+      ctx: {
+        ...ctx,
+        session,
+        user,
+      },
+    })
+  } finally {
+    span.end()
   }
-
-  const {
-    data: { user },
-  } = await getUserByToken(session.access_token)
-
-  if (!user) {
-    throw unauthorizedUserError()
-  }
-
-  return next({
-    ctx: {
-      ...ctx,
-      session,
-      user,
-    },
-  })
 })

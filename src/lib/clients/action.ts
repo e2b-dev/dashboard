@@ -3,7 +3,7 @@ import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
 import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
 import { UnauthenticatedError, UnknownError } from '@/types/errors'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { Session, User } from '@supabase/supabase-js'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { unauthorized } from 'next/navigation'
@@ -65,7 +65,12 @@ export const actionClient = createSafeActionClient({
 
   const startTime = performance.now()
 
-  const result = await next()
+  const result = await context.with(
+    trace.setSpan(context.active(), s),
+    async () => {
+      return next()
+    }
+  )
 
   const duration = performance.now() - startTime
 

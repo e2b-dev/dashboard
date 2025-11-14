@@ -36,6 +36,18 @@ interface TelemetryState {
   }
 }
 
+const meter = getMeter()
+const durationHistogram = meter.createHistogram('trpc.procedure.duration', {
+  description: 'Duration of tRPC procedure execution',
+  unit: 'ms',
+})
+const requestCounter = meter.createCounter('trpc.procedure.requests', {
+  description: 'Total number of tRPC procedure requests',
+})
+const errorCounter = meter.createCounter('trpc.procedure.errors', {
+  description: 'Total number of tRPC procedure errors',
+})
+
 /**
  * Start Telemetry Middleware
  *
@@ -51,7 +63,6 @@ interface TelemetryState {
 export const startTelemetryMiddleware = t.middleware(
   async ({ ctx, next, path, type, input }) => {
     const tracer = getTracer()
-    const meter = getMeter()
 
     const procedurePath = path || 'unknown'
     const procedureType = type
@@ -62,26 +73,16 @@ export const startTelemetryMiddleware = t.middleware(
     const procedureName = pathParts[pathParts.length - 1] || 'unknown'
     const routerName = pathParts.slice(0, -1).join('.') || 'unknown'
 
-    const span = tracer.startSpan(`trpc:${procedurePath.replace(/\./g, ':')}`, {
-      attributes: {
-        'trpc.router.name': routerName,
-        'trpc.procedure.type': procedureType,
-        'trpc.procedure.name': procedureName,
-      },
-    })
-
-    const durationHistogram = meter.createHistogram('trpc.procedure.duration', {
-      description: 'Duration of tRPC procedure execution',
-      unit: 'ms',
-    })
-
-    const requestCounter = meter.createCounter('trpc.procedure.requests', {
-      description: 'Total number of tRPC procedure requests',
-    })
-
-    const errorCounter = meter.createCounter('trpc.procedure.errors', {
-      description: 'Total number of tRPC procedure errors',
-    })
+    const span = tracer.startSpan(
+      `trpc.procedure.${routerName}.${procedureName}`,
+      {
+        attributes: {
+          'trpc.router.name': routerName,
+          'trpc.procedure.type': procedureType,
+          'trpc.procedure.name': procedureName,
+        },
+      }
+    )
 
     const metricAttrs = {
       'trpc.router.name': routerName,

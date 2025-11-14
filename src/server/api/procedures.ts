@@ -1,4 +1,6 @@
+import { getTracer } from '@/lib/clients/tracer'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import z from 'zod'
 import checkUserTeamAuth from '../auth/check-user-team-auth'
 import { getTeamIdFromSegment } from '../team/get-team-id-from-segment'
@@ -66,25 +68,55 @@ export const protectedTeamProcedure = t.procedure
     })
   )
   .use(async ({ ctx, next, input }) => {
-    const teamId = await getTeamIdFromSegment(input.teamIdOrSlug)
+    const tracer = getTracer()
+    const span = tracer.startSpan('trpc.middleware.teamAuth')
+    span.setAttribute('trpc.middleware.name', 'teamAuth')
 
-    if (!teamId) {
-      // the actual error should be 400, but we want to prevent leaking information to bad actors
-      throw forbiddenTeamAccessError()
+    try {
+      const teamId = await context.with(
+        trace.setSpan(context.active(), span),
+        async () => {
+          return await getTeamIdFromSegment(input.teamIdOrSlug)
+        }
+      )
+
+      if (!teamId) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: `teamId not found for teamIdOrSlug (${input.teamIdOrSlug})`,
+        })
+
+        // the actual error should be 400, but we want to prevent leaking information to bad actors
+        throw forbiddenTeamAccessError()
+      }
+
+      const isAuthorized = await context.with(
+        trace.setSpan(context.active(), span),
+        async () => {
+          return await checkUserTeamAuth(ctx.user.id, teamId)
+        }
+      )
+
+      if (!isAuthorized) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: `user (${ctx.user.id}) not authorized to access team (${teamId})`,
+        })
+
+        throw forbiddenTeamAccessError()
+      }
+
+      span.setStatus({ code: SpanStatusCode.OK })
+
+      // add teamId to context - endTelemetryMiddleware will pick it up for logging
+      return next({
+        ctx: {
+          ...ctx,
+          teamId,
+        },
+      })
+    } finally {
+      span.end()
     }
-
-    const isAuthorized = await checkUserTeamAuth(ctx.user.id, teamId)
-
-    if (!isAuthorized) {
-      throw forbiddenTeamAccessError()
-    }
-
-    // add teamId to context - endTelemetryMiddleware will pick it up for logging
-    return next({
-      ctx: {
-        ...ctx,
-        teamId,
-      },
-    })
   })
   .use(endTelemetryMiddleware)
