@@ -3,11 +3,9 @@ import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { getTeamMetricsMax } from '@/server/sandboxes/get-team-metrics-max'
 import { getTeamLimits } from '@/server/team/get-team-limits'
-import { trpc } from '@/trpc/server'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { TRPCError } from '@trpc/server'
 import { AlertTriangle } from 'lucide-react'
 import { Suspense } from 'react'
 import {
@@ -145,23 +143,22 @@ export const SandboxesStartRate = async ({
   const now = getNowMemo()
   const start = now - 60_000
 
-  try {
-    const data = await trpc.sandboxes.getTeamMetrics({
-      teamIdOrSlug,
-      startDate: start,
-      endDate: now,
-    })
+  const teamMetricsResult = await getTeamMetrics({
+    teamIdOrSlug,
+    startDate: start,
+    endDate: now,
+  })
 
-    return <SandboxesStartRateClient initialData={data} />
-  } catch (error) {
+  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
       <BaseErrorTooltip>
-        {error instanceof TRPCError
-          ? error.message
-          : 'Failed to load max sandbox start rate'}
+        {teamMetricsResult?.serverError ||
+          'Failed to load max sandbox start rate'}
       </BaseErrorTooltip>
     )
   }
+
+  return <SandboxesStartRateClient initialData={teamMetricsResult.data} />
 }
 
 export const MaxConcurrentSandboxes = async ({
