@@ -32,7 +32,7 @@ export default async function checkUserTeamAuthorizationPure(
       `Failed to fetch users_teams relation (user: ${userId}, team: ${teamId})`
     )
 
-    return null
+    return false
   }
 
   return !!userTeamsRelationData.length
