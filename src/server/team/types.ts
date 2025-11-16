@@ -42,21 +42,10 @@ const CreateTeamSchema = z.object({
 export { CreateTeamSchema, UpdateTeamNameSchema }
 
 /**
- * Describes where the team information was resolved from.
- * Used for logging and debugging team resolution flow.
- */
-export type TeamResolutionSource =
-  | 'url-cookies' // Resolved from URL segment matching valid cookie metadata
-  | 'cookies' // Resolved from cookie values only
-  | 'default-db' // Resolved from user's default team in database
-  | 'first-db' // Resolved from user's first team in database
-
-/**
  * The result of resolving a team for a user.
- * Contains the team ID, slug, and the source of the resolution.
+ * Contains the team ID, slug.
  */
 export interface ResolvedTeam {
   id: string
   slug: string
-  source: TeamResolutionSource
 }
