@@ -1,4 +1,5 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
@@ -8,9 +9,10 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { DefaultTemplate } from '@/types/api.types'
+import { cacheLife, cacheTag } from 'next/cache'
 import { apiError } from '../errors'
 import { createTRPCRouter } from '../init'
-import { protectedTeamProcedure, publicProcedure } from '../procedures'
+import { protectedProcedure, protectedTeamProcedure } from '../procedures'
 
 export const templatesRouter = createTRPCRouter({
   getTemplates: protectedTeamProcedure.query(async ({ ctx }) => {
@@ -58,7 +60,11 @@ export const templatesRouter = createTRPCRouter({
     }
   }),
 
-  getDefaultTemplates: publicProcedure.query(async () => {
+  getDefaultTemplates: protectedProcedure.query(async () => {
+    'use cache: remote'
+    cacheTag(CACHE_TAGS.DEFAULT_TEMPLATES)
+    cacheLife('hours')
+
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       return {

@@ -1,8 +1,6 @@
 import TemplatesTable from '@/features/dashboard/templates/table'
-import {
-  getDefaultTemplates,
-  getTeamTemplates,
-} from '@/server/templates/get-team-templates'
+import { safeCall } from '@/lib/utils'
+import { trpcCaller } from '@/trpc/server'
 import ErrorBoundary from '@/ui/error'
 
 export default async function Page({
@@ -10,30 +8,31 @@ export default async function Page({
 }: PageProps<'/dashboard/[teamIdOrSlug]/templates'>) {
   const { teamIdOrSlug } = await params
 
-  const res = await getTeamTemplates({
-    teamIdOrSlug,
-  })
+  try {
+    const res = await trpcCaller.templates.getTemplates({
+      teamIdOrSlug,
+    })
 
-  const defaultRes = await getDefaultTemplates()
+    const [_, defaultRes] = await safeCall(() =>
+      trpcCaller.templates.getDefaultTemplates()
+    )
 
-  if (!res?.data?.templates || res?.serverError) {
+    const defaultTemplates = defaultRes?.templates ?? []
+
+    const templates = [...res.templates, ...defaultTemplates]
+
+    return <TemplatesTable templates={templates} />
+  } catch (error) {
     return (
       <ErrorBoundary
         error={
           {
             name: 'Templates Error',
-            message: res?.serverError ?? 'Unknown error',
+            message: error instanceof Error ? error.message : 'Unknown error',
           } satisfies Error
         }
         description={'Could not load templates'}
       />
     )
   }
-
-  const templates = [
-    ...res.data.templates,
-    ...(defaultRes?.data?.templates ? defaultRes.data.templates : []),
-  ]
-
-  return <TemplatesTable templates={templates} />
 }
