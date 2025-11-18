@@ -40,7 +40,7 @@ export const templatesRouter = createTRPCRouter({
       },
     })
 
-    if (res.error) {
+    if (!res.response.ok) {
       const status = res.response.status
 
       l.error(
@@ -51,9 +51,10 @@ export const templatesRouter = createTRPCRouter({
           user_id: session.user.id,
           context: {
             status,
+            body: await res.response.text(),
           },
         },
-        `Failed to get team templates: ${res.error.message}`
+        `Failed to get team templates: ${res.error?.message}`
       )
 
       throw apiError(status)
@@ -91,7 +92,7 @@ export const templatesRouter = createTRPCRouter({
         },
       })
 
-      if (res.error) {
+      if (!res.response.ok) {
         const status = res.response.status
 
         l.error(
@@ -103,9 +104,10 @@ export const templatesRouter = createTRPCRouter({
             template_id: templateId,
             context: {
               status,
+              body: await res.response.text(),
             },
           },
-          `Failed to delete template: ${res.error.message}`
+          `Failed to delete template: ${res.error?.message || 'Unknown error'}`
         )
 
         if (status === 404) {
@@ -159,7 +161,7 @@ export const templatesRouter = createTRPCRouter({
         },
       })
 
-      if (res.error) {
+      if (!res.response.ok) {
         const status = res.response.status
 
         l.error(
@@ -171,9 +173,10 @@ export const templatesRouter = createTRPCRouter({
             template_id: templateId,
             context: {
               status,
+              body: await res.response.text(),
             },
           },
-          `Failed to update template: ${res.error.message}`
+          `Failed to update template: ${res.error?.message || 'Unknown error'}`
         )
 
         if (status === 404) {
