@@ -5,7 +5,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { cookies } from 'next/headers'
 import { serializeError } from 'serialize-error'
-import checkUserTeamAuth from '../auth/check-user-team-auth'
+import checkUserTeamAuthCached from '../auth/check-user-team-auth-cached'
 import { ResolvedTeam } from './types'
 
 /**
@@ -30,7 +30,7 @@ export async function resolveUserTeam(
 
   // If we have cookies, check if the user is authorized to access the team
   if (cookieTeamId && cookieTeamSlug) {
-    const isAuthorized = await checkUserTeamAuth(userId, cookieTeamId)
+    const isAuthorized = await checkUserTeamAuthCached(userId, cookieTeamId)
 
     if (isAuthorized) {
       return {
