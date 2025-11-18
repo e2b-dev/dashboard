@@ -202,7 +202,7 @@ export const endTelemetryMiddleware = t.middleware(
         span.recordException(error)
 
         // internal errors with causes are unexpected bugs - log as error and obfuscate
-        if (error.code === 'INTERNAL_SERVER_ERROR' && error.cause) {
+        if (error.code === 'INTERNAL_SERVER_ERROR') {
           l.error(
             {
               key: 'trpc:unexpected_error',
@@ -215,9 +215,9 @@ export const endTelemetryMiddleware = t.middleware(
               'trpc.procedure.input': rawInput,
               'trpc.procedure.duration_ms': durationMs,
 
-              error: serializeError(error.cause),
+              error: serializeError(error),
             },
-            `[tRPC] ${routerName}.${procedureName} failed unexpectedly: ${error.cause.message}`
+            `[tRPC] ${routerName}.${procedureName} failed unexpectedly: ${error?.cause?.message || error.message}`
           )
 
           throw internalServerError()
