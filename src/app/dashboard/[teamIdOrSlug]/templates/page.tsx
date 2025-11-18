@@ -14,7 +14,7 @@ export default async function Page({
     })
 
     const [_, defaultRes] = await safeCall(() =>
-      trpcCaller.templates.getDefaultTemplates()
+      trpcCaller.templates.getDefaultTemplatesCached()
     )
 
     const defaultTemplates = defaultRes?.templates ?? []
