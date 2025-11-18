@@ -7,10 +7,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { isVersionCompatible } from '@/lib/utils/version'
-import {
-  deleteTemplateAction,
-  updateTemplateAction,
-} from '@/server/templates/templates-actions'
+import { useTRPC } from '@/trpc/client'
 import { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
@@ -26,9 +23,10 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader_d'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
 import { Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useAction } from 'next-safe-action/hooks'
+import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../common/resource-usage'
 import { useDashboard } from '../context'
@@ -49,60 +47,68 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
+    >()
+
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-  const { execute: executeUpdateTemplate, isExecuting: isUpdating } = useAction(
-    updateTemplateAction,
-    {
-      onSuccess: ({ input }) => {
+  const updateTemplateMutation = useMutation(
+    trpc.templates.updateTemplate.mutationOptions({
+      onSuccess: (data) => {
         toast(
           defaultSuccessToast(
-            `Template is now ${input.props.Public ? 'public' : 'private'}.`
+            `Template is now ${data.public ? 'public' : 'private'}.`
           )
         )
+        queryClient.invalidateQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
       },
       onError: (error) => {
-        toast(
-          defaultErrorToast(
-            error.error.serverError || 'Failed to update template.'
-          )
-        )
+        toast(defaultErrorToast(error.message || 'Failed to update template.'))
       },
-    }
+    })
   )
 
-  const { execute: executeDeleteTemplate, isExecuting: isDeleting } = useAction(
-    deleteTemplateAction,
-    {
+  const deleteTemplateMutation = useMutation(
+    trpc.templates.deleteTemplate.mutationOptions({
       onSuccess: () => {
         toast(defaultSuccessToast('Template has been deleted.'))
+        queryClient.invalidateQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
       },
       onError: (error) => {
-        toast(
-          defaultErrorToast(
-            error.error.serverError || 'Failed to delete template.'
-          )
-        )
+        toast(defaultErrorToast(error.message || 'Failed to delete template.'))
       },
       onSettled: () => {
         setIsDeleteDialogOpen(false)
       },
-    }
+    })
   )
 
-  const togglePublish = async () => {
-    executeUpdateTemplate({
+  const isUpdating = updateTemplateMutation.isPending
+  const isDeleting = deleteTemplateMutation.isPending
+
+  const togglePublish = () => {
+    updateTemplateMutation.mutate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
-      props: {
-        Public: !template.public,
-      },
+      public: !template.public,
     })
   }
 
-  const deleteTemplate = async () => {
-    executeDeleteTemplate({
+  const deleteTemplate = () => {
+    deleteTemplateMutation.mutate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
     })

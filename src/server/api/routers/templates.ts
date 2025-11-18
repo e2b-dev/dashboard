@@ -9,12 +9,16 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { DefaultTemplate } from '@/types/api.types'
+import { TRPCError } from '@trpc/server'
 import { cacheLife, cacheTag } from 'next/cache'
+import { z } from 'zod'
 import { apiError } from '../errors'
 import { createTRPCRouter } from '../init'
 import { protectedProcedure, protectedTeamProcedure } from '../procedures'
 
 export const templatesRouter = createTRPCRouter({
+  // QUERIES
+
   getTemplates: protectedTeamProcedure.query(async ({ ctx }) => {
     const { session, teamId } = ctx
 
@@ -63,6 +67,127 @@ export const templatesRouter = createTRPCRouter({
   getDefaultTemplatesCached: protectedProcedure.query(async () => {
     return getDefaultTemplatesCached()
   }),
+
+  // MUTATIONS
+
+  deleteTemplate: protectedTeamProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { templateId } = input
+
+      const res = await infra.DELETE('/templates/{templateID}', {
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token),
+        },
+      })
+
+      if (res.error) {
+        const status = res.response.status
+
+        l.error(
+          {
+            key: 'trpc:templates:delete_template:infra_error',
+            error: res.error,
+            user_id: session.user.id,
+            team_id: teamId,
+            template_id: templateId,
+            context: {
+              status,
+            },
+          },
+          `Failed to delete template: ${res.error.message}`
+        )
+
+        if (status === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Template not found',
+          })
+        }
+
+        if (
+          status === 400 &&
+          res.error?.message?.includes(
+            'because there are paused sandboxes using it'
+          )
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'Cannot delete template because there are paused sandboxes using it',
+          })
+        }
+
+        throw apiError(status)
+      }
+
+      return { success: true }
+    }),
+
+  updateTemplate: protectedTeamProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        public: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { templateId, public: isPublic } = input
+
+      const res = await infra.PATCH('/templates/{templateID}', {
+        body: {
+          public: isPublic,
+        },
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token),
+        },
+      })
+
+      if (res.error) {
+        const status = res.response.status
+
+        l.error(
+          {
+            key: 'trpc:templates:update_template:infra_error',
+            error: res.error,
+            user_id: session.user.id,
+            team_id: teamId,
+            template_id: templateId,
+            context: {
+              status,
+            },
+          },
+          `Failed to update template: ${res.error.message}`
+        )
+
+        if (status === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Template not found',
+          })
+        }
+
+        throw apiError(status)
+      }
+
+      return { success: true, public: isPublic }
+    }),
 })
 
 async function getDefaultTemplatesCached() {
