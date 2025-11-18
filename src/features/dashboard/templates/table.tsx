@@ -26,6 +26,7 @@ import {
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import LoadingLayout from '../loading-layout'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
@@ -43,7 +44,11 @@ export default function TemplatesTable() {
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
 
-  const { data: templatesData, error: templatesError } = useSuspenseQuery(
+  const {
+    data: templatesData,
+    error: templatesError,
+    isFetching: isTemplatesFetching,
+  } = useSuspenseQuery(
     trpc.templates.getTemplates.queryOptions(
       { teamIdOrSlug },
       {
@@ -159,6 +164,10 @@ export default function TemplatesTable() {
     estimateSizePx: ROW_HEIGHT_PX,
     overscan: VIRTUAL_OVERSCAN,
   })
+
+  if (isTemplatesFetching) {
+    return <LoadingLayout />
+  }
 
   if (templatesError || defaultTemplatesError) {
     const error = templatesError || defaultTemplatesError
