@@ -1,9 +1,6 @@
-import { revalidateSandboxes } from '@/server/sandboxes/sandbox-actions'
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { Circle, ListFilter } from 'lucide-react'
-import { useAction } from 'next-safe-action/hooks'
-import { useParams } from 'next/navigation'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -15,26 +12,19 @@ import { SearchInput } from './table-search'
 interface SandboxesHeaderProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>
   table: SandboxesTable
+  onRefresh: () => void
+  isRefreshing: boolean
 }
 
 export function SandboxesHeader({
   searchInputRef,
   table,
+  onRefresh,
+  isRefreshing,
 }: SandboxesHeaderProps) {
   'use no memo'
 
-  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
-
   const { pollingInterval, setPollingInterval } = useSandboxTableStore()
-
-  const { execute: revalidateSandboxesAction, isPending } =
-    useAction(revalidateSandboxes)
-
-  const handleRefresh = () => {
-    if (!teamIdOrSlug) return
-
-    revalidateSandboxesAction({ teamIdOrSlug })
-  }
 
   const hasActiveFilters = () => {
     return Object.keys(table.getState().columnFilters).length > 0
@@ -51,10 +41,10 @@ export function SandboxesHeader({
             <SearchInput ref={searchInputRef} className="max-w-[380px]" />
             <PollingButton
               intervals={sandboxesPollingIntervals}
-              pollingInterval={pollingInterval}
+              interval={pollingInterval}
               onIntervalChange={setPollingInterval}
-              onRefresh={handleRefresh}
-              isPolling={isPending}
+              onRefresh={onRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
 

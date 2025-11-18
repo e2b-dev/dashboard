@@ -40,8 +40,8 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(() => mockCookieStore),
 }))
 
-vi.mock('@/server/auth/check-user-team-auth', () => ({
-  default: mockCheckUserTeamAuth,
+vi.mock('@/server/auth/check-user-team-auth-cached', () => ({
+  checkUserTeamAuth: mockCheckUserTeamAuth,
 }))
 
 // import after mocks are set up

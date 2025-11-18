@@ -5,7 +5,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { cookies } from 'next/headers'
 import { serializeError } from 'serialize-error'
-import checkUserTeamAuth from '../auth/check-user-team-auth'
+import { checkUserTeamAuth } from '../auth/check-user-team-auth-cached'
 import { ResolvedTeam } from './types'
 
 /**

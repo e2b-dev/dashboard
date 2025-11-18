@@ -13,6 +13,7 @@ import { StartedAtFilter } from '../table-filters'
 
 export const sandboxesPollingIntervals = [
   { value: 0, label: 'Off' },
+  { value: 5, label: '5s' },
   { value: 15, label: '15s' },
   { value: 30, label: '30s' },
   { value: 60, label: '1m' },
@@ -58,7 +59,7 @@ type Store = SandboxTableState & SandboxTableActions
 
 const initialState: SandboxTableState = {
   // Page state
-  pollingInterval: sandboxesPollingIntervals[3]!.value,
+  pollingInterval: sandboxesPollingIntervals[2]!.value,
 
   // Table state
   sorting: [],

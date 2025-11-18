@@ -1,34 +1,27 @@
 'use client'
 
-import { USE_MOCK_DATA } from '@/configs/flags'
-import { MOCK_METRICS_DATA } from '@/configs/mock-data'
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { useTRPC } from '@/trpc/client'
 import { Sandboxes } from '@/types/api.types'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
-import { useMemo } from 'react'
-import useSWR from 'swr'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
 import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
-interface MetricsResponse {
-  metrics: ClientSandboxesMetrics
-  error?: string
-}
-
 interface UseSandboxesMetricsProps {
   sandboxes: Sandboxes
-  initialMetrics?: ClientSandboxesMetrics | null
   pollingInterval?: number
   debounceDelay?: number
 }
 
 export function useSandboxesMetrics({
   sandboxes,
-  initialMetrics = null,
-  pollingInterval,
+  pollingInterval = SANDBOXES_METRICS_POLLING_MS,
   debounceDelay = 1000,
 }: UseSandboxesMetricsProps) {
   const { team } = useDashboard()
+  const trpc = useTRPC()
 
   const sandboxIds = useMemo(
     () => sandboxes.map((sbx) => sbx.sandboxID),
@@ -39,57 +32,28 @@ export function useSandboxesMetrics({
 
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
 
-  const { data, error, isLoading } = useSWR<MetricsResponse>(
-    debouncedSandboxIds.length > 0
-      ? [`/api/teams/${team.id}/sandboxes/metrics`, debouncedSandboxIds]
-      : null,
-    async ([url, ids]: [string, string[]]) => {
-      if (ids.length === 0) {
-        return {
-          metrics: initialMetrics ?? {},
-        }
-      }
-
-      if (USE_MOCK_DATA) {
-        return MOCK_METRICS_DATA(sandboxes)
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sandboxIds: ids }),
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        const { error } = await response.json()
-
-        throw new Error(error || 'Failed to fetch metrics')
-      }
-
-      return (await response.json()) as MetricsResponse
-    },
-    {
-      refreshInterval: pollingInterval,
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-      shouldRetryOnError: true,
-      errorRetryCount: 100,
-      errorRetryInterval: pollingInterval,
-      revalidateOnMount: false,
-      revalidateIfStale: true,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      keepPreviousData: true,
-
-      fallbackData: initialMetrics ? { metrics: initialMetrics } : undefined,
-      onSuccess: (data) => {
-        setMetrics(data.metrics)
+  const { data, error, isLoading } = useQuery(
+    trpc.sandboxes.getSandboxesMetrics.queryOptions(
+      {
+        teamIdOrSlug: team.slug,
+        sandboxIds: debouncedSandboxIds,
       },
-    }
+      {
+        enabled: debouncedSandboxIds.length > 0 && pollingInterval !== 0,
+        refetchInterval: pollingInterval,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
+        refetchIntervalInBackground: false,
+      }
+    )
   )
+
+  useEffect(() => {
+    if (data?.metrics) {
+      setMetrics(data.metrics)
+    }
+  }, [data, setMetrics])
 
   return {
     metrics: data?.metrics ?? null,

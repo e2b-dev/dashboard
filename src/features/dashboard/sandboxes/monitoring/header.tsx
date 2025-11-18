@@ -93,7 +93,6 @@ export default function SandboxesMonitoringHeader({
     </div>
   )
 }
-
 // Components
 
 export const ConcurrentSandboxes = async ({

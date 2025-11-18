@@ -1,7 +1,7 @@
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
 import { ListIcon, TrendIcon } from '@/ui/primitives/icons'
 
-export default async function SandboxesLayout({
+export default function SandboxesLayout({
   list,
   monitoring,
 }: LayoutProps<'/dashboard/[teamIdOrSlug]/sandboxes'> & {

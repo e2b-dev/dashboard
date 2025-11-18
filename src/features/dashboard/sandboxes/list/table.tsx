@@ -1,16 +1,15 @@
 'use client'
 
-import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
-import { Sandbox } from '@/types/api.types'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
 import { DataTable } from '@/ui/data-table'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
   ColumnSizingState,
@@ -21,6 +20,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
+import { useParams } from 'next/navigation'
 import React, { useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
@@ -40,20 +40,18 @@ const VIRTUAL_OVERSCAN = 8
 
 // metrics fetched via useSandboxesMetrics
 
-interface SandboxesTableProps {
-  initialSandboxes: Sandbox[]
-  initialMetrics: ClientSandboxesMetrics | null
-}
-
-export default function SandboxesTable({
-  initialSandboxes,
-  initialMetrics,
-}: SandboxesTableProps) {
+export default function SandboxesTable() {
   'use no memo'
 
   const isMounted = useIsMounted()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'>['params']>
+    >()
+
+  const trpc = useTRPC()
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
     'sandboxes:columnSizing',
@@ -62,6 +60,18 @@ export default function SandboxesTable({
       deserializer: (value) => JSON.parse(value),
       serializer: (value) => JSON.stringify(value),
     }
+  )
+
+  const { data, refetch, isFetching } = useSuspenseQuery(
+    trpc.sandboxes.getSandboxes.queryOptions(
+      {
+        teamIdOrSlug,
+      },
+      {
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+      }
+    )
   )
 
   const {
@@ -144,7 +154,7 @@ export default function SandboxesTable({
 
   const table = useReactTable({
     columns: COLUMNS,
-    data: initialSandboxes,
+    data: data.sandboxes,
     state: {
       globalFilter,
       sorting,
@@ -204,13 +214,16 @@ export default function SandboxesTable({
 
   useSandboxesMetrics({
     sandboxes: memoizedVisualRows,
-    initialMetrics,
-    pollingInterval: SANDBOXES_METRICS_POLLING_MS,
   })
 
   return (
     <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
-      <SandboxesHeader searchInputRef={searchInputRef} table={table} />
+      <SandboxesHeader
+        searchInputRef={searchInputRef}
+        table={table}
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+      />
 
       <div
         className={cn(
@@ -233,7 +246,7 @@ export default function SandboxesTable({
               state={table.getState()}
             />
             <TableBody
-              sandboxes={initialSandboxes}
+              sandboxes={data.sandboxes}
               table={table}
               visualRows={visualRows}
               virtualizedTotalHeight={virtualizedTotalHeight}
