@@ -6,17 +6,7 @@ import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { cacheTag } from 'next/cache'
 import { serializeError } from 'serialize-error'
 
-/*
- *  This function checks if a user is authorized to access a team.
- *  If the user is not authorized, it returns false.
- */
-export default async function checkUserTeamAuthCached(
-  userId: string,
-  teamId: string
-) {
-  'use cache'
-  cacheTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamId))
-
+export async function checkUserTeamAuth(userId: string, teamId: string) {
   const { data: userTeamsRelationData, error: userTeamsRelationError } =
     await supabaseAdmin
       .from('users_teams')
@@ -41,4 +31,18 @@ export default async function checkUserTeamAuthCached(
   }
 
   return !!userTeamsRelationData.length
+}
+
+/*
+ *  This function checks if a user is authorized to access a team.
+ *  If the user is not authorized, it returns false.
+ */
+export default async function checkUserTeamAuthCached(
+  userId: string,
+  teamId: string
+) {
+  'use cache'
+  cacheTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamId))
+
+  return checkUserTeamAuth(userId, teamId)
 }
