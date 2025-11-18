@@ -45,7 +45,7 @@ vi.mock('next/cache', () => ({
 }))
 
 vi.mock('@/server/auth/check-user-team-auth-cached', () => ({
-  default: mockCheckUserTeamAuth,
+  checkUserTeamAuth: mockCheckUserTeamAuth,
 }))
 
 // import after mocks are set up
