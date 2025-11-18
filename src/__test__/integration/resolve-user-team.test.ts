@@ -40,10 +40,6 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(() => mockCookieStore),
 }))
 
-vi.mock('next/cache', () => ({
-  cacheTag: vi.fn(),
-}))
-
 vi.mock('@/server/auth/check-user-team-auth-cached', () => ({
   checkUserTeamAuth: mockCheckUserTeamAuth,
 }))
