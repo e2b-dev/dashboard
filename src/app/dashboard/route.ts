@@ -5,7 +5,7 @@ import { setTeamCookies } from '@/lib/utils/cookies'
 import { resolveUserTeam } from '@/server/team/resolve-user-team'
 import { NextRequest, NextResponse } from 'next/server'
 
-const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
+export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES(teamId),
   templates: (teamId) => PROTECTED_URLS.TEMPLATES(teamId),
   usage: (teamId) => PROTECTED_URLS.USAGE(teamId),
