@@ -34,8 +34,16 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
   },
 
   // team
-  '/dashboard/*/(general|keys|members)': {
+  '/dashboard/*/general': {
     title: 'General',
+    type: 'default',
+  },
+  '/dashboard/*/keys': {
+    title: 'API Keys',
+    type: 'default',
+  },
+  '/dashboard/*/members': {
+    title: 'Members',
     type: 'default',
   },
 
@@ -47,8 +55,12 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
       includeHeaderBottomStyles: true,
     },
   },
-  '/dashboard/*/(budget|billing)': {
+  '/dashboard/*/budget': {
     title: 'Budget',
+    type: 'default',
+  },
+  '/dashboard/*/billing': {
+    title: 'Billing',
     type: 'default',
   },
 
