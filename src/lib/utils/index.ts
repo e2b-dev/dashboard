@@ -47,14 +47,3 @@ export function debounce<T extends (...args: any[]) => void>(
     }, wait)
   }
 }
-
-export async function safeCall<T>(
-  fn: () => Promise<T>
-): Promise<[error: null, data: T] | [error: unknown, data: null]> {
-  try {
-    const data = await fn()
-    return [null, data]
-  } catch (error) {
-    return [error, null]
-  }
-}

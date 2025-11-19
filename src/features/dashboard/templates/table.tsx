@@ -165,21 +165,20 @@ export default function TemplatesTable() {
     overscan: VIRTUAL_OVERSCAN,
   })
 
-  if (isTemplatesFetching) {
-    return <LoadingLayout />
-  }
-
-  if (templatesError || defaultTemplatesError) {
-    const error = templatesError || defaultTemplatesError
+  if (templatesError) {
     return (
       <ErrorBoundary
         error={{
           name: 'Templates Error',
-          message: error?.message ?? 'Failed to load templates',
+          message: templatesError?.message ?? 'Failed to load templates',
         }}
         description="Could not load templates"
       />
     )
+  }
+
+  if (isTemplatesFetching) {
+    return <LoadingLayout />
   }
 
   return (
