@@ -3,7 +3,8 @@
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
-import { DefaultTemplate, Template } from '@/types/api.types'
+import { useTRPC } from '@/trpc/client'
+import { Template } from '@/types/api.types'
 import ClientOnly from '@/ui/client-only'
 import {
   DataTable,
@@ -11,8 +12,10 @@ import {
   DataTableHeader,
   DataTableRow,
 } from '@/ui/data-table'
+import ErrorBoundary from '@/ui/error'
 import HelpTooltip from '@/ui/help-tooltip'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
   ColumnSizingState,
@@ -20,22 +23,52 @@ import {
   TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
-interface TemplatesTableProps {
-  templates: (Template | DefaultTemplate)[]
-}
-
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
 
-export default function TemplatesTable({ templates }: TemplatesTableProps) {
+export default function TemplatesTable() {
   'use no memo'
+
+  const trpc = useTRPC()
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
+    >()
+
+  const { data: templatesData, error: templatesError } = useSuspenseQuery(
+    trpc.templates.getTemplates.queryOptions(
+      { teamIdOrSlug },
+      {
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      }
+    )
+  )
+
+  const { data: defaultTemplatesData } = useSuspenseQuery(
+    trpc.templates.getDefaultTemplatesCached.queryOptions(undefined, {
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    })
+  )
+
+  const templates = useMemo(
+    () => [
+      ...(defaultTemplatesData?.templates ?? []),
+      ...(templatesData?.templates ?? []),
+    ],
+    [templatesData, defaultTemplatesData]
+  )
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -125,6 +158,18 @@ export default function TemplatesTable({ templates }: TemplatesTableProps) {
     estimateSizePx: ROW_HEIGHT_PX,
     overscan: VIRTUAL_OVERSCAN,
   })
+
+  if (templatesError) {
+    return (
+      <ErrorBoundary
+        error={{
+          name: 'Templates Error',
+          message: templatesError?.message ?? 'Failed to load templates',
+        }}
+        description="Could not load templates"
+      />
+    )
+  }
 
   return (
     <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">

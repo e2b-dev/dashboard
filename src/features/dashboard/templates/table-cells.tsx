@@ -7,10 +7,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { isVersionCompatible } from '@/lib/utils/version'
-import {
-  deleteTemplateAction,
-  updateTemplateAction,
-} from '@/server/templates/templates-actions'
+import { useTRPC } from '@/trpc/client'
 import { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
@@ -26,9 +23,10 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader_d'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
 import { Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useAction } from 'next-safe-action/hooks'
+import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../common/resource-usage'
 import { useDashboard } from '../context'
@@ -49,60 +47,144 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
+    >()
+
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-  const { execute: executeUpdateTemplate, isExecuting: isUpdating } = useAction(
-    updateTemplateAction,
-    {
-      onSuccess: ({ input }) => {
+  const updateTemplateMutation = useMutation(
+    trpc.templates.updateTemplate.mutationOptions({
+      onSuccess: async (data, variables) => {
+        const templateName = template.aliases[0] || template.templateID
+
         toast(
           defaultSuccessToast(
-            `Template is now ${input.props.Public ? 'public' : 'private'}.`
+            <>
+              Template{' '}
+              <span className="prose-body-highlight">{templateName}</span> is
+              now {data.public ? 'public' : 'private'}.
+            </>
           )
+        )
+
+        await queryClient.cancelQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
+
+        queryClient.setQueryData(
+          trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+          (old) => {
+            if (!old?.templates) return old
+
+            return {
+              ...old,
+              templates: old.templates.map((t: Template) =>
+                t.templateID === variables.templateId
+                  ? { ...t, public: variables.public }
+                  : t
+              ),
+            }
+          }
         )
       },
       onError: (error) => {
+        const templateName = template.aliases[0] || template.templateID
         toast(
           defaultErrorToast(
-            error.error.serverError || 'Failed to update template.'
+            error.message || `Failed to update template ${templateName}.`
           )
         )
       },
-    }
+      onSettled: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
+      },
+    })
   )
 
-  const { execute: executeDeleteTemplate, isExecuting: isDeleting } = useAction(
-    deleteTemplateAction,
-    {
-      onSuccess: () => {
-        toast(defaultSuccessToast('Template has been deleted.'))
+  const deleteTemplateMutation = useMutation(
+    trpc.templates.deleteTemplate.mutationOptions({
+      onSuccess: async (_, variables) => {
+        const templateName = template.aliases[0] || template.templateID
+        toast(
+          defaultSuccessToast(
+            <>
+              Template{' '}
+              <span className="prose-body-highlight">{templateName}</span> has
+              been deleted.
+            </>
+          )
+        )
+
+        // stop ongoing invlaidations and remove template from state while refetch is going in the background
+
+        await queryClient.cancelQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
+
+        queryClient.setQueryData(
+          trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+
+          (old) => {
+            if (!old?.templates) return old
+            return {
+              ...old,
+              templates: old.templates.filter(
+                (t: Template) => t.templateID !== variables.templateId
+              ),
+            }
+          }
+        )
       },
-      onError: (error) => {
+      onError: (error, _variables) => {
+        const templateName = template.aliases[0] || template.templateID
         toast(
           defaultErrorToast(
-            error.error.serverError || 'Failed to delete template.'
+            error.message || `Failed to delete template ${templateName}.`
           )
         )
       },
       onSettled: () => {
         setIsDeleteDialogOpen(false)
+
+        queryClient.invalidateQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
       },
-    }
+    })
   )
 
-  const togglePublish = async () => {
-    executeUpdateTemplate({
+  const isUpdating = updateTemplateMutation.isPending
+  const isDeleting = deleteTemplateMutation.isPending
+
+  const togglePublish = () => {
+    updateTemplateMutation.mutate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
-      props: {
-        Public: !template.public,
-      },
+      public: !template.public,
     })
   }
 
-  const deleteTemplate = async () => {
-    executeDeleteTemplate({
+  const deleteTemplate = () => {
+    deleteTemplateMutation.mutate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
     })
@@ -114,7 +196,23 @@ export function ActionsCell({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Delete Template"
-        description="Are you sure you want to delete this template? This action cannot be undone."
+        description={
+          <>
+            You are about to delete the template{' '}
+            {template.aliases[0] && (
+              <>
+                <span className="prose-body-highlight">
+                  {template.aliases[0]}
+                </span>{' '}
+                (
+              </>
+            )}
+            <code className="text-fg-tertiary font-mono">
+              {template.templateID}
+            </code>
+            {template.aliases[0] && <>)</>}. This action cannot be undone.
+          </>
+        }
         confirm="Delete"
         onConfirm={() => deleteTemplate()}
         confirmProps={{

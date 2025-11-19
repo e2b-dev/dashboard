@@ -61,7 +61,7 @@ const errorCounter = meter.createCounter('trpc.procedure.errors', {
  * The span will be closed and logs written by endTelemetryMiddleware.
  */
 export const startTelemetryMiddleware = t.middleware(
-  async ({ ctx, next, path, type, input }) => {
+  async ({ ctx, next, path, type }) => {
     const tracer = getTracer()
 
     const procedurePath = path || 'unknown'
@@ -201,8 +201,8 @@ export const endTelemetryMiddleware = t.middleware(
         })
         span.recordException(error)
 
-        // internal errors with causes are unexpected bugs - log as error and obfuscate
-        if (error.code === 'INTERNAL_SERVER_ERROR' && error.cause) {
+        // internal errors are mostly unexpected - log as error and potentially obfuscate
+        if (error.code === 'INTERNAL_SERVER_ERROR') {
           l.error(
             {
               key: 'trpc:unexpected_error',
@@ -215,12 +215,18 @@ export const endTelemetryMiddleware = t.middleware(
               'trpc.procedure.input': rawInput,
               'trpc.procedure.duration_ms': durationMs,
 
-              error: serializeError(error.cause),
+              error: serializeError(error),
             },
-            `[tRPC] ${routerName}.${procedureName} failed unexpectedly: ${error.cause.message}`
+            `[tRPC] ${routerName}.${procedureName}: ${error.code} ${error?.cause?.message || error.message}`
           )
 
-          throw internalServerError()
+          // when it's internal error AND has a cause (unhandled errors), obfuscate
+          if (error.cause) {
+            throw internalServerError()
+          }
+
+          // otherwise return as is
+          return result
         }
 
         // expected errors (validation, not found, etc) - log as warning
@@ -238,7 +244,7 @@ export const endTelemetryMiddleware = t.middleware(
 
             error: serializeError(error),
           },
-          `[tRPC] ${routerName}.${procedureName} failed: ${error.message}`
+          `[tRPC] ${routerName}.${procedureName}: ${error.code} ${error.message}`
         )
 
         return result
@@ -258,11 +264,12 @@ export const endTelemetryMiddleware = t.middleware(
           'trpc.procedure.input': rawInput,
           'trpc.procedure.duration_ms': durationMs,
         },
-        `[tRPC] ${routerName}.${procedureName} succeeded in ${durationMs}ms`
+        `[tRPC] ${routerName}.${procedureName}`
       )
 
       return result
     } catch (error) {
+      // if the error is coming from a route (INTERNAL_SERVER_ERROR), rethrow
       if (error instanceof TRPCError) {
         throw error
       }
@@ -275,9 +282,10 @@ export const endTelemetryMiddleware = t.middleware(
 
           'trpc.router.name': routerName,
           'trpc.procedure.name': procedureName,
+
           error: serializeError(error),
         },
-        `[tRPC] Telemetry error in ${routerName}.${procedureName}`
+        `[tRPC] telemetry error in ${routerName}.${procedureName}${error && typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? `: ${error.message}` : ''}`
       )
 
       throw internalServerError()
