@@ -60,9 +60,15 @@ export function ActionsCell({
   const updateTemplateMutation = useMutation(
     trpc.templates.updateTemplate.mutationOptions({
       onSuccess: async (data, variables) => {
+        const templateName = template.aliases[0] || template.templateID
+
         toast(
           defaultSuccessToast(
-            `Template is now ${data.public ? 'public' : 'private'}.`
+            <>
+              Template{' '}
+              <span className="prose-body-highlight">{templateName}</span>is now{' '}
+              {data.public ? 'public' : 'private'}.
+            </>
           )
         )
 
@@ -91,7 +97,12 @@ export function ActionsCell({
         )
       },
       onError: (error) => {
-        toast(defaultErrorToast(error.message || 'Failed to update template.'))
+        const templateName = template.aliases[0] || template.templateID
+        toast(
+          defaultErrorToast(
+            error.message || `Failed to update template ${templateName}.`
+          )
+        )
       },
       onSettled: () => {
         queryClient.invalidateQueries({
@@ -106,7 +117,16 @@ export function ActionsCell({
   const deleteTemplateMutation = useMutation(
     trpc.templates.deleteTemplate.mutationOptions({
       onSuccess: async (_, variables) => {
-        toast(defaultSuccessToast('Template has been deleted.'))
+        const templateName = template.aliases[0] || template.templateID
+        toast(
+          defaultSuccessToast(
+            <>
+              Template{' '}
+              <span className="prose-body-highlight">{templateName}</span> has
+              been deleted.
+            </>
+          )
+        )
 
         // stop ongoing invlaidations and remove template from state while refetch is going in the background
 
@@ -133,7 +153,12 @@ export function ActionsCell({
         )
       },
       onError: (error, _variables) => {
-        toast(defaultErrorToast(error.message || 'Failed to delete template.'))
+        const templateName = template.aliases[0] || template.templateID
+        toast(
+          defaultErrorToast(
+            error.message || `Failed to delete template ${templateName}.`
+          )
+        )
       },
       onSettled: () => {
         setIsDeleteDialogOpen(false)
@@ -171,7 +196,23 @@ export function ActionsCell({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Delete Template"
-        description="Are you sure you want to delete this template? This action cannot be undone."
+        description={
+          <>
+            You are about to delete the template{' '}
+            {template.aliases[0] && (
+              <>
+                <span className="prose-body-highlight">
+                  {template.aliases[0]}
+                </span>{' '}
+                (
+              </>
+            )}
+            <code className="text-fg-tertiary font-mono">
+              {template.templateID}
+            </code>
+            {template.aliases[0] && <>)</>}. This action cannot be undone.
+          </>
+        }
         confirm="Delete"
         onConfirm={() => deleteTemplate()}
         confirmProps={{
