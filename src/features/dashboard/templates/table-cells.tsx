@@ -66,8 +66,8 @@ export function ActionsCell({
           defaultSuccessToast(
             <>
               Template{' '}
-              <span className="prose-body-highlight">{templateName}</span>is now{' '}
-              {data.public ? 'public' : 'private'}.
+              <span className="prose-body-highlight">{templateName}</span> is
+              now {data.public ? 'public' : 'private'}.
             </>
           )
         )
