@@ -64,8 +64,8 @@ export default function TemplatesTable() {
 
   const templates = useMemo(
     () => [
-      ...(templatesData?.templates ?? []),
       ...(defaultTemplatesData?.templates ?? []),
+      ...(templatesData?.templates ?? []),
     ],
     [templatesData, defaultTemplatesData]
   )
