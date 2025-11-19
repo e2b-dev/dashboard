@@ -26,7 +26,6 @@ import {
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import LoadingLayout from '../loading-layout'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
@@ -44,11 +43,7 @@ export default function TemplatesTable() {
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
 
-  const {
-    data: templatesData,
-    error: templatesError,
-    isFetching: isTemplatesFetching,
-  } = useSuspenseQuery(
+  const { data: templatesData, error: templatesError } = useSuspenseQuery(
     trpc.templates.getTemplates.queryOptions(
       { teamIdOrSlug },
       {
@@ -59,14 +54,13 @@ export default function TemplatesTable() {
     )
   )
 
-  const { data: defaultTemplatesData, error: defaultTemplatesError } =
-    useSuspenseQuery(
-      trpc.templates.getDefaultTemplatesCached.queryOptions(undefined, {
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-      })
-    )
+  const { data: defaultTemplatesData } = useSuspenseQuery(
+    trpc.templates.getDefaultTemplatesCached.queryOptions(undefined, {
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    })
+  )
 
   const templates = useMemo(
     () => [
@@ -175,10 +169,6 @@ export default function TemplatesTable() {
         description="Could not load templates"
       />
     )
-  }
-
-  if (isTemplatesFetching) {
-    return <LoadingLayout />
   }
 
   return (

@@ -59,39 +59,90 @@ export function ActionsCell({
 
   const updateTemplateMutation = useMutation(
     trpc.templates.updateTemplate.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: async (data, variables) => {
         toast(
           defaultSuccessToast(
             `Template is now ${data.public ? 'public' : 'private'}.`
           )
         )
+
+        await queryClient.cancelQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
+
+        queryClient.setQueryData(
+          trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+          (old) => {
+            if (!old?.templates) return old
+
+            return {
+              ...old,
+              templates: old.templates.map((t: Template) =>
+                t.templateID === variables.templateId
+                  ? { ...t, public: variables.public }
+                  : t
+              ),
+            }
+          }
+        )
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message || 'Failed to update template.'))
+      },
+      onSettled: () => {
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
             teamIdOrSlug,
           }),
         })
-      },
-      onError: (error) => {
-        toast(defaultErrorToast(error.message || 'Failed to update template.'))
       },
     })
   )
 
   const deleteTemplateMutation = useMutation(
     trpc.templates.deleteTemplate.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async (_, variables) => {
         toast(defaultSuccessToast('Template has been deleted.'))
+
+        // stop ongoing invlaidations and remove template from state while refetch is going in the background
+
+        await queryClient.cancelQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+        })
+
+        queryClient.setQueryData(
+          trpc.templates.getTemplates.queryKey({
+            teamIdOrSlug,
+          }),
+
+          (old) => {
+            if (!old?.templates) return old
+            return {
+              ...old,
+              templates: old.templates.filter(
+                (t: Template) => t.templateID !== variables.templateId
+              ),
+            }
+          }
+        )
+      },
+      onError: (error, _variables) => {
+        toast(defaultErrorToast(error.message || 'Failed to delete template.'))
+      },
+      onSettled: () => {
+        setIsDeleteDialogOpen(false)
+
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
             teamIdOrSlug,
           }),
         })
-      },
-      onError: (error) => {
-        toast(defaultErrorToast(error.message || 'Failed to delete template.'))
-      },
-      onSettled: () => {
-        setIsDeleteDialogOpen(false)
       },
     })
   )
