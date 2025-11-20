@@ -43,6 +43,12 @@ const BuildsTable = () => {
 
   const { statuses, buildIdOrTemplate } = useFiters()
 
+  useEffect(() => {
+    if (parentRef.current) {
+      parentRef.current.scrollTop = 0
+    }
+  }, [statuses, buildIdOrTemplate])
+
   const {
     data: builds,
     fetchNextPage,
@@ -182,6 +188,11 @@ const BuildsTable = () => {
   const showData = hasData
   const isRefetching = isFetchingList && hasData
 
+  const idWidth = 96
+  const templateWidth = 192
+  const startedWidth = 128
+  const durationWidth = 96
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div
@@ -190,11 +201,31 @@ const BuildsTable = () => {
       >
         <Table suppressHydrationWarning>
           <colgroup>
-            {/* no tailwind to avoid server/client boundary layout shifts */}
-            <col style={{ width: '6rem' }} />
-            <col style={{ width: '12rem' }} />
-            <col style={{ width: '8rem' }} />
-            <col style={{ width: '6rem' }} />
+            {/* inline styles to avoid server/client boundary layout shifts */}
+            <col
+              style={{ width: idWidth, minWidth: idWidth, maxWidth: idWidth }}
+            />
+            <col
+              style={{
+                width: templateWidth,
+                minWidth: templateWidth,
+                maxWidth: templateWidth,
+              }}
+            />
+            <col
+              style={{
+                width: startedWidth,
+                minWidth: startedWidth,
+                maxWidth: startedWidth,
+              }}
+            />
+            <col
+              style={{
+                width: durationWidth,
+                minWidth: durationWidth,
+                maxWidth: durationWidth,
+              }}
+            />
             <col />
           </colgroup>
           <TableHeader className="sticky top-0 z-10 bg-bg">
@@ -263,7 +294,10 @@ const BuildsTable = () => {
                       <TableCell className="py-1.5">
                         <BuildId shortId={build.shortId} />
                       </TableCell>
-                      <TableCell className="py-1.5">
+                      <TableCell
+                        className="py-1.5 overflow-hidden"
+                        style={{ maxWidth: templateWidth }}
+                      >
                         <Template name={build.template} />
                       </TableCell>
                       <TableCell className="py-1.5">

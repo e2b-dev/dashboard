@@ -20,7 +20,7 @@ export function BuildId({ shortId }: { shortId: string }) {
 }
 
 export function Template({ name }: { name: string }) {
-  return <span className="whitespace-nowrap truncate">{name}</span>
+  return <p className="truncate">{name}</p>
 }
 
 export function LoadingIndicator({ isLoading }: { isLoading: boolean }) {
@@ -171,9 +171,9 @@ export function Status({ status, statusMessage }: StatusProps) {
         {label}
       </Badge>
       {statusMessage && (
-        <span className="prose-table text-fg-tertiary truncate max-w-full">
+        <p className="prose-table text-fg-tertiary truncate max-w-full">
           {statusMessage}
-        </span>
+        </p>
       )}
     </div>
   )
