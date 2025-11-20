@@ -1,24 +1,24 @@
 import LoadingLayout from '@/features/dashboard/loading-layout'
-import TemplatesTable from '@/features/dashboard/templates/table'
+import BuildsTable from '@/features/dashboard/templates/builds/table'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { Suspense } from 'react'
 
-export default async function Page({
+export default async function BuildsPage({
   params,
 }: PageProps<'/dashboard/[teamIdOrSlug]/templates'>) {
   const { teamIdOrSlug } = await params
 
   prefetch(
-    trpc.templates.getTemplates.queryOptions({
+    trpc.builds.getCompletedBuilds.infiniteQueryOptions({
       teamIdOrSlug,
+      limit: 20,
     })
   )
-  prefetch(trpc.templates.getDefaultTemplatesCached.queryOptions())
 
   return (
     <HydrateClient>
       <Suspense fallback={<LoadingLayout />}>
-        <TemplatesTable />
+        <BuildsTable />
       </Suspense>
     </HydrateClient>
   )

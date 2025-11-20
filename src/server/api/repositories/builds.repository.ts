@@ -109,7 +109,7 @@ export async function getCompletedBuilds(
       )
     `
     )
-    .in('status', ['ready', 'failed'])
+    .in('status', ['uploaded', 'failed'])
     .eq('envs.team_id', teamId)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
