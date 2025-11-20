@@ -1,6 +1,7 @@
 'use client'
 
 import { useTRPC } from '@/trpc/client'
+import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
   TableBody,
@@ -10,9 +11,9 @@ import {
   TableRow,
 } from '@/ui/primitives/table'
 import {
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
-  useSuspenseInfiniteQuery,
 } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
@@ -48,8 +49,9 @@ const BuildsTable = () => {
     hasNextPage,
     isFetchingNextPage,
     isFetching: isFetchingList,
+    isPending,
     error: listError,
-  } = useSuspenseInfiniteQuery(
+  } = useInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
       {
         teamIdOrSlug,
@@ -58,11 +60,15 @@ const BuildsTable = () => {
       },
       {
         getNextPageParam: (page) => page.nextCursor,
+        placeholderData: (prev) => prev,
       }
     )
   )
 
-  const allBuilds = useMemo(() => builds.pages.flatMap((p) => p.data), [builds])
+  const allBuilds = useMemo(
+    () => builds?.pages.flatMap((p) => p.data) ?? [],
+    [builds]
+  )
 
   const runningBuildIds = useMemo(
     () => allBuilds.filter((b) => b.status === 'building').map((b) => b.id),
@@ -159,33 +165,6 @@ const BuildsTable = () => {
     virtualItems,
   ])
 
-  if (listError || buildsWithUpdatedStatuses.length === 0) {
-    return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1 overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-24">Build ID</TableHead>
-                <TableHead className="min-w-18">Status</TableHead>
-                <TableHead className="min-w-48">Template</TableHead>
-                <TableHead className="min-w-24">Duration</TableHead>
-                <TableHead className="w-full">Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <BuildsEmpty error={listError?.message} />
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    )
-  }
-
   const paddingTop = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0
   const paddingBottom =
     virtualItems.length > 0
@@ -193,76 +172,124 @@ const BuildsTable = () => {
         (virtualItems[virtualItems.length - 1]?.end ?? 0)
       : 0
 
+  const hasData = buildsWithUpdatedStatuses.length > 0
+  const showInitialLoader = isPending && !hasData
+  const showEmpty = !isPending && !hasData
+  const showData = hasData
+  const isRefetching = isFetchingList && hasData
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">
-        <Table>
+      <div
+        ref={parentRef}
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+      >
+        <Table suppressHydrationWarning>
+          <colgroup>
+            {/* no tailwind to avoid server/client boundary layout shifts */}
+            <col style={{ width: '6rem' }} />
+            <col style={{ width: '12rem' }} />
+            <col style={{ width: '8rem' }} />
+            <col style={{ width: '6rem' }} />
+            <col />
+          </colgroup>
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
-              <TableHead className="min-w-24">Build ID</TableHead>
-              <TableHead className="min-w-48">Template</TableHead>
-              <TableHead className="min-w-24">Started</TableHead>
-              <TableHead className="min-w-24">Duration</TableHead>
-              <TableHead className="w-full">Status</TableHead>
+              <TableHead>Build ID</TableHead>
+              <TableHead>Template</TableHead>
+              <TableHead>Started</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {paddingTop > 0 && (
-              <tr>
-                <td colSpan={5} style={{ height: paddingTop, padding: 0 }} />
-              </tr>
+          <TableBody
+            className={isRefetching ? 'opacity-50 transition-opacity' : ''}
+          >
+            {showInitialLoader && (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <div className="h-[35vh] w-full flex justify-center items-center">
+                    <Loader variant="slash" size="lg" />
+                  </div>
+                </TableCell>
+              </TableRow>
             )}
-            {virtualItems.map((virtualRow) => {
-              const isLoaderRow =
-                virtualRow.index > buildsWithUpdatedStatuses.length - 1
-              const build = buildsWithUpdatedStatuses[virtualRow.index]
 
-              if (isLoaderRow) {
-                return (
-                  <TableRow key="loader">
-                    <TableCell
+            {showEmpty && (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <BuildsEmpty error={listError?.message} />
+                </TableCell>
+              </TableRow>
+            )}
+
+            {showData && (
+              <>
+                {paddingTop > 0 && (
+                  <tr>
+                    <td
                       colSpan={5}
-                      className="text-center text-fg-tertiary"
-                    >
-                      <LoadingIndicator isLoading={isFetchingNextPage} />
-                    </TableCell>
-                  </TableRow>
-                )
-              }
-
-              if (!build) return null
-
-              return (
-                <TableRow key={build.id}>
-                  <TableCell className="py-1.5">
-                    <BuildId shortId={build.shortId} />
-                  </TableCell>
-                  <TableCell className="py-1.5">
-                    <Template name={build.template} />
-                  </TableCell>
-                  <TableCell className="py-1.5">
-                    <CreatedAt timestamp={build.createdAt} />
-                  </TableCell>
-                  <TableCell className="py-1.5">
-                    <Duration
-                      createdAt={build.createdAt}
-                      finishedAt={build.finishedAt}
-                      isRunning={build.status === 'building'}
+                      style={{ height: paddingTop, padding: 0 }}
                     />
-                  </TableCell>
-                  <TableCell className="py-1.5">
-                    <Status
-                      status={build.status}
-                      statusMessage={build.statusMessage}
+                  </tr>
+                )}
+
+                {virtualItems.map((virtualRow) => {
+                  const isLoaderRow =
+                    virtualRow.index > buildsWithUpdatedStatuses.length - 1
+                  const build = buildsWithUpdatedStatuses[virtualRow.index]
+
+                  if (isLoaderRow) {
+                    return (
+                      <TableRow key="loader">
+                        <TableCell
+                          colSpan={5}
+                          className="text-center text-fg-tertiary"
+                        >
+                          <LoadingIndicator isLoading={isFetchingNextPage} />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  }
+
+                  if (!build) return null
+
+                  return (
+                    <TableRow key={build.id}>
+                      <TableCell className="py-1.5">
+                        <BuildId shortId={build.shortId} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Template name={build.template} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <CreatedAt timestamp={build.createdAt} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Duration
+                          createdAt={build.createdAt}
+                          finishedAt={build.finishedAt}
+                          isRunning={build.status === 'building'}
+                        />
+                      </TableCell>
+                      <TableCell className="py-1.5 overflow-hidden">
+                        <Status
+                          status={build.status}
+                          statusMessage={build.statusMessage}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+                {paddingBottom > 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      style={{ height: paddingBottom, padding: 0 }}
                     />
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-            {paddingBottom > 0 && (
-              <tr>
-                <td colSpan={5} style={{ height: paddingBottom, padding: 0 }} />
-              </tr>
+                  </tr>
+                )}
+              </>
             )}
           </TableBody>
         </Table>

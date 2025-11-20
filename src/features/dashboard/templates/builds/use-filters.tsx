@@ -21,13 +21,13 @@ export default function useFilters() {
 
   const setStatuses = useDebounceCallback((statuses: BuildStatus[]) => {
     setFilters({ statuses: statuses })
-  }, 500)
+  }, 300)
 
   const setBuildIdOrTemplate = useDebounceCallback(
     (buildIdOrTemplate: string) => {
       setFilters({ buildIdOrTemplate })
     },
-    500
+    300
   )
 
   return {

@@ -32,7 +32,7 @@ export function LoadingIndicator({ isLoading }: { isLoading: boolean }) {
       </span>
     )
   }
-  return <>Load more...</>
+  return <>Scroll to load more...</>
 }
 
 export function Duration({
@@ -160,10 +160,10 @@ export function Status({ status, statusMessage }: StatusProps) {
   const { label, icon, variant } = config[status]
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 min-w-0">
       <Badge
         variant={variant}
-        className={cn('select-none', {
+        className={cn('select-none flex-shrink-0', {
           'bg-bg-inverted/10': variant === 'default',
         })}
       >
@@ -171,7 +171,7 @@ export function Status({ status, statusMessage }: StatusProps) {
         {label}
       </Badge>
       {statusMessage && (
-        <span className="prose-table font-mono text-fg-tertiary whitespace-nowrap truncate max-w-full">
+        <span className="prose-table text-fg-tertiary truncate max-w-full">
           {statusMessage}
         </span>
       )}

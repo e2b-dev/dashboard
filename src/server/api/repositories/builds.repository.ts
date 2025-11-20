@@ -56,7 +56,8 @@ function mapRawBuildToDTO(build: RawBuild): BuildDTO {
     shortId: build.id.split('-')[0]!,
     template: alias ?? build.env_id,
     status: mapBuildStatusDB(build.status as BuildStatusDB),
-    statusMessage: extractStatusMessage(build.status, build.reason),
+    statusMessage:
+      'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
     createdAt: new Date(build.created_at).getTime(),
     finishedAt: build.finished_at
       ? new Date(build.finished_at).getTime()
