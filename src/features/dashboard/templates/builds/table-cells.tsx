@@ -160,7 +160,7 @@ export function Status({ status, statusMessage }: StatusProps) {
   const { label, icon, variant } = config[status]
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <Badge
         variant={variant}
         className={cn('select-none', {
@@ -171,7 +171,7 @@ export function Status({ status, statusMessage }: StatusProps) {
         {label}
       </Badge>
       {statusMessage && (
-        <span className="prose-body-highlight text-fg-tertiary">
+        <span className="prose-table font-mono text-fg-tertiary whitespace-nowrap truncate max-w-full">
           {statusMessage}
         </span>
       )}
