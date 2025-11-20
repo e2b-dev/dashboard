@@ -155,7 +155,11 @@ const BuildsTable = () => {
       hasNextPage &&
       !isFetchingNextPage
     ) {
-      fetchNextPage()
+      const timeoutId = setTimeout(() => {
+        fetchNextPage()
+      }, 500)
+
+      return () => clearTimeout(timeoutId)
     }
   }, [
     hasNextPage,

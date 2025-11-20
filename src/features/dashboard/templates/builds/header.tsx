@@ -86,7 +86,13 @@ export default function BuildsHeader() {
   }, [statuses])
 
   const toggleStatus = (status: BuildStatus) => {
-    const newStatuses = localStatuses.includes(status)
+    const isSelected = localStatuses.includes(status)
+
+    if (isSelected && localStatuses.length === 1) {
+      return
+    }
+
+    const newStatuses = isSelected
       ? localStatuses.filter((s) => s !== status)
       : [...localStatuses, status]
 
