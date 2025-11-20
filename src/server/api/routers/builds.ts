@@ -6,28 +6,31 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { apiError } from '../errors'
 import { createTRPCRouter } from '../init'
+import {
+  type BuildStatusDB,
+  BuildStatusSchema,
+  mapBuildStatusDTO,
+} from '../models/builds.models'
 import { protectedTeamProcedure } from '../procedures'
 
 export const buildsRouter = createTRPCRouter({
-  // QUERIES
-
   getBuildStatus: protectedTeamProcedure
     .input(
       z.object({
-        templateid: z.string(),
+        templateId: z.string(),
         buildId: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
       const { session, teamId } = ctx
-      const { buildId } = input
+      const { templateId, buildId } = input
 
       const res = await infra.GET(
         '/templates/{templateID}/builds/{buildID}/status',
         {
           params: {
             path: {
-              templateID: teamId,
+              templateID: templateId,
               buildID: buildId,
             },
           },
@@ -46,6 +49,7 @@ export const buildsRouter = createTRPCRouter({
             error: res.error,
             user_id: session.user.id,
             team_id: teamId,
+            template_id: templateId,
             build_id: buildId,
             context: {
               status,
@@ -68,100 +72,37 @@ export const buildsRouter = createTRPCRouter({
       return res.data
     }),
 
-  getRunningBuilds: protectedTeamProcedure
-    .input(
-      z.object({
-        templateIdOrAlias: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { teamId } = ctx
-      const { templateIdOrAlias } = input
-
-      try {
-        const builds = await buildsRepo.getRunningBuilds(
-          teamId,
-          templateIdOrAlias
-        )
-        return { builds }
-      } catch (error) {
-        l.error(
-          {
-            key: 'trpc:builds:get_running_builds:error',
-            error,
-            team_id: teamId,
-            template_id_or_alias: templateIdOrAlias,
-          },
-          `Failed to get running builds: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch running builds',
-        })
-      }
-    }),
-
-  getCompletedBuilds: protectedTeamProcedure
-    .input(
-      z.object({
-        templateIdOrAlias: z.string().optional(),
-        limit: z.number().min(1).max(100).optional(),
-        cursor: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { teamId } = ctx
-      const { templateIdOrAlias, limit, cursor } = input
-
-      try {
-        const result = await buildsRepo.getCompletedBuilds(
-          teamId,
-          templateIdOrAlias,
-          { limit, cursor }
-        )
-        return result
-      } catch (error) {
-        l.error(
-          {
-            key: 'trpc:builds:get_completed_builds:error',
-            error,
-            team_id: teamId,
-            template_id_or_alias: templateIdOrAlias,
-          },
-          `Failed to get completed builds: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch completed builds',
-        })
-      }
-    }),
-
   list: protectedTeamProcedure
     .input(
       z.object({
-        templateIdOrAlias: z.string().optional(),
-        limit: z.number().min(1).max(100).optional(),
+        buildIdOrTemplate: z.string().optional(),
+        statuses: z.array(BuildStatusSchema),
+        limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const { teamId } = ctx
-      const { templateIdOrAlias, limit, cursor } = input
+      const { buildIdOrTemplate, statuses, limit, cursor } = input
+
+      const dbStatuses = statuses.flatMap(mapBuildStatusDTO) as BuildStatusDB[]
 
       try {
-        const result = await buildsRepo.listBuilds(teamId, templateIdOrAlias, {
+        return await buildsRepo.listBuilds(teamId, buildIdOrTemplate, dbStatuses, {
           limit,
           cursor,
         })
-        return result
       } catch (error) {
         l.error(
           {
             key: 'trpc:builds:list:error',
             error,
             team_id: teamId,
-            template_id_or_alias: templateIdOrAlias,
+            context: {
+              build_id_or_template: buildIdOrTemplate,
+              statuses,
+              db_statuses: dbStatuses,
+            },
           },
           `Failed to list builds: ${error instanceof Error ? error.message : 'Unknown error'}`
         )

@@ -7,7 +7,7 @@ interface BuildsEmptyProps {
 
 export default function BuildsEmpty({ error }: BuildsEmptyProps) {
   return (
-    <div className="h-36 w-full gap-2 relative flex justify-center items-center p-6">
+    <div className="h-[35vh] w-full gap-2 relative flex justify-center items-center p-6">
       <BuildIcon
         className={cn('size-5', error && 'text-accent-error-highlight')}
       />
@@ -17,7 +17,7 @@ export default function BuildsEmpty({ error }: BuildsEmptyProps) {
           error && 'text-accent-error-highlight'
         )}
       >
-        {error ? error : 'No webhooks added yet'}
+        {error ? error : 'No template builds found'}
       </p>
     </div>
   )

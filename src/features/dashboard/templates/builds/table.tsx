@@ -1,7 +1,6 @@
 'use client'
 
 import { useTRPC } from '@/trpc/client'
-import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
   TableBody,
@@ -19,7 +18,15 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef } from 'react'
 import BuildsEmpty from './empty'
-import { CreatedAt, Duration, Status } from './table-cells'
+import {
+  BuildId,
+  CreatedAt,
+  Duration,
+  LoadingIndicator,
+  Status,
+  Template,
+} from './table-cells'
+import useFiters from './use-filters'
 
 const RUNNING_BUILDS_REFETCH_INTERVAL = 5 * 1000
 const ROW_HEIGHT = 37
@@ -33,17 +40,21 @@ const BuildsTable = () => {
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
 
+  const { statuses, buildIdOrTemplate } = useFiters()
+
   const {
     data: builds,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching: isFetchingList,
     error: listError,
   } = useSuspenseInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
       {
         teamIdOrSlug,
-        limit: 20,
+        statuses,
+        buildIdOrTemplate,
       },
       {
         getNextPageParam: (page) => page.nextCursor,
@@ -72,8 +83,9 @@ const BuildsTable = () => {
     )
   )
 
+  // invalidate list when statuses have changed
   useEffect(() => {
-    if (!statusesData?.statuses) return
+    if (!statusesData?.statuses || isFetchingList) return
 
     const completedBuildIds = statusesData.statuses
       .filter((s) => s.status === 'success' || s.status === 'failed')
@@ -83,11 +95,20 @@ const BuildsTable = () => {
       queryClient.invalidateQueries({
         queryKey: trpc.builds.list.infiniteQueryOptions({
           teamIdOrSlug,
-          limit: 20,
+          buildIdOrTemplate,
+          statuses,
         }).queryKey,
       })
     }
-  }, [statusesData, queryClient, trpc, teamIdOrSlug])
+  }, [
+    statusesData,
+    queryClient,
+    trpc,
+    teamIdOrSlug,
+    statuses,
+    buildIdOrTemplate,
+    isFetchingList,
+  ])
 
   const buildsWithUpdatedStatuses = useMemo(() => {
     if (!statusesData?.statuses) return allBuilds
@@ -116,8 +137,9 @@ const BuildsTable = () => {
     overscan: 5,
   })
 
+  const virtualItems = rowVirtualizer.getVirtualItems()
+
   useEffect(() => {
-    const virtualItems = rowVirtualizer.getVirtualItems()
     const lastItem = virtualItems[virtualItems.length - 1]
 
     if (!lastItem) return
@@ -134,7 +156,7 @@ const BuildsTable = () => {
     fetchNextPage,
     buildsWithUpdatedStatuses.length,
     isFetchingNextPage,
-    rowVirtualizer.getVirtualItems(),
+    virtualItems,
   ])
 
   if (listError || buildsWithUpdatedStatuses.length === 0) {
@@ -164,9 +186,7 @@ const BuildsTable = () => {
     )
   }
 
-  const virtualItems = rowVirtualizer.getVirtualItems()
-  const paddingTop =
-    virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0
+  const paddingTop = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0
   const paddingBottom =
     virtualItems.length > 0
       ? rowVirtualizer.getTotalSize() -
@@ -180,10 +200,10 @@ const BuildsTable = () => {
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead className="min-w-24">Build ID</TableHead>
-              <TableHead className="min-w-18">Status</TableHead>
               <TableHead className="min-w-48">Template</TableHead>
+              <TableHead className="min-w-24">Started</TableHead>
               <TableHead className="min-w-24">Duration</TableHead>
-              <TableHead className="w-full">Created</TableHead>
+              <TableHead className="w-full">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -204,14 +224,7 @@ const BuildsTable = () => {
                       colSpan={5}
                       className="text-center text-fg-tertiary"
                     >
-                      {isFetchingNextPage ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader variant="slash" size="sm" />
-                          Loading...
-                        </span>
-                      ) : (
-                        'Load more...'
-                      )}
+                      <LoadingIndicator isLoading={isFetchingNextPage} />
                     </TableCell>
                   </TableRow>
                 )
@@ -222,14 +235,14 @@ const BuildsTable = () => {
               return (
                 <TableRow key={build.id}>
                   <TableCell className="py-1.5">
-                    <span className="whitespace-nowrap text-fg-tertiary">
-                      {build.shortId}
-                    </span>
+                    <BuildId shortId={build.shortId} />
                   </TableCell>
                   <TableCell className="py-1.5">
-                    <Status status={build.status} />
+                    <Template name={build.template} />
                   </TableCell>
-                  <TableCell className="py-1.5">{build.template}</TableCell>
+                  <TableCell className="py-1.5">
+                    <CreatedAt timestamp={build.createdAt} />
+                  </TableCell>
                   <TableCell className="py-1.5">
                     <Duration
                       createdAt={build.createdAt}
@@ -238,7 +251,10 @@ const BuildsTable = () => {
                     />
                   </TableCell>
                   <TableCell className="py-1.5">
-                    <CreatedAt timestamp={build.createdAt} />
+                    <Status
+                      status={build.status}
+                      statusMessage={build.statusMessage}
+                    />
                   </TableCell>
                 </TableRow>
               )

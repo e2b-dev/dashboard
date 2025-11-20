@@ -1,10 +1,11 @@
 import { cn } from '@/lib/utils'
 import { formatDurationCompact } from '@/lib/utils/formatting'
-import { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildDTO, BuildStatus } from '@/server/api/models/builds.models'
 import CopyButton from '@/ui/copy-button'
 import { Badge } from '@/ui/primitives/badge'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
+import { Loader } from '@/ui/primitives/loader'
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +14,26 @@ import {
 } from '@/ui/primitives/tooltip'
 import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useState } from 'react'
+
+export function BuildId({ shortId }: { shortId: string }) {
+  return <span className="whitespace-nowrap text-fg-tertiary">{shortId}</span>
+}
+
+export function Template({ name }: { name: string }) {
+  return <span className="whitespace-nowrap truncate">{name}</span>
+}
+
+export function LoadingIndicator({ isLoading }: { isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <span className="flex items-center justify-center gap-2">
+        <Loader variant="slash" size="sm" />
+        Loading...
+      </span>
+    )
+  }
+  return <>Load more...</>
+}
 
 export function Duration({
   createdAt,
@@ -105,7 +126,12 @@ export function CreatedAt({ timestamp }: { timestamp: number }) {
   )
 }
 
-export function Status({ status }: { status: BuildStatus }) {
+interface StatusProps {
+  status: BuildStatus
+  statusMessage: BuildDTO['statusMessage']
+}
+
+export function Status({ status, statusMessage }: StatusProps) {
   const config: Record<
     BuildStatus,
     {
@@ -134,14 +160,21 @@ export function Status({ status }: { status: BuildStatus }) {
   const { label, icon, variant } = config[status]
 
   return (
-    <Badge
-      variant={variant}
-      className={cn('select-none', {
-        'bg-bg-inverted/10': variant === 'default',
-      })}
-    >
-      {icon}
-      {label}
-    </Badge>
+    <div className="flex items-center gap-2">
+      <Badge
+        variant={variant}
+        className={cn('select-none', {
+          'bg-bg-inverted/10': variant === 'default',
+        })}
+      >
+        {icon}
+        {label}
+      </Badge>
+      {statusMessage && (
+        <span className="prose-body-highlight text-fg-tertiary">
+          {statusMessage}
+        </span>
+      )}
+    </div>
   )
 }

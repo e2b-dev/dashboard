@@ -11,8 +11,9 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Input } from '@/ui/primitives/input'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Status } from './table-cells'
+import useFilters from './use-filters'
 
 interface DashedStatusCircleIconProps {
   status: BuildStatus
@@ -66,23 +67,50 @@ const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
 ]
 
 export default function BuildsHeader() {
-  const [selectedStatuses, setSelectedStatuses] = useState<BuildStatus[]>([
-    'building',
-    'success',
-    'failed',
-  ])
+  const { statuses, setStatuses, buildIdOrTemplate, setBuildIdOrTemplate } =
+    useFilters()
+
+  const [localBuildIdOrTemplate, setLocalBuildIdOrTemplate] = useState<string>(
+    buildIdOrTemplate ?? ''
+  )
+
+  const [localStatuses, setLocalStatuses] = useState<BuildStatus[]>(statuses)
+
+  useEffect(() => {
+    if (!buildIdOrTemplate) return
+    setLocalBuildIdOrTemplate(buildIdOrTemplate)
+  }, [buildIdOrTemplate])
+
+  useEffect(() => {
+    setLocalStatuses(statuses)
+  }, [statuses])
 
   const toggleStatus = (status: BuildStatus) => {
-    setSelectedStatuses((prev) =>
-      prev.includes(status)
-        ? prev.filter((s) => s !== status)
-        : [...prev, status]
-    )
+    const newStatuses = localStatuses.includes(status)
+      ? localStatuses.filter((s) => s !== status)
+      : [...localStatuses, status]
+
+    setLocalStatuses(newStatuses)
+    setStatuses(newStatuses)
+  }
+
+  const selectAllStatuses = () => {
+    const allStatuses = STATUS_OPTIONS.map((s) => s.value)
+    setLocalStatuses(allStatuses)
+    setStatuses(allStatuses)
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <Input placeholder="Build ID, Template ID or Name" className="w-62" />
+      <Input
+        placeholder="Build ID, Template ID or Name"
+        className="w-62"
+        value={localBuildIdOrTemplate}
+        onChange={(e) => {
+          setLocalBuildIdOrTemplate(e.target.value)
+          setBuildIdOrTemplate(e.target.value)
+        }}
+      />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -91,16 +119,15 @@ export default function BuildsHeader() {
             size="sm"
             className="font-sans w-min normal-case"
           >
-            <StatusIcons selectedStatuses={selectedStatuses} /> Status •{' '}
-            {selectedStatuses.length}/{STATUS_OPTIONS.length}
+            <StatusIcons selectedStatuses={localStatuses} /> Status •{' '}
+            {localStatuses.length}/{STATUS_OPTIONS.length}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuCheckboxItem
-            checked={selectedStatuses.length === STATUS_OPTIONS.length}
-            onCheckedChange={() =>
-              setSelectedStatuses(STATUS_OPTIONS.map((s) => s.value))
-            }
+            checked={localStatuses.length === STATUS_OPTIONS.length}
+            onCheckedChange={selectAllStatuses}
+            onSelect={(e) => e.preventDefault()}
           >
             All
           </DropdownMenuCheckboxItem>
@@ -108,10 +135,11 @@ export default function BuildsHeader() {
           {STATUS_OPTIONS.map((option) => (
             <DropdownMenuCheckboxItem
               key={option.value}
-              checked={selectedStatuses.includes(option.value)}
+              checked={localStatuses.includes(option.value)}
               onCheckedChange={() => toggleStatus(option.value)}
+              onSelect={(e) => e.preventDefault()}
             >
-              <Status status={option.value} />
+              <Status status={option.value} statusMessage={null} />
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>
