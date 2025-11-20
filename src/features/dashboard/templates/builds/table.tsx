@@ -190,7 +190,7 @@ const BuildsTable = () => {
 
   const idWidth = 96
   const templateWidth = 192
-  const startedWidth = 128
+  const startedWidth = 156
   const durationWidth = 96
 
   return (
@@ -279,7 +279,7 @@ const BuildsTable = () => {
                       <TableRow key="loader">
                         <TableCell
                           colSpan={5}
-                          className="text-center text-fg-tertiary"
+                          className="text-start text-accent-main-highlight"
                         >
                           <LoadingIndicator isLoading={isFetchingNextPage} />
                         </TableCell>
