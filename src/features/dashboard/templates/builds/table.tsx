@@ -1,73 +1,256 @@
 'use client'
 
 import { useTRPC } from '@/trpc/client'
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query'
-import { useDashboard } from '../../context'
+import { Loader } from '@/ui/primitives/loader'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/ui/primitives/table'
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+} from '@tanstack/react-query'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useParams } from 'next/navigation'
+import { useEffect, useMemo, useRef } from 'react'
+import BuildsEmpty from './empty'
+import { CreatedAt, Duration, Status } from './table-cells'
+
+const RUNNING_BUILDS_REFETCH_INTERVAL = 5 * 1000
+const ROW_HEIGHT = 37
 
 const BuildsTable = () => {
   const trpc = useTRPC()
-  const { team } = useDashboard()
+  const queryClient = useQueryClient()
+  const parentRef = useRef<HTMLDivElement>(null)
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
+    >()
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useSuspenseInfiniteQuery(
-      trpc.builds.getCompletedBuilds.infiniteQueryOptions(
-        {
-          teamIdOrSlug: team.id,
+  const {
+    data: builds,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error: listError,
+  } = useSuspenseInfiniteQuery(
+    trpc.builds.list.infiniteQueryOptions(
+      {
+        teamIdOrSlug,
+        limit: 20,
+      },
+      {
+        getNextPageParam: (page) => page.nextCursor,
+      }
+    )
+  )
+
+  const allBuilds = useMemo(() => builds.pages.flatMap((p) => p.data), [builds])
+
+  const runningBuildIds = useMemo(
+    () => allBuilds.filter((b) => b.status === 'building').map((b) => b.id),
+    [allBuilds]
+  )
+
+  const { data: statusesData } = useQuery(
+    trpc.builds.getStatuses.queryOptions(
+      {
+        teamIdOrSlug,
+        buildIds: runningBuildIds,
+      },
+      {
+        refetchInterval:
+          runningBuildIds.length > 0 ? RUNNING_BUILDS_REFETCH_INTERVAL : false,
+        enabled: runningBuildIds.length > 0,
+      }
+    )
+  )
+
+  useEffect(() => {
+    if (!statusesData?.statuses) return
+
+    const completedBuildIds = statusesData.statuses
+      .filter((s) => s.status === 'success' || s.status === 'failed')
+      .map((s) => s.id)
+
+    if (completedBuildIds.length > 0) {
+      queryClient.invalidateQueries({
+        queryKey: trpc.builds.list.infiniteQueryOptions({
+          teamIdOrSlug,
           limit: 20,
-        },
-        {
-          getNextPageParam: (parentPage) => parentPage.nextCursor,
-        }
-      )
+        }).queryKey,
+      })
+    }
+  }, [statusesData, queryClient, trpc, teamIdOrSlug])
+
+  const buildsWithUpdatedStatuses = useMemo(() => {
+    if (!statusesData?.statuses) return allBuilds
+
+    const statusMap = new Map(
+      statusesData.statuses.map((s) => [s.id, s.status])
     )
 
-  const allBuilds = data.pages.flatMap((page) => page.data)
+    return allBuilds.map((build) => {
+      const updatedStatus = statusMap.get(build.id)
+      if (updatedStatus && updatedStatus !== build.status) {
+        return { ...build, status: updatedStatus }
+      }
+      return build
+    })
+  }, [allBuilds, statusesData])
+
+  const rowCount = hasNextPage
+    ? buildsWithUpdatedStatuses.length + 1
+    : buildsWithUpdatedStatuses.length
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 5,
+  })
+
+  useEffect(() => {
+    const virtualItems = rowVirtualizer.getVirtualItems()
+    const lastItem = virtualItems[virtualItems.length - 1]
+
+    if (!lastItem) return
+
+    if (
+      lastItem.index >= buildsWithUpdatedStatuses.length - 1 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage()
+    }
+  }, [
+    hasNextPage,
+    fetchNextPage,
+    buildsWithUpdatedStatuses.length,
+    isFetchingNextPage,
+    rowVirtualizer.getVirtualItems(),
+  ])
+
+  if (listError || buildsWithUpdatedStatuses.length === 0) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-24">Build ID</TableHead>
+                <TableHead className="min-w-18">Status</TableHead>
+                <TableHead className="min-w-48">Template</TableHead>
+                <TableHead className="min-w-24">Duration</TableHead>
+                <TableHead className="w-full">Created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <BuildsEmpty error={listError?.message} />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    )
+  }
+
+  const virtualItems = rowVirtualizer.getVirtualItems()
+  const paddingTop =
+    virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0
+  const paddingBottom =
+    virtualItems.length > 0
+      ? rowVirtualizer.getTotalSize() -
+        (virtualItems[virtualItems.length - 1]?.end ?? 0)
+      : 0
 
   return (
-    <div className="space-y-4 p-4 overflow-y-auto h-full">
-      <h2 className="text-lg font-semibold">
-        Completed Builds ({allBuilds.length})
-      </h2>
-
-      <div className="space-2">
-        {allBuilds.map((build) => (
-          <div key={build.id} className="rounded border p-3 text-sm">
-            <div>
-              <strong>Build ID:</strong> {build.id}
-            </div>
-            <div>
-              <strong>Status:</strong> {build.status}
-            </div>
-            <div>
-              <strong>Env ID:</strong> {build.env_id}
-            </div>
-            <div>
-              <strong>Created:</strong>{' '}
-              {new Date(build.created_at).toLocaleString()}
-            </div>
-            {build.finished_at && (
-              <div>
-                <strong>Finished:</strong>{' '}
-                {new Date(build.finished_at).toLocaleString()}
-              </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-bg">
+            <TableRow>
+              <TableHead className="min-w-24">Build ID</TableHead>
+              <TableHead className="min-w-18">Status</TableHead>
+              <TableHead className="min-w-48">Template</TableHead>
+              <TableHead className="min-w-24">Duration</TableHead>
+              <TableHead className="w-full">Created</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paddingTop > 0 && (
+              <tr>
+                <td colSpan={5} style={{ height: paddingTop, padding: 0 }} />
+              </tr>
             )}
-          </div>
-        ))}
+            {virtualItems.map((virtualRow) => {
+              const isLoaderRow =
+                virtualRow.index > buildsWithUpdatedStatuses.length - 1
+              const build = buildsWithUpdatedStatuses[virtualRow.index]
+
+              if (isLoaderRow) {
+                return (
+                  <TableRow key="loader">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-fg-tertiary"
+                    >
+                      {isFetchingNextPage ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader variant="slash" size="sm" />
+                          Loading...
+                        </span>
+                      ) : (
+                        'Load more...'
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              }
+
+              if (!build) return null
+
+              return (
+                <TableRow key={build.id}>
+                  <TableCell className="py-1.5">
+                    <span className="whitespace-nowrap text-fg-tertiary">
+                      {build.shortId}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    <Status status={build.status} />
+                  </TableCell>
+                  <TableCell className="py-1.5">{build.template}</TableCell>
+                  <TableCell className="py-1.5">
+                    <Duration
+                      createdAt={build.createdAt}
+                      finishedAt={build.finishedAt}
+                      isRunning={build.status === 'building'}
+                    />
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    <CreatedAt timestamp={build.createdAt} />
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+            {paddingBottom > 0 && (
+              <tr>
+                <td colSpan={5} style={{ height: paddingBottom, padding: 0 }} />
+              </tr>
+            )}
+          </TableBody>
+        </Table>
       </div>
-
-      {allBuilds.length === 0 && (
-        <div className="text-center text-muted-foreground">No builds found</div>
-      )}
-
-      {hasNextPage && (
-        <button
-          onClick={() => fetchNextPage()}
-          disabled={isFetchingNextPage}
-          className="w-full rounded border bg-background px-4 py-2 hover:bg-accent disabled:opacity-50"
-        >
-          {isFetchingNextPage ? 'Loading...' : 'Load More'}
-        </button>
-      )}
     </div>
   )
 }

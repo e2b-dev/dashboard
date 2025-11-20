@@ -1,5 +1,10 @@
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import type { Tables } from '@/types/database.types'
+import {
+  type BuildDTO,
+  type BuildStatus,
+  mapBuildStatus,
+} from '../models/builds.models'
 
 const TEMPLATE_BUILD_TIMEOUT_MS = 1000 * 60 * 60
 
@@ -152,4 +157,130 @@ export async function getCompletedBuilds(
     nextCursor,
     hasMore,
   }
+}
+
+export async function listBuilds(
+  teamId: string,
+  templateIdOrAlias?: string,
+  options: PaginationOptions = {}
+): Promise<PaginatedResult<BuildDTO>> {
+  const limit = options.limit ?? 50
+  const buildTimeoutAgo = new Date(
+    Date.now() - TEMPLATE_BUILD_TIMEOUT_MS
+  ).toISOString()
+
+  let query = supabaseAdmin
+    .from('env_builds')
+    .select(
+      `
+      id,
+      env_id,
+      status,
+      created_at,
+      finished_at,
+      envs!inner(
+        id,
+        team_id,
+        env_aliases(alias)
+      )
+    `
+    )
+    .eq('envs.team_id', teamId)
+    .or(
+      `status.in.(uploaded,failed),and(status.in.(waiting,building),created_at.gte.${buildTimeoutAgo})`
+    )
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit + 1)
+
+  if (templateIdOrAlias) {
+    const resolvedEnvId = await resolveTemplateId(templateIdOrAlias, teamId)
+    if (!resolvedEnvId) {
+      return { data: [], nextCursor: null, hasMore: false }
+    }
+    query = query.eq('env_id', resolvedEnvId)
+  }
+
+  if (options.cursor) {
+    query = query.lt('created_at', options.cursor)
+  }
+
+  const { data: rawBuilds, error } = await query
+
+  if (error) {
+    throw error
+  }
+
+  if (!rawBuilds) {
+    return { data: [], nextCursor: null, hasMore: false }
+  }
+
+  const builds: BuildDTO[] = rawBuilds.map((build) => {
+    const envs = build.envs as {
+      id: string
+      team_id: string
+      env_aliases: Array<{ alias: string }>
+    }
+    const alias = envs.env_aliases?.[0]?.alias
+
+    return {
+      id: build.id,
+      shortId: build.id.split('-')[0]!,
+      template: alias ?? build.env_id,
+      status: mapBuildStatus(
+        build.status as 'waiting' | 'building' | 'uploaded' | 'failed'
+      ),
+      createdAt: new Date(build.created_at).getTime(),
+      finishedAt: build.finished_at
+        ? new Date(build.finished_at).getTime()
+        : null,
+    }
+  })
+
+  const hasMore = builds.length > limit
+  const data = hasMore ? builds.slice(0, limit) : builds
+  const lastBuild = rawBuilds[data.length - 1]
+  const nextCursor = hasMore && lastBuild ? lastBuild.created_at : null
+
+  return {
+    data,
+    nextCursor,
+    hasMore,
+  }
+}
+
+export async function getBuildStatuses(
+  teamId: string,
+  buildIds: string[]
+): Promise<Array<{ id: string; status: BuildStatus }>> {
+  if (buildIds.length === 0) {
+    return []
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('env_builds')
+    .select(
+      `
+      id,
+      status,
+      envs!inner(team_id)
+    `
+    )
+    .eq('envs.team_id', teamId)
+    .in('id', buildIds)
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    return []
+  }
+
+  return data.map((build) => ({
+    id: build.id,
+    status: mapBuildStatus(
+      build.status as 'waiting' | 'building' | 'uploaded' | 'failed'
+    ),
+  }))
 }

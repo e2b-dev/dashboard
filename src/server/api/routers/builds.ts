@@ -136,4 +136,69 @@ export const buildsRouter = createTRPCRouter({
         })
       }
     }),
+
+  list: protectedTeamProcedure
+    .input(
+      z.object({
+        templateIdOrAlias: z.string().optional(),
+        limit: z.number().min(1).max(100).optional(),
+        cursor: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { templateIdOrAlias, limit, cursor } = input
+
+      try {
+        const result = await buildsRepo.listBuilds(teamId, templateIdOrAlias, {
+          limit,
+          cursor,
+        })
+        return result
+      } catch (error) {
+        l.error(
+          {
+            key: 'trpc:builds:list:error',
+            error,
+            team_id: teamId,
+            template_id_or_alias: templateIdOrAlias,
+          },
+          `Failed to list builds: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch builds',
+        })
+      }
+    }),
+
+  getStatuses: protectedTeamProcedure
+    .input(
+      z.object({
+        buildIds: z.array(z.string()).max(100),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { buildIds } = input
+
+      try {
+        const statuses = await buildsRepo.getBuildStatuses(teamId, buildIds)
+        return { statuses }
+      } catch (error) {
+        l.error(
+          {
+            key: 'trpc:builds:get_statuses:error',
+            error,
+            team_id: teamId,
+            build_ids: buildIds,
+          },
+          `Failed to get build statuses: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch build statuses',
+        })
+      }
+    }),
 })

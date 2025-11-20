@@ -1,6 +1,5 @@
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
-import { ListIcon } from '@/ui/primitives/icons'
-import { PackageIcon } from 'lucide-react'
+import { BuildIcon, ListIcon } from '@/ui/primitives/icons'
 
 export default function TemplatesLayout({
   list,
@@ -13,7 +12,7 @@ export default function TemplatesLayout({
     <DashboardTabs
       type="query"
       layoutKey="tabs-indicator-templates"
-      className="mt-2 md:mt-3"
+      className="mt-2 md:mt-3 h-full"
     >
       <DashboardTab
         id="list"
@@ -25,7 +24,7 @@ export default function TemplatesLayout({
       <DashboardTab
         id="builds"
         label="Builds"
-        icon={<PackageIcon className="size-4" />}
+        icon={<BuildIcon className="size-4" />}
       >
         {builds}
       </DashboardTab>
