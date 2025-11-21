@@ -12,6 +12,7 @@ const config = {
       bodySizeLimit: '5mb',
     },
     authInterrupts: true,
+    clientSegmentCache: true,
   },
   logging: {
     fetches: {
