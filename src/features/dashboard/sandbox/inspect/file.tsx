@@ -1,3 +1,5 @@
+'use client'
+
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
 import { AlertCircle, FileIcon } from 'lucide-react'

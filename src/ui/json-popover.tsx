@@ -1,3 +1,5 @@
+'use client'
+
 import { useShikiTheme } from '@/configs/shiki'
 import { cn } from '@/lib/utils'
 import {
@@ -13,10 +15,16 @@ import { ScrollArea, ScrollBar } from './primitives/scroll-area'
 interface JsonPopoverProps {
   json: unknown
   children: React.ReactNode
+  buttonProps?: React.ComponentPropsWithoutRef<typeof Button>
   className?: string
 }
 
-export function JsonPopover({ json, children, className }: JsonPopoverProps) {
+export function JsonPopover({
+  json,
+  children,
+  buttonProps,
+  className,
+}: JsonPopoverProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const shikiTheme = useShikiTheme()
@@ -41,6 +49,7 @@ export function JsonPopover({ json, children, className }: JsonPopoverProps) {
             e.preventDefault()
             setIsOpen(true)
           }}
+          {...buttonProps}
         >
           {children}
         </Button>

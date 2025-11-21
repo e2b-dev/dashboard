@@ -8,7 +8,6 @@ const config = {
   experimental: {
     useCache: true,
     turbopackFileSystemCacheForDev: true,
-    clientSegmentCache: true,
     serverActions: {
       bodySizeLimit: '5mb',
     },
@@ -31,17 +30,17 @@ const config = {
           value: 'SAMEORIGIN',
         },
       ],
-    }, 
+    },
   ],
   rewrites: async () => ({
     beforeFiles: [
       {
-        source: "/ph-proxy/static/:path*",
-        destination: "https://us-assets.i.posthog.com/static/:path*",
+        source: '/ph-proxy/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
       },
       {
-        source: "/ph-proxy/:path*",
-        destination: "https://us.i.posthog.com/:path*",
+        source: '/ph-proxy/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
       },
 
       // Asset rewrites for Mintlify
@@ -51,7 +50,7 @@ const config = {
       },
       {
         source: '/_mintlify/:path*',
-        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`, 
+        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`,
       },
     ],
   }),
