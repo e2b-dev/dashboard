@@ -17,12 +17,12 @@ import useFilters from './use-filters'
 
 interface DashedStatusCircleIconProps {
   status: BuildStatusDTO
-  className?: string
+  index: number
 }
 
 const DashedStatusCircleIcon = ({
   status,
-  className,
+  index,
 }: DashedStatusCircleIconProps) => {
   return (
     <div
@@ -32,9 +32,9 @@ const DashedStatusCircleIcon = ({
           'border-fg-tertiary': status === 'building',
           'border-accent-positive-highlight': status === 'success',
           'border-accent-error-highlight': status === 'failed',
-        },
-        className
+        }
       )}
+      style={{ rotate: `deg(${index * 10}deg)`, zIndex: index + 1 }}
     />
   )
 }
@@ -50,11 +50,7 @@ const StatusIcons = ({
   return (
     <div className="flex -space-x-1.5">
       {sortedStatuses.map((status, i) => (
-        <DashedStatusCircleIcon
-          key={status}
-          status={status}
-          className={`z-[${1 + i}]! rotate-[${i * 10}deg`}
-        />
+        <DashedStatusCircleIcon key={status} status={status} index={i} />
       ))}
     </div>
   )
@@ -145,7 +141,7 @@ export default function BuildsHeader() {
               onCheckedChange={() => toggleStatus(option.value)}
               onSelect={(e) => e.preventDefault()}
             >
-              <Status status={option.value} statusMessage={null} />
+              <Status status={option.value} />
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>

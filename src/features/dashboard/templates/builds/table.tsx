@@ -21,9 +21,10 @@ import { useEffect, useMemo, useRef } from 'react'
 import BuildsEmpty from './empty'
 import {
   BuildId,
-  CreatedAt,
   Duration,
-  LoadingIndicator,
+  LoadMoreButton,
+  Reason,
+  StartedAt,
   Status,
   Template,
 } from './table-cells'
@@ -186,30 +187,6 @@ const BuildsTable = () => {
 
   const virtualItems = rowVirtualizer.getVirtualItems()
 
-  useEffect(() => {
-    const lastItem = virtualItems[virtualItems.length - 1]
-
-    if (!lastItem) return
-
-    if (
-      lastItem.index >= buildsWithUpdatedStatuses.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
-      const timeoutId = setTimeout(() => {
-        fetchNextPage()
-      }, 500)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [
-    hasNextPage,
-    fetchNextPage,
-    buildsWithUpdatedStatuses.length,
-    isFetchingNextPage,
-    virtualItems,
-  ])
-
   const paddingTop = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0
   const paddingBottom =
     virtualItems.length > 0
@@ -221,12 +198,12 @@ const BuildsTable = () => {
   const showInitialLoader = isPending && !hasData
   const showEmpty = !isPending && !hasData
   const showData = hasData
-  const isRefetching = isFetchingList && hasData
 
   const idWidth = 96
   const templateWidth = 192
   const startedWidth = 156
   const durationWidth = 96
+  const statusWidth = 96
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -239,6 +216,13 @@ const BuildsTable = () => {
             {/* inline styles to avoid server/client boundary layout shifts */}
             <col
               style={{ width: idWidth, minWidth: idWidth, maxWidth: idWidth }}
+            />
+            <col
+              style={{
+                width: statusWidth,
+                minWidth: statusWidth,
+                maxWidth: statusWidth,
+              }}
             />
             <col
               style={{
@@ -266,18 +250,17 @@ const BuildsTable = () => {
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Build ID</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Template</TableHead>
               <TableHead>Started</TableHead>
               <TableHead>Duration</TableHead>
-              <TableHead>Status</TableHead>
+              <th />
             </TableRow>
           </TableHeader>
-          <TableBody
-            className={isRefetching ? 'opacity-50 transition-opacity' : ''}
-          >
+          <TableBody>
             {showInitialLoader && (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={6}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
@@ -287,7 +270,7 @@ const BuildsTable = () => {
 
             {showEmpty && (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={6}>
                   <BuildsEmpty error={listError?.message} />
                 </TableCell>
               </TableRow>
@@ -298,7 +281,7 @@ const BuildsTable = () => {
                 {paddingTop > 0 && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       style={{ height: paddingTop, padding: 0 }}
                     />
                   </tr>
@@ -313,10 +296,13 @@ const BuildsTable = () => {
                     return (
                       <TableRow key="loader">
                         <TableCell
-                          colSpan={5}
+                          colSpan={6}
                           className="text-start text-fg-tertiary"
                         >
-                          <LoadingIndicator isLoading={isFetchingNextPage} />
+                          <LoadMoreButton
+                            isLoading={isFetchingNextPage}
+                            onLoadMore={() => fetchNextPage()}
+                          />
                         </TableCell>
                       </TableRow>
                     )
@@ -329,6 +315,9 @@ const BuildsTable = () => {
                       <TableCell className="py-1.5">
                         <BuildId shortId={build.shortId} />
                       </TableCell>
+                      <TableCell className="py-1.5">
+                        <Status status={build.status} />
+                      </TableCell>
                       <TableCell
                         className="py-1.5 overflow-hidden"
                         style={{ maxWidth: templateWidth }}
@@ -336,7 +325,10 @@ const BuildsTable = () => {
                         <Template name={build.template} />
                       </TableCell>
                       <TableCell className="py-1.5">
-                        <CreatedAt timestamp={build.createdAt} />
+                        <StartedAt
+                          isBuilding={build.status === 'building'}
+                          timestamp={build.createdAt}
+                        />
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Duration
@@ -346,10 +338,7 @@ const BuildsTable = () => {
                         />
                       </TableCell>
                       <TableCell className="py-1.5 overflow-hidden">
-                        <Status
-                          status={build.status}
-                          statusMessage={build.statusMessage}
-                        />
+                        <Reason statusMessage={build.statusMessage} />
                       </TableCell>
                     </TableRow>
                   )
@@ -357,7 +346,7 @@ const BuildsTable = () => {
                 {paddingBottom > 0 && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       style={{ height: paddingBottom, padding: 0 }}
                     />
                   </tr>

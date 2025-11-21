@@ -12,7 +12,7 @@ export default function TemplatesLayout({
     <DashboardTabs
       type="query"
       layoutKey="tabs-indicator-templates"
-      className="mt-2 md:mt-3 h-full"
+      className="pt-2 flex-1 md:pt-3"
     >
       <DashboardTab
         id="list"

@@ -26,7 +26,13 @@ export function Template({ name }: { name: string }) {
   return <p className="truncate">{name}</p>
 }
 
-export function LoadingIndicator({ isLoading }: { isLoading: boolean }) {
+export function LoadMoreButton({
+  isLoading,
+  onLoadMore,
+}: {
+  isLoading: boolean
+  onLoadMore: () => void
+}) {
   if (isLoading) {
     return (
       <span className="flex items-center gap-2">
@@ -35,7 +41,14 @@ export function LoadingIndicator({ isLoading }: { isLoading: boolean }) {
       </span>
     )
   }
-  return <>Scroll to load more...</>
+  return (
+    <button
+      onClick={onLoadMore}
+      className="underline text-fg-tertiary hover:text-fg-primary transition-colors"
+    >
+      Load more
+    </button>
+  )
 }
 
 export function Duration({
@@ -98,16 +111,25 @@ export function Duration({
   )
 }
 
-export function CreatedAt({ timestamp }: { timestamp: number }) {
+export function StartedAt({
+  timestamp,
+  isBuilding,
+}: {
+  timestamp: number
+  isBuilding: boolean
+}) {
   const iso = new Date(timestamp).toISOString()
 
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="prose-table-numeric text-fg-tertiary whitespace-nowrap">
-            {formatDistanceToNow(timestamp, { addSuffix: true })}
-          </span>
+          <div className="flex items-center gap-2">
+            {isBuilding && <Loader className="size-4" />}
+            <span className="prose-table-numeric text-fg-tertiary whitespace-nowrap">
+              {formatDistanceToNow(timestamp, { addSuffix: true })}
+            </span>
+          </div>
         </TooltipTrigger>
         <TooltipContent>
           <div className="flex items-center justify-between gap-3">
@@ -131,10 +153,9 @@ export function CreatedAt({ timestamp }: { timestamp: number }) {
 
 interface StatusProps {
   status: BuildStatusDTO
-  statusMessage: ListedBuildDTO['statusMessage']
 }
 
-export function Status({ status, statusMessage }: StatusProps) {
+export function Status({ status }: StatusProps) {
   const config: Record<
     BuildStatusDTO,
     {
@@ -173,11 +194,20 @@ export function Status({ status, statusMessage }: StatusProps) {
         {icon}
         {label}
       </Badge>
-      {statusMessage && (
-        <p className="prose-table text-fg-tertiary truncate max-w-full">
-          {statusMessage}
-        </p>
-      )}
     </div>
+  )
+}
+
+export function Reason({
+  statusMessage,
+}: {
+  statusMessage: ListedBuildDTO['statusMessage']
+}) {
+  if (!statusMessage) return null
+
+  return (
+    <p className="prose-table text-accent-error-highlight/80 truncate max-w-full">
+      {statusMessage}
+    </p>
   )
 }
