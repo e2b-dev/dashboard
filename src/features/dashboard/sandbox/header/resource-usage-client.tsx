@@ -29,7 +29,7 @@ export const ResourceUsageClient = memo(
         return sandboxInfo?.memoryMB
       }
       return lastMetrics?.diskTotalGb
-    }, [props.type, sandboxInfo])
+    }, [props.type, sandboxInfo, lastMetrics])
 
     return (
       <ResourceUsage
