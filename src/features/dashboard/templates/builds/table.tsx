@@ -10,11 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef } from 'react'
@@ -29,13 +25,14 @@ import {
 } from './table-cells'
 import useFiters from './use-filters'
 
-const RUNNING_BUILDS_REFETCH_INTERVAL = 5 * 1000
+const PULSE_INTERVAL = 5_000
 const ROW_HEIGHT = 37
 
 const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const parentRef = useRef<HTMLDivElement>(null)
+  const lastSeenBuildAtRef = useRef<number | null>(null)
   const { teamIdOrSlug } =
     useParams<
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
@@ -76,34 +73,29 @@ const BuildsTable = () => {
     [builds]
   )
 
-  const runningBuildIds = useMemo(
-    () => allBuilds.filter((b) => b.status === 'building').map((b) => b.id),
-    [allBuilds]
-  )
-
-  const { data: statusesData } = useQuery(
-    trpc.builds.getStatuses.queryOptions(
+  const { data: pulseData } = useQuery(
+    trpc.builds.pulse.queryOptions(
+      { teamIdOrSlug },
       {
-        teamIdOrSlug,
-        buildIds: runningBuildIds,
-      },
-      {
-        refetchInterval:
-          runningBuildIds.length > 0 ? RUNNING_BUILDS_REFETCH_INTERVAL : false,
-        enabled: runningBuildIds.length > 0,
+        refetchInterval: PULSE_INTERVAL,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: true,
       }
     )
   )
 
-  // invalidate list when statuses have changed
+  // invalidate list when new builds are detected
   useEffect(() => {
-    if (!statusesData?.statuses || isFetchingList) return
+    if (!pulseData || isFetchingList) return
 
-    const completedBuildIds = statusesData.statuses
-      .filter((s) => s.status === 'success' || s.status === 'failed')
-      .map((s) => s.id)
+    const { latestBuildAt, runningStatuses } = pulseData
 
-    if (completedBuildIds.length > 0) {
+    // detect new builds
+    if (
+      latestBuildAt !== null &&
+      lastSeenBuildAtRef.current !== null &&
+      latestBuildAt > lastSeenBuildAtRef.current
+    ) {
       queryClient.invalidateQueries({
         queryKey: trpc.builds.list.infiniteQueryOptions({
           teamIdOrSlug,
@@ -112,21 +104,40 @@ const BuildsTable = () => {
         }).queryKey,
       })
     }
+
+    // detect completed builds (were running, now not in runningStatuses)
+    const runningIds = new Set(runningStatuses.map((s) => s.id))
+    const hadRunningBuilds = allBuilds.some(
+      (b) => b.status === 'building' && !runningIds.has(b.id)
+    )
+
+    if (hadRunningBuilds) {
+      queryClient.invalidateQueries({
+        queryKey: trpc.builds.list.infiniteQueryOptions({
+          teamIdOrSlug,
+          buildIdOrTemplate,
+          statuses,
+        }).queryKey,
+      })
+    }
+
+    lastSeenBuildAtRef.current = latestBuildAt
   }, [
-    statusesData,
+    pulseData,
     queryClient,
     trpc,
     teamIdOrSlug,
     statuses,
     buildIdOrTemplate,
     isFetchingList,
+    allBuilds,
   ])
 
   const buildsWithUpdatedStatuses = useMemo(() => {
-    if (!statusesData?.statuses) return allBuilds
+    if (!pulseData?.runningStatuses) return allBuilds
 
     const statusMap = new Map(
-      statusesData.statuses.map((s) => [s.id, s.status])
+      pulseData.runningStatuses.map((s) => [s.id, s.status])
     )
 
     return allBuilds.map((build) => {
@@ -136,7 +147,7 @@ const BuildsTable = () => {
       }
       return build
     })
-  }, [allBuilds, statusesData])
+  }, [allBuilds, pulseData])
 
   const rowCount = hasNextPage
     ? buildsWithUpdatedStatuses.length + 1
@@ -197,7 +208,7 @@ const BuildsTable = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div
         ref={parentRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto"
       >
         <Table suppressHydrationWarning>
           <colgroup>
@@ -243,7 +254,7 @@ const BuildsTable = () => {
             {showInitialLoader && (
               <TableRow>
                 <TableCell colSpan={5}>
-                  <div className="h-[35vh] w-full flex justify-center items-center">
+                  <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
                 </TableCell>
@@ -279,7 +290,7 @@ const BuildsTable = () => {
                       <TableRow key="loader">
                         <TableCell
                           colSpan={5}
-                          className="text-start text-accent-main-highlight"
+                          className="text-start text-fg-tertiary"
                         >
                           <LoadingIndicator isLoading={isFetchingNextPage} />
                         </TableCell>

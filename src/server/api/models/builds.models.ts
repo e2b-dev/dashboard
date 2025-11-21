@@ -1,22 +1,81 @@
 import z from 'zod'
 
-export const BuildStatusSchema = z.enum(['building', 'failed', 'success'])
+export const BuildStatusDTOSchema = z.enum(['building', 'failed', 'success'])
 
-export type BuildStatus = z.infer<typeof BuildStatusSchema>
+export type BuildStatusDTO = z.infer<typeof BuildStatusDTOSchema>
 export type BuildStatusDB = 'waiting' | 'building' | 'uploaded' | 'failed'
 
-export interface BuildDTO {
+export interface ListedBuildDTO {
   id: string
   shortId: string
   template: string
-  status: BuildStatus
+  status: BuildStatusDTO
   statusMessage: string | null
   createdAt: number
   finishedAt: number | null
 }
 
-export function mapBuildStatusDTO(dbStatus: BuildStatus) {
-  switch (dbStatus) {
+export interface BuildsPulseDTO {
+  latestBuildAt: number | null
+  runningStatuses: Array<{ id: string; status: BuildStatusDTO }>
+}
+
+// database queries
+
+type RawListedBuildWithEnvAndAliasesDB = {
+  id: string
+  env_id: string
+  status: string
+  reason: unknown
+  created_at: string
+  finished_at: string | null
+  envs: {
+    id: string
+    team_id: string
+    env_aliases: Array<{ alias: string }> | null
+  }
+}
+
+// mappings
+
+function mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+  status: string,
+  reason: unknown
+): string | null {
+  if (status !== 'failed') return null
+  if (!reason || typeof reason !== 'object') return null
+  if (!('message' in reason)) return null
+  if (typeof reason.message !== 'string') return null
+  return reason.message
+}
+
+export function mapDatabaseBuildToListedBuildDTO(
+  build: RawListedBuildWithEnvAndAliasesDB
+): ListedBuildDTO {
+  const alias = build.envs.env_aliases?.[0]?.alias
+
+  return {
+    id: build.id,
+    shortId: build.id.split('-')[0]!,
+    template: alias ?? build.env_id,
+    status: mapDatabaseBuildStatusToBuildStatusDTO(
+      build.status as BuildStatusDB
+    ),
+    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+      build.status,
+      build.reason
+    ),
+    createdAt: new Date(build.created_at).getTime(),
+    finishedAt: build.finished_at
+      ? new Date(build.finished_at).getTime()
+      : null,
+  }
+}
+
+export function mapBuildStatusDTOToDatabaseBuildStatus(
+  buildStatusDTO: BuildStatusDTO
+): BuildStatusDB[] {
+  switch (buildStatusDTO) {
     case 'building':
       return ['building', 'waiting']
     case 'failed':
@@ -26,7 +85,9 @@ export function mapBuildStatusDTO(dbStatus: BuildStatus) {
   }
 }
 
-export function mapBuildStatusDB(dbStatus: BuildStatusDB): BuildStatus {
+export function mapDatabaseBuildStatusToBuildStatusDTO(
+  dbStatus: BuildStatusDB
+): BuildStatusDTO {
   switch (dbStatus) {
     case 'waiting':
     case 'building':

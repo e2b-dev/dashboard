@@ -1,6 +1,6 @@
-import { BuildStatus } from '@/server/api/models/builds.models'
+import { BuildStatusDTO } from '@/server/api/models/builds.models'
 
-export const INITIAL_BUILD_STATUSES: BuildStatus[] = [
+export const INITIAL_BUILD_STATUSES: BuildStatusDTO[] = [
   'building',
   'failed',
   'success',

@@ -232,8 +232,7 @@ export function SandboxInspectProvider({
     sandboxManagerRef.current = new SandboxManager(
       storeRef.current,
       sandbox,
-      rootPath,
-      sandboxInfo.envdAccessToken !== undefined
+      rootPath
     )
 
     trackInteraction('started_watching', {

@@ -1,6 +1,6 @@
 'use client'
 
-import { BuildStatus } from '@/server/api/models/builds.models'
+import { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
@@ -12,14 +12,15 @@ export default function useFilters() {
     shallow: true,
   })
 
-  const statuses: BuildStatus[] = useMemo(
-    () => (filters?.statuses as BuildStatus[] | null) || INITIAL_BUILD_STATUSES,
+  const statuses: BuildStatusDTO[] = useMemo(
+    () =>
+      (filters?.statuses as BuildStatusDTO[] | null) || INITIAL_BUILD_STATUSES,
     [filters.statuses]
   )
 
   const buildIdOrTemplate = filters?.buildIdOrTemplate ?? undefined
 
-  const setStatuses = useDebounceCallback((statuses: BuildStatus[]) => {
+  const setStatuses = useDebounceCallback((statuses: BuildStatusDTO[]) => {
     setFilters({ statuses: statuses })
   }, 300)
 

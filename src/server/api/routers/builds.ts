@@ -7,13 +7,83 @@ import { z } from 'zod'
 import { apiError } from '../errors'
 import { createTRPCRouter } from '../init'
 import {
-  type BuildStatusDB,
-  BuildStatusSchema,
-  mapBuildStatusDTO,
+  BuildStatusDTOSchema,
+  mapBuildStatusDTOToDatabaseBuildStatus,
 } from '../models/builds.models'
 import { protectedTeamProcedure } from '../procedures'
 
 export const buildsRouter = createTRPCRouter({
+  // QUERIES
+
+  list: protectedTeamProcedure
+    .input(
+      z.object({
+        buildIdOrTemplate: z.string().optional(),
+        statuses: z.array(BuildStatusDTOSchema),
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { buildIdOrTemplate, statuses, limit, cursor } = input
+
+      const dbStatuses = statuses.flatMap(
+        mapBuildStatusDTOToDatabaseBuildStatus
+      )
+
+      try {
+        return await buildsRepo.listBuilds(
+          teamId,
+          buildIdOrTemplate,
+          dbStatuses,
+          {
+            limit,
+            cursor,
+          }
+        )
+      } catch (error) {
+        l.error(
+          {
+            key: 'trpc:builds:list:error',
+            error,
+            team_id: teamId,
+            context: {
+              build_id_or_template: buildIdOrTemplate,
+              statuses,
+              db_statuses: dbStatuses,
+            },
+          },
+          `Failed to list builds: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch builds',
+        })
+      }
+    }),
+
+  pulse: protectedTeamProcedure.query(async ({ ctx }) => {
+    const { teamId } = ctx
+
+    try {
+      return await buildsRepo.getBuildsPulse(teamId)
+    } catch (error) {
+      l.error(
+        {
+          key: 'trpc:builds:pulse:error',
+          error,
+          team_id: teamId,
+        },
+        `Failed to get builds pulse: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to fetch builds pulse',
+      })
+    }
+  }),
+
   getBuildStatus: protectedTeamProcedure
     .input(
       z.object({
@@ -70,76 +140,5 @@ export const buildsRouter = createTRPCRouter({
       }
 
       return res.data
-    }),
-
-  list: protectedTeamProcedure
-    .input(
-      z.object({
-        buildIdOrTemplate: z.string().optional(),
-        statuses: z.array(BuildStatusSchema),
-        limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { teamId } = ctx
-      const { buildIdOrTemplate, statuses, limit, cursor } = input
-
-      const dbStatuses = statuses.flatMap(mapBuildStatusDTO) as BuildStatusDB[]
-
-      try {
-        return await buildsRepo.listBuilds(teamId, buildIdOrTemplate, dbStatuses, {
-          limit,
-          cursor,
-        })
-      } catch (error) {
-        l.error(
-          {
-            key: 'trpc:builds:list:error',
-            error,
-            team_id: teamId,
-            context: {
-              build_id_or_template: buildIdOrTemplate,
-              statuses,
-              db_statuses: dbStatuses,
-            },
-          },
-          `Failed to list builds: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch builds',
-        })
-      }
-    }),
-
-  getStatuses: protectedTeamProcedure
-    .input(
-      z.object({
-        buildIds: z.array(z.string()).max(100),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { teamId } = ctx
-      const { buildIds } = input
-
-      try {
-        const statuses = await buildsRepo.getBuildStatuses(teamId, buildIds)
-        return { statuses }
-      } catch (error) {
-        l.error(
-          {
-            key: 'trpc:builds:get_statuses:error',
-            error,
-            team_id: teamId,
-            build_ids: buildIds,
-          },
-          `Failed to get build statuses: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch build statuses',
-        })
-      }
     }),
 })

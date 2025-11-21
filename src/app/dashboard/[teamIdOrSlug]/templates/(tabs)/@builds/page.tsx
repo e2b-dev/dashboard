@@ -2,7 +2,7 @@ import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/co
 import { loadTemplateBuildsFilters } from '@/features/dashboard/templates/builds/filter-params'
 import BuildsHeader from '@/features/dashboard/templates/builds/header'
 import BuildsTable from '@/features/dashboard/templates/builds/table'
-import type { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 export default async function BuildsPage({
@@ -14,7 +14,7 @@ export default async function BuildsPage({
   const filters = await loadTemplateBuildsFilters(searchParams)
 
   const statuses =
-    (filters.statuses as BuildStatus[] | null) ?? INITIAL_BUILD_STATUSES
+    (filters.statuses as BuildStatusDTO[] | null) ?? INITIAL_BUILD_STATUSES
 
   const buildIdOrTemplate = filters.buildIdOrTemplate ?? undefined
 
@@ -27,7 +27,7 @@ export default async function BuildsPage({
   )
 
   return (
-    <div className="h-full min-h-0 flex-1 px-3 md:p-6 flex flex-col gap-3">
+    <div className="h-full min-h-0 flex-1 p-3 flex flex-col gap-3">
       <HydrateClient>
         <BuildsHeader />
         <BuildsTable />

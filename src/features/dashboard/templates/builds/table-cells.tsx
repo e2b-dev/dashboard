@@ -1,6 +1,9 @@
 import { cn } from '@/lib/utils'
 import { formatDurationCompact } from '@/lib/utils/formatting'
-import type { BuildDTO, BuildStatus } from '@/server/api/models/builds.models'
+import type {
+  BuildStatusDTO,
+  ListedBuildDTO,
+} from '@/server/api/models/builds.models'
 import CopyButton from '@/ui/copy-button'
 import { Badge } from '@/ui/primitives/badge'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
@@ -26,7 +29,7 @@ export function Template({ name }: { name: string }) {
 export function LoadingIndicator({ isLoading }: { isLoading: boolean }) {
   if (isLoading) {
     return (
-      <span className="flex items-center justify-center gap-2">
+      <span className="flex items-center gap-2">
         <Loader variant="slash" size="sm" />
         Loading...
       </span>
@@ -127,13 +130,13 @@ export function CreatedAt({ timestamp }: { timestamp: number }) {
 }
 
 interface StatusProps {
-  status: BuildStatus
-  statusMessage: BuildDTO['statusMessage']
+  status: BuildStatusDTO
+  statusMessage: ListedBuildDTO['statusMessage']
 }
 
 export function Status({ status, statusMessage }: StatusProps) {
   const config: Record<
-    BuildStatus,
+    BuildStatusDTO,
     {
       label: string
       variant: 'default' | 'positive' | 'error'

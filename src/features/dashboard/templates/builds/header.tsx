@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import { Status } from './table-cells'
 import useFilters from './use-filters'
 
 interface DashedStatusCircleIconProps {
-  status: BuildStatus
+  status: BuildStatusDTO
   className?: string
 }
 
@@ -42,9 +42,9 @@ const DashedStatusCircleIcon = ({
 const StatusIcons = ({
   selectedStatuses,
 }: {
-  selectedStatuses: BuildStatus[]
+  selectedStatuses: BuildStatusDTO[]
 }) => {
-  const statusOrder: BuildStatus[] = ['building', 'failed', 'success']
+  const statusOrder: BuildStatusDTO[] = ['building', 'failed', 'success']
   const sortedStatuses = statusOrder.filter((s) => selectedStatuses.includes(s))
 
   return (
@@ -60,7 +60,7 @@ const StatusIcons = ({
   )
 }
 
-const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
+const STATUS_OPTIONS: Array<{ value: BuildStatusDTO; label: string }> = [
   { value: 'building', label: 'Building' },
   { value: 'success', label: 'Success' },
   { value: 'failed', label: 'Failed' },
@@ -74,7 +74,7 @@ export default function BuildsHeader() {
     buildIdOrTemplate ?? ''
   )
 
-  const [localStatuses, setLocalStatuses] = useState<BuildStatus[]>(statuses)
+  const [localStatuses, setLocalStatuses] = useState<BuildStatusDTO[]>(statuses)
 
   useEffect(() => {
     if (!buildIdOrTemplate) return
@@ -85,7 +85,7 @@ export default function BuildsHeader() {
     setLocalStatuses(statuses)
   }, [statuses])
 
-  const toggleStatus = (status: BuildStatus) => {
+  const toggleStatus = (status: BuildStatusDTO) => {
     const isSelected = localStatuses.includes(status)
 
     if (isSelected && localStatuses.length === 1) {
@@ -110,7 +110,7 @@ export default function BuildsHeader() {
     <div className="flex flex-col gap-3">
       <Input
         placeholder="Build ID, Template ID or Name"
-        className="w-62"
+        className="w-full max-w-62"
         value={localBuildIdOrTemplate}
         onChange={(e) => {
           setLocalBuildIdOrTemplate(e.target.value)
