@@ -182,7 +182,7 @@ const BuildsTable = () => {
     count: rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 5,
+    overscan: 10,
   })
 
   const virtualItems = rowVirtualizer.getVirtualItems()
@@ -199,7 +199,7 @@ const BuildsTable = () => {
   const showEmpty = !isPending && !hasData
   const showData = hasData
 
-  const idWidth = 96
+  const idWidth = 132
   const templateWidth = 192
   const startedWidth = 156
   const durationWidth = 96
@@ -209,7 +209,7 @@ const BuildsTable = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div
         ref={parentRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto"
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden"
       >
         <Table suppressHydrationWarning>
           <colgroup>
@@ -312,8 +312,11 @@ const BuildsTable = () => {
 
                   return (
                     <TableRow key={build.id}>
-                      <TableCell className="py-1.5">
-                        <BuildId shortId={build.shortId} />
+                      <TableCell
+                        className="py-1.5 overflow-hidden"
+                        style={{ maxWidth: idWidth }}
+                      >
+                        <BuildId shortId={build.id} />
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Status status={build.status} />
@@ -334,7 +337,7 @@ const BuildsTable = () => {
                           isBuilding={build.status === 'building'}
                         />
                       </TableCell>
-                      <TableCell className="py-1.5 overflow-hidden">
+                      <TableCell className="py-1.5 overflow-hidden max-w-full">
                         <Reason statusMessage={build.statusMessage} />
                       </TableCell>
                     </TableRow>

@@ -19,7 +19,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useState } from 'react'
 
 export function BuildId({ shortId }: { shortId: string }) {
-  return <span className="whitespace-nowrap text-fg-tertiary">{shortId}</span>
+  return <p className="text-fg-tertiary truncate">{shortId}</p>
 }
 
 export function Template({ name }: { name: string }) {
