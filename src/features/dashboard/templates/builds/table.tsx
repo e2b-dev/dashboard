@@ -94,7 +94,7 @@ const BuildsTable = () => {
       {
         refetchInterval: pulseInterval,
         refetchIntervalInBackground: false,
-        refetchOnWindowFocus: true,
+        refetchOnWindowFocus: 'always',
         refetchOnMount: 'always',
       }
     )
@@ -198,6 +198,7 @@ const BuildsTable = () => {
   const showInitialLoader = isPending && !hasData
   const showEmpty = !isPending && !hasData
   const showData = hasData
+  const isRefetching = isFetchingList && hasData && !isFetchingNextPage
 
   const idWidth = 132
   const templateWidth = 192
@@ -257,7 +258,9 @@ const BuildsTable = () => {
               <th />
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody
+            className={isRefetching ? 'opacity-70 transition-opacity' : ''}
+          >
             {showInitialLoader && (
               <TableRow>
                 <TableCell colSpan={6}>
@@ -311,7 +314,14 @@ const BuildsTable = () => {
                   if (!build) return null
 
                   return (
-                    <TableRow key={build.id}>
+                    <TableRow
+                      key={build.id}
+                      className={
+                        build.status === 'building'
+                          ? 'bg-bg-1 animate-pulse'
+                          : ''
+                      }
+                    >
                       <TableCell
                         className="py-1.5 overflow-hidden"
                         style={{ maxWidth: idWidth }}
@@ -325,7 +335,10 @@ const BuildsTable = () => {
                         className="py-1.5 overflow-hidden"
                         style={{ maxWidth: templateWidth }}
                       >
-                        <Template name={build.template} />
+                        <Template
+                          name={build.template}
+                          templateId={build.template}
+                        />
                       </TableCell>
                       <TableCell className="py-1.5">
                         <StartedAt timestamp={build.createdAt} />

@@ -1,3 +1,7 @@
+'use client'
+
+import { PROTECTED_URLS } from '@/configs/urls'
+import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { formatDurationCompact } from '@/lib/utils/formatting'
 import type {
@@ -6,6 +10,7 @@ import type {
 } from '@/server/api/models/builds.models'
 import CopyButton from '@/ui/copy-button'
 import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
@@ -16,14 +21,43 @@ import {
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
 import { formatDistanceToNow } from 'date-fns'
+import { ArrowUpRight } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export function BuildId({ shortId }: { shortId: string }) {
   return <p className="text-fg-tertiary truncate">{shortId}</p>
 }
 
-export function Template({ name }: { name: string }) {
-  return <p className="truncate">{name}</p>
+export function Template({
+  name,
+  templateId,
+}: {
+  name: string
+  templateId: string
+}) {
+  const router = useRouter()
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
+    >()
+
+  return (
+    <Button
+      variant="link"
+      className="text-fg h-auto p-0 gap-1 font-sans prose-table normal-case max-w-full"
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+
+        useTemplateTableStore.getState().setGlobalFilter(templateId)
+        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamIdOrSlug))
+      }}
+    >
+      <p className="truncate">{name}</p>
+      <ArrowUpRight className="size-3 min-w-3" />
+    </Button>
+  )
 }
 
 export function LoadMoreButton({
@@ -77,10 +111,10 @@ export function Duration({
     : (finishedAt ?? now) - createdAt
   const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
-  if (!iso) {
+  if (isBuilding || !iso) {
     return (
-      <span className="prose-table-numeric whitespace-nowrap">
-        {formatDurationCompact(duration)}
+      <span className="prose-table-numeric whitespace-nowrap text-fg-tertiary flex items-center gap-1">
+        {formatDurationCompact(duration)} <Loader variant="dots" />
       </span>
     )
   }
@@ -89,27 +123,22 @@ export function Duration({
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2">
-            {isBuilding && (
-              <Loader className="text-[8px] transform-y-0.5 text-fg-tertiary" />
-            )}
-            <span className="prose-table-numeric text-fg-secondary whitespace-nowrap">
-              {formatDurationCompact(duration)}
-            </span>
-          </div>
+          <span className="prose-table-numeric text-fg-secondary whitespace-nowrap">
+            {formatDurationCompact(duration)}
+          </span>
         </TooltipTrigger>
-        <TooltipContent>
-          <div className="flex items-center justify-between gap-3">
+        <TooltipContent className="p-1 px-1.5">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <Label>Finished at</Label>
-              <div className="font-mono prose-label text-fg-secondary">
+              <Label className="text-[10px]!">Finished at</Label>
+              <div className="prose-label-highlight text-fg-tertiary">
                 {iso}
               </div>
             </div>
             <CopyButton
               value={iso}
               variant="ghost"
-              className="self-end size-4.5"
+              className="self-end size-4 text-fg-secondary"
             />
           </div>
         </TooltipContent>
@@ -129,18 +158,18 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
             {formatDistanceToNow(timestamp, { addSuffix: true })}
           </span>
         </TooltipTrigger>
-        <TooltipContent>
-          <div className="flex items-center justify-between gap-3">
+        <TooltipContent className="p-1 px-1.5">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <Label>Started at</Label>
-              <div className="font-mono prose-label text-fg-secondary">
+              <Label className="text-[10px]!">Started at</Label>
+              <div className="prose-label-highlight text-fg-tertiary">
                 {iso}
               </div>
             </div>
             <CopyButton
               value={iso}
               variant="ghost"
-              className="self-end size-4.5"
+              className="self-end size-4 text-fg-secondary"
             />
           </div>
         </TooltipContent>
