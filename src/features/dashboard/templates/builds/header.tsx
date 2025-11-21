@@ -34,7 +34,7 @@ const DashedStatusCircleIcon = ({
           'border-accent-error-highlight': status === 'failed',
         }
       )}
-      style={{ rotate: `deg(${index * 10}deg)`, zIndex: index + 1 }}
+      style={{ rotate: `${index * 50}deg`, zIndex: index + 1 }}
     />
   )
 }

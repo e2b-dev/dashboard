@@ -325,16 +325,13 @@ const BuildsTable = () => {
                         <Template name={build.template} />
                       </TableCell>
                       <TableCell className="py-1.5">
-                        <StartedAt
-                          isBuilding={build.status === 'building'}
-                          timestamp={build.createdAt}
-                        />
+                        <StartedAt timestamp={build.createdAt} />
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Duration
                           createdAt={build.createdAt}
                           finishedAt={build.finishedAt}
-                          isRunning={build.status === 'building'}
+                          isBuilding={build.status === 'building'}
                         />
                       </TableCell>
                       <TableCell className="py-1.5 overflow-hidden">

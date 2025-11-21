@@ -44,7 +44,7 @@ export function LoadMoreButton({
   return (
     <button
       onClick={onLoadMore}
-      className="underline text-fg-tertiary hover:text-fg-primary transition-colors"
+      className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
     >
       Load more
     </button>
@@ -54,25 +54,27 @@ export function LoadMoreButton({
 export function Duration({
   createdAt,
   finishedAt,
-  isRunning,
+  isBuilding,
 }: {
   createdAt: number
   finishedAt: number | null
-  isRunning: boolean
+  isBuilding: boolean
 }) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
-    if (!isRunning) return
+    if (!isBuilding) return
 
     const interval = setInterval(() => {
       setNow(Date.now())
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [isRunning])
+  }, [isBuilding])
 
-  const duration = isRunning ? now - createdAt : (finishedAt ?? now) - createdAt
+  const duration = isBuilding
+    ? now - createdAt
+    : (finishedAt ?? now) - createdAt
   const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
   if (!iso) {
@@ -87,9 +89,14 @@ export function Duration({
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="prose-table-numeric text-fg-secondary whitespace-nowrap">
-            {formatDurationCompact(duration)}
-          </span>
+          <div className="flex items-center gap-2">
+            {isBuilding && (
+              <Loader className="text-[8px] transform-y-0.5 text-fg-tertiary" />
+            )}
+            <span className="prose-table-numeric text-fg-secondary whitespace-nowrap">
+              {formatDurationCompact(duration)}
+            </span>
+          </div>
         </TooltipTrigger>
         <TooltipContent>
           <div className="flex items-center justify-between gap-3">
@@ -111,25 +118,16 @@ export function Duration({
   )
 }
 
-export function StartedAt({
-  timestamp,
-  isBuilding,
-}: {
-  timestamp: number
-  isBuilding: boolean
-}) {
+export function StartedAt({ timestamp }: { timestamp: number }) {
   const iso = new Date(timestamp).toISOString()
 
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2">
-            {isBuilding && <Loader className="size-4" />}
-            <span className="prose-table-numeric text-fg-tertiary whitespace-nowrap">
-              {formatDistanceToNow(timestamp, { addSuffix: true })}
-            </span>
-          </div>
+          <span className="prose-table-numeric text-fg-tertiary whitespace-nowrap">
+            {formatDistanceToNow(timestamp, { addSuffix: true })}
+          </span>
         </TooltipTrigger>
         <TooltipContent>
           <div className="flex items-center justify-between gap-3">
