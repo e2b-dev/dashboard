@@ -25,8 +25,29 @@ import { ArrowUpRight } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-export function BuildId({ shortId }: { shortId: string }) {
-  return <p className="text-fg-tertiary truncate">{shortId}</p>
+export function BuildId({ id }: { id: string }) {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <p className="text-fg-tertiary truncate">{id}</p>
+        </TooltipTrigger>
+        <TooltipContent className="p-1 px-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <Label className="text-[10px]!">Build ID</Label>
+              <div className="prose-label-highlight text-fg-tertiary">{id}</div>
+            </div>
+            <CopyButton
+              value={id}
+              variant="ghost"
+              className="self-end size-4 text-fg-secondary"
+            />
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
 }
 
 export function Template({
@@ -233,7 +254,7 @@ export function Reason({
   if (!statusMessage) return null
 
   return (
-    <p className="prose-table text-accent-error-highlight/80 truncate max-w-full">
+    <p className="prose-table text-accent-error-highlight truncate max-w-full">
       {statusMessage}
     </p>
   )

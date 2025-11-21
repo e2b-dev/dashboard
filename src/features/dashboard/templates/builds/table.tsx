@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import BuildsEmpty from './empty'
 import {
   BuildId,
@@ -28,45 +28,57 @@ import {
   Status,
   Template,
 } from './table-cells'
-import useFiters from './use-filters'
+import useFilters from './use-filters'
 
-const ACTIVE_PULSE_INTERVAL = 3_000
-const IDLE_PULSE_INTERVAL = 10_000
+const PULSE_INTERVAL_ACTIVE = 3_000
+const PULSE_INTERVAL_IDLE = 10_000
 const ROW_HEIGHT = 37
+const OVERSCAN = 10
+
+const COLUMN_WIDTHS = {
+  id: 132,
+  status: 96,
+  template: 192,
+  started: 156,
+  duration: 96,
+} as const
+
+const colStyle = (width: number) => ({
+  width,
+  minWidth: width,
+  maxWidth: width,
+})
 
 const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const parentRef = useRef<HTMLDivElement>(null)
-  const lastSeenBuildAtRef = useRef<number | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const lastKnownBuildTimestamp = useRef<number | null>(null)
+
   const { teamIdOrSlug } =
     useParams<
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
+  const { statuses, buildIdOrTemplate } = useFilters()
 
-  const { statuses, buildIdOrTemplate } = useFiters()
-
+  // reset scroll when filters change
   useEffect(() => {
-    if (parentRef.current) {
-      parentRef.current.scrollTop = 0
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
     }
   }, [statuses, buildIdOrTemplate])
 
   const {
-    data: builds,
+    data: paginatedBuilds,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isFetching: isFetchingList,
-    isPending,
-    error: listError,
+    isFetching: isFetchingBuilds,
+    isPending: isInitialLoad,
+    error: buildsError,
   } = useInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
-      {
-        teamIdOrSlug,
-        statuses,
-        buildIdOrTemplate,
-      },
+      { teamIdOrSlug, statuses, buildIdOrTemplate },
       {
         getNextPageParam: (page) => page.nextCursor,
         placeholderData: (prev) => prev,
@@ -74,20 +86,22 @@ const BuildsTable = () => {
     )
   )
 
-  const allBuilds = useMemo(
-    () => builds?.pages.flatMap((p) => p.data) ?? [],
+  const builds = useMemo(
+    () => paginatedBuilds?.pages.flatMap((p) => p.data) ?? [],
+    [paginatedBuilds]
+  )
+
+  // determine pulse frequency based on active builds
+  const hasActiveBuilds = useMemo(
+    () => builds.some((b) => b.status === 'building'),
     [builds]
   )
 
-  const hasRunningBuilds = useMemo(
-    () => allBuilds.some((b) => b.status === 'building'),
-    [allBuilds]
-  )
+  const pulseInterval = hasActiveBuilds
+    ? PULSE_INTERVAL_ACTIVE
+    : PULSE_INTERVAL_IDLE
 
-  const pulseInterval = hasRunningBuilds
-    ? ACTIVE_PULSE_INTERVAL
-    : IDLE_PULSE_INTERVAL
-
+  // poll for build status updates
   const { data: pulseData } = useQuery(
     trpc.builds.pulse.queryOptions(
       { teamIdOrSlug },
@@ -100,30 +114,35 @@ const BuildsTable = () => {
     )
   )
 
-  // handle pulse updates
+  // query key for cache updates
+  const buildsQueryKey = useMemo(
+    () =>
+      trpc.builds.list.infiniteQueryOptions({
+        teamIdOrSlug,
+        buildIdOrTemplate,
+        statuses,
+      }).queryKey,
+    [trpc, teamIdOrSlug, buildIdOrTemplate, statuses]
+  )
+
+  // sync pulse data with builds cache
   useEffect(() => {
-    if (!pulseData || isFetchingList) return
+    if (!pulseData || isFetchingBuilds) return
 
     const { latestBuildAt, recentlyCompleted } = pulseData
 
-    const listQueryKey = trpc.builds.list.infiniteQueryOptions({
-      teamIdOrSlug,
-      buildIdOrTemplate,
-      statuses,
-    }).queryKey
-
-    // detect new builds - invalidate to fetch them
+    // invalidate if new builds detected
     if (
       latestBuildAt !== null &&
-      lastSeenBuildAtRef.current !== null &&
-      latestBuildAt > lastSeenBuildAtRef.current
+      lastKnownBuildTimestamp.current !== null &&
+      latestBuildAt > lastKnownBuildTimestamp.current
     ) {
-      queryClient.invalidateQueries({ queryKey: listQueryKey })
+      queryClient.invalidateQueries({ queryKey: buildsQueryKey })
     }
 
-    // update completed builds directly in cache
+    // update completed builds in cache
     if (recentlyCompleted.length > 0) {
-      queryClient.setQueryData(listQueryKey, (old) => {
+      queryClient.setQueryData(buildsQueryKey, (old) => {
         if (!old) return old
 
         return {
@@ -147,105 +166,70 @@ const BuildsTable = () => {
       })
     }
 
-    lastSeenBuildAtRef.current = latestBuildAt
-  }, [
-    pulseData,
-    queryClient,
-    trpc,
-    teamIdOrSlug,
-    statuses,
-    buildIdOrTemplate,
-    isFetchingList,
-  ])
+    lastKnownBuildTimestamp.current = latestBuildAt
+  }, [pulseData, queryClient, buildsQueryKey, isFetchingBuilds])
 
-  const buildsWithUpdatedStatuses = useMemo(() => {
-    if (!pulseData?.runningStatuses) return allBuilds
+  // merge live status updates from pulse
+  const buildsWithLiveStatus = useMemo(() => {
+    if (!pulseData?.runningStatuses) return builds
 
-    const statusMap = new Map(
+    const liveStatusMap = new Map(
       pulseData.runningStatuses.map((s) => [s.id, s.status])
     )
 
-    return allBuilds.map((build) => {
-      const updatedStatus = statusMap.get(build.id)
-      if (updatedStatus && updatedStatus !== build.status) {
-        return { ...build, status: updatedStatus }
+    return builds.map((build) => {
+      const liveStatus = liveStatusMap.get(build.id)
+      if (liveStatus && liveStatus !== build.status) {
+        return { ...build, status: liveStatus }
       }
       return build
     })
-  }, [allBuilds, pulseData])
+  }, [builds, pulseData])
 
+  // virtualization
   const rowCount = hasNextPage
-    ? buildsWithUpdatedStatuses.length + 1
-    : buildsWithUpdatedStatuses.length
+    ? buildsWithLiveStatus.length + 1
+    : buildsWithLiveStatus.length
 
-  const rowVirtualizer = useVirtualizer({
+  const virtualizer = useVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 10,
+    overscan: OVERSCAN,
   })
 
-  const virtualItems = rowVirtualizer.getVirtualItems()
+  const virtualRows = virtualizer.getVirtualItems()
 
-  const paddingTop = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0
+  const paddingTop = virtualRows.length > 0 ? (virtualRows[0]?.start ?? 0) : 0
   const paddingBottom =
-    virtualItems.length > 0
-      ? rowVirtualizer.getTotalSize() -
-        (virtualItems[virtualItems.length - 1]?.end ?? 0)
+    virtualRows.length > 0
+      ? virtualizer.getTotalSize() -
+        (virtualRows[virtualRows.length - 1]?.end ?? 0)
       : 0
 
-  const hasData = buildsWithUpdatedStatuses.length > 0
-  const showInitialLoader = isPending && !hasData
-  const showEmpty = !isPending && !hasData
-  const showData = hasData
-  const isRefetching = isFetchingList && hasData && !isFetchingNextPage
+  // UI state
+  const hasData = buildsWithLiveStatus.length > 0
+  const showLoader = isInitialLoad && !hasData
+  const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
+  const isRefetching = isFetchingBuilds && hasData && !isFetchingNextPage
 
-  const idWidth = 132
-  const templateWidth = 192
-  const startedWidth = 156
-  const durationWidth = 96
-  const statusWidth = 96
+  const handleLoadMore = useCallback(() => {
+    fetchNextPage()
+  }, [fetchNextPage])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div
-        ref={parentRef}
+        ref={scrollContainerRef}
         className="min-h-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden"
       >
         <Table suppressHydrationWarning>
           <colgroup>
-            {/* inline styles to avoid server/client boundary layout shifts */}
-            <col
-              style={{ width: idWidth, minWidth: idWidth, maxWidth: idWidth }}
-            />
-            <col
-              style={{
-                width: statusWidth,
-                minWidth: statusWidth,
-                maxWidth: statusWidth,
-              }}
-            />
-            <col
-              style={{
-                width: templateWidth,
-                minWidth: templateWidth,
-                maxWidth: templateWidth,
-              }}
-            />
-            <col
-              style={{
-                width: startedWidth,
-                minWidth: startedWidth,
-                maxWidth: startedWidth,
-              }}
-            />
-            <col
-              style={{
-                width: durationWidth,
-                minWidth: durationWidth,
-                maxWidth: durationWidth,
-              }}
-            />
+            <col style={colStyle(COLUMN_WIDTHS.id)} />
+            <col style={colStyle(COLUMN_WIDTHS.status)} />
+            <col style={colStyle(COLUMN_WIDTHS.template)} />
+            <col style={colStyle(COLUMN_WIDTHS.started)} />
+            <col style={colStyle(COLUMN_WIDTHS.duration)} />
             <col />
           </colgroup>
           <TableHeader className="sticky top-0 z-10 bg-bg">
@@ -261,7 +245,7 @@ const BuildsTable = () => {
           <TableBody
             className={isRefetching ? 'opacity-70 transition-opacity' : ''}
           >
-            {showInitialLoader && (
+            {showLoader && (
               <TableRow>
                 <TableCell colSpan={6}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
@@ -274,12 +258,12 @@ const BuildsTable = () => {
             {showEmpty && (
               <TableRow>
                 <TableCell colSpan={6}>
-                  <BuildsEmpty error={listError?.message} />
+                  <BuildsEmpty error={buildsError?.message} />
                 </TableCell>
               </TableRow>
             )}
 
-            {showData && (
+            {hasData && (
               <>
                 {paddingTop > 0 && (
                   <tr>
@@ -290,21 +274,21 @@ const BuildsTable = () => {
                   </tr>
                 )}
 
-                {virtualItems.map((virtualRow) => {
-                  const isLoaderRow =
-                    virtualRow.index > buildsWithUpdatedStatuses.length - 1
-                  const build = buildsWithUpdatedStatuses[virtualRow.index]
+                {virtualRows.map((virtualRow) => {
+                  const isLoadMoreRow =
+                    virtualRow.index > buildsWithLiveStatus.length - 1
+                  const build = buildsWithLiveStatus[virtualRow.index]
 
-                  if (isLoaderRow) {
+                  if (isLoadMoreRow) {
                     return (
-                      <TableRow key="loader">
+                      <TableRow key="load-more">
                         <TableCell
                           colSpan={6}
                           className="text-start text-fg-tertiary"
                         >
                           <LoadMoreButton
                             isLoading={isFetchingNextPage}
-                            onLoadMore={() => fetchNextPage()}
+                            onLoadMore={handleLoadMore}
                           />
                         </TableCell>
                       </TableRow>
@@ -313,27 +297,25 @@ const BuildsTable = () => {
 
                   if (!build) return null
 
+                  const isBuilding = build.status === 'building'
+
                   return (
                     <TableRow
                       key={build.id}
-                      className={
-                        build.status === 'building'
-                          ? 'bg-bg-1 animate-pulse'
-                          : ''
-                      }
+                      className={isBuilding ? 'bg-bg-1 animate-pulse' : ''}
                     >
                       <TableCell
                         className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: idWidth }}
+                        style={{ maxWidth: COLUMN_WIDTHS.id }}
                       >
-                        <BuildId shortId={build.id} />
+                        <BuildId id={build.id} />
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Status status={build.status} />
                       </TableCell>
                       <TableCell
                         className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: templateWidth }}
+                        style={{ maxWidth: COLUMN_WIDTHS.template }}
                       >
                         <Template
                           name={build.template}
@@ -347,7 +329,7 @@ const BuildsTable = () => {
                         <Duration
                           createdAt={build.createdAt}
                           finishedAt={build.finishedAt}
-                          isBuilding={build.status === 'building'}
+                          isBuilding={isBuilding}
                         />
                       </TableCell>
                       <TableCell className="py-1.5 overflow-hidden max-w-full">
@@ -356,6 +338,7 @@ const BuildsTable = () => {
                     </TableRow>
                   )
                 })}
+
                 {paddingBottom > 0 && (
                   <tr>
                     <td
