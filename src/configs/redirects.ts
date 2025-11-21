@@ -28,18 +28,20 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
     },
   },
   {
-    source: '/start',
+    source: '/machines',
     destination:
-      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=start',
+      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=machines',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
     },
   },
+
+  // Docker MCP Campaign
   {
-    source: '/machines',
+    source: '/start',
     destination:
-      '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=prague_ooh_2025&utm_content=machines',
+      '/docs/mcp?utm_source=billboard&utm_medium=outdoor&utm_campaign=docker_2025&utm_content=ooh',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
