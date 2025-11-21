@@ -1,3 +1,5 @@
+'use client'
+
 import SandboxInspectDir from './dir'
 import SandboxInspectFile from './file'
 import { useFilesystemNode } from './hooks/use-node'

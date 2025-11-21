@@ -2,7 +2,6 @@
 
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
 import { Braces, CircleSlash } from 'lucide-react'
 import { useSandboxContext } from '../context'
 
@@ -18,15 +17,16 @@ export default function Metadata() {
   }
 
   return (
-    <JsonPopover json={sandboxInfo.metadata}>
-      <Button
-        variant="accent"
-        size="sm"
-        className="h-5 font-sans prose-label-highlight"
-      >
-        <Braces className="size-3.5" />
-        Metadata
-      </Button>
+    <JsonPopover
+      json={sandboxInfo.metadata}
+      buttonProps={{
+        variant: 'accent',
+        size: 'sm',
+        className: 'h-5 font-sans prose-label-highlight',
+      }}
+    >
+      <Braces className="size-3.5" />
+      Metadata
     </JsonPopover>
   )
 }
