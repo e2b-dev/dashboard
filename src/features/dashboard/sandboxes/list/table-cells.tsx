@@ -2,7 +2,7 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { useTemplateTableStore } from '@/features/dashboard/templates/stores/table-store'
+import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import {
   defaultErrorToast,
   defaultSuccessToast,

@@ -14,6 +14,16 @@ const config = {
     authInterrupts: true,
     clientSegmentCache: true,
   },
+  turbopack: {
+    resolveAlias: {
+      // Stub Node.js modules for browser builds
+      // e2b package bundles these packages. when dealing with browser chunks,
+      // we need to stub these packages for builds.
+      fs: { browser: './stubs/fs.ts' },
+      'node:fs': { browser: './stubs/fs.ts' },
+      'node:fs/promises': { browser: './stubs/fs-promises.ts' },
+    },
+  },
   logging: {
     fetches: {
       fullUrl: true,

@@ -1,12 +1,12 @@
 import { createCallerFactory, createTRPCRouter } from '../init'
+import { buildsRouter } from './builds'
 import { sandboxesRouter } from './sandboxes'
-import { teamsRouter } from './teams'
 import { templatesRouter } from './templates'
 
 export const trpcAppRouter = createTRPCRouter({
   sandboxes: sandboxesRouter,
-  teams: teamsRouter,
   templates: templatesRouter,
+  builds: buildsRouter,
 })
 
 export type TRPCAppRouter = typeof trpcAppRouter

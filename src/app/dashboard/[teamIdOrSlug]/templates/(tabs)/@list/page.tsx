@@ -1,9 +1,9 @@
 import LoadingLayout from '@/features/dashboard/loading-layout'
-import TemplatesTable from '@/features/dashboard/templates/table'
+import TemplatesTable from '@/features/dashboard/templates/list/table'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { Suspense } from 'react'
 
-export default async function Page({
+export default async function ListPage({
   params,
 }: PageProps<'/dashboard/[teamIdOrSlug]/templates'>) {
   const { teamIdOrSlug } = await params

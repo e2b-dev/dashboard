@@ -25,7 +25,6 @@ export class SandboxManager {
   private readonly rootPath: string
   private store: FilesystemStore
   private sandbox: Sandbox
-  private readonly isSandboxSecure: boolean = false
 
   private static readonly LOAD_DEBOUNCE_MS = 250
   private static readonly READ_DEBOUNCE_MS = 250
@@ -50,16 +49,10 @@ export class SandboxManager {
     }
   > = new Map()
 
-  constructor(
-    store: FilesystemStore,
-    sandbox: Sandbox,
-    rootPath: string,
-    isSandboxSecure: boolean
-  ) {
+  constructor(store: FilesystemStore, sandbox: Sandbox, rootPath: string) {
     this.store = store
     this.sandbox = sandbox
     this.rootPath = normalizePath(rootPath)
-    this.isSandboxSecure = isSandboxSecure
 
     // immediately start a single recursive watcher at the root
     void this.startRootWatcher()
@@ -360,10 +353,7 @@ export class SandboxManager {
 
     const downloadUrl = await this.sandbox.downloadUrl(normalizedPath, {
       user: 'root',
-      useSignature: this.isSandboxSecure || undefined,
     })
-
-    console.log('downloadUrl', downloadUrl)
 
     return downloadUrl
   }

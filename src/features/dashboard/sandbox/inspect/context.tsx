@@ -37,7 +37,7 @@ interface SandboxInspectProviderProps {
   seedEntries?: EntryInfo[]
 }
 
-export function SandboxInspectProvider({
+export default function SandboxInspectProvider({
   children,
   rootPath,
   seedEntries,
@@ -232,8 +232,7 @@ export function SandboxInspectProvider({
     sandboxManagerRef.current = new SandboxManager(
       storeRef.current,
       sandbox,
-      rootPath,
-      sandboxInfo.envdAccessToken !== undefined
+      rootPath
     )
 
     trackInteraction('started_watching', {

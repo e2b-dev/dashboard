@@ -28,8 +28,8 @@ import { CellContext } from '@tanstack/react-table'
 import { Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import ResourceUsage from '../common/resource-usage'
-import { useDashboard } from '../context'
+import ResourceUsage from '../../common/resource-usage'
+import { useDashboard } from '../../context'
 
 function E2BTemplateBadge() {
   return (

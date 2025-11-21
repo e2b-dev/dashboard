@@ -5,7 +5,9 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 import { VariantProps } from 'class-variance-authority'
-import { Check, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { Checkbox } from './checkbox'
+import { CheckIcon } from './icons'
 import {
   menuContentStyles,
   menuGroupStyles,
@@ -109,13 +111,15 @@ DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
 
 const DropdownMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
->(({ className, children, checked, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem> & {
+    checkIndicator?: ({ checked }: { checked: boolean }) => React.ReactNode
+  }
+>(({ className, children, checked, checkIndicator, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
       'relative prose-body flex cursor-default items-center gap-2 select-none',
-      'py-1.5 pr-2 pl-8',
+      'py-1.5 pr-2 pl-1',
       'outline-none',
       'focus:bg-bg-highlight',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
@@ -125,11 +129,13 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     checked={checked}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <DropdownMenuPrimitive.ItemIndicator>
-        [×]
-      </DropdownMenuPrimitive.ItemIndicator>
-    </span>
+    {checkIndicator ? (
+      checkIndicator({
+        checked: checked === true,
+      })
+    ) : (
+      <Checkbox checked={checked} className="size-4" />
+    )}
     {children}
   </DropdownMenuPrimitive.CheckboxItem>
 ))
@@ -154,7 +160,7 @@ const DropdownMenuRadioItem = React.forwardRef<
 
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="text-fg size-4" />
+        <CheckIcon className="text-fg size-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
   </DropdownMenuPrimitive.RadioItem>

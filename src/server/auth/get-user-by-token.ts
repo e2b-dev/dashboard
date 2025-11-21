@@ -16,6 +16,7 @@ import { cache } from 'react'
  * @returns A promise that resolves to an object containing either the user data or an error
  * @throws {AuthSessionMissingError} When no access token is provided
  */
+
 function getUserByToken(accessToken: string | undefined) {
   const trimmedAccessToken = accessToken?.trim()
 

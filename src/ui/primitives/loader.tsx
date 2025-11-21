@@ -2,7 +2,7 @@ import * as React from 'react'
 import styled, { css } from 'styled-components'
 
 interface LoaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'slash' | 'square'
+  variant?: 'slash' | 'square' | 'dots'
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
@@ -45,6 +45,11 @@ const StyledLoader = styled.div<StyledLoaderProps>`
           return css`
             content: '|';
             animation: slashAnimation 0.4s linear infinite;
+          `
+        case 'dots':
+          return css`
+            content: '.';
+            animation: dotsAnimation 0.9s step-end infinite;
           `
         default:
           return css`
@@ -93,6 +98,17 @@ const Loader = React.forwardRef<HTMLDivElement, LoaderProps>(
             }
             100% {
               content: '◰';
+            }
+          }
+          @keyframes dotsAnimation {
+            0% {
+              content: '.';
+            }
+            33% {
+              content: '..';
+            }
+            66% {
+              content: '...';
             }
           }
         `}</style>

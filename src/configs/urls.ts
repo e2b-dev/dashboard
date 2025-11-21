@@ -35,6 +35,11 @@ export const PROTECTED_URLS = {
   WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
 
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
+  TEMPLATES_LIST: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/templates?tab=list`,
+  TEMPLATES_BUILDS: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/templates?tab=builds`,
+
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,

@@ -1,6 +1,6 @@
 'use client'
 
-import { SandboxInspectProvider } from '@/features/dashboard/sandbox/inspect/context'
+import SandboxInspectProvider from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
 import { cn } from '@/lib/utils'
