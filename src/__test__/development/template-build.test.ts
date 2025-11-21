@@ -31,6 +31,7 @@ describe('E2B Template build test', () => {
       })
 
       const template = Template()
+        .skipCache()
         .fromNodeImage('lts')
         .setWorkdir('/app')
         .runCmd('echo "Hello from template build"')

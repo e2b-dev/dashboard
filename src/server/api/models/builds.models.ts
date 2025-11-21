@@ -18,6 +18,12 @@ export interface ListedBuildDTO {
 export interface BuildsPulseDTO {
   latestBuildAt: number | null
   runningStatuses: Array<{ id: string; status: BuildStatusDTO }>
+  recentlyCompleted: Array<{
+    id: string
+    status: BuildStatusDTO
+    finishedAt: number
+    statusMessage: string | null
+  }>
 }
 
 // database queries
@@ -38,7 +44,7 @@ type RawListedBuildWithEnvAndAliasesDB = {
 
 // mappings
 
-function mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+export function mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
   status: string,
   reason: unknown
 ): string | null {

@@ -37,7 +37,7 @@ interface SandboxInspectProviderProps {
   seedEntries?: EntryInfo[]
 }
 
-export function SandboxInspectProvider({
+export default function SandboxInspectProvider({
   children,
   rootPath,
   seedEntries,

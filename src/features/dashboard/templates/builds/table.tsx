@@ -10,7 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef } from 'react'
@@ -25,7 +29,8 @@ import {
 } from './table-cells'
 import useFiters from './use-filters'
 
-const PULSE_INTERVAL = 5_000
+const ACTIVE_PULSE_INTERVAL = 3_000
+const IDLE_PULSE_INTERVAL = 10_000
 const ROW_HEIGHT = 37
 
 const BuildsTable = () => {
@@ -73,51 +78,71 @@ const BuildsTable = () => {
     [builds]
   )
 
+  const hasRunningBuilds = useMemo(
+    () => allBuilds.some((b) => b.status === 'building'),
+    [allBuilds]
+  )
+
+  const pulseInterval = hasRunningBuilds
+    ? ACTIVE_PULSE_INTERVAL
+    : IDLE_PULSE_INTERVAL
+
   const { data: pulseData } = useQuery(
     trpc.builds.pulse.queryOptions(
       { teamIdOrSlug },
       {
-        refetchInterval: PULSE_INTERVAL,
+        refetchInterval: pulseInterval,
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: true,
+        refetchOnMount: 'always',
       }
     )
   )
 
-  // invalidate list when new builds are detected
+  // handle pulse updates
   useEffect(() => {
     if (!pulseData || isFetchingList) return
 
-    const { latestBuildAt, runningStatuses } = pulseData
+    const { latestBuildAt, recentlyCompleted } = pulseData
 
-    // detect new builds
+    const listQueryKey = trpc.builds.list.infiniteQueryOptions({
+      teamIdOrSlug,
+      buildIdOrTemplate,
+      statuses,
+    }).queryKey
+
+    // detect new builds - invalidate to fetch them
     if (
       latestBuildAt !== null &&
       lastSeenBuildAtRef.current !== null &&
       latestBuildAt > lastSeenBuildAtRef.current
     ) {
-      queryClient.invalidateQueries({
-        queryKey: trpc.builds.list.infiniteQueryOptions({
-          teamIdOrSlug,
-          buildIdOrTemplate,
-          statuses,
-        }).queryKey,
-      })
+      queryClient.invalidateQueries({ queryKey: listQueryKey })
     }
 
-    // detect completed builds (were running, now not in runningStatuses)
-    const runningIds = new Set(runningStatuses.map((s) => s.id))
-    const hadRunningBuilds = allBuilds.some(
-      (b) => b.status === 'building' && !runningIds.has(b.id)
-    )
+    // update completed builds directly in cache
+    if (recentlyCompleted.length > 0) {
+      queryClient.setQueryData(listQueryKey, (old) => {
+        if (!old) return old
 
-    if (hadRunningBuilds) {
-      queryClient.invalidateQueries({
-        queryKey: trpc.builds.list.infiniteQueryOptions({
-          teamIdOrSlug,
-          buildIdOrTemplate,
-          statuses,
-        }).queryKey,
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: page.data.map((build) => {
+              const completed = recentlyCompleted.find((c) => c.id === build.id)
+              if (completed) {
+                return {
+                  ...build,
+                  status: completed.status,
+                  finishedAt: completed.finishedAt,
+                  statusMessage: completed.statusMessage,
+                }
+              }
+              return build
+            }),
+          })),
+        }
       })
     }
 
@@ -130,7 +155,6 @@ const BuildsTable = () => {
     statuses,
     buildIdOrTemplate,
     isFetchingList,
-    allBuilds,
   ])
 
   const buildsWithUpdatedStatuses = useMemo(() => {

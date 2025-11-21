@@ -2,16 +2,12 @@ import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import z from 'zod'
 import {
   ListedBuildDTO,
+  mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
   mapDatabaseBuildToListedBuildDTO,
   type BuildsPulseDTO,
   type BuildStatusDB,
 } from '../models/builds.models'
-
-// constants
-
-const TEMPLATE_BUILD_TIMEOUT_MS =
-  1000 * 60 * 60 + 1000 * 60 * 10 /* 1 hour + 10 minutes margin */
 
 // helpers
 
@@ -152,33 +148,54 @@ export async function listBuilds(
 
 // get builds pulse
 
+const TEMPLATE_BUILD_TIMEOUT_MS =
+  1000 * 60 * 60 + 1000 * 60 * 10 /* 1 hour + 10 minutes margin */
+
+const RECENTLY_COMPLETED_WINDOW_MS = 10_000
+
 export async function getBuildsPulse(teamId: string): Promise<BuildsPulseDTO> {
   const buildTimeoutAgo = new Date(
     Date.now() - TEMPLATE_BUILD_TIMEOUT_MS
   ).toISOString()
 
+  const recentlyCompletedAfter = new Date(
+    Date.now() - RECENTLY_COMPLETED_WINDOW_MS
+  ).toISOString()
+
   const statusesFilter = ['waiting', 'building'] as const
   type StatusesFilterElementLiterals = (typeof statusesFilter)[number]
 
-  const [latestResult, runningResult] = await Promise.all([
-    supabaseAdmin
-      .from('env_builds')
-      .select('created_at, envs!inner(team_id)')
-      .eq('envs.team_id', teamId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  const completedStatuses = ['uploaded', 'failed'] as const
+  type CompletedStatusLiterals = (typeof completedStatuses)[number]
 
-    supabaseAdmin
-      .from('env_builds')
-      .select('id, status, envs!inner(team_id)')
-      .eq('envs.team_id', teamId)
-      .in('status', statusesFilter)
-      .gte('created_at', buildTimeoutAgo),
-  ])
+  const [latestResult, runningResult, recentlyCompletedResult] =
+    await Promise.all([
+      supabaseAdmin
+        .from('env_builds')
+        .select('created_at, envs!inner(team_id)')
+        .eq('envs.team_id', teamId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from('env_builds')
+        .select('id, status, envs!inner(team_id)')
+        .eq('envs.team_id', teamId)
+        .in('status', statusesFilter)
+        .gte('created_at', buildTimeoutAgo),
+
+      supabaseAdmin
+        .from('env_builds')
+        .select('id, status, reason, finished_at, envs!inner(team_id)')
+        .eq('envs.team_id', teamId)
+        .in('status', completedStatuses)
+        .gte('finished_at', recentlyCompletedAfter),
+    ])
 
   if (latestResult.error) throw latestResult.error
   if (runningResult.error) throw runningResult.error
+  if (recentlyCompletedResult.error) throw recentlyCompletedResult.error
 
   return {
     latestBuildAt: latestResult.data
@@ -188,6 +205,17 @@ export async function getBuildsPulse(teamId: string): Promise<BuildsPulseDTO> {
       id: build.id,
       status: mapDatabaseBuildStatusToBuildStatusDTO(
         build.status as StatusesFilterElementLiterals
+      ),
+    })),
+    recentlyCompleted: (recentlyCompletedResult.data ?? []).map((build) => ({
+      id: build.id,
+      status: mapDatabaseBuildStatusToBuildStatusDTO(
+        build.status as CompletedStatusLiterals
+      ),
+      finishedAt: new Date(build.finished_at!).getTime(),
+      statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+        build.status,
+        build.reason
       ),
     })),
   }
