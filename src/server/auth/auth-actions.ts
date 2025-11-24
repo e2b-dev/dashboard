@@ -246,6 +246,15 @@ export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
   .action(async ({ parsedInput: { email } }) => {
+    const isHealthy = await checkAuthProviderHealth()
+    if (!isHealthy) {
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.FORGOT_PASSWORD,
+        AUTH_PROVIDER_ERROR_MESSAGE
+      )
+    }
+
     const supabase = await createClient()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email)
