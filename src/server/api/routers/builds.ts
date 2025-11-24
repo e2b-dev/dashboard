@@ -32,57 +32,33 @@ export const buildsRouter = createTRPCRouter({
         mapBuildStatusDTOToDatabaseBuildStatus
       )
 
-      try {
-        return await buildsRepo.listBuilds(
-          teamId,
-          buildIdOrTemplate,
-          dbStatuses,
-          {
-            limit,
-            cursor,
-          }
-        )
-      } catch (error) {
-        l.error(
-          {
-            key: 'trpc:builds:list:error',
-            error,
-            team_id: teamId,
-            context: {
-              build_id_or_template: buildIdOrTemplate,
-              statuses,
-              db_statuses: dbStatuses,
-            },
-          },
-          `Failed to list builds: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch builds',
-        })
-      }
+      return await buildsRepo.listBuilds(
+        teamId,
+        buildIdOrTemplate,
+        dbStatuses,
+        {
+          limit,
+          cursor,
+        }
+      )
     }),
 
-  pulse: protectedTeamProcedure.query(async ({ ctx }) => {
-    const { teamId } = ctx
-
-    try {
-      return await buildsRepo.getBuildsPulse(teamId)
-    } catch (error) {
-      l.error(
-        {
-          key: 'trpc:builds:pulse:error',
-          error,
-          team_id: teamId,
-        },
-        `Failed to get builds pulse: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch builds pulse',
-      })
-    }
+  latestBuildTimestamp: protectedTeamProcedure.query(async ({ ctx }) => {
+    return await buildsRepo.getLatestBuildTimestamp(ctx.teamId)
   }),
+
+  runningStatuses: protectedTeamProcedure
+    .input(
+      z.object({
+        buildIds: z.array(z.string()).max(100),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { buildIds } = input
+
+      return await buildsRepo.getRunningStatuses(teamId, buildIds)
+    }),
 
   getBuildStatus: protectedTeamProcedure
     .input(

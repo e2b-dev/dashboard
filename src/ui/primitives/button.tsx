@@ -59,7 +59,7 @@ const buttonVariants = cva(
       },
       size: {
         default: 'h-8 px-3 gap-2',
-        sm: 'h-7 px-2 gap-1',
+        sm: 'h-7 px-2 gap-1 text-xs',
         lg: 'h-10 px-4 gap-2',
         icon: 'h-8 w-8 gap-2',
         iconSm: 'h-7 w-7 gap-1',

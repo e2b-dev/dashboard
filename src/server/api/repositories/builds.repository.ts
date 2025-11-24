@@ -5,7 +5,7 @@ import {
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
   mapDatabaseBuildToListedBuildDTO,
-  type BuildsPulseDTO,
+  type RunningBuildStatusDTO,
   type BuildStatusDB,
 } from '../models/builds.models'
 
@@ -39,6 +39,9 @@ export async function resolveTemplateId(
 }
 
 // list builds
+
+const TEMPLATE_BUILD_TIMEOUT_MS =
+  1000 * 60 * 60 + 1000 * 60 * 10 /* 1 hour + 10 minutes margin */
 
 interface ListBuildsPaginationOptions {
   limit?: number
@@ -146,77 +149,53 @@ export async function listBuilds(
   }
 }
 
-// get builds pulse
+// get latest build timestamp
 
-const TEMPLATE_BUILD_TIMEOUT_MS =
-  1000 * 60 * 60 + 1000 * 60 * 10 /* 1 hour + 10 minutes margin */
+export async function getLatestBuildTimestamp(
+  teamId: string
+): Promise<number | null> {
+  const { data, error } = await supabaseAdmin
+    .from('env_builds')
+    .select('created_at, envs!inner(team_id)')
+    .eq('envs.team_id', teamId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-const RECENTLY_COMPLETED_WINDOW_MS = 10_000
+  if (error) throw error
 
-export async function getBuildsPulse(teamId: string): Promise<BuildsPulseDTO> {
-  const buildTimeoutAgo = new Date(
-    Date.now() - TEMPLATE_BUILD_TIMEOUT_MS
-  ).toISOString()
+  return data ? new Date(data.created_at).getTime() : null
+}
 
-  const recentlyCompletedAfter = new Date(
-    Date.now() - RECENTLY_COMPLETED_WINDOW_MS
-  ).toISOString()
+// get running build statuses
 
-  const statusesFilter = ['waiting', 'building'] as const
-  type StatusesFilterElementLiterals = (typeof statusesFilter)[number]
-
-  const completedStatuses = ['uploaded', 'failed'] as const
-  type CompletedStatusLiterals = (typeof completedStatuses)[number]
-
-  const [latestResult, runningResult, recentlyCompletedResult] =
-    await Promise.all([
-      supabaseAdmin
-        .from('env_builds')
-        .select('created_at, envs!inner(team_id)')
-        .eq('envs.team_id', teamId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-
-      supabaseAdmin
-        .from('env_builds')
-        .select('id, status, envs!inner(team_id)')
-        .eq('envs.team_id', teamId)
-        .in('status', statusesFilter)
-        .gte('created_at', buildTimeoutAgo),
-
-      supabaseAdmin
-        .from('env_builds')
-        .select('id, status, reason, finished_at, envs!inner(team_id)')
-        .eq('envs.team_id', teamId)
-        .in('status', completedStatuses)
-        .gte('finished_at', recentlyCompletedAfter),
-    ])
-
-  if (latestResult.error) throw latestResult.error
-  if (runningResult.error) throw runningResult.error
-  if (recentlyCompletedResult.error) throw recentlyCompletedResult.error
-
-  return {
-    latestBuildAt: latestResult.data
-      ? new Date(latestResult.data.created_at).getTime()
-      : null,
-    runningStatuses: (runningResult.data ?? []).map((build) => ({
-      id: build.id,
-      status: mapDatabaseBuildStatusToBuildStatusDTO(
-        build.status as StatusesFilterElementLiterals
-      ),
-    })),
-    recentlyCompleted: (recentlyCompletedResult.data ?? []).map((build) => ({
-      id: build.id,
-      status: mapDatabaseBuildStatusToBuildStatusDTO(
-        build.status as CompletedStatusLiterals
-      ),
-      finishedAt: new Date(build.finished_at!).getTime(),
-      statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
-        build.status,
-        build.reason
-      ),
-    })),
+export async function getRunningStatuses(
+  teamId: string,
+  buildIds: string[]
+): Promise<RunningBuildStatusDTO[]> {
+  if (buildIds.length === 0) {
+    return []
   }
+
+  const { data, error } = await supabaseAdmin
+    .from('env_builds')
+    .select('id, status, reason, finished_at, envs!inner(team_id)')
+    .eq('envs.team_id', teamId)
+    .in('id', buildIds)
+
+  if (error) throw error
+
+  return (data ?? []).map((build) => ({
+    id: build.id,
+    status: mapDatabaseBuildStatusToBuildStatusDTO(
+      build.status as BuildStatusDB
+    ),
+    finishedAt: build.finished_at
+      ? new Date(build.finished_at).getTime()
+      : null,
+    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+      build.status,
+      build.reason
+    ),
+  }))
 }

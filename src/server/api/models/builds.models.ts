@@ -14,15 +14,11 @@ export interface ListedBuildDTO {
   finishedAt: number | null
 }
 
-export interface BuildsPulseDTO {
-  latestBuildAt: number | null
-  runningStatuses: Array<{ id: string; status: BuildStatusDTO }>
-  recentlyCompleted: Array<{
-    id: string
-    status: BuildStatusDTO
-    finishedAt: number
-    statusMessage: string | null
-  }>
+export interface RunningBuildStatusDTO {
+  id: string
+  status: BuildStatusDTO
+  finishedAt: number | null
+  statusMessage: string | null
 }
 
 // database queries

@@ -1,6 +1,8 @@
 'use client'
 
 import { useTRPC } from '@/trpc/client'
+import { Button } from '@/ui/primitives/button'
+import { Card } from '@/ui/primitives/card'
 import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
@@ -16,8 +18,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { AnimatePresence, motion } from 'motion/react'
 import { useParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BuildsEmpty from './empty'
 import {
   BuildId,
@@ -30,8 +33,8 @@ import {
 } from './table-cells'
 import useFilters from './use-filters'
 
-const PULSE_INTERVAL_ACTIVE = 3_000
-const PULSE_INTERVAL_IDLE = 10_000
+const LATEST_BUILD_CHECK_INTERVAL = 15_000
+const RUNNING_STATUS_INTERVAL = 3_000
 const ROW_HEIGHT = 37
 const OVERSCAN = 10
 
@@ -53,21 +56,23 @@ const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const lastKnownBuildTimestamp = useRef<number | null>(null)
-
+  const [staleListRefreshToastDismissed, setStaleListRefreshToastDismissed] =
+    useState(false)
   const { teamIdOrSlug } =
     useParams<
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
   const { statuses, buildIdOrTemplate } = useFilters()
 
-  // reset scroll when filters change
+  // reset scroll and toast state when filters change
   useEffect(() => {
+    setStaleListRefreshToastDismissed(false)
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0
     }
   }, [statuses, buildIdOrTemplate])
 
+  // paginated query for builds
   const {
     data: paginatedBuilds,
     fetchNextPage,
@@ -91,22 +96,12 @@ const BuildsTable = () => {
     [paginatedBuilds]
   )
 
-  // determine pulse frequency based on active builds
-  const hasActiveBuilds = useMemo(
-    () => builds.some((b) => b.status === 'building'),
-    [builds]
-  )
-
-  const pulseInterval = hasActiveBuilds
-    ? PULSE_INTERVAL_ACTIVE
-    : PULSE_INTERVAL_IDLE
-
-  // poll for build status updates
-  const { data: pulseData } = useQuery(
-    trpc.builds.pulse.queryOptions(
+  // lightweight check for new builds
+  const { data: latestBuildTimestamp } = useQuery(
+    trpc.builds.latestBuildTimestamp.queryOptions(
       { teamIdOrSlug },
       {
-        refetchInterval: pulseInterval,
+        refetchInterval: LATEST_BUILD_CHECK_INTERVAL,
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: 'always',
         refetchOnMount: 'always',
@@ -114,7 +109,17 @@ const BuildsTable = () => {
     )
   )
 
-  // query key for cache updates
+  // determine if there are new builds available
+  const firstBuildTimestamp = builds[0]?.createdAt ?? null
+  const hasNewBuilds =
+    latestBuildTimestamp !== undefined &&
+    latestBuildTimestamp !== null &&
+    firstBuildTimestamp !== null &&
+    latestBuildTimestamp > firstBuildTimestamp
+
+  const pagesLoaded = paginatedBuilds?.pages.length ?? 0
+
+  // query key for cache invalidation
   const buildsQueryKey = useMemo(
     () =>
       trpc.builds.list.infiniteQueryOptions({
@@ -125,66 +130,68 @@ const BuildsTable = () => {
     [trpc, teamIdOrSlug, buildIdOrTemplate, statuses]
   )
 
-  // sync pulse data with builds cache
+  const handleCompleteListRefresh = useCallback(() => {
+    queryClient.resetQueries({ queryKey: buildsQueryKey })
+    setStaleListRefreshToastDismissed(false)
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
+  }, [queryClient, buildsQueryKey])
+
+  // auto-refetch when pages < 3 and stale, otherwise show refresh toast
   useEffect(() => {
-    if (!pulseData || isFetchingBuilds) return
-
-    const { latestBuildAt, recentlyCompleted } = pulseData
-
-    // invalidate if new builds detected
-    if (
-      latestBuildAt !== null &&
-      lastKnownBuildTimestamp.current !== null &&
-      latestBuildAt > lastKnownBuildTimestamp.current
-    ) {
-      queryClient.invalidateQueries({ queryKey: buildsQueryKey })
+    if (!hasNewBuilds) {
+      setStaleListRefreshToastDismissed(false)
+      return
     }
 
-    // update completed builds in cache
-    if (recentlyCompleted.length > 0) {
-      queryClient.setQueryData(buildsQueryKey, (old) => {
-        if (!old) return old
-
-        return {
-          ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            data: page.data.map((build) => {
-              const completed = recentlyCompleted.find((c) => c.id === build.id)
-              if (completed) {
-                return {
-                  ...build,
-                  status: completed.status,
-                  finishedAt: completed.finishedAt,
-                  statusMessage: completed.statusMessage,
-                }
-              }
-              return build
-            }),
-          })),
-        }
-      })
+    if (pagesLoaded < 3) {
+      handleCompleteListRefresh()
     }
+  }, [hasNewBuilds, pagesLoaded, handleCompleteListRefresh])
 
-    lastKnownBuildTimestamp.current = latestBuildAt
-  }, [pulseData, queryClient, buildsQueryKey, isFetchingBuilds])
+  const buildingIdsFromList = useMemo(
+    () => builds.filter((b) => b.status === 'building').map((b) => b.id),
+    [builds]
+  )
 
-  // merge live status updates from pulse
-  const buildsWithLiveStatus = useMemo(() => {
-    if (!pulseData?.runningStatuses) return builds
-
-    const liveStatusMap = new Map(
-      pulseData.runningStatuses.map((s) => [s.id, s.status])
+  // poll to check running builds for status updates
+  const { data: runningStatusesData } = useQuery(
+    trpc.builds.runningStatuses.queryOptions(
+      { teamIdOrSlug, buildIds: buildingIdsFromList },
+      {
+        enabled: buildingIdsFromList.length > 0,
+        refetchInterval: (query) => {
+          const data = query.state.data
+          if (!data) return RUNNING_STATUS_INTERVAL
+          const hasRunning = data.some((s) => s.status === 'building')
+          return hasRunning ? RUNNING_STATUS_INTERVAL : false
+        },
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: 'always',
+      }
     )
+  )
+
+  // merge live status updates
+  const buildsWithLiveStatus = useMemo(() => {
+    if (!runningStatusesData || runningStatusesData.length === 0) return builds
+
+    const statusMap = new Map(runningStatusesData.map((s) => [s.id, s]))
 
     return builds.map((build) => {
-      const liveStatus = liveStatusMap.get(build.id)
-      if (liveStatus && liveStatus !== build.status) {
-        return { ...build, status: liveStatus }
+      const updated = statusMap.get(build.id)
+      if (updated) {
+        return {
+          ...build,
+          status: updated.status,
+          finishedAt: updated.finishedAt,
+          statusMessage: updated.statusMessage,
+        }
       }
       return build
     })
-  }, [builds, pulseData])
+  }, [builds, runningStatusesData])
 
   // virtualization
   const rowCount = hasNextPage
@@ -211,6 +218,8 @@ const BuildsTable = () => {
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
+  const showStaleListRefreshToast =
+    hasNewBuilds && pagesLoaded >= 3 && !staleListRefreshToastDismissed
   const isRefetching = isFetchingBuilds && hasData && !isFetchingNextPage
 
   const handleLoadMore = useCallback(() => {
@@ -218,7 +227,7 @@ const BuildsTable = () => {
   }, [fetchNextPage])
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
       <div
         ref={scrollContainerRef}
         className="min-h-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden"
@@ -352,6 +361,43 @@ const BuildsTable = () => {
           </TableBody>
         </Table>
       </div>
+
+      <AnimatePresence>
+        {showStaleListRefreshToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <Card
+              variant="layer"
+              className="shadow-lg p-3 flex items-center gap-3"
+            >
+              <span className="prose-label-highlight text-fg-secondary">
+                New builds available
+              </span>
+              <div className="flex gap-1.5">
+                <Button
+                  onClick={handleCompleteListRefresh}
+                  variant="accent"
+                  size="sm"
+                >
+                  Refresh
+                </Button>
+                <Button
+                  onClick={() => setStaleListRefreshToastDismissed(true)}
+                  variant="muted"
+                  size="sm"
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
