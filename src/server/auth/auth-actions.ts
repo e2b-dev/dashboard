@@ -18,6 +18,27 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
+async function checkAuthProviderHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    )
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+const AUTH_PROVIDER_ERROR_MESSAGE =
+  'Our authentication provider is experiencing issues. Please try again later.'
+
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
   returnTo: relativeUrlSchema.optional(),
@@ -28,6 +49,17 @@ export const signInWithOAuthAction = actionClient
   .metadata({ actionName: 'signInWithOAuth' })
   .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
+
+    const isHealthy = await checkAuthProviderHealth()
+    if (!isHealthy) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        AUTH_PROVIDER_ERROR_MESSAGE,
+        queryParams
+      )
+    }
 
     const supabase = await createClient()
 
@@ -86,6 +118,17 @@ export const signUpAction = actionClient
   .schema(signUpSchema)
   .metadata({ actionName: 'signUp' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    const isHealthy = await checkAuthProviderHealth()
+    if (!isHealthy) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_UP,
+        AUTH_PROVIDER_ERROR_MESSAGE,
+        queryParams
+      )
+    }
+
     const supabase = await createClient()
     const headerStore = await headers()
 
@@ -147,6 +190,17 @@ export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    const isHealthy = await checkAuthProviderHealth()
+    if (!isHealthy) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        AUTH_PROVIDER_ERROR_MESSAGE,
+        queryParams
+      )
+    }
+
     const supabase = await createClient()
 
     const headerStore = await headers()
