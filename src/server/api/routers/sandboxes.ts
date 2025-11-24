@@ -43,7 +43,7 @@ export const sandboxesRouter = createTRPCRouter({
       cache: 'no-store',
     })
 
-    if (sandboxesRes.error) {
+    if (!sandboxesRes.response.ok || sandboxesRes.error) {
       const status = sandboxesRes.response.status
 
       l.error(
@@ -56,7 +56,7 @@ export const sandboxesRouter = createTRPCRouter({
             status,
           },
         },
-        `failed to fetch /sandboxes: ${sandboxesRes.error.message}`
+        `failed to fetch /sandboxes: ${sandboxesRes?.error?.message}`
       )
 
       throw apiError(status)
@@ -95,13 +95,12 @@ export const sandboxesRouter = createTRPCRouter({
         cache: 'no-store',
       })
 
-      if (infraRes.error) {
+      if (!infraRes.response.ok || infraRes.error) {
         const status = infraRes.response.status
 
         l.error(
           {
             key: 'trpc:sandboxes:get_team_sandboxes_metrics:infra_error',
-            message: infraRes.error.message,
             error: infraRes.error,
             team_id: teamId,
             user_id: session.user.id,
@@ -111,7 +110,7 @@ export const sandboxesRouter = createTRPCRouter({
               path: '/sandboxes/metrics',
             },
           },
-          `failed to fetch /sandboxes/metrics: ${infraRes.error.message}`
+          `failed to fetch /sandboxes/metrics: ${infraRes?.error?.message || 'Unknown error'}`
         )
 
         throw apiError(status)
@@ -171,7 +170,7 @@ export const sandboxesRouter = createTRPCRouter({
         cache: 'no-store',
       })
 
-      if (res.error) {
+      if (!res.response.ok || res.error) {
         const status = res.response.status
 
         l.warn(
@@ -188,7 +187,7 @@ export const sandboxesRouter = createTRPCRouter({
               overfetchS,
             },
           },
-          `failed to fetch /teams/{teamID}/metrics: ${res.error.message}`
+          `failed to fetch /teams/{teamID}/metrics: ${res?.error?.message || 'Unknown error'}`
         )
 
         throw apiError(status)
@@ -246,7 +245,7 @@ export const sandboxesRouter = createTRPCRouter({
         cache: 'no-store',
       })
 
-      if (res.error) {
+      if (!res.response.ok || res.error) {
         const status = res.response.status
 
         l.error(
@@ -262,7 +261,7 @@ export const sandboxesRouter = createTRPCRouter({
               metric,
             },
           },
-          `failed to fetch /teams/{teamID}/metrics/max: ${res.error.message}`
+          `failed to fetch /teams/{teamID}/metrics/max: ${res.error?.message || 'Unknown error'}`
         )
 
         throw apiError(status)
