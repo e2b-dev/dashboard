@@ -28,6 +28,7 @@ async function checkAuthProviderHealth(): Promise<boolean> {
           apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         },
         signal: AbortSignal.timeout(5000),
+        next: { revalidate: 30 },
       }
     )
     return response.ok
