@@ -56,7 +56,7 @@ export const sandboxesRouter = createTRPCRouter({
             status,
           },
         },
-        `failed to fetch /sandboxes: ${sandboxesRes?.error?.message || 'Unknown error'}`
+        `failed to fetch /sandboxes: ${sandboxesRes.error?.message || 'Unknown error'}`
       )
 
       throw apiError(status)
@@ -110,7 +110,7 @@ export const sandboxesRouter = createTRPCRouter({
               path: '/sandboxes/metrics',
             },
           },
-          `failed to fetch /sandboxes/metrics: ${infraRes?.error?.message || 'Unknown error'}`
+          `failed to fetch /sandboxes/metrics: ${infraRes.error?.message || 'Unknown error'}`
         )
 
         throw apiError(status)
@@ -187,7 +187,7 @@ export const sandboxesRouter = createTRPCRouter({
               overfetchS,
             },
           },
-          `failed to fetch /teams/{teamID}/metrics: ${res?.error?.message || 'Unknown error'}`
+          `failed to fetch /teams/{teamID}/metrics: ${res.error?.message || 'Unknown error'}`
         )
 
         throw apiError(status)
