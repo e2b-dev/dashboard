@@ -73,8 +73,7 @@ export default function BuildsHeader() {
   const [localStatuses, setLocalStatuses] = useState<BuildStatusDTO[]>(statuses)
 
   useEffect(() => {
-    if (!buildIdOrTemplate) return
-    setLocalBuildIdOrTemplate(buildIdOrTemplate)
+    setLocalBuildIdOrTemplate(buildIdOrTemplate ?? '')
   }, [buildIdOrTemplate])
 
   useEffect(() => {
