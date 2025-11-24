@@ -87,6 +87,7 @@ const BuildsTable = () => {
       {
         getNextPageParam: (page) => page.nextCursor,
         placeholderData: (prev) => prev,
+        retry: false,
       }
     )
   )
@@ -96,7 +97,7 @@ const BuildsTable = () => {
     [paginatedBuilds]
   )
 
-  // lightweight check for new builds
+  // lightweight check for new builds (errors ignored)
   const { data: latestBuildTimestamp } = useQuery(
     trpc.builds.latestBuildTimestamp.queryOptions(
       { teamIdOrSlug },
@@ -105,6 +106,7 @@ const BuildsTable = () => {
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: 'always',
         refetchOnMount: 'always',
+        retry: false,
       }
     )
   )
@@ -155,7 +157,7 @@ const BuildsTable = () => {
     [builds]
   )
 
-  // poll to check running builds for status updates
+  // poll to check running builds for status updates (errors ignored)
   const { data: runningStatusesData } = useQuery(
     trpc.builds.runningStatuses.queryOptions(
       { teamIdOrSlug, buildIds: buildingIdsFromList },
@@ -169,6 +171,7 @@ const BuildsTable = () => {
         },
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: 'always',
+        retry: false,
       }
     )
   )
