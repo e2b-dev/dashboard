@@ -56,7 +56,7 @@ export const sandboxesRouter = createTRPCRouter({
             status,
           },
         },
-        `failed to fetch /sandboxes: ${sandboxesRes?.error?.message}`
+        `failed to fetch /sandboxes: ${sandboxesRes?.error?.message || 'Unknown error'}`
       )
 
       throw apiError(status)
