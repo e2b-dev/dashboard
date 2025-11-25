@@ -217,11 +217,16 @@ export function formatAveragingPeriod(stepMs: number): string {
  * Format a number with locale-specific separators
  * @param value - Number to format
  * @param locale - Locale to use (defaults to 'en-US')
+ * @param maxFractionDigits - Maximum decimal places to show (defaults to 0 for whole numbers)
  * @returns Formatted number string
  */
-export function formatNumber(value: number, locale: string = 'en-US'): string {
+export function formatNumber(
+  value: number,
+  locale: string = 'en-US',
+  maxFractionDigits: number = 0
+): string {
   return value.toLocaleString(locale, {
-    maximumFractionDigits: 0,
+    maximumFractionDigits: maxFractionDigits,
   })
 }
 
@@ -421,6 +426,7 @@ export function combineDateTimeStrings(
 
 /**
  * Format a currency amount with the specified currency and locale
+ * Always displays exactly 2 decimal places with standard rounding
  * @param amount - Amount to format
  * @param currency - Currency to use (defaults to 'USD')
  * @param locale - Locale to use (defaults to 'en-US')
@@ -434,7 +440,7 @@ export function formatCurrency(
   return Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
 }
