@@ -97,16 +97,17 @@ const BuildsTable = () => {
     [paginatedBuilds]
   )
 
-  // lightweight check for new builds (errors ignored)
+  // only start polling for new builds after initial data is loaded
   const { data: latestBuildTimestamp } = useQuery(
     trpc.builds.latestBuildTimestamp.queryOptions(
       { teamIdOrSlug },
       {
+        enabled: !isInitialLoad,
         refetchInterval: LATEST_BUILD_CHECK_INTERVAL,
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: 'always',
         refetchOnMount: 'always',
-        retry: false,
+        retry: 3,
       }
     )
   )
@@ -114,6 +115,8 @@ const BuildsTable = () => {
   // determine if there are new builds available
   const firstBuildTimestamp = builds[0]?.createdAt ?? null
   const hasNewBuilds =
+    !isInitialLoad &&
+    !isFetchingBuilds &&
     latestBuildTimestamp !== undefined &&
     latestBuildTimestamp !== null &&
     firstBuildTimestamp !== null &&
@@ -132,18 +135,31 @@ const BuildsTable = () => {
     [trpc, teamIdOrSlug, buildIdOrTemplate, statuses]
   )
 
+  // track if we've already auto-refreshed for this "new builds" detection
+  const hasAutoRefreshedRef = useRef(false)
+
   const handleCompleteListRefresh = useCallback(() => {
     queryClient.resetQueries({ queryKey: buildsQueryKey })
     setStaleListRefreshToastDismissed(false)
+    hasAutoRefreshedRef.current = true
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0
     }
   }, [queryClient, buildsQueryKey])
 
-  // auto-refetch when pages < 3 and stale, otherwise show refresh toast
+  // reset auto-refresh flag when new builds are detected after a refresh
   useEffect(() => {
     if (!hasNewBuilds) {
-      setStaleListRefreshToastDismissed(false)
+      hasAutoRefreshedRef.current = false
+    }
+  }, [hasNewBuilds])
+
+  // auto-refetch when pages < 3 and stale, otherwise show refresh toast
+  useEffect(() => {
+    if (!hasNewBuilds || hasAutoRefreshedRef.current) {
+      if (!hasNewBuilds) {
+        setStaleListRefreshToastDismissed(false)
+      }
       return
     }
 
