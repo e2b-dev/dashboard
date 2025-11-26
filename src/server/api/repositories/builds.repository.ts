@@ -149,24 +149,6 @@ export async function listBuilds(
   }
 }
 
-// get latest build timestamp
-
-export async function getLatestBuildTimestamp(
-  teamId: string
-): Promise<number | null> {
-  const { data, error } = await supabaseAdmin
-    .from('env_builds')
-    .select('created_at, envs!inner(team_id)')
-    .eq('envs.team_id', teamId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (error) throw error
-
-  return data ? new Date(data.created_at).getTime() : null
-}
-
 // get running build statuses
 
 export async function getRunningStatuses(

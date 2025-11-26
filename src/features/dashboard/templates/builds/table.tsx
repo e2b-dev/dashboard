@@ -1,8 +1,6 @@
 'use client'
 
 import { useTRPC } from '@/trpc/client'
-import { Button } from '@/ui/primitives/button'
-import { Card } from '@/ui/primitives/card'
 import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
@@ -12,13 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AnimatePresence, motion } from 'motion/react'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BuildsEmpty from './empty'
@@ -33,7 +26,7 @@ import {
 } from './table-cells'
 import useFilters from './use-filters'
 
-const LATEST_BUILD_CHECK_INTERVAL = 15_000
+const BUILDS_REFETCH_INTERVAL = 15_000
 const RUNNING_STATUS_INTERVAL = 3_000
 const ROW_HEIGHT = 37
 const OVERSCAN = 10
@@ -54,25 +47,25 @@ const colStyle = (width: number) => ({
 
 const BuildsTable = () => {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [staleListRefreshToastDismissed, setStaleListRefreshToastDismissed] =
-    useState(false)
+  const [isFilterRefetching, setIsFilterRefetching] = useState(false)
   const { teamIdOrSlug } =
     useParams<
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
   const { statuses, buildIdOrTemplate } = useFilters()
 
-  // reset scroll and toast state when filters change
+  // track filter changes to show loading state only for user-initiated refetches
+  const isFirstRender = useRef(true)
   useEffect(() => {
-    setStaleListRefreshToastDismissed(false)
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
     }
+    setIsFilterRefetching(true)
   }, [statuses, buildIdOrTemplate])
 
-  // paginated query for builds
+  // paginated query for builds with periodic refetch
   const {
     data: paginatedBuilds,
     fetchNextPage,
@@ -88,6 +81,8 @@ const BuildsTable = () => {
         getNextPageParam: (page) => page.nextCursor,
         placeholderData: (prev) => prev,
         retry: false,
+        refetchInterval: BUILDS_REFETCH_INTERVAL,
+        refetchIntervalInBackground: false,
       }
     )
   )
@@ -97,76 +92,12 @@ const BuildsTable = () => {
     [paginatedBuilds]
   )
 
-  // only start polling for new builds after initial data is loaded
-  const { data: latestBuildTimestamp } = useQuery(
-    trpc.builds.latestBuildTimestamp.queryOptions(
-      { teamIdOrSlug },
-      {
-        enabled: !isInitialLoad,
-        refetchInterval: LATEST_BUILD_CHECK_INTERVAL,
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: 'always',
-        refetchOnMount: 'always',
-        retry: 3,
-      }
-    )
-  )
-
-  // determine if there are new builds available
-  const firstBuildTimestamp = builds[0]?.createdAt ?? null
-  const hasNewBuilds =
-    !isInitialLoad &&
-    !isFetchingBuilds &&
-    latestBuildTimestamp !== undefined &&
-    latestBuildTimestamp !== null &&
-    firstBuildTimestamp !== null &&
-    latestBuildTimestamp > firstBuildTimestamp
-
-  const pagesLoaded = paginatedBuilds?.pages.length ?? 0
-
-  // query key for cache invalidation
-  const buildsQueryKey = useMemo(
-    () =>
-      trpc.builds.list.infiniteQueryOptions({
-        teamIdOrSlug,
-        buildIdOrTemplate,
-        statuses,
-      }).queryKey,
-    [trpc, teamIdOrSlug, buildIdOrTemplate, statuses]
-  )
-
-  // track if we've already auto-refreshed for this "new builds" detection
-  const hasAutoRefreshedRef = useRef(false)
-
-  const handleCompleteListRefresh = useCallback(() => {
-    queryClient.resetQueries({ queryKey: buildsQueryKey })
-    setStaleListRefreshToastDismissed(false)
-    hasAutoRefreshedRef.current = true
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0
-    }
-  }, [queryClient, buildsQueryKey])
-
-  // reset auto-refresh flag when new builds are detected after a refresh
+  // reset filter refetching state when fetch completes
   useEffect(() => {
-    if (!hasNewBuilds) {
-      hasAutoRefreshedRef.current = false
+    if (!isFetchingBuilds && isFilterRefetching) {
+      setIsFilterRefetching(false)
     }
-  }, [hasNewBuilds])
-
-  // auto-refetch when pages < 3 and stale, otherwise show refresh toast
-  useEffect(() => {
-    if (!hasNewBuilds || hasAutoRefreshedRef.current) {
-      if (!hasNewBuilds) {
-        setStaleListRefreshToastDismissed(false)
-      }
-      return
-    }
-
-    if (pagesLoaded < 3) {
-      handleCompleteListRefresh()
-    }
-  }, [hasNewBuilds, pagesLoaded, handleCompleteListRefresh])
+  }, [isFetchingBuilds, isFilterRefetching])
 
   const buildingIdsFromList = useMemo(
     () => builds.filter((b) => b.status === 'building').map((b) => b.id),
@@ -237,9 +168,8 @@ const BuildsTable = () => {
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
-  const showStaleListRefreshToast =
-    hasNewBuilds && pagesLoaded >= 3 && !staleListRefreshToastDismissed
-  const isRefetching = isFetchingBuilds && hasData && !isFetchingNextPage
+  const showFilterRefetchingOverlay =
+    isFilterRefetching && isFetchingBuilds && hasData
 
   const handleLoadMore = useCallback(() => {
     fetchNextPage()
@@ -271,7 +201,9 @@ const BuildsTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody
-            className={isRefetching ? 'opacity-70 transition-opacity' : ''}
+            className={
+              showFilterRefetchingOverlay ? 'opacity-70 transition-opacity' : ''
+            }
           >
             {showLoader && (
               <TableRow>
@@ -380,43 +312,6 @@ const BuildsTable = () => {
           </TableBody>
         </Table>
       </div>
-
-      <AnimatePresence>
-        {showStaleListRefreshToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-4 right-4 z-50"
-          >
-            <Card
-              variant="layer"
-              className="shadow-lg p-3 flex items-center gap-3"
-            >
-              <span className="prose-label-highlight text-fg-secondary">
-                New builds available
-              </span>
-              <div className="flex gap-1.5">
-                <Button
-                  onClick={handleCompleteListRefresh}
-                  variant="accent"
-                  size="sm"
-                >
-                  Refresh
-                </Button>
-                <Button
-                  onClick={() => setStaleListRefreshToastDismissed(true)}
-                  variant="muted"
-                  size="sm"
-                >
-                  Dismiss
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

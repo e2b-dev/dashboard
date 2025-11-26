@@ -43,10 +43,6 @@ export const buildsRouter = createTRPCRouter({
       )
     }),
 
-  latestBuildTimestamp: protectedTeamProcedure.query(async ({ ctx }) => {
-    return await buildsRepo.getLatestBuildTimestamp(ctx.teamId)
-  }),
-
   runningStatuses: protectedTeamProcedure
     .input(
       z.object({
