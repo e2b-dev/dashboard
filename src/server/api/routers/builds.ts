@@ -21,12 +21,7 @@ export const buildsRouter = createTRPCRouter({
         buildIdOrTemplate: z.string().optional(),
         statuses: z.array(BuildStatusDTOSchema),
         limit: z.number().min(1).max(100).default(50),
-        cursor: z
-          .object({
-            timestamp: z.string(),
-            direction: z.enum(['forward', 'backward']),
-          })
-          .optional(),
+        cursor: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -41,11 +36,7 @@ export const buildsRouter = createTRPCRouter({
         teamId,
         buildIdOrTemplate,
         dbStatuses,
-        {
-          limit,
-          cursor: cursor?.timestamp,
-          direction: cursor?.direction,
-        }
+        { limit, cursor }
       )
     }),
 

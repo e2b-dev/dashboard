@@ -19,10 +19,10 @@ import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BuildsEmpty from './empty'
 import {
+  BackToTopButton,
   BuildId,
   Duration,
   LoadMoreButton,
-  LoadPreviousButton,
   Reason,
   StartedAt,
   Status,
@@ -71,11 +71,8 @@ const BuildsTable = () => {
   const {
     data: paginatedBuilds,
     fetchNextPage,
-    fetchPreviousPage,
     hasNextPage,
-    hasPreviousPage,
     isFetchingNextPage,
-    isFetchingPreviousPage,
     isFetching: isFetchingBuilds,
     isPending: isInitialLoad,
     error: buildsError,
@@ -85,7 +82,6 @@ const BuildsTable = () => {
       { teamIdOrSlug, statuses, buildIdOrTemplate },
       {
         getNextPageParam: (page) => page.nextCursor ?? undefined,
-        getPreviousPageParam: (page) => page.previousCursor ?? undefined,
         placeholderData: keepPreviousData,
         retry: 3,
         refetchInterval: BUILDS_REFETCH_INTERVAL,
@@ -94,6 +90,11 @@ const BuildsTable = () => {
       }
     )
   )
+
+  // Show "Back to top" when the initial page has been dropped due to maxPages
+  // This happens when the first pageParam is not undefined (meaning we've scrolled past the beginning)
+  const firstPageParam = paginatedBuilds?.pageParams[0]
+  const showBackToTop = firstPageParam !== undefined
 
   const builds = useMemo(
     () => paginatedBuilds?.pages.flatMap((p) => p.data) ?? [],
@@ -162,11 +163,7 @@ const BuildsTable = () => {
     fetchNextPage()
   }, [fetchNextPage])
 
-  const handleLoadPrevious = useCallback(() => {
-    fetchPreviousPage()
-  }, [fetchPreviousPage])
-
-  const handleReset = useCallback(() => {
+  const handleBackToTop = useCallback(() => {
     refetch()
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0
@@ -223,17 +220,13 @@ const BuildsTable = () => {
 
             {hasData && (
               <>
-                {hasPreviousPage && (
+                {showBackToTop && (
                   <TableRow>
                     <TableCell
                       colSpan={6}
                       className="text-start text-fg-tertiary"
                     >
-                      <LoadPreviousButton
-                        isLoading={isFetchingPreviousPage}
-                        onLoadPrevious={handleLoadPrevious}
-                        onReset={handleReset}
-                      />
+                      <BackToTopButton onBackToTop={handleBackToTop} />
                     </TableCell>
                   </TableRow>
                 )}

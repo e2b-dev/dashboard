@@ -46,19 +46,11 @@ const TEMPLATE_BUILD_TIMEOUT_MS =
 interface ListBuildsPaginationOptions {
   limit?: number
   cursor?: string
-  direction?: 'forward' | 'backward'
-}
-
-interface PaginationCursor {
-  timestamp: string
-  direction: 'forward' | 'backward'
 }
 
 interface ListBuildsPaginatedResult<T> {
   data: T[]
-  nextCursor: PaginationCursor | null
-  previousCursor: PaginationCursor | null
-  hasMore: boolean
+  nextCursor: string | null
 }
 
 export async function listBuilds(
@@ -89,14 +81,6 @@ export async function listBuilds(
     statusFilter = `status.in.(${completedStatuses.join(',')})`
   }
 
-  const isBackward = options.direction === 'backward'
-
-  // For backward pagination (fetching newer items), we need to:
-  // 1. Use gt() to get items newer than cursor
-  // 2. Order ascending to get items closest to cursor first
-  // 3. Reverse results to maintain descending order (newest first)
-  const orderAscending = isBackward
-
   let query = supabaseAdmin
     .from('env_builds')
     .select(
@@ -116,8 +100,7 @@ export async function listBuilds(
     )
     .eq('envs.team_id', teamId)
     .or(statusFilter)
-    .order('created_at', { ascending: orderAscending })
-    .order('id', { ascending: orderAscending })
+    .order('created_at', { ascending: false })
 
   if (buildIdOrTemplate) {
     const resolvedEnvId = await resolveTemplateId(buildIdOrTemplate, teamId)
@@ -127,8 +110,6 @@ export async function listBuilds(
       return {
         data: [],
         nextCursor: null,
-        previousCursor: null,
-        hasMore: false,
       }
     }
 
@@ -142,11 +123,7 @@ export async function listBuilds(
   }
 
   if (options.cursor) {
-    if (isBackward) {
-      query = query.gt('created_at', options.cursor)
-    } else {
-      query = query.lt('created_at', options.cursor)
-    }
+    query = query.lt('created_at', options.cursor)
   }
 
   query.limit(limit + 1)
@@ -161,48 +138,19 @@ export async function listBuilds(
     return {
       data: [],
       nextCursor: null,
-      previousCursor: null,
-      hasMore: false,
     }
-  }
-
-  // For backward pagination, reverse to maintain newest-first order
-  if (isBackward) {
-    rawBuilds.reverse()
   }
 
   const hasMore = rawBuilds.length > limit
   const trimmedRawBuilds = hasMore ? rawBuilds.slice(0, limit) : rawBuilds
   const builds = trimmedRawBuilds.map(mapDatabaseBuildToListedBuildDTO)
 
-  const firstTimestamp = trimmedRawBuilds[0]?.created_at
   const lastTimestamp = trimmedRawBuilds[trimmedRawBuilds.length - 1]?.created_at
-
-  // nextCursor: for fetching older builds (forward direction)
-  // Available when there are more older items OR when we paginated backward
-  // (meaning there are older items we came from)
-  const nextCursor: PaginationCursor | null =
-    (hasMore && !isBackward) || (isBackward && options.cursor)
-      ? lastTimestamp
-        ? { timestamp: lastTimestamp, direction: 'forward' }
-        : null
-      : null
-
-  // previousCursor: for fetching newer builds (backward direction)
-  // Available when we navigated forward (older) and there might be newer items,
-  // OR when backward pagination found more items
-  const previousCursor: PaginationCursor | null =
-    (options.cursor && !isBackward) || (hasMore && isBackward)
-      ? firstTimestamp
-        ? { timestamp: firstTimestamp, direction: 'backward' }
-        : null
-      : null
+  const nextCursor = hasMore && lastTimestamp ? lastTimestamp : null
 
   return {
     data: builds,
     nextCursor,
-    previousCursor,
-    hasMore,
   }
 }
 
