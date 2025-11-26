@@ -10,13 +10,16 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import useSWR from 'swr'
 import { useDashboard } from '../context'
 
+const PRESERVED_SEARCH_PARAMS = ['tab'] as const
+
 export default function DashboardSidebarMenuTeams() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const { user, team: selectedTeam } = useDashboard()
 
@@ -54,9 +57,20 @@ export default function DashboardSidebarMenuTeams() {
       const splitPath = pathname.split('/')
       splitPath[2] = team.slug
 
-      return splitPath.join('/')
+      const preservedParams = new URLSearchParams()
+      for (const param of PRESERVED_SEARCH_PARAMS) {
+        const value = searchParams.get(param)
+        if (value) {
+          preservedParams.set(param, value)
+        }
+      }
+
+      const queryString = preservedParams.toString()
+      return queryString
+        ? `${splitPath.join('/')}?${queryString}`
+        : splitPath.join('/')
     },
-    [pathname]
+    [pathname, searchParams]
   )
 
   if (isLoading) {
