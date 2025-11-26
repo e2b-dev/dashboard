@@ -142,11 +142,9 @@ export async function listBuilds(
   }
 
   const hasMore = rawBuilds.length > limit
-  const trimmedRawBuilds = hasMore ? rawBuilds.slice(0, limit) : rawBuilds
-  const builds = trimmedRawBuilds.map(mapDatabaseBuildToListedBuildDTO)
+  const builds = rawBuilds.map(mapDatabaseBuildToListedBuildDTO)
 
-  const lastTimestamp =
-    trimmedRawBuilds[trimmedRawBuilds.length - 1]?.created_at
+  const lastTimestamp = rawBuilds[rawBuilds.length - 1]?.created_at
   const nextCursor = hasMore && lastTimestamp ? lastTimestamp : null
 
   return {
