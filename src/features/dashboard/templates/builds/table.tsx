@@ -14,6 +14,7 @@ import {
   keepPreviousData,
   useInfiniteQuery,
   useQuery,
+  useQueryClient,
 } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -49,6 +50,7 @@ const colStyle = (width: number) => ({
 
 const BuildsTable = () => {
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [isFilterRefetching, setIsFilterRefetching] = useState(false)
   const { teamIdOrSlug } =
@@ -76,7 +78,6 @@ const BuildsTable = () => {
     isFetching: isFetchingBuilds,
     isPending: isInitialLoad,
     error: buildsError,
-    refetch,
   } = useInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
       { teamIdOrSlug, statuses, buildIdOrTemplate },
@@ -152,23 +153,30 @@ const BuildsTable = () => {
     })
   }, [builds, runningStatusesData])
 
+  const handleLoadMore = useCallback(() => {
+    fetchNextPage()
+  }, [fetchNextPage])
+
+  const queryKey = trpc.builds.list.infiniteQueryOptions({
+    teamIdOrSlug,
+    statuses,
+    buildIdOrTemplate,
+  }).queryKey
+
+  const handleBackToTop = useCallback(() => {
+    queryClient.resetQueries({ queryKey })
+
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
+  }, [queryClient, queryKey])
+
   // UI state
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
   const showFilterRefetchingOverlay =
     isFilterRefetching && isFetchingBuilds && hasData
-
-  const handleLoadMore = useCallback(() => {
-    fetchNextPage()
-  }, [fetchNextPage])
-
-  const handleBackToTop = useCallback(() => {
-    refetch()
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0
-    }
-  }, [refetch])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
