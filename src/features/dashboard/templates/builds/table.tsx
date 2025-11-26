@@ -15,7 +15,6 @@ import {
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query'
-import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BuildsEmpty from './empty'
@@ -33,9 +32,6 @@ import useFilters from './use-filters'
 
 const BUILDS_REFETCH_INTERVAL = 15_000
 const RUNNING_STATUS_INTERVAL = 3_000
-const ROW_HEIGHT = 37
-const LOADER_ROW_HEIGHT = 48
-const OVERSCAN = 10
 
 const COLUMN_WIDTHS = {
   id: 132,
@@ -155,42 +151,6 @@ const BuildsTable = () => {
     })
   }, [builds, runningStatusesData])
 
-  // virtualization - account for load previous and load more rows
-  const hasPreviousRow = hasPreviousPage
-  const hasNextRow = hasNextPage
-  const rowCount =
-    buildsWithLiveStatus.length +
-    (hasPreviousRow ? 1 : 0) +
-    (hasNextRow ? 1 : 0)
-
-  const lastRowIndex = rowCount - 1
-  const loadMoreRowIndex = hasNextRow ? lastRowIndex : -1
-  const loadPreviousRowIndex = hasPreviousRow ? 0 : -1
-
-  const virtualizer = useVirtualizer({
-    count: rowCount,
-    getScrollElement: () => scrollContainerRef.current,
-    estimateSize: useCallback(
-      (index: number) => {
-        if (index === loadPreviousRowIndex || index === loadMoreRowIndex) {
-          return LOADER_ROW_HEIGHT
-        }
-        return ROW_HEIGHT
-      },
-      [loadPreviousRowIndex, loadMoreRowIndex]
-    ),
-    overscan: OVERSCAN,
-  })
-
-  const virtualRows = virtualizer.getVirtualItems()
-
-  const paddingTop = virtualRows.length > 0 ? (virtualRows[0]?.start ?? 0) : 0
-  const paddingBottom =
-    virtualRows.length > 0
-      ? virtualizer.getTotalSize() -
-        (virtualRows[virtualRows.length - 1]?.end ?? 0)
-      : 0
-
   // UI state
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
@@ -263,70 +223,22 @@ const BuildsTable = () => {
 
             {hasData && (
               <>
-                {paddingTop > 0 && (
-                  <tr>
-                    <td
+                {hasPreviousPage && (
+                  <TableRow>
+                    <TableCell
                       colSpan={6}
-                      style={{ height: paddingTop, padding: 0 }}
-                    />
-                  </tr>
+                      className="text-start text-fg-tertiary"
+                    >
+                      <LoadPreviousButton
+                        isLoading={isFetchingPreviousPage}
+                        onLoadPrevious={handleLoadPrevious}
+                        onReset={handleReset}
+                      />
+                    </TableCell>
+                  </TableRow>
                 )}
 
-                {virtualRows.map((virtualRow) => {
-                  const isLoadPreviousRow =
-                    hasPreviousRow && virtualRow.index === 0
-                  const isLoadMoreRow =
-                    hasNextRow &&
-                    virtualRow.index ===
-                      buildsWithLiveStatus.length + (hasPreviousRow ? 1 : 0)
-                  const buildIndex = hasPreviousRow
-                    ? virtualRow.index - 1
-                    : virtualRow.index
-                  const build = buildsWithLiveStatus[buildIndex]
-
-                  if (isLoadPreviousRow) {
-                    return (
-                      <TableRow
-                        key="load-previous"
-                        style={{ height: LOADER_ROW_HEIGHT }}
-                      >
-                        <TableCell
-                          colSpan={6}
-                          className="text-start text-fg-tertiary py-0"
-                        >
-                          <LoadPreviousButton
-                            isLoading={isFetchingPreviousPage}
-                            onLoadPrevious={handleLoadPrevious}
-                            onReset={handleReset}
-                            height={LOADER_ROW_HEIGHT}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  }
-
-                  if (isLoadMoreRow) {
-                    return (
-                      <TableRow
-                        key="load-more"
-                        style={{ height: LOADER_ROW_HEIGHT }}
-                      >
-                        <TableCell
-                          colSpan={6}
-                          className="text-start text-fg-tertiary py-0"
-                        >
-                          <LoadMoreButton
-                            isLoading={isFetchingNextPage}
-                            onLoadMore={handleLoadMore}
-                            height={LOADER_ROW_HEIGHT}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  }
-
-                  if (!build) return null
-
+                {buildsWithLiveStatus.map((build) => {
                   const isBuilding = build.status === 'building'
 
                   return (
@@ -372,13 +284,18 @@ const BuildsTable = () => {
                   )
                 })}
 
-                {paddingBottom > 0 && (
-                  <tr>
-                    <td
+                {hasNextPage && (
+                  <TableRow>
+                    <TableCell
                       colSpan={6}
-                      style={{ height: paddingBottom, padding: 0 }}
-                    />
-                  </tr>
+                      className="text-start text-fg-tertiary"
+                    >
+                      <LoadMoreButton
+                        isLoading={isFetchingNextPage}
+                        onLoadMore={handleLoadMore}
+                      />
+                    </TableCell>
+                  </TableRow>
                 )}
               </>
             )}
