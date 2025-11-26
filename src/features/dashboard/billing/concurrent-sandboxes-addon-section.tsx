@@ -50,7 +50,7 @@ export function ConcurrentSandboxAddonSection({
           <div className="flex-1">
             <p className="prose-body text-fg">+500 Concurrent Sandboxes</p>
             <p className="text-fg-tertiary prose-label mt-0.5 uppercase">
-              {`+${formatCurrency(priceCents / 100)}/mo`}
+              {`+${formatCurrency(priceCents / 100)}/MO`}
             </p>
           </div>
           {isCreateOrderLoading ? (
