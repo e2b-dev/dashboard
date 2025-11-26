@@ -90,25 +90,28 @@ export function Template({
 export function LoadMoreButton({
   isLoading,
   onLoadMore,
+  height,
 }: {
   isLoading: boolean
   onLoadMore: () => void
+  height: number
 }) {
-  if (isLoading) {
-    return (
-      <span className="flex items-center gap-2">
-        <Loader variant="slash" size="sm" />
-        Loading...
-      </span>
-    )
-  }
   return (
-    <button
-      onClick={onLoadMore}
-      className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
-    >
-      Load more
-    </button>
+    <div className="flex items-center" style={{ height }}>
+      {isLoading ? (
+        <span className="flex items-center gap-2">
+          <Loader variant="slash" size="sm" />
+          Loading...
+        </span>
+      ) : (
+        <button
+          onClick={onLoadMore}
+          className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+        >
+          Load more
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -116,35 +119,38 @@ export function LoadPreviousButton({
   isLoading,
   onLoadPrevious,
   onReset,
+  height,
 }: {
   isLoading: boolean
   onLoadPrevious: () => void
   onReset: () => void
+  height: number
 }) {
-  if (isLoading) {
-    return (
-      <span className="flex items-center gap-2">
-        <Loader variant="slash" size="sm" />
-        Loading...
-      </span>
-    )
-  }
   return (
-    <span className="flex items-center gap-3">
-      <button
-        onClick={onLoadPrevious}
-        className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
-      >
-        Load newer
-      </button>
-      <span className="text-fg-tertiary">·</span>
-      <button
-        onClick={onReset}
-        className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
-      >
-        Back to top
-      </button>
-    </span>
+    <div className="flex items-center" style={{ height }}>
+      {isLoading ? (
+        <span className="flex items-center gap-2">
+          <Loader variant="slash" size="sm" />
+          Loading...
+        </span>
+      ) : (
+        <span className="flex items-center gap-3">
+          <button
+            onClick={onLoadPrevious}
+            className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+          >
+            Load newer
+          </button>
+          <span className="text-fg-tertiary">·</span>
+          <button
+            onClick={onReset}
+            className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+          >
+            Back to top
+          </button>
+        </span>
+      )}
+    </div>
   )
 }
 

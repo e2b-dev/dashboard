@@ -34,6 +34,7 @@ import useFilters from './use-filters'
 const BUILDS_REFETCH_INTERVAL = 15_000
 const RUNNING_STATUS_INTERVAL = 3_000
 const ROW_HEIGHT = 37
+const LOADER_ROW_HEIGHT = 48
 const OVERSCAN = 10
 
 const COLUMN_WIDTHS = {
@@ -162,10 +163,22 @@ const BuildsTable = () => {
     (hasPreviousRow ? 1 : 0) +
     (hasNextRow ? 1 : 0)
 
+  const lastRowIndex = rowCount - 1
+  const loadMoreRowIndex = hasNextRow ? lastRowIndex : -1
+  const loadPreviousRowIndex = hasPreviousRow ? 0 : -1
+
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: useCallback(
+      (index: number) => {
+        if (index === loadPreviousRowIndex || index === loadMoreRowIndex) {
+          return LOADER_ROW_HEIGHT
+        }
+        return ROW_HEIGHT
+      },
+      [loadPreviousRowIndex, loadMoreRowIndex]
+    ),
     overscan: OVERSCAN,
   })
 
@@ -273,15 +286,19 @@ const BuildsTable = () => {
 
                   if (isLoadPreviousRow) {
                     return (
-                      <TableRow key="load-previous">
+                      <TableRow
+                        key="load-previous"
+                        style={{ height: LOADER_ROW_HEIGHT }}
+                      >
                         <TableCell
                           colSpan={6}
-                          className="text-start text-fg-tertiary"
+                          className="text-start text-fg-tertiary py-0"
                         >
                           <LoadPreviousButton
                             isLoading={isFetchingPreviousPage}
                             onLoadPrevious={handleLoadPrevious}
                             onReset={handleReset}
+                            height={LOADER_ROW_HEIGHT}
                           />
                         </TableCell>
                       </TableRow>
@@ -290,14 +307,18 @@ const BuildsTable = () => {
 
                   if (isLoadMoreRow) {
                     return (
-                      <TableRow key="load-more">
+                      <TableRow
+                        key="load-more"
+                        style={{ height: LOADER_ROW_HEIGHT }}
+                      >
                         <TableCell
                           colSpan={6}
-                          className="text-start text-fg-tertiary"
+                          className="text-start text-fg-tertiary py-0"
                         >
                           <LoadMoreButton
                             isLoading={isFetchingNextPage}
                             onLoadMore={handleLoadMore}
+                            height={LOADER_ROW_HEIGHT}
                           />
                         </TableCell>
                       </TableRow>

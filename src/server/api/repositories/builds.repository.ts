@@ -5,8 +5,8 @@ import {
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
   mapDatabaseBuildToListedBuildDTO,
-  type RunningBuildStatusDTO,
   type BuildStatusDB,
+  type RunningBuildStatusDTO,
 } from '../models/builds.models'
 
 // helpers
@@ -110,7 +110,6 @@ export async function listBuilds(
     .or(statusFilter)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .limit(limit + 1)
 
   if (buildIdOrTemplate) {
     const resolvedEnvId = await resolveTemplateId(buildIdOrTemplate, teamId)
@@ -144,6 +143,8 @@ export async function listBuilds(
     }
   }
 
+  query.limit(limit + 1)
+
   const { data: rawBuilds, error } = await query
 
   if (error) {
@@ -159,14 +160,11 @@ export async function listBuilds(
     }
   }
 
-  // for backward queries, we need to reverse to maintain chronological order (newest first)
-  const orderedBuilds = isBackward ? [...rawBuilds].reverse() : rawBuilds
-
-  const builds = orderedBuilds.map(mapDatabaseBuildToListedBuildDTO)
+  const builds = rawBuilds.map(mapDatabaseBuildToListedBuildDTO)
   const hasMore = builds.length > limit
   const data = hasMore ? builds.slice(0, limit) : builds
-  const firstRawBuild = orderedBuilds[0]
-  const lastRawBuild = orderedBuilds[data.length - 1]
+  const firstRawBuild = rawBuilds[0]
+  const lastRawBuild = rawBuilds[data.length - 1]
 
   // nextCursor: for fetching older builds (forward direction)
   const nextCursor: PaginationCursor | null =
