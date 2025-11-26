@@ -10,7 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -19,6 +23,7 @@ import {
   BuildId,
   Duration,
   LoadMoreButton,
+  LoadPreviousButton,
   Reason,
   StartedAt,
   Status,
@@ -69,20 +74,26 @@ const BuildsTable = () => {
   const {
     data: paginatedBuilds,
     fetchNextPage,
+    fetchPreviousPage,
     hasNextPage,
+    hasPreviousPage,
     isFetchingNextPage,
+    isFetchingPreviousPage,
     isFetching: isFetchingBuilds,
     isPending: isInitialLoad,
     error: buildsError,
+    refetch,
   } = useInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
       { teamIdOrSlug, statuses, buildIdOrTemplate },
       {
         getNextPageParam: (page) => page.nextCursor,
-        placeholderData: (prev) => prev,
-        retry: false,
+        getPreviousPageParam: (page) => page.previousCursor,
+        placeholderData: keepPreviousData,
+        retry: 3,
         refetchInterval: BUILDS_REFETCH_INTERVAL,
         refetchIntervalInBackground: false,
+        maxPages: 3,
       }
     )
   )
@@ -143,10 +154,13 @@ const BuildsTable = () => {
     })
   }, [builds, runningStatusesData])
 
-  // virtualization
-  const rowCount = hasNextPage
-    ? buildsWithLiveStatus.length + 1
-    : buildsWithLiveStatus.length
+  // virtualization - account for load previous and load more rows
+  const hasPreviousRow = hasPreviousPage
+  const hasNextRow = hasNextPage
+  const rowCount =
+    buildsWithLiveStatus.length +
+    (hasPreviousRow ? 1 : 0) +
+    (hasNextRow ? 1 : 0)
 
   const virtualizer = useVirtualizer({
     count: rowCount,
@@ -174,6 +188,17 @@ const BuildsTable = () => {
   const handleLoadMore = useCallback(() => {
     fetchNextPage()
   }, [fetchNextPage])
+
+  const handleLoadPrevious = useCallback(() => {
+    fetchPreviousPage()
+  }, [fetchPreviousPage])
+
+  const handleReset = useCallback(() => {
+    refetch()
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
+  }, [refetch])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
@@ -235,9 +260,33 @@ const BuildsTable = () => {
                 )}
 
                 {virtualRows.map((virtualRow) => {
+                  const isLoadPreviousRow =
+                    hasPreviousRow && virtualRow.index === 0
                   const isLoadMoreRow =
-                    virtualRow.index > buildsWithLiveStatus.length - 1
-                  const build = buildsWithLiveStatus[virtualRow.index]
+                    hasNextRow &&
+                    virtualRow.index ===
+                      buildsWithLiveStatus.length + (hasPreviousRow ? 1 : 0)
+                  const buildIndex = hasPreviousRow
+                    ? virtualRow.index - 1
+                    : virtualRow.index
+                  const build = buildsWithLiveStatus[buildIndex]
+
+                  if (isLoadPreviousRow) {
+                    return (
+                      <TableRow key="load-previous">
+                        <TableCell
+                          colSpan={6}
+                          className="text-start text-fg-tertiary"
+                        >
+                          <LoadPreviousButton
+                            isLoading={isFetchingPreviousPage}
+                            onLoadPrevious={handleLoadPrevious}
+                            onReset={handleReset}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  }
 
                   if (isLoadMoreRow) {
                     return (

@@ -51,6 +51,7 @@ interface ListBuildsPaginationOptions {
 interface ListBuildsPaginatedResult<T> {
   data: T[]
   nextCursor: string | null
+  previousCursor: string | null
   hasMore: boolean
 }
 
@@ -110,7 +111,7 @@ export async function listBuilds(
     const isBuildUUID = isUUID(buildIdOrTemplate)
 
     if (!resolvedEnvId && !isBuildUUID) {
-      return { data: [], nextCursor: null, hasMore: false }
+      return { data: [], nextCursor: null, previousCursor: null, hasMore: false }
     }
 
     if (resolvedEnvId && isBuildUUID) {
@@ -133,18 +134,22 @@ export async function listBuilds(
   }
 
   if (!rawBuilds || rawBuilds.length === 0) {
-    return { data: [], nextCursor: null, hasMore: false }
+    return { data: [], nextCursor: null, previousCursor: null, hasMore: false }
   }
 
   const builds = rawBuilds.map(mapDatabaseBuildToListedBuildDTO)
   const hasMore = builds.length > limit
   const data = hasMore ? builds.slice(0, limit) : builds
+  const firstRawBuild = rawBuilds[0]
   const lastRawBuild = rawBuilds[data.length - 1]
   const nextCursor = hasMore && lastRawBuild ? lastRawBuild.created_at : null
+  const previousCursor =
+    options.cursor && firstRawBuild ? firstRawBuild.created_at : null
 
   return {
     data,
     nextCursor,
+    previousCursor,
     hasMore,
   }
 }

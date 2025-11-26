@@ -1,3 +1,5 @@
+'use client'
+
 import { Loader } from '@/ui/primitives/loader'
 
 export default function LoadingLayout() {

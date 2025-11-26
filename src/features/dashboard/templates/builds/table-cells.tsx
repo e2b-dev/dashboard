@@ -112,6 +112,42 @@ export function LoadMoreButton({
   )
 }
 
+export function LoadPreviousButton({
+  isLoading,
+  onLoadPrevious,
+  onReset,
+}: {
+  isLoading: boolean
+  onLoadPrevious: () => void
+  onReset: () => void
+}) {
+  if (isLoading) {
+    return (
+      <span className="flex items-center gap-2">
+        <Loader variant="slash" size="sm" />
+        Loading...
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-3">
+      <button
+        onClick={onLoadPrevious}
+        className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+      >
+        Load newer
+      </button>
+      <span className="text-fg-tertiary">·</span>
+      <button
+        onClick={onReset}
+        className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+      >
+        Back to top
+      </button>
+    </span>
+  )
+}
+
 export function Duration({
   createdAt,
   finishedAt,
