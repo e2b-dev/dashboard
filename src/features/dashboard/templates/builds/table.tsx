@@ -84,8 +84,8 @@ const BuildsTable = () => {
     trpc.builds.list.infiniteQueryOptions(
       { teamIdOrSlug, statuses, buildIdOrTemplate },
       {
-        getNextPageParam: (page) => page.nextCursor,
-        getPreviousPageParam: (page) => page.previousCursor,
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        getPreviousPageParam: (page) => page.previousCursor ?? undefined,
         placeholderData: keepPreviousData,
         retry: 3,
         refetchInterval: BUILDS_REFETCH_INTERVAL,
