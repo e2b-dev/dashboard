@@ -175,7 +175,8 @@ export const endTelemetryMiddleware = t.middleware(
 
     // set span attributes for input inferred parameters
     for (const [k, v] of Object.entries(contextAttrs)) {
-      if (!v) continue
+      if (!v || typeof v !== 'string') continue
+
       span.setAttribute(k, v)
     }
 

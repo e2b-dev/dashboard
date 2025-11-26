@@ -40,16 +40,15 @@ export async function resolveTemplateId(
 
 // list builds
 
-const TEMPLATE_BUILD_TIMEOUT_MS =
-  1000 * 60 * 60 + 1000 * 60 * 10 /* 1 hour + 10 minutes margin */
+const BUILD_TIMEOUT_MS = 70 * 60 * 1000 // 70 minutes
 
-interface ListBuildsPaginationOptions {
+interface ListBuildsOptions {
   limit?: number
   cursor?: string
 }
 
-interface ListBuildsPaginatedResult<T> {
-  data: T[]
+interface ListBuildsResult {
+  data: ListedBuildDTO[]
   nextCursor: string | null
 }
 
@@ -57,12 +56,11 @@ export async function listBuilds(
   teamId: string,
   buildIdOrTemplate?: string,
   statuses: BuildStatusDB[] = ['waiting', 'building', 'uploaded', 'failed'],
-  options: ListBuildsPaginationOptions = {}
-): Promise<ListBuildsPaginatedResult<ListedBuildDTO>> {
+  options: ListBuildsOptions = {}
+): Promise<ListBuildsResult> {
   const limit = options.limit ?? 50
-
-  const buildTimeoutAgo = new Date(
-    Date.now() - TEMPLATE_BUILD_TIMEOUT_MS
+  const buildTimeoutThreshold = new Date(
+    Date.now() - BUILD_TIMEOUT_MS
   ).toISOString()
 
   const runningStatuses = statuses.filter(
@@ -74,9 +72,9 @@ export async function listBuilds(
 
   let statusFilter: string
   if (runningStatuses.length > 0 && completedStatuses.length > 0) {
-    statusFilter = `status.in.(${completedStatuses.join(',')}),and(status.in.(${runningStatuses.join(',')}),created_at.gte.${buildTimeoutAgo})`
+    statusFilter = `status.in.(${completedStatuses.join(',')}),and(status.in.(${runningStatuses.join(',')}),created_at.gte.${buildTimeoutThreshold})`
   } else if (runningStatuses.length > 0) {
-    statusFilter = `and(status.in.(${runningStatuses.join(',')}),created_at.gte.${buildTimeoutAgo})`
+    statusFilter = `and(status.in.(${runningStatuses.join(',')}),created_at.gte.${buildTimeoutThreshold})`
   } else {
     statusFilter = `status.in.(${completedStatuses.join(',')})`
   }
@@ -142,14 +140,13 @@ export async function listBuilds(
   }
 
   const hasMore = rawBuilds.length > limit
-  const builds = rawBuilds.map(mapDatabaseBuildToListedBuildDTO)
-
-  const lastTimestamp = rawBuilds[rawBuilds.length - 1]?.created_at
-  const nextCursor = hasMore && lastTimestamp ? lastTimestamp : null
+  const trimmedBuilds = hasMore ? rawBuilds.slice(0, limit) : rawBuilds
 
   return {
-    data: builds,
-    nextCursor,
+    data: trimmedBuilds.map(mapDatabaseBuildToListedBuildDTO),
+    nextCursor: hasMore
+      ? trimmedBuilds[trimmedBuilds.length - 1]!.created_at
+      : null,
   }
 }
 

@@ -1,5 +1,9 @@
 'use client'
 
+import type {
+  ListedBuildDTO,
+  RunningBuildStatusDTO,
+} from '@/server/api/models/builds.models'
 import { useTRPC } from '@/trpc/client'
 import { Loader } from '@/ui/primitives/loader'
 import {
@@ -18,6 +22,7 @@ import {
 } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import BuildsEmpty from './empty'
 import {
   BackToTopButton,
@@ -31,8 +36,9 @@ import {
 } from './table-cells'
 import useFilters from './use-filters'
 
-const BUILDS_REFETCH_INTERVAL = 15_000
-const RUNNING_STATUS_INTERVAL = 3_000
+const BUILDS_REFETCH_INTERVAL_MS = 15_000
+const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
+const MAX_CACHED_PAGES = 3
 
 const COLUMN_WIDTHS = {
   id: 132,
@@ -42,34 +48,22 @@ const COLUMN_WIDTHS = {
   duration: 96,
 } as const
 
-const colStyle = (width: number) => ({
-  width,
-  minWidth: width,
-  maxWidth: width,
-})
-
 const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [isFilterRefetching, setIsFilterRefetching] = useState(false)
+
   const { teamIdOrSlug } =
     useParams<
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
     >()
   const { statuses, buildIdOrTemplate } = useFilters()
+  const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
+    statuses,
+    buildIdOrTemplate
+  )
 
-  // track filter changes to show loading state only for user-initiated refetches
-  const isFirstRender = useRef(true)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    setIsFilterRefetching(true)
-  }, [statuses, buildIdOrTemplate])
-
-  // paginated query for builds with periodic refetch
+  // Builds list query
   const {
     data: paginatedBuilds,
     fetchNextPage,
@@ -85,46 +79,43 @@ const BuildsTable = () => {
         getNextPageParam: (page) => page.nextCursor ?? undefined,
         placeholderData: keepPreviousData,
         retry: 3,
-        refetchInterval: BUILDS_REFETCH_INTERVAL,
+        refetchInterval: BUILDS_REFETCH_INTERVAL_MS,
         refetchIntervalInBackground: false,
-        maxPages: 3,
+        maxPages: MAX_CACHED_PAGES,
       }
     )
   )
-
-  // Show "Back to top" when the initial page has been dropped due to maxPages
-  // This happens when the first pageParam is not undefined (meaning we've scrolled past the beginning)
-  const firstPageParam = paginatedBuilds?.pageParams[0]
-  const showBackToTop = firstPageParam !== undefined
 
   const builds = useMemo(
     () => paginatedBuilds?.pages.flatMap((p) => p.data) ?? [],
     [paginatedBuilds]
   )
 
-  // reset filter refetching state when fetch completes
+  const hasScrolledPastInitialPages =
+    paginatedBuilds?.pageParams[0] !== undefined
+
   useEffect(() => {
     if (!isFetchingBuilds && isFilterRefetching) {
-      setIsFilterRefetching(false)
+      clearFilterRefetching()
     }
-  }, [isFetchingBuilds, isFilterRefetching])
+  }, [isFetchingBuilds, isFilterRefetching, clearFilterRefetching])
 
-  const buildingIdsFromList = useMemo(
+  // Running builds status polling
+  const runningBuildIds = useMemo(
     () => builds.filter((b) => b.status === 'building').map((b) => b.id),
     [builds]
   )
 
-  // poll to check running builds for status updates (errors ignored)
   const { data: runningStatusesData } = useQuery(
     trpc.builds.runningStatuses.queryOptions(
-      { teamIdOrSlug, buildIds: buildingIdsFromList },
+      { teamIdOrSlug, buildIds: runningBuildIds },
       {
-        enabled: buildingIdsFromList.length > 0,
+        enabled: runningBuildIds.length > 0,
         refetchInterval: (query) => {
-          const data = query.state.data
-          if (!data) return RUNNING_STATUS_INTERVAL
-          const hasRunning = data.some((s) => s.status === 'building')
-          return hasRunning ? RUNNING_STATUS_INTERVAL : false
+          const hasRunningBuilds = query.state.data?.some(
+            (s) => s.status === 'building'
+          )
+          return hasRunningBuilds ? RUNNING_BUILD_POLL_INTERVAL_MS : false
         },
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: 'always',
@@ -133,45 +124,30 @@ const BuildsTable = () => {
     )
   )
 
-  // merge live status updates
-  const buildsWithLiveStatus = useMemo(() => {
-    if (!runningStatusesData || runningStatusesData.length === 0) return builds
+  const buildsWithLiveStatus = useMemo(
+    () => mergeBuildsWithLiveStatuses(builds, runningStatusesData),
+    [builds, runningStatusesData]
+  )
 
-    const statusMap = new Map(runningStatusesData.map((s) => [s.id, s]))
-
-    return builds.map((build) => {
-      const updated = statusMap.get(build.id)
-      if (updated) {
-        return {
-          ...build,
-          status: updated.status,
-          finishedAt: updated.finishedAt,
-          statusMessage: updated.statusMessage,
-        }
-      }
-      return build
-    })
-  }, [builds, runningStatusesData])
-
-  const handleLoadMore = useCallback(() => {
-    fetchNextPage()
-  }, [fetchNextPage])
-
-  const queryKey = trpc.builds.list.infiniteQueryOptions({
+  // Handlers
+  const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
     teamIdOrSlug,
     statuses,
     buildIdOrTemplate,
   }).queryKey
 
-  const handleBackToTop = useCallback(() => {
-    queryClient.resetQueries({ queryKey })
+  const handleLoadMore = useCallback(() => {
+    fetchNextPage()
+  }, [fetchNextPage])
 
+  const handleBackToTop = useCallback(() => {
+    queryClient.resetQueries({ queryKey: buildsQueryKey })
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0
     }
-  }, [queryClient, queryKey])
+  }, [queryClient, buildsQueryKey])
 
-  // UI state
+  // Derived UI state
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
@@ -193,6 +169,7 @@ const BuildsTable = () => {
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
             <col />
           </colgroup>
+
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Build ID</TableHead>
@@ -203,6 +180,7 @@ const BuildsTable = () => {
               <th />
             </TableRow>
           </TableHeader>
+
           <TableBody
             className={
               showFilterRefetchingOverlay ? 'opacity-70 transition-opacity' : ''
@@ -228,7 +206,7 @@ const BuildsTable = () => {
 
             {hasData && (
               <>
-                {showBackToTop && (
+                {hasScrolledPastInitialPages && (
                   <TableRow>
                     <TableCell
                       colSpan={6}
@@ -308,3 +286,51 @@ const BuildsTable = () => {
 }
 
 export default BuildsTable
+
+function colStyle(width: number) {
+  return { width, minWidth: width, maxWidth: width }
+}
+
+function useFilterChangeTracking(
+  statuses: string[],
+  buildIdOrTemplate: string | undefined
+) {
+  const [isFilterRefetching, setIsFilterRefetching] = useState(false)
+  const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    setIsFilterRefetching(true)
+  }, [statuses, buildIdOrTemplate])
+
+  const clearFilterRefetching = useCallback(() => {
+    setIsFilterRefetching(false)
+  }, [])
+
+  return { isFilterRefetching, clearFilterRefetching }
+}
+
+function mergeBuildsWithLiveStatuses(
+  builds: ListedBuildDTO[],
+  runningStatusesData: RunningBuildStatusDTO[] | undefined
+): ListedBuildDTO[] {
+  if (!runningStatusesData || runningStatusesData.length === 0) return builds
+
+  const statusMap = new Map(runningStatusesData.map((s) => [s.id, s]))
+
+  return builds.map((build) => {
+    const updated = statusMap.get(build.id)
+    if (updated) {
+      return {
+        ...build,
+        status: updated.status,
+        finishedAt: updated.finishedAt,
+        statusMessage: updated.statusMessage,
+      }
+    }
+    return build
+  })
+}
