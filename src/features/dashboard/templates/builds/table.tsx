@@ -195,8 +195,8 @@ const BuildsTable = () => {
               <TableHead>Build ID</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Template</TableHead>
-              <TableHead>Started</TableHead>
-              <TableHead>Duration</TableHead>
+              <TableHead className="text-end">Started</TableHead>
+              <TableHead className="text-end">Duration</TableHead>
               <th />
             </TableRow>
           </TableHeader>
@@ -270,7 +270,10 @@ const BuildsTable = () => {
                       >
                         <BuildId id={build.id} />
                       </TableCell>
-                      <TableCell className="py-1.5">
+                      <TableCell
+                        className="py-1.5"
+                        style={{ maxWidth: COLUMN_WIDTHS.status }}
+                      >
                         <Status status={build.status} />
                       </TableCell>
                       <TableCell
@@ -282,17 +285,17 @@ const BuildsTable = () => {
                           templateId={build.template}
                         />
                       </TableCell>
-                      <TableCell className="py-1.5">
+                      <TableCell className="py-1.5 text-end">
                         <StartedAt timestamp={build.createdAt} />
                       </TableCell>
-                      <TableCell className="py-1.5">
+                      <TableCell className="py-1.5 text-end">
                         <Duration
                           createdAt={build.createdAt}
                           finishedAt={build.finishedAt}
                           isBuilding={isBuilding}
                         />
                       </TableCell>
-                      <TableCell className="py-1.5 overflow-hidden max-w-full">
+                      <TableCell className="py-1.5 w-full">
                         <Reason statusMessage={build.statusMessage} />
                       </TableCell>
                     </TableRow>
