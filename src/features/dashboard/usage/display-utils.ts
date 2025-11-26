@@ -139,12 +139,12 @@ export function formatHoveredValues(
       timestamp: timestampLabel,
     },
     vcpu: {
-      displayValue: formatNumber(vcpuHours),
+      displayValue: formatNumber(vcpuHours, 'en-US', 2),
       label,
       timestamp: timestampLabel,
     },
     ram: {
-      displayValue: formatNumber(ramGibHours),
+      displayValue: formatNumber(ramGibHours, 'en-US', 2),
       label,
       timestamp: timestampLabel,
     },
@@ -177,12 +177,12 @@ export function formatTotalValues(totals: {
       timestamp: null,
     },
     vcpu: {
-      displayValue: formatNumber(totals.vcpu),
+      displayValue: formatNumber(totals.vcpu, 'en-US', 2),
       label: 'total over range',
       timestamp: null,
     },
     ram: {
-      displayValue: formatNumber(totals.ram),
+      displayValue: formatNumber(totals.ram, 'en-US', 2),
       label: 'total over range',
       timestamp: null,
     },

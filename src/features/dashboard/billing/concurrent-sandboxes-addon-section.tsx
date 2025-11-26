@@ -49,7 +49,7 @@ export function ConcurrentSandboxAddonSection({
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex-1">
             <p className="prose-body text-fg">+500 Concurrent Sandboxes</p>
-            <p className="text-fg-tertiary prose-label mt-0.5 uppercase">
+            <p className="text-fg-tertiary prose-label mt-0.5 lowercase">
               {`+${formatCurrency(priceCents / 100)}/mo`}
             </p>
           </div>
