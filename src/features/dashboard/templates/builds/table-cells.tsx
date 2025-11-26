@@ -140,8 +140,8 @@ export function Duration({
 
   if (isBuilding || !iso) {
     return (
-      <span className="prose-table-numeric whitespace-nowrap text-fg-tertiary flex items-center gap-1 justify-end">
-        {formatDurationCompact(duration)} <Loader variant="dots" />
+      <span className="prose-table-numeric whitespace-nowrap text-fg-tertiary">
+        {formatDurationCompact(duration)}
       </span>
     )
   }
