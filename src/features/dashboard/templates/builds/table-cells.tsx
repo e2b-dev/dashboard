@@ -37,7 +37,7 @@ function CopyableCell({
         copy(value)
       }}
       className={cn(
-        'text-fg-tertiary transition-colors',
+        'text-fg-tertiary transition-colors cursor-copy',
         'hover:text-fg-secondary',
         wasCopied && 'text-accent-main',
         className

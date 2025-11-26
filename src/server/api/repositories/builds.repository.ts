@@ -46,12 +46,18 @@ const TEMPLATE_BUILD_TIMEOUT_MS =
 interface ListBuildsPaginationOptions {
   limit?: number
   cursor?: string
+  direction?: 'forward' | 'backward'
+}
+
+interface PaginationCursor {
+  timestamp: string
+  direction: 'forward' | 'backward'
 }
 
 interface ListBuildsPaginatedResult<T> {
   data: T[]
-  nextCursor: string | null
-  previousCursor: string | null
+  nextCursor: PaginationCursor | null
+  previousCursor: PaginationCursor | null
   hasMore: boolean
 }
 
@@ -111,7 +117,12 @@ export async function listBuilds(
     const isBuildUUID = isUUID(buildIdOrTemplate)
 
     if (!resolvedEnvId && !isBuildUUID) {
-      return { data: [], nextCursor: null, previousCursor: null, hasMore: false }
+      return {
+        data: [],
+        nextCursor: null,
+        previousCursor: null,
+        hasMore: false,
+      }
     }
 
     if (resolvedEnvId && isBuildUUID) {
@@ -123,8 +134,14 @@ export async function listBuilds(
     }
   }
 
+  const isBackward = options.direction === 'backward'
+
   if (options.cursor) {
-    query = query.lt('created_at', options.cursor)
+    if (isBackward) {
+      query = query.gt('created_at', options.cursor)
+    } else {
+      query = query.lt('created_at', options.cursor)
+    }
   }
 
   const { data: rawBuilds, error } = await query
@@ -134,17 +151,35 @@ export async function listBuilds(
   }
 
   if (!rawBuilds || rawBuilds.length === 0) {
-    return { data: [], nextCursor: null, previousCursor: null, hasMore: false }
+    return {
+      data: [],
+      nextCursor: null,
+      previousCursor: null,
+      hasMore: false,
+    }
   }
 
-  const builds = rawBuilds.map(mapDatabaseBuildToListedBuildDTO)
+  // for backward queries, we need to reverse to maintain chronological order (newest first)
+  const orderedBuilds = isBackward ? [...rawBuilds].reverse() : rawBuilds
+
+  const builds = orderedBuilds.map(mapDatabaseBuildToListedBuildDTO)
   const hasMore = builds.length > limit
   const data = hasMore ? builds.slice(0, limit) : builds
-  const firstRawBuild = rawBuilds[0]
-  const lastRawBuild = rawBuilds[data.length - 1]
-  const nextCursor = hasMore && lastRawBuild ? lastRawBuild.created_at : null
-  const previousCursor =
-    options.cursor && firstRawBuild ? firstRawBuild.created_at : null
+  const firstRawBuild = orderedBuilds[0]
+  const lastRawBuild = orderedBuilds[data.length - 1]
+
+  // nextCursor: for fetching older builds (forward direction)
+  const nextCursor: PaginationCursor | null =
+    hasMore && lastRawBuild
+      ? { timestamp: lastRawBuild.created_at, direction: 'forward' }
+      : null
+
+  // previousCursor: for fetching newer builds (backward direction)
+  // only available when we've navigated away from the first page
+  const previousCursor: PaginationCursor | null =
+    options.cursor && firstRawBuild
+      ? { timestamp: firstRawBuild.created_at, direction: 'backward' }
+      : null
 
   return {
     data,

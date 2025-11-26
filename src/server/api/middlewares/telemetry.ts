@@ -169,8 +169,8 @@ export const endTelemetryMiddleware = t.middleware(
     const durationMs = Math.round(duration * 1000) / 1000
 
     const contextAttrs: Record<string, string | undefined> = {
-      template_id: flattenClientInputValue(rawInput, 'template_id'),
-      sandbox_id: flattenClientInputValue(rawInput, 'sandbox_id'),
+      template_id: flattenClientInputValue(rawInput, 'templateId'),
+      sandbox_id: flattenClientInputValue(rawInput, 'sandboxId'),
     }
 
     // set span attributes for input inferred parameters
