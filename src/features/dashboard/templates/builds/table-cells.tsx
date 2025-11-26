@@ -4,7 +4,10 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
-import { formatDurationCompact } from '@/lib/utils/formatting'
+import {
+  formatDurationCompact,
+  formatTimeAgoCompact,
+} from '@/lib/utils/formatting'
 import type {
   BuildStatusDTO,
   ListedBuildDTO,
@@ -13,7 +16,6 @@ import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import { formatDistanceToNow } from 'date-fns'
 import { ArrowUpRight } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -112,11 +114,7 @@ export function LoadMoreButton({
   )
 }
 
-export function BackToTopButton({
-  onBackToTop,
-}: {
-  onBackToTop: () => void
-}) {
+export function BackToTopButton({ onBackToTop }: { onBackToTop: () => void }) {
   return (
     <button
       onClick={onBackToTop}
@@ -170,10 +168,11 @@ export function Duration({
 
 export function StartedAt({ timestamp }: { timestamp: number }) {
   const iso = new Date(timestamp).toISOString()
+  const elapsed = Date.now() - timestamp
 
   return (
     <CopyableCell value={iso} className="prose-table-numeric whitespace-nowrap">
-      {formatDistanceToNow(timestamp, { addSuffix: true })}
+      {formatTimeAgoCompact(elapsed)}
     </CopyableCell>
   )
 }
@@ -214,7 +213,7 @@ export function Status({ status }: StatusProps) {
     <div className="flex items-center gap-3 min-w-0">
       <Badge
         variant={variant}
-        className={cn('select-none flex-shrink-0', {
+        className={cn('select-none flex-shrink-0 uppercase', {
           'bg-bg-inverted/10': variant === 'default',
         })}
       >

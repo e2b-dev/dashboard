@@ -5,6 +5,7 @@ import type {
   RunningBuildStatusDTO,
 } from '@/server/api/models/builds.models'
 import { useTRPC } from '@/trpc/client'
+import { ArrowDownIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import {
   Table,
@@ -175,7 +176,12 @@ const BuildsTable = () => {
               <TableHead>Build ID</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Template</TableHead>
-              <TableHead className="text-end">Started</TableHead>
+              <TableHead className="text-end">
+                <span className="inline-flex items-center gap-1 text-fg">
+                  Started
+                  <ArrowDownIcon className="size-3" />
+                </span>
+              </TableHead>
               <TableHead className="text-end">Duration</TableHead>
               <th />
             </TableRow>

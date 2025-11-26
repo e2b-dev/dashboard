@@ -220,6 +220,31 @@ export function formatDurationCompact(ms: number): string {
   return `${seconds}s`
 }
 
+export function formatTimeAgoCompact(ms: number): string {
+  const minutes = Math.floor(ms / 1000 / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  const months = Math.floor(days / 30)
+
+  if (minutes < 1) {
+    return '< 1m ago'
+  }
+  if (hours < 1) {
+    return `${minutes}m ago`
+  }
+  if (days < 1) {
+    const remainingMinutes = minutes % 60
+    return `${hours}h ${remainingMinutes}m ago`
+  }
+  if (months < 1) {
+    const remainingHours = hours % 24
+    return `${days}d ${remainingHours}h ago`
+  }
+
+  const remainingDays = days % 30
+  return `${months}mo ${remainingDays}d ago`
+}
+
 /**
  * Format an averaging period text (e.g., "5 seconds average")
  * @param stepMs - Step/period in milliseconds
