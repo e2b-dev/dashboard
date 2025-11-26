@@ -126,7 +126,7 @@ export async function listBuilds(
     query = query.lt('created_at', options.cursor)
   }
 
-  query.limit(limit + 1)
+  query = query.limit(limit + 1)
 
   const { data: rawBuilds, error } = await query
 
@@ -145,7 +145,8 @@ export async function listBuilds(
   const trimmedRawBuilds = hasMore ? rawBuilds.slice(0, limit) : rawBuilds
   const builds = trimmedRawBuilds.map(mapDatabaseBuildToListedBuildDTO)
 
-  const lastTimestamp = trimmedRawBuilds[trimmedRawBuilds.length - 1]?.created_at
+  const lastTimestamp =
+    trimmedRawBuilds[trimmedRawBuilds.length - 1]?.created_at
   const nextCursor = hasMore && lastTimestamp ? lastTimestamp : null
 
   return {
