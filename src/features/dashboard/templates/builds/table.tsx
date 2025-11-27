@@ -215,7 +215,7 @@ const BuildsTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-center text-fg-tertiary"
+                      className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
                     </TableCell>
@@ -272,7 +272,7 @@ const BuildsTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-center text-fg-tertiary"
+                      className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton
                         isLoading={isFetchingNextPage}
