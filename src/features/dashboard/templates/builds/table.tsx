@@ -158,7 +158,7 @@ const BuildsTable = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
       <div
         ref={scrollContainerRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden"
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto lg:overflow-x-hidden"
       >
         <Table suppressHydrationWarning>
           <colgroup>
@@ -167,7 +167,7 @@ const BuildsTable = () => {
             <col style={colStyle(COLUMN_WIDTHS.template)} />
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
-            <col />
+            <col className="max-lg:min-w-[500px]" />
           </colgroup>
 
           <TableHeader className="sticky top-0 z-10 bg-bg">
@@ -272,7 +272,7 @@ const BuildsTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-start text-fg-tertiary"
+                      className="text-center text-fg-tertiary"
                     >
                       <LoadMoreButton
                         isLoading={isFetchingNextPage}
