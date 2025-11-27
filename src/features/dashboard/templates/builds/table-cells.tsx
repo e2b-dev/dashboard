@@ -98,9 +98,9 @@ export function LoadMoreButton({
 }) {
   if (isLoading) {
     return (
-      <span className="flex items-center gap-2">
-        <Loader variant="slash" size="sm" />
-        Loading...
+      <span className="inline-flex items-center gap-1">
+        Loading
+        <Loader variant="dots" />
       </span>
     )
   }
@@ -234,7 +234,7 @@ export function Reason({
   return (
     <CopyableCell
       value={statusMessage}
-      className="prose-table truncate max-w-0 min-w-full text-left"
+      className="truncate max-w-0 min-w-full text-left"
     >
       {statusMessage}
     </CopyableCell>
