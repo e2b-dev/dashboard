@@ -214,7 +214,7 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
         <span className="text-fg-secondary">
-          File too large to preview ({sizeMB}MB). Maximum: {maxSizeMB}MB.
+          File is too large to preview ({sizeMB} MB). Limit is {maxSizeMB} MB.
         </span>
         <Button variant="warning" size="sm" onClick={onDownload}>
           Download
