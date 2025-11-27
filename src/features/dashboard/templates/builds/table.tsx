@@ -215,7 +215,7 @@ const BuildsTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-start text-fg-tertiary"
+                      className="text-center text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
                     </TableCell>
