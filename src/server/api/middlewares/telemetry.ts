@@ -1,6 +1,7 @@
 import { l } from '@/lib/clients/logger/logger'
 import { getMeter } from '@/lib/clients/meter'
 import { getTracer } from '@/lib/clients/tracer'
+import { flattenClientInputValue } from '@/lib/utils/action'
 import type { Span } from '@opentelemetry/api'
 import {
   context,
@@ -167,14 +168,23 @@ export const endTelemetryMiddleware = t.middleware(
     const duration = performance.now() - startTime
     const durationMs = Math.round(duration * 1000) / 1000
 
-    // collect context attributes that were added by downstream middlewares
-    const contextAttrs: Record<string, string> = {}
+    const contextAttrs: Record<string, string | undefined> = {
+      template_id: flattenClientInputValue(rawInput, 'templateId'),
+      sandbox_id: flattenClientInputValue(rawInput, 'sandboxId'),
+    }
 
+    // set span attributes for input inferred parameters
+    for (const [k, v] of Object.entries(contextAttrs)) {
+      if (!v || typeof v !== 'string') continue
+
+      span.setAttribute(k, v)
+    }
+
+    // set span and context attributs for procedure ctx inferred parameters
     if ('user' in ctx && ctx.user && (ctx.user as User).id) {
       span.setAttribute('user_id', (ctx.user as User).id)
       contextAttrs.user_id = (ctx.user as User).id
     }
-
     if ('teamId' in ctx && typeof ctx.teamId === 'string') {
       span.setAttribute('team_id', ctx.teamId)
       contextAttrs.team_id = ctx.teamId
