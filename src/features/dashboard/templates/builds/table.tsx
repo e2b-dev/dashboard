@@ -152,8 +152,7 @@ const BuildsTable = () => {
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
-  const showFilterRefetchingOverlay =
-    isFilterRefetching && isFetchingBuilds && hasData
+  const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
