@@ -13,7 +13,7 @@ import { FilesystemNode } from './types'
 
 enableMapSet()
 
-export const MAX_VIEWABLE_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25MB
+export const MAX_VIEWABLE_FILE_SIZE_BYTES = 15 * 1024 * 1024 // 15MB
 
 interface FilesystemStatics {
   rootPath: string
