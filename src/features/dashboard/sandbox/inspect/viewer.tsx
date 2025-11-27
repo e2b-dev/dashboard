@@ -10,6 +10,12 @@ import { AnimatePresence } from 'framer-motion'
 import { Download } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ShikiHighlighter, { Language } from 'react-shiki'
+
+import {
+  MAX_VIEWABLE_FILE_SIZE_BYTES,
+  type UnreadableFileTypeContentState,
+  type UnreadableTooLargeContentState,
+} from './filesystem/store'
 import SandboxInspectFrame from './frame'
 import { useContent } from './hooks/use-content'
 import { useFile } from './hooks/use-file'
@@ -117,7 +123,7 @@ function SandboxInspectViewerContent({
       ) : state.type === 'image' ? (
         <ImageContent name={name} dataUri={state.dataUri} />
       ) : (
-        <UnreadableContent onDownload={download} />
+        <UnreadableContent state={state} onDownload={download} />
       )}
     </SandboxInspectFrame>
   )
@@ -148,7 +154,7 @@ function TextContent({
   if (content.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
-        <span className="text-fg-secondary ">This file is empty.</span>
+        <span className="text-fg-secondary">This file is empty.</span>
         <Button variant="warning" size="sm" onClick={onDownload}>
           Download
           <Download className="ml-1.5 h-4 w-4" />
@@ -195,14 +201,32 @@ function ImageContent({ name, dataUri }: ImageContentProps) {
   )
 }
 
-interface UnreadableContent {
+interface UnreadableContentProps {
+  state: UnreadableFileTypeContentState | UnreadableTooLargeContentState
   onDownload: () => void
 }
 
-function UnreadableContent({ onDownload }: UnreadableContent) {
+function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
+  const maxSizeMB = (MAX_VIEWABLE_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0)
+
+  if (state.reason === 'too_large') {
+    const sizeMB = (state.size / 1024 / 1024).toFixed(1)
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <span className="text-fg-secondary">
+          File too large to preview ({sizeMB}MB). Maximum: {maxSizeMB}MB.
+        </span>
+        <Button variant="warning" size="sm" onClick={onDownload}>
+          Download
+          <Download className="ml-1.5 h-4 w-4" />
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3">
-      <span className="text-fg-secondary ">This file is not readable.</span>
+      <span className="text-fg-secondary">This file is not readable.</span>
       <Button variant="warning" size="sm" onClick={onDownload}>
         Download
         <Download className="ml-1.5 h-4 w-4" />
