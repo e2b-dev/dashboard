@@ -89,17 +89,21 @@ export function formatHour(timestamp: number): string {
   const hour12 = hour % 12 || 12
 
   if (isThisYear(timestamp)) {
-    return new Intl.DateTimeFormat('en-US', {
+    return (
+      new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }).format(timestamp) + `, ${hour12}${ampm}`
+    )
+  }
+
+  return (
+    new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
     }).format(timestamp) + `, ${hour12}${ampm}`
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(timestamp) + `, ${hour12}${ampm}`
+  )
 }
 
 /**
@@ -198,6 +202,47 @@ export function formatDuration(durationMs: number): string {
     const hours = Math.floor(seconds / 3600)
     return `${hours} hour${hours !== 1 ? 's' : ''}`
   }
+}
+
+export function formatDurationCompact(ms: number): string {
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+
+  if (hours > 0) {
+    const remainingMinutes = minutes % 60
+    return `${hours}h ${remainingMinutes}m`
+  }
+  if (minutes > 0) {
+    const remainingSeconds = seconds % 60
+    return `${minutes}m ${remainingSeconds}s`
+  }
+  return `${seconds}s`
+}
+
+export function formatTimeAgoCompact(ms: number): string {
+  const minutes = Math.floor(ms / 1000 / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  const months = Math.floor(days / 30)
+
+  if (minutes < 1) {
+    return '< 1m ago'
+  }
+  if (hours < 1) {
+    return `${minutes}m ago`
+  }
+  if (days < 1) {
+    const remainingMinutes = minutes % 60
+    return `${hours}h ${remainingMinutes}m ago`
+  }
+  if (months < 1) {
+    const remainingHours = hours % 24
+    return `${days}d ${remainingHours}h ago`
+  }
+
+  const remainingDays = days % 30
+  return `${months}mo ${remainingDays}d ago`
 }
 
 /**
