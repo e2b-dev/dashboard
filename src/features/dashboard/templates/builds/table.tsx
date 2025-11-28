@@ -21,9 +21,11 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { cn } from '@/lib/utils/ui'
 import BuildsEmpty from './empty'
 import {
   BackToTopButton,
@@ -52,6 +54,7 @@ const COLUMN_WIDTHS = {
 const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamIdOrSlug } =
@@ -229,7 +232,19 @@ const BuildsTable = () => {
                   return (
                     <TableRow
                       key={build.id}
-                      className={isBuilding ? 'bg-bg-1 animate-pulse' : ''}
+                      className={cn(
+                        'hover:bg-bg-hover transition-colors cursor-pointer',
+                        isBuilding && 'bg-bg-1 animate-pulse'
+                      )}
+                      onClick={() => {
+                        router.push(
+                          PROTECTED_URLS.TEMPLATE_BUILD(
+                            teamIdOrSlug,
+                            build.templateId,
+                            build.id
+                          )
+                        )
+                      }}
                     >
                       <TableCell
                         className="py-1.5 overflow-hidden"

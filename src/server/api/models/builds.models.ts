@@ -7,7 +7,9 @@ export type BuildStatusDB = 'waiting' | 'building' | 'uploaded' | 'failed'
 
 export interface ListedBuildDTO {
   id: string
+  // id or alias
   template: string
+  templateId: string
   status: BuildStatusDTO
   statusMessage: string | null
   createdAt: number
@@ -58,6 +60,7 @@ export function mapDatabaseBuildToListedBuildDTO(
   return {
     id: build.id,
     template: alias ?? build.env_id,
+    templateId: build.env_id,
     status: mapDatabaseBuildStatusToBuildStatusDTO(
       build.status as BuildStatusDB
     ),
