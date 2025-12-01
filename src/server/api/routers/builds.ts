@@ -1,14 +1,12 @@
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
 import * as buildsRepo from '@/server/api/repositories/builds.repository'
-import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { apiError } from '../errors'
 import { createTRPCRouter } from '../init'
 import {
+  BuildDetailsDTO,
+  BuildLogDTO,
   BuildStatusDTOSchema,
   mapBuildStatusDTOToDatabaseBuildStatus,
+  mapInfraBuildStatusToBuildStatusDTO,
 } from '../models/builds.models'
 import { protectedTeamProcedure } from '../procedures'
 
@@ -56,71 +54,39 @@ export const buildsRouter = createTRPCRouter({
   buildDetails: protectedTeamProcedure
     .input(
       z.object({
-        buildId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { teamId } = ctx
-      const { buildId } = input
-
-      return await buildsRepo.getBuildDetails(teamId, buildId)
-    }),
-
-  buildStatus: protectedTeamProcedure
-    .input(
-      z.object({
         templateId: z.string(),
         buildId: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const { session, teamId } = ctx
-      const { templateId, buildId } = input
+      const { teamId } = ctx
+      const { buildId, templateId } = input
 
-      const res = await infra.GET(
-        '/templates/{templateID}/builds/{buildID}/status',
-        {
-          params: {
-            path: {
-              templateID: templateId,
-              buildID: buildId,
-            },
-          },
-          headers: {
-            ...SUPABASE_AUTH_HEADERS(session.access_token),
-          },
-        }
-      )
+      const [buildInfo, buildStatus] = await Promise.all([
+        buildsRepo.getBuildInfo(buildId, teamId),
+        buildsRepo.getInfraBuildStatus(
+          ctx.session.access_token,
+          teamId,
+          templateId,
+          buildId
+        ),
+      ])
 
-      if (!res.response.ok) {
-        const status = res.response.status
+      const logs: BuildLogDTO[] = buildStatus.logEntries.map((log) => ({
+        timestamp: new Date(log.timestamp).getTime(),
+        level: log.level,
+        message: log.message,
+      }))
 
-        l.error(
-          {
-            key: 'trpc:builds:get_build_status:infra_error',
-            error: res.error,
-            user_id: session.user.id,
-            team_id: teamId,
-            template_id: templateId,
-            build_id: buildId,
-            context: {
-              status,
-              body: await res.response.text(),
-            },
-          },
-          `Failed to get build status: ${res.error?.message || 'Unknown error'}`
-        )
-
-        if (status === 404) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Build not found',
-          })
-        }
-
-        throw apiError(status)
+      const result: BuildDetailsDTO = {
+        template: buildInfo.alias ?? templateId,
+        createdAt: buildInfo.createdAt,
+        finishedAt: buildInfo.finishedAt,
+        status: mapInfraBuildStatusToBuildStatusDTO(buildStatus.status),
+        statusMessage: buildStatus.reason?.message ?? null,
+        logs,
       }
 
-      return res.data
+      return result
     }),
 })

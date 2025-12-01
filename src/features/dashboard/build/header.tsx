@@ -4,7 +4,6 @@ import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { use } from 'react'
-import { useDashboard } from '../context'
 import { DetailsItem, DetailsRow } from '../layouts/details-row'
 import { RanFor, StartedAt, Template } from './header-cells'
 
@@ -14,14 +13,22 @@ interface BuildHeaderProps {
 
 export default function BuildHeader({ params }: BuildHeaderProps) {
   const trpc = useTRPC()
-  const { team } = useDashboard()
-  const { templateId, buildId } = use(params)
+  const { teamIdOrSlug, templateId, buildId } = use(params)
 
+  // refetching is handled inside the logs component
   const { data: buildDetails, isLoading: isBuildDetailsLoading } = useQuery(
-    trpc.builds.buildDetails.queryOptions({
-      teamIdOrSlug: team.id,
-      buildId,
-    })
+    trpc.builds.buildDetails.queryOptions(
+      {
+        teamIdOrSlug,
+        templateId,
+        buildId,
+      },
+      {
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      }
+    )
   )
 
   const isBuildDetailsReady = !isBuildDetailsLoading && buildDetails

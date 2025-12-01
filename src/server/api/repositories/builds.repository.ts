@@ -1,7 +1,11 @@
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { infra } from '@/lib/clients/api'
+import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { TRPCError } from '@trpc/server'
 import z from 'zod'
+import { apiError } from '../errors'
 import {
-  BuildDetailsDTO,
   ListedBuildDTO,
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
@@ -186,36 +190,79 @@ export async function getRunningStatuses(
 
 // get build details
 
-export async function getBuildDetails(
-  teamId: string,
-  buildId: string
-): Promise<BuildDetailsDTO | null> {
+export async function getBuildInfo(buildId: string, teamId: string) {
   const { data, error } = await supabaseAdmin
     .from('env_builds')
-    .select(
-      'created_at, finished_at, status, envs!inner(id, team_id, env_aliases(alias))'
-    )
-    .eq('envs.team_id', teamId)
+    .select('created_at, finished_at, envs!inner(env_aliases(alias))')
     .eq('id', buildId)
+    .maybeSingle()
 
   if (error) throw error
 
-  if (!data || data.length === 0) {
-    return null
+  if (!data) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: "Build not found or you don't have access to it",
+    })
   }
 
-  const build = data[0]!
-
-  const alias = build.envs.env_aliases?.[0]?.alias
+  const alias = data.envs.env_aliases?.[0]?.alias
 
   return {
-    template: alias ?? build.envs.id,
-    createdAt: new Date(build.created_at).getTime(),
-    finishedAt: build.finished_at
-      ? new Date(build.finished_at).getTime()
-      : null,
-    status: mapDatabaseBuildStatusToBuildStatusDTO(
-      build.status as BuildStatusDB
-    ),
+    alias,
+    createdAt: new Date(data.created_at).getTime(),
+    finishedAt: data.finished_at ? new Date(data.finished_at).getTime() : null,
   }
+}
+
+// get build status
+
+export async function getInfraBuildStatus(
+  accessToken: string,
+  teamId: string,
+  templateId: string,
+  buildId: string
+) {
+  const result = await infra.GET(
+    `/templates/{templateID}/builds/{buildID}/status`,
+    {
+      params: {
+        path: {
+          templateID: templateId,
+          buildID: buildId,
+        },
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    }
+  )
+
+  if (!result.response.ok || result.error) {
+    const status = result.response.status
+
+    l.error(
+      {
+        key: 'repositories:builds:get_build_status:infra_error',
+        error: result.error,
+        team_id: teamId,
+        context: {
+          status,
+          path: '/templates/{templateID}/builds/{buildID}/status',
+        },
+      },
+      `failed to fetch /templates/{templateID}/builds/{buildID}/status: ${result.error?.message || 'Unknown error'}`
+    )
+
+    if (status === 404) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: "Build not found or you don't have access to it",
+      })
+    }
+
+    throw apiError(status)
+  }
+
+  return result.data
 }

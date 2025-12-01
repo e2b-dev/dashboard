@@ -1,3 +1,4 @@
+import type { components } from '@/types/infra-api.types'
 import z from 'zod'
 
 export const BuildStatusDTOSchema = z.enum(['building', 'failed', 'success'])
@@ -16,18 +17,27 @@ export interface ListedBuildDTO {
   finishedAt: number | null
 }
 
-export interface BuildDetailsDTO {
-  createdAt: number
-  finishedAt: number | null
-  template: string
-  status: BuildStatusDTO
-}
-
 export interface RunningBuildStatusDTO {
   id: string
   status: BuildStatusDTO
   finishedAt: number | null
   statusMessage: string | null
+}
+
+export interface BuildLogDTO {
+  timestamp: number
+  level: components['schemas']['LogLevel']
+  message: string
+}
+
+export interface BuildDetailsDTO {
+  // id or alias
+  template: string
+  createdAt: number
+  finishedAt: number | null
+  status: BuildStatusDTO
+  statusMessage: string | null
+  logs: BuildLogDTO[]
 }
 
 // database queries
@@ -105,6 +115,21 @@ export function mapDatabaseBuildStatusToBuildStatusDTO(
     case 'uploaded':
       return 'success'
     case 'failed':
+      return 'failed'
+  }
+}
+
+export function mapInfraBuildStatusToBuildStatusDTO(
+  status: components['schemas']['TemplateBuild']['status']
+): BuildStatusDTO {
+  switch (status) {
+    case 'building':
+      return 'building'
+    case 'waiting':
+      return 'building'
+    case 'ready':
+      return 'success'
+    case 'error':
       return 'failed'
   }
 }
