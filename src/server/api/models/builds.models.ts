@@ -16,6 +16,13 @@ export interface ListedBuildDTO {
   finishedAt: number | null
 }
 
+export interface BuildDetailsDTO {
+  createdAt: number
+  finishedAt: number | null
+  template: string
+  status: BuildStatusDTO
+}
+
 export interface RunningBuildStatusDTO {
   id: string
   status: BuildStatusDTO

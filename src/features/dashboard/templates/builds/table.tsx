@@ -263,8 +263,8 @@ const BuildsTable = () => {
                         style={{ maxWidth: COLUMN_WIDTHS.template }}
                       >
                         <Template
-                          name={build.template}
-                          templateId={build.template}
+                          template={build.template}
+                          templateId={build.templateId}
                         />
                       </TableCell>
                       <TableCell className="py-1.5 text-end">

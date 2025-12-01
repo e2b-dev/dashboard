@@ -53,7 +53,20 @@ export const buildsRouter = createTRPCRouter({
       return await buildsRepo.getRunningStatuses(teamId, buildIds)
     }),
 
-  getBuildStatus: protectedTeamProcedure
+  buildDetails: protectedTeamProcedure
+    .input(
+      z.object({
+        buildId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { buildId } = input
+
+      return await buildsRepo.getBuildDetails(teamId, buildId)
+    }),
+
+  buildStatus: protectedTeamProcedure
     .input(
       z.object({
         templateId: z.string(),

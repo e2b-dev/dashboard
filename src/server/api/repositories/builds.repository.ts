@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import z from 'zod'
 import {
+  BuildDetailsDTO,
   ListedBuildDTO,
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
@@ -181,4 +182,40 @@ export async function getRunningStatuses(
       build.reason
     ),
   }))
+}
+
+// get build details
+
+export async function getBuildDetails(
+  teamId: string,
+  buildId: string
+): Promise<BuildDetailsDTO | null> {
+  const { data, error } = await supabaseAdmin
+    .from('env_builds')
+    .select(
+      'created_at, finished_at, status, envs!inner(id, team_id, env_aliases(alias))'
+    )
+    .eq('envs.team_id', teamId)
+    .eq('id', buildId)
+
+  if (error) throw error
+
+  if (!data || data.length === 0) {
+    return null
+  }
+
+  const build = data[0]!
+
+  const alias = build.envs.env_aliases?.[0]?.alias
+
+  return {
+    template: alias ?? build.envs.id,
+    createdAt: new Date(build.created_at).getTime(),
+    finishedAt: build.finished_at
+      ? new Date(build.finished_at).getTime()
+      : null,
+    status: mapDatabaseBuildStatusToBuildStatusDTO(
+      build.status as BuildStatusDB
+    ),
+  }
 }
