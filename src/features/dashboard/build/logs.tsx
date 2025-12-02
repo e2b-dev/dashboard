@@ -10,42 +10,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
-import { use, useMemo, useRef } from 'react'
+  useVirtualizer,
+  VirtualItem,
+  Virtualizer,
+} from '@tanstack/react-virtual'
+import { RefObject, use, useEffect, useMemo, useReducer, useRef } from 'react'
+import { LogLevel, Message, Timestamp } from './logs-cells'
 
-// TABLE CONFIG
+const COLUMN_WIDTHS_PX = {
+  timestamp: 164,
+  level: 92,
+} as const
 
 const ROW_HEIGHT_PX = 32
-
-const columnHelper = createColumnHelper<BuildLogDTO>()
-
-const COLUMNS = [
-  columnHelper.accessor((row) => row.timestamp, {
-    id: 'timestamp',
-    cell: (info) => <span>{info.getValue()}</span>,
-    size: 12,
-    maxSize: 12,
-  }),
-  columnHelper.accessor((row) => row.level, {
-    id: 'level',
-    cell: (info) => <span>{info.getValue()}</span>,
-    maxSize: 54,
-  }),
-  columnHelper.accessor((row) => row.message, {
-    id: 'message',
-    cell: (info) => <span>{info.getValue()}</span>,
-  }),
-]
-
-const defaultData: BuildLogDTO[] = []
-
-// LOGS VIEWER
+const VIRTUAL_OVERSCAN = 16
 
 interface LogsProps {
   params: PageProps<'/dashboard/[teamIdOrSlug]/templates/[templateId]/builds/[buildId]'>['params']
@@ -58,7 +38,7 @@ export default function Logs({ params }: LogsProps) {
   const trpc = useTRPC()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { data: buildDetails, isLoading: isBuildDetailsLoading } = useQuery(
+  const { data: buildDetails } = useSuspenseQuery(
     trpc.builds.buildDetails.queryOptions({
       teamIdOrSlug,
       templateId,
@@ -66,72 +46,160 @@ export default function Logs({ params }: LogsProps) {
     })
   )
 
-  const logsData = useMemo(
-    () => buildDetails?.logs ?? null,
-    [buildDetails?.logs]
-  )
-
-  const table = useReactTable({
-    columns: COLUMNS,
-    data: logsData ?? defaultData,
-    getCoreRowModel: getCoreRowModel(),
-  })
+  const logs = useMemo(() => buildDetails?.logs ?? [], [buildDetails?.logs])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
-      <div
-        ref={scrollContainerRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden"
-      >
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-bg border-b">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    {...{
-                      colSpan: header.colSpan,
-                      style: {
-                        width: header.getSize(),
-                      },
-                    }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                style={{
-                  height: ROW_HEIGHT_PX,
-                }}
+      <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
+        <Table style={{ display: 'grid', minWidth: 'min-content' }}>
+          <TableHeader
+            className="bg-bg"
+            style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
+          >
+            <TableRow
+              style={{
+                display: 'flex',
+                minWidth: '100%',
+              }}
+            >
+              <TableHead
+                style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="py-0"
-                    style={{
-                      width: cell.column.getSize(),
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
+                Timestamp
+              </TableHead>
+              <TableHead
+                style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
+              >
+                Level
+              </TableHead>
+              <TableHead style={{ display: 'flex', flex: 1 }}>
+                Message
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <LogsTableBody logs={logs} scrollContainerRef={scrollContainerRef} />
         </Table>
       </div>
     </div>
+  )
+}
+
+interface LogsTableBodyProps {
+  logs: BuildLogDTO[]
+  scrollContainerRef: RefObject<HTMLDivElement | null>
+}
+
+const rerenderReducer = () => ({})
+
+function LogsTableBody({ logs, scrollContainerRef }: LogsTableBodyProps) {
+  'use no memo'
+
+  const tbodyRef = useRef<HTMLTableSectionElement>(null)
+  const maxWidthRef = useRef<number>(0)
+  const [, rerender] = useReducer(rerenderReducer, 0)
+
+  // force rerender after mount so virtualizer can access the scroll container
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      rerender()
+    }
+  }, [scrollContainerRef])
+
+  const rowVirtualizer = useVirtualizer({
+    count: logs.length,
+    estimateSize: () => ROW_HEIGHT_PX,
+    getScrollElement: () => scrollContainerRef.current,
+    overscan: VIRTUAL_OVERSCAN,
+  })
+
+  const virtualItems = rowVirtualizer.getVirtualItems()
+
+  // measure tbody scrollWidth after render and track max width seen
+  const currentScrollWidth = tbodyRef.current?.scrollWidth ?? 0
+  if (currentScrollWidth > maxWidthRef.current) {
+    maxWidthRef.current = currentScrollWidth
+  }
+
+  return (
+    <TableBody
+      ref={tbodyRef}
+      style={{
+        display: 'grid',
+        height: `${rowVirtualizer.getTotalSize()}px`,
+        width: maxWidthRef.current,
+        minWidth: '100%',
+        position: 'relative',
+      }}
+    >
+      {virtualItems.map((virtualRow) => {
+        const log = logs[virtualRow.index]!
+        return (
+          <LogsTableRow
+            key={virtualRow.index}
+            log={log}
+            virtualRow={virtualRow}
+            rowVirtualizer={rowVirtualizer}
+          />
+        )
+      })}
+    </TableBody>
+  )
+}
+
+interface LogsTableRowProps {
+  log: BuildLogDTO
+  virtualRow: VirtualItem
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>
+}
+
+function LogsTableRow({ log, virtualRow, rowVirtualizer }: LogsTableRowProps) {
+  return (
+    <TableRow
+      data-index={virtualRow.index}
+      ref={(node) => rowVirtualizer.measureElement(node)}
+      style={{
+        display: 'flex',
+        position: 'absolute',
+        left: 0,
+        transform: `translateY(${virtualRow.start}px)`,
+        minWidth: '100%',
+        height: ROW_HEIGHT_PX,
+      }}
+    >
+      <TableCell
+        className="py-0"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          width: COLUMN_WIDTHS_PX.timestamp,
+        }}
+      >
+        <Timestamp
+          timestampUnix={log.timestampUnix}
+          millisAfterCreatedAt={log.millisAfterCreatedAt}
+        />
+      </TableCell>
+      <TableCell
+        className="py-0"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          width: COLUMN_WIDTHS_PX.level,
+        }}
+      >
+        <LogLevel level={log.level} />
+      </TableCell>
+      <TableCell
+        className="py-0"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <Message message={log.message} />
+      </TableCell>
+    </TableRow>
   )
 }

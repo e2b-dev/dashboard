@@ -2,7 +2,7 @@
 
 import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { use } from 'react'
 import { DetailsItem, DetailsRow } from '../layouts/details-row'
 import { RanFor, StartedAt, Template } from './header-cells'
@@ -16,7 +16,7 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
   const { teamIdOrSlug, templateId, buildId } = use(params)
 
   // refetching is handled inside the logs component
-  const { data: buildDetails, isLoading: isBuildDetailsLoading } = useQuery(
+  const { data: buildDetails } = useSuspenseQuery(
     trpc.builds.buildDetails.queryOptions(
       {
         teamIdOrSlug,
@@ -31,7 +31,7 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
     )
   )
 
-  const isBuildDetailsReady = !isBuildDetailsLoading && buildDetails
+  const isBuildDetailsReady = buildDetails
   const isBuilding = buildDetails?.status === 'building'
 
   return (

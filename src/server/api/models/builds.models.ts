@@ -25,7 +25,8 @@ export interface RunningBuildStatusDTO {
 }
 
 export interface BuildLogDTO {
-  timestamp: number
+  timestampUnix: number
+  millisAfterCreatedAt: number
   level: components['schemas']['LogLevel']
   message: string
 }
