@@ -20,8 +20,6 @@ interface DetailsRowProps {
 
 export function DetailsRow({ children }: DetailsRowProps) {
   return (
-    <div className="flex flex-wrap items-center gap-5 md:gap-7 h-8">
-      {children}
-    </div>
+    <div className="flex flex-wrap items-center gap-5 md:gap-7">{children}</div>
   )
 }

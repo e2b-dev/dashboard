@@ -72,17 +72,21 @@ export const buildsRouter = createTRPCRouter({
         ),
       ])
 
-      function calculateMillisecondsAfterCreatedAt(timestamp: number) {
-        return timestamp - buildInfo.createdAt
-      }
+      const logTimestamps = buildStatus.logEntries.map((log) =>
+        new Date(log.timestamp).getTime()
+      )
+
+      const firstLogTimestamp =
+        logTimestamps.length > 0 ? Math.min(...logTimestamps) : null
+
+      const startedAt = firstLogTimestamp ?? buildInfo.createdAt
 
       const logs: BuildLogDTO[] = buildStatus.logEntries.map((log) => {
         const timestampUnix = new Date(log.timestamp).getTime()
 
         return {
           timestampUnix,
-          millisAfterCreatedAt:
-            calculateMillisecondsAfterCreatedAt(timestampUnix),
+          millisAfterStart: timestampUnix - startedAt,
           level: log.level,
           message: log.message,
         }
@@ -90,7 +94,7 @@ export const buildsRouter = createTRPCRouter({
 
       const result: BuildDetailsDTO = {
         template: buildInfo.alias ?? templateId,
-        createdAt: buildInfo.createdAt,
+        startedAt,
         finishedAt: buildInfo.finishedAt,
         status: mapInfraBuildStatusToBuildStatusDTO(buildStatus.status),
         statusMessage: buildStatus.reason?.message ?? null,

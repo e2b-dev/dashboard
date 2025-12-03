@@ -48,11 +48,11 @@ export function Template({
 }
 
 export function RanFor({
-  createdAt,
+  startedAt,
   finishedAt,
   isBuilding,
 }: {
-  createdAt: number
+  startedAt: number
   finishedAt: number | null
   isBuilding: boolean
 }) {
@@ -69,8 +69,8 @@ export function RanFor({
   }, [isBuilding])
 
   const duration = isBuilding
-    ? now - createdAt
-    : (finishedAt ?? now) - createdAt
+    ? now - startedAt
+    : (finishedAt ?? now) - startedAt
   const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
   if (isBuilding || !iso) {

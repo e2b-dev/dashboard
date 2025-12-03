@@ -33,12 +33,12 @@ export const LogLevel = ({ level }: LogLevelProps) => {
 
 interface TimestampProps {
   timestampUnix: BuildLogDTO['timestampUnix']
-  millisAfterCreatedAt: BuildLogDTO['millisAfterCreatedAt']
+  millisAfterStart: BuildLogDTO['millisAfterStart']
 }
 
 export const Timestamp = ({
   timestampUnix,
-  millisAfterCreatedAt,
+  millisAfterStart,
 }: TimestampProps) => {
   const date = new Date(timestampUnix)
 
@@ -47,7 +47,7 @@ export const Timestamp = ({
       value={date.toISOString()}
       className="font-mono group prose-table-numeric truncate"
     >
-      {formatDurationCompact(millisAfterCreatedAt, true)}{' '}
+      {formatDurationCompact(millisAfterStart, true)}{' '}
       <span className="group-hover:text-current transition-colors text-fg-tertiary">
         {format(date, 'HH:mm:ss.SS')}
       </span>

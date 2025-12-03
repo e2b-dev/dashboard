@@ -33,7 +33,7 @@ export default function CopyButtonInline({
       className={cn(
         'transition-colors cursor-copy',
         'hover:text-accent-main-highlight',
-        wasCopied && 'text-accent-main-highlight',
+        wasCopied && 'text-accent-main-highlight font-sans!',
         className
       )}
     >

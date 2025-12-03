@@ -1,6 +1,11 @@
 'use client'
 
+import { cn } from '@/lib/utils/ui'
+import { BuildDetailsDTO } from '@/server/api/models/builds.models'
 import { useTRPC } from '@/trpc/client'
+import CopyButton from '@/ui/copy-button'
+import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { use } from 'react'
@@ -51,7 +56,7 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
           {!isBuildDetailsReady ? (
             <Skeleton className="w-22" />
           ) : (
-            <StartedAt timestamp={buildDetails.createdAt} />
+            <StartedAt timestamp={buildDetails.startedAt} />
           )}
         </DetailsItem>
         <DetailsItem label="Ran For">
@@ -59,13 +64,79 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
             <Skeleton className="w-22" />
           ) : (
             <RanFor
-              createdAt={buildDetails.createdAt}
+              startedAt={buildDetails.startedAt}
               finishedAt={buildDetails.finishedAt}
               isBuilding={isBuilding}
             />
           )}
         </DetailsItem>
       </DetailsRow>
+
+      <StatusBanner
+        status={'failed'}
+        statusMessage={`exit code 0: french test. adfja;lk dslfkjdslf slfs kjdflsdjfs lkdfj dslfkjdslf
+
+alsdkj
+
+asd`}
+      />
     </header>
+  )
+}
+
+interface StatusBannerProps {
+  status: BuildDetailsDTO['status']
+  statusMessage?: BuildDetailsDTO['statusMessage']
+}
+
+function StatusBanner({ status, statusMessage }: StatusBannerProps) {
+  return (
+    <div
+      className={cn('p-2 border relative', {
+        'border-stroke bg-bg-hover': status === 'building',
+        'border-accent-error-highlight bg-accent-error-bg-large':
+          status === 'failed',
+        'border-accent-positive-highlight bg-accent-positive-bg':
+          status === 'success',
+      })}
+    >
+      <div className="flex items-center gap-1">
+        {status === 'failed' ? (
+          <>
+            <CloseIcon className="size-3 text-accent-error-highlight" />
+            <label className="prose-label uppercase text-accent-error-highlight">
+              BUILD FAILED
+            </label>
+          </>
+        ) : status === 'success' ? (
+          <>
+            <CheckIcon className="size-4 text-accent-positive-highlight" />
+            <p className="prose-body text-fg">Build Successful</p>
+          </>
+        ) : (
+          <>
+            <Loader variant="slash" className="min-w-4" />
+            <p className="prose-body text-fg">Building</p>
+            <Loader variant="dots" />
+          </>
+        )}
+      </div>
+
+      {status === 'failed' && statusMessage && (
+        <>
+          <div className="max-h-28 overflow-y-auto">
+            <pre className="prose-body max-md:whitespace-normal max-w-140 text-fg font-sans">
+              {statusMessage}
+            </pre>
+          </div>
+          <CopyButton
+            value={statusMessage}
+            className="absolute top-2 right-2"
+            variant="ghost"
+            size="slate"
+          />
+        </>
+      )}
+    </div>
   )
 }
