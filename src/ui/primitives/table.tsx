@@ -100,7 +100,8 @@ const TableCell = React.forwardRef<
     ref={ref}
     className={cn(
       'p-4 align-middle',
-      'font-sans prose-table',
+      'font-sans text-xs',
+      'text-fg-secondary prose-table',
       '[&:has([role=checkbox])]:pr-0 first:pl-0 last:pr-0',
       className
     )}

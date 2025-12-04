@@ -5,13 +5,16 @@ import {
   normalizePath,
 } from '@/lib/utils/filesystem'
 import {
+  FilesystemEventType,
   type EntryInfo,
   type FilesystemEvent,
-  FilesystemEventType,
   type Sandbox,
   type WatchHandle,
 } from 'e2b'
-import type { FilesystemStore } from './filesystem/store'
+import {
+  MAX_VIEWABLE_FILE_SIZE_BYTES,
+  type FilesystemStore,
+} from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
 
 export const HANDLED_ERRORS = {
@@ -315,6 +318,20 @@ export class SandboxManager {
     try {
       state.setLoading(normalizedPath, true)
 
+      const fileInfo = await this.sandbox.files.getInfo(normalizedPath, {
+        user: 'root',
+        requestTimeoutMs: 10_000,
+      })
+
+      if (fileInfo.size > MAX_VIEWABLE_FILE_SIZE_BYTES) {
+        state.setFileContent(normalizedPath, {
+          type: 'unreadable',
+          reason: 'too_large',
+          size: fileInfo.size,
+        })
+        return
+      }
+
       const blob = await this.sandbox.files.read(normalizedPath, {
         format: 'blob',
         requestTimeoutMs: 30_000,
@@ -330,7 +347,10 @@ export class SandboxManager {
       console.error(`Failed to read file ${normalizedPath}:`, err)
 
       state.setError(normalizedPath, errorMessage)
-      state.setFileContent(normalizedPath, { type: 'unreadable' })
+      state.setFileContent(normalizedPath, {
+        type: 'unreadable',
+        reason: 'file_type',
+      })
     } finally {
       state.setLoading(normalizedPath, false)
       state.setLoaded(normalizedPath, true)

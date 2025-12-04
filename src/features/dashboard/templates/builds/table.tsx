@@ -1,5 +1,7 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { cn } from '@/lib/utils/ui'
 import type {
   ListedBuildDTO,
   RunningBuildStatusDTO,
@@ -23,20 +25,8 @@ import {
 } from '@tanstack/react-query'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import { PROTECTED_URLS } from '@/configs/urls'
-import { cn } from '@/lib/utils/ui'
 import BuildsEmpty from './empty'
-import {
-  BackToTopButton,
-  BuildId,
-  Duration,
-  LoadMoreButton,
-  Reason,
-  StartedAt,
-  Status,
-  Template,
-} from './table-cells'
+import { BuildId, LoadMoreButton, Template } from './table-cells'
 import useFilters from './use-filters'
 
 const BUILDS_REFETCH_INTERVAL_MS = 15_000
@@ -155,14 +145,13 @@ const BuildsTable = () => {
   const hasData = buildsWithLiveStatus.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
-  const showFilterRefetchingOverlay =
-    isFilterRefetching && isFetchingBuilds && hasData
+  const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
       <div
         ref={scrollContainerRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden"
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-auto lg:overflow-x-hidden"
       >
         <Table suppressHydrationWarning>
           <colgroup>
@@ -171,7 +160,7 @@ const BuildsTable = () => {
             <col style={colStyle(COLUMN_WIDTHS.template)} />
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
-            <col />
+            <col className="max-lg:min-w-[500px]" />
           </colgroup>
 
           <TableHeader className="sticky top-0 z-10 bg-bg">
@@ -219,7 +208,7 @@ const BuildsTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-start text-fg-tertiary"
+                      className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
                     </TableCell>
@@ -288,7 +277,7 @@ const BuildsTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-start text-fg-tertiary"
+                      className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton
                         isLoading={isFetchingNextPage}

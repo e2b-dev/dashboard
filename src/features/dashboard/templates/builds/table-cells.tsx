@@ -76,9 +76,9 @@ export function LoadMoreButton({
 }) {
   if (isLoading) {
     return (
-      <span className="flex items-center gap-2">
-        <Loader variant="slash" size="sm" />
-        Loading...
+      <span className="inline-flex items-center gap-1">
+        Loading
+        <Loader variant="dots" />
       </span>
     )
   }
@@ -197,7 +197,7 @@ export function Status({ status }: StatusProps) {
     <div className="flex items-center gap-3 min-w-0">
       <Badge
         variant={variant}
-        className={cn('select-none flex-shrink-0 uppercase', {
+        className={cn('select-none shrink-0 uppercase', {
           'bg-bg-inverted/10': variant === 'default',
         })}
       >

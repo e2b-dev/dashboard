@@ -45,8 +45,6 @@ export async function resolveTemplateId(
 
 // list builds
 
-const BUILD_TIMEOUT_MS = 70 * 60 * 1000 // 70 minutes
-
 interface ListBuildsOptions {
   limit?: number
   cursor?: string
@@ -64,25 +62,6 @@ export async function listBuilds(
   options: ListBuildsOptions = {}
 ): Promise<ListBuildsResult> {
   const limit = options.limit ?? 50
-  const buildTimeoutThreshold = new Date(
-    Date.now() - BUILD_TIMEOUT_MS
-  ).toISOString()
-
-  const runningStatuses = statuses.filter(
-    (s) => s === 'waiting' || s === 'building'
-  )
-  const completedStatuses = statuses.filter(
-    (s) => s === 'uploaded' || s === 'failed'
-  )
-
-  let statusFilter: string
-  if (runningStatuses.length > 0 && completedStatuses.length > 0) {
-    statusFilter = `status.in.(${completedStatuses.join(',')}),and(status.in.(${runningStatuses.join(',')}),created_at.gte.${buildTimeoutThreshold})`
-  } else if (runningStatuses.length > 0) {
-    statusFilter = `and(status.in.(${runningStatuses.join(',')}),created_at.gte.${buildTimeoutThreshold})`
-  } else {
-    statusFilter = `status.in.(${completedStatuses.join(',')})`
-  }
 
   let query = supabaseAdmin
     .from('env_builds')
@@ -102,7 +81,7 @@ export async function listBuilds(
     `
     )
     .eq('envs.team_id', teamId)
-    .or(statusFilter)
+    .in('status', statuses)
     .order('created_at', { ascending: false })
 
   if (buildIdOrTemplate) {
