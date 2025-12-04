@@ -11,6 +11,8 @@ export default async function BuildPage({
 
   const queryClient = getQueryClient()
 
+  let exists = true
+
   try {
     const data = await queryClient.fetchQuery(
       trpc.builds.buildDetails.queryOptions({
@@ -20,11 +22,17 @@ export default async function BuildPage({
       })
     )
 
-    if (!data.hasRetainedLogs) throw notFound()
+    if (!data.hasRetainedLogs) {
+      exists = false
+    }
   } catch (error) {
     if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
-      throw notFound()
+      exists = false
     }
+  }
+
+  if (!exists) {
+    notFound()
   }
 
   return (
