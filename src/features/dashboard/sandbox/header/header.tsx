@@ -4,6 +4,7 @@ import { SandboxInfo } from '@/types/api.types'
 import { ChevronLeftIcon } from 'lucide-react'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import { DetailsItem, DetailsRow } from '../../layouts/details-row'
 import KillButton from './kill-button'
 import Metadata from './metadata'
 import RanFor from './ran-for'
@@ -27,45 +28,6 @@ export default async function SandboxDetailsHeader({
   const initialPollingInterval = (await cookies()).get(
     COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL
   )?.value
-
-  const headerItems = {
-    state: {
-      label: 'status',
-      value: <Status />,
-    },
-    templateID: {
-      label: 'template',
-      value: <TemplateId />,
-    },
-    metadata: {
-      label: 'metadata',
-      value: <Metadata />,
-    },
-    remainingTime: {
-      label: 'timeout in',
-      value: <RemainingTime />,
-    },
-    startedAt: {
-      label: 'created at',
-      value: <StartedAt />,
-    },
-    endAt: {
-      label: state === 'running' ? 'running for' : 'ran for',
-      value: <RanFor />,
-    },
-    cpuCount: {
-      label: 'CPU Usage',
-      value: <ResourceUsageClient type="cpu" mode="usage" />,
-    },
-    memoryMB: {
-      label: 'Memory Usage',
-      value: <ResourceUsageClient type="mem" mode="usage" />,
-    },
-    diskGB: {
-      label: 'Disk Usage',
-      value: <ResourceUsageClient type="disk" mode="usage" />,
-    },
-  }
 
   return (
     <header className="bg-bg relative z-30 flex w-full flex-col gap-6 p-3 md:p-6 max-md:pt-0">
@@ -95,25 +57,35 @@ export default async function SandboxDetailsHeader({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-5 md:gap-7">
-        {Object.entries(headerItems).map(([key, { label, value }]) => (
-          <HeaderItem key={key} label={label} value={value} />
-        ))}
-      </div>
+      <DetailsRow>
+        <DetailsItem label="status">
+          <Status />
+        </DetailsItem>
+        <DetailsItem label="template">
+          <TemplateId />
+        </DetailsItem>
+        <DetailsItem label="metadata">
+          <Metadata />
+        </DetailsItem>
+        <DetailsItem label="timeout in">
+          <RemainingTime />
+        </DetailsItem>
+        <DetailsItem label="created at">
+          <StartedAt />
+        </DetailsItem>
+        <DetailsItem label={state === 'running' ? 'running for' : 'ran for'}>
+          <RanFor />
+        </DetailsItem>
+        <DetailsItem label="CPU Usage">
+          <ResourceUsageClient type="cpu" mode="usage" />
+        </DetailsItem>
+        <DetailsItem label="Memory Usage">
+          <ResourceUsageClient type="mem" mode="usage" />
+        </DetailsItem>
+        <DetailsItem label="Disk Usage">
+          <ResourceUsageClient type="disk" mode="usage" />
+        </DetailsItem>
+      </DetailsRow>
     </header>
-  )
-}
-
-interface HeaderItemProps {
-  label: string
-  value: string | React.ReactNode
-}
-
-function HeaderItem({ label, value }: HeaderItemProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-fg-tertiary text-xs uppercase">{label}</span>
-      {typeof value === 'string' ? <p className="">{value}</p> : value}
-    </div>
   )
 }

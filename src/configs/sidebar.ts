@@ -44,7 +44,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     label: 'Templates',
     href: (args) => PROTECTED_URLS.TEMPLATES(args.teamIdOrSlug!),
     icon: Container,
-    activeMatch: `/dashboard/*/templates`,
+    activeMatch: `/dashboard/*/templates/**`,
   },
 
   // Integrations

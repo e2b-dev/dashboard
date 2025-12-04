@@ -1,5 +1,10 @@
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { infra } from '@/lib/clients/api'
+import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { TRPCError } from '@trpc/server'
 import z from 'zod'
+import { apiError } from '../errors'
 import {
   ListedBuildDTO,
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
@@ -160,4 +165,84 @@ export async function getRunningStatuses(
       build.reason
     ),
   }))
+}
+
+// get build details
+
+export async function getBuildInfo(buildId: string, teamId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('env_builds')
+    .select('created_at, finished_at, envs!inner(team_id, env_aliases(alias))')
+    .eq('id', buildId)
+    .eq('envs.team_id', teamId)
+    .maybeSingle()
+
+  if (error) throw error
+
+  if (!data) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: "Build not found or you don't have access to it",
+    })
+  }
+
+  const alias = data.envs.env_aliases?.[0]?.alias
+
+  return {
+    alias,
+    createdAt: new Date(data.created_at).getTime(),
+    finishedAt: data.finished_at ? new Date(data.finished_at).getTime() : null,
+  }
+}
+
+// get build status
+
+export async function getInfraBuildStatus(
+  accessToken: string,
+  teamId: string,
+  templateId: string,
+  buildId: string
+) {
+  const result = await infra.GET(
+    `/templates/{templateID}/builds/{buildID}/status`,
+    {
+      params: {
+        path: {
+          templateID: templateId,
+          buildID: buildId,
+        },
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    }
+  )
+
+  if (!result.response.ok || result.error) {
+    const status = result.response.status
+
+    l.error(
+      {
+        key: 'repositories:builds:get_build_status:infra_error',
+        error: result.error,
+        team_id: teamId,
+        context: {
+          status,
+          path: '/templates/{templateID}/builds/{buildID}/status',
+        },
+      },
+      `failed to fetch /templates/{templateID}/builds/{buildID}/status: ${result.error?.message || 'Unknown error'}`
+    )
+
+    if (status === 404) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: "Build not found or you don't have access to it",
+      })
+    }
+
+    throw apiError(status)
+  }
+
+  return result.data
 }

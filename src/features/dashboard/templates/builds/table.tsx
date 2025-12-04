@@ -1,5 +1,8 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { cn } from '@/lib/utils/ui'
 import type {
   ListedBuildDTO,
   RunningBuildStatusDTO,
@@ -21,9 +24,9 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
+import { LOG_RETENTION_MS } from './constants'
 import BuildsEmpty from './empty'
 import {
   BackToTopButton,
@@ -52,6 +55,8 @@ const COLUMN_WIDTHS = {
 const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const router = useRouter()
+  const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamIdOrSlug } =
@@ -228,7 +233,39 @@ const BuildsTable = () => {
                   return (
                     <TableRow
                       key={build.id}
-                      className={isBuilding ? 'bg-bg-1 animate-pulse' : ''}
+                      className={cn(
+                        'hover:bg-bg-hover transition-colors cursor-pointer',
+                        {
+                          'hover:bg-bg-hover cursor-pointer':
+                            build.hasRetainedLogs,
+                          'bg-bg-1 animate-pulse': isBuilding,
+                        }
+                      )}
+                      onClick={() => {
+                        if (!build.hasRetainedLogs) {
+                          toast(
+                            defaultErrorToast(
+                              <p>
+                                There is no details available for this build. We
+                                maintain details for up to{' '}
+                                <span className="prose-body-highlight text-accent-main-highlight">
+                                  {LOG_RETENTION_MS / 24 / 60 / 60 / 1000} days
+                                </span>
+                                .
+                              </p>
+                            )
+                          )
+                          return
+                        }
+
+                        router.push(
+                          PROTECTED_URLS.TEMPLATE_BUILD(
+                            teamIdOrSlug,
+                            build.templateId,
+                            build.id
+                          )
+                        )
+                      }}
                     >
                       <TableCell
                         className="py-1.5 overflow-hidden"
@@ -247,8 +284,8 @@ const BuildsTable = () => {
                         style={{ maxWidth: COLUMN_WIDTHS.template }}
                       >
                         <Template
-                          name={build.template}
-                          templateId={build.template}
+                          template={build.template}
+                          templateId={build.templateId}
                         />
                       </TableCell>
                       <TableCell className="py-1.5 text-end">
