@@ -57,7 +57,7 @@ export default function Logs({ params }: LogsProps) {
   const trpc = useTRPC()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { data: buildDetails } = useSuspenseQuery(
+  const { data: buildDetails, error } = useSuspenseQuery(
     trpc.builds.buildDetails.queryOptions(
       {
         teamIdOrSlug,

@@ -1,3 +1,4 @@
+import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
 import type { components } from '@/types/infra-api.types'
 import z from 'zod'
 
@@ -15,6 +16,7 @@ export interface ListedBuildDTO {
   statusMessage: string | null
   createdAt: number
   finishedAt: number | null
+  hasRetainedLogs: boolean
 }
 
 export interface RunningBuildStatusDTO {
@@ -39,6 +41,7 @@ export interface BuildDetailsDTO {
   status: BuildStatusDTO
   statusMessage: string | null
   logs: BuildLogDTO[]
+  hasRetainedLogs: boolean
 }
 
 // database queries
@@ -59,6 +62,10 @@ type RawListedBuildWithEnvAndAliasesDB = {
 
 // mappings
 
+export function checkIfBuildStillHasLogs(createdAt: number): boolean {
+  return new Date().getTime() - createdAt < LOG_RETENTION_MS
+}
+
 export function mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
   status: string,
   reason: unknown
@@ -75,6 +82,11 @@ export function mapDatabaseBuildToListedBuildDTO(
 ): ListedBuildDTO {
   const alias = build.envs.env_aliases?.[0]?.alias
 
+  const createdAt = new Date(build.created_at).getTime()
+
+  // check if build still has logs available
+  const hasRetainedLogs = new Date().getTime() - createdAt < LOG_RETENTION_MS
+
   return {
     id: build.id,
     template: alias ?? build.env_id,
@@ -90,6 +102,7 @@ export function mapDatabaseBuildToListedBuildDTO(
     finishedAt: build.finished_at
       ? new Date(build.finished_at).getTime()
       : null,
+    hasRetainedLogs,
   }
 }
 

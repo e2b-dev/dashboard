@@ -5,6 +5,7 @@ import {
   BuildDetailsDTO,
   BuildLogDTO,
   BuildStatusDTOSchema,
+  checkIfBuildStillHasLogs,
   mapBuildStatusDTOToDatabaseBuildStatus,
   mapInfraBuildStatusToBuildStatusDTO,
 } from '../models/builds.models'
@@ -98,6 +99,7 @@ export const buildsRouter = createTRPCRouter({
         finishedAt: buildInfo.finishedAt,
         status: mapInfraBuildStatusToBuildStatusDTO(buildStatus.status),
         statusMessage: buildStatus.reason?.message ?? null,
+        hasRetainedLogs: checkIfBuildStillHasLogs(buildInfo.createdAt),
         logs,
       }
 
