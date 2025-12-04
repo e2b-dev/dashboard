@@ -73,12 +73,14 @@ export const buildsRouter = createTRPCRouter({
         ),
       ])
 
-      const logTimestamps = buildStatus.logEntries.map((log) =>
-        new Date(log.timestamp).getTime()
-      )
-
       const firstLogTimestamp =
-        logTimestamps.length > 0 ? Math.min(...logTimestamps) : null
+        buildStatus.logEntries.length > 0
+          ? buildStatus.logEntries.reduce<number | null>((min, log) => {
+              const timestamp = new Date(log.timestamp).getTime()
+              if (Number.isNaN(timestamp)) return min
+              return min === null || timestamp < min ? timestamp : min
+            }, null)
+          : null
 
       const startedAt = firstLogTimestamp ?? buildInfo.createdAt
 
