@@ -26,7 +26,16 @@ import {
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BuildsEmpty from './empty'
-import { BuildId, LoadMoreButton, Template } from './table-cells'
+import {
+  BackToTopButton,
+  BuildId,
+  Duration,
+  LoadMoreButton,
+  Reason,
+  StartedAt,
+  Status,
+  Template,
+} from './table-cells'
 import useFilters from './use-filters'
 
 const BUILDS_REFETCH_INTERVAL_MS = 15_000

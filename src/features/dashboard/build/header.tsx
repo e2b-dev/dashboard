@@ -73,12 +73,8 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
       </DetailsRow>
 
       <StatusBanner
-        status={'failed'}
-        statusMessage={`exit code 0: french test. adfja;lk dslfkjdslf slfs kjdflsdjfs lkdfj dslfkjdslf
-
-alsdkj
-
-asd`}
+        status={buildDetails.status}
+        statusMessage={buildDetails.statusMessage}
       />
     </header>
   )

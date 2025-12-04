@@ -172,8 +172,9 @@ export async function getRunningStatuses(
 export async function getBuildInfo(buildId: string, teamId: string) {
   const { data, error } = await supabaseAdmin
     .from('env_builds')
-    .select('created_at, finished_at, envs!inner(env_aliases(alias))')
+    .select('created_at, finished_at, envs!inner(team_id, env_aliases(alias))')
     .eq('id', buildId)
+    .eq('envs.team_id', teamId)
     .maybeSingle()
 
   if (error) throw error
