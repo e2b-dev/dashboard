@@ -9,7 +9,8 @@ interface VerifyOtpResult {
 }
 
 /**
- * Verifies an OTP token with Supabase Auth
+ * Verifies an OTP token with Supabase Auth.
+ * Creates a session and sets auth cookies on success.
  * @throws TRPCError on verification failure
  */
 async function verifyOtp(
@@ -38,7 +39,6 @@ async function verifyOtp(
       `failed to verify OTP: ${error.message}`
     )
 
-    // map supabase errors to user-friendly messages
     if (error.status === 403 && error.code === 'otp_expired') {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -68,6 +68,38 @@ async function verifyOtp(
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Verification failed. Please try again.',
     })
+  }
+
+  // verify session was created (cookies should be set by supabase client)
+  const hasSession = !!data.session
+  const hasAccessToken = !!data.session?.access_token
+  const hasRefreshToken = !!data.session?.refresh_token
+
+  l.info(
+    {
+      key: 'auth_repository:verify_otp:success',
+      user_id: data.user.id,
+      context: {
+        type,
+        tokenHashPrefix: tokenHash.slice(0, 10),
+        hasSession,
+        hasAccessToken,
+        hasRefreshToken,
+        sessionExpiresAt: data.session?.expires_at,
+      },
+    },
+    `verified OTP for user: ${data.user.id}, session: ${hasSession}`
+  )
+
+  if (!hasSession) {
+    l.warn(
+      {
+        key: 'auth_repository:verify_otp:no_session',
+        user_id: data.user.id,
+        context: { type, tokenHashPrefix: tokenHash.slice(0, 10) },
+      },
+      `OTP verified but no session returned - user may not be signed in`
+    )
   }
 
   return {

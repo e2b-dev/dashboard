@@ -1,13 +1,16 @@
 'use client'
 
 import { AUTH_URLS } from '@/configs/urls'
-import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
-import { type OtpType } from '@/server/api/models/auth.models'
-import { useTRPC } from '@/trpc/client'
+import { AuthFormMessage } from '@/features/auth/form-message'
+import {
+  ConfirmEmailInputSchema,
+  type ConfirmEmailInput,
+  type OtpType,
+} from '@/server/api/models/auth.models'
 import { Button } from '@/ui/primitives/button'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useMemo, useTransition } from 'react'
 
 const OTP_TYPE_LABELS: Record<OtpType, string> = {
   signup: 'Sign Up',
@@ -27,12 +30,31 @@ const OTP_TYPE_DESCRIPTIONS: Record<OtpType, string> = {
   email_change: 'Confirm your new email address',
 }
 
+interface VerifyOtpResponse {
+  redirectUrl?: string
+  error?: string
+}
+
+async function verifyOtp(input: ConfirmEmailInput): Promise<VerifyOtpResponse> {
+  const response = await fetch('/api/auth/verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+
+  const data: VerifyOtpResponse = await response.json()
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error || 'Verification failed. Please try again.')
+  }
+
+  return data
+}
+
 export default function ConfirmPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const trpc = useTRPC()
-
-  const [message, setMessage] = useState<AuthMessage | undefined>()
+  const [isPending, startTransition] = useTransition()
 
   const params = useMemo(() => {
     const tokenHash = searchParams.get('token_hash') ?? ''
@@ -42,28 +64,32 @@ export default function ConfirmPage() {
     return { tokenHash, type, next }
   }, [searchParams])
 
-  const isValidParams = params.tokenHash && params.type && params.next
+  const isValidParams = ConfirmEmailInputSchema.safeParse({
+    token_hash: params.tokenHash,
+    type: params.type,
+    next: params.next,
+  }).success
+
   const typeLabel = params.type ? OTP_TYPE_LABELS[params.type] : 'Verification'
   const typeDescription = params.type
     ? OTP_TYPE_DESCRIPTIONS[params.type]
     : 'Confirm your action'
 
-  const confirmMutation = useMutation(
-    trpc.auth.confirmEmail.mutationOptions({
-      onSuccess: (data) => {
-        router.push(data.redirectUrl)
-      },
-      onError: (error) => {
-        setMessage({ error: error.message })
-      },
-    })
-  )
+  const mutation = useMutation({
+    mutationFn: verifyOtp,
+    onSuccess: (data) => {
+      if (data.redirectUrl) {
+        startTransition(() => {
+          router.push(data.redirectUrl!)
+        })
+      }
+    },
+  })
 
   const handleConfirm = () => {
     if (!isValidParams || !params.type) return
 
-    setMessage(undefined)
-    confirmMutation.mutate({
+    mutation.mutate({
       token_hash: params.tokenHash,
       type: params.type,
       next: params.next,
@@ -78,7 +104,7 @@ export default function ConfirmPage() {
       <div className="mt-5">
         <Button
           onClick={handleConfirm}
-          loading={confirmMutation.isPending}
+          loading={mutation.isPending || isPending}
           disabled={!isValidParams}
           className="w-full"
         >
@@ -98,7 +124,7 @@ export default function ConfirmPage() {
         .
       </p>
 
-      {!isValidParams && !message && (
+      {!isValidParams && !mutation.error && (
         <AuthFormMessage
           className="mt-4"
           message={{
@@ -107,7 +133,12 @@ export default function ConfirmPage() {
         />
       )}
 
-      {message && <AuthFormMessage className="mt-4" message={message} />}
+      {mutation.error && (
+        <AuthFormMessage
+          className="mt-4"
+          message={{ error: mutation.error.message }}
+        />
+      )}
     </div>
   )
 }

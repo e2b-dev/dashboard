@@ -67,22 +67,37 @@ export async function GET(request: NextRequest) {
   const dashboardOrigin = request.nextUrl.origin
   const isDifferentOrigin = isExternalOrigin(next, dashboardOrigin)
 
-  l.info({
-    key: 'auth_confirm:init',
-    context: {
-      tokenHashPrefix: token_hash.slice(0, 10),
-      type,
-      next,
-      isDifferentOrigin,
-      origin: dashboardOrigin,
+  l.info(
+    {
+      key: 'auth_confirm:init',
+      context: {
+        tokenHashPrefix: token_hash.slice(0, 10),
+        type,
+        next,
+        isDifferentOrigin,
+        origin: dashboardOrigin,
+      },
     },
-  })
+    `confirming email with OTP token hash: ${token_hash.slice(0, 10)}`
+  )
 
   // external origin: redirect to supabase client flow for the external app to handle
   if (isDifferentOrigin) {
     const supabaseClientFlowUrl = new URL(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${type}&redirect_to=${next}`
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${type}&redirect_to=${encodeURIComponent(next)}`
     )
+
+    l.info(
+      {
+        key: 'auth_confirm:redirect_to_supabase_client_flow',
+        context: {
+          supabaseClientFlowUrl: supabaseClientFlowUrl.toString(),
+          next,
+        },
+      },
+      `redirecting to supabase client flow: ${supabaseClientFlowUrl.toString()}`
+    )
+
     throw redirect(supabaseClientFlowUrl.toString())
   }
 
@@ -92,14 +107,17 @@ export async function GET(request: NextRequest) {
   confirmPageUrl.searchParams.set('type', type)
   confirmPageUrl.searchParams.set('next', next)
 
-  l.info({
-    key: 'auth_confirm:redirect_to_confirm_page',
-    context: {
-      tokenHashPrefix: token_hash.slice(0, 10),
-      type,
-      confirmPageUrl: confirmPageUrl.toString(),
+  l.info(
+    {
+      key: 'auth_confirm:redirect_to_confirm_page',
+      context: {
+        tokenHashPrefix: token_hash.slice(0, 10),
+        type,
+        confirmPageUrl: confirmPageUrl.toString(),
+      },
     },
-  })
+    `redirecting to confirm page: ${confirmPageUrl.toString()}`
+  )
 
   throw redirect(confirmPageUrl.toString())
 }
