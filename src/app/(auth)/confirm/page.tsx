@@ -105,7 +105,7 @@ export default function ConfirmPage() {
           disabled={!isValidParams}
           className="w-full"
         >
-          Confirm
+          Continue
         </Button>
       </div>
 
