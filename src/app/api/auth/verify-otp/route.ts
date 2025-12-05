@@ -1,4 +1,4 @@
-import { PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import {
   ConfirmEmailInputSchema,
@@ -29,7 +29,18 @@ function buildRedirectUrl(type: OtpType, next: string): string {
   return next
 }
 
+/**
+ * Builds a redirect URL to sign-in with an encoded error message.
+ */
+function buildErrorRedirectUrl(origin: string, message: string): string {
+  const url = new URL(origin + AUTH_URLS.SIGN_IN)
+  url.searchParams.set('error', encodeURIComponent(message))
+  return url.toString()
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.nextUrl.origin
+
   try {
     const body = await request.json()
 
@@ -44,10 +55,12 @@ export async function POST(request: NextRequest) {
         'invalid input for verify OTP'
       )
 
-      return NextResponse.json(
-        { error: 'Invalid request' },
-        { status: 400 }
+      const errorRedirectUrl = buildErrorRedirectUrl(
+        origin,
+        'Invalid verification link. Please request a new one.'
       )
+
+      return NextResponse.json({ redirectUrl: errorRedirectUrl })
     }
 
     const { token_hash, type, next } = result.data
@@ -68,18 +81,6 @@ export async function POST(request: NextRequest) {
 
     const redirectUrl = buildRedirectUrl(type, next)
 
-    l.info(
-      {
-        key: 'verify_otp:success',
-        user_id: userId,
-        context: {
-          type,
-          redirectUrl,
-        },
-      },
-      `OTP verified for user: ${userId}, redirecting to: ${redirectUrl}`
-    )
-
     return NextResponse.json({ redirectUrl })
   } catch (error) {
     // handle known errors from repository
@@ -94,10 +95,9 @@ export async function POST(request: NextRequest) {
         `verify OTP failed: ${message}`
       )
 
-      return NextResponse.json(
-        { error: message },
-        { status: 400 }
-      )
+      const errorRedirectUrl = buildErrorRedirectUrl(origin, message)
+
+      return NextResponse.json({ redirectUrl: errorRedirectUrl })
     }
 
     l.error(
@@ -108,10 +108,11 @@ export async function POST(request: NextRequest) {
       'verify OTP failed with unknown error'
     )
 
-    return NextResponse.json(
-      { error: 'Verification failed. Please try again.' },
-      { status: 500 }
+    const errorRedirectUrl = buildErrorRedirectUrl(
+      origin,
+      'Verification failed. Please try again.'
     )
+
+    return NextResponse.json({ redirectUrl: errorRedirectUrl })
   }
 }
-

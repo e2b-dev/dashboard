@@ -31,8 +31,7 @@ const OTP_TYPE_DESCRIPTIONS: Record<OtpType, string> = {
 }
 
 interface VerifyOtpResponse {
-  redirectUrl?: string
-  error?: string
+  redirectUrl: string
 }
 
 async function verifyOtp(input: ConfirmEmailInput): Promise<VerifyOtpResponse> {
@@ -44,8 +43,8 @@ async function verifyOtp(input: ConfirmEmailInput): Promise<VerifyOtpResponse> {
 
   const data: VerifyOtpResponse = await response.json()
 
-  if (!response.ok || data.error) {
-    throw new Error(data.error || 'Verification failed. Please try again.')
+  if (!data.redirectUrl) {
+    throw new Error('Verification failed. Please try again.')
   }
 
   return data
@@ -78,11 +77,9 @@ export default function ConfirmPage() {
   const mutation = useMutation({
     mutationFn: verifyOtp,
     onSuccess: (data) => {
-      if (data.redirectUrl) {
-        startTransition(() => {
-          router.push(data.redirectUrl!)
-        })
-      }
+      startTransition(() => {
+        router.push(data.redirectUrl)
+      })
     },
   })
 
