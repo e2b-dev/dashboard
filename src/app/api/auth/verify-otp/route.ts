@@ -6,14 +6,36 @@ import {
 } from '@/server/api/models/auth.models'
 import { authRepo } from '@/server/api/repositories/auth.repository'
 import { NextRequest, NextResponse } from 'next/server'
+import { flattenError } from 'zod'
+
+const normalizeOrigin = (origin: string) =>
+  origin.replace('www.', '').replace(/\/$/, '')
+
+function isExternalOrigin(next: string, dashboardOrigin: string): boolean {
+  return (
+    normalizeOrigin(new URL(next).origin) !== normalizeOrigin(dashboardOrigin)
+  )
+}
 
 /**
- * Determines the redirect URL based on OTP type and the original next parameter.
+ * Determines the redirect URL based on OTP type.
+ * Uses dashboard origin to build safe redirect URLs, only preserving the pathname from next.
  */
-function buildRedirectUrl(type: OtpType, next: string): string {
-  const redirectUrl = new URL(next)
+function buildRedirectUrl(
+  type: OtpType,
+  next: string,
+  dashboardOrigin: string
+): string {
+  const nextUrl = new URL(next)
+  // always use dashboard origin to prevent open redirects
+  const redirectUrl = new URL(dashboardOrigin)
+  redirectUrl.pathname = nextUrl.pathname
+  // preserve search params from original next URL
+  nextUrl.searchParams.forEach((value, key) => {
+    redirectUrl.searchParams.set(key, value)
+  })
 
-  // recovery flow always goes to account settings with reauth flag
+  // recovery flow always goes to reset password with reauth flag
   if (type === 'recovery') {
     redirectUrl.pathname = PROTECTED_URLS.RESET_PASSWORD
     redirectUrl.searchParams.set('reauth', '1')
@@ -26,7 +48,7 @@ function buildRedirectUrl(type: OtpType, next: string): string {
     return redirectUrl.toString()
   }
 
-  return next
+  return redirectUrl.toString()
 }
 
 /**
@@ -50,7 +72,7 @@ export async function POST(request: NextRequest) {
       l.error(
         {
           key: 'verify_otp:invalid_input',
-          error: result.error.flatten(),
+          error: flattenError(result.error),
         },
         'invalid input for verify OTP'
       )
@@ -65,6 +87,29 @@ export async function POST(request: NextRequest) {
 
     const { token_hash, type, next } = result.data
 
+    // reject external origins to prevent open redirect attacks
+    if (isExternalOrigin(next, origin)) {
+      l.warn(
+        {
+          key: 'verify_otp:external_origin_rejected',
+          context: {
+            type,
+            tokenHashPrefix: token_hash.slice(0, 10),
+            nextOrigin: new URL(next).origin,
+            dashboardOrigin: origin,
+          },
+        },
+        `rejected verify OTP request with external origin: ${new URL(next).origin}`
+      )
+
+      const errorRedirectUrl = buildErrorRedirectUrl(
+        origin,
+        'Invalid verification link. Please request a new one.'
+      )
+
+      return NextResponse.json({ redirectUrl: errorRedirectUrl })
+    }
+
     l.info(
       {
         key: 'verify_otp:init',
@@ -77,9 +122,9 @@ export async function POST(request: NextRequest) {
       `verifying OTP token: ${token_hash.slice(0, 10)}`
     )
 
-    const { userId } = await authRepo.verifyOtp(token_hash, type)
+    await authRepo.verifyOtp(token_hash, type)
 
-    const redirectUrl = buildRedirectUrl(type, next)
+    const redirectUrl = buildRedirectUrl(type, next, origin)
 
     return NextResponse.json({ redirectUrl })
   } catch (error) {
