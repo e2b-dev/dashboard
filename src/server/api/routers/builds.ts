@@ -1,7 +1,7 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import * as buildsRepo from '@/server/api/repositories/builds.repository'
+import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { apiError } from '../errors'

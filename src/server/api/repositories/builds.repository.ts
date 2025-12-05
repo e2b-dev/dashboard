@@ -15,7 +15,7 @@ function isUUID(value: string): boolean {
   return z.uuid().safeParse(value).success
 }
 
-export async function resolveTemplateId(
+async function resolveTemplateId(
   templateIdOrAlias: string,
   teamId: string
 ): Promise<string | null> {
@@ -50,7 +50,7 @@ interface ListBuildsResult {
   nextCursor: string | null
 }
 
-export async function listBuilds(
+async function listBuilds(
   teamId: string,
   buildIdOrTemplate?: string,
   statuses: BuildStatusDB[] = ['waiting', 'building', 'uploaded', 'failed'],
@@ -131,7 +131,7 @@ export async function listBuilds(
 
 // get running build statuses
 
-export async function getRunningStatuses(
+async function getRunningStatuses(
   teamId: string,
   buildIds: string[]
 ): Promise<RunningBuildStatusDTO[]> {
@@ -160,4 +160,9 @@ export async function getRunningStatuses(
       build.reason
     ),
   }))
+}
+
+export const buildsRepo = {
+  listBuilds,
+  getRunningStatuses,
 }
