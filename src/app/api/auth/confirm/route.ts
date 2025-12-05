@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
-// accepts both absolute URLs (external apps) and relative URLs (same-origin)
 const confirmSchema = z.object({
   token_hash: z.string().min(1),
   type: z.enum([
@@ -16,30 +15,16 @@ const confirmSchema = z.object({
     'email',
     'email_change',
   ]),
-  next: z.string().min(1),
+  next: z.httpUrl(),
 })
 
 const normalizeOrigin = (origin: string) =>
   origin.replace('www.', '').replace(/\/$/, '')
 
-function isRelativeUrl(url: string): boolean {
-  return url.startsWith('/') && !url.startsWith('//')
-}
-
 function isExternalOrigin(next: string, dashboardOrigin: string): boolean {
-  // relative URLs are always same-origin
-  if (isRelativeUrl(next)) {
-    return false
-  }
-
-  try {
-    return (
-      normalizeOrigin(new URL(next).origin) !== normalizeOrigin(dashboardOrigin)
-    )
-  } catch {
-    // invalid URL format - treat as same-origin to be safe
-    return false
-  }
+  return (
+    normalizeOrigin(new URL(next).origin) !== normalizeOrigin(dashboardOrigin)
+  )
 }
 
 /**

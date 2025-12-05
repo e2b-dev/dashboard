@@ -1,4 +1,3 @@
-import { relativeUrlSchema } from '@/lib/schemas/url'
 import z from 'zod'
 
 // otp types supported by supabase
@@ -17,7 +16,7 @@ export type OtpType = z.infer<typeof OtpTypeSchema>
 export const ConfirmEmailInputSchema = z.object({
   token_hash: z.string().min(1),
   type: OtpTypeSchema,
-  next: relativeUrlSchema,
+  next: z.httpUrl(),
 })
 
 export type ConfirmEmailInput = z.infer<typeof ConfirmEmailInputSchema>

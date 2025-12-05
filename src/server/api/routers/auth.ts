@@ -10,18 +10,21 @@ import { authRepo } from '../repositories/auth.repository'
 
 /**
  * Determines the redirect URL based on OTP type and the original next parameter.
- * Handles relative URLs (e.g., /dashboard)
  */
 function buildRedirectUrl(type: OtpType, next: string): string {
+  const redirectUrl = new URL(next)
+
   // recovery flow always goes to account settings with reauth flag
   if (type === 'recovery') {
-    return `${PROTECTED_URLS.RESET_PASSWORD}?reauth=1`
+    redirectUrl.pathname = PROTECTED_URLS.RESET_PASSWORD
+    redirectUrl.searchParams.set('reauth', '1')
+    return redirectUrl.toString()
   }
 
   // reauth flow for account settings
-  if (next.startsWith(PROTECTED_URLS.ACCOUNT_SETTINGS)) {
-    const hasQuery = next.includes('?')
-    return hasQuery ? `${next}&reauth=1` : `${next}?reauth=1`
+  if (redirectUrl.pathname === PROTECTED_URLS.ACCOUNT_SETTINGS) {
+    redirectUrl.searchParams.set('reauth', '1')
+    return redirectUrl.toString()
   }
 
   return next
