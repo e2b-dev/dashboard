@@ -1,20 +1,14 @@
 import { AUTH_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
+import { OtpTypeSchema } from '@/server/api/models/auth.models'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 const confirmSchema = z.object({
   token_hash: z.string().min(1),
-  type: z.enum([
-    'signup',
-    'recovery',
-    'invite',
-    'magiclink',
-    'email',
-    'email_change',
-  ]),
+  type: OtpTypeSchema,
   next: z.httpUrl(),
 })
 
@@ -62,17 +56,16 @@ export async function GET(request: NextRequest) {
     {
       key: 'auth_confirm:init',
       context: {
-        tokenHashPrefix: token_hash.slice(0, 10),
+        token_hash_prefix: token_hash.slice(0, 10),
         type,
         next,
-        isDifferentOrigin,
+        is_different_origin: isDifferentOrigin,
         origin: dashboardOrigin,
       },
     },
     `confirming email with OTP token hash: ${token_hash.slice(0, 10)}`
   )
 
-  // external origin: redirect to supabase client flow for the external app to handle
   if (isDifferentOrigin) {
     const supabaseClientFlowUrl = new URL(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${type}&redirect_to=${encodeURIComponent(next)}`
@@ -82,7 +75,7 @@ export async function GET(request: NextRequest) {
       {
         key: 'auth_confirm:redirect_to_supabase_client_flow',
         context: {
-          supabaseClientFlowUrl: supabaseClientFlowUrl.toString(),
+          supabase_client_flow_url: supabaseClientFlowUrl.toString(),
           next,
         },
       },
@@ -92,7 +85,6 @@ export async function GET(request: NextRequest) {
     throw redirect(supabaseClientFlowUrl.toString())
   }
 
-  // same origin: redirect to /confirm page for user to explicitly confirm
   const confirmPageUrl = new URL(dashboardOrigin + AUTH_URLS.CONFIRM)
   confirmPageUrl.searchParams.set('token_hash', token_hash)
   confirmPageUrl.searchParams.set('type', type)
@@ -102,9 +94,9 @@ export async function GET(request: NextRequest) {
     {
       key: 'auth_confirm:redirect_to_confirm_page',
       context: {
-        tokenHashPrefix: token_hash.slice(0, 10),
+        token_hash_prefix: token_hash.slice(0, 10),
         type,
-        confirmPageUrl: confirmPageUrl.toString(),
+        confirm_page_url: confirmPageUrl.toString(),
       },
     },
     `redirecting to confirm page: ${confirmPageUrl.toString()}`

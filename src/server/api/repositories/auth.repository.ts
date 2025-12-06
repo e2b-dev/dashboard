@@ -31,9 +31,9 @@ async function verifyOtp(
         error: serializeError(error),
         context: {
           type,
-          tokenHashPrefix: tokenHash.slice(0, 10),
-          errorCode: error.code,
-          errorStatus: error.status,
+          token_hash_prefix: tokenHash.slice(0, 10),
+          error_code: error.code,
+          error_status: error.status,
         },
       },
       `failed to verify OTP: ${error.message}`
@@ -58,10 +58,10 @@ async function verifyOtp(
         key: 'auth_repository:verify_otp:no_user',
         context: {
           type,
-          tokenHashPrefix: tokenHash.slice(0, 10),
+          token_hash_prefix: tokenHash.slice(0, 10),
         },
       },
-      `failed to verify OTP: no user found for token hash: ${tokenHash.slice(0, 10)}`
+      `failed to verify OTP: no user found`
     )
 
     throw new TRPCError({
@@ -81,14 +81,14 @@ async function verifyOtp(
       user_id: data.user.id,
       context: {
         type,
-        tokenHashPrefix: tokenHash.slice(0, 10),
-        hasSession,
-        hasAccessToken,
-        hasRefreshToken,
-        sessionExpiresAt: data.session?.expires_at,
+        token_hash_prefix: tokenHash.slice(0, 10),
+        has_session: !!data.session,
+        has_access_token: !!data.session?.access_token,
+        has_refresh_token: !!data.session?.refresh_token,
+        session_expires_at: data.session?.expires_at,
       },
     },
-    `verified OTP for user: ${data.user.id}, session: ${hasSession}`
+    `verified OTP for user: ${data.user.id}`
   )
 
   if (!hasSession) {

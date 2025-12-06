@@ -19,22 +19,18 @@ function buildRedirectUrl(
   dashboardOrigin: string
 ): string {
   const nextUrl = new URL(next)
-  // always use dashboard origin to prevent open redirects
   const redirectUrl = new URL(dashboardOrigin)
   redirectUrl.pathname = nextUrl.pathname
-  // preserve search params from original next URL
   nextUrl.searchParams.forEach((value, key) => {
     redirectUrl.searchParams.set(key, value)
   })
 
-  // recovery flow always goes to reset password with reauth flag
   if (type === 'recovery') {
     redirectUrl.pathname = PROTECTED_URLS.RESET_PASSWORD
     redirectUrl.searchParams.set('reauth', '1')
     return redirectUrl.toString()
   }
 
-  // reauth flow for account settings
   if (redirectUrl.pathname === PROTECTED_URLS.ACCOUNT_SETTINGS) {
     redirectUrl.searchParams.set('reauth', '1')
     return redirectUrl.toString()
@@ -79,16 +75,15 @@ export async function POST(request: NextRequest) {
 
     const { token_hash, type, next } = result.data
 
-    // reject external origins to prevent open redirect attacks
     if (isExternalOrigin(next, origin)) {
       l.warn(
         {
           key: 'verify_otp:external_origin_rejected',
           context: {
             type,
-            tokenHashPrefix: token_hash.slice(0, 10),
-            nextOrigin: new URL(next).origin,
-            dashboardOrigin: origin,
+            token_hash_prefix: token_hash.slice(0, 10),
+            next_origin: new URL(next).origin,
+            dashboard_origin: origin,
           },
         },
         `rejected verify OTP request with external origin: ${new URL(next).origin}`
@@ -107,7 +102,7 @@ export async function POST(request: NextRequest) {
         key: 'verify_otp:init',
         context: {
           type,
-          tokenHashPrefix: token_hash.slice(0, 10),
+          token_hash_prefix: token_hash.slice(0, 10),
           next,
         },
       },
@@ -120,7 +115,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ redirectUrl })
   } catch (error) {
-    // handle known errors from repository
     if (error && typeof error === 'object' && 'message' in error) {
       const message = (error as { message: string }).message
 
