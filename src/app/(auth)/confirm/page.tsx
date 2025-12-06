@@ -35,6 +35,10 @@ interface VerifyOtpResponse {
   redirectUrl: string
 }
 
+/**
+ * Verifies OTP and returns a redirect URL.
+ * The API always returns a redirectUrl - errors redirect to sign-in with encoded error params.
+ */
 async function verifyOtp(input: ConfirmEmailInput): Promise<VerifyOtpResponse> {
   const response = await fetch('/api/auth/verify-otp', {
     method: 'POST',
@@ -42,13 +46,7 @@ async function verifyOtp(input: ConfirmEmailInput): Promise<VerifyOtpResponse> {
     body: JSON.stringify(input),
   })
 
-  const data: VerifyOtpResponse = await response.json()
-
-  if (!data.redirectUrl) {
-    throw new Error('Verification failed. Please try again.')
-  }
-
-  return data
+  return response.json()
 }
 
 export default function ConfirmPage() {
@@ -124,19 +122,12 @@ export default function ConfirmPage() {
         .
       </p>
 
-      {!isValidParams && !mutation.error && (
+      {!isValidParams && (
         <AuthFormMessage
           className="mt-4"
           message={{
             error: 'Invalid verification link. Please request a new one.',
           }}
-        />
-      )}
-
-      {mutation.error && (
-        <AuthFormMessage
-          className="mt-4"
-          message={{ error: mutation.error.message }}
         />
       )}
     </div>
