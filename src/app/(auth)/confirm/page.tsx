@@ -14,21 +14,31 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useTransition } from 'react'
 
 const OTP_TYPE_LABELS: Record<OtpType, string> = {
-  signup: 'Sign Up',
-  recovery: 'Password Reset',
+  signup: 'Welcome to E2B',
+  recovery: 'Password Recovery',
   invite: 'Team Invitation',
   magiclink: 'Sign In',
-  email: 'Email Verification',
-  email_change: 'Email Change',
+  email: 'Verify Email',
+  email_change: 'Confirm Email Change',
 }
 
 const OTP_TYPE_DESCRIPTIONS: Record<OtpType, string> = {
-  signup: 'Complete your account registration',
-  recovery: 'Reset your password',
-  invite: 'Accept team invitation',
-  magiclink: 'Sign in to your account',
-  email: 'Verify your email address',
-  email_change: 'Confirm your new email address',
+  signup: 'Click below to verify your email and create your account.',
+  recovery:
+    'Click below to sign in. You will be forwarded to the account settings page where you can change your password.',
+  invite: 'Click below to accept the invitation and join the team.',
+  magiclink: 'Click below to sign in to your account.',
+  email: 'Click below to verify your email address.',
+  email_change: 'Click below to confirm your new email address.',
+}
+
+const OTP_TYPE_BUTTON_LABELS: Record<OtpType, string> = {
+  signup: 'Create Account',
+  recovery: 'Sign In',
+  invite: 'Join Team',
+  magiclink: 'Sign In',
+  email: 'Verify Email',
+  email_change: 'Confirm Email',
 }
 
 interface VerifyOtpResponse {
@@ -74,6 +84,9 @@ export default function ConfirmPage() {
   const typeDescription = params.type
     ? OTP_TYPE_DESCRIPTIONS[params.type]
     : 'Confirm your action'
+  const buttonLabel = params.type
+    ? OTP_TYPE_BUTTON_LABELS[params.type]
+    : 'Continue'
 
   const mutation = useMutation({
     mutationFn: verifyOtp,
@@ -106,7 +119,7 @@ export default function ConfirmPage() {
           disabled={!isValidParams}
           className="w-full"
         >
-          Continue
+          {buttonLabel}
         </Button>
       </div>
 
