@@ -4,6 +4,7 @@ import { AUTH_URLS } from '@/configs/urls'
 import { AuthFormMessage } from '@/features/auth/form-message'
 import {
   ConfirmEmailInputSchema,
+  OtpTypeSchema,
   type ConfirmEmailInput,
   type OtpType,
 } from '@/server/api/models/auth.models'
@@ -57,7 +58,9 @@ export default function ConfirmPage() {
 
   const params = useMemo(() => {
     const tokenHash = searchParams.get('token_hash') ?? ''
-    const type = searchParams.get('type') as OtpType | null
+    const typeParam = searchParams.get('type')
+    const typeResult = OtpTypeSchema.safeParse(typeParam)
+    const type: OtpType | null = typeResult.success ? typeResult.data : null
     const next = searchParams.get('next') ?? ''
 
     return { tokenHash, type, next }
