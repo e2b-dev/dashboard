@@ -1,5 +1,6 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
+import { isExternalOrigin } from '@/lib/utils/auth'
 import {
   ConfirmEmailInputSchema,
   type OtpType,
@@ -7,15 +8,6 @@ import {
 import { authRepo } from '@/server/api/repositories/auth.repository'
 import { NextRequest, NextResponse } from 'next/server'
 import { flattenError } from 'zod'
-
-const normalizeOrigin = (origin: string) =>
-  origin.replace('www.', '').replace(/\/$/, '')
-
-function isExternalOrigin(next: string, dashboardOrigin: string): boolean {
-  return (
-    normalizeOrigin(new URL(next).origin) !== normalizeOrigin(dashboardOrigin)
-  )
-}
 
 /**
  * Determines the redirect URL based on OTP type.

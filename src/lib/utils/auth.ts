@@ -28,3 +28,22 @@ export function encodedRedirect(
 export function getUserProviders(user: User) {
   return user.app_metadata.providers as string[] | undefined
 }
+
+/**
+ * Normalizes an origin URL by removing 'www.' prefix and trailing slash.
+ */
+export function normalizeOrigin(origin: string): string {
+  return origin.replace('www.', '').replace(/\/$/, '')
+}
+
+/**
+ * Checks if the redirect URL points to a different origin than the dashboard.
+ */
+export function isExternalOrigin(
+  next: string,
+  dashboardOrigin: string
+): boolean {
+  return (
+    normalizeOrigin(new URL(next).origin) !== normalizeOrigin(dashboardOrigin)
+  )
+}

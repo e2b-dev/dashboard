@@ -1,6 +1,6 @@
 import { AUTH_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
-import { encodedRedirect } from '@/lib/utils/auth'
+import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
@@ -17,15 +17,6 @@ const confirmSchema = z.object({
   ]),
   next: z.httpUrl(),
 })
-
-const normalizeOrigin = (origin: string) =>
-  origin.replace('www.', '').replace(/\/$/, '')
-
-function isExternalOrigin(next: string, dashboardOrigin: string): boolean {
-  return (
-    normalizeOrigin(new URL(next).origin) !== normalizeOrigin(dashboardOrigin)
-  )
-}
 
 /**
  * This route acts as an intermediary for email OTP verification.
