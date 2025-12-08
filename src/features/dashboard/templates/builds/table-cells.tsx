@@ -24,7 +24,7 @@ export function BuildId({ id }: { id: string }) {
   return (
     <CopyButtonInline
       value={id}
-      className="truncate text-left w-full text-fg-tertiary"
+      className="truncate w-full text-left text-fg-tertiary"
     >
       {id}
     </CopyButtonInline>

@@ -233,14 +233,11 @@ const BuildsTable = () => {
                   return (
                     <TableRow
                       key={build.id}
-                      className={cn(
-                        'hover:bg-bg-hover transition-colors cursor-pointer',
-                        {
-                          'hover:bg-bg-hover cursor-pointer':
-                            build.hasRetainedLogs,
-                          'bg-bg-1 animate-pulse': isBuilding,
-                        }
-                      )}
+                      className={cn('transition-colors cursor-pointer', {
+                        'hover:bg-bg-hover cursor-pointer':
+                          build.hasRetainedLogs,
+                        'bg-bg-1 animate-pulse': isBuilding,
+                      })}
                       onClick={() => {
                         if (!build.hasRetainedLogs) {
                           toast(

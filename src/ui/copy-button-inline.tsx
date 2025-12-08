@@ -31,10 +31,10 @@ export default function CopyButtonInline({
         wasCopied && capturedWidth ? { minWidth: capturedWidth } : undefined
       }
       className={cn(
-        'transition-colors cursor-copy',
+        'block transition-colors cursor-copy',
         'hover:text-accent-main-highlight',
-        wasCopied && 'text-accent-main-highlight font-sans!',
-        className
+        className,
+        wasCopied && 'text-accent-main-highlight font-sans!'
       )}
     >
       {wasCopied ? 'Copied!' : children}
