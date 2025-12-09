@@ -282,7 +282,7 @@ function SidebarTrigger({
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="ghost"
+      variant="tertiary"
       size="icon"
       className={cn('size-6 text-fg-tertiary', className)}
       onClick={(event) => {

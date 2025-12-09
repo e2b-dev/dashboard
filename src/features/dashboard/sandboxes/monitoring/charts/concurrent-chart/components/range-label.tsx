@@ -10,8 +10,6 @@ export function RangeLabel({ label, copyValue }: RangeLabelProps) {
     <div className="flex items-center gap-2 max-md:w-full max-md:min-w-0">
       <CopyButton
         value={copyValue}
-        variant="ghost"
-        size="slate"
         className="size-4 max-md:hidden"
         title="Copy ISO 8601 time interval"
       />
@@ -24,8 +22,6 @@ export function RangeLabel({ label, copyValue }: RangeLabelProps) {
       </span>
       <CopyButton
         value={copyValue}
-        variant="ghost"
-        size="slate"
         className="size-4 md:hidden flex-shrink-0"
         title="Copy ISO 8601 time interval"
       />

@@ -2,8 +2,8 @@ import { Sandbox } from '@/types/api.types'
 import { DataTableBody } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
+import { AddIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Row } from '@tanstack/react-table'
-import { ExternalLink, X } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { useSandboxTableStore } from './stores/table-store'
 import { SandboxesTable, SandboxWithMetrics } from './table-config'
@@ -43,8 +43,8 @@ export const TableBody = memo(function TableBody({
           title="No Results Found"
           description="No sandboxes match your current filters"
           message={
-            <Button variant="default" onClick={resetFilters}>
-              Reset Filters <X className="text-accent-main-highlight size-4" />
+            <Button variant="primary" onClick={resetFilters}>
+              <CloseIcon /> Reset Filters
             </Button>
           }
           className="h-[70%] max-md:w-screen"
@@ -57,10 +57,10 @@ export const TableBody = memo(function TableBody({
         title="No Sandboxes Yet"
         description="Running Sandboxes can be observed here"
         message={
-          <Button variant="default" asChild>
+          <Button variant="primary" asChild>
             <a href="/docs/quickstart" target="_blank" rel="noopener">
+              <AddIcon />
               Create a Sandbox
-              <ExternalLink className="size-3.5" />
             </a>
           </Button>
         }

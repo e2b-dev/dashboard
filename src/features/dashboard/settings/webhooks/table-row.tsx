@@ -100,7 +100,7 @@ export default function WebhookTableRow({
       <TableCell className="text-right w-[5%]">
         <DropdownMenu onOpenChange={setDropDownOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="tertiary" size="icon-sm">
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>

@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/ui'
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group'
 import * as React from 'react'
 
@@ -25,16 +25,50 @@ function RadioGroupItem({
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
       className={cn(
-        'peer hover:border-stroke-active data-[state=checked]:border-stroke-active focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight size-4 shrink-0 border transition-colors outline-none focus-visible:ring-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
+        [
+          // Base layout and sizing
+          'group peer size-4 shrink-0',
+          // Border and outline
+          'border outline-none',
+          // Transitions
+          'transition-colors anim-ease-appear anim-duration-fast',
+          // Cursor
+          'cursor-pointer disabled:cursor-default',
+          // Disabled state (unchecked)
+          'disabled:pointer-events-none disabled:opacity-65',
+          // Checked state
+          'data-[state=checked]:border-stroke-active',
+          // Checked + Disabled state
+          'data-[state=checked]:disabled:opacity-100 data-[state=checked]:disabled:border-stroke',
+          // Hover state
+          'hover:border-stroke-active',
+          'data-[display-state=hover]:border-stroke-active', // duplicated hover, for display purposes
+          // Focus state
+          'focus-visible:ring-1 focus-visible:ring-accent-main-highlight focus-visible:ring-offset-1 focus-visible:ring-offset-bg',
+          'data-[display-state=focus]:ring-1 data-[display-state=focus]:ring-accent-main-highlight data-[display-state=focus]:ring-offset-1 data-[display-state=focus]:ring-offset-bg', // duplicated focus, for display purposes
+          // Error state
+          'aria-invalid:ring-1 aria-invalid:ring-accent-error-highlight aria-invalid:ring-offset-1 aria-invalid:ring-offset-bg',
+        ].join(' '),
         className
       )}
       {...props}
     >
       <RadioGroupPrimitive.Indicator
         data-slot="radio-group-indicator"
-        className="flex items-center justify-center text-fg-inverted transition-none p-0.5"
+        className="flex items-center justify-center text-fg-inverted p-0.5"
+        forceMount
       >
-        <div className="bg-accent-main-highlight size-2.5" />
+        <div
+          className={cn(
+            [
+              'bg-accent-main-highlight group-disabled:bg-fill-highlight',
+              'size-2.5 origin-center',
+              'transition-all anim-ease-appear anim-duration-fast',
+              'group-data-[state=unchecked]:scale-[0.5] group-data-[state=unchecked]:opacity-0',
+              'group-data-[state=checked]:scale-100 group-data-[state=checked]:opacity-100',
+            ].join(' ')
+          )}
+        />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   )

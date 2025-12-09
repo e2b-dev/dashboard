@@ -173,7 +173,7 @@ export default function WebhookEditSecretDialog({
                   type="submit"
                   disabled={!isSecretValid}
                   className="w-full"
-                  variant="outline"
+                  variant="secondary"
                 >
                   <CheckIcon className="size-4" />
                   Confirm

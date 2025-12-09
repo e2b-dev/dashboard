@@ -74,8 +74,8 @@ export function SurveyContent({
                       <Button
                         key={emojiIndex}
                         type="button"
-                        variant={'ghost'}
-                        size="iconLg"
+                        variant={'tertiary'}
+                        size="icon-lg"
                         className={cn(
                           'text-fg-tertiary hover:text-fg-secondary size-14 hover:scale-[1.03]',
                           {
@@ -103,10 +103,10 @@ export function SurveyContent({
                         type="button"
                         variant={
                           responses[currentQuestionIndex] === String(num)
-                            ? 'default'
-                            : 'outline'
+                            ? 'primary'
+                            : 'secondary'
                         }
-                        size="iconLg"
+                        size="icon-lg"
                         onClick={() =>
                           setResponses((prev) => ({
                             ...prev,
@@ -177,7 +177,7 @@ export function SurveyContent({
           <div className="flex justify-between">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => setCurrentQuestionIndex((i) => Math.max(0, i - 1))}
               disabled={currentQuestionIndex === 0}
             >

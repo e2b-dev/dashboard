@@ -49,12 +49,7 @@ export default function DashboardSidebarToggle() {
         )}
       </AnimatePresence>
       <ShortcutTooltip keys={['ctrl', 's']}>
-        <Button
-          variant="ghost"
-          className="text-fg-tertiary"
-          size="icon"
-          onClick={toggleSidebar}
-        >
+        <Button variant="quaternary" size="icon-sm" onClick={toggleSidebar}>
           {isOpen ? (
             <ArrowLeftToLine className="size-4" />
           ) : (

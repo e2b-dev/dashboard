@@ -54,8 +54,7 @@ export function PollingButton({
   return (
     <div className={cn('flex h-6 items-center gap-1 px-0', className)}>
       <Button
-        variant="ghost"
-        size="sm"
+        variant="tertiary"
         onClick={refresh}
         className="text-fg-tertiary h-6"
         disabled={concatenatedIsRefreshing}

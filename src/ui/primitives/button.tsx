@@ -1,74 +1,70 @@
-import { cn } from '@/lib/utils/index'
+import { cn } from '@/lib/utils/ui'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
-import { Loader } from './loader_d'
 
 const buttonVariants = cva(
   [
-    'inline-flex items-center cursor-pointer  justify-center whitespace-nowrap',
-    'font-mono uppercase',
-    'transition-colors duration-150',
-    'focus-visible:outline-none ',
-    'disabled:pointer-events-none disabled:opacity-50',
+    'inline-flex items-center cursor-pointer justify-center whitespace-nowrap prose-body-highlight!',
+    'transition-colors [&_svg]:transition-colors disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
+    '[&_svg]:text-icon-tertiary',
   ].join(' '),
   {
     variants: {
       variant: {
-        default: [
+        primary: [
+          '[&_svg]:text-icon-inverted',
           'bg-bg-inverted text-fg-inverted',
-          'hover:bg-bg-inverted-hover focus:bg-bg-inverted-hover',
-          'active:translate-y-[1px] active:shadow-none',
+          'hover:bg-bg-inverted-hover', // hover
+          'data-[display-state=hover]:bg-bg-inverted-hover', // duplicated hover, for display purposes
+          'disabled:text-fg-tertiary disabled:bg-fill disabled:[&_svg]:text-icon-tertiary', // disabled
+          'data-[state=open]:bg-bg-inverted-hover',
         ].join(' '),
-        accent: [
-          'bg-accent-main-bg text-accent-main-highlight ',
-          'hover:bg-accent-main-bg/80 focus:bg-accent-main-bg/80',
-          'active:translate-y-[1px] active:shadow-none',
+        secondary: [
+          'border',
+          'hover:border-stroke-active', // hover
+          'data-[display-state=hover]:border-stroke-active', // duplicated hover, for display purposes
+          'active:bg-bg-1 active:[&_svg]:text-icon', // active
+          'data-[display-state=active]:bg-bg-1 data-[display-state=active]:[&_svg]:text-icon', // duplicated active, for display purposes
+          'disabled:opacity-65', // disabled
+          'data-[state=open]:bg-bg-1',
         ].join(' '),
-        ghost: [
-          'bg-transparent',
-          'hover:bg-transparent focus:bg-transparent',
-          'active:translate-y-[1px] active:shadow-none',
+        tertiary: [
+          'text-fg',
+          'hover:text-fg hover:underline', // hover
+          'data-[display-state=hover]:text-fg data-[display-state=hover]:underline', // duplicated hover, for display purposes
+          'active:text-fg active:[&_svg]:text-icon', // active
+          'data-[display-state=active]:text-fg data-[display-state=active]:[&_svg]:text-icon', // duplicated active, for display purposes
+          'disabled:opacity-65 text-fg-tertiary', // disabled
         ].join(' '),
-        muted: [
-          'border bg-bg-hover text-fg-secondary hover:text-fg',
-          'hover:bg-bg-hover/90 focus:bg-bg-hover/90',
-          'active:translate-y-[1px] active:shadow-none',
+        quaternary: [
+          'text-fg-tertiary',
+          'hover:text-fg', // hover
+          'data-[display-state=hover]:text-fg', // duplicated hover, for display purposes
+          'active:text-fg active:[&_svg]:text-icon', // active
+          'data-[display-state=active]:text-fg data-[display-state=active]:[&_svg]:text-icon', // duplicated active, for display purposes
+          'disabled:opacity-65', // disabled
         ].join(' '),
         error: [
-          'bg-accent-error-bg text-accent-error-highlight',
-          'hover:bg-accent-error-bg focus:bg-accent-error-bg',
-          'active:translate-y-[1px] active:shadow-none',
-        ].join(' '),
-        warning: [
-          'bg-accent-warning-bg text-accent-warning-highlight',
-          'hover:bg-accent-warning-bg focus:bg-accent-warning-bg',
-          'active:translate-y-[1px] active:shadow-none',
-        ].join(' '),
-        outline: [
-          'border border-stroke bg-transparent',
-          'hover:bg-bg-1 focus:bg-bg-1',
-          'active:translate-y-[1px] active:shadow-none',
-        ].join(' '),
-        link: [
-          'text-accent-main-highlight underline-offset-4',
-          'hover:underline hover:bg-transparent',
-          'focus:ring-0 focus:underline focus:bg-transparent',
-          'shadow-none',
+          '[&_svg]:text-icon-inverted',
+          'bg-accent-error-highlight text-fg-inverted',
+          'hover:bg-accent-error-highlight/90', // hover
+          'data-[display-state=hover]:bg-accent-error-highlight/90', // duplicated hover, for display purposes
+          'disabled:text-fg-tertiary disabled:bg-fill disabled:[&_svg]:text-icon-tertiary', // disabled
+          'data-[state=open]:bg-accent-error-highlight/90',
         ].join(' '),
       },
       size: {
-        default: 'h-8 px-3 gap-2',
-        sm: 'h-7 px-2 gap-1 text-xs',
-        lg: 'h-10 px-4 gap-2',
-        icon: 'h-8 w-8 gap-2',
-        iconSm: 'h-7 w-7 gap-1',
-        iconLg: 'h-10 w-10 text-xl gap-2',
-        slate: 'h-auto px-0 py-0 gap-1',
+        default:
+          '[&_svg]:size-4 h-9 py-1.5 gap-1 [&:has(svg)]:pr-3 [&:has(svg)]:pl-2.5 px-4',
+        icon: 'h-9 w-9 px-2.5 py-1.5 [&_svg]:size-5',
+        'icon-sm': 'h-7 w-7 px-2.5 py-1.5 [&_svg]:size-4',
+        'icon-xs': 'size-4.5 [&_svg]:size-3',
+        'icon-lg': 'h-12 w-12 px-2.5 py-1.5 [&_svg]:size-6',
       },
     },
     defaultVariants: {
-      variant: 'default',
+      variant: 'primary',
       size: 'default',
     },
   }
@@ -78,31 +74,17 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
-  loading?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { className, variant, size, asChild = false, loading = false, ...props },
-    ref
-  ) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        disabled={loading || props.disabled}
         {...props}
-      >
-        {loading ? (
-          <div className="flex items-center gap-2">
-            {props.children}
-            <Loader />
-          </div>
-        ) : (
-          props.children
-        )}
-      </Comp>
+      />
     )
   }
 )

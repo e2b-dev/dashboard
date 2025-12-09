@@ -1,40 +1,44 @@
-import { cn } from '@/lib/utils/index'
+import { cn } from '@/lib/utils/ui'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
 const badgeVariants = cva(
-  'inline-flex items-center cursor-default justify-center focus-visible:ring-1 w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 [&>svg]:pointer-events-none ![&>svg]:pl-0.75 aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight transition-[color,box-shadow] overflow-hidden',
+  [
+    // Base layout and sizing
+    'inline-flex items-center justify-center w-fit',
+    // Text and cursor
+    'prose-label uppercase cursor-default whitespace-nowrap shrink-0 overflow-hidden',
+    // Icon styles
+    ' [&>svg]:pointer-events-none ![&>svg]:pl-0.75 [&>svg]:size-3',
+    // Interactive states
+    'focus-visible:ring-1',
+    // Error state
+    'aria-invalid:ring-accent-error-highlight/20 aria-invalid:border-accent-error-highlight',
+  ].join(' '),
   {
     variants: {
       variant: {
-        default: 'bg-bg-highlight text-fg-secondary',
+        default: 'bg-fill text-fg-secondary',
         positive: 'bg-accent-positive-bg text-accent-positive-highlight',
         warning: 'bg-accent-warning-bg text-accent-warning-highlight',
         info: 'bg-accent-info-bg text-accent-info-highlight',
-        main: 'bg-accent-main-bg text-accent-main-highlight',
         error: 'bg-accent-error-bg text-accent-error-highlight',
-        code: 'bg-bg-1 ring-1 ring-stroke text-fg-secondary font-mono',
-      },
-      size: {
-        default: 'h-5 px-1 gap-1',
-        sm: 'h-4.5 px-1 text-xs gap-0.5',
-        lg: 'h-7 px-2 gap-1.5',
       },
       can: {
         none: '',
         hover: 'hover:ring-1 ring-[currentColor]',
       },
-      typography: {
-        highlight: 'prose-label-highlight',
-        regular: 'prose-label',
+      size: {
+        sm: 'h-4.5 px-1 gap-0.5',
+        md: 'h-5.5 px-2 gap-1',
+        lg: 'h-6.5 px-2 gap-1.5',
       },
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
+      size: 'sm',
       can: 'none',
-      typography: 'regular',
     },
   }
 )

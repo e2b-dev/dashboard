@@ -238,7 +238,7 @@ export default function WebhookAddEditDialog({
                       {currentStep === 1 ? (
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="secondary"
                           onClick={handleNext}
                           disabled={!isStep1Valid}
                           className="w-full"
@@ -249,7 +249,7 @@ export default function WebhookAddEditDialog({
                         <>
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="secondary"
                             onClick={handleBack}
                             className="w-full"
                           >
@@ -260,7 +260,7 @@ export default function WebhookAddEditDialog({
                             className="w-full"
                             disabled={!isStep2Valid}
                           >
-                            <PlusIcon className="size-4" />
+                            <PlusIcon />
                             Add
                           </Button>
                         </>

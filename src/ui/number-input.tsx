@@ -99,8 +99,8 @@ export function NumberInput({
       <div className="flex flex-col">
         <Button
           type="button"
-          variant="outline"
-          size="icon"
+          variant="secondary"
+          size="icon-sm"
           className={cn(
             'bg-bg-1 h-[1.125rem] border-r-0 px-2 py-0',
             buttonClassName
@@ -113,8 +113,8 @@ export function NumberInput({
         </Button>
         <Button
           type="button"
-          variant="outline"
-          size="icon"
+          variant="secondary"
+          size="icon-sm"
           className={cn(
             'bg-bg-1 h-[1.125rem] border-t-0 border-r-0 px-2',
             buttonClassName

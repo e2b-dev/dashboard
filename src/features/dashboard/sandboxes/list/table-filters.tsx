@@ -118,7 +118,7 @@ const TemplateFilter = memo(function TemplateFilter() {
           className="w-full"
         />
         <Button
-          variant={'outline'}
+          variant={'secondary'}
           onClick={handleSubmit}
           disabled={!localValue.trim()}
         >
@@ -189,8 +189,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
             />
             {localValues.cpu > 0 && (
               <Button
-                variant="error"
-                size="sm"
+                variant="secondary"
                 onClick={handleClearCpu}
                 className="h-9 text-xs"
               >
@@ -218,8 +217,7 @@ const ResourcesFilter = memo(function ResourcesFilter() {
             />
             {localValues.memory > 0 && (
               <Button
-                variant="error"
-                size="sm"
+                variant="secondary"
                 onClick={handleClearMemory}
                 className="h-9 text-xs"
               >
@@ -268,7 +266,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="normal-case gap-2">
+          <Button variant="secondary" className="normal-case gap-2">
             <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>

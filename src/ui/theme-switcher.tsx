@@ -29,7 +29,7 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={className} asChild>
-        <Button variant="ghost" size={'iconSm'}>
+        <Button variant="tertiary" size="icon-sm">
           {resolvedTheme === 'light' ? (
             <Sun key="light" size={ICON_SIZE} className={'text-fg-secondary'} />
           ) : (

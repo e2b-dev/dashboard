@@ -153,7 +153,7 @@ export const TimeInput = memo(function TimeInput({
           <div className="absolute right-1 top-1/2 -translate-y-1/2">
             <PopoverTrigger asChild>
               <Button
-                variant="ghost"
+                variant="tertiary"
                 size="icon"
                 className=" h-8 w-8"
                 tabIndex={-1}
@@ -183,85 +183,85 @@ export const TimeInput = memo(function TimeInput({
 
       {!hideTime && (
         <Popover open={timeOpen} onOpenChange={setTimeOpen}>
-        <div className="relative flex-1">
-          <Input
-            type="text"
-            value={displayTime || (isLive ? 'now' : '')}
-            onChange={(e) => setDisplayTime(e.target.value)}
-            onBlur={() => onTimeChange(displayTime)}
-            placeholder="HH:MM:SS"
-            disabled={disabled}
-            className={cn(
-              'pr-10 h-10 w-full bg-transparent',
-              'placeholder:prose-label'
-            )}
-          />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-            <span className="prose-label text-fg-tertiary font-mono">
-              {getTimezoneIdentifier()}
-            </span>
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              value={displayTime || (isLive ? 'now' : '')}
+              onChange={(e) => setDisplayTime(e.target.value)}
+              onBlur={() => onTimeChange(displayTime)}
+              placeholder="HH:MM:SS"
+              disabled={disabled}
+              className={cn(
+                'pr-10 h-10 w-full bg-transparent',
+                'placeholder:prose-label'
+              )}
+            />
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+              <span className="prose-label text-fg-tertiary font-mono">
+                {getTimezoneIdentifier()}
+              </span>
 
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                tabIndex={-1}
-              >
-                <ClockIcon className="size-4 text-fg-tertiary" />
-              </Button>
-            </PopoverTrigger>
-          </div>
-        </div>
-        <PopoverContent
-          className="w-76.5 p-3 translate-x-1 translate-y-1"
-          side="bottom"
-          align="end"
-          sideOffset={4}
-        >
-          <div className="flex items-center w-full justify-center">
-            <div className="flex flex-col items-center gap-1">
-              <span className="prose-label text-fg-tertiary">Hours</span>
-              <NumberInput
-                value={hours}
-                onChange={(value) => handleTimeChange('hours', value)}
-                min={0}
-                max={23}
-                step={1}
-                disabled={disabled}
-                inputClassName="h-8 w-11 text-center border-r-0"
-                buttonClassName="h-[1rem]"
-              />
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="prose-label text-fg-tertiary">Minutes</span>
-              <NumberInput
-                value={minutes}
-                onChange={(value) => handleTimeChange('minutes', value)}
-                min={0}
-                max={59}
-                step={1}
-                disabled={disabled}
-                inputClassName="h-8 w-11 text-center border-r-0"
-                buttonClassName="h-[1rem]"
-              />
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="prose-label text-fg-tertiary">Seconds</span>
-              <NumberInput
-                value={seconds}
-                onChange={(value) => handleTimeChange('seconds', value)}
-                min={0}
-                max={59}
-                step={1}
-                disabled={disabled}
-                inputClassName="h-8 w-11 text-center"
-                buttonClassName="h-[1rem]"
-              />
+              <PopoverTrigger asChild>
+                <Button
+                  variant="tertiary"
+                  size="icon"
+                  className="h-8 w-8"
+                  tabIndex={-1}
+                >
+                  <ClockIcon className="size-4 text-fg-tertiary" />
+                </Button>
+              </PopoverTrigger>
             </div>
           </div>
-        </PopoverContent>
-      </Popover>
+          <PopoverContent
+            className="w-76.5 p-3 translate-x-1 translate-y-1"
+            side="bottom"
+            align="end"
+            sideOffset={4}
+          >
+            <div className="flex items-center w-full justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <span className="prose-label text-fg-tertiary">Hours</span>
+                <NumberInput
+                  value={hours}
+                  onChange={(value) => handleTimeChange('hours', value)}
+                  min={0}
+                  max={23}
+                  step={1}
+                  disabled={disabled}
+                  inputClassName="h-8 w-11 text-center border-r-0"
+                  buttonClassName="h-[1rem]"
+                />
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="prose-label text-fg-tertiary">Minutes</span>
+                <NumberInput
+                  value={minutes}
+                  onChange={(value) => handleTimeChange('minutes', value)}
+                  min={0}
+                  max={59}
+                  step={1}
+                  disabled={disabled}
+                  inputClassName="h-8 w-11 text-center border-r-0"
+                  buttonClassName="h-[1rem]"
+                />
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="prose-label text-fg-tertiary">Seconds</span>
+                <NumberInput
+                  value={seconds}
+                  onChange={(value) => handleTimeChange('seconds', value)}
+                  min={0}
+                  max={59}
+                  step={1}
+                  disabled={disabled}
+                  inputClassName="h-8 w-11 text-center"
+                  buttonClassName="h-[1rem]"
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       )}
     </div>
   )

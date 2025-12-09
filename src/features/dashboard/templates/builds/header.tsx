@@ -115,11 +115,7 @@ export default function BuildsHeader() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="font-sans w-min normal-case"
-          >
+          <Button variant="secondary" className="w-min pr-3 pl-2.5">
             <StatusIcons selectedStatuses={localStatuses} /> Status •{' '}
             {localStatuses.length}/{STATUS_OPTIONS.length}
           </Button>
