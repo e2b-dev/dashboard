@@ -13,7 +13,7 @@ const mapLogLevelToBadgeProps: Record<BuildLogDTO['level'], BadgeProps> = {
     variant: 'default',
   },
   info: {
-    variant: 'info',
+    variant: 'positive',
   },
   warn: {
     variant: 'warning',

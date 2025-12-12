@@ -21,7 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
 import {
   useVirtualizer,
   VirtualItem,
@@ -41,36 +45,20 @@ import { LogLevel, Message, Timestamp } from './logs-cells'
 import { type LogLevelFilter } from './logs-filter-params'
 import useLogFilters from './use-log-filters'
 
-const COLUMN_WIDTHS_PX = {
-  timestamp: 164,
-  level: 92,
-} as const
-
+const COLUMN_WIDTHS_PX = { timestamp: 164, level: 92 } as const
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 16
+const REFETCH_INTERVAL_MS = 5_000
+const SCROLL_LOAD_THRESHOLD_PX = 200
 
-const BUILDS_REFETCH_INTERVAL_MS = 5_000
+const EMPTY_LOGS: BuildLogDTO[] = []
 
-const defaultData: BuildLogDTO[] = []
-
-function useFilterChangeTracking(level: LogLevelFilter | null) {
-  const [isFilterRefetching, setIsFilterRefetching] = useState(false)
-  const isFirstRender = useRef(true)
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    setIsFilterRefetching(true)
-  }, [level])
-
-  const clearFilterRefetching = useCallback(() => {
-    setIsFilterRefetching(false)
-  }, [])
-
-  return { isFilterRefetching, clearFilterRefetching }
-}
+const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
+  { value: 'debug', label: 'Debug' },
+  { value: 'info', label: 'Info' },
+  { value: 'warn', label: 'Warn' },
+  { value: 'error', label: 'Error' },
+]
 
 interface LogsProps {
   params: PageProps<'/dashboard/[teamIdOrSlug]/templates/[templateId]/builds/[buildId]'>['params']
@@ -86,65 +74,41 @@ export default function Logs({ params, isBuilding }: LogsProps) {
 
   const { data: buildDetails } = useSuspenseQuery(
     trpc.builds.buildDetails.queryOptions(
-      {
-        teamIdOrSlug,
-        templateId,
-        buildId,
-      },
+      { teamIdOrSlug, templateId, buildId },
       {
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: ({ state }) =>
           state.data?.status === 'building' ? 'always' : false,
         refetchInterval: ({ state }) =>
-          state.data?.status === 'building'
-            ? BUILDS_REFETCH_INTERVAL_MS
-            : false,
+          state.data?.status === 'building' ? REFETCH_INTERVAL_MS : false,
       }
     )
   )
 
   const { level, setLevel } = useLogFilters()
-  const { isFilterRefetching, clearFilterRefetching } =
-    useFilterChangeTracking(level)
+  const { isRefetchingFromFilterChange, onFetchComplete } =
+    useFilterRefetchTracking(level)
 
-  const {
-    data: paginatedLogs,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetching,
-  } = useInfiniteQuery(
-    trpc.builds.buildLogsBackwards.infiniteQueryOptions(
-      {
-        teamIdOrSlug,
-        templateId,
-        buildId,
-        level: level ?? undefined,
-      },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: isBuilding ? 'always' : false,
-        refetchInterval: isBuilding ? BUILDS_REFETCH_INTERVAL_MS : false,
-      }
-    )
-  )
+  const { logs, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage } =
+    useBuildLogs({
+      trpc,
+      teamIdOrSlug,
+      templateId,
+      buildId,
+      level,
+      isBuilding,
+    })
 
   useEffect(() => {
-    if (!isFetching && isFilterRefetching) {
-      clearFilterRefetching()
+    if (!isFetching && isRefetchingFromFilterChange) {
+      onFetchComplete()
     }
-  }, [isFetching, isFilterRefetching, clearFilterRefetching])
+  }, [isFetching, isRefetchingFromFilterChange, onFetchComplete])
 
-  const logs = useMemo(
-    () => paginatedLogs?.pages.flatMap((p) => p.logs) ?? defaultData,
-    [paginatedLogs]
-  )
-
-  const hasData = logs.length > 0
-  const showLoader = isFilterRefetching && !hasData
-  const showEmpty = !isFetching && !hasData
-  const showFilterRefetchingOverlay = isFilterRefetching && hasData
+  const hasLogs = logs.length > 0
+  const showLoader = isRefetchingFromFilterChange && !hasLogs
+  const showEmpty = !isFetching && !hasLogs
+  const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -154,68 +118,23 @@ export default function Logs({ params, isBuilding }: LogsProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-      <LogsLevelFilter level={level} setLevel={setLevel} />
+      <LevelFilter level={level} onLevelChange={setLevel} />
 
       <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
-          <TableHeader
-            className="bg-bg"
-            style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
-          >
-            <TableRow
-              style={{
-                display: 'flex',
-                minWidth: '100%',
-              }}
-            >
-              <TableHead
-                className="text-fg"
-                style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
-              >
-                Timestamp <ArrowDownIcon className="size-3" />
-              </TableHead>
-              <TableHead
-                style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
-              >
-                Level
-              </TableHead>
-              <TableHead style={{ display: 'flex', flex: 1 }}>
-                Message
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+          <LogsTableHeader />
 
-          {showLoader && (
-            <TableBody style={{ display: 'grid' }}>
-              <TableRow style={{ display: 'flex', minWidth: '100%' }}>
-                <TableCell className="flex-1">
-                  <div className="h-[35svh] w-full flex justify-center items-center">
-                    <Loader variant="slash" size="lg" />
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          )}
-
-          {showEmpty && (
-            <TableBody style={{ display: 'grid' }}>
-              <TableRow style={{ display: 'flex', minWidth: '100%' }}>
-                <TableCell className="flex-1">
-                  <LogsEmpty />
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          )}
-
-          {hasData && (
-            <LogsTableBody
+          {showLoader && <LoaderBody />}
+          {showEmpty && <EmptyBody />}
+          {hasLogs && (
+            <VirtualizedLogsBody
               logs={logs}
               scrollContainerRef={scrollContainerRef}
               startedAt={buildDetails.startedAt}
               onLoadMore={handleLoadMore}
               hasNextPage={hasNextPage}
               isFetchingNextPage={isFetchingNextPage}
-              showFilterRefetchingOverlay={showFilterRefetchingOverlay}
+              showRefetchOverlay={showRefetchOverlay}
             />
           )}
         </Table>
@@ -224,34 +143,201 @@ export default function Logs({ params, isBuilding }: LogsProps) {
   )
 }
 
-const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
-  { value: 'debug', label: 'Debug' },
-  { value: 'info', label: 'Info' },
-  { value: 'warn', label: 'Warn' },
-  { value: 'error', label: 'Error' },
-]
+function useFilterRefetchTracking(level: LogLevelFilter | null) {
+  const [isRefetchingFromFilterChange, setIsRefetching] = useState(false)
+  const isInitialRender = useRef(true)
 
-function LevelIcon({ level }: { level: LogLevelFilter }) {
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false
+      return
+    }
+    setIsRefetching(true)
+  }, [level])
+
+  const onFetchComplete = useCallback(() => setIsRefetching(false), [])
+
+  return { isRefetchingFromFilterChange, onFetchComplete }
+}
+
+interface UseBuildLogsParams {
+  trpc: ReturnType<typeof useTRPC>
+  teamIdOrSlug: string
+  templateId: string
+  buildId: string
+  level: LogLevelFilter | null
+  isBuilding: boolean
+}
+
+function useBuildLogs({
+  trpc,
+  teamIdOrSlug,
+  templateId,
+  buildId,
+  level,
+  isBuilding,
+}: UseBuildLogsParams) {
+  const [forwardLogsAccumulator, setForwardLogsAccumulator] = useState<
+    BuildLogDTO[]
+  >([])
+
+  useEffect(() => {
+    setForwardLogsAccumulator([])
+  }, [level])
+
+  const {
+    data: backwardsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching: isFetchingBackwards,
+  } = useInfiniteQuery(
+    trpc.builds.buildLogsBackwards.infiniteQueryOptions(
+      { teamIdOrSlug, templateId, buildId, level: level ?? undefined },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: false,
+        refetchInterval: false,
+      }
+    )
+  )
+
+  const backwardsLogs = useMemo(
+    () => backwardsData?.pages.flatMap((p) => p.logs) ?? EMPTY_LOGS,
+    [backwardsData]
+  )
+
+  const forwardCursor = useMemo(() => {
+    const newestAccumulated = forwardLogsAccumulator[0]?.timestampUnix
+    const newestBackwards = backwardsLogs[0]?.timestampUnix
+    return newestAccumulated ?? newestBackwards
+  }, [forwardLogsAccumulator, backwardsLogs])
+
+  const { data: forwardData, isFetching: isFetchingForward } = useQuery(
+    trpc.builds.buildLogsForward.queryOptions(
+      {
+        teamIdOrSlug,
+        templateId,
+        buildId,
+        cursor: forwardCursor,
+        level: level ?? undefined,
+      },
+      {
+        enabled: isBuilding,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: 'always',
+        refetchInterval: REFETCH_INTERVAL_MS,
+      }
+    )
+  )
+
+  useEffect(() => {
+    const newLogs = forwardData?.logs
+    if (!newLogs || newLogs.length === 0) return
+
+    setForwardLogsAccumulator((accumulated) => {
+      if (accumulated.length === 0) return newLogs
+
+      const existingTimestamps = new Set(
+        accumulated.map((log) => log.timestampUnix)
+      )
+      const uniqueNewLogs = newLogs.filter(
+        (log) => !existingTimestamps.has(log.timestampUnix)
+      )
+
+      if (uniqueNewLogs.length === 0) return accumulated
+
+      return [...uniqueNewLogs, ...accumulated].sort(
+        (a, b) => b.timestampUnix - a.timestampUnix
+      )
+    })
+  }, [forwardData?.logs])
+
+  const mergedLogs = useMemo(() => {
+    if (forwardLogsAccumulator.length === 0) return backwardsLogs
+    if (backwardsLogs.length === 0) return forwardLogsAccumulator
+
+    const backwardsTimestamps = new Set(
+      backwardsLogs.map((log) => log.timestampUnix)
+    )
+    const uniqueForwardLogs = forwardLogsAccumulator.filter(
+      (log) => !backwardsTimestamps.has(log.timestampUnix)
+    )
+
+    return [...uniqueForwardLogs, ...backwardsLogs]
+  }, [forwardLogsAccumulator, backwardsLogs])
+
+  return {
+    logs: mergedLogs,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching: isFetchingBackwards || isFetchingForward,
+    fetchNextPage,
+  }
+}
+
+function LogsTableHeader() {
   return (
-    <div
-      className={cn('size-3.5 rounded-full bg-bg border-[1.5px] border-dashed', {
-        'border-fg-tertiary': level === 'debug',
-        'border-accent-info-highlight': level === 'info',
-        'border-accent-warning-highlight': level === 'warn',
-        'border-accent-error-highlight': level === 'error',
-      })}
-    />
+    <TableHeader
+      className="bg-bg"
+      style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
+    >
+      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
+        <TableHead
+          className="text-fg"
+          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
+        >
+          Timestamp <ArrowDownIcon className="size-3" />
+        </TableHead>
+        <TableHead style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}>
+          Level
+        </TableHead>
+        <TableHead style={{ display: 'flex', flex: 1 }}>Message</TableHead>
+      </TableRow>
+    </TableHeader>
   )
 }
 
-interface LogsLevelFilterProps {
-  level: LogLevelFilter | null
-  setLevel: (level: LogLevelFilter | null) => void
+function LoaderBody() {
+  return (
+    <TableBody style={{ display: 'grid' }}>
+      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
+        <TableCell className="flex-1">
+          <div className="h-[35svh] w-full flex justify-center items-center">
+            <Loader variant="slash" size="lg" />
+          </div>
+        </TableCell>
+      </TableRow>
+    </TableBody>
+  )
 }
 
-function LogsLevelFilter({ level, setLevel }: LogsLevelFilterProps) {
-  const currentLevel = level ?? 'debug'
-  const displayLabel = LEVEL_OPTIONS.find((o) => o.value === currentLevel)?.label
+function EmptyBody() {
+  return (
+    <TableBody style={{ display: 'grid' }}>
+      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
+        <TableCell className="flex-1">
+          <div className="h-[35vh] w-full gap-2 relative flex justify-center items-center p-6">
+            <ListIcon className="size-5" />
+            <p className="prose-body-highlight">No logs found</p>
+          </div>
+        </TableCell>
+      </TableRow>
+    </TableBody>
+  )
+}
+
+interface LevelFilterProps {
+  level: LogLevelFilter | null
+  onLevelChange: (level: LogLevelFilter | null) => void
+}
+
+function LevelFilter({ level, onLevelChange }: LevelFilterProps) {
+  const selectedLevel = level ?? 'debug'
+  const selectedLabel = LEVEL_OPTIONS.find(
+    (o) => o.value === selectedLevel
+  )?.label
 
   return (
     <div className="flex w-full min-h-0 justify-between gap-3">
@@ -262,14 +348,14 @@ function LogsLevelFilter({ level, setLevel }: LogsLevelFilterProps) {
             size="sm"
             className="font-sans w-min normal-case"
           >
-            <LevelIcon level={currentLevel} />
-            Min Level • {displayLabel}
+            <LevelIndicator level={selectedLevel} />
+            Min Level • {selectedLabel}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup
-            value={currentLevel}
-            onValueChange={(value) => setLevel(value as LogLevelFilter)}
+            value={selectedLevel}
+            onValueChange={(value) => onLevelChange(value as LogLevelFilter)}
           >
             {LEVEL_OPTIONS.map((option) => (
               <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -283,48 +369,122 @@ function LogsLevelFilter({ level, setLevel }: LogsLevelFilterProps) {
   )
 }
 
-function LogsEmpty() {
+function LevelIndicator({ level }: { level: LogLevelFilter }) {
   return (
-    <div className="h-[35vh] w-full gap-2 relative flex justify-center items-center p-6">
-      <ListIcon className="size-5" />
-      <p className="prose-body-highlight">No logs found</p>
-    </div>
+    <div
+      className={cn(
+        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
+        {
+          'border-fg-tertiary': level === 'debug',
+          'border-accent-positive-highlight': level === 'info',
+          'border-accent-warning-highlight': level === 'warn',
+          'border-accent-error-highlight': level === 'error',
+        }
+      )}
+    />
   )
 }
 
-const SCROLL_THRESHOLD_PX = 200
-
-interface LogsTableBodyProps {
+interface VirtualizedLogsBodyProps {
   logs: BuildLogDTO[]
   scrollContainerRef: RefObject<HTMLDivElement | null>
   startedAt: number
   onLoadMore: () => void
   hasNextPage: boolean
   isFetchingNextPage: boolean
-  showFilterRefetchingOverlay: boolean
+  showRefetchOverlay: boolean
 }
 
-const rerenderReducer = () => ({})
-
-function LogsTableBody({
+function VirtualizedLogsBody({
   logs,
   scrollContainerRef,
   startedAt,
   onLoadMore,
   hasNextPage,
   isFetchingNextPage,
-  showFilterRefetchingOverlay,
-}: LogsTableBodyProps) {
+  showRefetchOverlay,
+}: VirtualizedLogsBodyProps) {
   const tbodyRef = useRef<HTMLTableSectionElement>(null)
   const maxWidthRef = useRef<number>(0)
-  const [, rerender] = useReducer(rerenderReducer, 0)
+  const [, forceRerender] = useReducer(() => ({}), {})
 
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      rerender()
-    }
+    if (scrollContainerRef.current) forceRerender()
   }, [scrollContainerRef])
 
+  useScrollLoadMore({
+    scrollContainerRef,
+    hasNextPage,
+    isFetchingNextPage,
+    onLoadMore,
+  })
+
+  const virtualizer = useVirtualizer({
+    count: logs.length + 1,
+    estimateSize: () => ROW_HEIGHT_PX,
+    getScrollElement: () => scrollContainerRef.current,
+    overscan: VIRTUAL_OVERSCAN,
+  })
+
+  const currentScrollWidth = tbodyRef.current?.scrollWidth ?? 0
+  if (currentScrollWidth > maxWidthRef.current) {
+    maxWidthRef.current = currentScrollWidth
+  }
+
+  return (
+    <TableBody
+      ref={tbodyRef}
+      className={showRefetchOverlay ? 'opacity-70 transition-opacity' : ''}
+      style={{
+        display: 'grid',
+        height: `${virtualizer.getTotalSize()}px`,
+        width: maxWidthRef.current,
+        minWidth: '100%',
+        position: 'relative',
+      }}
+    >
+      {virtualizer.getVirtualItems().map((virtualRow) => {
+        const isStatusRow = virtualRow.index === logs.length
+
+        if (isStatusRow) {
+          return (
+            <StatusRow
+              key="status-row"
+              virtualRow={virtualRow}
+              virtualizer={virtualizer}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+            />
+          )
+        }
+
+        return (
+          <LogRow
+            key={virtualRow.index}
+            log={logs[virtualRow.index]!}
+            virtualRow={virtualRow}
+            virtualizer={virtualizer}
+            startedAt={startedAt}
+          />
+        )
+      })}
+    </TableBody>
+  )
+}
+
+interface UseScrollLoadMoreParams {
+  scrollContainerRef: RefObject<HTMLDivElement | null>
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  onLoadMore: () => void
+}
+
+function useScrollLoadMore({
+  scrollContainerRef,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+}: UseScrollLoadMoreParams) {
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current
     if (!scrollContainer) return
@@ -334,7 +494,7 @@ function LogsTableBody({
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight
 
       if (
-        distanceFromBottom < SCROLL_THRESHOLD_PX &&
+        distanceFromBottom < SCROLL_LOAD_THRESHOLD_PX &&
         hasNextPage &&
         !isFetchingNextPage
       ) {
@@ -345,84 +505,22 @@ function LogsTableBody({
     scrollContainer.addEventListener('scroll', handleScroll)
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [scrollContainerRef, hasNextPage, isFetchingNextPage, onLoadMore])
-
-  const rowVirtualizer = useVirtualizer({
-    count: logs.length + 1,
-    estimateSize: () => ROW_HEIGHT_PX,
-    getScrollElement: () => scrollContainerRef.current,
-    overscan: VIRTUAL_OVERSCAN,
-  })
-
-  const virtualItems = rowVirtualizer.getVirtualItems()
-
-  const currentScrollWidth = tbodyRef.current?.scrollWidth ?? 0
-  if (currentScrollWidth > maxWidthRef.current) {
-    maxWidthRef.current = currentScrollWidth
-  }
-
-  return (
-    <TableBody
-      ref={tbodyRef}
-      className={
-        showFilterRefetchingOverlay ? 'opacity-70 transition-opacity' : ''
-      }
-      style={{
-        display: 'grid',
-        height: `${rowVirtualizer.getTotalSize()}px`,
-        width: maxWidthRef.current,
-        minWidth: '100%',
-        position: 'relative',
-      }}
-    >
-      {virtualItems.map((virtualRow) => {
-        const isStatusRow = virtualRow.index === logs.length
-
-        if (isStatusRow) {
-          return (
-            <LogsStatusRow
-              key="status-row"
-              virtualRow={virtualRow}
-              rowVirtualizer={rowVirtualizer}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={isFetchingNextPage}
-            />
-          )
-        }
-
-        const log = logs[virtualRow.index]!
-        return (
-          <LogsTableRow
-            key={virtualRow.index}
-            log={log}
-            virtualRow={virtualRow}
-            rowVirtualizer={rowVirtualizer}
-            startedAt={startedAt}
-          />
-        )
-      })}
-    </TableBody>
-  )
 }
 
-interface LogsTableRowProps {
+interface LogRowProps {
   log: BuildLogDTO
   virtualRow: VirtualItem
-  rowVirtualizer: Virtualizer<HTMLDivElement, Element>
+  virtualizer: Virtualizer<HTMLDivElement, Element>
   startedAt: number
 }
 
-function LogsTableRow({
-  log,
-  virtualRow,
-  rowVirtualizer,
-  startedAt,
-}: LogsTableRowProps) {
+function LogRow({ log, virtualRow, virtualizer, startedAt }: LogRowProps) {
   const millisAfterStart = log.timestampUnix - startedAt
 
   return (
     <TableRow
       data-index={virtualRow.index}
-      ref={(node) => rowVirtualizer.measureElement(node)}
+      ref={(node) => virtualizer.measureElement(node)}
       style={{
         display: 'flex',
         position: 'absolute',
@@ -457,11 +555,7 @@ function LogsTableRow({
       </TableCell>
       <TableCell
         className="py-0"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          whiteSpace: 'nowrap',
-        }}
+        style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
       >
         <Message message={log.message} />
       </TableCell>
@@ -469,23 +563,23 @@ function LogsTableRow({
   )
 }
 
-interface LogsStatusRowProps {
+interface StatusRowProps {
   virtualRow: VirtualItem
-  rowVirtualizer: Virtualizer<HTMLDivElement, Element>
+  virtualizer: Virtualizer<HTMLDivElement, Element>
   hasNextPage: boolean
   isFetchingNextPage: boolean
 }
 
-function LogsStatusRow({
+function StatusRow({
   virtualRow,
-  rowVirtualizer,
+  virtualizer,
   hasNextPage,
   isFetchingNextPage,
-}: LogsStatusRowProps) {
+}: StatusRowProps) {
   return (
     <TableRow
       data-index={virtualRow.index}
-      ref={(node) => rowVirtualizer.measureElement(node)}
+      ref={(node) => virtualizer.measureElement(node)}
       style={{
         display: 'flex',
         position: 'absolute',

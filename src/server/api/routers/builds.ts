@@ -134,4 +134,42 @@ export const buildsRouter = createTRPCRouter({
 
       return result
     }),
+
+  buildLogsForward: protectedTeamProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        buildId: z.string(),
+        cursor: z.number().optional(),
+        level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { buildId, templateId, level } = input
+      let { cursor } = input
+
+      cursor ??= new Date().getTime()
+
+      const direction = 'forward'
+      const limit = 100
+
+      const buildLogs = await buildsRepo.getInfraBuildLogs(
+        ctx.session.access_token,
+        teamId,
+        templateId,
+        buildId,
+        { cursor, limit, direction, level }
+      )
+
+      const logs: BuildLogDTO[] = buildLogs.logs
+        .map((log) => ({
+          timestampUnix: new Date(log.timestamp).getTime(),
+          level: log.level,
+          message: log.message,
+        }))
+        .sort((a, b) => b.timestampUnix - a.timestampUnix)
+
+      return { logs }
+    }),
 })

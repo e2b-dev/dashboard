@@ -41,6 +41,18 @@ export default async function BuildPage({
     }
 
     isBuilding = buildDetails.status === 'building'
+
+    // Prefetch forward query for building status (cursor undefined = now)
+    if (isBuilding) {
+      queryClient.prefetchQuery(
+        trpc.builds.buildLogsForward.queryOptions({
+          teamIdOrSlug,
+          templateId,
+          buildId,
+          level: level ?? undefined,
+        })
+      )
+    }
   } catch (error) {
     if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
       exists = false
