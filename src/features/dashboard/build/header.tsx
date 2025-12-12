@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils/ui'
 import { BuildDetailsDTO } from '@/server/api/models/builds.models'
 import { useTRPC } from '@/trpc/client'
 import CopyButton from '@/ui/copy-button'
+import CopyButtonInline from '@/ui/copy-button-inline'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { Skeleton } from '@/ui/primitives/skeleton'
@@ -42,6 +43,11 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
   return (
     <header className="flex flex-col gap-6">
       <DetailsRow>
+        <DetailsItem label="ID">
+          <CopyButtonInline value={buildId}>
+            {buildId.slice(0, 6)}...{buildId.slice(-6)}
+          </CopyButtonInline>
+        </DetailsItem>
         <DetailsItem label="Template">
           {!isBuildDetailsReady ? (
             <Skeleton className="w-48 h-full" />

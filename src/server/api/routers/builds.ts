@@ -4,6 +4,7 @@ import { createTRPCRouter } from '../init'
 import {
   BuildDetailsDTO,
   BuildLogDTO,
+  BuildLogsDTO,
   BuildStatusDTOSchema,
   checkIfBuildStillHasLogs,
   mapBuildStatusDTOToDatabaseBuildStatus,
@@ -73,36 +74,67 @@ export const buildsRouter = createTRPCRouter({
         ),
       ])
 
-      const firstLogTimestamp =
-        buildStatus.logEntries.length > 0
-          ? buildStatus.logEntries.reduce<number | null>((min, log) => {
-              const timestamp = new Date(log.timestamp).getTime()
-              if (Number.isNaN(timestamp)) return min
-              return min === null || timestamp < min ? timestamp : min
-            }, null)
-          : null
-
-      const startedAt = firstLogTimestamp ?? buildInfo.createdAt
-
-      const logs: BuildLogDTO[] = buildStatus.logEntries.map((log) => {
-        const timestampUnix = new Date(log.timestamp).getTime()
-
-        return {
-          timestampUnix,
-          millisAfterStart: timestampUnix - startedAt,
-          level: log.level,
-          message: log.message,
-        }
-      })
-
       const result: BuildDetailsDTO = {
         template: buildInfo.alias ?? templateId,
-        startedAt,
+        startedAt: buildInfo.createdAt,
         finishedAt: buildInfo.finishedAt,
         status: mapInfraBuildStatusToBuildStatusDTO(buildStatus.status),
         statusMessage: buildStatus.reason?.message ?? null,
         hasRetainedLogs: checkIfBuildStillHasLogs(buildInfo.createdAt),
+      }
+
+      return result
+    }),
+
+  buildLogsBackwards: protectedTeamProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        buildId: z.string(),
+        cursor: z.number().optional(),
+        levels: z
+          .array(z.enum(['debug', 'info', 'warn', 'error']))
+          .min(1)
+          .max(4)
+          .default(['debug', 'info', 'warn', 'error']),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId } = ctx
+      const { buildId, templateId, levels } = input
+      let { cursor } = input
+
+      cursor ??= new Date().getTime()
+
+      const direction = 'backward'
+      const limit = 100
+
+      const level = levels.length === 1 ? levels[0] : undefined
+
+      const buildLogs = await buildsRepo.getInfraBuildLogs(
+        ctx.session.access_token,
+        teamId,
+        templateId,
+        buildId,
+        { cursor, limit, direction, level }
+      )
+
+      const logsToReturn = buildLogs.logs
+
+      const logs: BuildLogDTO[] = logsToReturn
+        .map((log) => ({
+          timestampUnix: new Date(log.timestamp).getTime(),
+          level: log.level,
+          message: log.message,
+        }))
+        .sort((a, b) => b.timestampUnix - a.timestampUnix)
+
+      const cursorLog = logs[logs.length - 1]
+      const nextCursor = cursorLog?.timestampUnix ?? null
+
+      const result: BuildLogsDTO = {
         logs,
+        nextCursor,
       }
 
       return result

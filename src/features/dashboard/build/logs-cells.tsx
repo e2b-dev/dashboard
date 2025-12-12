@@ -13,7 +13,7 @@ const mapLogLevelToBadgeProps: Record<BuildLogDTO['level'], BadgeProps> = {
     variant: 'default',
   },
   info: {
-    variant: 'positive',
+    variant: 'info',
   },
   warn: {
     variant: 'warning',
@@ -32,8 +32,8 @@ export const LogLevel = ({ level }: LogLevelProps) => {
 }
 
 interface TimestampProps {
-  timestampUnix: BuildLogDTO['timestampUnix']
-  millisAfterStart: BuildLogDTO['millisAfterStart']
+  timestampUnix: number
+  millisAfterStart: number
 }
 
 export const Timestamp = ({

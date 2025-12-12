@@ -195,7 +195,7 @@ export async function getBuildInfo(buildId: string, teamId: string) {
   }
 }
 
-// get build status
+// get build status (without logs)
 
 export async function getInfraBuildStatus(
   accessToken: string,
@@ -210,6 +210,9 @@ export async function getInfraBuildStatus(
         path: {
           templateID: templateId,
           buildID: buildId,
+        },
+        query: {
+          limit: 0,
         },
       },
       headers: {
@@ -232,6 +235,72 @@ export async function getInfraBuildStatus(
         },
       },
       `failed to fetch /templates/{templateID}/builds/{buildID}/status: ${result.error?.message || 'Unknown error'}`
+    )
+
+    if (status === 404) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: "Build not found or you don't have access to it",
+      })
+    }
+
+    throw apiError(status)
+  }
+
+  return result.data
+}
+
+// get build logs
+
+export interface GetInfraBuildLogsOptions {
+  cursor?: number
+  limit?: number
+  direction?: 'forward' | 'backward'
+  level?: 'debug' | 'info' | 'warn' | 'error'
+}
+
+export async function getInfraBuildLogs(
+  accessToken: string,
+  teamId: string,
+  templateId: string,
+  buildId: string,
+  options: GetInfraBuildLogsOptions = {}
+) {
+  const result = await infra.GET(
+    `/templates/{templateID}/builds/{buildID}/logs`,
+    {
+      params: {
+        path: {
+          templateID: templateId,
+          buildID: buildId,
+        },
+        query: {
+          cursor: options.cursor,
+          limit: options.limit,
+          direction: options.direction,
+          level: options.level,
+        },
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+    }
+  )
+
+  if (!result.response.ok || result.error) {
+    const status = result.response.status
+
+    l.error(
+      {
+        key: 'repositories:builds:get_build_logs:infra_error',
+        error: result.error,
+        team_id: teamId,
+        context: {
+          status,
+          path: '/templates/{templateID}/builds/{buildID}/logs',
+        },
+      },
+      `failed to fetch /templates/{templateID}/builds/{buildID}/logs: ${result.error?.message || 'Unknown error'}`
     )
 
     if (status === 404) {

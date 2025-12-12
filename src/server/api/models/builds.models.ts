@@ -28,9 +28,13 @@ export interface RunningBuildStatusDTO {
 
 export interface BuildLogDTO {
   timestampUnix: number
-  millisAfterStart: number
   level: components['schemas']['LogLevel']
   message: string
+}
+
+export interface BuildLogsDTO {
+  logs: BuildLogDTO[]
+  nextCursor: number | null
 }
 
 export interface BuildDetailsDTO {
@@ -40,7 +44,6 @@ export interface BuildDetailsDTO {
   finishedAt: number | null
   status: BuildStatusDTO
   statusMessage: string | null
-  logs: BuildLogDTO[]
   hasRetainedLogs: boolean
 }
 
