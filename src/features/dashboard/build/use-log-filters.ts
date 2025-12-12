@@ -1,30 +1,25 @@
 'use client'
 
 import { useQueryStates } from 'nuqs'
-import { useMemo } from 'react'
-import { useDebounceCallback } from 'usehooks-ts'
-import {
-  ALL_LOG_LEVELS,
-  buildLogsFilterParams,
-  LogLevelFilter,
-} from './logs-filter-params'
+import { useCallback } from 'react'
+import { buildLogsFilterParams, LogLevelFilter } from './logs-filter-params'
 
 export default function useLogFilters() {
   const [filters, setFilters] = useQueryStates(buildLogsFilterParams, {
     shallow: true,
   })
 
-  const levels: LogLevelFilter[] = useMemo(
-    () => (filters?.levels as LogLevelFilter[] | null) || ALL_LOG_LEVELS,
-    [filters.levels]
+  const level = filters.level as LogLevelFilter | null
+
+  const setLevel = useCallback(
+    (level: LogLevelFilter | null) => {
+      setFilters({ level })
+    },
+    [setFilters]
   )
 
-  const setLevels = useDebounceCallback((levels: LogLevelFilter[]) => {
-    setFilters({ levels })
-  }, 300)
-
   return {
-    levels,
-    setLevels,
+    level,
+    setLevel,
   }
 }

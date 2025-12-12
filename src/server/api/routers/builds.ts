@@ -92,24 +92,18 @@ export const buildsRouter = createTRPCRouter({
         templateId: z.string(),
         buildId: z.string(),
         cursor: z.number().optional(),
-        levels: z
-          .array(z.enum(['debug', 'info', 'warn', 'error']))
-          .min(1)
-          .max(4)
-          .default(['debug', 'info', 'warn', 'error']),
+        level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const { teamId } = ctx
-      const { buildId, templateId, levels } = input
+      const { buildId, templateId, level } = input
       let { cursor } = input
 
       cursor ??= new Date().getTime()
 
       const direction = 'backward'
       const limit = 100
-
-      const level = levels.length === 1 ? levels[0] : undefined
 
       const buildLogs = await buildsRepo.getInfraBuildLogs(
         ctx.session.access_token,
@@ -129,8 +123,9 @@ export const buildsRouter = createTRPCRouter({
         }))
         .sort((a, b) => b.timestampUnix - a.timestampUnix)
 
+      const hasMore = logs.length === limit
       const cursorLog = logs[logs.length - 1]
-      const nextCursor = cursorLog?.timestampUnix ?? null
+      const nextCursor = hasMore ? (cursorLog?.timestampUnix ?? null) : null
 
       const result: BuildLogsDTO = {
         logs,

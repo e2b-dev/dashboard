@@ -1,10 +1,6 @@
 import BuildHeader from '@/features/dashboard/build/header'
 import Logs from '@/features/dashboard/build/logs'
-import {
-  ALL_LOG_LEVELS,
-  loadBuildLogsFilters,
-  LogLevelFilter,
-} from '@/features/dashboard/build/logs-filter-params'
+import { loadBuildLogsFilters } from '@/features/dashboard/build/logs-filter-params'
 import { getQueryClient, HydrateClient, trpc } from '@/trpc/server'
 import { TRPCError } from '@trpc/server'
 import { notFound } from 'next/navigation'
@@ -14,14 +10,12 @@ export default async function BuildPage({
   searchParams,
 }: PageProps<'/dashboard/[teamIdOrSlug]/templates/[templateId]/builds/[buildId]'>) {
   const { teamIdOrSlug, templateId, buildId } = await params
-  const { levels } = await loadBuildLogsFilters(searchParams)
+  const { level } = await loadBuildLogsFilters(searchParams)
 
   const queryClient = getQueryClient()
 
   let exists = true
   let isBuilding = false
-
-  const filterLevels: LogLevelFilter[] = levels ?? ALL_LOG_LEVELS
 
   try {
     const [buildDetails] = await Promise.all([
@@ -37,7 +31,7 @@ export default async function BuildPage({
           teamIdOrSlug,
           templateId,
           buildId,
-          levels: filterLevels,
+          level: level ?? undefined,
         })
       ),
     ])

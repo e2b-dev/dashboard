@@ -6,9 +6,9 @@ import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
@@ -38,7 +38,7 @@ import {
   useState,
 } from 'react'
 import { LogLevel, Message, Timestamp } from './logs-cells'
-import { ALL_LOG_LEVELS, type LogLevelFilter } from './logs-filter-params'
+import { type LogLevelFilter } from './logs-filter-params'
 import useLogFilters from './use-log-filters'
 
 const COLUMN_WIDTHS_PX = {
@@ -53,7 +53,7 @@ const BUILDS_REFETCH_INTERVAL_MS = 5_000
 
 const defaultData: BuildLogDTO[] = []
 
-function useFilterChangeTracking(levels: LogLevelFilter[]) {
+function useFilterChangeTracking(level: LogLevelFilter | null) {
   const [isFilterRefetching, setIsFilterRefetching] = useState(false)
   const isFirstRender = useRef(true)
 
@@ -63,7 +63,7 @@ function useFilterChangeTracking(levels: LogLevelFilter[]) {
       return
     }
     setIsFilterRefetching(true)
-  }, [levels])
+  }, [level])
 
   const clearFilterRefetching = useCallback(() => {
     setIsFilterRefetching(false)
@@ -103,9 +103,9 @@ export default function Logs({ params, isBuilding }: LogsProps) {
     )
   )
 
-  const { levels, setLevels } = useLogFilters()
+  const { level, setLevel } = useLogFilters()
   const { isFilterRefetching, clearFilterRefetching } =
-    useFilterChangeTracking(levels)
+    useFilterChangeTracking(level)
 
   const {
     data: paginatedLogs,
@@ -119,7 +119,7 @@ export default function Logs({ params, isBuilding }: LogsProps) {
         teamIdOrSlug,
         templateId,
         buildId,
-        levels,
+        level: level ?? undefined,
       },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -154,7 +154,7 @@ export default function Logs({ params, isBuilding }: LogsProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-      <LogsLevelFilter levels={levels} setLevels={setLevels} />
+      <LogsLevelFilter level={level} setLevel={setLevel} />
 
       <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
@@ -231,73 +231,27 @@ const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
   { value: 'error', label: 'Error' },
 ]
 
-interface DashedLevelCircleIconProps {
-  level: LogLevelFilter
-  index: number
-}
-
-function DashedLevelCircleIcon({ level, index }: DashedLevelCircleIconProps) {
+function LevelIcon({ level }: { level: LogLevelFilter }) {
   return (
     <div
-      className={cn(
-        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
-        {
-          'border-fg-tertiary': level === 'debug',
-          'border-accent-info-highlight': level === 'info',
-          'border-accent-warning-highlight': level === 'warn',
-          'border-accent-error-highlight': level === 'error',
-        }
-      )}
-      style={{ rotate: `${index * 50}deg`, zIndex: index + 1 }}
+      className={cn('size-3.5 rounded-full bg-bg border-[1.5px] border-dashed', {
+        'border-fg-tertiary': level === 'debug',
+        'border-accent-info-highlight': level === 'info',
+        'border-accent-warning-highlight': level === 'warn',
+        'border-accent-error-highlight': level === 'error',
+      })}
     />
   )
 }
 
-function LevelIcons({ selectedLevels }: { selectedLevels: LogLevelFilter[] }) {
-  const levelOrder: LogLevelFilter[] = ['debug', 'info', 'warn', 'error']
-  const sortedLevels = levelOrder.filter((l) => selectedLevels.includes(l))
-
-  return (
-    <div className="flex -space-x-1.5">
-      {sortedLevels.map((level, i) => (
-        <DashedLevelCircleIcon key={level} level={level} index={i} />
-      ))}
-    </div>
-  )
-}
-
 interface LogsLevelFilterProps {
-  levels: LogLevelFilter[]
-  setLevels: (levels: LogLevelFilter[]) => void
+  level: LogLevelFilter | null
+  setLevel: (level: LogLevelFilter | null) => void
 }
 
-function LogsLevelFilter({ levels, setLevels }: LogsLevelFilterProps) {
-  const [localLevels, setLocalLevels] = useState<LogLevelFilter[]>(levels)
-
-  useEffect(() => {
-    setLocalLevels(levels)
-  }, [levels])
-
-  const toggleLevel = (level: LogLevelFilter) => {
-    const isSelected = localLevels.includes(level)
-
-    if (isSelected && localLevels.length === 1) {
-      return
-    }
-
-    const newLevels = isSelected
-      ? localLevels.filter((l) => l !== level)
-      : [...localLevels, level]
-
-    setLocalLevels(newLevels)
-    setLevels(newLevels)
-  }
-
-  const selectAllLevels = () => {
-    const allLevels = LEVEL_OPTIONS.map((l) => l.value)
-    setLocalLevels(allLevels)
-    setLevels(allLevels)
-  }
+function LogsLevelFilter({ level, setLevel }: LogsLevelFilterProps) {
+  const currentLevel = level ?? 'debug'
+  const displayLabel = LEVEL_OPTIONS.find((o) => o.value === currentLevel)?.label
 
   return (
     <div className="flex w-full min-h-0 justify-between gap-3">
@@ -308,29 +262,21 @@ function LogsLevelFilter({ levels, setLevels }: LogsLevelFilterProps) {
             size="sm"
             className="font-sans w-min normal-case"
           >
-            <LevelIcons selectedLevels={localLevels} /> Level •{' '}
-            {localLevels.length}/{LEVEL_OPTIONS.length}
+            <LevelIcon level={currentLevel} />
+            Min Level • {displayLabel}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuCheckboxItem
-            checked={localLevels.length === LEVEL_OPTIONS.length}
-            onCheckedChange={selectAllLevels}
-            onSelect={(e) => e.preventDefault()}
+          <DropdownMenuRadioGroup
+            value={currentLevel}
+            onValueChange={(value) => setLevel(value as LogLevelFilter)}
           >
-            All
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuSeparator />
-          {LEVEL_OPTIONS.map((option) => (
-            <DropdownMenuCheckboxItem
-              key={option.value}
-              checked={localLevels.includes(option.value)}
-              onCheckedChange={() => toggleLevel(option.value)}
-              onSelect={(e) => e.preventDefault()}
-            >
-              <LogLevel level={option.value} />
-            </DropdownMenuCheckboxItem>
-          ))}
+            {LEVEL_OPTIONS.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                <LogLevel level={option.value} />
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
