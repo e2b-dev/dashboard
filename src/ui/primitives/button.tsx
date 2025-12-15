@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils/ui'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
+import { Loader } from './loader'
 
 const buttonVariants = cva(
   [
@@ -74,10 +75,24 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  loading?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading, ...props }, ref) => {
+    if (loading) {
+      return (
+        <div
+          className={cn(
+            buttonVariants({ variant: 'quaternary', size, className }),
+            'hover:text-fg-tertiary cursor-default active:text-fg-tertiary select-none'
+          )}
+        >
+          <Loader variant="slash" className="min-w-2" /> {loading}
+        </div>
+      )
+    }
+
     const Comp = asChild ? Slot : 'button'
     return (
       <Comp

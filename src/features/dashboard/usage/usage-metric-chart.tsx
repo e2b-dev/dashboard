@@ -98,7 +98,7 @@ function UsageMetricChartContent({
             <Button
               onClick={() => setFullscreenMetric(metric)}
               variant="ghost"
-              size="iconSm"
+              size="icon-sm"
               className={cn(
                 cardVariants({ variant: 'layer' }),
                 'hidden lg:flex absolute top-4 right-4 opacity-70 hover:opacity-100 animate-fade-slide-in'

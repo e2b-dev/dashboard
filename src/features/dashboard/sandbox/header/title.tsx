@@ -16,7 +16,6 @@ export default function Title() {
       <CopyButton
         value={sandboxInfo.sandboxID}
         size="icon"
-        variant="ghost"
         className="text-fg-secondary"
       />
     </div>

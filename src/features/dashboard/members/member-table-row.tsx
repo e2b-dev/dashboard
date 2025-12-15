@@ -93,7 +93,7 @@ export default function MemberTableRow({
               loading: isRemoving,
             }}
             trigger={
-              <Button variant="muted" size="iconSm">
+              <Button variant="muted" size="icon-sm">
                 <span className="text-xs">X</span>
               </Button>
             }

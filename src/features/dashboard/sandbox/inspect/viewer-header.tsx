@@ -27,20 +27,16 @@ export default function SandboxInspectViewerHeader({
       <span className="mr-auto ">{name}</span>
 
       {fileContentState?.type === 'text' && (
-        <CopyButton
-          variant="ghost"
-          size="iconSm"
-          value={fileContentState.text}
-        />
+        <CopyButton value={fileContentState.text} />
       )}
 
-      <Button variant="ghost" size="iconSm" onClick={onDownload}>
+      <Button variant="quaternary" size="icon-sm" onClick={onDownload}>
         <Download className="h-4 w-4" />
       </Button>
 
       <Button
-        variant="ghost"
-        size="iconSm"
+        variant="quaternary"
+        size="icon-sm"
         onClick={onRefresh}
         disabled={isLoading}
       >
@@ -59,7 +55,7 @@ export default function SandboxInspectViewerHeader({
         </motion.div>
       </Button>
 
-      <Button variant="ghost" size="iconSm" onClick={onClose}>
+      <Button variant="quaternary" size="icon-sm" onClick={onClose}>
         <X className="h-4 w-4" />
       </Button>
     </div>

@@ -8,9 +8,10 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
+import { cn } from '@/lib/utils/ui'
 import { updateTeamNameAction } from '@/server/team/team-actions'
 import { UpdateTeamNameSchema } from '@/server/team/types'
-import { Button } from '@/ui/primitives/button'
+import { Button, buttonVariants } from '@/ui/primitives/button'
 import {
   Card,
   CardContent,
@@ -26,9 +27,11 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
+import { Loader } from '@/ui/primitives/loader'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { AnimatePresence, motion } from 'motion/react'
+import { useMemo } from 'react'
 
 interface NameCardProps {
   className?: string
@@ -37,7 +40,7 @@ interface NameCardProps {
 export function NameCard({ className }: NameCardProps) {
   'use no memo'
 
-  const { team } = useDashboard()
+  const { team, setTeam } = useDashboard()
 
   const { toast } = useToast()
 
@@ -69,8 +72,13 @@ export function NameCard({ className }: NameCardProps) {
             },
           }
         },
-        onSuccess: async () => {
+        onSuccess: async ({ data }) => {
           toast(defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message))
+
+          setTeam({
+            ...team,
+            name: data.name,
+          })
         },
         onError: ({ error }) => {
           if (!error.serverError) return
@@ -86,6 +94,9 @@ export function NameCard({ className }: NameCardProps) {
   )
 
   const { watch } = form
+
+  const name = watch('name')
+  const isNameDirty = useMemo(() => name !== team.name, [name, team.name])
 
   return (
     <Card className={className}>
@@ -135,14 +146,20 @@ export function NameCard({ className }: NameCardProps) {
                 </FormItem>
               )}
             />
-            <Button
-              type="submit"
-              variant="outline"
-              loading={isExecuting}
-              disabled={watch('name') === optimisticState?.team?.name}
-            >
-              Save
-            </Button>
+            {isExecuting ? (
+              <div className={cn(buttonVariants({ variant: 'quaternary' }))}>
+                <Loader variant="slash" size="sm" className="min-w-2" />{' '}
+                Saving...
+              </div>
+            ) : (
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={!isNameDirty || isExecuting}
+              >
+                Save
+              </Button>
+            )}
           </form>
         </Form>
       </CardContent>

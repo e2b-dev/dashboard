@@ -15,12 +15,7 @@ export default function TemplateId() {
   return (
     <Badge variant="info">
       <p>{value}</p>
-      <CopyButton
-        size="slate"
-        className="size-3.5"
-        variant="ghost"
-        value={value}
-      />
+      <CopyButton className="size-3.5" value={value} />
     </Badge>
   )
 }

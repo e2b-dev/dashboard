@@ -45,7 +45,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
         />
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="icon"
           onClick={() => {
             if (token) {
@@ -71,8 +71,9 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           )}
         </Button>
         <CopyButton
+          size="icon"
+          variant="secondary"
           value={token ?? ''}
-          variant="outline"
           className="ml-2"
           disabled={!token}
         />
