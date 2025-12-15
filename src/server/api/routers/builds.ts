@@ -1,4 +1,4 @@
-import * as buildsRepo from '@/server/api/repositories/builds.repository'
+import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { z } from 'zod'
 import { createTRPCRouter } from '../init'
 import {

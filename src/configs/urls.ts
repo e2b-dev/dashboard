@@ -2,6 +2,7 @@ export const AUTH_URLS = {
   FORGOT_PASSWORD: '/forgot-password',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
+  CONFIRM: '/confirm',
   CALLBACK: '/api/auth/callback',
   CLI: '/auth/cli',
 }
