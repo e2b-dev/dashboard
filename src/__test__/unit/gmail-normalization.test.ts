@@ -1,4 +1,20 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// mock supabase admin client to avoid env var requirements
+vi.mock('@/lib/clients/supabase/admin', () => ({
+  supabaseAdmin: {
+    from: vi.fn(),
+  },
+}))
+
+// mock vercel kv
+vi.mock('@vercel/kv', () => ({
+  kv: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+}))
+
 import {
   isGmailAddress,
   normalizeGmailEmail,
@@ -120,7 +136,9 @@ describe('Gmail Normalization', () => {
         const normalized = 'testuser@gmail.com'
 
         expect(normalizeGmailEmail('test.user@gmail.com')).toBe(normalized)
-        expect(normalizeGmailEmail('t.e.s.t.u.s.e.r@gmail.com')).toBe(normalized)
+        expect(normalizeGmailEmail('t.e.s.t.u.s.e.r@gmail.com')).toBe(
+          normalized
+        )
         expect(normalizeGmailEmail('testuser+spam@gmail.com')).toBe(normalized)
         expect(normalizeGmailEmail('test.user+anything@gmail.com')).toBe(
           normalized
@@ -131,4 +149,3 @@ describe('Gmail Normalization', () => {
     })
   })
 })
-
