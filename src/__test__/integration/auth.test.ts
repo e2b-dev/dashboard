@@ -11,10 +11,12 @@ import { redirect } from 'next/navigation'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Create hoisted mock functions that can be used throughout the file
-const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({
-  validateEmail: vi.fn(),
-  shouldWarnAboutAlternateEmail: vi.fn(),
-}))
+const { validateEmail, shouldWarnAboutAlternateEmail, checkDuplicateGmailEmail } =
+  vi.hoisted(() => ({
+    validateEmail: vi.fn(),
+    shouldWarnAboutAlternateEmail: vi.fn(),
+    checkDuplicateGmailEmail: vi.fn(),
+  }))
 
 // Mock console.error to prevent output during tests
 const originalConsoleError = console.error
@@ -76,6 +78,7 @@ vi.mock('@/lib/utils/auth', () => ({
 vi.mock('@/server/auth/validate-email', () => ({
   validateEmail,
   shouldWarnAboutAlternateEmail,
+  checkDuplicateGmailEmail,
 }))
 
 describe('Auth Actions - Integration Tests', () => {
@@ -196,6 +199,7 @@ describe('Auth Actions - Integration Tests', () => {
      */
     it('should show success message on valid sign-up', async () => {
       // Set up mock implementations for this specific test
+      checkDuplicateGmailEmail.mockResolvedValue(false)
       validateEmail.mockResolvedValue({
         valid: true,
         data: { status: 'valid', address: 'newuser@example.com' },
@@ -297,6 +301,56 @@ describe('Auth Actions - Integration Tests', () => {
       // Verify: Check that encodedRedirect was called with error message
       expect(result).toBeDefined()
       expect(result).toHaveProperty('serverError')
+    })
+
+    /**
+     * GMAIL ALIAS TEST: Verifies that sign-up with a Gmail alias
+     * (dots or plus addressing) of an existing account is blocked
+     */
+    it('should block sign-up when Gmail alias of existing account is detected', async () => {
+      // Setup: Mock Gmail duplicate check to return true (duplicate found)
+      checkDuplicateGmailEmail.mockResolvedValue(true)
+
+      // Execute: Try to sign up with a Gmail alias
+      const result = await signUpAction({
+        email: 'new.user@gmail.com', // alias of existing newuser@gmail.com
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+      })
+
+      // Verify: Check that sign-up was blocked with appropriate error
+      expect(result).toBeDefined()
+      expect(result).toHaveProperty('serverError')
+      expect(result?.serverError).toContain('already exists')
+    })
+
+    /**
+     * GMAIL ALIAS TEST: Verifies that sign-up proceeds for non-Gmail
+     * addresses even if they look similar
+     */
+    it('should allow sign-up for non-Gmail addresses', async () => {
+      // Setup: Mock Gmail check to return false (not a duplicate)
+      checkDuplicateGmailEmail.mockResolvedValue(false)
+      validateEmail.mockResolvedValue({
+        valid: true,
+        data: { status: 'valid', address: 'user@company.com' },
+      })
+      shouldWarnAboutAlternateEmail.mockResolvedValue(false)
+      mockSupabaseClient.auth.signUp.mockResolvedValue({
+        data: { user: { id: 'new-user-456' } },
+        error: null,
+      })
+
+      // Execute: Sign up with non-Gmail address
+      const result = await signUpAction({
+        email: 'user@company.com',
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+      })
+
+      // Verify: Sign-up should succeed
+      expect(result).toBeDefined()
+      expect(result).not.toHaveProperty('serverError')
     })
   })
 
