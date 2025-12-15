@@ -60,6 +60,10 @@ export const USER_MESSAGES = {
   emailInUse: {
     message: 'E-mail already in use.',
   },
+  emailAliasInUse: {
+    message:
+      'An account with this email address already exists. Please sign in instead.',
+  },
   passwordWeak: {
     message: 'Password is too weak',
   },

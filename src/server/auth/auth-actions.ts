@@ -9,6 +9,7 @@ import { relativeUrlSchema } from '@/lib/schemas/url'
 import { returnServerError } from '@/lib/utils/action'
 import { encodedRedirect } from '@/lib/utils/auth'
 import {
+  checkDuplicateGmailEmail,
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
@@ -146,6 +147,12 @@ export const signUpAction = actionClient
           _errors: ['Password is too weak.'],
         },
       })
+    }
+
+    // check for gmail alias abuse (dots/plus addressing)
+    const isDuplicateGmail = await checkDuplicateGmailEmail(email)
+    if (isDuplicateGmail) {
+      return returnServerError(USER_MESSAGES.emailAliasInUse.message)
     }
 
     const validationResult = await validateEmail(email)

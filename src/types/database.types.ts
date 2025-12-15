@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "10.2.0 (e07807d)"
+    PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
@@ -75,6 +75,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_tokens_users_access_tokens"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_gmail_emails"
             referencedColumns: ["id"]
           },
         ]
@@ -147,6 +154,13 @@ export type Database = {
             referencedRelation: "auth_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "addons_users_addons"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "normalized_gmail_emails"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clusters: {
@@ -201,7 +215,12 @@ export type Database = {
       }
       env_builds: {
         Row: {
-          cluster_node_id: string
+          cluster_node_id: string | null
+          cpu_architecture: string | null
+          cpu_family: string | null
+          cpu_flags: string[] | null
+          cpu_model: string | null
+          cpu_model_name: string | null
           created_at: string
           dockerfile: string | null
           env_id: string
@@ -222,7 +241,12 @@ export type Database = {
           version: string | null
         }
         Insert: {
-          cluster_node_id: string
+          cluster_node_id?: string | null
+          cpu_architecture?: string | null
+          cpu_family?: string | null
+          cpu_flags?: string[] | null
+          cpu_model?: string | null
+          cpu_model_name?: string | null
           created_at?: string
           dockerfile?: string | null
           env_id: string
@@ -243,7 +267,12 @@ export type Database = {
           version?: string | null
         }
         Update: {
-          cluster_node_id?: string
+          cluster_node_id?: string | null
+          cpu_architecture?: string | null
+          cpu_family?: string | null
+          cpu_flags?: string[] | null
+          cpu_model?: string | null
+          cpu_model_name?: string | null
           created_at?: string
           dockerfile?: string | null
           env_id?: string
@@ -362,45 +391,36 @@ export type Database = {
             referencedRelation: "auth_users"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      feedback: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          id: number
-          text: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          id?: number
-          text?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          id?: number
-          text?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "feedback_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "envs_users_created_envs"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "auth_users"
+            referencedRelation: "normalized_gmail_emails"
             referencedColumns: ["id"]
           },
         ]
+      }
+      schema_migrations: {
+        Row: {
+          dirty: boolean
+          version: number
+        }
+        Insert: {
+          dirty: boolean
+          version: number
+        }
+        Update: {
+          dirty?: boolean
+          version?: number
+        }
+        Relationships: []
       }
       snapshots: {
         Row: {
           allow_internet_access: boolean | null
           auto_pause: boolean
           base_env_id: string
+          config: Json | null
           created_at: string | null
           env_id: string
           env_secure: boolean
@@ -415,6 +435,7 @@ export type Database = {
           allow_internet_access?: boolean | null
           auto_pause?: boolean
           base_env_id: string
+          config?: Json | null
           created_at?: string | null
           env_id: string
           env_secure?: boolean
@@ -422,13 +443,14 @@ export type Database = {
           metadata?: Json | null
           origin_node_id: string
           sandbox_id: string
-          sandbox_started_at?: string
+          sandbox_started_at: string
           team_id: string
         }
         Update: {
           allow_internet_access?: boolean | null
           auto_pause?: boolean
           base_env_id?: string
+          config?: Json | null
           created_at?: string | null
           env_id?: string
           env_secure?: boolean
@@ -452,20 +474,6 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snapshots_envs_base_env_id"
-            columns: ["base_env_id"]
-            isOneToOne: false
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snapshots_envs_env_id"
-            columns: ["env_id"]
-            isOneToOne: false
-            referencedRelation: "envs"
             referencedColumns: ["id"]
           },
         ]
@@ -535,6 +543,13 @@ export type Database = {
             referencedRelation: "auth_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "team_api_keys_users_created_api_keys"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "normalized_gmail_emails"
+            referencedColumns: ["id"]
+          },
         ]
       }
       teams: {
@@ -546,7 +561,6 @@ export type Database = {
           id: string
           is_banned: boolean
           is_blocked: boolean
-          is_default: boolean | null
           name: string
           profile_picture_url: string | null
           slug: string
@@ -560,7 +574,6 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
-          is_default?: boolean | null
           name: string
           profile_picture_url?: string | null
           slug: string
@@ -574,7 +587,6 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
-          is_default?: boolean | null
           name?: string
           profile_picture_url?: string | null
           slug?: string
@@ -664,6 +676,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "users_teams_added_by_user"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "normalized_gmail_emails"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "users_teams_teams_teams"
             columns: ["team_id"]
             isOneToOne: false
@@ -682,6 +701,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_teams_users_users"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_gmail_emails"
             referencedColumns: ["id"]
           },
         ]
@@ -703,6 +729,24 @@ export type Database = {
         }
         Relationships: []
       }
+      normalized_gmail_emails: {
+        Row: {
+          email: string | null
+          id: string | null
+          normalized_email: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string | null
+          normalized_email?: never
+        }
+        Update: {
+          email?: string | null
+          id?: string | null
+          normalized_email?: never
+        }
+        Relationships: []
+      }
       team_limits: {
         Row: {
           concurrent_sandboxes: number | null
@@ -717,28 +761,21 @@ export type Database = {
       }
     }
     Functions: {
-      append_array: {
-        Args: { id: string; new_element: Json }
-        Returns: undefined
-      }
       extra_for_post_user_signup: {
         Args: { team_id: string; user_id: string }
         Returns: undefined
       }
       generate_access_token: { Args: never; Returns: string }
-      generate_sandbox_video_stream_token: { Args: never; Returns: string }
       generate_team_api_key: { Args: never; Returns: string }
       generate_team_slug: { Args: { name: string }; Returns: string }
-      get_project_user_ids: { Args: never; Returns: string[] }
       is_member_of_team: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
-      temp_create_access_token: { Args: never; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
-      deployment_state: "generating" | "deploying" | "finished" | "error"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -865,8 +902,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      deployment_state: ["generating", "deploying", "finished", "error"],
-    },
+    Enums: {},
   },
 } as const

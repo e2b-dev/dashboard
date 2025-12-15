@@ -1,7 +1,99 @@
 import { KV_KEYS } from '@/configs/keys'
 import { l } from '@/lib/clients/logger/logger'
+import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { kv } from '@vercel/kv'
 import { serializeError } from 'serialize-error'
+
+const GMAIL_DOMAINS = ['gmail.com', 'googlemail.com']
+
+/**
+ * Checks if an email address is from Gmail (including googlemail.com alias)
+ */
+export function isGmailAddress(email: string): boolean {
+  const parts = email.toLowerCase().split('@')
+  const domain = parts[1] ?? ''
+  return GMAIL_DOMAINS.includes(domain)
+}
+
+/**
+ * Normalizes a Gmail address to prevent alias abuse.
+ * Gmail ignores dots in the local part and everything after + (plus addressing).
+ *
+ * Examples:
+ * - john.doe@gmail.com → johndoe@gmail.com
+ * - johndoe+spam@gmail.com → johndoe@gmail.com
+ * - j.o.h.n.d.o.e+test@googlemail.com → johndoe@gmail.com
+ *
+ * @param email - Email address to normalize
+ * @returns Normalized email (only modified for Gmail addresses)
+ */
+export function normalizeGmailEmail(email: string): string {
+  const lowerEmail = email.toLowerCase()
+  const parts = lowerEmail.split('@')
+  const localPart = parts[0] ?? ''
+  const domain = parts[1] ?? ''
+
+  if (!GMAIL_DOMAINS.includes(domain)) {
+    return lowerEmail
+  }
+
+  // remove everything after + (plus addressing)
+  const withoutPlus = localPart.split('+')[0] ?? ''
+
+  // remove all dots from local part
+  const normalized = withoutPlus.replace(/\./g, '')
+
+  // always normalize to gmail.com (googlemail.com is an alias)
+  return `${normalized}@gmail.com`
+}
+
+type NormalizedGmailRow = {
+  id: string
+  email: string
+  normalized_email: string
+}
+
+/**
+ * Checks if a Gmail address (or alias variant) already exists in the database.
+ * This prevents abuse where users create multiple accounts using Gmail's
+ * dot-ignoring and plus-addressing features.
+ *
+ * Uses the `normalized_gmail_emails` view which computes normalization in Postgres.
+ * The view is indexed and restricted to service_role only.
+ *
+ * @param email - Email to check for duplicates
+ * @returns true if a duplicate exists, false otherwise
+ */
+export async function checkDuplicateGmailEmail(
+  email: string
+): Promise<boolean> {
+  if (!isGmailAddress(email)) {
+    return false
+  }
+
+  const normalizedEmail = normalizeGmailEmail(email)
+
+  // query the indexed view (service_role only) for fast duplicate check
+  const { count, error } = await supabaseAdmin
+    .from('normalized_gmail_emails' as 'auth_users')
+    .select('*', { count: 'exact', head: true })
+    .eq('normalized_email' as 'email', normalizedEmail)
+
+  if (error) {
+    l.error(
+      {
+        key: 'check_duplicate_gmail:db_error',
+        error: serializeError(error),
+        context: { email },
+      },
+      'Failed to check for duplicate Gmail addresses'
+    )
+    // fail open - don't block sign-up on query errors
+    return false
+  }
+
+  return (count ?? 0) > 0
+}
 
 /**
  * Response type from the ZeroBounce email validation API
