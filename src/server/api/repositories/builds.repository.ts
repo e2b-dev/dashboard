@@ -319,4 +319,7 @@ export async function getInfraBuildLogs(
 export const buildsRepo = {
   listBuilds,
   getRunningStatuses,
+  getBuildInfo,
+  getInfraBuildStatus,
+  getInfraBuildLogs,
 }
