@@ -50,8 +50,14 @@ const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 16
 const REFETCH_INTERVAL_MS = 5_000
 const SCROLL_LOAD_THRESHOLD_PX = 200
+const LOG_KEY_MESSAGE_TRUNCATE_LENGTH = 64
 
 const EMPTY_LOGS: BuildLogDTO[] = []
+
+function getLogKey(log: BuildLogDTO): string {
+  const truncatedMessage = log.message.slice(0, LOG_KEY_MESSAGE_TRUNCATE_LENGTH)
+  return `${log.timestampUnix}:${log.level}:${truncatedMessage}`
+}
 
 const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
   { value: 'debug', label: 'Debug' },
@@ -239,11 +245,9 @@ function useBuildLogs({
     setForwardLogsAccumulator((accumulated) => {
       if (accumulated.length === 0) return newLogs
 
-      const existingTimestamps = new Set(
-        accumulated.map((log) => log.timestampUnix)
-      )
+      const existingKeys = new Set(accumulated.map(getLogKey))
       const uniqueNewLogs = newLogs.filter(
-        (log) => !existingTimestamps.has(log.timestampUnix)
+        (log) => !existingKeys.has(getLogKey(log))
       )
 
       if (uniqueNewLogs.length === 0) return accumulated
@@ -258,11 +262,9 @@ function useBuildLogs({
     if (forwardLogsAccumulator.length === 0) return backwardsLogs
     if (backwardsLogs.length === 0) return forwardLogsAccumulator
 
-    const backwardsTimestamps = new Set(
-      backwardsLogs.map((log) => log.timestampUnix)
-    )
+    const backwardsKeys = new Set(backwardsLogs.map(getLogKey))
     const uniqueForwardLogs = forwardLogsAccumulator.filter(
-      (log) => !backwardsTimestamps.has(log.timestampUnix)
+      (log) => !backwardsKeys.has(getLogKey(log))
     )
 
     return [...uniqueForwardLogs, ...backwardsLogs]
