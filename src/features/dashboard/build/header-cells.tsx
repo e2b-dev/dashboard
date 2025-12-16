@@ -1,5 +1,6 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import {
+  formatCompactDate,
   formatDurationCompact,
   formatTimeAgoCompact,
 } from '@/lib/utils/formatting'
@@ -71,9 +72,8 @@ export function RanFor({
   const duration = isBuilding
     ? now - startedAt
     : (finishedAt ?? now) - startedAt
-  const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
-  if (isBuilding || !iso) {
+  if (isBuilding) {
     return (
       <span className="whitespace-nowrap text-fg-tertiary">
         {formatDurationCompact(duration)}
@@ -81,9 +81,13 @@ export function RanFor({
     )
   }
 
+  const iso = finishedAt ? new Date(finishedAt).toISOString() : null
+  const formattedTimestamp = finishedAt ? formatCompactDate(finishedAt) : null
+
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap">
-      {formatDurationCompact(duration)}
+    <CopyButtonInline value={iso ?? ''} className="whitespace-nowrap group/time">
+      {formatDurationCompact(duration)}{' '}
+      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">· {formattedTimestamp}</span>
     </CopyButtonInline>
   )
 }
@@ -91,10 +95,12 @@ export function RanFor({
 export function StartedAt({ timestamp }: { timestamp: number }) {
   const iso = new Date(timestamp).toISOString()
   const elapsed = Date.now() - timestamp
+  const formattedTimestamp = formatCompactDate(timestamp)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap">
-      {formatTimeAgoCompact(elapsed)}
+    <CopyButtonInline value={iso} className="whitespace-nowrap group/time">
+      {formatTimeAgoCompact(elapsed)}{' '}
+      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">· {formattedTimestamp}</span>
     </CopyButtonInline>
   )
 }

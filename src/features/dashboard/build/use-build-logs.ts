@@ -47,8 +47,8 @@ export function useBuildLogs({
   })
 
   const mergedLogs = useMemo(() => {
-    const { logs: forwardLogs } = forwardQuery
-    const { logs: backwardsLogs } = backwardsQuery
+    const forwardLogs = forwardQuery.logs
+    const backwardsLogs = backwardsQuery.logs
 
     if (forwardLogs.length === 0) return backwardsLogs
     if (backwardsLogs.length === 0) return forwardLogs

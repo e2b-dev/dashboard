@@ -65,7 +65,7 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
             <StartedAt timestamp={buildDetails.startedAt} />
           )}
         </DetailsItem>
-        <DetailsItem label="Ran For">
+        <DetailsItem label={isBuilding ? 'Ran for' : 'Finished'}>
           {!isBuildDetailsReady ? (
             <Skeleton className="w-22" />
           ) : (
