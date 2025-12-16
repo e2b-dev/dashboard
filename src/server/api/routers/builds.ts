@@ -110,7 +110,7 @@ export const buildsRouter = createTRPCRouter({
         teamId,
         templateId,
         buildId,
-        { cursor, limit, direction, level }
+        { cursor, limit, direction, level, source: 'persistent' }
       )
 
       const logsToReturn = buildLogs.logs
@@ -121,7 +121,7 @@ export const buildsRouter = createTRPCRouter({
           level: log.level,
           message: log.message,
         }))
-        .sort((a, b) => b.timestampUnix - a.timestampUnix)
+        .reverse()
 
       const hasMore = logs.length === limit
       const cursorLog = logs[logs.length - 1]
@@ -159,7 +159,7 @@ export const buildsRouter = createTRPCRouter({
         teamId,
         templateId,
         buildId,
-        { cursor, limit, direction, level }
+        { cursor, limit, direction, level, source: 'temporary' }
       )
 
       const logs: BuildLogDTO[] = buildLogs.logs
@@ -168,8 +168,16 @@ export const buildsRouter = createTRPCRouter({
           level: log.level,
           message: log.message,
         }))
-        .sort((a, b) => b.timestampUnix - a.timestampUnix)
+        .reverse()
 
-      return { logs }
+      const newestLog = logs[0]
+      const nextCursor = newestLog?.timestampUnix ?? null
+
+      const result: BuildLogsDTO = {
+        logs,
+        nextCursor,
+      }
+
+      return result
     }),
 })

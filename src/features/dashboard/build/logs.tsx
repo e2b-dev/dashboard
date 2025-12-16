@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils'
 import type { BuildLogDTO } from '@/server/api/models/builds.models'
-import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -21,11 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import {
-  useInfiniteQuery,
-  useQuery,
-  useSuspenseQuery,
-} from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { useTRPC } from '@/trpc/client'
 import {
   useVirtualizer,
   VirtualItem,
@@ -36,28 +32,20 @@ import {
   use,
   useCallback,
   useEffect,
-  useMemo,
   useReducer,
   useRef,
   useState,
 } from 'react'
 import { LogLevel, Message, Timestamp } from './logs-cells'
 import { type LogLevelFilter } from './logs-filter-params'
+import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 
 const COLUMN_WIDTHS_PX = { timestamp: 164, level: 92 } as const
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 16
-const REFETCH_INTERVAL_MS = 5_000
+const REFETCH_INTERVAL_MS = 1_500
 const SCROLL_LOAD_THRESHOLD_PX = 200
-const LOG_KEY_MESSAGE_TRUNCATE_LENGTH = 64
-
-const EMPTY_LOGS: BuildLogDTO[] = []
-
-function getLogKey(log: BuildLogDTO): string {
-  const truncatedMessage = log.message.slice(0, LOG_KEY_MESSAGE_TRUNCATE_LENGTH)
-  return `${log.timestampUnix}:${log.level}:${truncatedMessage}`
-}
 
 const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
   { value: 'debug', label: 'Debug' },
@@ -68,10 +56,9 @@ const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
 
 interface LogsProps {
   params: PageProps<'/dashboard/[teamIdOrSlug]/templates/[templateId]/builds/[buildId]'>['params']
-  isBuilding: boolean
 }
 
-export default function Logs({ params, isBuilding }: LogsProps) {
+export default function Logs({ params }: LogsProps) {
   'use no memo'
 
   const { teamIdOrSlug, templateId, buildId } = use(params)
@@ -91,13 +78,13 @@ export default function Logs({ params, isBuilding }: LogsProps) {
     )
   )
 
+  const isBuilding = buildDetails.status === 'building'
   const { level, setLevel } = useLogFilters()
   const { isRefetchingFromFilterChange, onFetchComplete } =
     useFilterRefetchTracking(level)
 
   const { logs, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage } =
     useBuildLogs({
-      trpc,
       teamIdOrSlug,
       templateId,
       buildId,
@@ -164,119 +151,6 @@ function useFilterRefetchTracking(level: LogLevelFilter | null) {
   const onFetchComplete = useCallback(() => setIsRefetching(false), [])
 
   return { isRefetchingFromFilterChange, onFetchComplete }
-}
-
-interface UseBuildLogsParams {
-  trpc: ReturnType<typeof useTRPC>
-  teamIdOrSlug: string
-  templateId: string
-  buildId: string
-  level: LogLevelFilter | null
-  isBuilding: boolean
-}
-
-function useBuildLogs({
-  trpc,
-  teamIdOrSlug,
-  templateId,
-  buildId,
-  level,
-  isBuilding,
-}: UseBuildLogsParams) {
-  const [forwardLogsAccumulator, setForwardLogsAccumulator] = useState<
-    BuildLogDTO[]
-  >([])
-
-  useEffect(() => {
-    setForwardLogsAccumulator([])
-  }, [level])
-
-  const {
-    data: backwardsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetching: isFetchingBackwards,
-  } = useInfiniteQuery(
-    trpc.builds.buildLogsBackwards.infiniteQueryOptions(
-      { teamIdOrSlug, templateId, buildId, level: level ?? undefined },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: false,
-        refetchInterval: false,
-      }
-    )
-  )
-
-  const backwardsLogs = useMemo(
-    () => backwardsData?.pages.flatMap((p) => p.logs) ?? EMPTY_LOGS,
-    [backwardsData]
-  )
-
-  const forwardCursor = useMemo(() => {
-    const newestAccumulated = forwardLogsAccumulator[0]?.timestampUnix
-    const newestBackwards = backwardsLogs[0]?.timestampUnix
-    return newestAccumulated ?? newestBackwards
-  }, [forwardLogsAccumulator, backwardsLogs])
-
-  const { data: forwardData, isFetching: isFetchingForward } = useQuery(
-    trpc.builds.buildLogsForward.queryOptions(
-      {
-        teamIdOrSlug,
-        templateId,
-        buildId,
-        cursor: forwardCursor,
-        level: level ?? undefined,
-      },
-      {
-        enabled: isBuilding,
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: 'always',
-        refetchInterval: REFETCH_INTERVAL_MS,
-      }
-    )
-  )
-
-  useEffect(() => {
-    const newLogs = forwardData?.logs
-    if (!newLogs || newLogs.length === 0) return
-
-    setForwardLogsAccumulator((accumulated) => {
-      if (accumulated.length === 0) return newLogs
-
-      const existingKeys = new Set(accumulated.map(getLogKey))
-      const uniqueNewLogs = newLogs.filter(
-        (log) => !existingKeys.has(getLogKey(log))
-      )
-
-      if (uniqueNewLogs.length === 0) return accumulated
-
-      return [...uniqueNewLogs, ...accumulated].sort(
-        (a, b) => b.timestampUnix - a.timestampUnix
-      )
-    })
-  }, [forwardData?.logs])
-
-  const mergedLogs = useMemo(() => {
-    if (forwardLogsAccumulator.length === 0) return backwardsLogs
-    if (backwardsLogs.length === 0) return forwardLogsAccumulator
-
-    const backwardsKeys = new Set(backwardsLogs.map(getLogKey))
-    const uniqueForwardLogs = forwardLogsAccumulator.filter(
-      (log) => !backwardsKeys.has(getLogKey(log))
-    )
-
-    return [...uniqueForwardLogs, ...backwardsLogs]
-  }, [forwardLogsAccumulator, backwardsLogs])
-
-  return {
-    logs: mergedLogs,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetching: isFetchingBackwards || isFetchingForward,
-    fetchNextPage,
-  }
 }
 
 function LogsTableHeader() {

@@ -257,6 +257,7 @@ export interface GetInfraBuildLogsOptions {
   limit?: number
   direction?: 'forward' | 'backward'
   level?: 'debug' | 'info' | 'warn' | 'error'
+  source?: 'persistent' | 'temporary'
 }
 
 export async function getInfraBuildLogs(
@@ -279,6 +280,7 @@ export async function getInfraBuildLogs(
           limit: options.limit,
           direction: options.direction,
           level: options.level,
+          source: options.source ?? 'persistent',
         },
       },
       headers: {
