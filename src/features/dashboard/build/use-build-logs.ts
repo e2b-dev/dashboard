@@ -8,11 +8,8 @@ import { type LogLevelFilter } from './logs-filter-params'
 
 const REFETCH_INTERVAL_MS = 1_500
 const FORWARD_LOGS_PAGE_LIMIT = 100
+const FORWARD_LOGS_EXCLUSION_PADDING_MS = 1
 const EMPTY_LOGS: BuildLogDTO[] = []
-
-function getLogKey(log: BuildLogDTO): string {
-  return `${log.timestampUnix}:${log.level}:${log.message}`
-}
 
 interface UseBuildLogsParams {
   teamIdOrSlug: string
@@ -56,11 +53,7 @@ export function useBuildLogs({
     if (forwardLogs.length === 0) return backwardsLogs
     if (backwardsLogs.length === 0) return forwardLogs
 
-    const seenKeys = new Set(forwardLogs.map(getLogKey))
-    const uniqueBackwardsLogs = backwardsLogs.filter(
-      (log) => !seenKeys.has(getLogKey(log))
-    )
-    return [...forwardLogs, ...uniqueBackwardsLogs]
+    return [...forwardLogs, ...backwardsLogs]
   }, [forwardQuery.logs, backwardsQuery.logs])
 
   return {
@@ -164,12 +157,13 @@ function useForwardLogs({
         templateId,
         buildId,
         level: level ?? undefined,
-        cursor: newestBackwardsTimestamp,
+        cursor:
+          (newestBackwardsTimestamp ?? 0) + FORWARD_LOGS_EXCLUSION_PADDING_MS,
       },
       {
         getNextPageParam: (lastPage, allPages) => {
           if (lastPage.nextCursor !== null) {
-            return lastPage.nextCursor + 1
+            return lastPage.nextCursor + FORWARD_LOGS_EXCLUSION_PADDING_MS
           }
 
           const lastPageWithLogs = allPages.findLast(
@@ -180,12 +174,13 @@ function useForwardLogs({
             !lastPageWithLogs?.nextCursor ||
             !newestBackwardsTimestampRef.current
           ) {
-            return Date.now()
+            return new Date().getTime()
           }
 
           return (
             (lastPageWithLogs?.nextCursor ??
-              newestBackwardsTimestampRef.current) + 1
+              newestBackwardsTimestampRef.current) +
+            FORWARD_LOGS_EXCLUSION_PADDING_MS
           )
         },
         enabled: shouldFetch,
@@ -220,7 +215,11 @@ function useForwardLogs({
   })
 
   const logs = useMemo(
-    () => data?.pages.slice().reverse().flatMap((p) => p.logs) ?? EMPTY_LOGS,
+    () =>
+      data?.pages
+        .slice()
+        .reverse()
+        .flatMap((p) => p.logs) ?? EMPTY_LOGS,
     [data]
   )
 
