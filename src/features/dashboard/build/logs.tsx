@@ -79,7 +79,6 @@ export default function Logs({ params }: LogsProps) {
     )
   )
 
-  const isBuilding = buildDetails.status === 'building'
   const { level, setLevel } = useLogFilters()
   const { isRefetchingFromFilterChange, onFetchComplete } =
     useFilterRefetchTracking(level)
@@ -90,7 +89,7 @@ export default function Logs({ params }: LogsProps) {
       templateId,
       buildId,
       level,
-      isBuilding,
+      buildStatus: buildDetails.status,
     })
 
   useEffect(() => {

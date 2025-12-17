@@ -11,7 +11,8 @@ import { useState } from 'react'
 import SuperJSON from 'superjson'
 import { createQueryClient } from './query-client'
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<TRPCAppRouter>()
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<TRPCAppRouter>()
 
 /**
  * Inference helper for inputs.
