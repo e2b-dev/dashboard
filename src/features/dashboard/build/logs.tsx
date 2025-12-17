@@ -135,7 +135,7 @@ function LogsContent({
   }, [isFetching, isRefetchingFromFilterChange, onFetchComplete])
 
   const hasLogs = logs.length > 0
-  const showLoader = isRefetchingFromFilterChange && !hasLogs
+  const showLoader = (isFetching || isRefetchingFromFilterChange) && !hasLogs
   const showEmpty = !isFetching && !hasLogs && !isRefetchingFromFilterChange
   const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
 

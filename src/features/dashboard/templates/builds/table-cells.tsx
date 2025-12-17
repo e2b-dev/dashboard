@@ -202,6 +202,8 @@ export function Reason({
   if (!statusMessage) return null
 
   return (
-    <span className="prose-table text-fg-tertiary truncate">{statusMessage}</span>
+    <span className="block truncate max-w-0 min-w-full text-left text-fg-tertiary">
+      {statusMessage}
+    </span>
   )
 }
