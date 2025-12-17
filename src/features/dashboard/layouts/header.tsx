@@ -34,7 +34,7 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
-      <div className="flex items-center gap-2 w-full relative">
+      <div className="flex items-center gap-2 w-full relative min-h-7">
         <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1" />
 
         <h1 className="mr-auto align-middle truncate">{config.title}</h1>

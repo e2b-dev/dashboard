@@ -1,55 +1,64 @@
+'use client'
+
 import BuildHeader from '@/features/dashboard/build/header'
 import Logs from '@/features/dashboard/build/logs'
-import { loadBuildLogsFilters } from '@/features/dashboard/build/logs-filter-params'
-import { getQueryClient, HydrateClient, trpc } from '@/trpc/server'
-import { TRPCError } from '@trpc/server'
+import { useTRPC } from '@/trpc/client'
+import { useQuery } from '@tanstack/react-query'
+import { TRPCClientError } from '@trpc/client'
 import { notFound } from 'next/navigation'
+import { use } from 'react'
 
-export default async function BuildPage({
+const REFETCH_INTERVAL_MS = 1_500
+
+export default function BuildPage({
   params,
-  searchParams,
 }: PageProps<'/dashboard/[teamIdOrSlug]/templates/[templateId]/builds/[buildId]'>) {
-  const { teamIdOrSlug, templateId, buildId } = await params
-  const { level } = await loadBuildLogsFilters(searchParams)
+  const { teamIdOrSlug, templateId, buildId } = use(params)
+  const trpc = useTRPC()
 
-  const queryClient = getQueryClient()
+  const {
+    data: buildDetails,
+    error,
+    isPending,
+  } = useQuery(
+    trpc.builds.buildDetails.queryOptions(
+      { teamIdOrSlug, templateId, buildId },
+      {
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: ({ state }) =>
+          state.data?.status === 'building' ? 'always' : false,
+        refetchInterval: ({ state }) =>
+          state.data?.status === 'building' ? REFETCH_INTERVAL_MS : false,
+        retry: (failureCount, error) => {
+          if (
+            error instanceof TRPCClientError &&
+            error.data?.code === 'NOT_FOUND'
+          ) {
+            return false
+          }
+          return failureCount < 3
+        },
+      }
+    )
+  )
 
-  let exists = true
-
-  try {
-    await Promise.all([
-      queryClient.fetchQuery(
-        trpc.builds.buildDetails.queryOptions({
-          teamIdOrSlug,
-          templateId,
-          buildId,
-        })
-      ),
-      queryClient.fetchInfiniteQuery(
-        trpc.builds.buildLogsBackwards.infiniteQueryOptions({
-          teamIdOrSlug,
-          templateId,
-          buildId,
-          level: level ?? undefined,
-        })
-      ),
-    ])
-  } catch (error) {
-    if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
-      exists = false
-    }
-  }
-
-  if (!exists) {
+  if (error instanceof TRPCClientError && error.data?.code === 'NOT_FOUND') {
     notFound()
   }
 
   return (
-    <HydrateClient>
-      <div className="h-full min-h-0 flex-1 p-3 md:p-6 flex flex-col gap-6">
-        <BuildHeader params={params} />
-        <Logs params={params} />
-      </div>
-    </HydrateClient>
+    <div className="h-full min-h-0 flex-1 p-3 md:p-6 flex flex-col gap-6">
+      <BuildHeader
+        buildDetails={buildDetails}
+        buildId={buildId}
+        templateId={templateId}
+      />
+      <Logs
+        buildDetails={buildDetails}
+        teamIdOrSlug={teamIdOrSlug}
+        templateId={templateId}
+        buildId={buildId}
+      />
+    </div>
   )
 }

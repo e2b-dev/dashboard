@@ -1,8 +1,10 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
-import { useTRPC } from '@/trpc/client'
+import type {
+  BuildDetailsDTO,
+  BuildLogDTO,
+} from '@/server/api/models/builds.models'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -21,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   useVirtualizer,
   VirtualItem,
@@ -29,7 +30,6 @@ import {
 } from '@tanstack/react-virtual'
 import {
   RefObject,
-  use,
   useCallback,
   useEffect,
   useReducer,
@@ -45,7 +45,6 @@ import useLogFilters from './use-log-filters'
 const COLUMN_WIDTHS_PX = { timestamp: 164, level: 92 } as const
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 16
-const REFETCH_INTERVAL_MS = 1_500
 const SCROLL_LOAD_THRESHOLD_PX = 200
 
 const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
@@ -56,30 +55,67 @@ const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
 ]
 
 interface LogsProps {
-  params: PageProps<'/dashboard/[teamIdOrSlug]/templates/[templateId]/builds/[buildId]'>['params']
+  buildDetails: BuildDetailsDTO | undefined
+  teamIdOrSlug: string
+  templateId: string
+  buildId: string
 }
 
-export default function Logs({ params }: LogsProps) {
+export default function Logs({
+  buildDetails,
+  teamIdOrSlug,
+  templateId,
+  buildId,
+}: LogsProps) {
   'use no memo'
 
-  const { teamIdOrSlug, templateId, buildId } = use(params)
-  const trpc = useTRPC()
+  const { level, setLevel } = useLogFilters()
+
+  if (!buildDetails) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
+        <LevelFilter level={level} onLevelChange={setLevel} />
+        <div className="min-h-0 flex-1 overflow-auto">
+          <Table style={{ display: 'grid', minWidth: 'min-content' }}>
+            <LogsTableHeader />
+            <LoaderBody />
+          </Table>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <LogsContent
+      buildDetails={buildDetails}
+      teamIdOrSlug={teamIdOrSlug}
+      templateId={templateId}
+      buildId={buildId}
+      level={level}
+      setLevel={setLevel}
+    />
+  )
+}
+
+interface LogsContentProps {
+  buildDetails: BuildDetailsDTO
+  teamIdOrSlug: string
+  templateId: string
+  buildId: string
+  level: LogLevelFilter | null
+  setLevel: (level: LogLevelFilter | null) => void
+}
+
+function LogsContent({
+  buildDetails,
+  teamIdOrSlug,
+  templateId,
+  buildId,
+  level,
+  setLevel,
+}: LogsContentProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { data: buildDetails } = useSuspenseQuery(
-    trpc.builds.buildDetails.queryOptions(
-      { teamIdOrSlug, templateId, buildId },
-      {
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: ({ state }) =>
-          state.data?.status === 'building' ? 'always' : false,
-        refetchInterval: ({ state }) =>
-          state.data?.status === 'building' ? REFETCH_INTERVAL_MS : false,
-      }
-    )
-  )
-
-  const { level, setLevel } = useLogFilters()
   const { isRefetchingFromFilterChange, onFetchComplete } =
     useFilterRefetchTracking(level)
 
