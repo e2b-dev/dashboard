@@ -136,7 +136,7 @@ function LogsContent({
 
   const hasLogs = logs.length > 0
   const showLoader = isRefetchingFromFilterChange && !hasLogs
-  const showEmpty = !isFetching && !hasLogs
+  const showEmpty = !isFetching && !hasLogs && !isRefetchingFromFilterChange
   const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
 
   const handleLoadMore = useCallback(() => {

@@ -27,6 +27,7 @@ interface BuildLogsState {
 
   _trpcClient: TRPCClient | null
   _params: BuildLogsParams | null
+  _initVersion: number
 }
 
 interface BuildLogsMutations {
@@ -71,6 +72,7 @@ const initialState: BuildLogsState = {
   isInitialized: false,
   _trpcClient: null,
   _params: null,
+  _initVersion: 0,
 }
 
 export const createBuildLogsStore = () =>
@@ -103,11 +105,15 @@ export const createBuildLogsStore = () =>
           get().reset()
         }
 
+        // Increment version to invalidate any in-flight requests
+        const requestVersion = state._initVersion + 1
+
         set((s) => {
           s._trpcClient = trpcClient
           s._params = params
           s.level = level
           s.isLoadingBackwards = true
+          s._initVersion = requestVersion
         })
 
         try {
@@ -119,6 +125,11 @@ export const createBuildLogsStore = () =>
             cursor: Date.now(),
           })
 
+          // Ignore stale response if a newer init was called
+          if (get()._initVersion !== requestVersion) {
+            return
+          }
+
           set((s) => {
             s.logs = result.logs
             s.hasMoreBackwards = result.nextCursor !== null
@@ -126,11 +137,15 @@ export const createBuildLogsStore = () =>
             s.isLoadingBackwards = false
             s.isInitialized = true
           })
-        } catch (error) {
+        } catch {
+          // Ignore errors from stale requests
+          if (get()._initVersion !== requestVersion) {
+            return
+          }
+
           set((s) => {
             s.isLoadingBackwards = false
           })
-          throw error
         }
       },
 
@@ -145,6 +160,8 @@ export const createBuildLogsStore = () =>
         ) {
           return
         }
+
+        const requestVersion = state._initVersion
 
         set((s) => {
           s.isLoadingBackwards = true
@@ -164,6 +181,11 @@ export const createBuildLogsStore = () =>
             }
           )
 
+          // Ignore stale response if init was called during fetch
+          if (get()._initVersion !== requestVersion) {
+            return
+          }
+
           set((s) => {
             const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
             s.logs = [...s.logs, ...uniqueNewLogs]
@@ -171,20 +193,29 @@ export const createBuildLogsStore = () =>
             s.backwardsCursor = result.nextCursor
             s.isLoadingBackwards = false
           })
-        } catch (error) {
+        } catch {
+          if (get()._initVersion !== requestVersion) {
+            return
+          }
+
           set((s) => {
             s.isLoadingBackwards = false
           })
-          throw error
         }
       },
 
       fetchMoreForwards: async () => {
         const state = get()
 
-        if (!state._trpcClient || !state._params) {
+        if (
+          !state._trpcClient ||
+          !state._params ||
+          state.isLoadingForwards
+        ) {
           return { logsCount: 0 }
         }
+
+        const requestVersion = state._initVersion
 
         set((s) => {
           s.isLoadingForwards = true
@@ -204,6 +235,11 @@ export const createBuildLogsStore = () =>
             cursor,
           })
 
+          // Ignore stale response if init was called during fetch
+          if (get()._initVersion !== requestVersion) {
+            return { logsCount: 0 }
+          }
+
           set((s) => {
             const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
             if (uniqueNewLogs.length > 0) {
@@ -213,11 +249,16 @@ export const createBuildLogsStore = () =>
           })
 
           return { logsCount: result.logs.length }
-        } catch (error) {
+        } catch {
+          if (get()._initVersion !== requestVersion) {
+            return { logsCount: 0 }
+          }
+
           set((s) => {
             s.isLoadingForwards = false
           })
-          throw error
+
+          return { logsCount: 0 }
         }
       },
 
