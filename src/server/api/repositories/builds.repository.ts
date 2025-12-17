@@ -172,7 +172,9 @@ async function getRunningStatuses(
 export async function getBuildInfo(buildId: string, teamId: string) {
   const { data, error } = await supabaseAdmin
     .from('env_builds')
-    .select('created_at, finished_at, envs!inner(team_id, env_aliases(alias))')
+    .select(
+      'created_at, finished_at, status, reason, envs!inner(team_id, env_aliases(alias))'
+    )
     .eq('id', buildId)
     .eq('envs.team_id', teamId)
     .maybeSingle()
@@ -192,6 +194,13 @@ export async function getBuildInfo(buildId: string, teamId: string) {
     alias,
     createdAt: new Date(data.created_at).getTime(),
     finishedAt: data.finished_at ? new Date(data.finished_at).getTime() : null,
+    status: mapDatabaseBuildStatusToBuildStatusDTO(
+      data.status as BuildStatusDB
+    ),
+    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+      data.status,
+      data.reason
+    ),
   }
 }
 

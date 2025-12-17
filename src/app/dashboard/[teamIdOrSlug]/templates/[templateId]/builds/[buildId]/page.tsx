@@ -15,10 +15,9 @@ export default async function BuildPage({
   const queryClient = getQueryClient()
 
   let exists = true
-  let isBuilding = false
 
   try {
-    const [buildDetails] = await Promise.all([
+    await Promise.all([
       queryClient.fetchQuery(
         trpc.builds.buildDetails.queryOptions({
           teamIdOrSlug,
@@ -35,12 +34,6 @@ export default async function BuildPage({
         })
       ),
     ])
-
-    if (!buildDetails.hasRetainedLogs) {
-      exists = false
-    }
-
-    isBuilding = buildDetails.status === 'building'
   } catch (error) {
     if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
       exists = false

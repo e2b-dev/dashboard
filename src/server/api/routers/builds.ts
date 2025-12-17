@@ -8,7 +8,6 @@ import {
   BuildStatusDTOSchema,
   checkIfBuildStillHasLogs,
   mapBuildStatusDTOToDatabaseBuildStatus,
-  mapInfraBuildStatusToBuildStatusDTO,
 } from '../models/builds.models'
 import { protectedTeamProcedure } from '../procedures'
 
@@ -64,22 +63,14 @@ export const buildsRouter = createTRPCRouter({
       const { teamId } = ctx
       const { buildId, templateId } = input
 
-      const [buildInfo, buildStatus] = await Promise.all([
-        buildsRepo.getBuildInfo(buildId, teamId),
-        buildsRepo.getInfraBuildStatus(
-          ctx.session.access_token,
-          teamId,
-          templateId,
-          buildId
-        ),
-      ])
+      const buildInfo = await buildsRepo.getBuildInfo(buildId, teamId)
 
       const result: BuildDetailsDTO = {
         template: buildInfo.alias ?? templateId,
         startedAt: buildInfo.createdAt,
         finishedAt: buildInfo.finishedAt,
-        status: mapInfraBuildStatusToBuildStatusDTO(buildStatus.status),
-        statusMessage: buildStatus.reason?.message ?? null,
+        status: buildInfo.status,
+        statusMessage: buildInfo.statusMessage,
         hasRetainedLogs: checkIfBuildStillHasLogs(buildInfo.createdAt),
       }
 

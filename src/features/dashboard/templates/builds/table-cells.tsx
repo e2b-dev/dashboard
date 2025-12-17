@@ -24,9 +24,9 @@ export function BuildId({ id }: { id: string }) {
   return (
     <CopyButtonInline
       value={id}
-      className="truncate w-full text-left text-fg-tertiary"
+      className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
     >
-      {id}
+      {id.slice(0, 6)}...{id.slice(-6)}
     </CopyButtonInline>
   )
 }
@@ -129,21 +129,10 @@ export function Duration({
     : (finishedAt ?? now) - createdAt
   const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
-  if (isBuilding || !iso) {
-    return (
-      <span className="prose-table-numeric whitespace-nowrap text-fg-tertiary">
-        {formatDurationCompact(duration)}
-      </span>
-    )
-  }
-
   return (
-    <CopyButtonInline
-      value={iso}
-      className="text-fg-tertiary prose-table-numeric whitespace-nowrap"
-    >
+    <span className="text-fg-tertiary prose-table-numeric whitespace-nowrap">
       {formatDurationCompact(duration)}
-    </CopyButtonInline>
+    </span>
   )
 }
 
@@ -152,12 +141,9 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const elapsed = Date.now() - timestamp
 
   return (
-    <CopyButtonInline
-      value={iso}
-      className="text-fg-tertiary prose-table-numeric whitespace-nowrap"
-    >
+    <span className="text-fg prose-table-numeric whitespace-nowrap">
       {formatTimeAgoCompact(elapsed)}
-    </CopyButtonInline>
+    </span>
   )
 }
 

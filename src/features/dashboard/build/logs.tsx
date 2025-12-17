@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -21,7 +22,6 @@ import {
   TableRow,
 } from '@/ui/primitives/table'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { useTRPC } from '@/trpc/client'
 import {
   useVirtualizer,
   VirtualItem,
@@ -36,6 +36,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { LOG_RETENTION_MS } from '../templates/builds/constants'
 import { LogLevel, Message, Timestamp } from './logs-cells'
 import { type LogLevelFilter } from './logs-filter-params'
 import { useBuildLogs } from './use-build-logs'
@@ -118,7 +119,9 @@ export default function Logs({ params }: LogsProps) {
           <LogsTableHeader />
 
           {showLoader && <LoaderBody />}
-          {showEmpty && <EmptyBody />}
+          {showEmpty && (
+            <EmptyBody hasRetainedLogs={buildDetails.hasRetainedLogs} />
+          )}
           {hasLogs && (
             <VirtualizedLogsBody
               logs={logs}
@@ -189,14 +192,26 @@ function LoaderBody() {
   )
 }
 
-function EmptyBody() {
+interface EmptyBodyProps {
+  hasRetainedLogs: boolean
+}
+
+function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
   return (
     <TableBody style={{ display: 'grid' }}>
       <TableRow style={{ display: 'flex', minWidth: '100%' }}>
         <TableCell className="flex-1">
-          <div className="h-[35vh] w-full gap-2 relative flex justify-center items-center p-6">
-            <ListIcon className="size-5" />
-            <p className="prose-body-highlight">No logs found</p>
+          <div className="h-[35vh] w-full gap-2 relative flex flex-col justify-center items-center p-6">
+            <div className="flex items-center gap-2">
+              <ListIcon className="size-5" />
+              <p className="prose-body-highlight">No logs found</p>
+            </div>
+            {!hasRetainedLogs && (
+              <p className="text-fg-tertiary text-sm">
+                This build has exceeded the{' '}
+                {LOG_RETENTION_MS / 24 / 60 / 60 / 1000} day retention limit.
+              </p>
+            )}
           </div>
         </TableCell>
       </TableRow>

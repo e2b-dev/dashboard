@@ -44,7 +44,10 @@ export default function BuildHeader({ params }: BuildHeaderProps) {
     <header className="flex flex-col gap-6">
       <DetailsRow>
         <DetailsItem label="ID">
-          <CopyButtonInline value={buildId}>
+          <CopyButtonInline
+            value={buildId}
+            className="font-mono prose-body-numeric"
+          >
             {buildId.slice(0, 6)}...{buildId.slice(-6)}
           </CopyButtonInline>
         </DetailsItem>
