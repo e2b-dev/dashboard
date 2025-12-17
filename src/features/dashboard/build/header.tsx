@@ -130,9 +130,7 @@ function StatusBanner({ status, statusMessage }: StatusBannerProps) {
       {status === 'failed' && statusMessage && (
         <>
           <div className="max-h-28 overflow-y-auto">
-            <pre className="prose-body max-md:whitespace-normal max-w-140 text-fg font-sans">
-              {statusMessage}
-            </pre>
+            <p className="prose-body max-w-140 text-fg">{statusMessage}</p>
           </div>
           <CopyButton
             value={statusMessage}

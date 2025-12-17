@@ -179,7 +179,24 @@ export async function getBuildInfo(buildId: string, teamId: string) {
     .eq('envs.team_id', teamId)
     .maybeSingle()
 
-  if (error) throw error
+  if (error) {
+    l.error(
+      {
+        key: 'repositories:builds:get_build_info:supabase_error',
+        error: error,
+        team_id: teamId,
+        context: {
+          build_id: buildId,
+        },
+      },
+      `failed to query env_builds: ${error?.message || 'Unknown error'}`
+    )
+
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: "Build not found or you don't have access to it",
+    })
+  }
 
   if (!data) {
     throw new TRPCError({
