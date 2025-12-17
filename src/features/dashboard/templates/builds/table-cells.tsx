@@ -202,11 +202,6 @@ export function Reason({
   if (!statusMessage) return null
 
   return (
-    <CopyButtonInline
-      value={statusMessage}
-      className="prose-table text-fg-tertiary truncate max-w-0 min-w-full text-left"
-    >
-      {statusMessage}
-    </CopyButtonInline>
+    <span className="prose-table text-fg-tertiary truncate">{statusMessage}</span>
   )
 }
