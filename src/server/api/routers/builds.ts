@@ -110,7 +110,7 @@ export const buildsRouter = createTRPCRouter({
         teamId,
         templateId,
         buildId,
-        { cursor, limit, direction, level, source: 'persistent' }
+        { cursor, limit, direction, level }
       )
 
       const logsToReturn = buildLogs.logs
@@ -159,7 +159,7 @@ export const buildsRouter = createTRPCRouter({
         teamId,
         templateId,
         buildId,
-        { cursor, limit, direction, level, source: 'temporary' }
+        { cursor, limit, direction, level }
       )
 
       const logs: BuildLogDTO[] = buildLogs.logs
