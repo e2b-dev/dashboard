@@ -36,12 +36,7 @@ export default function StartedAt() {
       <p>
         {prefix}, {timeStr}
       </p>
-      <CopyButton
-        value={startedAt}
-        variant="ghost"
-        size="slate"
-        className="text-fg-secondary size-3.5"
-      />
+      <CopyButton value={startedAt} className="text-fg-secondary size-3.5" />
     </div>
   )
 }

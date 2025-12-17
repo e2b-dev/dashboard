@@ -76,10 +76,7 @@ export default function SandboxInspectIncompatible({
                   </CodeBlock>
                   <div className="text-fg-secondary -ml-4 inline-block">
                     The folder should contain an{' '}
-                    <Badge className={codeClassNames} variant="code">
-                      e2b.toml
-                    </Badge>{' '}
-                    file.
+                    <Badge className={codeClassNames}>e2b.toml</Badge> file.
                   </div>
                 </li>
 
@@ -87,9 +84,7 @@ export default function SandboxInspectIncompatible({
                   <p className="prose-body-highlight">Rebuild the template</p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
-                    <Badge className={codeClassNames} variant="code">
-                      e2b template build
-                    </Badge>{' '}
+                    <Badge className={codeClassNames}>e2b template build</Badge>{' '}
                     along with custom{' '}
                     <Link
                       className="text-fg underline"
@@ -99,9 +94,7 @@ export default function SandboxInspectIncompatible({
                       start commands
                     </Link>{' '}
                     and any other arguments to rebuild. For example:
-                    <Badge className={codeClassNames} variant="code">
-                      -c "start.sh"
-                    </Badge>
+                    <Badge className={codeClassNames}>-c "start.sh"</Badge>
                   </div>
                 </li>
 
@@ -120,8 +113,7 @@ export default function SandboxInspectIncompatible({
           </CardContent>
           <CardFooter className="pt-auto justify-between border-none px-0 pb-0 max-md:flex-col max-md:gap-4">
             <Button
-              variant="ghost"
-              size="slate"
+              variant="quaternary"
               className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
@@ -131,8 +123,7 @@ export default function SandboxInspectIncompatible({
               </Link>
             </Button>
             <Button
-              size="lg"
-              variant="outline"
+              variant="secondary"
               className="pr-3 font-sans normal-case max-md:w-full"
               asChild
             >
