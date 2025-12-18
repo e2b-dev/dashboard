@@ -43,7 +43,7 @@ import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 
 const COLUMN_WIDTHS_PX = { timestamp: 164, level: 92 } as const
-const ROW_HEIGHT_PX = 32
+const ROW_HEIGHT_PX = 26
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 

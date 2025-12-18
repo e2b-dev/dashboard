@@ -1,11 +1,17 @@
 import { l } from '@/lib/clients/logger/logger'
 import micromatch from 'micromatch'
+import { PROTECTED_URLS } from './urls'
+
+export interface TitleSegment {
+  label: string
+  href?: string
+}
 
 /**
  * Layout configuration for dashboard pages.
  */
 export interface DashboardLayoutConfig {
-  title: string
+  title: string | TitleSegment[]
   type: 'default' | 'custom'
   custom?: {
     includeHeaderBottomStyles: boolean
@@ -29,13 +35,25 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Templates',
     type: 'custom',
   }),
-  '/dashboard/*/templates/*/builds/*': (pathname) => ({
-    title: `Templates / Build ${pathname.split('/').pop()}`,
-    type: 'custom',
-    custom: {
-      includeHeaderBottomStyles: true,
-    },
-  }),
+  '/dashboard/*/templates/*/builds/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+    const buildId = parts.pop()
+
+    return {
+      title: [
+        {
+          label: 'Templates',
+          href: PROTECTED_URLS.TEMPLATES_BUILDS(teamIdOrSlug),
+        },
+        { label: `Build ${buildId}` },
+      ],
+      type: 'custom',
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
+    }
+  },
 
   // integrations
   '/dashboard/*/webhooks': () => ({
