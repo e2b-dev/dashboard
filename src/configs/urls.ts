@@ -40,6 +40,8 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamIdOrSlug}/templates?tab=list`,
   TEMPLATES_BUILDS: (teamIdOrSlug: string) =>
     `/dashboard/${teamIdOrSlug}/templates?tab=builds`,
+  TEMPLATE_BUILD: (teamIdOrSlug: string, templateId: string, buildId: string) =>
+    `/dashboard/${teamIdOrSlug}/templates/${templateId}/builds/${buildId}`,
 
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,

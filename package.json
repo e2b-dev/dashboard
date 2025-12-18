@@ -81,6 +81,7 @@
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-query": "^5.90.7",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-table": "^8.20.6",
     "@tanstack/react-virtual": "^3.13.12",
     "@theguild/remark-mermaid": "^0.2.0",

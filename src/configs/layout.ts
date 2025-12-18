@@ -1,73 +1,101 @@
 import { l } from '@/lib/clients/logger/logger'
 import micromatch from 'micromatch'
+import { PROTECTED_URLS } from './urls'
+
+export interface TitleSegment {
+  label: string
+  href?: string
+}
 
 /**
  * Layout configuration for dashboard pages.
  */
 export interface DashboardLayoutConfig {
-  title: string
+  title: string | TitleSegment[]
   type: 'default' | 'custom'
   custom?: {
     includeHeaderBottomStyles: boolean
   }
 }
 
-const DASHBOARD_LAYOUT_CONFIGS: Record<string, DashboardLayoutConfig> = {
+const DASHBOARD_LAYOUT_CONFIGS: Record<
+  string,
+  (pathname: string) => DashboardLayoutConfig
+> = {
   // base
-  '/dashboard/*/sandboxes': {
+  '/dashboard/*/sandboxes': () => ({
     title: 'Sandboxes',
     type: 'custom',
-  },
-  '/dashboard/*/sandboxes/**/*': {
+  }),
+  '/dashboard/*/sandboxes/**/*': () => ({
     title: 'Sandbox',
     type: 'custom',
-  },
-  '/dashboard/*/templates': {
+  }),
+  '/dashboard/*/templates': () => ({
     title: 'Templates',
     type: 'custom',
+  }),
+  '/dashboard/*/templates/*/builds/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+    const buildId = parts.pop()
+
+    return {
+      title: [
+        {
+          label: 'Templates',
+          href: PROTECTED_URLS.TEMPLATES_BUILDS(teamIdOrSlug),
+        },
+        { label: `Build ${buildId}` },
+      ],
+      type: 'custom',
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
+    }
   },
 
   // integrations
-  '/dashboard/*/webhooks': {
+  '/dashboard/*/webhooks': () => ({
     title: 'Webhooks',
     type: 'default',
-  },
+  }),
 
   // team
-  '/dashboard/*/general': {
+  '/dashboard/*/general': () => ({
     title: 'General',
     type: 'default',
-  },
-  '/dashboard/*/keys': {
+  }),
+  '/dashboard/*/keys': () => ({
     title: 'API Keys',
     type: 'default',
-  },
-  '/dashboard/*/members': {
+  }),
+  '/dashboard/*/members': () => ({
     title: 'Members',
     type: 'default',
-  },
+  }),
 
   // billing
-  '/dashboard/*/usage': {
+  '/dashboard/*/usage': () => ({
     title: 'Usage',
     type: 'custom',
     custom: {
       includeHeaderBottomStyles: true,
     },
-  },
-  '/dashboard/*/budget': {
+  }),
+  '/dashboard/*/budget': () => ({
     title: 'Budget',
     type: 'default',
-  },
-  '/dashboard/*/billing': {
+  }),
+  '/dashboard/*/billing': () => ({
     title: 'Billing',
     type: 'default',
-  },
+  }),
 
-  '/dashboard/*/account': {
+  '/dashboard/*/account': () => ({
     title: 'Account',
     type: 'default',
-  },
+  }),
 }
 
 /**
@@ -79,7 +107,7 @@ export const getDashboardLayoutConfig = (
 ): DashboardLayoutConfig => {
   for (const [pattern, config] of Object.entries(DASHBOARD_LAYOUT_CONFIGS)) {
     if (micromatch.isMatch(pathname, pattern)) {
-      return config
+      return config(pathname)
     }
   }
 

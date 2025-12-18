@@ -1,5 +1,7 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { cn } from '@/lib/utils/ui'
 import type {
   ListedBuildDTO,
   RunningBuildStatusDTO,
@@ -21,9 +23,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
 import BuildsEmpty from './empty'
 import {
   BackToTopButton,
@@ -42,16 +43,17 @@ const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
 const MAX_CACHED_PAGES = 3
 
 const COLUMN_WIDTHS = {
-  id: 132,
+  id: 152,
   status: 96,
   template: 192,
-  started: 156,
+  started: 126,
   duration: 96,
 } as const
 
 const BuildsTable = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamIdOrSlug } =
@@ -162,26 +164,26 @@ const BuildsTable = () => {
       >
         <Table suppressHydrationWarning>
           <colgroup>
-            <col style={colStyle(COLUMN_WIDTHS.id)} />
             <col style={colStyle(COLUMN_WIDTHS.status)} />
             <col style={colStyle(COLUMN_WIDTHS.template)} />
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
+            <col style={colStyle(COLUMN_WIDTHS.id)} />
             <col className="max-lg:min-w-[500px]" />
           </colgroup>
 
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
-              <TableHead>Build ID</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Template</TableHead>
-              <TableHead className="text-end">
+              <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
                   Started
                   <ArrowDownIcon className="size-3" />
                 </span>
               </TableHead>
               <TableHead className="text-end">Duration</TableHead>
+              <TableHead>ID</TableHead>
               <th />
             </TableRow>
           </TableHeader>
@@ -228,14 +230,22 @@ const BuildsTable = () => {
                   return (
                     <TableRow
                       key={build.id}
-                      className={isBuilding ? 'bg-bg-1 animate-pulse' : ''}
+                      className={cn(
+                        'transition-colors cursor-pointer hover:bg-bg-hover',
+                        {
+                          'bg-bg-1 animate-pulse': isBuilding,
+                        }
+                      )}
+                      onClick={() => {
+                        router.push(
+                          PROTECTED_URLS.TEMPLATE_BUILD(
+                            teamIdOrSlug,
+                            build.templateId,
+                            build.id
+                          )
+                        )
+                      }}
                     >
-                      <TableCell
-                        className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: COLUMN_WIDTHS.id }}
-                      >
-                        <BuildId id={build.id} />
-                      </TableCell>
                       <TableCell
                         className="py-1.5"
                         style={{ maxWidth: COLUMN_WIDTHS.status }}
@@ -247,11 +257,11 @@ const BuildsTable = () => {
                         style={{ maxWidth: COLUMN_WIDTHS.template }}
                       >
                         <Template
-                          name={build.template}
-                          templateId={build.template}
+                          template={build.template}
+                          templateId={build.templateId}
                         />
                       </TableCell>
-                      <TableCell className="py-1.5 text-end">
+                      <TableCell className="py-1.5">
                         <StartedAt timestamp={build.createdAt} />
                       </TableCell>
                       <TableCell className="py-1.5 text-end">
@@ -260,6 +270,12 @@ const BuildsTable = () => {
                           finishedAt={build.finishedAt}
                           isBuilding={isBuilding}
                         />
+                      </TableCell>
+                      <TableCell
+                        className="py-1.5 overflow-hidden"
+                        style={{ maxWidth: COLUMN_WIDTHS.id }}
+                      >
+                        <BuildId id={build.id} />
                       </TableCell>
                       <TableCell className="py-1.5 w-full">
                         <Reason statusMessage={build.statusMessage} />

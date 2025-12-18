@@ -1,11 +1,13 @@
 'use client'
 
-import { getDashboardLayoutConfig } from '@/configs/layout'
+import { getDashboardLayoutConfig, TitleSegment } from '@/configs/layout'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Fragment } from 'react'
 
 interface DashboardLayoutHeaderProps {
   className?: string
@@ -34,10 +36,12 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
-      <div className="flex items-center gap-2 w-full relative">
+      <div className="flex items-center gap-2 w-full relative min-h-7">
         <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1" />
 
-        <h1 className="mr-auto align-middle">{config.title}</h1>
+        <h1 className="mr-auto align-middle truncate">
+          <HeaderTitle title={config.title} />
+        </h1>
 
         {children}
 
@@ -46,5 +50,31 @@ export default function DashboardLayoutHeader({
         </ClientOnly>
       </div>
     </div>
+  )
+}
+
+function HeaderTitle({ title }: { title: string | TitleSegment[] }) {
+  if (typeof title === 'string') {
+    return title
+  }
+
+  return (
+    <span className="flex items-center gap-1">
+      {title.map((segment, index) => (
+        <Fragment key={index}>
+          {index > 0 && <span className="text-fg-tertiary select-none">/</span>}
+          {segment.href ? (
+            <Link
+              href={segment.href}
+              className="text-fg-secondary hover:text-fg transition-colors hover:underline"
+            >
+              {segment.label}
+            </Link>
+          ) : (
+            <span>{segment.label}</span>
+          )}
+        </Fragment>
+      ))}
+    </span>
   )
 }

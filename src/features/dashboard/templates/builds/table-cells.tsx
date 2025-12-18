@@ -2,7 +2,6 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
-import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
 import {
   formatDurationCompact,
@@ -12,6 +11,7 @@ import type {
   BuildStatusDTO,
   ListedBuildDTO,
 } from '@/server/api/models/builds.models'
+import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
@@ -20,50 +20,25 @@ import { ArrowUpRight } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-function CopyableCell({
-  value,
-  children,
-  className,
-}: {
-  value: string
-  children: React.ReactNode
-  className?: string
-}) {
-  const [wasCopied, copy] = useClipboard()
-
-  return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation()
-        copy(value)
-      }}
-      className={cn(
-        'text-fg-tertiary transition-colors cursor-copy',
-        'hover:text-fg-secondary',
-        wasCopied && 'text-accent-main',
-        className
-      )}
-    >
-      {wasCopied ? 'Copied!' : children}
-    </button>
-  )
-}
-
 export function BuildId({ id }: { id: string }) {
   return (
-    <CopyableCell value={id} className="truncate text-left w-full">
-      {id}
-    </CopyableCell>
+    <CopyButtonInline
+      value={id}
+      className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
+    >
+      {id.slice(0, 6)}...{id.slice(-6)}
+    </CopyButtonInline>
   )
 }
 
 export function Template({
-  name,
+  template,
   templateId,
+  className,
 }: {
-  name: string
+  template: string
   templateId: string
+  className?: string
 }) {
   const router = useRouter()
   const { teamIdOrSlug } =
@@ -74,7 +49,10 @@ export function Template({
   return (
     <Button
       variant="link"
-      className="text-fg h-auto p-0 gap-1 font-sans prose-table normal-case max-w-full"
+      className={cn(
+        'text-fg h-auto p-0 gap-1 font-sans prose-table normal-case max-w-full',
+        className
+      )}
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
@@ -83,7 +61,7 @@ export function Template({
         router.push(PROTECTED_URLS.TEMPLATES_LIST(teamIdOrSlug))
       }}
     >
-      <p className="truncate">{name}</p>
+      <p className="truncate">{template}</p>
       <ArrowUpRight className="size-3 min-w-3" />
     </Button>
   )
@@ -151,18 +129,10 @@ export function Duration({
     : (finishedAt ?? now) - createdAt
   const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
-  if (isBuilding || !iso) {
-    return (
-      <span className="prose-table-numeric whitespace-nowrap text-fg-tertiary">
-        {formatDurationCompact(duration)}
-      </span>
-    )
-  }
-
   return (
-    <CopyableCell value={iso} className="prose-table-numeric whitespace-nowrap">
+    <span className="text-fg-tertiary prose-table-numeric whitespace-nowrap">
       {formatDurationCompact(duration)}
-    </CopyableCell>
+    </span>
   )
 }
 
@@ -171,9 +141,9 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const elapsed = Date.now() - timestamp
 
   return (
-    <CopyableCell value={iso} className="prose-table-numeric whitespace-nowrap">
+    <span className="text-fg prose-table-numeric whitespace-nowrap">
       {formatTimeAgoCompact(elapsed)}
-    </CopyableCell>
+    </span>
   )
 }
 
@@ -213,7 +183,7 @@ export function Status({ status }: StatusProps) {
     <div className="flex items-center gap-3 min-w-0">
       <Badge
         variant={variant}
-        className={cn('select-none flex-shrink-0 uppercase', {
+        className={cn('select-none shrink-0 uppercase', {
           'bg-bg-inverted/10': variant === 'default',
         })}
       >
@@ -232,11 +202,8 @@ export function Reason({
   if (!statusMessage) return null
 
   return (
-    <CopyableCell
-      value={statusMessage}
-      className="truncate max-w-0 min-w-full text-left"
-    >
+    <span className="block truncate max-w-0 min-w-full text-left text-fg-tertiary">
       {statusMessage}
-    </CopyableCell>
+    </span>
   )
 }
