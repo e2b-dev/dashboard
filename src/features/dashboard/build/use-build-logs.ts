@@ -80,6 +80,7 @@ export function useBuildLogs({
 
   return {
     logs,
+    isInitialized,
     hasNextPage: hasMoreBackwards,
     isFetchingNextPage: isLoadingBackwards,
     isFetching: isLoadingBackwards || isLoadingForwards || isPolling,

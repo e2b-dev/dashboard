@@ -188,7 +188,7 @@ export const createBuildLogsStore = () =>
 
           set((s) => {
             const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
-            s.logs = [...s.logs, ...uniqueNewLogs]
+            s.logs = [...uniqueNewLogs, ...s.logs]
             s.hasMoreBackwards = result.nextCursor !== null
             s.backwardsCursor = result.nextCursor
             s.isLoadingBackwards = false
@@ -243,7 +243,7 @@ export const createBuildLogsStore = () =>
           set((s) => {
             const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
             if (uniqueNewLogs.length > 0) {
-              s.logs = [...uniqueNewLogs, ...s.logs]
+              s.logs = [...s.logs, ...uniqueNewLogs]
             }
             s.isLoadingForwards = false
           })
@@ -264,12 +264,12 @@ export const createBuildLogsStore = () =>
 
       getNewestTimestamp: () => {
         const state = get()
-        return state.logs[0]?.timestampUnix
+        return state.logs[state.logs.length - 1]?.timestampUnix
       },
 
       getOldestTimestamp: () => {
         const state = get()
-        return state.logs[state.logs.length - 1]?.timestampUnix
+        return state.logs[0]?.timestampUnix
       },
     }))
   )
