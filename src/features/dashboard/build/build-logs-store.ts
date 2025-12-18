@@ -171,15 +171,14 @@ export const createBuildLogsStore = () =>
           const cursor =
             state.backwardsCursor ?? state.getOldestTimestamp() ?? Date.now()
 
-          const result = await state._trpcClient.builds.buildLogsBackwards.query(
-            {
+          const result =
+            await state._trpcClient.builds.buildLogsBackwards.query({
               teamIdOrSlug: state._params.teamIdOrSlug,
               templateId: state._params.templateId,
               buildId: state._params.buildId,
               level: state.level ?? undefined,
               cursor,
-            }
-          )
+            })
 
           // Ignore stale response if init was called during fetch
           if (get()._initVersion !== requestVersion) {
@@ -207,11 +206,7 @@ export const createBuildLogsStore = () =>
       fetchMoreForwards: async () => {
         const state = get()
 
-        if (
-          !state._trpcClient ||
-          !state._params ||
-          state.isLoadingForwards
-        ) {
+        if (!state._trpcClient || !state._params || state.isLoadingForwards) {
           return { logsCount: 0 }
         }
 
@@ -240,15 +235,18 @@ export const createBuildLogsStore = () =>
             return { logsCount: 0 }
           }
 
+          let uniqueLogsCount = 0
+
           set((s) => {
             const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
-            if (uniqueNewLogs.length > 0) {
+            uniqueLogsCount = uniqueNewLogs.length
+            if (uniqueLogsCount > 0) {
               s.logs = [...s.logs, ...uniqueNewLogs]
             }
             s.isLoadingForwards = false
           })
 
-          return { logsCount: result.logs.length }
+          return { logsCount: uniqueLogsCount }
         } catch {
           if (get()._initVersion !== requestVersion) {
             return { logsCount: 0 }

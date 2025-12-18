@@ -73,7 +73,8 @@ export function RanFor({
     ? now - startedAt
     : (finishedAt ?? now) - startedAt
 
-  if (isBuilding) {
+  // no timestamp to copy - just show duration
+  if (isBuilding || !finishedAt) {
     return (
       <span className="whitespace-nowrap text-fg-tertiary">
         {formatDurationCompact(duration)}
@@ -81,13 +82,15 @@ export function RanFor({
     )
   }
 
-  const iso = finishedAt ? new Date(finishedAt).toISOString() : null
-  const formattedTimestamp = finishedAt ? formatCompactDate(finishedAt) : null
+  const iso = new Date(finishedAt).toISOString()
+  const formattedTimestamp = formatCompactDate(finishedAt)
 
   return (
-    <CopyButtonInline value={iso ?? ''} className="whitespace-nowrap group/time">
+    <CopyButtonInline value={iso} className="whitespace-nowrap group/time">
       {formatDurationCompact(duration)}{' '}
-      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">· {formattedTimestamp}</span>
+      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
+        · {formattedTimestamp}
+      </span>
     </CopyButtonInline>
   )
 }
@@ -100,7 +103,9 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   return (
     <CopyButtonInline value={iso} className="whitespace-nowrap group/time">
       {formatTimeAgoCompact(elapsed)}{' '}
-      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">· {formattedTimestamp}</span>
+      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
+        · {formattedTimestamp}
+      </span>
     </CopyButtonInline>
   )
 }
