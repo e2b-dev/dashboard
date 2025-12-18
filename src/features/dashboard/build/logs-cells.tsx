@@ -3,6 +3,7 @@ import { BuildLogDTO } from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge, BadgeProps } from '@/ui/primitives/badge'
 import { format } from 'date-fns'
+import { enUS } from 'date-fns/locale/en-US'
 
 interface LogLevelProps {
   level: BuildLogDTO['level']
@@ -49,7 +50,9 @@ export const Timestamp = ({
     >
       {formatDurationCompact(millisAfterStart, true)}{' '}
       <span className="group-hover:text-current transition-colors text-fg-tertiary">
-        {format(date, 'HH:mm:ss.SS')}
+        {format(date, 'hh:mm:ss.SS a', {
+          locale: enUS,
+        })}
       </span>
     </CopyButtonInline>
   )
