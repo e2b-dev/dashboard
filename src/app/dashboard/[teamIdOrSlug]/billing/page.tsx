@@ -7,7 +7,6 @@ import { l } from '@/lib/clients/logger/logger'
 import { getItems } from '@/server/billing/get-items'
 import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorBoundary from '@/ui/error'
-import Frame from '@/ui/frame'
 
 export default async function BillingPage({
   params,
@@ -51,13 +50,13 @@ export default async function BillingPage({
   const addonData = extractAddonData(itemsRes.data, tierData.selected?.id)
 
   return (
-    <Frame
-      classNames={{
-        wrapper: 'w-full max-md:p-0',
-        frame: 'max-md:border-none',
-      }}
-    >
-      <SelectedPlan tierData={tierData} addonData={addonData} />
-    </Frame>
+    // <Frame
+    //   classNames={{
+    //     wrapper: 'w-full max-md:p-0',
+    //     frame: 'max-md:border-none',
+    //   }}
+    // >
+    <SelectedPlan tierData={tierData} addonData={addonData} />
+    // </Frame>
   )
 }
