@@ -1,6 +1,4 @@
-import CustomerPortalLink from '@/features/dashboard/billing/customer-portal-link'
-import BillingInvoicesTable from '@/features/dashboard/billing/invoices-table'
-import { PlanSection } from '@/features/dashboard/billing/plan-section'
+import SelectedPlan from '@/features/dashboard/billing/selected-plan'
 import {
   extractAddonData,
   extractTierData,
@@ -10,13 +8,6 @@ import { getItems } from '@/server/billing/get-items'
 import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorBoundary from '@/ui/error'
 import Frame from '@/ui/frame'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/ui/primitives/card'
 
 export default async function BillingPage({
   params,
@@ -66,39 +57,7 @@ export default async function BillingPage({
         frame: 'max-md:border-none',
       }}
     >
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Plan</CardTitle>
-          <CardDescription>
-            Manage your current plan and subscription details.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <CustomerPortalLink className="bg-bg w-fit" />
-
-          <PlanSection
-            tierData={tierData}
-            addonData={addonData}
-            limits={limitsRes.data}
-          />
-        </CardContent>
-      </Card>
-
-      <Card className="w-full mt-6">
-        <CardHeader>
-          <CardTitle>Billing History</CardTitle>
-          <CardDescription>
-            View your team's billing history and invoices.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <div className="w-full overflow-x-auto">
-            <BillingInvoicesTable params={params} />
-          </div>
-        </CardContent>
-      </Card>
+      <SelectedPlan tierData={tierData} addonData={addonData} />
     </Frame>
   )
 }
