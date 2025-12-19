@@ -32,7 +32,7 @@ export default function BuildHeader({
             value={buildId}
             className="font-mono prose-table-numeric text-fg-secondary"
           >
-            {buildId.slice(0, 6)}...{buildId.slice(-6)}
+            {buildId}
           </CopyButtonInline>
         </DetailsItem>
         <DetailsItem label="Template">

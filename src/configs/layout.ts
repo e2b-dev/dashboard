@@ -38,7 +38,8 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   '/dashboard/*/templates/*/builds/*': (pathname) => {
     const parts = pathname.split('/')
     const teamIdOrSlug = parts[2]!
-    const buildId = parts.pop()
+    const buildId = parts.pop()!
+    const buildIdSliced = `${buildId.slice(0, 6)}...${buildId.slice(-6)}`
 
     return {
       title: [
@@ -46,7 +47,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
           label: 'Templates',
           href: PROTECTED_URLS.TEMPLATES_BUILDS(teamIdOrSlug),
         },
-        { label: `Build ${buildId}` },
+        { label: `Build ${buildIdSliced}` },
       ],
       type: 'custom',
       custom: {
