@@ -10,6 +10,7 @@ export default async function BillingPage({
   const { teamIdOrSlug } = await params
 
   prefetch(trpc.billing.getItems.queryOptions({ teamIdOrSlug }))
+  prefetch(trpc.billing.getUsage.queryOptions({ teamIdOrSlug }))
 
   return (
     <HydrateClient>

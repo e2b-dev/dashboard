@@ -4,10 +4,10 @@ import { formatCurrency } from '@/lib/utils/formatting'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useBillingItems } from './hooks'
+import { useUsage } from './hooks'
 
 export default function Credits() {
-  const { isLoading } = useBillingItems()
+  const { credits, isLoading } = useUsage()
 
   return (
     <section>
@@ -18,7 +18,9 @@ export default function Credits() {
           {isLoading ? (
             <Skeleton className="h-5 w-16" />
           ) : (
-            <span className="prose-value-small">{formatCurrency(100)}</span>
+            <span className="prose-value-small">
+              {formatCurrency(credits ?? 0)}
+            </span>
           )}
         </div>
         <p className="prose-body text-fg-tertiary whitespace-nowrap">

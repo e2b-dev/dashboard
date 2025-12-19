@@ -15,12 +15,29 @@ export function useBillingItems() {
 
   const tierData = items ? extractTierData(items) : undefined
   const addonData =
-    items && tierData ? extractAddonData(items, tierData.selected?.id) : undefined
+    items && tierData
+      ? extractAddonData(items, tierData.selected?.id)
+      : undefined
 
   return {
     items,
     tierData,
     addonData,
+    isLoading,
+  }
+}
+
+export function useUsage() {
+  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
+  const trpc = useTRPC()
+
+  const { data: usage, isLoading } = useQuery(
+    trpc.billing.getUsage.queryOptions({ teamIdOrSlug })
+  )
+
+  return {
+    usage,
+    credits: usage?.credits,
     isLoading,
   }
 }
