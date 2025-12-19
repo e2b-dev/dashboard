@@ -279,11 +279,10 @@ function LevelFilter({ level, onLevelChange }: LevelFilterProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            size="sm"
-            className="font-sans w-min normal-case"
+            className="font-sans w-min normal-case prose-body-highlight h-9"
           >
             <LevelIndicator level={selectedLevel} />
-            Min Level • {selectedLabel}
+            Min Level · {selectedLabel}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
