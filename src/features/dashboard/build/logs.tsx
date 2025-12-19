@@ -207,7 +207,7 @@ function LogsTableHeader() {
     >
       <TableRow style={{ display: 'flex', minWidth: '100%' }}>
         <TableHead
-          className="text-fg"
+          data-state="selected"
           style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
         >
           Timestamp <ArrowDownIcon className="size-3 rotate-180" />
