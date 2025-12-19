@@ -1,4 +1,3 @@
-import CreditsCard from '@/features/dashboard/budget/credits-card'
 import UsageLimits from '@/features/dashboard/budget/usage-limits'
 import Frame from '@/ui/frame'
 
@@ -14,7 +13,6 @@ export default function BudgetPage({ params }: BudgetPageProps) {
         wrapper: 'w-full max-md:p-0',
       }}
     >
-      <CreditsCard params={params} />
       <UsageLimits params={params} />
     </Frame>
   )
