@@ -31,7 +31,7 @@ export function Template({
     <Button
       variant="link"
       className={cn(
-        'text-fg h-auto p-0 gap-1 font-sans prose-body normal-case max-w-full',
+        'text-fg h-auto p-0 gap-1 font-sans prose-body normal-case max-w-full underline underline-offset-2 hover:text-accent-main-highlight',
         className
       )}
       onClick={(e) => {
@@ -43,7 +43,6 @@ export function Template({
       }}
     >
       <p className="truncate">{template}</p>
-      <ArrowUpRight className="size-3 min-w-3" />
     </Button>
   )
 }
