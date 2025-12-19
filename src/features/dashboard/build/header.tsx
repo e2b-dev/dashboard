@@ -30,7 +30,7 @@ export default function BuildHeader({
         <DetailsItem label="ID">
           <CopyButtonInline
             value={buildId}
-            className="font-mono prose-body-numeric"
+            className="font-mono prose-table-numeric"
           >
             {buildId.slice(0, 6)}...{buildId.slice(-6)}
           </CopyButtonInline>

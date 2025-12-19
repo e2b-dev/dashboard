@@ -31,7 +31,7 @@ export function Template({
     <Button
       variant="link"
       className={cn(
-        'text-fg h-auto p-0 gap-1 font-sans prose-table normal-case max-w-full',
+        'text-fg h-auto p-0 gap-1 font-sans prose-body normal-case max-w-full',
         className
       )}
       onClick={(e) => {
