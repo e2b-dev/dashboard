@@ -52,7 +52,7 @@ export default function BuildHeader({
             <StartedAt timestamp={buildDetails.startedAt} />
           )}
         </DetailsItem>
-        <DetailsItem label={isBuilding ? 'Ran for' : 'Finished'}>
+        <DetailsItem label={isBuilding ? 'Running for' : 'Finished'}>
           {isLoading ? (
             <Skeleton className="w-36 h-5" />
           ) : (

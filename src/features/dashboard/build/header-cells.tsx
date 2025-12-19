@@ -87,7 +87,7 @@ export function RanFor({
 
   return (
     <CopyButtonInline value={iso} className="whitespace-nowrap group/time">
-      {formatDurationCompact(duration)}{' '}
+      In {formatDurationCompact(duration)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}
       </span>
