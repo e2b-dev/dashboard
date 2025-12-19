@@ -1,6 +1,7 @@
 import { TierLimits } from '@/types/billing.types'
 import { Button } from '@/ui/primitives/button'
 import {
+  BuildIcon,
   CpuIcon,
   GaugeIcon,
   MemoryIcon,
@@ -10,7 +11,7 @@ import {
 } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
-import Image from 'next/image'
+import { TierAvatarBorder } from './tier-avatar-border'
 import { BillingAddonData, BillingTierData } from './types'
 
 const MIB_TO_GB = 1024
@@ -53,18 +54,16 @@ interface PlanAvatarProps {
 function PlanAvatar({ selectedTier }: PlanAvatarProps) {
   const isBaseTier = !selectedTier || selectedTier.id.includes('base')
 
+  const icon = isBaseTier ? (
+    <BuildIcon className="size-7" />
+  ) : (
+    <UpgradeIcon className="size-7" />
+  )
+
   return (
-    <div className="size-36 min-w-36 relative flex items-center justify-center max-lg:hidden ">
-      <Image
-        src={
-          isBaseTier
-            ? '/graphics/dashboard/base-tier-avatar.svg'
-            : '/graphics/dashboard/pro-tier-avatar.svg'
-        }
-        alt="Plan Avatar"
-        width={144}
-        height={144}
-      />
+    <div className="size-36 min-w-36 relative flex items-center justify-center max-lg:hidden text-icon-tertiary">
+      {icon}
+      <TierAvatarBorder className="absolute inset-0 dark:text-white text-black" />
     </div>
   )
 }
@@ -75,7 +74,7 @@ interface PlanTitleProps {
 
 function PlanTitle({ selectedTier }: PlanTitleProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <Label className="text-fg-tertiary">Plan</Label>
       <h2 className="text-3xl font-bold tracking-tight">
         {selectedTier?.name}
