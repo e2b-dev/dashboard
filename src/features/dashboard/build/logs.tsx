@@ -659,7 +659,7 @@ function StatusRow({
           justifyContent: 'start',
         }}
       >
-        <span className="prose-body-highlight text-fg-tertiary uppercase">
+        <span className="prose-body text-fg-tertiary pb-1">
           {isFetchingNextPage ? (
             <span className="inline-flex gap-1">
               Loading more logs
