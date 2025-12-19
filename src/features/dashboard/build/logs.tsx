@@ -214,10 +214,15 @@ function LogsTableHeader() {
         >
           Timestamp <ArrowDownIcon className="size-3 rotate-180" />
         </TableHead>
-        <TableHead className="px-0 pr-4" style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}>
+        <TableHead
+          className="px-0 pr-4"
+          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
+        >
           Level
         </TableHead>
-        <TableHead className="px-0" style={{ display: 'flex', flex: 1 }}>Message</TableHead>
+        <TableHead className="px-0" style={{ display: 'flex', flex: 1 }}>
+          Message
+        </TableHead>
       </TableRow>
     </TableHeader>
   )
@@ -311,7 +316,7 @@ function LevelIndicator({ level }: { level: LogLevelFilter }) {
         'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
         {
           'border-fg-tertiary': level === 'debug',
-          'border-accent-positive-highlight': level === 'info',
+          'border-accent-info-highlight': level === 'info',
           'border-accent-warning-highlight': level === 'warn',
           'border-accent-error-highlight': level === 'error',
         }
