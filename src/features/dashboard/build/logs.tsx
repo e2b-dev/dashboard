@@ -42,7 +42,8 @@ import { type LogLevelFilter } from './logs-filter-params'
 import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 
-const COLUMN_WIDTHS_PX = { timestamp: 192, level: 92 } as const
+// Column width are calculated as max width of the content + padding
+const COLUMN_WIDTHS_PX = { timestamp: 176 + 16, level: 52 + 16 } as const
 const ROW_HEIGHT_PX = 26
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
@@ -208,14 +209,15 @@ function LogsTableHeader() {
       <TableRow style={{ display: 'flex', minWidth: '100%' }}>
         <TableHead
           data-state="selected"
+          className="px-0 pr-4"
           style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
         >
           Timestamp <ArrowDownIcon className="size-3 rotate-180" />
         </TableHead>
-        <TableHead style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}>
+        <TableHead className="px-0 pr-4" style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}>
           Level
         </TableHead>
-        <TableHead style={{ display: 'flex', flex: 1 }}>Message</TableHead>
+        <TableHead className="px-0" style={{ display: 'flex', flex: 1 }}>Message</TableHead>
       </TableRow>
     </TableHeader>
   )
@@ -224,7 +226,7 @@ function LogsTableHeader() {
 function LoaderBody() {
   return (
     <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
+      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
         <TableCell className="flex-1">
           <div className="h-[35svh] w-full flex justify-center items-center">
             <Loader variant="slash" size="lg" />
@@ -242,7 +244,7 @@ interface EmptyBodyProps {
 function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
   return (
     <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
+      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
         <TableCell className="flex-1">
           <div className="h-[35vh] w-full gap-2 relative flex flex-col justify-center items-center p-6">
             <div className="flex items-center gap-2">
@@ -376,6 +378,7 @@ function VirtualizedLogsBody({
     estimateSize: () => ROW_HEIGHT_PX,
     getScrollElement: () => scrollContainerRef.current,
     overscan: VIRTUAL_OVERSCAN,
+    paddingStart: 8,
   })
 
   const containerWidth = scrollContainerRef.current?.clientWidth ?? 0
@@ -585,7 +588,7 @@ function LogRow({ log, virtualRow, virtualizer, startedAt }: LogRowProps) {
       }}
     >
       <TableCell
-        className="py-0"
+        className="py-0 px-0 pr-4"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -598,7 +601,7 @@ function LogRow({ log, virtualRow, virtualizer, startedAt }: LogRowProps) {
         />
       </TableCell>
       <TableCell
-        className="py-0"
+        className="py-0 px-0 pr-4"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -608,7 +611,7 @@ function LogRow({ log, virtualRow, virtualizer, startedAt }: LogRowProps) {
         <LogLevel level={log.level} />
       </TableCell>
       <TableCell
-        className="py-0"
+        className="py-0 px-0"
         style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
       >
         <Message message={log.message} />
