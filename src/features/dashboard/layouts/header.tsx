@@ -74,7 +74,7 @@ function HeaderTitle({ title }: { title: string | TitleSegment[] }) {
               {segment.label}
             </Link>
           ) : (
-            <span className="shrink-0">{segment.label}</span>
+            <span className="truncate">{segment.label}</span>
           )}
         </Fragment>
       ))}
