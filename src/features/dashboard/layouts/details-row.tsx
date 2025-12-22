@@ -7,7 +7,7 @@ interface DetailItemProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function DetailsItem({ label, children, ...props }: DetailItemProps) {
   return (
-    <div className={cn('flex flex-col gap-2')} {...props}>
+    <div className={cn('flex flex-col gap-1')} {...props}>
       <span className="text-fg-tertiary prose-label uppercase">{label}</span>
       {children}
     </div>

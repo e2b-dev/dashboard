@@ -14,7 +14,7 @@ const mapLogLevelToBadgeProps: Record<BuildLogDTO['level'], BadgeProps> = {
     variant: 'default',
   },
   info: {
-    variant: 'positive',
+    variant: 'info',
   },
   warn: {
     variant: 'warning',
@@ -26,7 +26,7 @@ const mapLogLevelToBadgeProps: Record<BuildLogDTO['level'], BadgeProps> = {
 
 export const LogLevel = ({ level }: LogLevelProps) => {
   return (
-    <Badge {...mapLogLevelToBadgeProps[level]} className="uppercase">
+    <Badge {...mapLogLevelToBadgeProps[level]} className="uppercase h-[18px]">
       {level}
     </Badge>
   )
