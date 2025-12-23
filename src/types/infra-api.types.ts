@@ -376,6 +376,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/sandboxes/{sandboxID}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox logs (v2) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
+                    cursor?: number;
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
+                    direction?: components["schemas"]["LogsDirection"];
+                };
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox logs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxLogsV2Response"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}": {
         parameters: {
             query?: never;
@@ -1700,6 +1747,13 @@ export interface components {
             logs: components["schemas"]["SandboxLog"][];
             /** @description Structured logs of the sandbox */
             logEntries: components["schemas"]["SandboxLogEntry"][];
+        };
+        SandboxLogsV2Response: {
+            /**
+             * @description Sandbox logs structured
+             * @default []
+             */
+            logs: components["schemas"]["SandboxLogEntry"][];
         };
         /** @description Metric entry with timestamp and line */
         SandboxMetric: {
