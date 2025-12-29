@@ -19,10 +19,7 @@ export const TableRow = memo(function TableRow({ row }: TableRowProps) {
 
   return (
     <Link
-      href={PROTECTED_URLS.SANDBOX_INSPECT(
-        teamIdOrSlug,
-        row.original.sandboxID
-      )}
+      href={PROTECTED_URLS.SANDBOX_LOGS(teamIdOrSlug, row.original.sandboxID)}
       prefetch={false}
       passHref
     >

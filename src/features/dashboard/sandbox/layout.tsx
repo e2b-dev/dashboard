@@ -38,8 +38,8 @@ export default function SandboxLayout({
 
       <DashboardTabs type="path" layoutKey="tabs-indicator-sandbox">
         <DashboardTab
-          id="inspect"
-          label="Inspect"
+          id="filesystem"
+          label="Filesystem"
           className="flex flex-col max-h-full"
         >
           {isEnvdVersionCompatibleForInspect ? (
@@ -50,6 +50,13 @@ export default function SandboxLayout({
               teamIdOrSlug={teamIdOrSlug}
             />
           )}
+        </DashboardTab>
+        <DashboardTab
+          id="logs"
+          label="Logs"
+          className="flex flex-col max-h-full"
+        >
+          {children}
         </DashboardTab>
       </DashboardTabs>
     </div>
