@@ -44,7 +44,6 @@ export const upsertWebhookAction = authActionClient
             url,
             events,
             enabled,
-            ...(signatureSecret ? { signatureSecret } : {}),
           },
         })
       : await infra.POST('/events/webhooks', {
