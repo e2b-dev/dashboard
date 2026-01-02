@@ -5,6 +5,7 @@ interface Invoice {
   paid: boolean
   url: string
   date_created: string
+  credits_used: number
 }
 
 interface BillingLimit {

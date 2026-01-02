@@ -1,5 +1,5 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { TeamItems, UsageResponse } from '@/types/billing.types'
+import { Invoice, TeamItems, UsageResponse } from '@/types/billing.types'
 import { TRPCError } from '@trpc/server'
 import { createTRPCRouter } from '../init'
 import { protectedTeamProcedure } from '../procedures'
@@ -69,5 +69,32 @@ export const billingRouter = createTRPCRouter({
     }
 
     return data
+  }),
+
+  getInvoices: protectedTeamProcedure.query(async ({ ctx }) => {
+    const { teamId, session } = ctx
+
+    const res = await fetch(
+      `${process.env.BILLING_API_URL}/teams/${teamId}/invoices`,
+      {
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message:
+          text ?? `Failed to fetch billing endpoint: /teams/${teamId}/invoices`,
+      })
+    }
+
+    const invoices = (await res.json()) as Invoice[]
+
+    return invoices
   }),
 })

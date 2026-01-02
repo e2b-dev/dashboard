@@ -41,3 +41,18 @@ export function useUsage() {
     isLoading,
   }
 }
+
+export function useInvoices() {
+  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
+  const trpc = useTRPC()
+
+  const { data: invoices, isLoading, error } = useQuery(
+    trpc.billing.getInvoices.queryOptions({ teamIdOrSlug })
+  )
+
+  return {
+    invoices,
+    isLoading,
+    error,
+  }
+}

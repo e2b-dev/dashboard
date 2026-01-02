@@ -188,7 +188,7 @@ function PlanFeatures({ limits, addonData, isLoading }: PlanFeaturesProps) {
       {features.map((feature) => (
         <div
           key={feature.label}
-          className="flex items-center gap-2 text-fg-tertiary"
+          className="flex items-center gap-1 text-fg-tertiary"
         >
           {feature.icon}
           <span className="text-sm">{feature.label}</span>
