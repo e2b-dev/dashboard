@@ -48,7 +48,7 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
     },
   },
 
-  // Manus Billboard Campaign
+  // SF 2026 Billboard Campaign
   {
     source: '/computers',
     destination:
