@@ -52,7 +52,7 @@ export const MIDDLEWARE_REDIRECTS: MiddlewareRedirect[] = [
   {
     source: '/computers',
     destination:
-      '/blog/how-manus-uses-e2b-to-provide-agents-with-virtual-computers?utm_source=billboard&utm_medium=outdoor&utm_campaign=manus_2025&utm_content=computers',
+      '/blog/how-manus-uses-e2b-to-provide-agents-with-virtual-computers?utm_source=billboard&utm_medium=outdoor&utm_campaign=sf_ooh_2026&utm_content=computers',
     statusCode: 302,
     headers: {
       'X-Robots-Tag': 'noindex',
