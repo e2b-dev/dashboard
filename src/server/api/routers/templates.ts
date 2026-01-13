@@ -10,6 +10,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { DefaultTemplate } from '@/types/api.types'
 import { TRPCError } from '@trpc/server'
+import { Template } from 'e2b'
 import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { apiError } from '../errors'
@@ -36,7 +37,7 @@ export const templatesRouter = createTRPCRouter({
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
     })
 
@@ -87,7 +88,7 @@ export const templatesRouter = createTRPCRouter({
           },
         },
         headers: {
-          ...SUPABASE_AUTH_HEADERS(session.access_token),
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
       })
 
@@ -155,7 +156,7 @@ export const templatesRouter = createTRPCRouter({
           },
         },
         headers: {
-          ...SUPABASE_AUTH_HEADERS(session.access_token),
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
       })
 
