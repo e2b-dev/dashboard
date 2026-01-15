@@ -92,8 +92,8 @@ function DashboardSurveyPopover({ trigger }: DashboardSurveyPopoverProps) {
 
       <PopoverContent
         className="w-[400px]"
-        collisionPadding={20}
-        sideOffset={25}
+        collisionPadding={12}
+        sideOffset={12}
       >
         {dashboardFeedbackSurvey && (
           <SurveyContent
