@@ -53,8 +53,12 @@ export default function ReportIssuePopover({
         setWasSubmitted(true)
         toast.success('Issue reported successfully. Our team will review it shortly.')
         setIsOpen(false)
+        // reset state
         setSandboxId('')
         setDescription('')
+        setTimeout(() => {
+          setWasSubmitted(false)
+        }, 100)
       } else {
         toast.error('Failed to report issue. Please try again.')
       }
@@ -75,11 +79,6 @@ export default function ReportIssuePopover({
         }
         if (!open && !wasSubmitted) {
           posthog.capture('issue_report_dismissed')
-        }
-        if (!open) {
-          setTimeout(() => {
-            setWasSubmitted(false)
-          }, 100)
         }
         setIsOpen(open)
       }}
