@@ -15,6 +15,7 @@ import {
 import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
+import ReportIssuePopover from '../navbar/report-issue-popover'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -102,17 +103,21 @@ export default function DashboardSidebarFooter() {
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
         >
-          <SidebarMenuButton
-            tooltip="Report Issue"
-            variant="ghost"
-            className={cn(
-              'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
-              SIDEBAR_TRANSITION_CLASSNAMES
-            )}
-          >
-            <Bug className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
-            Report Issue
-          </SidebarMenuButton>
+          <ReportIssuePopover
+            trigger={
+              <SidebarMenuButton
+                tooltip="Report Issue"
+                variant="ghost"
+                className={cn(
+                  'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                  SIDEBAR_TRANSITION_CLASSNAMES
+                )}
+              >
+                <Bug className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                Report Issue
+              </SidebarMenuButton>
+            }
+          />
         </SidebarMenuItem>
       </SidebarMenu>
     </>
