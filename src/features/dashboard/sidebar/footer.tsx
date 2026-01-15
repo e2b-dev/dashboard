@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Github, MessageSquarePlus } from 'lucide-react'
+import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import TeamBlockageAlert from './blocked-banner'
@@ -60,12 +60,17 @@ export default function DashboardSidebarFooter() {
         </SidebarGroup>
       </SidebarFooter>
 
-      {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
-        <SidebarMenu className="p-0 gap-0">
+      <SidebarMenu
+        className={cn(
+          'flex-row gap-0 border-t group-data-[collapsible=icon]:flex-col',
+          SIDEBAR_TRANSITION_CLASSNAMES
+        )}
+      >
+        {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
           <SidebarMenuItem
             key="survey"
             className={cn(
-              'transition-all border-t group-data-[collapsible=icon]:pl-2',
+              'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
               SIDEBAR_TRANSITION_CLASSNAMES
             )}
           >
@@ -79,14 +84,37 @@ export default function DashboardSidebarFooter() {
                     SIDEBAR_TRANSITION_CLASSNAMES
                   )}
                 >
-                  <MessageSquarePlus className="group-data-[collapsible=icon]:!size-5" />
+                  <MessageSquarePlus className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
                   Feedback
                 </SidebarMenuButton>
               }
             />
           </SidebarMenuItem>
-        </SidebarMenu>
-      )}
+        )}
+        {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
+          /* separator */
+          <div className="border-r h-full hidden group-data-[collapsible=icon]:hidden group-data-[state=expanded]:block" />
+        )}
+        <SidebarMenuItem
+          key="report-issue"
+          className={cn(
+            'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+            SIDEBAR_TRANSITION_CLASSNAMES
+          )}
+        >
+          <SidebarMenuButton
+            tooltip="Report Issue"
+            variant="ghost"
+            className={cn(
+              'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+              SIDEBAR_TRANSITION_CLASSNAMES
+            )}
+          >
+            <Bug className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+            Report Issue
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </>
   )
 }
