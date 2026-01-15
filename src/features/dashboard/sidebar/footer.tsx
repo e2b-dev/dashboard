@@ -77,7 +77,7 @@ export default function DashboardSidebarFooter() {
             <DashboardSurveyPopover
               trigger={
                 <SidebarMenuButton
-                  tooltip="Survey"
+                  tooltip="Feedback"
                   variant="ghost"
                   className={cn(
                     'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
