@@ -11,6 +11,7 @@ import {
 import { Input } from '@/ui/primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/primitives/popover'
 import { Textarea } from '@/ui/primitives/textarea'
+import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -21,10 +22,12 @@ interface ReportIssuePopoverProps {
 export default function ReportIssuePopover({
   trigger,
 }: ReportIssuePopoverProps) {
+  const posthog = usePostHog()
   const [isOpen, setIsOpen] = useState(false)
   const [sandboxId, setSandboxId] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [wasSubmitted, setWasSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,6 +46,11 @@ export default function ReportIssuePopover({
       })
 
       if (result?.data?.success) {
+        posthog.capture('issue_reported', {
+          sandbox_id: sandboxId.trim(),
+          thread_id: result.data.threadId,
+        })
+        setWasSubmitted(true)
         toast.success('Issue reported successfully. Our team will review it shortly.')
         setIsOpen(false)
         setSandboxId('')
@@ -59,7 +67,23 @@ export default function ReportIssuePopover({
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (open) {
+          posthog.capture('issue_report_shown')
+        }
+        if (!open && !wasSubmitted) {
+          posthog.capture('issue_report_dismissed')
+        }
+        if (!open) {
+          setTimeout(() => {
+            setWasSubmitted(false)
+          }, 100)
+        }
+        setIsOpen(open)
+      }}
+    >
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
 
       <PopoverContent
