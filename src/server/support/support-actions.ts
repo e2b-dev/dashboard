@@ -16,8 +16,8 @@ export const reportIssueAction = authActionClient
     const { sandboxId, description } = parsedInput
     const email = ctx.user.email
 
-    if (!process.env.PLAIN_API_KEY) {
-      console.error('PLAIN_API_KEY not configured')
+    if (!process.env.NEXT_PUBLIC_PLAIN_API_KEY) {
+      console.error('NEXT_PUBLIC_PLAIN_API_KEY not configured')
       return { success: false, error: 'Support API not configured' }
     }
 
@@ -27,7 +27,7 @@ export const reportIssueAction = authActionClient
     }
 
     const client = new PlainClient({
-      apiKey: process.env.PLAIN_API_KEY,
+      apiKey: process.env.NEXT_PUBLIC_PLAIN_API_KEY,
     })
 
     // First, upsert the customer to ensure they exist

@@ -45,6 +45,8 @@ export const clientSchema = z.object({
     .string()
     .min(1)
     .optional(),
+  
+  NEXT_PUBLIC_PLAIN_API_KEY: z.string().min(1).optional(),
 
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
   NEXT_PUBLIC_INCLUDE_ARGUS: z.string().optional(),
