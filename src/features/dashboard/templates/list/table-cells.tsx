@@ -25,8 +25,9 @@ import {
 import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
-import { Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useParams } from 'next/navigation'
+import { Hammer, Lock, LockOpen, MoreVertical } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -55,7 +56,9 @@ export function ActionsCell({
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const router = useRouter()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isRebuildDialogOpen, setIsRebuildDialogOpen] = useState(false)
 
   const updateTemplateMutation = useMutation(
     trpc.templates.updateTemplate.mutationOptions({
@@ -172,8 +175,40 @@ export function ActionsCell({
     })
   )
 
+  const rebuildTemplateMutation = useMutation(
+    trpc.templates.rebuildTemplate.mutationOptions({
+      onSuccess: async (data) => {
+        const templateName = template.aliases[0] || template.templateID
+        toast(
+          defaultSuccessToast(
+            <>
+              Rebuild started for template{' '}
+              <span className="prose-body-highlight">{templateName}</span>.
+            </>
+          )
+        )
+
+        router.push(
+          PROTECTED_URLS.TEMPLATE_BUILD(teamIdOrSlug, data.templateID, data.buildID)
+        )
+      },
+      onError: (error) => {
+        const templateName = template.aliases[0] || template.templateID
+        toast(
+          defaultErrorToast(
+            error.message || `Failed to rebuild template ${templateName}.`
+          )
+        )
+      },
+      onSettled: () => {
+        setIsRebuildDialogOpen(false)
+      },
+    })
+  )
+
   const isUpdating = updateTemplateMutation.isPending
   const isDeleting = deleteTemplateMutation.isPending
+  const isRebuilding = rebuildTemplateMutation.isPending
 
   const togglePublish = () => {
     updateTemplateMutation.mutate({
@@ -187,6 +222,15 @@ export function ActionsCell({
     deleteTemplateMutation.mutate({
       teamIdOrSlug: team.slug ?? team.id,
       templateId: template.templateID,
+    })
+  }
+
+  const rebuildTemplate = () => {
+    rebuildTemplateMutation.mutate({
+      teamIdOrSlug: team.slug ?? team.id,
+      alias: template.aliases[0] || template.templateID,
+      cpuCount: template.cpuCount,
+      memoryMB: template.memoryMB,
     })
   }
 
@@ -221,15 +265,48 @@ export function ActionsCell({
         }}
       />
 
+      <AlertDialog
+        open={isRebuildDialogOpen}
+        onOpenChange={setIsRebuildDialogOpen}
+        title="Rebuild Template"
+        description={
+          <>
+            You are about to rebuild the template{' '}
+            {template.aliases[0] && (
+              <>
+                <span className="prose-body-highlight">
+                  {template.aliases[0]}
+                </span>{' '}
+                (
+              </>
+            )}
+            <code className="text-fg-tertiary font-mono">
+              {template.templateID}
+            </code>
+            {template.aliases[0] && <>)</>}. This will create a new build with
+            the same configuration.
+          </>
+        }
+        confirm="Rebuild"
+        onConfirm={() => rebuildTemplate()}
+        confirmProps={{
+          variant: 'default',
+          disabled: isRebuilding,
+          loading: isRebuilding,
+        }}
+      />
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
             className="text-fg-tertiary size-5"
-            disabled={isUpdating || isDeleting || 'isDefault' in template}
+            disabled={
+              isUpdating || isDeleting || isRebuilding || 'isDefault' in template
+            }
           >
-            {isUpdating ? (
+            {isUpdating || isRebuilding ? (
               <Loader className="size-4" />
             ) : (
               <MoreVertical className="size-4" />
@@ -241,7 +318,7 @@ export function ActionsCell({
             <DropdownMenuLabel>General</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={togglePublish}
-              disabled={isUpdating || isDeleting}
+              disabled={isUpdating || isDeleting || isRebuilding}
             >
               {template.public ? (
                 <>
@@ -255,6 +332,13 @@ export function ActionsCell({
                 </>
               )}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsRebuildDialogOpen(true)}
+              disabled={isUpdating || isDeleting || isRebuilding}
+            >
+              <Hammer className="!size-3" />
+              Rebuild
+            </DropdownMenuItem>
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
@@ -264,7 +348,7 @@ export function ActionsCell({
             <DropdownMenuItem
               variant="error"
               onClick={() => setIsDeleteDialogOpen(true)}
-              disabled={isUpdating || isDeleting}
+              disabled={isUpdating || isDeleting || isRebuilding}
             >
               X Delete
             </DropdownMenuItem>
