@@ -10,6 +10,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { DefaultTemplate } from '@/types/api.types'
 import { TRPCError } from '@trpc/server'
+import { Template } from 'e2b'
 import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { apiError } from '../errors'
@@ -187,6 +188,67 @@ export const templatesRouter = createTRPCRouter({
       }
 
       return { success: true, public: isPublic }
+    }),
+
+  rebuildTemplate: protectedTeamProcedure
+    .input(
+      z.object({
+        alias: z.string(),
+        cpuCount: z.number(),
+        memoryMB: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { alias, cpuCount, memoryMB } = input
+
+      try {
+        const template = Template().fromTemplate(alias)
+
+        const buildInfo = await Template.buildInBackground(template, {
+          alias,
+          cpuCount,
+          memoryMB,
+          domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+          headers: {
+            ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+          },
+        })
+
+        return {
+          templateID: buildInfo.templateId,
+          buildID: buildInfo.buildId,
+        }
+      } catch (error) {
+        l.error(
+          {
+            key: 'trpc:templates:rebuild_template:e2b_error',
+            error,
+            user_id: session.user.id,
+            team_id: teamId,
+            alias,
+          },
+          `failed to rebuild template: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+
+        if (
+          error instanceof Error &&
+          error.message.toLowerCase().includes('not found')
+        ) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Template not found',
+          })
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to rebuild template',
+        })
+      }
     }),
 })
 
