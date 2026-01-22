@@ -17,7 +17,7 @@ export const TableFilterButton = React.forwardRef<
     <Button
       ref={ref}
       variant="outline"
-      size="sm"
+      size="md"
       className="max-w-56 gap-2"
       suppressHydrationWarning
       {...props}

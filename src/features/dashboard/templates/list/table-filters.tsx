@@ -155,7 +155,7 @@ const TemplatesTableFilters = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn('flex items-center gap-2', className)}
+      className={cn('flex items-center gap-1', className)}
       {...props}
     >
       <DropdownMenu>
