@@ -68,14 +68,6 @@ export const useColumns = (deps: unknown[]) => {
   return useMemo<ColumnDef<Template | DefaultTemplate>[]>(
     () => [
       {
-        id: 'actions',
-        enableSorting: false,
-        enableGlobalFilter: false,
-        enableResizing: false,
-        size: 35,
-        cell: ActionsCell,
-      },
-      {
         accessorKey: 'name',
         accessorFn: (row) => row.aliases?.[0],
         header: 'Name',
@@ -146,6 +138,14 @@ export const useColumns = (deps: unknown[]) => {
         minSize: 70,
         cell: EnvdVersionCell,
         enableSorting: false,
+      },
+      {
+        id: 'actions',
+        enableSorting: false,
+        enableGlobalFilter: false,
+        enableResizing: false,
+        size: 35,
+        cell: ActionsCell,
       },
     ],
     deps
