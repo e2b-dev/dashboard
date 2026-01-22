@@ -20,6 +20,7 @@ const badgeVariants = cva(
         default: 'h-5 px-1 gap-1',
         sm: 'h-4.5 px-1 text-xs gap-0.5',
         lg: 'h-7 px-2 gap-1.5',
+        xl: 'h-9 px-3 gap-1.5',
       },
       can: {
         none: '',
