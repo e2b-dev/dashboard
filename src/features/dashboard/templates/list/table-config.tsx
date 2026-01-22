@@ -76,19 +76,19 @@ export const useColumns = (deps: unknown[]) => {
         cell: ActionsCell,
       },
       {
-        accessorKey: 'templateID',
-        header: 'ID',
-        size: 160,
-        minSize: 120,
-        cell: TemplateIdCell,
-      },
-      {
         accessorKey: 'name',
         accessorFn: (row) => row.aliases?.[0],
         header: 'Name',
         size: 160,
         minSize: 120,
         cell: TemplateNameCell,
+      },
+      {
+        accessorKey: 'templateID',
+        header: 'ID',
+        size: 160,
+        minSize: 120,
+        cell: TemplateIdCell,
       },
       {
         accessorKey: 'cpuCount',
