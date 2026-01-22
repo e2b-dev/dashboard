@@ -24,7 +24,7 @@ export const SearchInput = () => {
         value={globalFilter}
         onChange={(v) => setGlobalFilter(v as string)}
         placeholder="Find template..."
-        className="h-10 w-full pr-14"
+        className="h-9 w-full pr-14"
         debounce={500}
         ref={inputRef}
       />

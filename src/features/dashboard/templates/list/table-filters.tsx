@@ -160,8 +160,8 @@ const TemplatesTableFilters = React.forwardRef<
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
+          <Button variant="outline" size="md" className="normal-case gap-2">
+            <ListFilter className="text-fg-tertiary size-4" /> Filter{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
