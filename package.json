@@ -104,7 +104,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "deepmerge": "^4.3.1",
-    "e2b": "^2.7.0",
+    "e2b": "^2.10.2",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "fast-xml-parser": "^4.5.1",
