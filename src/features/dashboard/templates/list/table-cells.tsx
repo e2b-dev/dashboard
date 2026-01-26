@@ -279,7 +279,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="overflow-x-hidden whitespace-nowrap text-fg-tertiary">
+    <div className="overflow-x-hidden whitespace-nowrap text-fg-tertiary font-mono prose-table-numeric">
       {row.getValue('templateID')}
     </div>
   )
@@ -292,7 +292,7 @@ export function TemplateNameCell({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 overflow-x-hidden whitespace-nowrap',
+        'flex items-center gap-2 overflow-x-hidden whitespace-nowrap prose-body',
         {
           'text-fg-tertiary': !getValue(),
         }
@@ -310,14 +310,22 @@ export function CpuCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
-  return <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+    </div>
+  )
 }
 
 export function MemoryCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
-  return <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+    </div>
+  )
 }
 
 export function CreatedAtCell({
