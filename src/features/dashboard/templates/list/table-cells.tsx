@@ -12,6 +12,7 @@ import { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -373,14 +374,16 @@ export function UpdatedAtCell({
 export function VisibilityCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const isPublic = getValue() as boolean
   return (
-    <span
-      className={cn('text-fg-tertiary whitespace-nowrap font-mono', {
-        'text-accent-positive-highlight': getValue(),
-      })}
+    <Badge
+      variant="default"
+      size="sm"
+      className={cn('uppercase bg-fill', !isPublic && 'pl-[3]')}
     >
-      {getValue() ? 'Public' : 'Private'}
-    </span>
+      {!isPublic && <Lock className="size-3 text-fg-tertiary" />}
+      {isPublic ? 'Public' : 'Internal'}
+    </Badge>
   )
 }
 
