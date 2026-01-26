@@ -99,7 +99,7 @@ export const useColumns = (deps: unknown[]) => {
         enableGlobalFilter: true,
         id: 'createdAt',
         header: 'Created At',
-        size: 250,
+        size: 156,
         cell: CreatedAtCell,
         sortingFn: (rowA, rowB) => {
           return rowA.original.createdAt.localeCompare(rowB.original.createdAt)
@@ -109,7 +109,7 @@ export const useColumns = (deps: unknown[]) => {
         accessorKey: 'updatedAt',
         id: 'updatedAt',
         header: 'Updated At',
-        size: 250,
+        size: 156,
         enableGlobalFilter: true,
         cell: UpdatedAtCell,
         sortingFn: (rowA, rowB) => {
