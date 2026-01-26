@@ -119,7 +119,7 @@ export const useColumns = (deps: unknown[]) => {
       {
         accessorKey: 'public',
         header: 'Visibility',
-        size: 140,
+        size: 80,
         cell: VisibilityCell,
         enableSorting: false,
         filterFn: 'equals',
