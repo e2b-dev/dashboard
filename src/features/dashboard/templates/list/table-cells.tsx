@@ -333,19 +333,18 @@ export function CreatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const dateTimeString = useMemo(() => {
-    return new Date(dateValue).toUTCString()
+  const [datePart, timePart] = useMemo(() => {
+    const date = new Date(dateValue)
+    const isoDate = date.toISOString().split('T')[0] // YYYY-MM-DD
+    const isoTime = date.toISOString().split('T')[1].slice(0, 5) // HH:MM
+    return [isoDate, isoTime]
   }, [dateValue])
 
-  const [day, date, month, year, time, timezone] = useMemo(() => {
-    return dateTimeString.split(' ')
-  }, [dateTimeString])
-
   return (
-    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono')}>
-      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
-      <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-tertiary">{timezone}</span>
+    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric')}>
+      <span className="text-fg-tertiary">{datePart}</span>{' '}
+      <span className="text-fg-secondary">{timePart}</span>{' '}
+      <span className="text-fg-tertiary">UTC</span>
     </div>
   )
 }
@@ -355,19 +354,18 @@ export function UpdatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const dateTimeString = useMemo(() => {
-    return new Date(dateValue).toUTCString()
+  const [datePart, timePart] = useMemo(() => {
+    const date = new Date(dateValue)
+    const isoDate = date.toISOString().split('T')[0] // YYYY-MM-DD
+    const isoTime = date.toISOString().split('T')[1].slice(0, 5) // HH:MM
+    return [isoDate, isoTime]
   }, [dateValue])
 
-  const [day, date, month, year, time, timezone] = useMemo(() => {
-    return dateTimeString.split(' ')
-  }, [dateTimeString])
-
   return (
-    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono')}>
-      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
-      <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-tertiary">{timezone}</span>
+    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric')}>
+      <span className="text-fg-tertiary">{datePart}</span>{' '}
+      <span className="text-fg-secondary">{timePart}</span>{' '}
+      <span className="text-fg-tertiary">UTC</span>
     </div>
   )
 }
