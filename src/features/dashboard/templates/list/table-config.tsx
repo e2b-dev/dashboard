@@ -127,7 +127,7 @@ export const useColumns = (deps: unknown[]) => {
       {
         accessorKey: 'envdVersion',
         header: 'Envd Version',
-        size: 125,
+        size: 40,
         cell: EnvdVersionCell,
         enableSorting: false,
       },
