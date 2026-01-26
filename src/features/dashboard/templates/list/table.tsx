@@ -1,6 +1,5 @@
 'use client'
 
-import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
@@ -18,14 +17,12 @@ import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
-  ColumnSizingState,
   flexRender,
   TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocalStorage } from 'usehooks-ts'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
@@ -64,6 +61,18 @@ export default function TemplatesTable() {
 
   const templates = useMemo(
     () => [
+      // Mock row for testing column widths
+      {
+        templateID: 'WWWWWWWWWWWWWWWWWWWW',
+        aliases: ['very-long-template-name-that-should-truncate'],
+        cpuCount: 8,
+        memoryMB: 16384,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        public: true,
+        envdVersion: '0.2.5',
+        isDefault: true,
+      } as any,
       ...(defaultTemplatesData?.templates ?? []),
       ...(templatesData?.templates ?? []),
     ],
@@ -74,15 +83,6 @@ export default function TemplatesTable() {
 
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
-
-  const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
-    'templates:columnSizing',
-    {},
-    {
-      deserializer: (value) => JSON.parse(value),
-      serializer: (value) => JSON.stringify(value),
-    }
-  )
 
   const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
 
@@ -129,16 +129,12 @@ export default function TemplatesTable() {
     state: {
       globalFilter,
       sorting,
-      columnSizing,
       columnFilters,
     },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
-    onColumnSizingChange: setColumnSizing,
     onColumnFiltersChange: setColumnFilters,
   } as TableOptions<Template>)
-
-  const columnSizeVars = useColumnSizeVars(table)
 
   const resetScroll = () => {
     if (scrollRef.current) {
@@ -186,7 +182,6 @@ export default function TemplatesTable() {
             'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
-          style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
           <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">
@@ -196,10 +191,12 @@ export default function TemplatesTable() {
                   <DataTableHead
                     key={header.id}
                     header={header}
-                    style={{
-                      width: header.getSize(),
-                    }}
                     sorting={sorting.find((s) => s.id === header.id)?.desc}
+                    align={
+                      header.id === 'cpuCount' || header.id === 'memoryMB'
+                        ? 'right'
+                        : 'left'
+                    }
                   >
                     {header.id === 'public' ? (
                       <HelpTooltip>
