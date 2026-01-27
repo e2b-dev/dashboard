@@ -35,6 +35,7 @@ type WebhookAddEditDialogStepsProps = {
   allEventsSelected: boolean
   handleAllToggle: () => void
   handleEventToggle: (event: string) => void
+  mode: 'add' | 'edit'
 }
 
 export function WebhookAddEditDialogSteps({
@@ -45,6 +46,7 @@ export function WebhookAddEditDialogSteps({
   allEventsSelected,
   handleAllToggle,
   handleEventToggle,
+  mode,
 }: WebhookAddEditDialogStepsProps) {
   const shikiTheme = useShikiTheme()
   const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
@@ -61,8 +63,11 @@ export function WebhookAddEditDialogSteps({
 
   const [copied, setCopied] = useState(false)
 
-  // sync secret with form state and validation
+  // sync secret with form state and validation - only in 'add' mode
+  // in 'edit' mode, we should never touch the signature secret
   useEffect(() => {
+    if (mode !== 'add') return
+
     if (secretType === 'pre-generated') {
       // set pre-generated secret and trigger validation to clear any errors
       form.setValue('signatureSecret', preGeneratedSecret, {
@@ -78,7 +83,7 @@ export function WebhookAddEditDialogSteps({
         shouldDirty: false,
       })
     }
-  }, [secretType, preGeneratedSecret, form])
+  }, [mode, secretType, preGeneratedSecret, form])
 
   const handleCopy = async () => {
     try {
