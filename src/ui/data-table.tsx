@@ -50,7 +50,7 @@ function DataTableHead<TData, TValue>({
     >
       <div
         className={cn(
-          'flex h-full w-full items-center gap-2 overflow-hidden',
+          'flex h-full w-full items-center gap-1 whitespace-nowrap',
           canSort && 'cursor-pointer hover:text-fg-secondary transition-colors',
           canSort && sorting !== undefined && 'text-accent-main-highlight',
           align === 'right' && 'justify-end'

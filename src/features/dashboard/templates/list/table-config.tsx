@@ -98,7 +98,7 @@ export const useColumns = (deps: unknown[]) => {
         accessorKey: 'createdAt',
         enableGlobalFilter: true,
         id: 'createdAt',
-        header: 'Created At',
+        header: 'Created',
         size: 156,
         cell: CreatedAtCell,
         sortingFn: (rowA, rowB) => {
@@ -108,7 +108,7 @@ export const useColumns = (deps: unknown[]) => {
       {
         accessorKey: 'updatedAt',
         id: 'updatedAt',
-        header: 'Updated At',
+        header: 'Updated',
         size: 156,
         enableGlobalFilter: true,
         cell: UpdatedAtCell,
@@ -126,7 +126,7 @@ export const useColumns = (deps: unknown[]) => {
       },
       {
         accessorKey: 'envdVersion',
-        header: 'Envd Version',
+        header: 'ENVD Ver.',
         size: 40,
         cell: EnvdVersionCell,
         enableSorting: false,
