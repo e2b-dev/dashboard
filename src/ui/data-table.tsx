@@ -53,7 +53,7 @@ function DataTableHead<TData, TValue>({
           'flex h-full w-full items-center gap-1 whitespace-nowrap',
           canSort && 'cursor-pointer hover:text-fg-secondary transition-colors',
           canSort && sorting !== undefined && 'text-accent-main-highlight',
-          align === 'right' && 'justify-end'
+          align === 'right' && 'flex-row-reverse'
         )}
         onClick={
           canSort
