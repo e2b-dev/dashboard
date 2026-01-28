@@ -210,11 +210,11 @@ export const uploadTeamProfilePictureAction = authActionClient
     const { image, teamIdOrSlug } = parsedInput
     const { teamId } = ctx
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml']
+    const allowedTypes = ['image/jpeg', 'image/png']
 
     if (!allowedTypes.includes(image.type)) {
       return returnValidationErrors(UploadTeamProfilePictureSchema, {
-        image: { _errors: ['File must be JPG, PNG, or SVG format'] },
+        image: { _errors: ['File must be JPG or PNG format'] },
       })
     }
 
