@@ -86,6 +86,7 @@ export const useColumns = (deps: unknown[]) => {
         size: 64,
         cell: CpuCell,
         filterFn: 'equals',
+        sortDescFirst: true,
       },
       {
         accessorKey: 'memoryMB',
@@ -93,6 +94,7 @@ export const useColumns = (deps: unknown[]) => {
         size: 80,
         cell: MemoryCell,
         filterFn: 'equals',
+        sortDescFirst: true,
       },
       {
         accessorKey: 'createdAt',
@@ -101,6 +103,7 @@ export const useColumns = (deps: unknown[]) => {
         header: 'Created',
         size: 156,
         cell: CreatedAtCell,
+        sortDescFirst: true,
         sortingFn: (rowA, rowB) => {
           return rowA.original.createdAt.localeCompare(rowB.original.createdAt)
         },
@@ -112,6 +115,7 @@ export const useColumns = (deps: unknown[]) => {
         size: 156,
         enableGlobalFilter: true,
         cell: UpdatedAtCell,
+        sortDescFirst: true,
         sortingFn: (rowA, rowB) => {
           return rowA.original.updatedAt.localeCompare(rowB.original.updatedAt)
         },
@@ -154,6 +158,7 @@ export const templatesTableConfig: Partial<
   getSortedRowModel: getSortedRowModel(),
   enableSorting: true,
   enableMultiSort: false,
+  enableSortingRemoval: false,
   enableColumnResizing: false,
   enableGlobalFilter: true,
   // @ts-expect-error globalFilterFn is not a valid option
