@@ -242,7 +242,7 @@ export function WebhookAddEditDialogSteps({
             </p>
             <p className="text-fg-tertiary prose-body">
               This secret is used to verify webhook authenticity. Each request
-              includes an <code className="text-fg">x-e2b-signature</code>{' '}
+              includes an <code className="text-fg">e2b-signature</code>{' '}
               header generated with HMAC SHA-256. Validate this in your endpoint
               to ensure requests are from E2B and untampered.
             </p>
