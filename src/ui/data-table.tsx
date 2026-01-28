@@ -37,10 +37,10 @@ function DataTableHead<TData, TValue>({
   return (
     <div
       className={cn(
-        'relative flex h-8 items-center align-middle',
-        'font-mono prose-label-highlight uppercase',
-        'text-fg-tertiary',
+        'relative flex h-8 items-center align-middle group',
+        'font-mono uppercase',
         '[&:has([role=checkbox])]:pr-0',
+        sorting !== undefined ? 'prose-label-highlight text-fg' : 'prose-label text-fg-tertiary',
         className
       )}
       style={{
@@ -51,8 +51,7 @@ function DataTableHead<TData, TValue>({
       <div
         className={cn(
           'flex h-full w-full items-center gap-1 whitespace-nowrap',
-          canSort && 'cursor-pointer hover:text-fg-secondary transition-colors',
-          canSort && sorting !== undefined && 'text-accent-main-highlight',
+          canSort && 'cursor-pointer group-hover:text-fg-secondary transition-colors',
           align === 'right' && 'flex-row-reverse'
         )}
         onClick={
@@ -63,9 +62,17 @@ function DataTableHead<TData, TValue>({
       >
         {children}
         {canSort && (
-          <div className="size-5 min-w-5 flex items-center justify-center">
+          <div className={cn(
+            "size-5 min-w-5 flex items-center justify-center",
+            sorting === undefined && "opacity-0 group-hover:opacity-100 transition-opacity"
+          )}>
             {sorting === undefined ? (
-              <ArrowUpDown className="size-3" />
+              // Show the arrow for the next state based on sortDescFirst
+              header.column.columnDef.sortDescFirst ? (
+                <ArrowDownWideNarrow className="size-3" />
+              ) : (
+                <ArrowUpNarrowWide className="size-3" />
+              )
             ) : sorting ? (
               <ArrowDownWideNarrow className="size-3" />
             ) : (
