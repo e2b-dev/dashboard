@@ -174,7 +174,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
         type="file"
         ref={fileInputRef}
         className="hidden"
-        accept="image/jpeg, image/png"
+        accept="image/jpeg, image/png, image/svg+xml"
         onChange={handleUpload}
         disabled={isUploading}
       />
