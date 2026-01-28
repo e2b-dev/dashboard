@@ -51,7 +51,7 @@ function DataTableHead<TData, TValue>({
       <div
         className={cn(
           'flex h-full w-full items-center gap-1 whitespace-nowrap',
-          canSort && 'cursor-pointer group-hover:text-fg-secondary transition-colors',
+          canSort && 'cursor-pointer group-hover:text-fg-secondary',
           align === 'right' && 'flex-row-reverse'
         )}
         onClick={
@@ -64,7 +64,7 @@ function DataTableHead<TData, TValue>({
         {canSort && (
           <div className={cn(
             "size-5 min-w-5 flex items-center justify-center",
-            sorting === undefined && "opacity-0 group-hover:opacity-100 transition-opacity"
+            sorting === undefined && "opacity-0 group-hover:opacity-100"
           )}>
             {sorting === undefined ? (
               // Show the arrow for the next state based on sortDescFirst
