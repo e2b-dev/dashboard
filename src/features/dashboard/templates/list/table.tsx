@@ -204,7 +204,7 @@ export default function TemplatesTable() {
                         Sandboxes, but can only be edited by your team.
                       </HelpTooltip>
                     ) : null}
-                    <span className="truncate">
+                    <span>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
