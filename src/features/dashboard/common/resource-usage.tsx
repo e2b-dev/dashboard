@@ -27,7 +27,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
 
   if (mode === 'simple') {
     const hasValue = total !== null && total !== undefined && total !== 0
-    const displayTotal = hasValue ? formatNumber(total) : 'N/A'
+    const displayTotal = hasValue ? formatNumber(total) : '--'
     return (
       <p className="flex justify-end gap-1 prose-table">
         <span
