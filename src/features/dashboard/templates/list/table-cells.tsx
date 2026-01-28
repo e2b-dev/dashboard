@@ -299,7 +299,7 @@ export function TemplateNameCell({
         }
       )}
     >
-      <span>{(getValue() as string) ?? 'N/A'}</span>
+      <span>{(getValue() as string) ?? '--'}</span>
       {'isDefault' in row.original && row.original.isDefault && (
         <E2BTemplateBadge />
       )}
@@ -409,7 +409,7 @@ export function EnvdVersionCell({
         }
       )}
     >
-      {versionValue ?? 'N/A'}
+      {versionValue ?? '--'}
       {isNotV2Compatible && (
         <HelpTooltip>
           The envd version is not compatible with the SDK v2. To update the envd
