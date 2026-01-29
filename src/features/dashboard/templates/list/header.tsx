@@ -17,6 +17,9 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
     Object.keys(table.getState().columnFilters).length > 0 ||
     table.getState().globalFilter
 
+  const filteredCount = table.getFilteredRowModel().rows.length
+  const totalCount = table.getCoreRowModel().rows.length
+
   return (
     <div className="flex items-center gap-1">
       <SearchInput />
@@ -25,16 +28,23 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
         <TemplatesTableFilters />
       </Suspense>
 
-      <Badge size="xl" variant="positive" className="uppercase">
-        {table.getCoreRowModel().rows.length} templates
-        <Hexagon className="size-3 !stroke-[3px]" />
-      </Badge>
-      {showFilteredRowCount && (
-        <Badge size="xl" variant="info" className="uppercase">
-          {table.getFilteredRowModel().rows.length} filtered
-          <ListFilter className="size-3 !stroke-[3px]" />
-        </Badge>
-      )}
+      <span className="prose-label-highlight uppercase px-3">
+        {showFilteredRowCount ? (
+          <>
+            <span className="text-fg">
+              {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
+            </span>
+            <span className="text-fg-tertiary"> · </span>
+            <span className="text-fg-tertiary">
+              {totalCount} total
+            </span>
+          </>
+        ) : (
+          <span className="text-fg-tertiary">
+            {totalCount} total
+          </span>
+        )}
+      </span>
     </div>
   )
 }
