@@ -293,13 +293,13 @@ export function TemplateNameCell({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 overflow-x-hidden whitespace-nowrap prose-body',
+        'flex items-center gap-2 prose-body min-w-0',
         {
           'text-fg-tertiary': !getValue(),
         }
       )}
     >
-      <span>{(getValue() as string) ?? '--'}</span>
+      <span className="truncate">{(getValue() as string) ?? '--'}</span>
       {'isDefault' in row.original && row.original.isDefault && (
         <E2BTemplateBadge />
       )}
