@@ -343,8 +343,8 @@ export function CreatedAtCell({
 
   return (
     <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric')}>
-      <span className="text-fg-tertiary">{datePart}</span>{' '}
-      <span className="text-fg-secondary">{timePart}</span>{' '}
+      <span className="text-fg-secondary">{datePart}</span>{' '}
+      <span className="text-fg-tertiary">{timePart}</span>{' '}
       <span className="text-fg-tertiary">UTC</span>
     </div>
   )
@@ -364,8 +364,8 @@ export function UpdatedAtCell({
 
   return (
     <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric')}>
-      <span className="text-fg-tertiary">{datePart}</span>{' '}
-      <span className="text-fg-secondary">{timePart}</span>{' '}
+      <span className="text-fg-secondary">{datePart}</span>{' '}
+      <span className="text-fg-tertiary">{timePart}</span>{' '}
       <span className="text-fg-tertiary">UTC</span>
     </div>
   )
