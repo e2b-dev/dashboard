@@ -84,6 +84,7 @@
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-table": "^8.20.6",
     "@tanstack/react-virtual": "^3.13.12",
+    "@team-plain/typescript-sdk": "^5.11.0",
     "@theguild/remark-mermaid": "^0.2.0",
     "@trpc/client": "^11.7.1",
     "@trpc/react-query": "^11.7.1",
