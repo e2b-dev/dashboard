@@ -16,12 +16,14 @@ import { Label } from '@/ui/primitives/label'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 export default function ForgotPassword() {
   const searchParams = useSearchParams()
   const [message, setMessage] = useState<AuthMessage | undefined>()
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const {
     form,
@@ -37,6 +39,11 @@ export default function ForgotPassword() {
           setMessage({ success: USER_MESSAGES.passwordReset.message })
         },
         onError: ({ error }) => {
+          if (error.serverError === USER_MESSAGES.captchaFailed.message) {
+            turnstileRef.current?.reset()
+            setCaptchaToken(null)
+          }
+
           if (error.serverError) {
             setMessage({ error: error.serverError })
           }
@@ -122,6 +129,7 @@ export default function ForgotPassword() {
         <input type="hidden" {...form.register('captchaToken')} />
 
         <TurnstileWidget
+          ref={turnstileRef}
           onSuccess={handleCaptchaSuccess}
           onExpire={handleCaptchaExpire}
           className="my-3"

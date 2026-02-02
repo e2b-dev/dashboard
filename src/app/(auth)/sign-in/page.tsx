@@ -23,7 +23,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 export default function Login() {
   'use no memo'
@@ -39,6 +40,7 @@ export default function Login() {
   })
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const {
     form,
@@ -52,6 +54,11 @@ export default function Login() {
         ) {
           setMessage({ success: error.serverError })
           return
+        }
+
+        if (error.serverError === USER_MESSAGES.captchaFailed.message) {
+          turnstileRef.current?.reset()
+          setCaptchaToken(null)
         }
 
         if (error.serverError) {
@@ -182,6 +189,7 @@ export default function Login() {
           <input type="hidden" {...form.register('captchaToken')} />
 
           <TurnstileWidget
+            ref={turnstileRef}
             onSuccess={handleCaptchaSuccess}
             onExpire={handleCaptchaExpire}
             className="my-3"
