@@ -1,5 +1,6 @@
 'use client'
 
+import { CAPTCHA_ENABLED } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
   getTimeoutMsFromUserMessage,
@@ -7,6 +8,7 @@ import {
 } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
+import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { signUpAction } from '@/server/auth/auth-actions'
 import { signUpSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
@@ -24,7 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 export default function SignUp() {
   'use no memo'
@@ -38,6 +40,8 @@ export default function SignUp() {
 
     return undefined
   })
+
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   const returnTo = searchParams.get('returnTo') || undefined
 
@@ -82,6 +86,19 @@ export default function SignUp() {
       return () => clearTimeout(timer)
     }
   }, [message])
+
+  const handleCaptchaSuccess = useCallback(
+    (token: string) => {
+      setCaptchaToken(token)
+      form.setValue('captchaToken', token)
+    },
+    [form]
+  )
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken(null)
+    form.setValue('captchaToken', undefined)
+  }, [form])
 
   return (
     <div className="flex w-full flex-col">
@@ -172,7 +189,20 @@ export default function SignUp() {
             )}
           />
 
-          <Button type="submit" loading={isExecuting} className="mt-3">
+          <input type="hidden" {...form.register('captchaToken')} />
+
+          <TurnstileWidget
+            onSuccess={handleCaptchaSuccess}
+            onExpire={handleCaptchaExpire}
+            className="my-3"
+          />
+
+          <Button
+            type="submit"
+            loading={isExecuting}
+            disabled={CAPTCHA_ENABLED && !captchaToken}
+            className="mt-3"
+          >
             Sign up
           </Button>
         </form>

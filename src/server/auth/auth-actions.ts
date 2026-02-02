@@ -1,7 +1,9 @@
 'use server'
 
+import { CAPTCHA_ENABLED } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
 import { actionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -17,6 +19,23 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
+
+async function validateCaptcha(captchaToken: string | undefined) {
+  if (!CAPTCHA_ENABLED) {
+    return null
+  }
+
+  if (!captchaToken) {
+    return returnServerError(USER_MESSAGES.captchaRequired.message)
+  }
+
+  const isValidCaptcha = await verifyTurnstileToken(captchaToken)
+  if (!isValidCaptcha) {
+    return returnServerError(USER_MESSAGES.captchaFailed.message)
+  }
+
+  return null
+}
 
 async function checkAuthProviderHealth(): Promise<boolean> {
   try {
@@ -118,17 +137,21 @@ export const signInWithOAuthAction = actionClient
 export const signUpAction = actionClient
   .schema(signUpSchema)
   .metadata({ actionName: 'signUp' })
-  .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
-    const isHealthy = await checkAuthProviderHealth()
-    if (!isHealthy) {
-      const queryParams = returnTo ? { returnTo } : undefined
-      throw encodedRedirect(
-        'error',
-        AUTH_URLS.SIGN_UP,
-        AUTH_PROVIDER_ERROR_MESSAGE,
-        queryParams
-      )
-    }
+  .action(
+    async ({ parsedInput: { email, password, returnTo = '', captchaToken } }) => {
+      const captchaError = await validateCaptcha(captchaToken)
+      if (captchaError) return captchaError
+
+      const isHealthy = await checkAuthProviderHealth()
+      if (!isHealthy) {
+        const queryParams = returnTo ? { returnTo } : undefined
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_UP,
+          AUTH_PROVIDER_ERROR_MESSAGE,
+          queryParams
+        )
+      }
 
     const supabase = await createClient()
     const headerStore = await headers()
@@ -190,17 +213,21 @@ export const signUpAction = actionClient
 export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
-  .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
-    const isHealthy = await checkAuthProviderHealth()
-    if (!isHealthy) {
-      const queryParams = returnTo ? { returnTo } : undefined
-      throw encodedRedirect(
-        'error',
-        AUTH_URLS.SIGN_IN,
-        AUTH_PROVIDER_ERROR_MESSAGE,
-        queryParams
-      )
-    }
+  .action(
+    async ({ parsedInput: { email, password, returnTo = '', captchaToken } }) => {
+      const captchaError = await validateCaptcha(captchaToken)
+      if (captchaError) return captchaError
+
+      const isHealthy = await checkAuthProviderHealth()
+      if (!isHealthy) {
+        const queryParams = returnTo ? { returnTo } : undefined
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_IN,
+          AUTH_PROVIDER_ERROR_MESSAGE,
+          queryParams
+        )
+      }
 
     const supabase = await createClient()
 
@@ -245,7 +272,10 @@ export const signInAction = actionClient
 export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
-  .action(async ({ parsedInput: { email } }) => {
+  .action(async ({ parsedInput: { email, captchaToken } }) => {
+    const captchaError = await validateCaptcha(captchaToken)
+    if (captchaError) return captchaError
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       throw encodedRedirect(
