@@ -292,7 +292,7 @@ export function TemplateNameCell({
 
   // Prefer a name without "/" as the primary display name
   const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
-  const additionalCount = names.length - 1
+  const additionalNames = names.filter((name) => name !== primaryName)
 
   return (
     <div
@@ -304,16 +304,16 @@ export function TemplateNameCell({
       )}
     >
       <span>{primaryName ?? 'N/A'}</span>
-      {additionalCount > 0 && (
+      {additionalNames.length > 0 && (
         <HelpTooltip
           trigger={
             <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
-              +{additionalCount}
+              +{additionalNames.length}
             </span>
           }
         >
           <div className="flex flex-col gap-1">
-            {names.slice(1).map((name) => (
+            {additionalNames.map((name) => (
               <span key={name} className="font-mono text-xs">
                 {name}
               </span>
