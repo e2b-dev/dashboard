@@ -1,4 +1,4 @@
-import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { relativeUrlSchema } from '@/lib/schemas/url'
 import { z } from 'zod'
 
@@ -8,7 +8,7 @@ export const captchaTokenSchema = z
   .string()
   .optional()
   .refine((value) => {
-    if (!CAPTCHA_ENABLED) return true
+    if (!CAPTCHA_REQUIRED_CLIENT) return true
 
     return value !== undefined
   })

@@ -1,6 +1,6 @@
 'use client'
 
-import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
@@ -108,8 +108,6 @@ export default function Login() {
     form.setValue('captchaToken', undefined)
   }, [form])
 
-  console.log(CAPTCHA_ENABLED, captchaToken)
-
   return (
     <div className="flex w-full flex-col">
       <h1>Sign in</h1>
@@ -186,7 +184,7 @@ export default function Login() {
           <Button
             type="submit"
             loading={isExecuting}
-            disabled={CAPTCHA_ENABLED && !captchaToken}
+            disabled={CAPTCHA_REQUIRED_CLIENT && !captchaToken}
           >
             Sign in
           </Button>

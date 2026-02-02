@@ -1,6 +1,6 @@
 'use server'
 
-import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
 import { l } from '@/lib/clients/logger/logger'
 
 interface TurnstileResponse {
@@ -13,17 +13,10 @@ interface TurnstileResponse {
 export async function verifyTurnstileToken(
   token: string | undefined
 ): Promise<boolean> {
-  if (!CAPTCHA_ENABLED) return true
+  if (!CAPTCHA_REQUIRED_SERVER) return true
   if (!token) return false
 
-  const secretKey = process.env.TURNSTILE_SECRET_KEY
-  if (!secretKey) {
-    l.warn(
-      { key: 'turnstile:missing_secret_key' },
-      'TURNSTILE_SECRET_KEY not configured, skipping validation'
-    )
-    return true
-  }
+  const secretKey = process.env.TURNSTILE_SECRET_KEY!
 
   try {
     const formData = new FormData()

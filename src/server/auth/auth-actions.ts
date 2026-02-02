@@ -1,6 +1,6 @@
 'use server'
 
-import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
@@ -21,7 +21,7 @@ import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
 async function validateCaptcha(captchaToken: string | undefined) {
-  if (!CAPTCHA_ENABLED) {
+  if (!CAPTCHA_REQUIRED_SERVER) {
     return null
   }
 

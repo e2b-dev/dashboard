@@ -1,6 +1,6 @@
 'use client'
 
-import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
   getTimeoutMsFromUserMessage,
@@ -205,7 +205,7 @@ export default function SignUp() {
           <Button
             type="submit"
             loading={isExecuting}
-            disabled={CAPTCHA_ENABLED && !captchaToken}
+            disabled={CAPTCHA_REQUIRED_CLIENT && !captchaToken}
           >
             Sign up
           </Button>

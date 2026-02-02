@@ -1,6 +1,6 @@
 'use client'
 
-import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { cn } from '@/lib/utils'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { forwardRef } from 'react'
@@ -16,10 +16,9 @@ export const TurnstileWidget = forwardRef<
   TurnstileInstance,
   TurnstileWidgetProps
 >(function TurnstileWidget({ onSuccess, onExpire, onError, className }, ref) {
-  if (!CAPTCHA_ENABLED) return null
+  if (!CAPTCHA_REQUIRED_CLIENT) return null
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-  if (!siteKey) return null
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
   return (
     <div className={cn('w-full', className)}>
