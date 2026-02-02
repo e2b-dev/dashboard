@@ -68,7 +68,7 @@ export function ActionsCell({
             <>
               Template{' '}
               <span className="prose-body-highlight">{templateName}</span> is
-              now {data.public ? 'public' : 'private'}.
+              now {data.public ? 'public' : 'internal'}.
             </>
           )
         )
@@ -247,7 +247,7 @@ export function ActionsCell({
               {template.public ? (
                 <>
                   <Lock className="!size-3" />
-                  Set Private
+                  Set Internal
                 </>
               ) : (
                 <>

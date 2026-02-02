@@ -203,7 +203,7 @@ const TemplatesTableFilters = React.forwardRef<
                       setIsPublic(isPublic === false ? undefined : false)
                     }}
                   >
-                    Private
+                    Internal
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
@@ -237,7 +237,7 @@ const TemplatesTableFilters = React.forwardRef<
       {isPublic !== undefined && (
         <TableFilterButton
           label="Visibility"
-          value={isPublic ? 'Public' : 'Private'}
+          value={isPublic ? 'Public' : 'Internal'}
           onClick={() => setIsPublic(undefined)}
         />
       )}
