@@ -18,18 +18,18 @@ export const TableFilterButton = React.forwardRef<
       ref={ref}
       variant="outline"
       size="md"
-      className="max-w-56 gap-2"
+      className="max-w-56 gap-1.5 normal-case prose-body-highlight"
       suppressHydrationWarning
       {...props}
     >
-      <X className={'size-3.5 min-w-3.5'} />
-      {label}
+      <span className="text-fg-tertiary">{label}</span>
       {value && (
         <>
-          <Separator orientation="vertical" className="h-4" />
-          <span className="truncate text-accent-info-highlight">{value}</span>
+          <span className="text-fg-tertiary">·</span>
+          <span className="truncate text-fg">{value}</span>
         </>
       )}
+      <X className="size-4 min-w-4 text-fg-tertiary" />
     </Button>
   )
 })
