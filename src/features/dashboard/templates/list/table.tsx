@@ -1,5 +1,6 @@
 'use client'
 
+import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
@@ -17,12 +18,14 @@ import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
+  ColumnSizingState,
   flexRender,
   TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
@@ -76,6 +79,15 @@ export default function TemplatesTable() {
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
+  const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
+    'templates:columnSizing:v2',
+    {},
+    {
+      deserializer: (value) => JSON.parse(value),
+      serializer: (value) => JSON.stringify(value),
+    }
+  )
+
   // Effect hooks for filters
   useEffect(() => {
     let newFilters = [...columnFilters]
@@ -117,12 +129,16 @@ export default function TemplatesTable() {
     state: {
       globalFilter,
       sorting,
+      columnSizing,
       columnFilters,
     },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
+    onColumnSizingChange: setColumnSizing,
     onColumnFiltersChange: setColumnFilters,
   } as TableOptions<Template>)
+
+  const columnSizeVars = useColumnSizeVars(table)
 
   const resetScroll = () => {
     if (scrollRef.current) {
@@ -170,6 +186,7 @@ export default function TemplatesTable() {
             'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
+          style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
           <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">

@@ -44,7 +44,7 @@ function DataTableHead<TData, TValue>({
         className
       )}
       style={{
-        width: `${header.getSize()}px`,
+        width: `calc(var(--header-${header.id}-size) * 1)`,
       }}
       {...props}
     >
@@ -81,6 +81,22 @@ function DataTableHead<TData, TValue>({
           </div>
         )}
       </div>
+
+      {header.column.getCanResize() && (
+        <div
+          className="absolute right-0 h-4 cursor-ew-resize pl-4 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          onTouchStart={header.getResizeHandler()}
+          onMouseDown={header.getResizeHandler()}
+          onMouseDownCapture={(e) => {
+            e.preventDefault()
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+        >
+          <Separator className="h-full bg-icon-secondary" orientation="vertical" />
+        </div>
+      )}
     </div>
   )
 }
@@ -100,7 +116,7 @@ function DataTableCell<TData, TValue>({
   return (
     <div
       style={{
-        width: `${cell.column.getSize()}px`,
+        width: `calc(var(--col-${cell.column.id}-size) * 1)`,
       }}
       className={cn(
         'align-middle font-sans text-xs [&:has([role=checkbox])]:pr-0',
