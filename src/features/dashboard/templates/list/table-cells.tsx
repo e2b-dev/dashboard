@@ -287,18 +287,40 @@ export function TemplateIdCell({
 
 export function TemplateNameCell({
   row,
-  getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const names = row.original.names
+
+  // Prefer a name without "/" as the primary display name
+  const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
+  const additionalCount = names.length - 1
+
   return (
     <div
       className={cn(
         'flex items-center gap-2 overflow-x-hidden whitespace-nowrap',
         {
-          'text-fg-tertiary': !getValue(),
+          'text-fg-tertiary': !primaryName,
         }
       )}
     >
-      <span>{(getValue() as string) ?? 'N/A'}</span>
+      <span>{primaryName ?? 'N/A'}</span>
+      {additionalCount > 0 && (
+        <HelpTooltip
+          trigger={
+            <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+              +{additionalCount}
+            </span>
+          }
+        >
+          <div className="flex flex-col gap-1">
+            {names.slice(1).map((name) => (
+              <span key={name} className="font-mono text-xs">
+                {name}
+              </span>
+            ))}
+          </div>
+        </HelpTooltip>
+      )}
       {'isDefault' in row.original && row.original.isDefault && (
         <E2BTemplateBadge />
       )}

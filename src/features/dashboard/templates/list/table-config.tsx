@@ -84,7 +84,7 @@ export const useColumns = (deps: unknown[]) => {
       },
       {
         accessorKey: 'name',
-        accessorFn: (row) => row.aliases?.[0],
+        accessorFn: (row) => row.names.join(', '),
         header: 'Name',
         size: 160,
         minSize: 120,
