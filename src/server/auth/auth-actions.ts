@@ -5,6 +5,7 @@ import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
+import { getEnforcedSsoDomains, type OAuthProvider } from '@/lib/env'
 import { relativeUrlSchema } from '@/lib/schemas/url'
 import { returnServerError } from '@/lib/utils/action'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -39,6 +40,20 @@ async function checkAuthProviderHealth(): Promise<boolean> {
 
 const AUTH_PROVIDER_ERROR_MESSAGE =
   'Our authentication provider is experiencing issues. Please try again later.'
+
+function getEnforcedOAuthProvider(email: string): OAuthProvider | null {
+  const domain = email.split('@')[1]?.toLowerCase()
+  if (!domain) return null
+
+  const enforcedDomains = getEnforcedSsoDomains()
+  return enforcedDomains[domain] ?? null
+}
+
+function getSsoEnforcedMessage(provider: OAuthProvider): string {
+  return provider === 'google'
+    ? USER_MESSAGES.ssoEnforcedGoogle.message
+    : USER_MESSAGES.ssoEnforcedGithub.message
+}
 
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
@@ -119,6 +134,11 @@ export const signUpAction = actionClient
   .schema(signUpSchema)
   .metadata({ actionName: 'signUp' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    const enforcedProvider = getEnforcedOAuthProvider(email)
+    if (enforcedProvider) {
+      return returnServerError(getSsoEnforcedMessage(enforcedProvider))
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       const queryParams = returnTo ? { returnTo } : undefined
@@ -191,6 +211,11 @@ export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    const enforcedProvider = getEnforcedOAuthProvider(email)
+    if (enforcedProvider) {
+      return returnServerError(getSsoEnforcedMessage(enforcedProvider))
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       const queryParams = returnTo ? { returnTo } : undefined
@@ -246,6 +271,11 @@ export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
   .action(async ({ parsedInput: { email } }) => {
+    const enforcedProvider = getEnforcedOAuthProvider(email)
+    if (enforcedProvider) {
+      return returnServerError(getSsoEnforcedMessage(enforcedProvider))
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       throw encodedRedirect(

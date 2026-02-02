@@ -1,9 +1,25 @@
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
+import { getEnforcedSsoDomains, type OAuthProvider } from '@/lib/env'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
 import { serializeError } from 'serialize-error'
+
+function getEnforcedOAuthProvider(email: string): OAuthProvider | null {
+  const domain = email.split('@')[1]?.toLowerCase()
+  if (!domain) return null
+
+  const enforcedDomains = getEnforcedSsoDomains()
+  return enforcedDomains[domain] ?? null
+}
+
+function getSsoEnforcedMessage(provider: OAuthProvider): string {
+  return provider === 'google'
+    ? USER_MESSAGES.ssoEnforcedGoogle.message
+    : USER_MESSAGES.ssoEnforcedGithub.message
+}
 
 export async function GET(request: Request) {
   // The `/auth/callback` route is required for the server-side auth flow implemented
@@ -49,15 +65,45 @@ export async function GET(request: Request) {
       )
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
-    } else {
-      l.info(
-        {
-          key: 'auth_callback:otp_exchanged',
-          user_id: data.user.id,
-        },
-        `OTP successfully exchanged for user session`
-      )
     }
+
+    const user = data.user
+    const email = user.email
+    const usedProvider = user.app_metadata.provider as string | undefined
+
+    if (email && usedProvider) {
+      const enforcedProvider = getEnforcedOAuthProvider(email)
+
+      if (enforcedProvider && usedProvider !== enforcedProvider) {
+        l.warn(
+          {
+            key: 'auth_callback:sso_enforcement_violation',
+            context: {
+              email,
+              usedProvider,
+              enforcedProvider,
+            },
+          },
+          `SSO enforcement violation: ${email} used ${usedProvider} but ${enforcedProvider} is required`
+        )
+
+        await supabase.auth.signOut()
+
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_IN,
+          getSsoEnforcedMessage(enforcedProvider)
+        )
+      }
+    }
+
+    l.info(
+      {
+        key: 'auth_callback:otp_exchanged',
+        user_id: user.id,
+      },
+      `OTP successfully exchanged for user session`
+    )
   }
 
   if (redirectTo) {

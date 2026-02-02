@@ -72,6 +72,12 @@ export const USER_MESSAGES = {
   checkCredentials: {
     message: 'Please check your credentials.',
   },
+  ssoEnforcedGoogle: {
+    message: 'Your organization requires signing in with Google.',
+  },
+  ssoEnforcedGithub: {
+    message: 'Your organization requires signing in with GitHub.',
+  },
 }
 
 export const getTimeoutMsFromUserMessage = (

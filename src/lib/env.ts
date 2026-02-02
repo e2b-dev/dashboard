@@ -1,5 +1,31 @@
 import { z } from 'zod'
 
+export const oAuthProviderSchema = z.enum(['google', 'github'])
+export type OAuthProvider = z.infer<typeof oAuthProviderSchema>
+
+export type EnforcedSsoDomains = Record<string, OAuthProvider>
+
+const DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/
+
+function parseEnforcedSsoDomains(val: string): EnforcedSsoDomains {
+  const parsed = JSON.parse(val) as Record<string, unknown>
+
+  const result: EnforcedSsoDomains = {}
+  for (const [domain, provider] of Object.entries(parsed)) {
+    if (!DOMAIN_REGEX.test(domain)) {
+      throw new Error(`Invalid domain format: ${domain}`)
+    }
+    const validProvider = oAuthProviderSchema.safeParse(provider)
+    if (!validProvider.success) {
+      throw new Error(
+        `Invalid provider for ${domain}: must be 'google' or 'github'`
+      )
+    }
+    result[domain.toLowerCase()] = validProvider.data
+  }
+  return result
+}
+
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   INFRA_API_URL: z.url(),
@@ -8,6 +34,11 @@ export const serverSchema = z.object({
 
   BILLING_API_URL: z.url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
+
+  ENFORCED_SSO_DOMAINS: z
+    .string()
+    .transform(parseEnforcedSsoDomains)
+    .optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
@@ -72,4 +103,25 @@ export function validateEnv(schema: z.ZodSchema) {
   }
 
   console.log('✅ Environment variables validated successfully')
+}
+
+let cachedEnforcedSsoDomains: EnforcedSsoDomains | null = null
+
+export function getEnforcedSsoDomains(): EnforcedSsoDomains {
+  if (cachedEnforcedSsoDomains !== null) {
+    return cachedEnforcedSsoDomains
+  }
+
+  const raw = process.env.ENFORCED_SSO_DOMAINS as string | undefined
+  if (!raw) {
+    cachedEnforcedSsoDomains = {}
+    return cachedEnforcedSsoDomains
+  }
+
+  try {
+    cachedEnforcedSsoDomains = parseEnforcedSsoDomains(raw)
+  } catch {
+    cachedEnforcedSsoDomains = {}
+  }
+  return cachedEnforcedSsoDomains
 }
