@@ -336,9 +336,8 @@ export function CreatedAtCell({
 
   const [datePart, timePart] = useMemo(() => {
     const date = new Date(dateValue)
-    const isoDate = date.toISOString().split('T')[0] // YYYY-MM-DD
-    const isoTime = date.toISOString().split('T')[1].slice(0, 5) // HH:MM
-    return [isoDate, isoTime]
+    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
+    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
   }, [dateValue])
 
   return (
@@ -357,9 +356,8 @@ export function UpdatedAtCell({
 
   const [datePart, timePart] = useMemo(() => {
     const date = new Date(dateValue)
-    const isoDate = date.toISOString().split('T')[0] // YYYY-MM-DD
-    const isoTime = date.toISOString().split('T')[1].slice(0, 5) // HH:MM
-    return [isoDate, isoTime]
+    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
+    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
   }, [dateValue])
 
   return (
