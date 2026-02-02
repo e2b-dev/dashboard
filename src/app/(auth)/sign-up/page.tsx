@@ -23,11 +23,11 @@ import {
 import { Input } from '@/ui/primitives/input'
 import TextSeparator from '@/ui/text-separator'
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 export default function SignUp() {
   'use no memo'
@@ -118,10 +118,7 @@ export default function SignUp() {
       <TextSeparator text="or" />
 
       <Form {...form}>
-        <form
-          className="flex flex-col gap-2 [&>input]:mb-3"
-          onSubmit={handleSubmitWithAction}
-        >
+        <form className="flex flex-col gap-2" onSubmit={handleSubmitWithAction}>
           <FormField
             control={form.control}
             name="email"
@@ -202,21 +199,20 @@ export default function SignUp() {
             ref={turnstileRef}
             onSuccess={handleCaptchaSuccess}
             onExpire={handleCaptchaExpire}
-            className="my-3"
+            className="my-1"
           />
 
           <Button
             type="submit"
             loading={isExecuting}
             disabled={CAPTCHA_ENABLED && !captchaToken}
-            className="mt-3"
           >
             Sign up
           </Button>
         </form>
       </Form>
 
-      <p className="text-fg-secondary mt-3  leading-6">
+      <p className="text-fg-secondary mt-3 leading-6">
         Already have an account?{' '}
         <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
           Sign in

@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex h-[100svh] flex-col">
+    <div className="relative flex min-h-svh flex-col">
       <GridPattern
         width={50}
         height={50}
@@ -31,7 +31,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         gradientTo="var(--fill-highlight)"
         gradientDegrees={90}
       />
-      <div className="z-10 flex h-full w-full items-center justify-center px-4">
+      <div className="z-10 flex flex-1 w-full items-center justify-center px-4 py-4">
         <div className="h-fit border bg-bg w-full max-w-96 p-6">{children}</div>
       </div>
     </div>

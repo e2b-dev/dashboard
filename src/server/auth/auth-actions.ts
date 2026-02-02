@@ -138,7 +138,9 @@ export const signUpAction = actionClient
   .schema(signUpSchema)
   .metadata({ actionName: 'signUp' })
   .action(
-    async ({ parsedInput: { email, password, returnTo = '', captchaToken } }) => {
+    async ({
+      parsedInput: { email, password, returnTo = '', captchaToken },
+    }) => {
       const captchaError = await validateCaptcha(captchaToken)
       if (captchaError) return captchaError
 
@@ -153,68 +155,71 @@ export const signUpAction = actionClient
         )
       }
 
-    const supabase = await createClient()
-    const headerStore = await headers()
+      const supabase = await createClient()
+      const headerStore = await headers()
 
-    const origin = headerStore.get('origin')
+      const origin = headerStore.get('origin')
 
-    if (!origin) {
-      throw new Error('Origin not found')
-    }
+      if (!origin) {
+        throw new Error('Origin not found')
+      }
 
-    // basic security check, that password does not equal e-mail
-    if (password && email && password.toLowerCase() === email.toLowerCase()) {
-      return returnValidationErrors(signUpSchema, {
-        password: {
-          _errors: ['Password is too weak.'],
+      // basic security check, that password does not equal e-mail
+      if (password && email && password.toLowerCase() === email.toLowerCase()) {
+        return returnValidationErrors(signUpSchema, {
+          password: {
+            _errors: ['Password is too weak.'],
+          },
+        })
+      }
+
+      const validationResult = await validateEmail(email)
+
+      if (validationResult?.data) {
+        if (!validationResult.valid) {
+          return returnServerError(
+            USER_MESSAGES.signUpEmailValidationInvalid.message
+          )
+        }
+
+        if (await shouldWarnAboutAlternateEmail(validationResult.data)) {
+          return returnServerError(USER_MESSAGES.signUpEmailAlternate.message)
+        }
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+          data: validationResult?.data
+            ? {
+                email_validation: validationResult?.data,
+              }
+            : undefined,
         },
       })
-    }
 
-    const validationResult = await validateEmail(email)
-
-    if (validationResult?.data) {
-      if (!validationResult.valid) {
-        return returnServerError(
-          USER_MESSAGES.signUpEmailValidationInvalid.message
-        )
-      }
-
-      if (await shouldWarnAboutAlternateEmail(validationResult.data)) {
-        return returnServerError(USER_MESSAGES.signUpEmailAlternate.message)
+      if (error) {
+        switch (error.code) {
+          case 'email_exists':
+            return returnServerError(USER_MESSAGES.emailInUse.message)
+          case 'weak_password':
+            return returnServerError(USER_MESSAGES.passwordWeak.message)
+          default:
+            throw error
+        }
       }
     }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
-        data: validationResult?.data
-          ? {
-              email_validation: validationResult?.data,
-            }
-          : undefined,
-      },
-    })
-
-    if (error) {
-      switch (error.code) {
-        case 'email_exists':
-          return returnServerError(USER_MESSAGES.emailInUse.message)
-        case 'weak_password':
-          return returnServerError(USER_MESSAGES.passwordWeak.message)
-        default:
-          throw error
-      }
-    }
-  })
+  )
 
 export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
   .action(
-    async ({ parsedInput: { email, password, returnTo = '', captchaToken } }) => {
+    async ({
+      parsedInput: { email, password, returnTo = '', captchaToken },
+    }) => {
       const captchaError = await validateCaptcha(captchaToken)
       if (captchaError) return captchaError
 
@@ -229,53 +234,53 @@ export const signInAction = actionClient
         )
       }
 
-    const supabase = await createClient()
+      const supabase = await createClient()
 
-    const headerStore = await headers()
+      const headerStore = await headers()
 
-    const origin = headerStore.get('origin')
+      const origin = headerStore.get('origin')
 
-    if (!origin) {
-      throw new Error('Origin not found')
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      if (error.code === 'invalid_credentials') {
-        return returnServerError(USER_MESSAGES.invalidCredentials.message)
+      if (!origin) {
+        throw new Error('Origin not found')
       }
-      if (error.code === 'email_not_confirmed') {
-        return returnServerError(USER_MESSAGES.signInEmailNotConfirmed.message)
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        if (error.code === 'invalid_credentials') {
+          return returnServerError(USER_MESSAGES.invalidCredentials.message)
+        }
+        if (error.code === 'email_not_confirmed') {
+          return returnServerError(
+            USER_MESSAGES.signInEmailNotConfirmed.message
+          )
+        }
+        throw error
       }
-      throw error
+
+      // handle extra case for password reset
+      if (
+        returnTo.trim().length > 0 &&
+        returnTo === PROTECTED_URLS.ACCOUNT_SETTINGS
+      ) {
+        const url = new URL(returnTo, origin)
+
+        url.searchParams.set('reauth', '1')
+
+        throw redirect(url.toString())
+      }
+
+      throw redirect(returnTo || PROTECTED_URLS.DASHBOARD)
     }
-
-    // handle extra case for password reset
-    if (
-      returnTo.trim().length > 0 &&
-      returnTo === PROTECTED_URLS.ACCOUNT_SETTINGS
-    ) {
-      const url = new URL(returnTo, origin)
-
-      url.searchParams.set('reauth', '1')
-
-      throw redirect(url.toString())
-    }
-
-    throw redirect(returnTo || PROTECTED_URLS.DASHBOARD)
-  })
+  )
 
 export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
-  .action(async ({ parsedInput: { email, captchaToken } }) => {
-    const captchaError = await validateCaptcha(captchaToken)
-    if (captchaError) return captchaError
-
+  .action(async ({ parsedInput: { email } }) => {
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       throw encodedRedirect(

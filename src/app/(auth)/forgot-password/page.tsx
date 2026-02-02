@@ -1,13 +1,11 @@
 'use client'
 
-import { CAPTCHA_ENABLED } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
   getTimeoutMsFromUserMessage,
   USER_MESSAGES,
 } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
-import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { forgotPasswordAction } from '@/server/auth/auth-actions'
 import { forgotPasswordSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
@@ -16,14 +14,11 @@ import { Label } from '@/ui/primitives/label'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TurnstileInstance } from '@marsidev/react-turnstile'
+import { useEffect, useState } from 'react'
 
 export default function ForgotPassword() {
   const searchParams = useSearchParams()
   const [message, setMessage] = useState<AuthMessage | undefined>()
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const {
     form,
@@ -39,11 +34,6 @@ export default function ForgotPassword() {
           setMessage({ success: USER_MESSAGES.passwordReset.message })
         },
         onError: ({ error }) => {
-          if (error.serverError === USER_MESSAGES.captchaFailed.message) {
-            turnstileRef.current?.reset()
-            setCaptchaToken(null)
-          }
-
           if (error.serverError) {
             setMessage({ error: error.serverError })
           }
@@ -85,19 +75,6 @@ export default function ForgotPassword() {
     window.location.href = `${AUTH_URLS.SIGN_IN}${searchParams}`
   }
 
-  const handleCaptchaSuccess = useCallback(
-    (token: string) => {
-      setCaptchaToken(token)
-      form.setValue('captchaToken', token)
-    },
-    [form]
-  )
-
-  const handleCaptchaExpire = useCallback(() => {
-    setCaptchaToken(null)
-    form.setValue('captchaToken', undefined)
-  }, [form])
-
   return (
     <div className="flex w-full flex-col">
       <h1>Reset Password</h1>
@@ -115,7 +92,7 @@ export default function ForgotPassword() {
 
       <form
         onSubmit={handleSubmitWithAction}
-        className="mt-5 flex flex-col gap-2 [&>input]:mb-1"
+        className="mt-5 flex flex-col gap-2"
       >
         <Label htmlFor="email">E-Mail</Label>
         <Input
@@ -126,20 +103,7 @@ export default function ForgotPassword() {
           placeholder="you@example.com"
           required
         />
-        <input type="hidden" {...form.register('captchaToken')} />
-
-        <TurnstileWidget
-          ref={turnstileRef}
-          onSuccess={handleCaptchaSuccess}
-          onExpire={handleCaptchaExpire}
-          className="my-3"
-        />
-
-        <Button
-          type="submit"
-          loading={isExecuting}
-          disabled={CAPTCHA_ENABLED && !captchaToken}
-        >
+        <Button type="submit" loading={isExecuting}>
           Reset Password
         </Button>
       </form>

@@ -4,11 +4,14 @@ import { z } from 'zod'
 
 export const emailSchema = z.email('Valid email is required')
 
-export const captchaTokenSchema = z.string().optional().refine((value) => {
-  if (!CAPTCHA_ENABLED) return true
+export const captchaTokenSchema = z
+  .string()
+  .optional()
+  .refine((value) => {
+    if (!CAPTCHA_ENABLED) return true
 
-  return value !== undefined
-})
+    return value !== undefined
+  })
 
 export const signUpSchema = z
   .object({
@@ -33,6 +36,4 @@ export const signInSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: emailSchema,
   callbackUrl: z.string().optional(),
-  captchaToken: captchaTokenSchema,
 })
-

@@ -1,6 +1,7 @@
 'use client'
 
 import { CAPTCHA_ENABLED } from '@/configs/flags'
+import { cn } from '@/lib/utils'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { forwardRef } from 'react'
 
@@ -21,14 +22,18 @@ export const TurnstileWidget = forwardRef<
   if (!siteKey) return null
 
   return (
-    <Turnstile
-      ref={ref}
-      siteKey={siteKey}
-      onSuccess={onSuccess}
-      onExpire={onExpire}
-      onError={onError}
-      options={{ theme: 'auto', size: 'normal' }}
-      className={className}
-    />
+    <div className={cn('w-full', className)}>
+      <Turnstile
+        ref={ref}
+        siteKey={siteKey}
+        onSuccess={onSuccess}
+        onExpire={onExpire}
+        onError={onError}
+        options={{
+          size: 'flexible',
+          appearance: 'always',
+        }}
+      />
+    </div>
   )
 })
