@@ -49,16 +49,14 @@ export default function Login() {
   } = useHookFormAction(signInAction, zodResolver(signInSchema), {
     actionProps: {
       onError: ({ error }) => {
+        turnstileRef.current?.reset()
+        setCaptchaToken(null)
+
         if (
           error.serverError === USER_MESSAGES.signInEmailNotConfirmed.message
         ) {
           setMessage({ success: error.serverError })
           return
-        }
-
-        if (error.serverError === USER_MESSAGES.captchaFailed.message) {
-          turnstileRef.current?.reset()
-          setCaptchaToken(null)
         }
 
         if (error.serverError) {

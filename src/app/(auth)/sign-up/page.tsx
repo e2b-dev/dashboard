@@ -57,10 +57,8 @@ export default function SignUp() {
         setMessage({ success: USER_MESSAGES.signUpVerification.message })
       },
       onError: ({ error }) => {
-        if (error.serverError === USER_MESSAGES.captchaFailed.message) {
-          turnstileRef.current?.reset()
-          setCaptchaToken(null)
-        }
+        turnstileRef.current?.reset()
+        setCaptchaToken(null)
 
         if (error.serverError) {
           setMessage({ error: error.serverError })
