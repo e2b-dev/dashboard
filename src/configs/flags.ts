@@ -10,4 +10,4 @@ export const INCLUDE_DASHBOARD_FEEDBACK_SURVEY =
   process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID &&
   process.env.NEXT_PUBLIC_POSTHOG_KEY
 
-export const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED === '1' && process.env.TURNSTILE_SECRET_KEY !== undefined && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== undefined 
+export const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED === '1' 

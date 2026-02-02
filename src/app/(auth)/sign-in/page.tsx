@@ -108,6 +108,8 @@ export default function Login() {
     form.setValue('captchaToken', undefined)
   }, [form])
 
+  console.log(CAPTCHA_ENABLED, captchaToken)
+
   return (
     <div className="flex w-full flex-col">
       <h1>Sign in</h1>
