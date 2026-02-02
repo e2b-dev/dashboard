@@ -213,13 +213,6 @@ const TemplatesTableFilters = React.forwardRef<
       </DropdownMenu>
 
       {/* Filter Pills */}
-      {globalFilter && (
-        <TableFilterButton
-          label="Search"
-          value={globalFilter}
-          onClick={() => setGlobalFilter('')}
-        />
-      )}
       {cpuCount && (
         <TableFilterButton
           label="CPU"
