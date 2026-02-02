@@ -5,6 +5,7 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
@@ -26,7 +27,7 @@ import {
 import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
-import { Lock, LockOpen, MoreVertical } from 'lucide-react'
+import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
@@ -290,18 +291,45 @@ export function TemplateNameCell({
   row,
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const [wasCopied, copy] = useClipboard(2000)
+  const nameValue = (getValue() as string) ?? '--'
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (nameValue !== '--') {
+      copy(nameValue)
+    }
+  }
+
   return (
     <div
+      onClick={handleCopy}
       className={cn(
-        'flex items-center gap-2 prose-body min-w-0',
+        'flex items-center gap-2 prose-body min-w-0 relative group/name w-full h-9',
         {
           'text-fg-tertiary': !getValue(),
+          'cursor-pointer': nameValue !== '--',
         }
       )}
     >
-      <span className="truncate">{(getValue() as string) ?? '--'}</span>
+      <span className="truncate">{nameValue}</span>
       {'isDefault' in row.original && row.original.isDefault && (
         <E2BTemplateBadge />
+      )}
+      {nameValue !== '--' && (
+        <div
+          className={cn(
+            'absolute right-0 p-1.5 rounded bg-bg pointer-events-none',
+            'opacity-0 group-hover/name:opacity-100'
+          )}
+          aria-hidden="true"
+        >
+          {wasCopied ? (
+            <Check className="size-3 text-icon" />
+          ) : (
+            <Copy className="size-3 text-icon-secondary" />
+          )}
+        </div>
       )}
     </div>
   )
