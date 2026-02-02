@@ -9,6 +9,7 @@ import {
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { TurnstileWidget } from '@/features/auth/turnstile-widget'
+import { useTurnstile } from '@/features/auth/use-turnstile'
 import { signUpAction } from '@/server/auth/auth-actions'
 import { signUpSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
@@ -23,11 +24,10 @@ import {
 import { Input } from '@/ui/primitives/input'
 import TextSeparator from '@/ui/text-separator'
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 
 export default function SignUp() {
   'use no memo'
@@ -42,8 +42,7 @@ export default function SignUp() {
     return undefined
   })
 
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const turnstileRef = useRef<TurnstileInstance>(null)
+  const turnstileResetRef = useRef<() => void>(() => {})
 
   const returnTo = searchParams.get('returnTo') || undefined
 
@@ -57,8 +56,7 @@ export default function SignUp() {
         setMessage({ success: USER_MESSAGES.signUpVerification.message })
       },
       onError: ({ error }) => {
-        turnstileRef.current?.reset()
-        setCaptchaToken(null)
+        turnstileResetRef.current()
 
         if (error.serverError) {
           setMessage({ error: error.serverError })
@@ -66,6 +64,9 @@ export default function SignUp() {
       },
     },
   })
+
+  const turnstile = useTurnstile(form)
+  turnstileResetRef.current = turnstile.reset
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -91,19 +92,6 @@ export default function SignUp() {
       return () => clearTimeout(timer)
     }
   }, [message])
-
-  const handleCaptchaSuccess = useCallback(
-    (token: string) => {
-      setCaptchaToken(token)
-      form.setValue('captchaToken', token)
-    },
-    [form]
-  )
-
-  const handleCaptchaExpire = useCallback(() => {
-    setCaptchaToken(null)
-    form.setValue('captchaToken', undefined)
-  }, [form])
 
   return (
     <div className="flex w-full flex-col">
@@ -194,16 +182,16 @@ export default function SignUp() {
           <input type="hidden" {...form.register('captchaToken')} />
 
           <TurnstileWidget
-            ref={turnstileRef}
-            onSuccess={handleCaptchaSuccess}
-            onExpire={handleCaptchaExpire}
+            ref={turnstile.turnstileRef}
+            onSuccess={turnstile.handleSuccess}
+            onExpire={turnstile.handleExpire}
             className="my-1"
           />
 
           <Button
             type="submit"
             loading={isExecuting}
-            disabled={CAPTCHA_REQUIRED_CLIENT && !captchaToken}
+            disabled={CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken}
           >
             Sign up
           </Button>
