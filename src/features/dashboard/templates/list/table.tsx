@@ -61,18 +61,6 @@ export default function TemplatesTable() {
 
   const templates = useMemo(
     () => [
-      // Mock row for testing column widths
-      {
-        templateID: 'WWWWWWWWWWWWWWWWWWWW',
-        aliases: ['very-long-template-name-that-should-truncate'],
-        cpuCount: 8,
-        memoryMB: 16384,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        public: true,
-        envdVersion: '0.2.5',
-        isDefault: true,
-      } as any,
       ...(defaultTemplatesData?.templates ?? []),
       ...(templatesData?.templates ?? []),
     ],
