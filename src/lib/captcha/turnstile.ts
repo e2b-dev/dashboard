@@ -25,7 +25,11 @@ export async function verifyTurnstileToken(
 
     const response = await fetch(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      { method: 'POST', body: formData }
+      {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(5000),
+      }
     )
 
     const result: TurnstileResponse = await response.json()

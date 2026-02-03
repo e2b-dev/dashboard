@@ -20,12 +20,12 @@ export const TurnstileWidget = forwardRef<
   { onSuccess, onExpire, onError, className, isVerified },
   ref
 ) {
-  if (!CAPTCHA_REQUIRED_CLIENT || isVerified) return null
+  if (!CAPTCHA_REQUIRED_CLIENT) return null
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full', isVerified && 'hidden', className)}>
       <Turnstile
         ref={ref}
         siteKey={siteKey}

@@ -1,7 +1,7 @@
 'use client'
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FieldValues, Path, UseFormReturn } from 'react-hook-form'
 
 const HIDE_DELAY_MS = 2000
@@ -45,6 +45,14 @@ export function useTurnstile<T extends FieldValues & { captchaToken?: string }>(
     setIsVerified(false)
     form.setValue('captchaToken' as Path<T>, undefined as T[Path<T>])
   }, [form])
+
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return {
     captchaToken,
