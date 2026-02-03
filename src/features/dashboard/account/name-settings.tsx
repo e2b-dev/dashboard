@@ -32,7 +32,7 @@ import { z } from 'zod'
 import { useDashboard } from '../context'
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name cannot be empty').max(32, 'Max 32 characters'),
+  name: z.string().min(1, 'Name cannot be empty').max(100, 'Max 100 characters'),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -108,7 +108,7 @@ export function NameSettings({ className }: NameSettingsProps) {
           </CardContent>
 
           <CardFooter className="bg-bg-1 justify-between">
-            <p className="text-fg-tertiary ">Max 32 characters.</p>
+            <p className="text-fg-tertiary ">Max 100 characters.</p>
             <Button
               loading={isPending}
               disabled={form.watch('name') === user?.user_metadata?.name}
