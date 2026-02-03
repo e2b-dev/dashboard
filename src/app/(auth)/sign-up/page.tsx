@@ -53,6 +53,7 @@ export default function SignUp() {
   } = useHookFormAction(signUpAction, zodResolver(signUpSchema), {
     actionProps: {
       onSuccess: () => {
+        turnstileResetRef.current()
         setMessage({ success: USER_MESSAGES.signUpVerification.message })
       },
       onError: ({ error }) => {
@@ -167,18 +168,7 @@ export default function SignUp() {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="returnTo"
-            render={({ field }) => (
-              <FormItem className="hidden">
-                <FormControl>
-                  <Input type="hidden" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
+          <input type="hidden" {...form.register('returnTo')} />
           <input type="hidden" {...form.register('captchaToken')} />
 
           <TurnstileWidget
