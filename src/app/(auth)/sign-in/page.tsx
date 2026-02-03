@@ -164,6 +164,7 @@ export default function Login() {
             ref={turnstile.turnstileRef}
             onSuccess={turnstile.handleSuccess}
             onExpire={turnstile.handleExpire}
+            isVerified={turnstile.isVerified}
             className="my-1 h-[70px]"
           />
 

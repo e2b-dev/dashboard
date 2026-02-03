@@ -175,6 +175,7 @@ export default function SignUp() {
             ref={turnstile.turnstileRef}
             onSuccess={turnstile.handleSuccess}
             onExpire={turnstile.handleExpire}
+            isVerified={turnstile.isVerified}
             className="my-1"
           />
 

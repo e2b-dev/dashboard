@@ -10,13 +10,17 @@ interface TurnstileWidgetProps {
   onExpire?: () => void
   onError?: () => void
   className?: string
+  isVerified?: boolean
 }
 
 export const TurnstileWidget = forwardRef<
   TurnstileInstance,
   TurnstileWidgetProps
->(function TurnstileWidget({ onSuccess, onExpire, onError, className }, ref) {
-  if (!CAPTCHA_REQUIRED_CLIENT) return null
+>(function TurnstileWidget(
+  { onSuccess, onExpire, onError, className, isVerified },
+  ref
+) {
+  if (!CAPTCHA_REQUIRED_CLIENT || isVerified) return null
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
@@ -30,7 +34,7 @@ export const TurnstileWidget = forwardRef<
         onError={onError}
         options={{
           size: 'flexible',
-          appearance: 'always',
+          appearance: 'execute',
         }}
       />
     </div>

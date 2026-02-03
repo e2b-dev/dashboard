@@ -38,6 +38,8 @@ export async function verifyTurnstileToken(
         },
         `Turnstile verification failed: ${result['error-codes']?.join(', ')}`
       )
+
+      return false
     }
 
     l.info(
@@ -48,7 +50,7 @@ export async function verifyTurnstileToken(
       'Turnstile verification succeeded'
     )
 
-    return result.success
+    return true
   } catch (error) {
     l.error(
       {
