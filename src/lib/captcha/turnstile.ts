@@ -40,6 +40,14 @@ export async function verifyTurnstileToken(
       )
     }
 
+    l.info(
+      {
+        key: 'turnstile:verification_succeeded',
+        context: { success: result.success },
+      },
+      'Turnstile verification succeeded'
+    )
+
     return result.success
   } catch (error) {
     l.error(
