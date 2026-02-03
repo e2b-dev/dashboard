@@ -30,7 +30,6 @@ export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(8, 'Password must be at least 8 characters'),
   returnTo: relativeUrlSchema.optional(),
-  captchaToken: captchaTokenSchema,
 })
 
 export const forgotPasswordSchema = z.object({

@@ -216,66 +216,57 @@ export const signUpAction = actionClient
 export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
-  .action(
-    async ({
-      parsedInput: { email, password, returnTo = '', captchaToken },
-    }) => {
-      const captchaError = await validateCaptcha(captchaToken)
-      if (captchaError) return captchaError
-
-      const isHealthy = await checkAuthProviderHealth()
-      if (!isHealthy) {
-        const queryParams = returnTo ? { returnTo } : undefined
-        throw encodedRedirect(
-          'error',
-          AUTH_URLS.SIGN_IN,
-          AUTH_PROVIDER_ERROR_MESSAGE,
-          queryParams
-        )
-      }
-
-      const supabase = await createClient()
-
-      const headerStore = await headers()
-
-      const origin = headerStore.get('origin')
-
-      if (!origin) {
-        throw new Error('Origin not found')
-      }
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        if (error.code === 'invalid_credentials') {
-          return returnServerError(USER_MESSAGES.invalidCredentials.message)
-        }
-        if (error.code === 'email_not_confirmed') {
-          return returnServerError(
-            USER_MESSAGES.signInEmailNotConfirmed.message
-          )
-        }
-        throw error
-      }
-
-      // handle extra case for password reset
-      if (
-        returnTo.trim().length > 0 &&
-        returnTo === PROTECTED_URLS.ACCOUNT_SETTINGS
-      ) {
-        const url = new URL(returnTo, origin)
-
-        url.searchParams.set('reauth', '1')
-
-        throw redirect(url.toString())
-      }
-
-      throw redirect(returnTo || PROTECTED_URLS.DASHBOARD)
+  .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    const isHealthy = await checkAuthProviderHealth()
+    if (!isHealthy) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        AUTH_PROVIDER_ERROR_MESSAGE,
+        queryParams
+      )
     }
-  )
+
+    const supabase = await createClient()
+
+    const headerStore = await headers()
+
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      if (error.code === 'invalid_credentials') {
+        return returnServerError(USER_MESSAGES.invalidCredentials.message)
+      }
+      if (error.code === 'email_not_confirmed') {
+        return returnServerError(USER_MESSAGES.signInEmailNotConfirmed.message)
+      }
+      throw error
+    }
+
+    // handle extra case for password reset
+    if (
+      returnTo.trim().length > 0 &&
+      returnTo === PROTECTED_URLS.ACCOUNT_SETTINGS
+    ) {
+      const url = new URL(returnTo, origin)
+
+      url.searchParams.set('reauth', '1')
+
+      throw redirect(url.toString())
+    }
+
+    throw redirect(returnTo || PROTECTED_URLS.DASHBOARD)
+  })
 
 export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)

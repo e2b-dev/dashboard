@@ -1,12 +1,9 @@
 'use client'
 
-import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
-import { TurnstileWidget } from '@/features/auth/turnstile-widget'
-import { useTurnstile } from '@/features/auth/use-turnstile'
 import { signInAction } from '@/server/auth/auth-actions'
 import { signInSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
@@ -24,7 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 export default function Login() {
   'use no memo'
@@ -39,8 +36,6 @@ export default function Login() {
     return undefined
   })
 
-  const turnstileResetRef = useRef<() => void>(() => {})
-
   const {
     form,
     handleSubmitWithAction,
@@ -48,8 +43,6 @@ export default function Login() {
   } = useHookFormAction(signInAction, zodResolver(signInSchema), {
     actionProps: {
       onError: ({ error }) => {
-        turnstileResetRef.current()
-
         if (
           error.serverError === USER_MESSAGES.signInEmailNotConfirmed.message
         ) {
@@ -63,9 +56,6 @@ export default function Login() {
       },
     },
   })
-
-  const turnstile = useTurnstile(form)
-  turnstileResetRef.current = turnstile.reset
 
   const returnTo = searchParams.get('returnTo') || undefined
 
@@ -158,21 +148,8 @@ export default function Login() {
           />
 
           <input type="hidden" {...form.register('returnTo')} />
-          <input type="hidden" {...form.register('captchaToken')} />
 
-          <TurnstileWidget
-            ref={turnstile.turnstileRef}
-            onSuccess={turnstile.handleSuccess}
-            onExpire={turnstile.handleExpire}
-            isVerified={turnstile.isVerified}
-            className="my-1 h-[70px]"
-          />
-
-          <Button
-            type="submit"
-            loading={isExecuting}
-            disabled={CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken}
-          >
+          <Button type="submit" loading={isExecuting}>
             Sign in
           </Button>
         </form>
