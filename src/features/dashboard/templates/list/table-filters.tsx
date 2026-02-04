@@ -155,13 +155,13 @@ const TemplatesTableFilters = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn('flex items-center gap-2', className)}
+      className={cn('flex items-center gap-1', className)}
       {...props}
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
+          <Button variant="outline" size="md" className="normal-case gap-2">
+            <ListFilter className="text-fg-tertiary size-4" /> Filter{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -203,7 +203,7 @@ const TemplatesTableFilters = React.forwardRef<
                       setIsPublic(isPublic === false ? undefined : false)
                     }}
                   >
-                    Private
+                    Internal
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
@@ -213,13 +213,6 @@ const TemplatesTableFilters = React.forwardRef<
       </DropdownMenu>
 
       {/* Filter Pills */}
-      {globalFilter && (
-        <TableFilterButton
-          label="Search"
-          value={globalFilter}
-          onClick={() => setGlobalFilter('')}
-        />
-      )}
       {cpuCount && (
         <TableFilterButton
           label="CPU"
@@ -237,7 +230,7 @@ const TemplatesTableFilters = React.forwardRef<
       {isPublic !== undefined && (
         <TableFilterButton
           label="Visibility"
-          value={isPublic ? 'Public' : 'Private'}
+          value={isPublic ? 'Public' : 'Internal'}
           onClick={() => setIsPublic(undefined)}
         />
       )}
