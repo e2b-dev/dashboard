@@ -63,9 +63,13 @@ function PlanAvatar({ selectedTier, isLoading }: PlanAvatarProps) {
     <UpgradeIcon className="size-7" />
   )
 
+  if (isLoading) {
+    return <Skeleton className="size-36 min-w-36 max-lg:hidden" />
+  }
+
   return (
     <div className="size-36 min-w-36 relative flex items-center justify-center max-lg:hidden text-icon-tertiary">
-      {!isLoading && icon}
+      {icon}
       <TierAvatarBorder className="absolute inset-0 dark:text-white text-black" />
     </div>
   )
