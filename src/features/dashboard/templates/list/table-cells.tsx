@@ -328,7 +328,7 @@ export function TemplateNameCell({
         >
           <div className="flex flex-col gap-1">
             <span className="text-fg-secondary text-xs">
-              Available also under:
+              Also available under:
             </span>
             <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
               {additionalNames.map((name) => (
