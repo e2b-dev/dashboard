@@ -60,8 +60,8 @@ export default function RemainingTime() {
         style={{ pointerEvents: remaining === 0 ? 'auto' : 'none' }}
       >
         <Button
-          variant="ghost"
-          size="slate"
+          variant="quaternary"
+          size="icon-xs"
           onClick={refetchSandboxInfo}
           disabled={isSandboxInfoLoading}
           asChild
