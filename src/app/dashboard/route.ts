@@ -14,6 +14,7 @@ export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   keys: (teamId) => PROTECTED_URLS.KEYS(teamId),
   settings: (teamId) => PROTECTED_URLS.GENERAL(teamId),
   team: (teamId) => PROTECTED_URLS.GENERAL(teamId),
+  general: (teamId) => PROTECTED_URLS.GENERAL(teamId),
   members: (teamId) => PROTECTED_URLS.MEMBERS(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,

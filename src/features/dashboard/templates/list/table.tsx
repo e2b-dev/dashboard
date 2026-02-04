@@ -75,18 +75,18 @@ export default function TemplatesTable() {
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
 
+  const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
+
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
-    'templates:columnSizing',
+    'templates:columnSizing:v2',
     {},
     {
       deserializer: (value) => JSON.parse(value),
       serializer: (value) => JSON.stringify(value),
     }
   )
-
-  const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
-
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   // Effect hooks for filters
   useEffect(() => {
@@ -196,18 +196,22 @@ export default function TemplatesTable() {
                   <DataTableHead
                     key={header.id}
                     header={header}
-                    style={{
-                      width: header.getSize(),
-                    }}
                     sorting={sorting.find((s) => s.id === header.id)?.desc}
+                    align={
+                      header.id === 'cpuCount' || header.id === 'memoryMB'
+                        ? 'right'
+                        : 'left'
+                    }
                   >
                     {header.id === 'public' ? (
                       <HelpTooltip>
                         Public templates can be used by all users to start
                         Sandboxes, but can only be edited by your team.
+                        
+                        Internal templates can only be used and edited by your team.
                       </HelpTooltip>
                     ) : null}
-                    <span className="truncate">
+                    <span>
                       {header.isPlaceholder
                         ? null
                         : flexRender(

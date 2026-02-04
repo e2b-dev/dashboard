@@ -11,7 +11,7 @@ const UpdateUserSchema = z
   .object({
     email: z.email().optional(),
     password: z.string().min(8).optional(),
-    name: z.string().min(1).optional(),
+    name: z.string().min(1).max(100).optional(),
   })
   .refine(
     (data) => {

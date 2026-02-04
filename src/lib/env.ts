@@ -9,6 +9,8 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
 
+  TURNSTILE_SECRET_KEY: z.string().optional(),
+
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z
@@ -52,6 +54,9 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
+
+  NEXT_PUBLIC_CAPTCHA_ENABLED: z.string().optional(),
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
 })
 
 export const testEnvSchema = z.object({

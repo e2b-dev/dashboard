@@ -11,7 +11,23 @@ type SandboxesMetricsRecord =
 
 type TeamMetric = InfraComponents['schemas']['TeamMetric']
 
-type Template = InfraComponents['schemas']['Template']
+type Template = Pick<
+  InfraComponents['schemas']['Template'],
+  | 'templateID'
+  | 'buildID'
+  | 'cpuCount'
+  | 'memoryMB'
+  | 'diskSizeMB'
+  | 'public'
+  | 'aliases'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'createdBy'
+  | 'lastSpawnedAt'
+  | 'spawnCount'
+  | 'buildCount'
+  | 'envdVersion'
+>
 
 type DefaultTemplate = Template & {
   isDefault: true

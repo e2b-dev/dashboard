@@ -204,7 +204,10 @@ export function formatDuration(durationMs: number): string {
   }
 }
 
-export function formatDurationCompact(ms: number): string {
+export function formatDurationCompact(
+  ms: number,
+  showDecimalSeconds = false
+): string {
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
@@ -217,7 +220,9 @@ export function formatDurationCompact(ms: number): string {
     const remainingSeconds = seconds % 60
     return `${minutes}m ${remainingSeconds}s`
   }
-  return `${seconds}s`
+  return showDecimalSeconds
+    ? `${seconds}.${Math.floor((ms % 1000) / 100)}s`
+    : `${seconds}s`
 }
 
 export function formatTimeAgoCompact(ms: number): string {

@@ -95,10 +95,7 @@ export default function Login() {
       <TextSeparator text="or" />
 
       <Form {...form}>
-        <form
-          className="flex flex-col gap-2 [&>input]:mb-3"
-          onSubmit={handleSubmitWithAction}
-        >
+        <form className="flex flex-col gap-2" onSubmit={handleSubmitWithAction}>
           <FormField
             control={form.control}
             name="email"
@@ -150,25 +147,15 @@ export default function Login() {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="returnTo"
-            render={({ field }) => (
-              <FormItem className="hidden">
-                <FormControl>
-                  <Input type="hidden" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          <input type="hidden" {...form.register('returnTo')} />
 
-          <Button type="submit" loading={isExecuting} className="mt-3">
+          <Button type="submit" loading={isExecuting}>
             Sign in
           </Button>
         </form>
       </Form>
 
-      <p className="text-fg-secondary mt-3  leading-6">
+      <p className="text-fg-secondary mt-3 leading-6">
         Don&apos;t have an account?{' '}
         <Link className="text-fg  underline" href={AUTH_URLS.SIGN_UP}>
           Sign up

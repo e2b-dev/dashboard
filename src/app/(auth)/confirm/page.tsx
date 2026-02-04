@@ -110,7 +110,7 @@ export default function ConfirmPage() {
   return (
     <div className="flex w-full flex-col">
       <h1>{typeLabel}</h1>
-      <p className="text-fg-secondary leading-6">{typeDescription}</p>
+      <p className="text-fg-secondary leading-6 mt-1">{typeDescription}</p>
 
       <div className="mt-5">
         <Button
