@@ -2289,7 +2289,7 @@ export interface components {
         };
         TemplateBuildRequestV3: {
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
-            name?: string;
+            name: string;
             /** @description Tags to assign to the template build */
             tags?: string[];
             /**

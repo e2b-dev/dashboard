@@ -933,6 +933,8 @@ components:
           description: Whether the step should be forced to run regardless of the cache
 
     TemplateBuildRequestV3:
+      required:
+        - name
       properties:
         name:
           description: Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array.
