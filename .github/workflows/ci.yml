@@ -54,15 +54,18 @@ jobs:
           bun run lint:fix
           bun run lint
 
-      - name: Fail if changes are found
+      - name: Fail if source files changed
         run: |
-          if [[ -z $(git status --porcelain) ]]; then
-            echo "✅ No changes detected."
+          # Check for changes excluding bun.lock (platform-specific)
+          CHANGED_FILES=$(git status --porcelain | grep -v "bun.lock" || true)
+          
+          if [[ -z "$CHANGED_FILES" ]]; then
+            echo "✅ No source file changes detected."
             exit 0
           fi
 
           echo "❌ Code is not properly formatted. Please run 'bun run format && bun run lint:fix' and commit the changes."
-          git status --short
+          echo "$CHANGED_FILES"
           exit 1
 
   integration-tests:
