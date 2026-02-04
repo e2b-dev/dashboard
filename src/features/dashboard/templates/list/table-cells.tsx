@@ -327,11 +327,16 @@ export function TemplateNameCell({
           }
         >
           <div className="flex flex-col gap-1">
-            {additionalNames.map((name) => (
-              <span key={name} className="font-mono text-xs">
-                {name}
-              </span>
-            ))}
+            <span className="text-fg-secondary text-xs">
+              Available also under:
+            </span>
+            <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
+              {additionalNames.map((name) => (
+                <li key={name} className="font-mono text-xs text-fg-tertiary">
+                  {name}
+                </li>
+              ))}
+            </ul>
           </div>
         </HelpTooltip>
       )}
