@@ -1,6 +1,6 @@
 import { TeamLimits } from '@/server/team/get-team-limits'
+import { ConcurrentSandboxAddonSection } from './_concurrent-sandboxes-addon-section'
 import BillingTierCard from './_tier-card'
-import { ConcurrentSandboxAddonSection } from './concurrent-sandboxes-addon-section'
 import { TIER_NAMES } from './constants'
 import { BillingAddonData, BillingTierData } from './types'
 import { formatAddonQuantity, generateTierLimitFeatures } from './utils'
