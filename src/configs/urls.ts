@@ -45,6 +45,8 @@ export const PROTECTED_URLS = {
 
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
+  BILLING_PLAN: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/billing/plan`,
   BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
 }
 

@@ -1,6 +1,9 @@
 'use client'
 
+import { PROTECTED_URLS } from '@/configs/urls'
+import { formatCurrency } from '@/lib/utils/formatting'
 import { TierLimits } from '@/types/billing.types'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   BuildIcon,
@@ -14,6 +17,8 @@ import {
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
+import Link from 'next/link'
+import { useParams, usePathname } from 'next/navigation'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import { BillingAddonData, BillingTierData } from './types'
@@ -83,6 +88,12 @@ interface PlanDetailsProps {
 
 function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
   const isBaseTier = !selectedTier || selectedTier.id.includes('base')
+  const { teamIdOrSlug } =
+    useParams<
+      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/billing'>['params']>
+    >()
+  const pathname = usePathname()
+  const isOnPlanPage = pathname.endsWith('/plan')
 
   return (
     <div className="flex flex-col pt-2 pr-2 pb-1 w-full">
@@ -91,19 +102,24 @@ function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
 
         <div className="flex items-center gap-2 flex-wrap">
           {isLoading ? (
-            <>
-              <Skeleton className="h-8 w-56" />
-              <Skeleton className="h-8 w-36" />
-            </>
-          ) : isBaseTier ? (
-            <Button variant="default">
-              <UpgradeIcon className="size-4" />
-              Upgrade for higher concurrency
-            </Button>
+            <Skeleton className="h-8 w-36" />
+          ) : isOnPlanPage ? (
+            <Button variant="outline">Change Plan</Button>
           ) : (
-            <Button variant="outline">Manage plan & add-ons</Button>
+            <>
+              <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)} passHref>
+                {isBaseTier ? (
+                  <Button variant="default">
+                    <UpgradeIcon className="size-4" />
+                    Upgrade for higher concurrency
+                  </Button>
+                ) : (
+                  <Button variant="outline">Manage plan & add-ons</Button>
+                )}
+              </Link>
+              <Button variant="outline">Manage payment</Button>
+            </>
           )}
-          {!isLoading && <Button variant="outline">Manage payment</Button>}
         </div>
       </div>
 
@@ -130,9 +146,16 @@ function PlanTitle({ selectedTier, isLoading }: PlanTitleProps) {
       {isLoading ? (
         <Skeleton className="h-5 w-20" />
       ) : (
-        <h2 className="text-3xl font-bold tracking-tight">
-          {selectedTier?.name}
-        </h2>
+        <div className="flex gap-3">
+          <span className="prose-value-big uppercase text-fg">
+            {selectedTier?.name}
+          </span>
+          <Badge className="uppercase translate-y-1">
+            {selectedTier?.price_cents
+              ? `${formatCurrency(selectedTier.price_cents / 100)}/mo`
+              : 'FREE'}
+          </Badge>
+        </div>
       )}
     </div>
   )

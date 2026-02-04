@@ -92,6 +92,18 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Billing',
     type: 'default',
   }),
+  '/dashboard/*/billing/plan': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+
+    return {
+      title: [
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        { label: 'Plan' },
+      ],
+      type: 'default',
+    }
+  },
 
   '/dashboard/*/account': () => ({
     title: 'Account',
