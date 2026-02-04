@@ -264,7 +264,7 @@ async function getDefaultTemplatesCached() {
 
     const { data: aliases, error: aliasesError } = await supabaseAdmin
       .from('env_aliases')
-      .select('alias')
+      .select('alias, namespace')
       .eq('env_id', env.id)
 
     if (aliasesError) {
@@ -299,6 +299,12 @@ async function getDefaultTemplatesCached() {
       envdVersion: latestBuild.envd_version,
       public: env.public,
       aliases: aliases.map((a) => a.alias),
+      names: aliases.map((a) => {
+        if (a.namespace && a.namespace.length > 0) {
+          return `${a.namespace}/${a.alias}`
+        }
+        return a.alias
+      }),
       createdAt: env.created_at,
       updatedAt: env.updated_at,
       createdBy: null,
