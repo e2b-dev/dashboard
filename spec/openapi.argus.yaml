@@ -48,36 +48,36 @@ components:
         format: uuid
 
   responses:
-    "400":
+    '400':
       description: Bad request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
-    "401":
+            $ref: '#/components/schemas/Error'
+    '401':
       description: Authentication error
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
-    "404":
+            $ref: '#/components/schemas/Error'
+    '404':
       description: Not found
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
-    "409":
+            $ref: '#/components/schemas/Error'
+    '409':
       description: Conflict
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
-    "500":
+            $ref: '#/components/schemas/Error'
+    '500':
       description: Server error
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
 
   schemas:
     Error:
@@ -274,8 +274,8 @@ paths:
         200:
           description: Request was successful
         401:
-          $ref: "#/components/responses/401"
-  
+          $ref: '#/components/responses/401'
+
   /events/sandboxes/{sandboxID}:
     get:
       description: Get sandbox events
@@ -285,7 +285,7 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: "#/components/parameters/sandboxID"
+        - $ref: '#/components/parameters/sandboxID'
         - name: offset
           in: query
           required: false
@@ -310,20 +310,20 @@ paths:
             type: boolean
             default: false
       responses:
-        "200":
+        '200':
           description: Successfully returned the sandbox events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SandboxEvent"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
+                  $ref: '#/components/schemas/SandboxEvent'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
 
   /events/sandboxes:
     get:
@@ -358,20 +358,20 @@ paths:
             type: boolean
             default: false
       responses:
-        "200":
+        '200':
           description: Successfully returned the sandbox events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SandboxEvent"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
+                  $ref: '#/components/schemas/SandboxEvent'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
 
   /events/webhooks:
     post:
@@ -387,45 +387,45 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WebhookCreate"
+              $ref: '#/components/schemas/WebhookCreate'
       responses:
-        "201":
+        '201':
           description: Successfully created webhook.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookCreation"
-        "400":
-          $ref: "#/components/responses/400"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
+                $ref: '#/components/schemas/WebhookCreation'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
     get:
-        operationId: webhooksList
-        description: List registered webhooks.
-        tags: [webhooks]
-        security:
-          - ApiKeyAuth: []
-          - Supabase1TokenAuth: []
-            Supabase2TeamAuth: []
-        responses:
-          "200":
-            description: List of registered webhooks.
-            content:
-              application/json:
-                schema:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/WebhookDetail"
-          "404":
-            $ref: "#/components/responses/404"
-          "401":
-            $ref: "#/components/responses/401"
-          "500":
-            $ref: "#/components/responses/500"
+      operationId: webhooksList
+      description: List registered webhooks.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      responses:
+        '200':
+          description: List of registered webhooks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookDetail'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
 
   /events/webhooks/{webhookID}:
     get:
@@ -437,20 +437,20 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: "#/components/parameters/webhookID"
+        - $ref: '#/components/parameters/webhookID'
       responses:
-        "200":
+        '200':
           description: Successfully returned the webhook configuration.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookDetail"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
+                $ref: '#/components/schemas/WebhookDetail'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
 
     patch:
       operationId: webhookUpdate
@@ -461,28 +461,28 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: "#/components/parameters/webhookID"
+        - $ref: '#/components/parameters/webhookID'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WebhookConfiguration"
+              $ref: '#/components/schemas/WebhookConfiguration'
       responses:
-        "200":
+        '200':
           description: Successfully updated webhook.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookDetail"
-        "400":
-          $ref: "#/components/responses/400"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
+                $ref: '#/components/schemas/WebhookDetail'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
 
     delete:
       operationId: webhookDelete
@@ -493,13 +493,13 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: "#/components/parameters/webhookID"
+        - $ref: '#/components/parameters/webhookID'
       responses:
-        "200":
+        '200':
           description: Successfully deleted webhook.
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'

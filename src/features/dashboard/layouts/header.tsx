@@ -65,7 +65,9 @@ function HeaderTitle({ title }: { title: string | TitleSegment[] }) {
     <span className="flex items-center gap-1">
       {title.map((segment, index) => (
         <Fragment key={index}>
-          {index > 0 && <span className="text-fg-tertiary select-none shrink-0">/</span>}
+          {index > 0 && (
+            <span className="text-fg-tertiary select-none shrink-0">/</span>
+          )}
           {segment.href ? (
             <Link
               href={segment.href}

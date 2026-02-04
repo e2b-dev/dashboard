@@ -32,7 +32,10 @@ import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { ADDON_PURCHASE_ACTION_ERRORS, ADDON_PURCHASE_MESSAGES } from './constants'
+import {
+  ADDON_PURCHASE_ACTION_ERRORS,
+  ADDON_PURCHASE_MESSAGES,
+} from './constants'
 import {
   stripePromise,
   usePaymentConfirmation,
@@ -102,8 +105,15 @@ function DialogContent_Inner({
       },
       onError: ({ error }) => {
         console.error('[Payment] Failed to confirm order:', error.serverError)
-        if (error.serverError === ADDON_PURCHASE_ACTION_ERRORS.missingPaymentMethod) {
-          toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.missingPaymentMethod))
+        if (
+          error.serverError ===
+          ADDON_PURCHASE_ACTION_ERRORS.missingPaymentMethod
+        ) {
+          toast(
+            defaultErrorToast(
+              ADDON_PURCHASE_MESSAGES.error.missingPaymentMethod
+            )
+          )
         } else {
           toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
         }
