@@ -23,7 +23,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: "${{ env.BUN }}"
+          bun-version: '${{ env.BUN }}'
 
       - name: Install dependencies
         run: bun install
@@ -45,7 +45,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: "${{ env.BUN }}"
+          bun-version: '${{ env.BUN }}'
 
       - name: Run linters and formatters
         run: |
@@ -97,7 +97,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: "${{ env.BUN }}"
+          bun-version: '${{ env.BUN }}'
 
       - name: Install dependencies
         run: bun install
