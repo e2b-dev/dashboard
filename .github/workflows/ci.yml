@@ -23,7 +23,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: '${{ env.BUN }}'
+          bun-version: "${{ env.BUN }}"
 
       - name: Install dependencies
         run: bun install
@@ -45,7 +45,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: '${{ env.BUN }}'
+          bun-version: "${{ env.BUN }}"
 
       - name: Run linters and formatters
         run: |
@@ -61,7 +61,7 @@ jobs:
             exit 0
           fi
 
-          echo "❌ Generated files are not up to date. Please run 'make generate' and commit the changes."
+          echo "❌ Code is not properly formatted. Please run 'bun run format && bun run lint:fix' and commit the changes."
           git status --short
           exit 1
 
@@ -97,7 +97,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: '${{ env.BUN }}'
+          bun-version: "${{ env.BUN }}"
 
       - name: Install dependencies
         run: bun install
