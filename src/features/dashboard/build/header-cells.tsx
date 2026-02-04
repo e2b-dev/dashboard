@@ -31,7 +31,7 @@ export function Template({
     <Button
       variant="link"
       className={cn(
-        'text-fg h-auto p-0 gap-1 font-sans prose-table normal-case max-w-full',
+        'text-fg-secondary h-auto p-0 gap-1 font-sans prose-body normal-case max-w-full underline underline-offset-2 hover:text-accent-main-highlight',
         className
       )}
       onClick={(e) => {
@@ -43,7 +43,6 @@ export function Template({
       }}
     >
       <p className="truncate">{template}</p>
-      <ArrowUpRight className="size-3 min-w-3" />
     </Button>
   )
 }
@@ -76,7 +75,7 @@ export function RanFor({
   // no timestamp to copy - just show duration
   if (isBuilding || !finishedAt) {
     return (
-      <span className="whitespace-nowrap text-fg-tertiary">
+      <span className="whitespace-nowrap text-fg-secondary">
         {formatDurationCompact(duration)}
       </span>
     )
@@ -86,8 +85,8 @@ export function RanFor({
   const formattedTimestamp = formatCompactDate(finishedAt)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap group/time">
-      {formatDurationCompact(duration)}{' '}
+    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary group/time">
+      In {formatDurationCompact(duration)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}
       </span>
@@ -101,7 +100,7 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const formattedTimestamp = formatCompactDate(timestamp)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap group/time">
+    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary group/time">
       {formatTimeAgoCompact(elapsed)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}

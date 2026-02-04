@@ -30,9 +30,9 @@ export default function BuildHeader({
         <DetailsItem label="ID">
           <CopyButtonInline
             value={buildId}
-            className="font-mono prose-body-numeric"
+            className="font-mono prose-table-numeric text-fg-secondary"
           >
-            {buildId.slice(0, 6)}...{buildId.slice(-6)}
+            {buildId}
           </CopyButtonInline>
         </DetailsItem>
         <DetailsItem label="Template">
@@ -52,7 +52,7 @@ export default function BuildHeader({
             <StartedAt timestamp={buildDetails.startedAt} />
           )}
         </DetailsItem>
-        <DetailsItem label={isBuilding ? 'Ran for' : 'Finished'}>
+        <DetailsItem label={isBuilding ? 'Running for' : 'Finished'}>
           {isLoading ? (
             <Skeleton className="w-36 h-5" />
           ) : (

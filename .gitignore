@@ -38,6 +38,7 @@ yarn-error.log*
 next-env.d.ts
 
 CLAUDE.md
+.agent
 
 # tooling
 /template

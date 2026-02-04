@@ -36,14 +36,17 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
-      <div className="flex items-center gap-2 w-full relative min-h-7">
-        <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1" />
+      <div className="flex items-center w-full relative min-h-6 gap-2">
+        <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1 shrink-0" />
 
-        <h1 className="mr-auto align-middle truncate">
+        <h1 className="truncate min-w-0 flex-1">
           <HeaderTitle title={config.title} />
         </h1>
 
-        {children}
+        {/* Ghost element - reserves width but not height */}
+        <div className="h-0 overflow-visible shrink-0 flex items-center">
+          {children}
+        </div>
 
         <ClientOnly>
           <ThemeSwitcher />
@@ -62,16 +65,16 @@ function HeaderTitle({ title }: { title: string | TitleSegment[] }) {
     <span className="flex items-center gap-1">
       {title.map((segment, index) => (
         <Fragment key={index}>
-          {index > 0 && <span className="text-fg-tertiary select-none">/</span>}
+          {index > 0 && <span className="text-fg-tertiary select-none shrink-0">/</span>}
           {segment.href ? (
             <Link
               href={segment.href}
-              className="text-fg-secondary hover:text-fg transition-colors hover:underline"
+              className="text-fg-secondary hover:text-fg transition-colors hover:underline shrink-0"
             >
               {segment.label}
             </Link>
           ) : (
-            <span>{segment.label}</span>
+            <span className="truncate">{segment.label}</span>
           )}
         </Fragment>
       ))}

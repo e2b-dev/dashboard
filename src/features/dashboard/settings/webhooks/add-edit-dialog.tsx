@@ -209,6 +209,7 @@ export default function WebhookAddEditDialog({
                 allEventsSelected={allEventsSelected}
                 handleAllToggle={handleAllToggle}
                 handleEventToggle={handleEventToggle}
+                mode={mode}
               />
             </div>
 

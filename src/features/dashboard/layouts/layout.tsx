@@ -15,7 +15,7 @@ export default function DashboardLayout({
     <div className="max-h-dvh h-full relative flex flex-col min-h-0">
       <DashboardLayoutHeader>
         <LiveSandboxCounterServer
-          className="top-1/2 -translate-y-1/2 absolute right-10 max-md:hidden"
+          className="max-md:hidden"
           params={params}
         />
       </DashboardLayoutHeader>

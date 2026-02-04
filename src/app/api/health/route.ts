@@ -1,6 +1,8 @@
 import { kv } from '@/lib/clients/kv'
+import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { NextResponse } from 'next/server'
+import { serializeError } from 'serialize-error'
 
 // NOTE - using cdn caching for rate limiting on db calls
 
@@ -17,7 +19,13 @@ export async function GET() {
     await kv.ping()
     checks.kv = true
   } catch (error) {
-    // kv failed
+    l.error(
+      {
+        key: 'health_check:kv_error',
+        error: serializeError(error),
+      },
+      'KV health check failed'
+    )
   }
 
   // check supabase
@@ -29,6 +37,14 @@ export async function GET() {
 
   if (!error) {
     checks.supabase = true
+  } else {
+    l.error(
+      {
+        key: 'health_check:supabase_error',
+        error: serializeError(error),
+      },
+      'Supabase health check failed'
+    )
   }
 
   const allHealthy = checks.kv && checks.supabase

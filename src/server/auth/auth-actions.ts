@@ -1,7 +1,9 @@
 'use server'
 
+import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
 import { actionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -17,6 +19,23 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
+
+async function validateCaptcha(captchaToken: string | undefined) {
+  if (!CAPTCHA_REQUIRED_SERVER) {
+    return null
+  }
+
+  if (!captchaToken) {
+    return returnServerError(USER_MESSAGES.captchaRequired.message)
+  }
+
+  const isValidCaptcha = await verifyTurnstileToken(captchaToken)
+  if (!isValidCaptcha) {
+    return returnServerError(USER_MESSAGES.captchaFailed.message)
+  }
+
+  return null
+}
 
 async function checkAuthProviderHealth(): Promise<boolean> {
   try {
@@ -118,74 +137,81 @@ export const signInWithOAuthAction = actionClient
 export const signUpAction = actionClient
   .schema(signUpSchema)
   .metadata({ actionName: 'signUp' })
-  .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
-    const isHealthy = await checkAuthProviderHealth()
-    if (!isHealthy) {
-      const queryParams = returnTo ? { returnTo } : undefined
-      throw encodedRedirect(
-        'error',
-        AUTH_URLS.SIGN_UP,
-        AUTH_PROVIDER_ERROR_MESSAGE,
-        queryParams
-      )
-    }
+  .action(
+    async ({
+      parsedInput: { email, password, returnTo = '', captchaToken },
+    }) => {
+      const captchaError = await validateCaptcha(captchaToken)
+      if (captchaError) return captchaError
 
-    const supabase = await createClient()
-    const headerStore = await headers()
-
-    const origin = headerStore.get('origin')
-
-    if (!origin) {
-      throw new Error('Origin not found')
-    }
-
-    // basic security check, that password does not equal e-mail
-    if (password && email && password.toLowerCase() === email.toLowerCase()) {
-      return returnValidationErrors(signUpSchema, {
-        password: {
-          _errors: ['Password is too weak.'],
-        },
-      })
-    }
-
-    const validationResult = await validateEmail(email)
-
-    if (validationResult?.data) {
-      if (!validationResult.valid) {
-        return returnServerError(
-          USER_MESSAGES.signUpEmailValidationInvalid.message
+      const isHealthy = await checkAuthProviderHealth()
+      if (!isHealthy) {
+        const queryParams = returnTo ? { returnTo } : undefined
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_UP,
+          AUTH_PROVIDER_ERROR_MESSAGE,
+          queryParams
         )
       }
 
-      if (await shouldWarnAboutAlternateEmail(validationResult.data)) {
-        return returnServerError(USER_MESSAGES.signUpEmailAlternate.message)
+      const supabase = await createClient()
+      const headerStore = await headers()
+
+      const origin = headerStore.get('origin')
+
+      if (!origin) {
+        throw new Error('Origin not found')
+      }
+
+      // basic security check, that password does not equal e-mail
+      if (password && email && password.toLowerCase() === email.toLowerCase()) {
+        return returnValidationErrors(signUpSchema, {
+          password: {
+            _errors: ['Password is too weak.'],
+          },
+        })
+      }
+
+      const validationResult = await validateEmail(email)
+
+      if (validationResult?.data) {
+        if (!validationResult.valid) {
+          return returnServerError(
+            USER_MESSAGES.signUpEmailValidationInvalid.message
+          )
+        }
+
+        if (await shouldWarnAboutAlternateEmail(validationResult.data)) {
+          return returnServerError(USER_MESSAGES.signUpEmailAlternate.message)
+        }
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+          data: validationResult?.data
+            ? {
+                email_validation: validationResult?.data,
+              }
+            : undefined,
+        },
+      })
+
+      if (error) {
+        switch (error.code) {
+          case 'email_exists':
+            return returnServerError(USER_MESSAGES.emailInUse.message)
+          case 'weak_password':
+            return returnServerError(USER_MESSAGES.passwordWeak.message)
+          default:
+            throw error
+        }
       }
     }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
-        data: validationResult?.data
-          ? {
-              email_validation: validationResult?.data,
-            }
-          : undefined,
-      },
-    })
-
-    if (error) {
-      switch (error.code) {
-        case 'email_exists':
-          return returnServerError(USER_MESSAGES.emailInUse.message)
-        case 'weak_password':
-          return returnServerError(USER_MESSAGES.passwordWeak.message)
-        default:
-          throw error
-      }
-    }
-  })
+  )
 
 export const signInAction = actionClient
   .schema(signInSchema)

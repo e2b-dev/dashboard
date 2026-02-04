@@ -36,7 +36,7 @@ export const templatesRouter = createTRPCRouter({
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token),
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
     })
 
@@ -87,7 +87,7 @@ export const templatesRouter = createTRPCRouter({
           },
         },
         headers: {
-          ...SUPABASE_AUTH_HEADERS(session.access_token),
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
       })
 
@@ -155,7 +155,7 @@ export const templatesRouter = createTRPCRouter({
           },
         },
         headers: {
-          ...SUPABASE_AUTH_HEADERS(session.access_token),
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
         },
       })
 

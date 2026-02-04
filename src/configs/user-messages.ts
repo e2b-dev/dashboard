@@ -72,6 +72,12 @@ export const USER_MESSAGES = {
   checkCredentials: {
     message: 'Please check your credentials.',
   },
+  captchaRequired: {
+    message: 'Please complete the captcha verification.',
+  },
+  captchaFailed: {
+    message: 'Captcha verification failed. Please try again.',
+  },
 }
 
 export const getTimeoutMsFromUserMessage = (

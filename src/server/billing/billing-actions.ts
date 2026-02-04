@@ -1,7 +1,7 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
+import { ADDON_500_SANDBOXES_ID, ADDON_PURCHASE_ACTION_ERRORS } from '@/features/dashboard/billing/constants'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
@@ -236,6 +236,10 @@ export const confirmOrderAction = authActionClient
 
     if (!res.ok) {
       const text = await res.text()
+      if (text.includes('Missing payment method, please update your payment information')) {
+        return returnServerError(ADDON_PURCHASE_ACTION_ERRORS.missingPaymentMethod)
+      }
+
       throw new Error(text ?? 'Failed to confirm order')
     }
 

@@ -11,6 +11,10 @@ export const TIER_NAMES = {
   [TIER_PRO_ID]: 'Pro',
 } as const
 
+export const ADDON_PURCHASE_ACTION_ERRORS = {
+  missingPaymentMethod: 'missing_payment_method',
+}
+
 // addon purchase messages
 export const ADDON_PURCHASE_MESSAGES = {
   success: {
@@ -26,6 +30,8 @@ export const ADDON_PURCHASE_MESSAGES = {
     // user-actionable: card authentication (3D Secure) failed
     cardAuthFailed:
       'Card authentication failed. Please try a different payment method.',
+    missingPaymentMethod:
+      'You have no attached payment method. Please add a payment method via "Manage subscription" first.',
     // generic error for all other failures (logged on our side)
     generic:
       'Something went wrong. Please try again or contact support if the issue persists.',
