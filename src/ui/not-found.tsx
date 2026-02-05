@@ -30,13 +30,13 @@ export default function NotFound() {
           <div className="flex w-full gap-1">
             <Button variant="secondary" asChild className="flex-1">
               <Link href="/">
-                <HomeIcon className="h-4 w-4" />
+                <HomeIcon />
                 Home
               </Link>
             </Button>
             <Button variant="secondary" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD}>
-                <LayoutDashboard className="h-4 w-4" />
+                <LayoutDashboard />
                 Dashboard
               </Link>
             </Button>
@@ -46,7 +46,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             className="w-full"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft />
             Go Back
           </Button>
         </CardFooter>

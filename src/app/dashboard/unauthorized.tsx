@@ -35,13 +35,13 @@ export default function Unauthorized() {
           <div className="flex w-full gap-1">
             <Button variant="secondary" asChild className="flex-1">
               <Link href="/">
-                <HomeIcon className="h-4 w-4" />
+                <HomeIcon />
                 Home
               </Link>
             </Button>
             <Button variant="secondary" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD}>
-                <UsersIcon className="h-4 w-4" />
+                <UsersIcon />
                 My Teams
               </Link>
             </Button>
@@ -51,7 +51,7 @@ export default function Unauthorized() {
             onClick={() => window.history.back()}
             className="w-full"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft />
             Go Back
           </Button>
         </CardFooter>
