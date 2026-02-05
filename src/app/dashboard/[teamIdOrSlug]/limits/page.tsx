@@ -1,11 +1,11 @@
-import UsageLimits from '@/features/dashboard/budget/usage-limits'
+import UsageLimits from '@/features/dashboard/limits/usage-limits'
 import Frame from '@/ui/frame'
 
-interface BudgetPageProps {
+interface LimitsPageProps {
   params: Promise<{ teamIdOrSlug: string }>
 }
 
-export default function BudgetPage({ params }: BudgetPageProps) {
+export default function LimitsPage({ params }: LimitsPageProps) {
   return (
     <Frame
       classNames={{

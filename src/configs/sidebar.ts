@@ -1,10 +1,9 @@
-import { WebhookIcon } from '@/ui/primitives/icons'
+import { GaugeIcon, WebhookIcon } from '@/ui/primitives/icons'
 import {
   Activity,
   Box,
   Container,
   CreditCard,
-  DollarSign,
   Key,
   LucideProps,
   Settings,
@@ -96,12 +95,12 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
           activeMatch: `/dashboard/*/usage/**`,
         },
         {
-          label: 'Budget',
+          label: 'Limits',
           href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.BUDGET(args.teamIdOrSlug!),
+            PROTECTED_URLS.LIMITS(args.teamIdOrSlug!),
           group: 'billing',
-          icon: DollarSign,
-          activeMatch: `/dashboard/*/budget/**`,
+          icon: GaugeIcon,
+          activeMatch: `/dashboard/*/limits/**`,
         },
         {
           label: 'Billing',

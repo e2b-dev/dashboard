@@ -84,8 +84,8 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       includeHeaderBottomStyles: true,
     },
   }),
-  '/dashboard/*/budget': () => ({
-    title: 'Budget',
+  '/dashboard/*/limits': () => ({
+    title: 'Limits',
     type: 'default',
   }),
   '/dashboard/*/billing': () => ({

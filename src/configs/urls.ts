@@ -49,7 +49,7 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamIdOrSlug}/billing/plan`,
   BILLING_PLAN_SELECT: (teamIdOrSlug: string) =>
     `/dashboard/${teamIdOrSlug}/billing/plan/select`,
-  BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
+  LIMITS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/limits`,
 }
 
 export const HELP_URLS = {
