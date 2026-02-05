@@ -101,10 +101,10 @@ function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
         <PlanTitle selectedTier={selectedTier} isLoading={isLoading} />
 
         <div className="flex items-center gap-2 flex-wrap">
-          {isLoading ? (
-            <Skeleton className="h-8 w-36" />
-          ) : isOnPlanPage ? (
+          {isOnPlanPage ? (
             <Button variant="outline">Change Plan</Button>
+          ) : isLoading ? (
+            <Skeleton className="h-8 w-36" />
           ) : (
             <>
               <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)} passHref>

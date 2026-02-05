@@ -37,7 +37,7 @@ function AddonItem({ name, priceCents, description, actions }: AddonItemProps) {
 
         <div className="flex flex-1 flex-col gap-0.5 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="prose-value-small text-fg">{name}</span>
+            <span className="prose-value-small text-fg uppercase">{name}</span>
             <Badge variant="default">
               {formatCurrency(priceCents / 100)}/MO
             </Badge>
