@@ -36,7 +36,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
 
   return (
     <div className={className}>
-      <div className="mt-2 flex items-center">
+      <div className="flex gap-1 items-center">
         <Input
           type={isVisible ? 'text' : 'password'}
           value={token ?? '••••••••••••••••'}
@@ -55,26 +55,24 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
               fetchToken()
             }
           }}
-          className="ml-2"
           disabled={isPending}
         >
           {isPending ? (
             <Loader />
           ) : token ? (
             isVisible ? (
-              <EyeOff className="size-4" />
+              <EyeOff />
             ) : (
-              <Eye className="size-4" />
+              <Eye />
             )
           ) : (
-            <Eye className="size-4" />
+            <Eye />
           )}
         </Button>
         <CopyButton
           size="icon"
           variant="secondary"
           value={token ?? ''}
-          className="ml-2"
           disabled={!token}
         />
       </div>

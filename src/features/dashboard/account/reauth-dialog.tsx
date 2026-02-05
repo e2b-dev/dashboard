@@ -27,7 +27,7 @@ export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
       }
       confirm="Sign in again"
       confirmProps={{
-        variant: 'default',
+        variant: 'primary',
       }}
       onConfirm={handleReauth}
     />
