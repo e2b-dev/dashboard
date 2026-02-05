@@ -33,7 +33,9 @@ function AddonItem({ name, priceCents, description, actions }: AddonItemProps) {
   return (
     <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4">
       <div className="flex items-center gap-3 sm:gap-4">
-        <SandboxIcon className="size-4 text-fg-tertiary shrink-0" />
+        <div className="flex size-9 items-center justify-center border border-stroke">
+          <SandboxIcon className="size-4 text-fg-tertiary shrink-0" />
+        </div>
 
         <div className="flex flex-1 flex-col gap-0.5 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
