@@ -48,11 +48,9 @@ export function Template({
 
   return (
     <Button
-      variant="link"
-      className={cn(
-        'text-fg h-auto p-0 gap-1 font-sans prose-table normal-case max-w-full',
-        className
-      )}
+      variant="link-table"
+      size="none"
+      className={cn('max-w-full', className)}
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
@@ -62,7 +60,6 @@ export function Template({
       }}
     >
       <p className="truncate">{template}</p>
-      <ArrowUpRight className="size-3 min-w-3" />
     </Button>
   )
 }

@@ -231,8 +231,8 @@ export function TemplateCell({
 
   return (
     <Button
-      variant="link"
-      className="text-fg h-auto p-0 font-sans prose-table normal-case"
+      variant="link-table"
+      size="none"
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
@@ -244,7 +244,6 @@ export function TemplateCell({
       }}
     >
       {templateIdentifier}
-      <ArrowUpRight className="size-3" />
     </Button>
   )
 }

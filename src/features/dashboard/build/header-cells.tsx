@@ -30,10 +30,8 @@ export function Template({
   return (
     <Button
       variant="link"
-      className={cn(
-        'text-fg-secondary h-auto p-0 gap-1 font-sans prose-body normal-case max-w-full underline underline-offset-2 hover:text-accent-main-highlight',
-        className
-      )}
+      size="none"
+      className={cn('max-w-full', className)}
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()

@@ -4,9 +4,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 import { Loader } from './loader'
 
+const linkStyles = [
+  'text-fg-secondary underline underline-offset-2',
+  'hover:opacity-80', // hover
+  'data-[display-state=hover]:opacity-80', // duplicated hover, for display purposes
+  'disabled:opacity-50', // disabled
+]
+
 const buttonVariants = cva(
   [
-    'inline-flex items-center cursor-pointer justify-center whitespace-nowrap prose-body-highlight!',
+    'inline-flex items-center cursor-pointer justify-center whitespace-nowrap',
     'transition-colors [&_svg]:transition-colors disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
     '[&_svg]:text-icon-tertiary',
   ].join(' '),
@@ -14,6 +21,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: [
+          'prose-body-highlight',
           '[&_svg]:text-icon-inverted',
           'bg-bg-inverted text-fg-inverted',
           'hover:bg-bg-inverted-hover', // hover
@@ -22,6 +30,7 @@ const buttonVariants = cva(
           'data-[state=open]:bg-bg-inverted-hover',
         ].join(' '),
         secondary: [
+          'prose-body-highlight',
           'border',
           'hover:border-stroke-active', // hover
           'data-[display-state=hover]:border-stroke-active', // duplicated hover, for display purposes
@@ -31,6 +40,7 @@ const buttonVariants = cva(
           'data-[state=open]:bg-bg-1',
         ].join(' '),
         tertiary: [
+          'prose-body-highlight',
           'text-fg',
           'hover:text-fg hover:underline', // hover
           'data-[display-state=hover]:text-fg data-[display-state=hover]:underline', // duplicated hover, for display purposes
@@ -39,6 +49,7 @@ const buttonVariants = cva(
           'disabled:opacity-65 text-fg-tertiary', // disabled
         ].join(' '),
         quaternary: [
+          'prose-body-highlight',
           'text-fg-tertiary',
           'hover:text-fg', // hover
           'data-[display-state=hover]:text-fg', // duplicated hover, for display purposes
@@ -47,6 +58,7 @@ const buttonVariants = cva(
           'disabled:opacity-65', // disabled
         ].join(' '),
         error: [
+          'prose-body-highlight',
           '[&_svg]:text-icon-inverted',
           'bg-accent-error-highlight text-fg-inverted',
           'hover:bg-accent-error-highlight/90', // hover
@@ -54,6 +66,8 @@ const buttonVariants = cva(
           'disabled:text-fg-tertiary disabled:bg-fill disabled:[&_svg]:text-icon-tertiary', // disabled
           'data-[state=open]:bg-accent-error-highlight/90',
         ].join(' '),
+        link: ['prose-body', ...linkStyles].join(' '),
+        'link-table': ['prose-table', ...linkStyles].join(' '),
       },
       size: {
         default:
@@ -62,7 +76,7 @@ const buttonVariants = cva(
         'icon-sm': 'h-7 w-7 px-2.5 py-1.5 [&_svg]:size-4',
         'icon-xs': 'size-4.5 [&_svg]:size-3',
         'icon-lg': 'h-12 w-12 px-2.5 py-1.5 [&_svg]:size-6',
-        none: '',
+        none: 'gap-1',
       },
     },
     defaultVariants: {
