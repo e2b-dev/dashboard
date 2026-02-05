@@ -174,7 +174,7 @@ function AddonsUpgradePlaceholder() {
           Upgrade to Pro to purchase add-ons for higher concurrency limits.
         </p>
         <Button variant="default" className="w-full sm:w-auto" asChild>
-          <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)}>
+          <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
             <UpgradeIcon className="size-4" />
             Upgrade to Pro
           </Link>

@@ -92,9 +92,9 @@ function InvoicesLoading() {
           {index === 1 && (
             <>
               <Loader variant="slash" className="z-10" />
-              <p className="prose-body-highlight z-10">
+              <span className="prose-body-highlight z-10">
                 Loading invoices <Loader variant="dots" className="z-10" />
-              </p>
+              </span>
             </>
           )}
         </div>

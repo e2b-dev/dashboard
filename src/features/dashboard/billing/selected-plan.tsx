@@ -1,7 +1,9 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
+import { useTRPC } from '@/trpc/client'
 import { TierLimits } from '@/types/billing.types'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -17,8 +19,9 @@ import {
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
+import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useParams, usePathname } from 'next/navigation'
+import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import { BillingAddonData, BillingTierData } from './types'
@@ -93,7 +96,28 @@ function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
       Awaited<PageProps<'/dashboard/[teamIdOrSlug]/billing'>['params']>
     >()
   const pathname = usePathname()
+  const router = useRouter()
+  const { toast } = useToast()
+  const trpc = useTRPC()
   const isOnPlanPage = pathname.endsWith('/plan')
+
+  const { mutate: openCustomerPortal, isPending: isPortalLoading } =
+    useMutation(
+      trpc.billing.createCustomerPortalSession.mutationOptions({
+        onSuccess: (data) => {
+          router.push(data.url)
+        },
+        onError: (error) => {
+          toast(
+            defaultErrorToast(error.message ?? 'Failed to open customer portal')
+          )
+        },
+      })
+    )
+
+  const handleManagePayment = () => {
+    openCustomerPortal({ teamIdOrSlug })
+  }
 
   return (
     <div className="flex flex-col pt-2 pr-2 pb-1 w-full">
@@ -102,22 +126,39 @@ function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
 
         <div className="flex items-center gap-2 flex-wrap">
           {isOnPlanPage ? (
-            <Button variant="outline">Change Plan</Button>
+            <Link
+              href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}
+              passHref
+            >
+              <Button variant="outline">Change Plan</Button>
+            </Link>
           ) : isLoading ? (
             <Skeleton className="h-8 w-36" />
           ) : (
             <>
-              <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)} passHref>
-                {isBaseTier ? (
+              {isBaseTier ? (
+                <Link
+                  href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}
+                  passHref
+                >
                   <Button variant="default">
                     <UpgradeIcon className="size-4" />
                     Upgrade for higher concurrency
                   </Button>
-                ) : (
+                </Link>
+              ) : (
+                <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)} passHref>
                   <Button variant="outline">Manage plan & add-ons</Button>
-                )}
-              </Link>
-              <Button variant="outline">Manage payment</Button>
+                </Link>
+              )}
+              <Button
+                variant="outline"
+                onClick={handleManagePayment}
+                loading={isPortalLoading}
+                disabled={isPortalLoading}
+              >
+                Manage payment
+              </Button>
             </>
           )}
         </div>
