@@ -1,9 +1,10 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
-import { createOrderAction } from '@/server/billing/billing-actions'
+import { useTRPC } from '@/trpc/client'
 import { AddonInfo } from '@/types/billing.types'
 import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
@@ -12,9 +13,8 @@ import { InfoIcon, SandboxIcon, UpgradeIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
 import { useState } from 'react'
 import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
@@ -164,7 +164,7 @@ function AddonsLoading() {
 }
 
 function AddonsUpgradePlaceholder() {
-  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
 
   return (
     <div className="flex flex-col">
@@ -187,6 +187,8 @@ function AddonsUpgradePlaceholder() {
 export default function Addons() {
   const { team } = useDashboard()
   const { toast } = useToast()
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const trpc = useTRPC()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
 
@@ -198,25 +200,22 @@ export default function Addons() {
 
   const isOnProTier = selectedTierId === TIER_PRO_ID
 
-  const {
-    execute: createOrder,
-    isPending: isCreateOrderLoading,
-    result,
-  } = useAction(createOrderAction, {
-    onSuccess: ({ data }) => {
-      if (!data) return
-      setIsDialogOpen(true)
-    },
-    onError: ({ error }) => {
-      toast(defaultErrorToast(error.serverError ?? 'Failed to create order'))
-    },
-  })
+  const createOrderMutation = useMutation(
+    trpc.billing.createOrder.mutationOptions({
+      onSuccess: () => {
+        setIsDialogOpen(true)
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message ?? 'Failed to create order'))
+      },
+    })
+  )
 
   const handleAddAddon = () => {
     if (!team) return
 
-    createOrder({
-      teamIdOrSlug: team.id,
+    createOrderMutation.mutate({
+      teamIdOrSlug,
       itemId: ADDON_500_SANDBOXES_ID,
     })
   }
@@ -246,7 +245,7 @@ export default function Addons() {
       : []
 
   const hasActiveAddons = activeAddons.length > 0
-  const data = result.data
+  const orderData = createOrderMutation.data
 
   return (
     <section className="flex flex-col space-y-6">
@@ -256,18 +255,18 @@ export default function Addons() {
         <AvailableAddons
           addon={availableAddon}
           onAdd={handleAddAddon}
-          isLoading={isCreateOrderLoading}
+          isLoading={createOrderMutation.isPending}
           disabled={!team}
         />
       )}
 
-      {data && availableAddon && (
+      {orderData && availableAddon && (
         <ConcurrentSandboxAddOnPurchaseDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          orderId={data.id}
+          orderId={orderData.id}
           monthlyPriceCents={availableAddon.price_cents}
-          amountDueCents={data.amount_due}
+          amountDueCents={orderData.amount_due}
           currentConcurrentSandboxesLimit={currentConcurrentSandboxesLimit}
         />
       )}

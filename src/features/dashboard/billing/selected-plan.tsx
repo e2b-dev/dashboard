@@ -1,6 +1,7 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
@@ -21,7 +22,7 @@ import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useParams, usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import { BillingAddonData, BillingTierData } from './types'
@@ -91,10 +92,7 @@ interface PlanDetailsProps {
 
 function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
   const isBaseTier = !selectedTier || selectedTier.id.includes('base')
-  const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/billing'>['params']>
-    >()
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()

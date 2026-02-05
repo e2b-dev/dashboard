@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import { TierInfo } from '@/types/billing.types'
@@ -16,7 +17,7 @@ import {
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useMutation } from '@tanstack/react-query'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useDashboard } from '../context'
 import { TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { useBillingItems } from './hooks'
@@ -243,11 +244,7 @@ export default function SelectPlan() {
   const { toast } = useToast()
   const { tierData, isLoading } = useBillingItems()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<
-        PageProps<'/dashboard/[teamIdOrSlug]/billing/plan/select'>['params']
-      >
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan/select'>()
   const router = useRouter()
   const trpc = useTRPC()
 

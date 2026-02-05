@@ -2,10 +2,10 @@
 
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { loadStripe } from '@stripe/stripe-js'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
-import { useParams } from 'next/navigation'
 import { useState } from 'react'
 import { ADDON_PURCHASE_MESSAGES } from './constants'
 import { extractAddonData, extractTierData } from './utils'
@@ -264,7 +264,7 @@ export function usePaymentConfirmation({
 export { stripePromise }
 
 export function useBillingItems() {
-  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const trpc = useTRPC()
 
   const { data: items, isLoading } = useQuery(
@@ -286,7 +286,7 @@ export function useBillingItems() {
 }
 
 export function useUsage() {
-  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const trpc = useTRPC()
 
   const { data: usage, isLoading } = useQuery(
@@ -301,7 +301,7 @@ export function useUsage() {
 }
 
 export function useInvoices() {
-  const { teamIdOrSlug } = useParams<{ teamIdOrSlug: string }>()
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const trpc = useTRPC()
 
   const {
