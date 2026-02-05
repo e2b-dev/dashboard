@@ -26,17 +26,17 @@ export default function NotFound() {
             changed, or is temporarily unavailable.
           </p>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4 pt-4">
-          <div className="flex w-full justify-between gap-4">
+        <CardFooter className="flex flex-col gap-1">
+          <div className="flex w-full gap-1">
             <Button variant="secondary" asChild className="flex-1">
-              <Link href="/" className="gap-2">
-                <HomeIcon className="h-4 w-4 text-fg-tertiary" />
+              <Link href="/">
+                <HomeIcon className="h-4 w-4" />
                 Home
               </Link>
             </Button>
             <Button variant="secondary" asChild className="flex-1">
-              <Link href={PROTECTED_URLS.DASHBOARD} className="gap-2">
-                <LayoutDashboard className="h-4 w-4 text-fg-tertiary" />
+              <Link href={PROTECTED_URLS.DASHBOARD}>
+                <LayoutDashboard className="h-4 w-4" />
                 Dashboard
               </Link>
             </Button>
@@ -44,9 +44,9 @@ export default function NotFound() {
           <Button
             variant="secondary"
             onClick={() => window.history.back()}
-            className="w-full gap-2"
+            className="w-full"
           >
-            <ArrowLeft className="h-4 w-4 text-fg-tertiary" />
+            <ArrowLeft className="h-4 w-4" />
             Go Back
           </Button>
         </CardFooter>
