@@ -59,6 +59,10 @@ export default function LimitForm({
     },
   })
 
+  const limitsQueryKey = trpc.billing.getLimits.queryOptions({
+    teamIdOrSlug,
+  }).queryKey
+
   const setLimitMutation = useMutation(
     trpc.billing.setLimit.mutationOptions({
       onSuccess: () => {
@@ -68,9 +72,7 @@ export default function LimitForm({
           )
         )
         setIsEditing(false)
-        queryClient.invalidateQueries({
-          queryKey: trpc.billing.getLimits.queryKey({ teamIdOrSlug }),
-        })
+        queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
       onError: (error) => {
         toast(
@@ -93,9 +95,7 @@ export default function LimitForm({
         )
         setIsEditing(false)
         form.reset({ value: null })
-        queryClient.invalidateQueries({
-          queryKey: trpc.billing.getLimits.queryKey({ teamIdOrSlug }),
-        })
+        queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
       onError: () => {
         toast(
