@@ -23,7 +23,7 @@ import { useDashboard } from '../context'
 import { TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
-import { formatHours, formatMibToGb } from './utils'
+import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
 
 interface PlanFeature {
   icon: React.ReactNode
@@ -166,7 +166,7 @@ function PlanCard({
     <UpgradeIcon className="size-7" />
   )
 
-  const displayName = isBaseTier ? 'Hobby' : 'Professional'
+  const displayName = tier ? formatTierDisplayName(tier.name) : isBaseTier ? 'Hobby' : 'Professional'
   const priceDisplay = tier?.price_cents
     ? formatCurrency(tier.price_cents / 100)
     : 'FREE'
@@ -208,7 +208,7 @@ function PlanCard({
                 loading={isSelectingPlan}
                 disabled={isSelectingPlan}
               >
-                <UpgradeIcon className="size-4" />
+                {!isBaseTier && <UpgradeIcon className="size-4" />}
                 {buttonText}
               </Button>
             </div>

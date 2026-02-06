@@ -26,7 +26,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import { BillingAddonData, BillingTierData } from './types'
-import { formatHours, formatMibToGb } from './utils'
+import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
 
 const SANDBOXES_PER_ADDON = 500
 
@@ -176,7 +176,7 @@ function PlanTitle({ selectedTier, isLoading }: PlanTitleProps) {
       ) : (
         <div className="flex gap-3">
           <span className="prose-value-big uppercase text-fg">
-            {selectedTier?.name}
+            {selectedTier ? formatTierDisplayName(selectedTier.name) : null}
           </span>
           <Badge className="uppercase translate-y-1">
             {selectedTier?.price_cents

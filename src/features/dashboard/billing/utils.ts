@@ -3,6 +3,12 @@ import { TeamItems } from '@/types/billing.types'
 import { ADDON_500_SANDBOXES_ID, TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { BillingAddonData, BillingTierData } from './types'
 
+export function formatTierDisplayName(name: string): string {
+  if (name.toLowerCase().includes('base')) return 'Hobby'
+  if (name.toLowerCase().includes('pro')) return 'Professional'
+  return name
+}
+
 export const MIB_TO_GB = 1024
 
 export function formatMibToGb(mib: number): string {

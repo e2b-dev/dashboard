@@ -95,10 +95,15 @@ function DialogContent_Inner({
   const itemsQueryKey = trpc.billing.getItems.queryOptions({
     teamIdOrSlug,
   }).queryKey
+  const concurrentLimitQueryKey =
+    trpc.billing.getTeamConcurrentLimit.queryOptions({
+      teamIdOrSlug,
+    }).queryKey
 
   const { confirmPayment, isConfirming } = usePaymentConfirmation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: itemsQueryKey })
+      queryClient.invalidateQueries({ queryKey: concurrentLimitQueryKey })
       onOpenChange(false)
     },
     onFallbackToPaymentElement: handleSwitchToPaymentElement,
