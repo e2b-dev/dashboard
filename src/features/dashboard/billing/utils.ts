@@ -3,6 +3,17 @@ import { TeamItems } from '@/types/billing.types'
 import { ADDON_500_SANDBOXES_ID, TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { BillingAddonData, BillingTierData } from './types'
 
+export const MIB_TO_GB = 1024
+
+export function formatMibToGb(mib: number): string {
+  const gb = Math.round(mib / MIB_TO_GB)
+  return `${gb}GB`
+}
+
+export function formatHours(hours: number): string {
+  return `${hours}h`
+}
+
 export function formatAddonQuantity(
   quantity: number,
   priceCents: number

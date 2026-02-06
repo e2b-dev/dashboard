@@ -26,18 +26,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import { BillingAddonData, BillingTierData } from './types'
+import { formatHours, formatMibToGb } from './utils'
 
-const MIB_TO_GB = 1024
 const SANDBOXES_PER_ADDON = 500
-
-function formatMibToGb(mib: number): string {
-  const gb = Math.round(mib / MIB_TO_GB)
-  return `${gb}GB`
-}
-
-function formatHours(hours: number): string {
-  return `${hours}h`
-}
 
 function formatCpu(vcpu: number): string {
   return `${vcpu} vCPU`

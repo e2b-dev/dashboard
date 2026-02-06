@@ -267,9 +267,10 @@ export function useBillingItems() {
   const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const trpc = useTRPC()
 
-  const { data: items, isLoading } = useQuery(
-    trpc.billing.getItems.queryOptions({ teamIdOrSlug })
-  )
+  const { data: items, isLoading } = useQuery({
+    ...trpc.billing.getItems.queryOptions({ teamIdOrSlug }),
+    throwOnError: true,
+  })
 
   const tierData = items ? extractTierData(items) : undefined
   const addonData =
@@ -289,9 +290,10 @@ export function useUsage() {
   const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const trpc = useTRPC()
 
-  const { data: usage, isLoading } = useQuery(
-    trpc.billing.getUsage.queryOptions({ teamIdOrSlug })
-  )
+  const { data: usage, isLoading } = useQuery({
+    ...trpc.billing.getUsage.queryOptions({ teamIdOrSlug }),
+    throwOnError: true,
+  })
 
   return {
     usage,

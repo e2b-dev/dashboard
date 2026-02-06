@@ -22,17 +22,7 @@ import { useDashboard } from '../context'
 import { TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
-
-const MIB_TO_GB = 1024
-
-function formatMibToGb(mib: number): string {
-  const gb = Math.round(mib / MIB_TO_GB)
-  return `${gb}GB`
-}
-
-function formatHours(hours: number): string {
-  return `${hours}h`
-}
+import { formatHours, formatMibToGb } from './utils'
 
 interface PlanFeature {
   icon: React.ReactNode
