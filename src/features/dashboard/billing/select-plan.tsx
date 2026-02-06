@@ -2,6 +2,7 @@
 
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { TierInfo } from '@/types/billing.types'
 import { Badge } from '@/ui/primitives/badge'
@@ -166,7 +167,9 @@ function PlanCard({
   )
 
   const displayName = isBaseTier ? 'Hobby' : 'Professional'
-  const priceDisplay = tier?.price_cents ? `$${tier.price_cents / 100}` : 'FREE'
+  const priceDisplay = tier?.price_cents
+    ? formatCurrency(tier.price_cents / 100)
+    : 'FREE'
 
   const teamDisplayName = team.transformed_default_name || team.name
 
