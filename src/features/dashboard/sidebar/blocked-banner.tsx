@@ -25,7 +25,7 @@ export default function TeamBlockageAlert({
   )
   const handleClick = () => {
     if (isBillingLimit) {
-      router.push(PROTECTED_URLS.BUDGET(team.slug))
+      router.push(PROTECTED_URLS.LIMITS(team.slug))
       return
     }
 

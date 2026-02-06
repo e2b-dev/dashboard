@@ -6,10 +6,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import {
-  clearLimitAction,
-  setLimitAction,
-} from '@/server/billing/billing-actions'
+import { useTRPC } from '@/trpc/client'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -21,13 +18,13 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 interface LimitFormProps {
-  teamId: string
+  teamIdOrSlug: string
   className?: string
   originalValue: number | null
   type: 'limit' | 'alert'
@@ -43,7 +40,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 export default function LimitForm({
-  teamId,
+  teamIdOrSlug,
   className,
   originalValue,
   type,
@@ -52,6 +49,8 @@ export default function LimitForm({
 
   const [isEditing, setIsEditing] = useState(false)
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -60,28 +59,34 @@ export default function LimitForm({
     },
   })
 
-  const { execute: setLimit, isPending: isSaving } = useAction(setLimitAction, {
-    onSuccess: () => {
-      toast(
-        defaultSuccessToast(
-          `Billing ${type === 'limit' ? 'limit' : 'alert'} saved.`
-        )
-      )
-      setIsEditing(false)
-    },
-    onError: ({ error }) => {
-      toast(
-        defaultErrorToast(
-          error.serverError ||
-            `Failed to save billing ${type === 'limit' ? 'limit' : 'alert'}.`
-        )
-      )
-    },
-  })
+  const limitsQueryKey = trpc.billing.getLimits.queryOptions({
+    teamIdOrSlug,
+  }).queryKey
 
-  const { execute: clearLimit, isPending: isClearing } = useAction(
-    clearLimitAction,
-    {
+  const setLimitMutation = useMutation(
+    trpc.billing.setLimit.mutationOptions({
+      onSuccess: () => {
+        toast(
+          defaultSuccessToast(
+            `Billing ${type === 'limit' ? 'limit' : 'alert'} saved.`
+          )
+        )
+        setIsEditing(false)
+        queryClient.invalidateQueries({ queryKey: limitsQueryKey })
+      },
+      onError: (error) => {
+        toast(
+          defaultErrorToast(
+            error.message ||
+              `Failed to save billing ${type === 'limit' ? 'limit' : 'alert'}.`
+          )
+        )
+      },
+    })
+  )
+
+  const clearLimitMutation = useMutation(
+    trpc.billing.clearLimit.mutationOptions({
       onSuccess: () => {
         toast(
           defaultSuccessToast(
@@ -90,15 +95,16 @@ export default function LimitForm({
         )
         setIsEditing(false)
         form.reset({ value: null })
+        queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
-      onError: ({ error }) => {
+      onError: () => {
         toast(
           defaultErrorToast(
             `Failed to clear billing ${type === 'limit' ? 'limit' : 'alert'}.`
           )
         )
       },
-    }
+    })
   )
 
   const handleSave = (data: FormData) => {
@@ -107,19 +113,22 @@ export default function LimitForm({
       return
     }
 
-    setLimit({
+    setLimitMutation.mutate({
+      teamIdOrSlug,
       type,
       value: data.value,
-      teamIdOrSlug: teamId,
     })
   }
 
   const handleClear = () => {
-    clearLimit({
+    clearLimitMutation.mutate({
+      teamIdOrSlug,
       type,
-      teamIdOrSlug: teamId,
     })
   }
+
+  const isSaving = setLimitMutation.isPending
+  const isClearing = clearLimitMutation.isPending
 
   if (originalValue === null || isEditing) {
     return (

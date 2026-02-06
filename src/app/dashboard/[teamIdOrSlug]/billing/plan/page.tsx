@@ -1,9 +1,8 @@
-import Credits from '@/features/dashboard/billing/credits'
-import Invoices from '@/features/dashboard/billing/invoices'
+import Addons from '@/features/dashboard/billing/addons'
 import SelectedPlan from '@/features/dashboard/billing/selected-plan'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
-export default async function BillingPage({
+export default async function BillingPlanPage({
   params,
 }: {
   params: Promise<{ teamIdOrSlug: string }>
@@ -11,15 +10,13 @@ export default async function BillingPage({
   const { teamIdOrSlug } = await params
 
   prefetch(trpc.billing.getItems.queryOptions({ teamIdOrSlug }))
-  prefetch(trpc.billing.getUsage.queryOptions({ teamIdOrSlug }))
-  prefetch(trpc.billing.getInvoices.queryOptions({ teamIdOrSlug }))
+  prefetch(trpc.billing.getTeamConcurrentLimit.queryOptions({ teamIdOrSlug }))
 
   return (
     <HydrateClient>
       <main className="space-y-10 p-3">
         <SelectedPlan />
-        <Credits />
-        <Invoices />
+        <Addons />
       </main>
     </HydrateClient>
   )

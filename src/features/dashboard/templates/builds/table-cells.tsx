@@ -2,6 +2,7 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import {
   formatDurationCompact,
@@ -17,7 +18,7 @@ import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { ArrowUpRight } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export function BuildId({ id }: { id: string }) {
@@ -42,9 +43,7 @@ export function Template({
 }) {
   const router = useRouter()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
 
   return (
     <Button

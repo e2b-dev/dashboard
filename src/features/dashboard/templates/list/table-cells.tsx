@@ -1,6 +1,7 @@
 'use client'
 
 import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -28,7 +29,6 @@ import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
 import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -50,9 +50,7 @@ export function ActionsCell({
   const template = row.original
   const { team } = useDashboard()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
