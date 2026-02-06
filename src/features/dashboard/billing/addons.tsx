@@ -236,12 +236,10 @@ export default function Addons() {
     )
   }
 
+  const addonPriceCents = availableAddon?.price_cents ?? currentAddon?.price_cents
   const activeAddons =
-    currentAddon && availableAddon
-      ? formatAddonQuantity(
-          currentAddon.quantity ?? 0,
-          availableAddon.price_cents
-        )
+    currentAddon && addonPriceCents
+      ? formatAddonQuantity(currentAddon.quantity ?? 0, addonPriceCents)
       : []
 
   const hasActiveAddons = activeAddons.length > 0

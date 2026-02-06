@@ -20,7 +20,7 @@ import {
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   AlertCircle,
   ArrowRight,
@@ -30,7 +30,10 @@ import {
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { ADDON_PURCHASE_ACTION_ERRORS, ADDON_PURCHASE_MESSAGES } from './constants'
+import {
+  ADDON_PURCHASE_ACTION_ERRORS,
+  ADDON_PURCHASE_MESSAGES,
+} from './constants'
 import {
   stripePromise,
   usePaymentConfirmation,
@@ -55,8 +58,10 @@ function DialogContent_Inner({
 }: Omit<ConcurrentSandboxAddOnPurchaseDialogProps, 'open'>) {
   const { team } = useDashboard()
   const { toast } = useToast()
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [customerSessionClientSecret, setCustomerSessionClientSecret] =
@@ -70,7 +75,10 @@ function DialogContent_Inner({
         }
       },
       onError: (error) => {
-        console.error('[Payment] Failed to get customer session:', error.message)
+        console.error(
+          '[Payment] Failed to get customer session:',
+          error.message
+        )
         toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
       },
     })
@@ -83,8 +91,15 @@ function DialogContent_Inner({
     customerSessionMutation.mutate({ teamIdOrSlug })
   }
 
+  const itemsQueryKey = trpc.billing.getItems.queryOptions({
+    teamIdOrSlug,
+  }).queryKey
+
   const { confirmPayment, isConfirming } = usePaymentConfirmation({
-    onSuccess: () => onOpenChange(false),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey })
+      onOpenChange(false)
+    },
     onFallbackToPaymentElement: handleSwitchToPaymentElement,
   })
 
@@ -97,8 +112,14 @@ function DialogContent_Inner({
       },
       onError: (error) => {
         console.error('[Payment] Failed to confirm order:', error.message)
-        if (error.message === ADDON_PURCHASE_ACTION_ERRORS.missingPaymentMethod) {
-          toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.missingPaymentMethod))
+        if (
+          error.message === ADDON_PURCHASE_ACTION_ERRORS.missingPaymentMethod
+        ) {
+          toast(
+            defaultErrorToast(
+              ADDON_PURCHASE_MESSAGES.error.missingPaymentMethod
+            )
+          )
         } else {
           toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
         }
