@@ -20,6 +20,7 @@ type Template = Pick<
   | 'diskSizeMB'
   | 'public'
   | 'aliases'
+  | 'names'
   | 'createdAt'
   | 'updatedAt'
   | 'createdBy'

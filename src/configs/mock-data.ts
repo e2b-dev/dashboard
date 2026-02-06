@@ -15,6 +15,7 @@ import { nanoid } from 'nanoid'
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   {
     aliases: ['code-interpreter'],
+    names: ['code-interpreter'],
     buildID: 'build_000',
     cpuCount: 1,
     memoryMB: 1024,
@@ -36,6 +37,7 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   },
   {
     aliases: ['web-starter'],
+    names: ['web-starter'],
     buildID: 'build_005',
     cpuCount: 2,
     memoryMB: 2048,
@@ -54,6 +56,7 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   },
   {
     aliases: ['data-science'],
+    names: ['data-science'],
     buildID: 'build_006',
     cpuCount: 4,
     memoryMB: 8192,
@@ -78,6 +81,7 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
 const TEMPLATES: Template[] = [
   {
     aliases: ['node-typescript', 'node-ts'],
+    names: ['node-typescript', 'node-ts'],
     buildID: 'build_001',
     cpuCount: 2,
     memoryMB: 2048,
@@ -97,6 +101,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['react-vite'],
+    names: ['react-vite'],
     buildID: 'build_002',
     cpuCount: 1,
     memoryMB: 1024,
@@ -113,6 +118,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['postgres', 'pg'],
+    names: ['postgres', 'pg'],
     buildID: 'build_003',
     cpuCount: 2,
     memoryMB: 4096,
@@ -129,6 +135,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['redis'],
+    names: ['redis'],
     buildID: 'build_004',
     cpuCount: 1,
     memoryMB: 2048,
@@ -145,6 +152,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['python-ml', 'ml'],
+    names: ['python-ml', 'ml'],
     buildID: 'build_005',
     cpuCount: 4,
     memoryMB: 8192,
@@ -161,6 +169,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['elastic', 'es'],
+    names: ['elastic', 'es'],
     buildID: 'build_006',
     cpuCount: 2,
     memoryMB: 4096,
@@ -177,6 +186,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['grafana'],
+    names: ['grafana'],
     buildID: 'build_007',
     cpuCount: 1,
     memoryMB: 2048,
@@ -193,6 +203,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['nginx'],
+    names: ['nginx'],
     buildID: 'build_008',
     cpuCount: 1,
     memoryMB: 1024,
@@ -209,6 +220,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['mongodb', 'mongo'],
+    names: ['mongodb', 'mongo'],
     buildID: 'build_009',
     cpuCount: 2,
     memoryMB: 4096,
@@ -225,6 +237,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['mysql'],
+    names: ['mysql'],
     buildID: 'build_010',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -241,6 +254,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['nextjs', 'next'],
+    names: ['nextjs', 'next'],
     buildID: 'build_011',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -260,6 +274,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['vue', 'vue3'],
+    names: ['vue', 'vue3'],
     buildID: 'build_012',
     cpuCount: 1,
     envdVersion: '0.1.0',
@@ -276,6 +291,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['django'],
+    names: ['django'],
     buildID: 'build_013',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -295,6 +311,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['flask'],
+    names: ['flask'],
     buildID: 'build_014',
     envdVersion: '0.1.0',
     cpuCount: 1,
@@ -311,6 +328,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['golang', 'go'],
+    names: ['golang', 'go'],
     buildID: 'build_015',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -330,6 +348,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['rust'],
+    names: ['rust'],
     buildID: 'build_016',
     cpuCount: 2,
     memoryMB: 2048,
@@ -346,6 +365,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['java-spring', 'spring'],
+    names: ['java-spring', 'spring'],
     buildID: 'build_017',
     cpuCount: 3,
     memoryMB: 4096,
@@ -365,6 +385,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['dotnet', 'csharp'],
+    names: ['dotnet', 'csharp'],
     buildID: 'build_018',
     cpuCount: 2,
     memoryMB: 3072,
@@ -381,6 +402,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['php-laravel', 'laravel'],
+    names: ['php-laravel', 'laravel'],
     buildID: 'build_019',
     cpuCount: 2,
     memoryMB: 2048,
@@ -400,6 +422,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['ruby-rails', 'rails'],
+    names: ['ruby-rails', 'rails'],
     buildID: 'build_020',
     cpuCount: 2,
     memoryMB: 2048,
@@ -416,6 +439,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['jupyter', 'notebook'],
+    names: ['jupyter', 'notebook'],
     buildID: 'build_021',
     cpuCount: 4,
     memoryMB: 6144,
@@ -435,6 +459,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['tensorflow'],
+    names: ['tensorflow'],
     buildID: 'build_022',
     cpuCount: 8,
     memoryMB: 16384,
@@ -454,6 +479,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['pytorch'],
+    names: ['pytorch'],
     buildID: 'build_023',
     cpuCount: 8,
     memoryMB: 16384,
@@ -473,6 +499,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['cassandra'],
+    names: ['cassandra'],
     buildID: 'build_024',
     cpuCount: 4,
     memoryMB: 8192,
@@ -489,6 +516,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['docker', 'dind'],
+    names: ['docker', 'dind'],
     buildID: 'build_025',
     cpuCount: 2,
     memoryMB: 4096,
@@ -508,6 +536,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['kubernetes', 'k8s'],
+    names: ['kubernetes', 'k8s'],
     buildID: 'build_026',
     cpuCount: 4,
     memoryMB: 8192,
@@ -527,6 +556,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['terraform'],
+    names: ['terraform'],
     buildID: 'build_027',
     cpuCount: 2,
     memoryMB: 2048,
@@ -543,6 +573,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['ansible'],
+    names: ['ansible'],
     buildID: 'build_028',
     cpuCount: 1,
     memoryMB: 1536,
@@ -562,6 +593,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['prometheus'],
+    names: ['prometheus'],
     buildID: 'build_029',
     cpuCount: 2,
     memoryMB: 3072,
@@ -578,6 +610,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['jenkins'],
+    names: ['jenkins'],
     buildID: 'build_030',
     cpuCount: 3,
     envdVersion: '0.1.0',
@@ -597,6 +630,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['gitlab-ci'],
+    names: ['gitlab-ci'],
     buildID: 'build_031',
     cpuCount: 2,
     envdVersion: '0.1.0',
@@ -613,6 +647,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['apache-spark', 'spark'],
+    names: ['apache-spark', 'spark'],
     buildID: 'build_032',
     cpuCount: 8,
     envdVersion: '0.1.0',
@@ -632,6 +667,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['kafka'],
+    names: ['kafka'],
     envdVersion: '0.1.0',
     buildID: 'build_033',
     cpuCount: 3,
@@ -648,6 +684,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['rabbitmq'],
+    names: ['rabbitmq'],
     buildID: 'build_034',
     cpuCount: 2,
     memoryMB: 2048,
@@ -667,6 +704,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['zookeeper'],
+    names: ['zookeeper'],
     envdVersion: '0.1.0',
     buildID: 'build_035',
     cpuCount: 1,
@@ -683,6 +721,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['solr'],
+    names: ['solr'],
     buildID: 'build_036',
     cpuCount: 2,
     memoryMB: 4096,
@@ -702,6 +741,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['logstash'],
+    names: ['logstash'],
     buildID: 'build_037',
     cpuCount: 2,
     memoryMB: 3072,
@@ -718,6 +758,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['kibana'],
+    names: ['kibana'],
     buildID: 'build_038',
     cpuCount: 1,
     memoryMB: 2048,
@@ -734,6 +775,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['minio'],
+    names: ['minio'],
     buildID: 'build_039',
     cpuCount: 2,
     memoryMB: 2048,
@@ -753,6 +795,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['vault'],
+    names: ['vault'],
     buildID: 'build_040',
     cpuCount: 1,
     envdVersion: '0.1.0',
