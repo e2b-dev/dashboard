@@ -1,8 +1,8 @@
 'use client'
 
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { loadStripe } from '@stripe/stripe-js'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
@@ -316,5 +316,20 @@ export function useInvoices() {
     invoices,
     isLoading,
     error,
+  }
+}
+
+export function useTeamConcurrentLimit() {
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const trpc = useTRPC()
+
+  const { data, isLoading } = useQuery({
+    ...trpc.billing.getTeamConcurrentLimit.queryOptions({ teamIdOrSlug }),
+    throwOnError: true,
+  })
+
+  return {
+    concurrentSandboxes: data?.concurrentSandboxes ?? 0,
+    isLoading,
   }
 }

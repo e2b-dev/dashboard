@@ -19,7 +19,7 @@ import { useState } from 'react'
 import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
 import { ADDON_500_SANDBOXES_ID, TIER_PRO_ID } from './constants'
-import { useBillingItems } from './hooks'
+import { useBillingItems, useTeamConcurrentLimit } from './hooks'
 import { formatAddonQuantity } from './utils'
 
 interface AddonItemProps {
@@ -164,7 +164,8 @@ function AddonsLoading() {
 }
 
 function AddonsUpgradePlaceholder() {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
 
   return (
     <div className="flex flex-col">
@@ -187,16 +188,17 @@ function AddonsUpgradePlaceholder() {
 export default function Addons() {
   const { team } = useDashboard()
   const { toast } = useToast()
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
   const trpc = useTRPC()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
+  const { concurrentSandboxes: currentConcurrentSandboxesLimit } =
+    useTeamConcurrentLimit()
 
   const selectedTierId = tierData?.selected?.id
   const currentAddon = addonData?.current
   const availableAddon = addonData?.available
-  const currentConcurrentSandboxesLimit =
-    tierData?.selected?.limits?.sandbox_concurrency
 
   const isOnProTier = selectedTierId === TIER_PRO_ID
 
@@ -236,7 +238,8 @@ export default function Addons() {
     )
   }
 
-  const addonPriceCents = availableAddon?.price_cents ?? currentAddon?.price_cents
+  const addonPriceCents =
+    availableAddon?.price_cents ?? currentAddon?.price_cents
   const activeAddons =
     currentAddon && addonPriceCents
       ? formatAddonQuantity(currentAddon.quantity ?? 0, addonPriceCents)

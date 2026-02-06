@@ -33,6 +33,7 @@ import { useDashboard } from '../context'
 import {
   ADDON_PURCHASE_ACTION_ERRORS,
   ADDON_PURCHASE_MESSAGES,
+  SANDBOXES_PER_ADDON,
 } from './constants'
 import {
   stripePromise,
@@ -137,11 +138,15 @@ function DialogContent_Inner({
     <>
       Increases total concurrent sandbox limit from{' '}
       <b>{currentConcurrentSandboxesLimit.toLocaleString()}</b> to{' '}
-      <b>{(currentConcurrentSandboxesLimit + 500).toLocaleString()}</b>
+      <b>
+        {(
+          currentConcurrentSandboxesLimit + SANDBOXES_PER_ADDON
+        ).toLocaleString()}
+      </b>
     </>
   ) : (
     <>
-      Increases total concurrent sandbox limit by <b>500</b>
+      Increases total concurrent sandbox limit by <b>{SANDBOXES_PER_ADDON}</b>
     </>
   )
 

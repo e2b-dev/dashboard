@@ -3,6 +3,7 @@ import {
   ADDON_500_SANDBOXES_ID,
   ADDON_PURCHASE_ACTION_ERRORS,
 } from '@/features/dashboard/billing/constants'
+import getTeamLimitsMemo from '@/server/team/get-team-limits-memo'
 import {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -212,6 +213,13 @@ export const billingRouter = createTRPCRouter({
     const limits = (await res.json()) as BillingLimit
 
     return limits
+  }),
+
+  getTeamConcurrentLimit: protectedTeamProcedure.query(async ({ ctx }) => {
+    const limits = await getTeamLimitsMemo(ctx.teamId, ctx.user.id)
+    return {
+      concurrentSandboxes: limits?.concurrentInstances ?? 0,
+    }
   }),
 
   setLimit: protectedTeamProcedure

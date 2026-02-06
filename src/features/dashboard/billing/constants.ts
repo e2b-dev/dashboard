@@ -1,4 +1,5 @@
 export const ADDON_500_SANDBOXES_ID = 'addon_concurrency_500_sandboxes' as const
+export const SANDBOXES_PER_ADDON = 500
 
 export const TIER_PRO_ID = 'pro_v1' as const
 export const TIER_BASE_ID = 'base_v1' as const
