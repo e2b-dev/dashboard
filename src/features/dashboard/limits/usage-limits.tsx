@@ -23,7 +23,7 @@ export default function UsageLimits({ className }: UsageLimitsProps) {
 
   if (isLoading || !limits) {
     return (
-      <div className={cn('flex flex-col border-t lg:flex-row', className)}>
+      <div className={cn('flex flex-col lg:flex-row', className)}>
         <div className="flex-1 border-r p-6">
           <Skeleton className="h-8 w-48 mb-4" />
           <Skeleton className="h-24 w-full" />
@@ -37,7 +37,7 @@ export default function UsageLimits({ className }: UsageLimitsProps) {
   }
 
   return (
-    <div className={cn('flex flex-col border-t lg:flex-row', className)}>
+    <div className={cn('flex flex-col lg:flex-row', className)}>
       <LimitCard value={limits.limit_amount_gte} className="flex-1 border-r" />
       <AlertCard value={limits.alert_amount_gte} className="flex-1" />
     </div>
