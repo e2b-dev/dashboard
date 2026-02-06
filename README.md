@@ -103,11 +103,17 @@ This project requires a Redis-compatible key-value store. You'll need to:
    ```
 
 #### c. Database Setup
-1. Apply the database migrations manually:
-   - Navigate to the `/migrations` folder in the project
-   - Execute each SQL migration file in sequential order against your Supabase database
-   - You can run these migrations using the Supabase SQL Editor or a PostgreSQL client
-   - Make sure to apply migrations in the correct order based on their timestamp prefixes
+Apply the database migrations:
+```bash
+# Using Bun (recommended)
+source .env.local && bun run db:migrations:apply
+
+# Using npm
+source .env.local && npm run db:migrations:apply
+```
+This runs all SQL files in `/migrations` in timestamp order. Already-applied migrations are automatically skipped.
+
+Alternatively, you can apply migrations manually using the Supabase SQL Editor or a PostgreSQL client — just execute each file in `/migrations` in sequential order.
 
 #### d. Supabase Storage Setup
 1. Go to Storage > Buckets
