@@ -17,30 +17,39 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
     Object.keys(table.getState().columnFilters).length > 0 ||
     table.getState().globalFilter
 
+  const filteredCount = table.getFilteredRowModel().rows.length
+  const totalCount = table.getCoreRowModel().rows.length
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex w-full flex-col gap-8">
-        <div className="flex flex-col gap-4">
-          <SearchInput />
-
-          <div className="flex items-center gap-3">
-            <Badge size="lg" variant="positive" className="uppercase">
-              {table.getCoreRowModel().rows.length} templates
-              <Hexagon className="size-3 !stroke-[3px]" />
-            </Badge>
-            {showFilteredRowCount && (
-              <Badge size="lg" variant="info" className="uppercase">
-                {table.getFilteredRowModel().rows.length} filtered
-                <ListFilter className="size-3 !stroke-[3px]" />
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <Suspense fallback={null}>
-          <TemplatesTableFilters />
-        </Suspense>
+    <div className="flex items-center gap-1 flex-wrap">
+      <div className="shrink-0">
+        <SearchInput />
       </div>
+
+      <Suspense fallback={null}>
+        <TemplatesTableFilters />
+      </Suspense>
+
+      {/* Extra spacing before count (margin would look bad when wrapped) */}
+      <div className="w-2 shrink-0" aria-hidden="true" />
+
+      <span className="prose-label-highlight uppercase h-9 flex items-center gap-1">
+        {showFilteredRowCount ? (
+          <>
+            <span className="text-fg">
+              {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
+            </span>
+            <span className="text-fg-tertiary"> · </span>
+            <span className="text-fg-tertiary">
+              {totalCount} total
+            </span>
+          </>
+        ) : (
+          <span className="text-fg-tertiary">
+            {totalCount} total
+          </span>
+        )}
+      </span>
     </div>
   )
 }

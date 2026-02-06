@@ -19,12 +19,12 @@ export const SearchInput = () => {
   })
 
   return (
-    <div className="relative w-full max-w-[420px]">
+    <div className="relative w-[280px]">
       <DebouncedInput
         value={globalFilter}
         onChange={(v) => setGlobalFilter(v as string)}
-        placeholder="Find template..."
-        className="h-10 w-full pr-14"
+        placeholder="Search by name or ID..."
+        className="h-9 w-full pr-14"
         debounce={500}
         ref={inputRef}
       />
