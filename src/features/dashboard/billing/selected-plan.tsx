@@ -115,30 +115,28 @@ function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
 
         <div className="flex items-center gap-2 flex-wrap">
           {isOnPlanPage ? (
-            <Link
-              href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}
-              passHref
-            >
-              <Button variant="outline">Change Plan</Button>
-            </Link>
+            <Button variant="outline" asChild>
+              <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
+                Change Plan
+              </Link>
+            </Button>
           ) : isLoading ? (
             <Skeleton className="h-8 w-36" />
           ) : (
             <>
               {isBaseTier ? (
-                <Link
-                  href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}
-                  passHref
-                >
-                  <Button variant="default">
+                <Button variant="default" asChild>
+                  <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
                     <UpgradeIcon className="size-4" />
                     Upgrade for higher concurrency
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               ) : (
-                <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)} passHref>
-                  <Button variant="outline">Manage plan & add-ons</Button>
-                </Link>
+                <Button variant="outline" asChild>
+                  <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)}>
+                    Manage plan & add-ons
+                  </Link>
+                </Button>
               )}
               <Button
                 variant="outline"
