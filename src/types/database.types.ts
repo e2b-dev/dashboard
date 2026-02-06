@@ -177,17 +177,23 @@ export type Database = {
         Row: {
           alias: string
           env_id: string
+          id: string
           is_renamable: boolean
+          namespace: string | null
         }
         Insert: {
           alias: string
           env_id: string
+          id?: string
           is_renamable?: boolean
+          namespace?: string | null
         }
         Update: {
           alias?: string
           env_id?: string
+          id?: string
           is_renamable?: boolean
+          namespace?: string | null
         }
         Relationships: [
           {
@@ -199,9 +205,56 @@ export type Database = {
           },
         ]
       }
+      env_build_assignments: {
+        Row: {
+          build_id: string
+          created_at: string | null
+          env_id: string
+          id: string
+          source: string
+          tag: string
+        }
+        Insert: {
+          build_id: string
+          created_at?: string | null
+          env_id: string
+          id?: string
+          source?: string
+          tag: string
+        }
+        Update: {
+          build_id?: string
+          created_at?: string | null
+          env_id?: string
+          id?: string
+          source?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_env_build_assignments_build"
+            columns: ["build_id"]
+            isOneToOne: false
+            referencedRelation: "env_builds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_env_build_assignments_env"
+            columns: ["env_id"]
+            isOneToOne: false
+            referencedRelation: "envs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       env_builds: {
         Row: {
-          cluster_node_id: string
+          cluster_node_id: string | null
+          cpu_architecture: string | null
+          cpu_family: string | null
+          cpu_flags: string[] | null
+          cpu_model: string | null
+          cpu_model_name: string | null
           created_at: string
           dockerfile: string | null
           env_id: string
@@ -222,7 +275,12 @@ export type Database = {
           version: string | null
         }
         Insert: {
-          cluster_node_id: string
+          cluster_node_id?: string | null
+          cpu_architecture?: string | null
+          cpu_family?: string | null
+          cpu_flags?: string[] | null
+          cpu_model?: string | null
+          cpu_model_name?: string | null
           created_at?: string
           dockerfile?: string | null
           env_id: string
@@ -243,7 +301,12 @@ export type Database = {
           version?: string | null
         }
         Update: {
-          cluster_node_id?: string
+          cluster_node_id?: string | null
+          cpu_architecture?: string | null
+          cpu_family?: string | null
+          cpu_flags?: string[] | null
+          cpu_model?: string | null
+          cpu_model_name?: string | null
           created_at?: string
           dockerfile?: string | null
           env_id?: string
@@ -401,6 +464,7 @@ export type Database = {
           allow_internet_access: boolean | null
           auto_pause: boolean
           base_env_id: string
+          config: Json | null
           created_at: string | null
           env_id: string
           env_secure: boolean
@@ -415,6 +479,7 @@ export type Database = {
           allow_internet_access?: boolean | null
           auto_pause?: boolean
           base_env_id: string
+          config?: Json | null
           created_at?: string | null
           env_id: string
           env_secure?: boolean
@@ -429,6 +494,7 @@ export type Database = {
           allow_internet_access?: boolean | null
           auto_pause?: boolean
           base_env_id?: string
+          config?: Json | null
           created_at?: string | null
           env_id?: string
           env_secure?: boolean
@@ -630,6 +696,38 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          normalized_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          normalized_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          normalized_email?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users_teams: {
         Row: {
           added_by: string | null
@@ -734,7 +832,9 @@ export type Database = {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
+      normalize_email: { Args: { email: string }; Returns: string }
       temp_create_access_token: { Args: never; Returns: string }
+      try_cast_uuid: { Args: { p_value: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
