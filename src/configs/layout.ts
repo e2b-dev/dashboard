@@ -84,14 +84,44 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       includeHeaderBottomStyles: true,
     },
   }),
-  '/dashboard/*/budget': () => ({
-    title: 'Budget',
+  '/dashboard/*/limits': () => ({
+    title: 'Limits',
     type: 'default',
   }),
   '/dashboard/*/billing': () => ({
     title: 'Billing',
     type: 'default',
   }),
+  '/dashboard/*/billing/plan': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+
+    return {
+      title: [
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        {
+          label: 'Plan & Add-ons',
+        },
+      ],
+      type: 'default',
+    }
+  },
+  '/dashboard/*/billing/plan/select': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+
+    return {
+      title: [
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        {
+          label: 'Plan & Add-ons',
+          href: PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug),
+        },
+        { label: 'Change Plan' },
+      ],
+      type: 'default',
+    }
+  },
 
   '/dashboard/*/account': () => ({
     title: 'Account',

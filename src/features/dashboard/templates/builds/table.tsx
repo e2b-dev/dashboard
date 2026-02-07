@@ -1,6 +1,7 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
 import type {
   ListedBuildDTO,
@@ -23,7 +24,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BuildsEmpty from './empty'
 import {
@@ -57,9 +58,7 @@ const BuildsTable = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
   const { statuses, buildIdOrTemplate } = useFilters()
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
