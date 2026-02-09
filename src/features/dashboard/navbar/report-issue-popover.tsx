@@ -1,6 +1,6 @@
 'use client'
 
-import { reportIssueAction } from '@/server/support/support-actions'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   CardContent,
@@ -9,8 +9,13 @@ import {
   CardTitle,
 } from '@/ui/primitives/card'
 import { Input } from '@/ui/primitives/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/primitives/popover'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/ui/primitives/popover'
 import { Textarea } from '@/ui/primitives/textarea'
+import { useMutation } from '@tanstack/react-query'
 import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -23,13 +28,37 @@ export default function ReportIssuePopover({
   trigger,
 }: ReportIssuePopoverProps) {
   const posthog = usePostHog()
+  const trpc = useTRPC()
   const [isOpen, setIsOpen] = useState(false)
   const [sandboxId, setSandboxId] = useState('')
   const [description, setDescription] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const reportIssueMutation = useMutation(
+    trpc.support.reportIssue.mutationOptions({
+      onSuccess: (data) => {
+        posthog.capture('issue_reported', {
+          sandbox_id: sandboxId.trim(),
+          thread_id: data.threadId,
+        })
+        setWasSubmitted(true)
+        toast.success(
+          'Issue reported successfully. Our team will review it shortly.'
+        )
+        setIsOpen(false)
+        setSandboxId('')
+        setDescription('')
+        setTimeout(() => {
+          setWasSubmitted(false)
+        }, 100)
+      },
+      onError: () => {
+        toast.error('Failed to report issue. Please try again.')
+      },
+    })
+  )
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!sandboxId.trim() || !description.trim()) {
@@ -37,37 +66,10 @@ export default function ReportIssuePopover({
       return
     }
 
-    setIsSubmitting(true)
-
-    try {
-      const result = await reportIssueAction({
-        sandboxId: sandboxId.trim(),
-        description: description.trim(),
-      })
-
-      if (result?.data?.success) {
-        posthog.capture('issue_reported', {
-          sandbox_id: sandboxId.trim(),
-          thread_id: result.data.threadId,
-        })
-        setWasSubmitted(true)
-        toast.success('Issue reported successfully. Our team will review it shortly.')
-        setIsOpen(false)
-        // reset state
-        setSandboxId('')
-        setDescription('')
-        setTimeout(() => {
-          setWasSubmitted(false)
-        }, 100)
-      } else {
-        toast.error('Failed to report issue. Please try again.')
-      }
-    } catch (error) {
-      console.error('Error reporting issue:', error)
-      toast.error('Failed to report issue. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+    reportIssueMutation.mutate({
+      sandboxId: sandboxId.trim(),
+      description: description.trim(),
+    })
   }
 
   return (
@@ -104,7 +106,7 @@ export default function ReportIssuePopover({
               aria-label="Sandbox ID"
               value={sandboxId}
               onChange={(e) => setSandboxId(e.target.value)}
-              disabled={isSubmitting}
+              disabled={reportIssueMutation.isPending}
             />
             <Textarea
               id="description"
@@ -113,14 +115,18 @@ export default function ReportIssuePopover({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-28"
-              disabled={isSubmitting}
+              disabled={reportIssueMutation.isPending}
             />
             <Button
               type="submit"
               className="w-full mt-2"
-              disabled={isSubmitting || !sandboxId.trim() || !description.trim()}
+              disabled={
+                reportIssueMutation.isPending ||
+                !sandboxId.trim() ||
+                !description.trim()
+              }
             >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
+              {reportIssueMutation.isPending ? 'Submitting...' : 'Submit'}
             </Button>
           </form>
         </CardContent>
