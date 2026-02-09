@@ -1,5 +1,6 @@
 'use client'
 
+import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
   getTimeoutMsFromUserMessage,
@@ -7,6 +8,8 @@ import {
 } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
+import { TurnstileWidget } from '@/features/auth/turnstile-widget'
+import { useTurnstile } from '@/features/auth/use-turnstile'
 import { signUpAction } from '@/server/auth/auth-actions'
 import { signUpSchema } from '@/server/auth/auth.types'
 import { Button } from '@/ui/primitives/button'
@@ -24,7 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 
 export default function SignUp() {
   'use no memo'
@@ -39,6 +42,8 @@ export default function SignUp() {
     return undefined
   })
 
+  const turnstileResetRef = useRef<() => void>(() => {})
+
   const returnTo = searchParams.get('returnTo') || undefined
 
   const {
@@ -48,15 +53,21 @@ export default function SignUp() {
   } = useHookFormAction(signUpAction, zodResolver(signUpSchema), {
     actionProps: {
       onSuccess: () => {
+        turnstileResetRef.current()
         setMessage({ success: USER_MESSAGES.signUpVerification.message })
       },
       onError: ({ error }) => {
+        turnstileResetRef.current()
+
         if (error.serverError) {
           setMessage({ error: error.serverError })
         }
       },
     },
   })
+
+  const turnstile = useTurnstile(form)
+  turnstileResetRef.current = turnstile.reset
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -94,10 +105,7 @@ export default function SignUp() {
       <TextSeparator text="or" />
 
       <Form {...form}>
-        <form
-          className="flex flex-col gap-2 [&>input]:mb-3"
-          onSubmit={handleSubmitWithAction}
-        >
+        <form className="flex flex-col gap-2" onSubmit={handleSubmitWithAction}>
           <FormField
             control={form.control}
             name="email"
@@ -160,25 +168,28 @@ export default function SignUp() {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="returnTo"
-            render={({ field }) => (
-              <FormItem className="hidden">
-                <FormControl>
-                  <Input type="hidden" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
+          <input type="hidden" {...form.register('returnTo')} />
+          <input type="hidden" {...form.register('captchaToken')} />
+
+          <TurnstileWidget
+            ref={turnstile.turnstileRef}
+            onSuccess={turnstile.handleSuccess}
+            onExpire={turnstile.handleExpire}
+            isVerified={turnstile.isVerified}
+            className="my-1"
           />
 
-          <Button type="submit" loading={isExecuting} className="mt-3">
+          <Button
+            type="submit"
+            loading={isExecuting}
+            disabled={CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken}
+          >
             Sign up
           </Button>
         </form>
       </Form>
 
-      <p className="text-fg-secondary mt-3  leading-6">
+      <p className="text-fg-secondary mt-3 leading-6">
         Already have an account?{' '}
         <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
           Sign in

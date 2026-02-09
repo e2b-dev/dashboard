@@ -45,7 +45,11 @@ export const PROTECTED_URLS = {
 
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
-  BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
+  BILLING_PLAN: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/billing/plan`,
+  BILLING_PLAN_SELECT: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/billing/plan/select`,
+  LIMITS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/limits`,
 }
 
 export const HELP_URLS = {

@@ -1,10 +1,8 @@
 'use client'
 
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import {
-  confirmOrderAction,
-  getCustomerSessionAction,
-} from '@/server/billing/billing-actions'
+import { useTRPC } from '@/trpc/client'
 import { AsciiSandbox } from '@/ui/patterns'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
@@ -22,17 +20,21 @@ import {
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   AlertCircle,
   ArrowRight,
   CircleDollarSign,
   CreditCard,
 } from 'lucide-react'
-import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { ADDON_PURCHASE_MESSAGES } from './constants'
+import {
+  ADDON_PURCHASE_ACTION_ERRORS,
+  ADDON_PURCHASE_MESSAGES,
+  SANDBOXES_PER_ADDON,
+} from './constants'
 import {
   stripePromise,
   usePaymentConfirmation,
@@ -57,75 +59,103 @@ function DialogContent_Inner({
 }: Omit<ConcurrentSandboxAddOnPurchaseDialogProps, 'open'>) {
   const { team } = useDashboard()
   const { toast } = useToast()
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [customerSessionClientSecret, setCustomerSessionClientSecret] =
     useState<string | null>(null)
 
-  const { execute: createCustomerSession } = useAction(
-    getCustomerSessionAction,
-    {
-      onSuccess: ({ data }) => {
+  const customerSessionMutation = useMutation(
+    trpc.billing.getCustomerSession.mutationOptions({
+      onSuccess: (data) => {
         if (data?.client_secret) {
           setCustomerSessionClientSecret(data.client_secret)
         }
       },
-      onError: ({ error }) => {
+      onError: (error) => {
         console.error(
           '[Payment] Failed to get customer session:',
-          error.serverError
+          error.message
         )
         toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
       },
-    }
+    })
   )
 
   const handleSwitchToPaymentElement = (clientSecret: string) => {
     if (!team) return
     setClientSecret(clientSecret)
     setShowPaymentForm(true)
-    createCustomerSession({ teamIdOrSlug: team.id })
+    customerSessionMutation.mutate({ teamIdOrSlug })
   }
 
+  const itemsQueryKey = trpc.billing.getItems.queryOptions({
+    teamIdOrSlug,
+  }).queryKey
+  const concurrentLimitQueryKey =
+    trpc.billing.getTeamConcurrentLimit.queryOptions({
+      teamIdOrSlug,
+    }).queryKey
+
   const { confirmPayment, isConfirming } = usePaymentConfirmation({
-    onSuccess: () => onOpenChange(false),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey })
+      queryClient.invalidateQueries({ queryKey: concurrentLimitQueryKey })
+      onOpenChange(false)
+    },
     onFallbackToPaymentElement: handleSwitchToPaymentElement,
   })
 
-  const { execute: confirmOrder, isPending: isLoading } = useAction(
-    confirmOrderAction,
-    {
-      onSuccess: async ({ data }) => {
+  const confirmOrderMutation = useMutation(
+    trpc.billing.confirmOrder.mutationOptions({
+      onSuccess: async (data) => {
         if (data?.client_secret && !isConfirming) {
           await confirmPayment(data.client_secret)
         }
       },
-      onError: ({ error }) => {
-        console.error('[Payment] Failed to confirm order:', error.serverError)
-        toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
+      onError: (error) => {
+        console.error('[Payment] Failed to confirm order:', error.message)
+        if (
+          error.message === ADDON_PURCHASE_ACTION_ERRORS.missingPaymentMethod
+        ) {
+          toast(
+            defaultErrorToast(
+              ADDON_PURCHASE_MESSAGES.error.missingPaymentMethod
+            )
+          )
+        } else {
+          toast(defaultErrorToast(ADDON_PURCHASE_MESSAGES.error.generic))
+        }
       },
-    }
+    })
   )
 
   const handlePurchase = () => {
     if (!team) return
 
-    confirmOrder({ teamIdOrSlug: team.id, orderId })
+    confirmOrderMutation.mutate({ teamIdOrSlug, orderId })
   }
 
   const limitIncreaseText = currentConcurrentSandboxesLimit ? (
     <>
       Increases total concurrent sandbox limit from{' '}
       <b>{currentConcurrentSandboxesLimit.toLocaleString()}</b> to{' '}
-      <b>{(currentConcurrentSandboxesLimit + 500).toLocaleString()}</b>
+      <b>
+        {(
+          currentConcurrentSandboxesLimit + SANDBOXES_PER_ADDON
+        ).toLocaleString()}
+      </b>
     </>
   ) : (
     <>
-      Increases total concurrent sandbox limit by <b>500</b>
+      Increases total concurrent sandbox limit by <b>{SANDBOXES_PER_ADDON}</b>
     </>
   )
 
-  const isProcessing = isLoading || isConfirming
+  const isProcessing = confirmOrderMutation.isPending || isConfirming
 
   return (
     <>
