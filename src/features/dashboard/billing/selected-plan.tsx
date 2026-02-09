@@ -4,8 +4,8 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
+import { TeamLimits } from '@/server/team/get-team-limits'
 import { useTRPC } from '@/trpc/client'
-import { TierLimits } from '@/types/billing.types'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -23,26 +23,26 @@ import { Skeleton } from '@/ui/primitives/skeleton'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useBillingItems } from './hooks'
+import { useBillingItems, useTeamLimits } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
-import { BillingAddonData, BillingTierData } from './types'
+import { BillingTierData } from './types'
 import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
-
-const SANDBOXES_PER_ADDON = 500
 
 function formatCpu(vcpu: number): string {
   return `${vcpu} vCPU`
 }
 
 export default function SelectedPlan() {
-  const { tierData, addonData, isLoading } = useBillingItems()
+  const { tierData, isLoading: isBillingLoading } = useBillingItems()
+  const { teamLimits, isLoading: isLimitsLoading } = useTeamLimits()
+  const isLoading = isBillingLoading || isLimitsLoading
 
   return (
     <section className="flex gap-5">
       <PlanAvatar selectedTier={tierData?.selected} isLoading={isLoading} />
       <PlanDetails
         selectedTier={tierData?.selected}
-        addonData={addonData}
+        teamLimits={teamLimits}
         isLoading={isLoading}
       />
     </section>
@@ -77,11 +77,15 @@ function PlanAvatar({ selectedTier, isLoading }: PlanAvatarProps) {
 
 interface PlanDetailsProps {
   selectedTier: BillingTierData['selected']
-  addonData: BillingAddonData | undefined
+  teamLimits: TeamLimits | null | undefined
   isLoading: boolean
 }
 
-function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
+function PlanDetails({
+  selectedTier,
+  teamLimits,
+  isLoading,
+}: PlanDetailsProps) {
   const isBaseTier = !selectedTier || selectedTier.id.includes('base')
   const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const pathname = usePathname()
@@ -153,11 +157,7 @@ function PlanDetails({ selectedTier, addonData, isLoading }: PlanDetailsProps) {
 
       <Separator className="my-4" />
 
-      <PlanFeatures
-        limits={selectedTier?.limits}
-        addonData={addonData}
-        isLoading={isLoading}
-      />
+      <PlanFeatures teamLimits={teamLimits} isLoading={isLoading} />
     </div>
   )
 }
@@ -190,12 +190,11 @@ function PlanTitle({ selectedTier, isLoading }: PlanTitleProps) {
 }
 
 interface PlanFeaturesProps {
-  limits: TierLimits | undefined
-  addonData: BillingAddonData | undefined
+  teamLimits: TeamLimits | null | undefined
   isLoading: boolean
 }
 
-function PlanFeatures({ limits, addonData, isLoading }: PlanFeaturesProps) {
+function PlanFeatures({ teamLimits, isLoading }: PlanFeaturesProps) {
   if (isLoading) {
     return (
       <div className="flex gap-x-3 gap-y-3 flex-wrap max-w-120">
@@ -209,32 +208,28 @@ function PlanFeatures({ limits, addonData, isLoading }: PlanFeaturesProps) {
     )
   }
 
-  if (!limits) return null
-
-  const addonSandboxes =
-    (addonData?.current?.quantity ?? 0) * SANDBOXES_PER_ADDON
-  const totalConcurrentSandboxes = limits.sandbox_concurrency + addonSandboxes
+  if (!teamLimits) return null
 
   const features = [
     {
       icon: <SandboxIcon className="size-4" />,
-      label: `${totalConcurrentSandboxes} concurrent sandboxes`,
+      label: `${teamLimits.concurrentInstances} concurrent sandboxes`,
     },
     {
       icon: <TimeIcon className="size-4" />,
-      label: `${formatHours(limits.max_sandbox_duration_hours)} session length`,
+      label: `${formatHours(teamLimits.maxLengthHours)} session length`,
     },
     {
       icon: <GaugeIcon className="size-4" />,
-      label: `${formatMibToGb(limits.disk_size_mib)} disk per sandbox`,
+      label: `${formatMibToGb(teamLimits.diskMb)} disk per sandbox`,
     },
     {
       icon: <CpuIcon className="size-4" />,
-      label: `${formatCpu(limits.max_cpu)} max`,
+      label: `${formatCpu(teamLimits.maxVcpu)} max`,
     },
     {
       icon: <MemoryIcon className="size-4" />,
-      label: `${formatMibToGb(limits.max_ram_mib)} RAM max`,
+      label: `${formatMibToGb(teamLimits.maxRamMb)} RAM max`,
     },
   ]
 
