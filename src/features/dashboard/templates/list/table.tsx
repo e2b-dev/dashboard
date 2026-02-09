@@ -78,7 +78,7 @@ export default function TemplatesTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
-    'templates:columnSizing:v2',
+    'templates:columnSizing:v3',
     {},
     {
       deserializer: (value) => JSON.parse(value),
