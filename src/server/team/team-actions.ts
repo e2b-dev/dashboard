@@ -10,6 +10,7 @@ import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
 import { CreateTeamsResponse } from '@/types/billing.types'
+import { fileTypeFromBuffer } from 'file-type'
 import { returnValidationErrors } from 'next-safe-action'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { after } from 'next/server'
@@ -210,11 +211,11 @@ export const uploadTeamProfilePictureAction = authActionClient
     const { image, teamIdOrSlug } = parsedInput
     const { teamId } = ctx
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml']
+    const allowedTypes = ['image/jpeg', 'image/png']
 
     if (!allowedTypes.includes(image.type)) {
       return returnValidationErrors(UploadTeamProfilePictureSchema, {
-        image: { _errors: ['File must be JPG, PNG, or SVG format'] },
+        image: { _errors: ['File must be JPG or PNG format'] },
       })
     }
 
@@ -226,15 +227,37 @@ export const uploadTeamProfilePictureAction = authActionClient
       })
     }
 
-    const extension = image.name.split('.').pop() || 'png'
-    const fileName = `${Date.now()}.${extension}`
-    const filePath = `teams/${teamId}/${fileName}`
-
     const arrayBuffer = await image.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    // Verify actual file type using magic bytes (file signature)
+    const fileType = await fileTypeFromBuffer(buffer)
+
+    if (!fileType) {
+      return returnValidationErrors(UploadTeamProfilePictureSchema, {
+        image: { _errors: ['Unable to determine file type'] },
+      })
+    }
+
+    const allowedMimeTypes = ['image/jpeg', 'image/png']
+    if (!allowedMimeTypes.includes(fileType.mime)) {
+      return returnValidationErrors(UploadTeamProfilePictureSchema, {
+        image: {
+          _errors: [
+            'Invalid file type. Only JPEG and PNG images are allowed. File appears to be: ' +
+              fileType.mime,
+          ],
+        },
+      })
+    }
+
+    // Use the actual detected extension from file-type
+    const extension = fileType.ext
+    const fileName = `${Date.now()}.${extension}`
+    const filePath = `teams/${teamId}/${fileName}`
+
     // Upload file to Supabase Storage
-    const publicUrl = await uploadFile(buffer, filePath, image.type)
+    const publicUrl = await uploadFile(buffer, filePath, fileType.mime)
 
     // Update team record with new profile picture URL
     const { data, error } = await supabaseAdmin

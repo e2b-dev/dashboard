@@ -1,8 +1,14 @@
+'use client'
+
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
 import { loadStripe } from '@stripe/stripe-js'
+import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { useState } from 'react'
 import { ADDON_PURCHASE_MESSAGES } from './constants'
+import { extractAddonData, extractTierData } from './utils'
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -256,3 +262,74 @@ export function usePaymentConfirmation({
 }
 
 export { stripePromise }
+
+export function useBillingItems() {
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const trpc = useTRPC()
+
+  const { data: items, isLoading } = useQuery({
+    ...trpc.billing.getItems.queryOptions({ teamIdOrSlug }),
+    throwOnError: true,
+  })
+
+  const tierData = items ? extractTierData(items) : undefined
+  const addonData =
+    items && tierData
+      ? extractAddonData(items, tierData.selected?.id)
+      : undefined
+
+  return {
+    items,
+    tierData,
+    addonData,
+    isLoading,
+  }
+}
+
+export function useUsage() {
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const trpc = useTRPC()
+
+  const { data: usage, isLoading } = useQuery({
+    ...trpc.billing.getUsage.queryOptions({ teamIdOrSlug }),
+    throwOnError: true,
+  })
+
+  return {
+    usage,
+    credits: usage?.credits,
+    isLoading,
+  }
+}
+
+export function useInvoices() {
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const trpc = useTRPC()
+
+  const {
+    data: invoices,
+    isLoading,
+    error,
+  } = useQuery(trpc.billing.getInvoices.queryOptions({ teamIdOrSlug }))
+
+  return {
+    invoices,
+    isLoading,
+    error,
+  }
+}
+
+export function useTeamLimits() {
+  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const trpc = useTRPC()
+
+  const { data: teamLimits, isLoading } = useQuery({
+    ...trpc.billing.getTeamLimits.queryOptions({ teamIdOrSlug }),
+    throwOnError: true,
+  })
+
+  return {
+    teamLimits,
+    isLoading,
+  }
+}

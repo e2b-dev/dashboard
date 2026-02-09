@@ -21,6 +21,7 @@ interface DataTableColumnHeaderProps<TData, TValue>
   header: Header<TData, TValue>
   canSort?: boolean
   sorting?: boolean
+  align?: 'left' | 'right'
 }
 
 function DataTableHead<TData, TValue>({
@@ -28,6 +29,7 @@ function DataTableHead<TData, TValue>({
   children,
   className,
   sorting,
+  align = 'left',
   ...props
 }: DataTableColumnHeaderProps<TData, TValue>) {
   const canSort = header.column.getCanSort()
@@ -35,10 +37,10 @@ function DataTableHead<TData, TValue>({
   return (
     <div
       className={cn(
-        'relative flex h-10 items-center text-left align-middle',
-        'font-mono prose-label-highlight uppercase',
-        'text-fg-tertiary',
+        'relative flex h-8 items-center align-middle group',
+        'font-mono uppercase',
         '[&:has([role=checkbox])]:pr-0',
+        sorting !== undefined ? 'prose-label-highlight text-fg' : 'prose-label text-fg-tertiary',
         className
       )}
       style={{
@@ -48,9 +50,9 @@ function DataTableHead<TData, TValue>({
     >
       <div
         className={cn(
-          'flex h-full w-full items-center gap-2 overflow-hidden p-2',
-          canSort && 'cursor-pointer hover:text-fg-secondary transition-colors',
-          canSort && sorting !== undefined && 'text-accent-main-highlight'
+          'flex h-full w-full items-center gap-1 whitespace-nowrap',
+          canSort && 'cursor-pointer group-hover:text-fg-secondary',
+          align === 'right' && 'flex-row-reverse'
         )}
         onClick={
           canSort
@@ -60,9 +62,17 @@ function DataTableHead<TData, TValue>({
       >
         {children}
         {canSort && (
-          <div className="size-5 min-w-5 flex items-center justify-center">
+          <div className={cn(
+            "size-5 min-w-5 flex items-center justify-center",
+            sorting === undefined && "opacity-0 group-hover:opacity-100"
+          )}>
             {sorting === undefined ? (
-              <ArrowUpDown className="size-3" />
+              // Show the arrow for the next state based on sortDescFirst
+              header.column.columnDef.sortDescFirst ? (
+                <ArrowDownWideNarrow className="size-3" />
+              ) : (
+                <ArrowUpNarrowWide className="size-3" />
+              )
             ) : sorting ? (
               <ArrowDownWideNarrow className="size-3" />
             ) : (
@@ -74,7 +84,7 @@ function DataTableHead<TData, TValue>({
 
       {header.column.getCanResize() && (
         <div
-          className="absolute right-0 bottom-2 h-6 cursor-ew-resize px-2"
+          className="absolute right-0 h-4 cursor-ew-resize pl-4 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
           onTouchStart={header.getResizeHandler()}
           onMouseDown={header.getResizeHandler()}
           onMouseDownCapture={(e) => {
@@ -84,7 +94,7 @@ function DataTableHead<TData, TValue>({
             e.stopPropagation()
           }}
         >
-          <Separator className="h-full" orientation="vertical" />
+          <Separator className="h-full bg-icon-secondary" orientation="vertical" />
         </div>
       )}
     </div>
@@ -109,7 +119,7 @@ function DataTableCell<TData, TValue>({
         width: `calc(var(--col-${cell.column.id}-size) * 1)`,
       }}
       className={cn(
-        'p-1 px-2 align-middle font-sans text-xs [&:has([role=checkbox])]:pr-0',
+        'align-middle font-sans text-xs [&:has([role=checkbox])]:pr-0',
         'flex items-center',
         'text-fg-secondary prose-table',
         className
@@ -132,7 +142,7 @@ const DataTableRow = React.forwardRef<HTMLDivElement, DataTableRowProps>(
         ref={ref}
         className={cn(
           'transition-colors',
-          'flex w-full items-center',
+          'flex w-full items-center gap-8',
           'border-b border-stroke/60',
           {
             'bg-bg-hover': isSelected,

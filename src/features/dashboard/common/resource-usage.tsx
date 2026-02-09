@@ -26,12 +26,24 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   const hasMetrics = metrics !== null && metrics !== undefined
 
   if (mode === 'simple') {
-    const displayTotal = total ? formatNumber(total) : 'n/a'
+    const hasValue = total !== null && total !== undefined && total !== 0
+    const displayTotal = hasValue ? formatNumber(total) : '--'
     return (
-      <p className=" text-fg-tertiary">
-        <span className="text-accent-info-highlight"> {displayTotal} </span>{' '}
-        {unit}
-        {isCpu && total && total > 1 ? 's' : ''}
+      <p className="flex justify-end gap-1 prose-table">
+        <span
+          className={cn(
+            'prose-table-numeric',
+            hasValue ? 'text-fg-secondary' : 'text-fg-tertiary'
+          )}
+        >
+          {displayTotal}
+        </span>
+        {hasValue && (
+          <span className="text-fg-tertiary">
+            {unit}
+            {isCpu && total && total > 1 ? 's' : ''}
+          </span>
+        )}
       </p>
     )
   }

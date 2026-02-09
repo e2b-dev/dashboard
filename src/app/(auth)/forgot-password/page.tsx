@@ -92,7 +92,7 @@ export default function ForgotPassword() {
 
       <form
         onSubmit={handleSubmitWithAction}
-        className="mt-5 flex flex-col gap-2 [&>input]:mb-1"
+        className="mt-5 flex flex-col gap-2"
       >
         <Label htmlFor="email">E-Mail</Label>
         <Input

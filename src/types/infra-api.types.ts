@@ -1068,7 +1068,10 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** @description Update template */
+        /**
+         * @deprecated
+         * @description Update template
+         */
         patch: {
             parameters: {
                 query?: never;
@@ -1183,6 +1186,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/templates/{templateID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Update template */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TemplateUpdateRequest"];
+                };
+            };
+            responses: {
+                /** @description The template was updated successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateUpdateResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        trace?: never;
+    };
     "/templates/{templateID}/builds/{buildID}/status": {
         parameters: {
             query?: never;
@@ -1270,6 +1318,118 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Assign tag(s) to a template build */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssignTemplateTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description Tag assigned successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssignedTemplateTags"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        /** @description Delete multiple tags from templates */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeleteTemplateTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description Tags deleted successfully */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/aliases/{alias}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Check if template with given alias exists */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    alias: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully queried template by alias */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateAliasResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                403: components["responses"]["403"];
                 404: components["responses"]["404"];
                 500: components["responses"]["500"];
             };
@@ -1674,6 +1834,10 @@ export interface components {
             /** @description Whether the template is public or only accessible by the team */
             public?: boolean;
         };
+        TemplateUpdateResponse: {
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
+        };
         /**
          * Format: int32
          * @description CPU cores for the sandbox
@@ -1985,8 +2149,13 @@ export interface components {
             diskSizeMB: components["schemas"]["DiskSizeMB"];
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
-            /** @description Aliases of the template */
+            /**
+             * @deprecated
+             * @description Aliases of the template
+             */
             aliases: string[];
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
             /**
              * Format: date-time
              * @description Time when the template was created
@@ -2023,7 +2192,14 @@ export interface components {
             buildID: string;
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
-            /** @description Aliases of the template */
+            /** @description Names of the template */
+            names: string[];
+            /** @description Tags assigned to the template build */
+            tags: string[];
+            /**
+             * @deprecated
+             * @description Aliases of the template
+             */
             aliases: string[];
         };
         TemplateLegacy: {
@@ -2098,8 +2274,13 @@ export interface components {
             templateID: string;
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
-            /** @description Aliases of the template */
+            /**
+             * @deprecated
+             * @description Aliases of the template
+             */
             aliases: string[];
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
             /**
              * Format: date-time
              * @description Time when the template was created
@@ -2122,6 +2303,12 @@ export interface components {
             spawnCount: number;
             /** @description List of builds for the template */
             builds: components["schemas"]["TemplateBuild"][];
+        };
+        TemplateAliasResponse: {
+            /** @description Identifier of the template */
+            templateID: string;
+            /** @description Whether the template is public or only accessible by the team */
+            public: boolean;
         };
         TemplateBuildRequest: {
             /** @description Alias of the template */
@@ -2155,9 +2342,19 @@ export interface components {
             force: boolean;
         };
         TemplateBuildRequestV3: {
-            /** @description Alias of the template */
-            alias: string;
-            /** @description Identifier of the team */
+            /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
+            name?: string;
+            /** @description Tags to assign to the template build */
+            tags?: string[];
+            /**
+             * @deprecated
+             * @description Alias of the template. Deprecated, use name instead.
+             */
+            alias?: string;
+            /**
+             * @deprecated
+             * @description Identifier of the team
+             */
             teamID?: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
@@ -2165,7 +2362,10 @@ export interface components {
         TemplateBuildRequestV2: {
             /** @description Alias of the template */
             alias: string;
-            /** @description Identifier of the team */
+            /**
+             * @deprecated
+             * @description Identifier of the team
+             */
             teamID?: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
@@ -2522,6 +2722,27 @@ export interface components {
             /** @description New name for the API key */
             name: string;
         };
+        AssignedTemplateTags: {
+            /** @description Assigned tags of the template */
+            tags: string[];
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with these tags
+             */
+            buildID: string;
+        };
+        AssignTemplateTagsRequest: {
+            /** @description Target template in "name:tag" format */
+            target: string;
+            /** @description Tags to assign to the template */
+            tags: string[];
+        };
+        DeleteTemplateTagsRequest: {
+            /** @description Name of the template */
+            name: string;
+            /** @description Tags to delete */
+            tags: string[];
+        };
         Error: {
             /**
              * Format: int32
@@ -2606,6 +2827,7 @@ export interface components {
         nodeID: string;
         apiKeyID: string;
         accessTokenID: string;
+        tag: string;
         /** @description Maximum number of items to return per page */
         paginationLimit: number;
         /** @description Cursor to start the list from */

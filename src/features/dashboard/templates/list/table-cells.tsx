@@ -1,5 +1,7 @@
 'use client'
 
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -12,6 +14,7 @@ import { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -25,8 +28,7 @@ import {
 import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
-import { Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useParams } from 'next/navigation'
+import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -48,9 +50,7 @@ export function ActionsCell({
   const template = row.original
   const { team } = useDashboard()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -67,7 +67,7 @@ export function ActionsCell({
             <>
               Template{' '}
               <span className="prose-body-highlight">{templateName}</span> is
-              now {data.public ? 'public' : 'private'}.
+              now {data.public ? 'public' : 'internal'}.
             </>
           )
         )
@@ -246,7 +246,7 @@ export function ActionsCell({
               {template.public ? (
                 <>
                   <Lock className="!size-3" />
-                  Set Private
+                  Set Internal
                 </>
               ) : (
                 <>
@@ -279,7 +279,7 @@ export function TemplateIdCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   return (
-    <div className="overflow-x-hidden whitespace-nowrap text-fg-tertiary">
+    <div className="overflow-x-hidden whitespace-nowrap text-fg-tertiary font-mono prose-table-numeric">
       {row.getValue('templateID')}
     </div>
   )
@@ -287,20 +287,74 @@ export function TemplateIdCell({
 
 export function TemplateNameCell({
   row,
-  getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const names = row.original.names
+
+  // Prefer a name without "/" as the primary display name
+  const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
+  const additionalNames = names.filter((name) => name !== primaryName)
+
+  const [wasCopied, copy] = useClipboard(2000)
+  const nameValue = (primaryName as string) ?? '--'
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (nameValue !== '--') {
+      copy(nameValue)
+    }
+  }
+
   return (
     <div
+      onClick={handleCopy}
       className={cn(
-        'flex items-center gap-2 overflow-x-hidden whitespace-nowrap',
+        'flex items-center gap-2 prose-body min-w-0 relative group/name w-full h-9',
         {
-          'text-fg-tertiary': !getValue(),
+          'text-fg-tertiary': !primaryName,
+          'cursor-pointer': nameValue !== '--',
         }
       )}
     >
-      <span>{(getValue() as string) ?? 'N/A'}</span>
+      <span className="truncate">{nameValue}</span>
+      {additionalNames.length > 0 && (
+        <HelpTooltip
+          trigger={
+            <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+              +{additionalNames.length}
+            </span>
+          }
+        >
+          <div className="flex flex-col gap-1">
+            <span className="text-fg-secondary text-xs">
+              Also available under:
+            </span>
+            <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
+              {additionalNames.map((name) => (
+                <li key={name} className="font-mono text-xs text-fg-tertiary">
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </HelpTooltip>
+      )}
       {'isDefault' in row.original && row.original.isDefault && (
         <E2BTemplateBadge />
+      )}
+      {nameValue !== '--' && (
+        <div
+          className={cn(
+            'absolute right-0 p-1.5 rounded bg-bg pointer-events-none',
+            'opacity-0 group-hover/name:opacity-100'
+          )}
+          aria-hidden="true"
+        >
+          {wasCopied ? (
+            <Check className="size-3 text-icon" />
+          ) : (
+            <Copy className="size-3 text-icon-secondary" />
+          )}
+        </div>
       )}
     </div>
   )
@@ -310,14 +364,22 @@ export function CpuCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const cpuCount = row.getValue('cpuCount') as number
-  return <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+    </div>
+  )
 }
 
 export function MemoryCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const memoryMB = row.getValue('memoryMB') as number
-  return <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+    </div>
+  )
 }
 
 export function CreatedAtCell({
@@ -325,19 +387,21 @@ export function CreatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const dateTimeString = useMemo(() => {
-    return new Date(dateValue).toUTCString()
+  const [datePart, timePart] = useMemo(() => {
+    const date = new Date(dateValue)
+    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
+    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
   }, [dateValue])
 
-  const [day, date, month, year, time, timezone] = useMemo(() => {
-    return dateTimeString.split(' ')
-  }, [dateTimeString])
-
   return (
-    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono')}>
-      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
-      <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-tertiary">{timezone}</span>
+    <div
+      className={cn(
+        'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
+      )}
+    >
+      <span className="text-fg-secondary">{datePart}</span>{' '}
+      <span className="text-fg-tertiary">{timePart}</span>{' '}
+      <span className="text-fg-tertiary">UTC</span>
     </div>
   )
 }
@@ -347,19 +411,21 @@ export function UpdatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const dateTimeString = useMemo(() => {
-    return new Date(dateValue).toUTCString()
+  const [datePart, timePart] = useMemo(() => {
+    const date = new Date(dateValue)
+    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
+    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
   }, [dateValue])
 
-  const [day, date, month, year, time, timezone] = useMemo(() => {
-    return dateTimeString.split(' ')
-  }, [dateTimeString])
-
   return (
-    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono')}>
-      <span className="text-fg-tertiary">{`${day} ${date} ${month} ${year}`}</span>{' '}
-      <span className="text-fg">{time}</span>{' '}
-      <span className="text-fg-tertiary">{timezone}</span>
+    <div
+      className={cn(
+        'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
+      )}
+    >
+      <span className="text-fg-secondary">{datePart}</span>{' '}
+      <span className="text-fg-tertiary">{timePart}</span>{' '}
+      <span className="text-fg-tertiary">UTC</span>
     </div>
   )
 }
@@ -367,14 +433,16 @@ export function UpdatedAtCell({
 export function VisibilityCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const isPublic = getValue() as boolean
   return (
-    <span
-      className={cn('text-fg-tertiary whitespace-nowrap font-mono', {
-        'text-accent-positive-highlight': getValue(),
-      })}
+    <Badge
+      variant="default"
+      size="sm"
+      className={cn('uppercase bg-fill', !isPublic && 'pl-[3]')}
     >
-      {getValue() ? 'Public' : 'Private'}
-    </span>
+      {!isPublic && <Lock className="size-3 text-fg-tertiary" />}
+      {isPublic ? 'Public' : 'Internal'}
+    </Badge>
   )
 }
 
@@ -400,7 +468,7 @@ export function EnvdVersionCell({
         }
       )}
     >
-      {versionValue ?? 'N/A'}
+      {versionValue ?? '--'}
       {isNotV2Compatible && (
         <HelpTooltip>
           The envd version is not compatible with the SDK v2. To update the envd
