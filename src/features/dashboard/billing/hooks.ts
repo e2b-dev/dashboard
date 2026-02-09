@@ -319,17 +319,17 @@ export function useInvoices() {
   }
 }
 
-export function useTeamConcurrentLimit() {
+export function useTeamLimits() {
   const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
   const trpc = useTRPC()
 
-  const { data, isLoading } = useQuery({
-    ...trpc.billing.getTeamConcurrentLimit.queryOptions({ teamIdOrSlug }),
+  const { data: teamLimits, isLoading } = useQuery({
+    ...trpc.billing.getTeamLimits.queryOptions({ teamIdOrSlug }),
     throwOnError: true,
   })
 
   return {
-    concurrentSandboxes: data?.concurrentSandboxes ?? 0,
+    teamLimits,
     isLoading,
   }
 }

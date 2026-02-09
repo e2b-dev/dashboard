@@ -215,11 +215,8 @@ export const billingRouter = createTRPCRouter({
     return limits
   }),
 
-  getTeamConcurrentLimit: protectedTeamProcedure.query(async ({ ctx }) => {
-    const limits = await getTeamLimitsMemo(ctx.teamId, ctx.user.id)
-    return {
-      concurrentSandboxes: limits?.concurrentInstances ?? 0,
-    }
+  getTeamLimits: protectedTeamProcedure.query(async ({ ctx }) => {
+    return await getTeamLimitsMemo(ctx.teamId, ctx.user.id)
   }),
 
   setLimit: protectedTeamProcedure

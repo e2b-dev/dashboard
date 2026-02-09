@@ -19,7 +19,7 @@ import { useState } from 'react'
 import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
 import { ADDON_500_SANDBOXES_ID, TIER_PRO_ID } from './constants'
-import { useBillingItems, useTeamConcurrentLimit } from './hooks'
+import { useBillingItems, useTeamLimits } from './hooks'
 import { formatAddonQuantity } from './utils'
 
 interface AddonItemProps {
@@ -193,8 +193,8 @@ export default function Addons() {
   const trpc = useTRPC()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
-  const { concurrentSandboxes: currentConcurrentSandboxesLimit } =
-    useTeamConcurrentLimit()
+  const { teamLimits } = useTeamLimits()
+  const currentConcurrentSandboxesLimit = teamLimits?.concurrentInstances ?? 0
 
   const selectedTierId = tierData?.selected?.id
   const currentAddon = addonData?.current
