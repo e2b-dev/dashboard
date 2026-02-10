@@ -35,9 +35,9 @@ export const sandboxRouter = createTRPCRouter({
         { cursor, limit, direction }
       )
 
-      const logs: SandboxLogDTO[] = sandboxLogs.logs.map(
-        mapInfraSandboxLogToDTO
-      )
+      const logs: SandboxLogDTO[] = sandboxLogs.logs
+        .map(mapInfraSandboxLogToDTO)
+        .sort((a, b) => a.timestampUnix - b.timestampUnix)
 
       const hasMore = logs.length === limit
       const cursorLog = logs[0]
@@ -75,9 +75,9 @@ export const sandboxRouter = createTRPCRouter({
         { cursor, limit, direction }
       )
 
-      const logs: SandboxLogDTO[] = sandboxLogs.logs.map(
-        mapInfraSandboxLogToDTO
-      )
+      const logs: SandboxLogDTO[] = sandboxLogs.logs
+        .map(mapInfraSandboxLogToDTO)
+        .sort((a, b) => a.timestampUnix - b.timestampUnix)
 
       const newestLog = logs[logs.length - 1]
       const nextCursor = newestLog?.timestampUnix ?? null

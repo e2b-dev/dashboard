@@ -9,7 +9,7 @@ import {
   type SandboxLogsStore,
 } from './sandbox-logs-store'
 
-const REFETCH_INTERVAL_MS = 1_500
+const REFETCH_INTERVAL_MS = 3_000
 
 interface UseSandboxLogsParams {
   teamIdOrSlug: string

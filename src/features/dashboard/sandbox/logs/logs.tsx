@@ -124,11 +124,11 @@ function LogsTableHeader() {
     >
       <TableRow style={{ display: 'flex', minWidth: '100%' }}>
         <TableHead
-          className="px-0 pr-4 text-fg"
+          data-state="selected"
+          className="px-0 pr-4"
           style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
         >
-          Timestamp
-          <ArrowDownIcon className="size-3 rotate-180" />
+          Timestamp <ArrowDownIcon className="size-3 rotate-180" />
         </TableHead>
         <TableHead
           className="px-0 pr-4"
@@ -364,6 +364,7 @@ function useAutoScrollToBottom({
 }: UseAutoScrollToBottomParams) {
   const isAutoScrollEnabledRef = useRef(true)
   const prevLogsCountRef = useRef(0)
+  const prevIsRunningRef = useRef(isRunning)
   const hasInitialScrolled = useRef(false)
 
   useEffect(() => {
@@ -391,10 +392,12 @@ function useAutoScrollToBottom({
     }
   }, [isInitialized, logsCount, scrollContainerRef])
 
-  // reset scroll state when sandbox stops/starts
   useEffect(() => {
-    hasInitialScrolled.current = false
-    prevLogsCountRef.current = 0
+    if (prevIsRunningRef.current !== isRunning) {
+      prevIsRunningRef.current = isRunning
+      hasInitialScrolled.current = false
+      prevLogsCountRef.current = 0
+    }
   }, [isRunning])
 
   useEffect(() => {
