@@ -27,10 +27,22 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Sandboxes',
     type: 'custom',
   }),
-  '/dashboard/*/sandboxes/**/*': () => ({
-    title: 'Sandbox',
-    type: 'custom',
-  }),
+  '/dashboard/*/sandboxes/*/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+    const sandboxId = parts[4]!
+
+    return {
+      title: [
+        {
+          label: 'Sandboxes',
+          href: PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug),
+        },
+        { label: parts.pop()! },
+      ],
+      type: 'custom',
+    }
+  },
   '/dashboard/*/templates': () => ({
     title: 'Templates',
     type: 'custom',

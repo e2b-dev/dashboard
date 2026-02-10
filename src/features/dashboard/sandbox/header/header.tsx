@@ -1,9 +1,6 @@
 import { COOKIE_KEYS } from '@/configs/cookies'
-import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api.types'
-import { ChevronLeftIcon } from 'lucide-react'
 import { cookies } from 'next/headers'
-import Link from 'next/link'
 import { DetailsItem, DetailsRow } from '../../layouts/details-row'
 import KillButton from './kill-button'
 import Metadata from './metadata'
@@ -33,15 +30,6 @@ export default async function SandboxDetailsHeader({
     <header className="bg-bg relative z-30 flex w-full flex-col gap-6 p-3 md:p-6 max-md:pt-0">
       <div className="flex flex-col sm:gap-2 md:gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
-          <Link
-            href={PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug)}
-            className="text-fg-tertiary! hover:text-fg! flex items-center gap-1 prose-body-highlight transition-colors"
-            prefetch
-            shallow
-          >
-            <ChevronLeftIcon className="size-4" />
-            Sandboxes
-          </Link>
           <SandboxDetailsTitle />
         </div>
         <div className="flex items-center gap-2 pt-4 sm:pt-0">
