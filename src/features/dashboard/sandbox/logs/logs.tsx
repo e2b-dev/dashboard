@@ -16,7 +16,13 @@ import {
   VirtualItem,
   Virtualizer,
 } from '@tanstack/react-virtual'
-import { RefObject, useCallback, useEffect, useReducer, useRef } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useSandboxContext } from '../context'
 import { LogLevel, Message, Timestamp } from './logs-cells'
 import { useSandboxLogs } from './use-sandbox-logs'
@@ -66,7 +72,8 @@ interface LogsContentProps {
 }
 
 function LogsContent({ teamIdOrSlug, sandboxId, isRunning }: LogsContentProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [scrollContainerElement, setScrollContainerElement] =
+    useState<HTMLDivElement | null>(null)
 
   const {
     logs,
@@ -93,16 +100,16 @@ function LogsContent({ teamIdOrSlug, sandboxId, isRunning }: LogsContentProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-      <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
+      <div ref={setScrollContainerElement} className="min-h-0 flex-1 overflow-auto">
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
           <LogsTableHeader />
 
           {showLoader && <LoaderBody />}
           {showEmpty && <EmptyBody />}
-          {hasLogs && (
+          {hasLogs && scrollContainerElement && (
             <VirtualizedLogsBody
               logs={logs}
-              scrollContainerRef={scrollContainerRef}
+              scrollContainerElement={scrollContainerElement}
               onLoadMore={handleLoadMore}
               hasNextPage={hasNextPage}
               isFetchingNextPage={isFetchingNextPage}
@@ -125,18 +132,21 @@ function LogsTableHeader() {
       <TableRow style={{ display: 'flex', minWidth: '100%' }}>
         <TableHead
           data-state="selected"
-          className="px-0 pr-4"
+          className="px-0 h-min pb-3 pr-4 text-fg"
           style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
         >
-          Timestamp <ArrowDownIcon className="size-3 rotate-180" />
+          Timestamp <ArrowDownIcon className="size-3" />
         </TableHead>
         <TableHead
-          className="px-0 pr-4"
+          className="px-0 h-min pb-3 pr-4"
           style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
         >
           Level
         </TableHead>
-        <TableHead className="px-0" style={{ display: 'flex', flex: 1 }}>
+        <TableHead
+          className="px-0 h-min pb-3"
+          style={{ display: 'flex', flex: 1 }}
+        >
           Message
         </TableHead>
       </TableRow>
@@ -180,7 +190,7 @@ function EmptyBody() {
 
 interface VirtualizedLogsBodyProps {
   logs: SandboxLogDTO[]
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   onLoadMore: () => void
   hasNextPage: boolean
   isFetchingNextPage: boolean
@@ -190,7 +200,7 @@ interface VirtualizedLogsBodyProps {
 
 function VirtualizedLogsBody({
   logs,
-  scrollContainerRef,
+  scrollContainerElement,
   onLoadMore,
   hasNextPage,
   isFetchingNextPage,
@@ -199,28 +209,16 @@ function VirtualizedLogsBody({
 }: VirtualizedLogsBodyProps) {
   const tbodyRef = useRef<HTMLTableSectionElement>(null)
   const maxWidthRef = useRef<number>(0)
-  const [, forceRerender] = useReducer(() => ({}), {})
-
-  useEffect(() => {
-    if (scrollContainerRef.current) forceRerender()
-  }, [scrollContainerRef])
 
   useScrollLoadMore({
-    scrollContainerRef,
+    scrollContainerElement,
     hasNextPage,
     isFetchingNextPage,
     onLoadMore,
   })
 
-  useAutoScrollToBottom({
-    scrollContainerRef,
-    logsCount: logs.length,
-    isInitialized,
-    isRunning,
-  })
-
   useMaintainScrollOnPrepend({
-    scrollContainerRef,
+    scrollContainerElement,
     logsCount: logs.length,
     isFetchingNextPage,
   })
@@ -230,13 +228,27 @@ function VirtualizedLogsBody({
   const virtualizer = useVirtualizer({
     count: logs.length + (showStatusRow ? 1 : 0),
     estimateSize: () => ROW_HEIGHT_PX,
-    getScrollElement: () => scrollContainerRef.current,
+    getScrollElement: () => scrollContainerElement,
     overscan: VIRTUAL_OVERSCAN,
     paddingStart: 8,
   })
 
-  const containerWidth = scrollContainerRef.current?.clientWidth ?? 0
-  const contentWidth = scrollContainerRef.current?.scrollWidth ?? 0
+  const scrollToLatestLog = useCallback(() => {
+    if (logs.length === 0) return
+    const lastLogIndex = logs.length - 1 + (showStatusRow ? 1 : 0)
+    virtualizer.scrollToIndex(lastLogIndex, { align: 'end' })
+  }, [logs.length, showStatusRow, virtualizer])
+
+  useAutoScrollToBottom({
+    scrollContainerElement,
+    logsCount: logs.length,
+    isInitialized,
+    isRunning,
+    scrollToLatestLog,
+  })
+
+  const containerWidth = scrollContainerElement.clientWidth
+  const contentWidth = scrollContainerElement.scrollWidth
   const SCROLLBAR_BUFFER_PX = 20
   const hasHorizontalOverflow =
     contentWidth > containerWidth + SCROLLBAR_BUFFER_PX
@@ -287,25 +299,22 @@ function VirtualizedLogsBody({
 }
 
 interface UseScrollLoadMoreParams {
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   hasNextPage: boolean
   isFetchingNextPage: boolean
   onLoadMore: () => void
 }
 
 function useScrollLoadMore({
-  scrollContainerRef,
+  scrollContainerElement,
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
 }: UseScrollLoadMoreParams) {
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current
-    if (!scrollContainer) return
-
     const handleScroll = () => {
       if (
-        scrollContainer.scrollTop < SCROLL_LOAD_THRESHOLD_PX &&
+        scrollContainerElement.scrollTop < SCROLL_LOAD_THRESHOLD_PX &&
         hasNextPage &&
         !isFetchingNextPage
       ) {
@@ -313,19 +322,20 @@ function useScrollLoadMore({
       }
     }
 
-    scrollContainer.addEventListener('scroll', handleScroll)
-    return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [scrollContainerRef, hasNextPage, isFetchingNextPage, onLoadMore])
+    scrollContainerElement.addEventListener('scroll', handleScroll)
+    return () =>
+      scrollContainerElement.removeEventListener('scroll', handleScroll)
+  }, [scrollContainerElement, hasNextPage, isFetchingNextPage, onLoadMore])
 }
 
 interface UseMaintainScrollOnPrependParams {
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   logsCount: number
   isFetchingNextPage: boolean
 }
 
 function useMaintainScrollOnPrepend({
-  scrollContainerRef,
+  scrollContainerElement,
   logsCount,
   isFetchingNextPage,
 }: UseMaintainScrollOnPrependParams) {
@@ -333,34 +343,33 @@ function useMaintainScrollOnPrepend({
   const wasFetchingRef = useRef(false)
 
   useEffect(() => {
-    const el = scrollContainerRef.current
-    if (!el) return
-
     const justFinishedFetching = wasFetchingRef.current && !isFetchingNextPage
     const logsWerePrepended = logsCount > prevLogsCountRef.current
 
     if (justFinishedFetching && logsWerePrepended) {
       const addedCount = logsCount - prevLogsCountRef.current
-      el.scrollTop += addedCount * ROW_HEIGHT_PX
+      scrollContainerElement.scrollTop += addedCount * ROW_HEIGHT_PX
     }
 
     wasFetchingRef.current = isFetchingNextPage
     prevLogsCountRef.current = logsCount
-  }, [scrollContainerRef, logsCount, isFetchingNextPage])
+  }, [scrollContainerElement, logsCount, isFetchingNextPage])
 }
 
 interface UseAutoScrollToBottomParams {
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   logsCount: number
   isInitialized: boolean
   isRunning: boolean
+  scrollToLatestLog: () => void
 }
 
 function useAutoScrollToBottom({
-  scrollContainerRef,
+  scrollContainerElement,
   logsCount,
   isInitialized,
   isRunning,
+  scrollToLatestLog,
 }: UseAutoScrollToBottomParams) {
   const isAutoScrollEnabledRef = useRef(true)
   const prevLogsCountRef = useRef(0)
@@ -368,29 +377,26 @@ function useAutoScrollToBottom({
   const hasInitialScrolled = useRef(false)
 
   useEffect(() => {
-    const el = scrollContainerRef.current
-    if (!el) return
-
     const handleScroll = () => {
       const distanceFromBottom =
-        el.scrollHeight - el.scrollTop - el.clientHeight
+        scrollContainerElement.scrollHeight -
+        scrollContainerElement.scrollTop -
+        scrollContainerElement.clientHeight
       isAutoScrollEnabledRef.current = distanceFromBottom < ROW_HEIGHT_PX * 2
     }
 
-    el.addEventListener('scroll', handleScroll)
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [scrollContainerRef])
+    scrollContainerElement.addEventListener('scroll', handleScroll)
+    return () =>
+      scrollContainerElement.removeEventListener('scroll', handleScroll)
+  }, [scrollContainerElement])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isInitialized && !hasInitialScrolled.current && logsCount > 0) {
       hasInitialScrolled.current = true
       prevLogsCountRef.current = logsCount
-      requestAnimationFrame(() => {
-        const el = scrollContainerRef.current
-        if (el) el.scrollTop = el.scrollHeight
-      })
+      scrollToLatestLog()
     }
-  }, [isInitialized, logsCount, scrollContainerRef])
+  }, [isInitialized, logsCount, scrollToLatestLog])
 
   useEffect(() => {
     if (prevIsRunningRef.current !== isRunning) {
@@ -406,12 +412,11 @@ function useAutoScrollToBottom({
     const newLogsCount = logsCount - prevLogsCountRef.current
 
     if (newLogsCount > 0 && isAutoScrollEnabledRef.current) {
-      const el = scrollContainerRef.current
-      if (el) el.scrollTop += newLogsCount * ROW_HEIGHT_PX
+      scrollContainerElement.scrollTop += newLogsCount * ROW_HEIGHT_PX
     }
 
     prevLogsCountRef.current = logsCount
-  }, [logsCount, scrollContainerRef])
+  }, [logsCount, scrollContainerElement])
 }
 
 interface LogRowProps {

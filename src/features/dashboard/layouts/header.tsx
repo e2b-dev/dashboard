@@ -43,14 +43,14 @@ export default function DashboardLayoutHeader({
           <HeaderTitle title={config.title} />
         </h1>
 
+        <ClientOnly>
+          <ThemeSwitcher />
+        </ClientOnly>
+
         {/* Ghost element - reserves width but not height */}
         <div className="h-0 overflow-visible shrink-0 flex items-center">
           {children}
         </div>
-
-        <ClientOnly>
-          <ThemeSwitcher />
-        </ClientOnly>
       </div>
     </div>
   )
@@ -65,7 +65,9 @@ function HeaderTitle({ title }: { title: string | TitleSegment[] }) {
     <span className="flex items-center gap-1">
       {title.map((segment, index) => (
         <Fragment key={index}>
-          {index > 0 && <span className="text-fg-tertiary select-none shrink-0">/</span>}
+          {index > 0 && (
+            <span className="text-fg-tertiary select-none shrink-0">/</span>
+          )}
           {segment.href ? (
             <Link
               href={segment.href}

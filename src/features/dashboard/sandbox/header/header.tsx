@@ -27,11 +27,9 @@ export default async function SandboxDetailsHeader({
   )?.value
 
   return (
-    <header className="bg-bg relative z-30 flex w-full flex-col gap-6 p-3 md:p-6 max-md:pt-0">
+    <header className="bg-bg relative z-30 flex w-full flex-col gap-6 p-3 md:p-6">
       <div className="flex flex-col sm:gap-2 md:gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <SandboxDetailsTitle />
-        </div>
+        <SandboxDetailsTitle />
         <div className="flex items-center gap-2 pt-4 sm:pt-0">
           <RefreshControl
             initialPollingInterval={
