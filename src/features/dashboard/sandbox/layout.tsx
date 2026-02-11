@@ -3,6 +3,7 @@
 import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
+import { ListIcon, StorageIcon } from '@/ui/primitives/icons'
 import { notFound } from 'next/navigation'
 import { useSandboxContext } from './context'
 import SandboxInspectIncompatible from './inspect/incompatible'
@@ -41,6 +42,7 @@ export default function SandboxLayout({
           id="filesystem"
           label="Filesystem"
           className="flex flex-col max-h-full"
+          icon={<StorageIcon className="size-4" />}
         >
           {isEnvdVersionCompatibleForInspect ? (
             children
@@ -55,6 +57,7 @@ export default function SandboxLayout({
           id="logs"
           label="Logs"
           className="flex flex-col max-h-full"
+          icon={<ListIcon className="size-4" />}
         >
           {children}
         </DashboardTab>
