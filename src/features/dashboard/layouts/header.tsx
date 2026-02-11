@@ -3,6 +3,7 @@
 import { getDashboardLayoutConfig, TitleSegment } from '@/configs/layout'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
+import CopyButton from '@/ui/copy-button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
 import Link from 'next/link'
@@ -20,6 +21,7 @@ export default function DashboardLayoutHeader({
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
+  const copyableValue = config.copyValue ?? null
 
   return (
     <div
@@ -39,9 +41,20 @@ export default function DashboardLayoutHeader({
       <div className="flex items-center w-full relative min-h-6 gap-2">
         <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1 shrink-0" />
 
-        <h1 className="truncate min-w-0 flex-1">
-          <HeaderTitle title={config.title} />
-        </h1>
+        <div className="min-w-0 flex-1 flex items-center gap-2">
+          <h1 className="truncate min-w-0">
+            <HeaderTitle title={config.title} />
+          </h1>
+          {copyableValue && (
+            <CopyButton
+              value={copyableValue}
+              size="iconSm"
+              variant="ghost"
+              className="text-fg-tertiary shrink-0"
+              aria-label="Copy identifier"
+            />
+          )}
+        </div>
 
         <ClientOnly>
           <ThemeSwitcher />
