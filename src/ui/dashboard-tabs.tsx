@@ -13,6 +13,7 @@ export interface DashboardTabsProps {
   type: 'query' | 'path'
   children: Array<DashboardTabElement> | DashboardTabElement
   className?: string
+  headerAccessory?: ReactNode
 }
 
 // COMPONENT
@@ -22,6 +23,7 @@ function DashboardTabsComponent({
   type,
   children,
   className,
+  headerAccessory,
 }: DashboardTabsProps) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -65,22 +67,46 @@ function DashboardTabsComponent({
       value={activeTabId}
       className={cn('min-h-0 w-full flex-1 h-full', className)}
     >
-      <TabsList className="bg-bg z-30 w-full justify-start">
-        {tabsWithHrefs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            layoutkey={layoutKey}
-            value={tab.id}
-            className="w-fit flex-none"
-            asChild
-          >
-            <Link href={tab.href} prefetch>
-              {tab.icon}
-              {tab.label}
-            </Link>
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      {headerAccessory ? (
+        <div className="bg-bg z-30 flex w-full flex-col gap-2 md:flex-row md:items-end md:justify-between md:gap-0">
+          <div className="order-1 px-3 md:order-2 md:border-b md:px-6 md:flex md:items-end">
+            {headerAccessory}
+          </div>
+          <TabsList className="bg-bg order-2 w-full justify-start md:order-1 md:flex-1 md:w-full">
+            {tabsWithHrefs.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                layoutkey={layoutKey}
+                value={tab.id}
+                className="w-fit flex-none"
+                asChild
+              >
+                <Link href={tab.href} prefetch>
+                  {tab.icon}
+                  {tab.label}
+                </Link>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+      ) : (
+        <TabsList className="bg-bg z-30 w-full justify-start">
+          {tabsWithHrefs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              layoutkey={layoutKey}
+              value={tab.id}
+              className="w-fit flex-none"
+              asChild
+            >
+              <Link href={tab.href} prefetch>
+                {tab.icon}
+                {tab.label}
+              </Link>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      )}
 
       {children}
     </Tabs>
@@ -91,7 +117,8 @@ export const DashboardTabs = memo(DashboardTabsComponent, (prev, next) => {
   if (
     prev.layoutKey !== next.layoutKey ||
     prev.type !== next.type ||
-    prev.className !== next.className
+    prev.className !== next.className ||
+    prev.headerAccessory !== next.headerAccessory
   ) {
     return false
   }

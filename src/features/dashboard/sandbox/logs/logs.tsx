@@ -226,10 +226,14 @@ function VirtualizedLogsBody({
     isFetchingNextPage,
   })
 
-  const showStatusRow = hasNextPage || isFetchingNextPage
+  const showLoadMoreStatusRow = hasNextPage || isFetchingNextPage
+  const logsStartIndex = showLoadMoreStatusRow ? 1 : 0
+  const spacerRowIndex = logsStartIndex + logs.length
+  const liveStatusRowIndex = spacerRowIndex + 1
+  const virtualRowsCount = logs.length + (showLoadMoreStatusRow ? 1 : 0) + 2
 
   const virtualizer = useVirtualizer({
-    count: logs.length + (showStatusRow ? 1 : 0),
+    count: virtualRowsCount,
     estimateSize: () => ROW_HEIGHT_PX,
     getScrollElement: () => scrollContainerElement,
     overscan: VIRTUAL_OVERSCAN,
@@ -238,9 +242,8 @@ function VirtualizedLogsBody({
 
   const scrollToLatestLog = useCallback(() => {
     if (logs.length === 0) return
-    const lastLogIndex = logs.length - 1 + (showStatusRow ? 1 : 0)
-    virtualizer.scrollToIndex(lastLogIndex, { align: 'end' })
-  }, [logs.length, showStatusRow, virtualizer])
+    virtualizer.scrollToIndex(liveStatusRowIndex, { align: 'end' })
+  }, [logs.length, liveStatusRowIndex, logsStartIndex, virtualizer])
 
   useAutoScrollToBottom({
     scrollContainerElement,
@@ -273,12 +276,13 @@ function VirtualizedLogsBody({
       }}
     >
       {virtualizer.getVirtualItems().map((virtualRow) => {
-        const isStatusRow = showStatusRow && virtualRow.index === 0
+        const isLoadMoreStatusRow =
+          showLoadMoreStatusRow && virtualRow.index === 0
 
-        if (isStatusRow) {
+        if (isLoadMoreStatusRow) {
           return (
             <StatusRow
-              key="status-row"
+              key="load-more-status-row"
               virtualRow={virtualRow}
               virtualizer={virtualizer}
               isFetchingNextPage={isFetchingNextPage}
@@ -286,7 +290,32 @@ function VirtualizedLogsBody({
           )
         }
 
-        const logIndex = showStatusRow ? virtualRow.index - 1 : virtualRow.index
+        const isSpacerRow = virtualRow.index === spacerRowIndex
+
+        if (isSpacerRow) {
+          return (
+            <SpacerRow
+              key="live-status-spacer-row"
+              virtualRow={virtualRow}
+              virtualizer={virtualizer}
+            />
+          )
+        }
+
+        const isLiveStatusRow = virtualRow.index === liveStatusRowIndex
+
+        if (isLiveStatusRow) {
+          return (
+            <LiveStatusRow
+              key="live-status-row"
+              virtualRow={virtualRow}
+              virtualizer={virtualizer}
+              isRunning={isRunning}
+            />
+          )
+        }
+
+        const logIndex = virtualRow.index - logsStartIndex
 
         return (
           <LogRow
@@ -515,6 +544,86 @@ function StatusRow({
           ) : (
             'Scroll to load more'
           )}
+        </span>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+interface LiveStatusRowProps {
+  virtualRow: VirtualItem
+  virtualizer: Virtualizer<HTMLDivElement, Element>
+  isRunning: boolean
+}
+
+interface SpacerRowProps {
+  virtualRow: VirtualItem
+  virtualizer: Virtualizer<HTMLDivElement, Element>
+}
+
+function SpacerRow({ virtualRow, virtualizer }: SpacerRowProps) {
+  return (
+    <TableRow
+      data-index={virtualRow.index}
+      ref={(node) => virtualizer.measureElement(node)}
+      style={{
+        display: 'flex',
+        position: 'absolute',
+        left: 0,
+        transform: `translateY(${virtualRow.start}px)`,
+        minWidth: '100%',
+        height: ROW_HEIGHT_PX,
+      }}
+    >
+      <TableCell colSpan={3} className="py-0 w-full" />
+    </TableRow>
+  )
+}
+
+function LiveStatusRow({
+  virtualRow,
+  virtualizer,
+  isRunning,
+}: LiveStatusRowProps) {
+  return (
+    <TableRow
+      data-index={virtualRow.index}
+      ref={(node) => virtualizer.measureElement(node)}
+      style={{
+        display: 'flex',
+        position: 'absolute',
+        left: 0,
+        transform: `translateY(${virtualRow.start}px)`,
+        minWidth: '100%',
+        height: ROW_HEIGHT_PX,
+      }}
+    >
+      <TableCell
+        colSpan={3}
+        className="py-0 w-full"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'start',
+        }}
+      >
+        <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
+          <span className="text-fg-secondary">[</span>
+          <span
+            className={
+              isRunning
+                ? 'text-accent-positive-highlight'
+                : 'text-accent-info-highlight'
+            }
+          >
+            {isRunning ? 'live' : 'end'}
+          </span>
+          <span className="text-fg-secondary">]</span>
+          <span>
+            {isRunning
+              ? 'No more logs to show. Wating for new entries...'
+              : 'No more logs to show'}
+          </span>
         </span>
       </TableCell>
     </TableRow>

@@ -12,12 +12,14 @@ interface SandboxLayoutProps {
   children: React.ReactNode
   header: React.ReactNode
   teamIdOrSlug: string
+  tabsHeaderAccessory?: React.ReactNode
 }
 
 export default function SandboxLayout({
   teamIdOrSlug,
   children,
   header,
+  tabsHeaderAccessory,
 }: SandboxLayoutProps) {
   const { sandboxInfo } = useSandboxContext()
 
@@ -37,7 +39,11 @@ export default function SandboxLayout({
     <div className="flex max-h-svh h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
       {header}
 
-      <DashboardTabs type="path" layoutKey="tabs-indicator-sandbox">
+      <DashboardTabs
+        type="path"
+        layoutKey="tabs-indicator-sandbox"
+        headerAccessory={tabsHeaderAccessory}
+      >
         <DashboardTab
           id="filesystem"
           label="Filesystem"

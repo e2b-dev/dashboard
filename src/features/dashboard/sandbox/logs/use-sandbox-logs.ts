@@ -77,6 +77,7 @@ export function useSandboxLogs({
     isInitialized,
     hasNextPage: hasMoreBackwards,
     isFetchingNextPage: isLoadingBackwards,
+    isRefetchingForwardLogs: isLoadingForwards || isPolling,
     isFetching: isLoadingBackwards || isLoadingForwards || isPolling,
     fetchNextPage,
   }
