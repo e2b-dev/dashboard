@@ -38,7 +38,7 @@ export default function ReportIssuePopover({
     trpc.support.reportIssue.mutationOptions({
       onSuccess: (data) => {
         posthog.capture('issue_reported', {
-          sandbox_id: sandboxId.trim(),
+          sandbox_id: sandboxId.trim() || undefined,
           thread_id: data.threadId,
         })
         setWasSubmitted(true)
@@ -61,13 +61,13 @@ export default function ReportIssuePopover({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!sandboxId.trim() || !description.trim()) {
-      toast.error('Please fill in all fields')
+    if (!description.trim()) {
+      toast.error('Please describe the issue')
       return
     }
 
     reportIssueMutation.mutate({
-      sandboxId: sandboxId.trim(),
+      sandboxId: sandboxId.trim() || undefined,
       description: description.trim(),
     })
   }
@@ -102,7 +102,7 @@ export default function ReportIssuePopover({
           <form onSubmit={handleSubmit} className="flex flex-col gap-1">
             <Input
               id="sandboxId"
-              placeholder="Enter sandbox ID"
+              placeholder="Enter sandbox ID (optional)"
               aria-label="Sandbox ID"
               value={sandboxId}
               onChange={(e) => setSandboxId(e.target.value)}
@@ -120,11 +120,7 @@ export default function ReportIssuePopover({
             <Button
               type="submit"
               className="w-full mt-2"
-              disabled={
-                reportIssueMutation.isPending ||
-                !sandboxId.trim() ||
-                !description.trim()
-              }
+              disabled={reportIssueMutation.isPending || !description.trim()}
             >
               {reportIssueMutation.isPending ? 'Submitting...' : 'Submit'}
             </Button>

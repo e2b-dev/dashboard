@@ -6,7 +6,7 @@ import { createTRPCRouter } from '../init'
 import { protectedProcedure } from '../procedures'
 
 const ReportIssueSchema = z.object({
-  sandboxId: z.string().min(1),
+  sandboxId: z.string().min(1).optional(),
   description: z.string().min(1),
 })
 
@@ -69,14 +69,18 @@ export const supportRouter = createTRPCRouter({
       }
 
       const result = await client.createThread({
-        title: `Dashboard Issue Report: ${sandboxId}`,
+        title: sandboxId
+          ? `Dashboard Issue Report: ${sandboxId}`
+          : 'Dashboard Issue Report',
         customerIdentifier: {
           customerId: customerResult.data.customer.id,
         },
         components: [
           {
             componentText: {
-              text: `**Sandbox ID:** ${sandboxId}\n\n**Description:**\n${description}`,
+              text: sandboxId
+                ? `**Sandbox ID:** ${sandboxId}\n\n**Description:**\n${description}`
+                : `**Description:**\n${description}`,
             },
           },
         ],
