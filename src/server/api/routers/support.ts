@@ -6,7 +6,7 @@ import { createTRPCRouter } from '../init'
 import { protectedProcedure } from '../procedures'
 
 const ReportIssueSchema = z.object({
-  sandboxId: z.string().optional(),
+  sandboxId: z.string().min(1).optional(),
   description: z.string().min(1),
 })
 
