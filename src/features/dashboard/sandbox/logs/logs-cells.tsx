@@ -1,8 +1,6 @@
 import { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge, BadgeProps } from '@/ui/primitives/badge'
-import { format } from 'date-fns'
-import { enUS } from 'date-fns/locale/en-US'
 
 interface LogLevelProps {
   level: SandboxLogDTO['level']
@@ -38,17 +36,27 @@ interface TimestampProps {
 export const Timestamp = ({ timestampUnix }: TimestampProps) => {
   const date = new Date(timestampUnix)
 
-  // format: "Feb 13 09:39:01.17"
   const centiseconds = Math.floor((date.getMilliseconds() / 10) % 100)
     .toString()
     .padStart(2, '0')
+  const localDatePart = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: '2-digit',
+  }).format(date)
+  const localTimePart = new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(date)
 
   return (
     <CopyButtonInline
       value={date.toISOString()}
       className="font-mono group prose-table-numeric truncate"
     >
-      {format(date, 'MMM dd HH:mm:ss', { locale: enUS })}.{centiseconds}
+      <span className="text-fg-tertiary">{localDatePart}</span> {localTimePart}.
+      {centiseconds}
     </CopyButtonInline>
   )
 }

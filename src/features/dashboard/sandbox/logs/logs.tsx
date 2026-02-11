@@ -28,7 +28,7 @@ import { LogLevel, Message, Timestamp } from './logs-cells'
 import { useSandboxLogs } from './use-sandbox-logs'
 
 // column widths are calculated as max width of the content + padding
-const COLUMN_WIDTHS_PX = { timestamp: 176 + 16, level: 52 + 16 } as const
+const COLUMN_WIDTHS_PX = { timestamp: 142 + 16, level: 52 + 16 } as const
 const ROW_HEIGHT_PX = 26
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
@@ -100,7 +100,10 @@ function LogsContent({ teamIdOrSlug, sandboxId, isRunning }: LogsContentProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-      <div ref={setScrollContainerElement} className="min-h-0 flex-1 overflow-auto">
+      <div
+        ref={setScrollContainerElement}
+        className="min-h-0 flex-1 overflow-auto"
+      >
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
           <LogsTableHeader />
 
@@ -138,8 +141,12 @@ function LogsTableHeader() {
           Timestamp <ArrowDownIcon className="size-3" />
         </TableHead>
         <TableHead
-          className="px-0 h-min pb-3 pr-4"
-          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
+          className="px-0 h-min pb-3 pr-4 text-end"
+          style={{
+            display: 'flex',
+            width: COLUMN_WIDTHS_PX.level,
+            justifyContent: 'flex-end',
+          }}
         >
           Level
         </TableHead>
@@ -450,11 +457,12 @@ function LogRow({ log, virtualRow, virtualizer }: LogRowProps) {
         <Timestamp timestampUnix={log.timestampUnix} />
       </TableCell>
       <TableCell
-        className="py-0 px-0 pr-4"
+        className="py-0 px-0 pr-4 text-end"
         style={{
           display: 'flex',
           alignItems: 'center',
           width: COLUMN_WIDTHS_PX.level,
+          justifyContent: 'flex-end',
         }}
       >
         <LogLevel level={log.level} />
