@@ -2,6 +2,7 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import type { Database } from '@/types/database.types'
 import { TRPCError } from '@trpc/server'
 import z from 'zod'
 import { apiError } from '../errors'
@@ -9,7 +10,6 @@ import {
   ListedBuildDTO,
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
-  mapDatabaseBuildToListedBuildDTO,
   type BuildStatusDB,
   type RunningBuildStatusDTO,
 } from '../models/builds.models'
@@ -20,27 +20,31 @@ function isUUID(value: string): boolean {
   return z.uuid().safeParse(value).success
 }
 
-async function resolveTemplateId(
-  templateIdOrAlias: string,
-  teamId: string
-): Promise<string | null> {
-  const { data: envById } = await supabaseAdmin
-    .from('envs')
-    .select('id')
-    .eq('id', templateIdOrAlias)
-    .eq('team_id', teamId)
-    .maybeSingle()
+const CURSOR_SEPARATOR = '|'
 
-  if (envById) return envById.id
+function decodeCursor(cursor?: string): {
+  cursorCreatedAt: string | null
+  cursorId: string | null
+} {
+  if (!cursor) {
+    return { cursorCreatedAt: null, cursorId: null }
+  }
 
-  const { data: envByAlias } = await supabaseAdmin
-    .from('env_aliases')
-    .select('env_id, envs!inner(team_id)')
-    .eq('alias', templateIdOrAlias)
-    .eq('envs.team_id', teamId)
-    .maybeSingle()
+  // Backward-compatible with old cursor format (created_at only)
+  if (!cursor.includes(CURSOR_SEPARATOR)) {
+    return { cursorCreatedAt: cursor, cursorId: null }
+  }
 
-  return envByAlias?.env_id ?? null
+  const [cursorCreatedAtRaw, cursorIdRaw] = cursor.split(CURSOR_SEPARATOR, 2)
+
+  return {
+    cursorCreatedAt: cursorCreatedAtRaw || null,
+    cursorId: cursorIdRaw && isUUID(cursorIdRaw) ? cursorIdRaw : null,
+  }
+}
+
+function encodeCursor(createdAt: string, id: string): string {
+  return `${createdAt}${CURSOR_SEPARATOR}${id}`
 }
 
 // list builds
@@ -55,6 +59,24 @@ interface ListBuildsResult {
   nextCursor: string | null
 }
 
+type ListTeamBuildsRpcRow =
+  Database['public']['Functions']['list_team_builds_rpc']['Returns'][number]
+
+function mapRpcBuildToListedBuildDTO(build: ListTeamBuildsRpcRow): ListedBuildDTO {
+  return {
+    id: build.id,
+    template: build.template_alias ?? build.template_id,
+    templateId: build.template_id,
+    status: mapDatabaseBuildStatusToBuildStatusDTO(build.status as BuildStatusDB),
+    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
+      build.status,
+      build.reason
+    ),
+    createdAt: new Date(build.created_at).getTime(),
+    finishedAt: build.finished_at ? new Date(build.finished_at).getTime() : null,
+  }
+}
+
 async function listBuilds(
   teamId: string,
   buildIdOrTemplate?: string,
@@ -62,55 +84,19 @@ async function listBuilds(
   options: ListBuildsOptions = {}
 ): Promise<ListBuildsResult> {
   const limit = options.limit ?? 50
+  const { cursorCreatedAt, cursorId } = decodeCursor(options.cursor)
 
-  let query = supabaseAdmin
-    .from('env_builds')
-    .select(
-      `
-      id,
-      env_id,
-      status,
-      reason,
-      created_at,
-      finished_at,
-      envs!inner(
-        id,
-        team_id,
-        env_aliases(alias)
-      )
-    `
-    )
-    .eq('envs.team_id', teamId)
-    .in('status', statuses)
-    .order('created_at', { ascending: false })
-
-  if (buildIdOrTemplate) {
-    const resolvedEnvId = await resolveTemplateId(buildIdOrTemplate, teamId)
-    const isBuildUUID = isUUID(buildIdOrTemplate)
-
-    if (!resolvedEnvId && !isBuildUUID) {
-      return {
-        data: [],
-        nextCursor: null,
-      }
+  const { data: rawBuilds, error } = await supabaseAdmin.rpc(
+    'list_team_builds_rpc',
+    {
+      p_team_id: teamId,
+      p_statuses: statuses,
+      p_limit: limit,
+      p_cursor_created_at: cursorCreatedAt ?? undefined,
+      p_cursor_id: cursorId ?? undefined,
+      p_build_id_or_template: buildIdOrTemplate?.trim() || undefined,
     }
-
-    if (resolvedEnvId && isBuildUUID) {
-      query = query.or(`env_id.eq.${resolvedEnvId},id.eq.${buildIdOrTemplate}`)
-    } else if (resolvedEnvId) {
-      query = query.eq('env_id', resolvedEnvId)
-    } else if (isBuildUUID) {
-      query = query.eq('id', buildIdOrTemplate)
-    }
-  }
-
-  if (options.cursor) {
-    query = query.lt('created_at', options.cursor)
-  }
-
-  query = query.limit(limit + 1)
-
-  const { data: rawBuilds, error } = await query
+  )
 
   if (error) {
     throw error
@@ -127,9 +113,12 @@ async function listBuilds(
   const trimmedBuilds = hasMore ? rawBuilds.slice(0, limit) : rawBuilds
 
   return {
-    data: trimmedBuilds.map(mapDatabaseBuildToListedBuildDTO),
+    data: trimmedBuilds.map(mapRpcBuildToListedBuildDTO),
     nextCursor: hasMore
-      ? trimmedBuilds[trimmedBuilds.length - 1]!.created_at
+      ? encodeCursor(
+          trimmedBuilds[trimmedBuilds.length - 1]!.created_at,
+          trimmedBuilds[trimmedBuilds.length - 1]!.id
+        )
       : null,
   }
 }

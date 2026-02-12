@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "10.2.0 (e07807d)"
+    PostgrestVersion: '10.2.0 (e07807d)'
   }
   public: {
     Tables: {
@@ -71,11 +71,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "access_tokens_users_access_tokens"
-            columns: ["user_id"]
+            foreignKeyName: 'access_tokens_users_access_tokens'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -127,25 +127,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "addons_teams_addons"
-            columns: ["team_id"]
+            foreignKeyName: 'addons_teams_addons'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "team_limits"
-            referencedColumns: ["id"]
+            referencedRelation: 'team_limits'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "addons_teams_addons"
-            columns: ["team_id"]
+            foreignKeyName: 'addons_teams_addons'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "addons_users_addons"
-            columns: ["added_by"]
+            foreignKeyName: 'addons_users_addons'
+            columns: ['added_by']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -197,11 +197,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "env_aliases_envs_env_aliases"
-            columns: ["env_id"]
+            foreignKeyName: 'env_aliases_envs_env_aliases'
+            columns: ['env_id']
             isOneToOne: false
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
+            referencedRelation: 'envs'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -232,18 +232,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_env_build_assignments_build"
-            columns: ["build_id"]
+            foreignKeyName: 'fk_env_build_assignments_build'
+            columns: ['build_id']
             isOneToOne: false
-            referencedRelation: "env_builds"
-            referencedColumns: ["id"]
+            referencedRelation: 'env_builds'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "fk_env_build_assignments_env"
-            columns: ["env_id"]
+            foreignKeyName: 'fk_env_build_assignments_env'
+            columns: ['env_id']
             isOneToOne: false
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
+            referencedRelation: 'envs'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -328,11 +328,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "env_builds_envs_builds"
-            columns: ["env_id"]
+            foreignKeyName: 'env_builds_envs_builds'
+            columns: ['env_id']
             isOneToOne: false
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
+            referencedRelation: 'envs'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -351,11 +351,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "env_defaults_env_id_fkey"
-            columns: ["env_id"]
+            foreignKeyName: 'env_defaults_env_id_fkey'
+            columns: ['env_id']
             isOneToOne: true
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
+            referencedRelation: 'envs'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -398,32 +398,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "envs_cluster_id_fkey"
-            columns: ["cluster_id"]
+            foreignKeyName: 'envs_cluster_id_fkey'
+            columns: ['cluster_id']
             isOneToOne: false
-            referencedRelation: "clusters"
-            referencedColumns: ["id"]
+            referencedRelation: 'clusters'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "envs_teams_envs"
-            columns: ["team_id"]
+            foreignKeyName: 'envs_teams_envs'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "team_limits"
-            referencedColumns: ["id"]
+            referencedRelation: 'team_limits'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "envs_teams_envs"
-            columns: ["team_id"]
+            foreignKeyName: 'envs_teams_envs'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "envs_users_created_envs"
-            columns: ["created_by"]
+            foreignKeyName: 'envs_users_created_envs'
+            columns: ['created_by']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -451,11 +451,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "feedback_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: 'feedback_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -507,32 +507,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_snapshots_team"
-            columns: ["team_id"]
+            foreignKeyName: 'fk_snapshots_team'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "team_limits"
-            referencedColumns: ["id"]
+            referencedRelation: 'team_limits'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "fk_snapshots_team"
-            columns: ["team_id"]
+            foreignKeyName: 'fk_snapshots_team'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "snapshots_envs_base_env_id"
-            columns: ["base_env_id"]
+            foreignKeyName: 'snapshots_envs_base_env_id'
+            columns: ['base_env_id']
             isOneToOne: false
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
+            referencedRelation: 'envs'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "snapshots_envs_env_id"
-            columns: ["env_id"]
+            foreignKeyName: 'snapshots_envs_env_id'
+            columns: ['env_id']
             isOneToOne: false
-            referencedRelation: "envs"
-            referencedColumns: ["id"]
+            referencedRelation: 'envs'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -581,25 +581,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "team_api_keys_teams_team_api_keys"
-            columns: ["team_id"]
+            foreignKeyName: 'team_api_keys_teams_team_api_keys'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "team_limits"
-            referencedColumns: ["id"]
+            referencedRelation: 'team_limits'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "team_api_keys_teams_team_api_keys"
-            columns: ["team_id"]
+            foreignKeyName: 'team_api_keys_teams_team_api_keys'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "team_api_keys_users_created_api_keys"
-            columns: ["created_by"]
+            foreignKeyName: 'team_api_keys_users_created_api_keys'
+            columns: ['created_by']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -648,18 +648,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "teams_cluster_id_fkey"
-            columns: ["cluster_id"]
+            foreignKeyName: 'teams_cluster_id_fkey'
+            columns: ['cluster_id']
             isOneToOne: false
-            referencedRelation: "clusters"
-            referencedColumns: ["id"]
+            referencedRelation: 'clusters'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "teams_tiers_teams"
-            columns: ["tier"]
+            foreignKeyName: 'teams_tiers_teams'
+            columns: ['tier']
             isOneToOne: false
-            referencedRelation: "tiers"
-            referencedColumns: ["id"]
+            referencedRelation: 'tiers'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -720,11 +720,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "users_id_fkey"
-            columns: ["id"]
+            foreignKeyName: 'users_id_fkey'
+            columns: ['id']
             isOneToOne: true
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -755,32 +755,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "users_teams_added_by_user"
-            columns: ["added_by"]
+            foreignKeyName: 'users_teams_added_by_user'
+            columns: ['added_by']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "users_teams_teams_teams"
-            columns: ["team_id"]
+            foreignKeyName: 'users_teams_teams_teams'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "team_limits"
-            referencedColumns: ["id"]
+            referencedRelation: 'team_limits'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "users_teams_teams_teams"
-            columns: ["team_id"]
+            foreignKeyName: 'users_teams_teams_teams'
+            columns: ['team_id']
             isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "users_teams_users_users"
-            columns: ["user_id"]
+            foreignKeyName: 'users_teams_users_users'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -823,6 +823,25 @@ export type Database = {
         Args: { team_id: string; user_id: string }
         Returns: undefined
       }
+      list_team_builds_rpc: {
+        Args: {
+          p_build_id_or_template?: string
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_statuses?: string[]
+          p_team_id: string
+        }
+        Returns: {
+          created_at: string
+          finished_at: string
+          id: string
+          reason: Json
+          status: string
+          template_alias: string
+          template_id: string
+        }[]
+      }
       generate_access_token: { Args: never; Returns: string }
       generate_sandbox_video_stream_token: { Args: never; Returns: string }
       generate_team_api_key: { Args: never; Returns: string }
@@ -835,10 +854,10 @@ export type Database = {
       normalize_email: { Args: { email: string }; Returns: string }
       temp_create_access_token: { Args: never; Returns: string }
       try_cast_uuid: { Args: { p_value: string }; Returns: string }
-      unaccent: { Args: { "": string }; Returns: string }
+      unaccent: { Args: { '': string }; Returns: string }
     }
     Enums: {
-      deployment_state: "generating" | "deploying" | "finished" | "error"
+      deployment_state: 'generating' | 'deploying' | 'finished' | 'error'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -846,33 +865,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
+        DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] &
+        DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -881,23 +900,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -906,23 +925,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -931,42 +950,42 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+    | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      deployment_state: ["generating", "deploying", "finished", "error"],
+      deployment_state: ['generating', 'deploying', 'finished', 'error'],
     },
   },
 } as const
