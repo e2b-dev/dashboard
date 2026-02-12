@@ -26,6 +26,7 @@
     "scripts:check-e2e-env": "bun scripts/check-e2e-env.ts",
     "scripts:check-all-env": "bun scripts:check-app-env && bun scripts:check-e2e-env",
     "scripts:create-migration": "bun scripts/create-migration.ts",
+    "scripts:apply-migrations": "bun scripts/apply-migrations.ts",
     "<<<<<<< Development": "",
     "shad": "bunx shadcn@canary",
     "test:dev:traffic": "vitest run src/__test__/development/traffic.test.ts",
