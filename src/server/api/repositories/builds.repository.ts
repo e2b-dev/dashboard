@@ -170,6 +170,8 @@ export async function getBuildInfo(buildId: string, teamId: string) {
     .select('env_id, envs!inner(team_id)')
     .eq('build_id', buildId)
     .eq('envs.team_id', teamId)
+    .order('created_at', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false })
     .limit(1)
     .maybeSingle()
 
