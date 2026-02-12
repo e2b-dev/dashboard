@@ -21,6 +21,16 @@ function isUUID(value: string): boolean {
 }
 
 const CURSOR_SEPARATOR = '|'
+const LIST_BUILDS_DEFAULT_LIMIT = 50
+const LIST_BUILDS_MIN_LIMIT = 1
+const LIST_BUILDS_MAX_LIMIT = 100
+
+function normalizeListBuildsLimit(limit?: number): number {
+  return Math.max(
+    LIST_BUILDS_MIN_LIMIT,
+    Math.min(limit ?? LIST_BUILDS_DEFAULT_LIMIT, LIST_BUILDS_MAX_LIMIT)
+  )
+}
 
 function decodeCursor(cursor?: string): {
   cursorCreatedAt: string | null
@@ -91,7 +101,7 @@ async function listBuilds(
   statuses: BuildStatusDB[] = ['waiting', 'building', 'uploaded', 'failed'],
   options: ListBuildsOptions = {}
 ): Promise<ListBuildsResult> {
-  const limit = options.limit ?? 50
+  const limit = normalizeListBuildsLimit(options.limit)
   const { cursorCreatedAt, cursorId } = decodeCursor(options.cursor)
 
   const { data: rawBuilds, error } = await supabaseAdmin.rpc(
