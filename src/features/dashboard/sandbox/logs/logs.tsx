@@ -28,8 +28,9 @@ import { LogLevel, Message, Timestamp } from './logs-cells'
 import { useSandboxLogs } from './use-sandbox-logs'
 
 // column widths are calculated as max width of the content + padding
-const COLUMN_WIDTHS_PX = { timestamp: 142 + 16, level: 48 + 16 } as const
+const COLUMN_WIDTHS_PX = { timestamp: 148 + 16, level: 48 + 16 } as const
 const ROW_HEIGHT_PX = 26
+const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 
@@ -228,13 +229,13 @@ function VirtualizedLogsBody({
 
   const showLoadMoreStatusRow = hasNextPage || isFetchingNextPage
   const logsStartIndex = showLoadMoreStatusRow ? 1 : 0
-  const spacerRowIndex = logsStartIndex + logs.length
-  const liveStatusRowIndex = spacerRowIndex + 1
-  const virtualRowsCount = logs.length + (showLoadMoreStatusRow ? 1 : 0) + 2
+  const liveStatusRowIndex = logsStartIndex + logs.length
+  const virtualRowsCount = logs.length + (showLoadMoreStatusRow ? 1 : 0) + 1
 
   const virtualizer = useVirtualizer({
     count: virtualRowsCount,
-    estimateSize: () => ROW_HEIGHT_PX,
+    estimateSize: (index) =>
+      index === liveStatusRowIndex ? LIVE_STATUS_ROW_HEIGHT_PX : ROW_HEIGHT_PX,
     getScrollElement: () => scrollContainerElement,
     overscan: VIRTUAL_OVERSCAN,
     paddingStart: 8,
@@ -243,7 +244,7 @@ function VirtualizedLogsBody({
   const scrollToLatestLog = useCallback(() => {
     if (logs.length === 0) return
     virtualizer.scrollToIndex(liveStatusRowIndex, { align: 'end' })
-  }, [logs.length, liveStatusRowIndex, logsStartIndex, virtualizer])
+  }, [logs.length, liveStatusRowIndex, virtualizer])
 
   useAutoScrollToBottom({
     scrollContainerElement,
@@ -290,18 +291,6 @@ function VirtualizedLogsBody({
           )
         }
 
-        const isSpacerRow = virtualRow.index === spacerRowIndex
-
-        if (isSpacerRow) {
-          return (
-            <SpacerRow
-              key="live-status-spacer-row"
-              virtualRow={virtualRow}
-              virtualizer={virtualizer}
-            />
-          )
-        }
-
         const isLiveStatusRow = virtualRow.index === liveStatusRowIndex
 
         if (isLiveStatusRow) {
@@ -321,6 +310,7 @@ function VirtualizedLogsBody({
           <LogRow
             key={virtualRow.index}
             log={logs[logIndex]!}
+            logIndex={logIndex}
             virtualRow={virtualRow}
             virtualizer={virtualizer}
           />
@@ -453,15 +443,26 @@ function useAutoScrollToBottom({
 
 interface LogRowProps {
   log: SandboxLogDTO
+  logIndex: number
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
 }
 
-function LogRow({ log, virtualRow, virtualizer }: LogRowProps) {
+function LogRow({ log, logIndex, virtualRow, virtualizer }: LogRowProps) {
+  const logLevelBorderClass: Record<SandboxLogDTO['level'], string> = {
+    debug: '',
+    info: 'border-accent-info-highlight!',
+    warn: 'border-accent-warning-highlight!',
+    error: 'border-accent-error-highlight!',
+  }
+
   return (
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => virtualizer.measureElement(node)}
+      className={`${logIndex % 2 === 1 ? 'bg-bg-1 ' : ''}border-l ${
+        logLevelBorderClass[log.level]
+      }`}
       style={{
         display: 'flex',
         position: 'absolute',
@@ -472,7 +473,7 @@ function LogRow({ log, virtualRow, virtualizer }: LogRowProps) {
       }}
     >
       <TableCell
-        className="py-0 px-0 pr-4"
+        className="py-0 pr-4 pl-1.5!"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -516,7 +517,6 @@ function StatusRow({
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => virtualizer.measureElement(node)}
-      className="animate-pulse"
       style={{
         display: 'flex',
         position: 'absolute',
@@ -528,19 +528,22 @@ function StatusRow({
     >
       <TableCell
         colSpan={3}
-        className="py-0 w-full"
+        className="py-0 w-full pl-1.5!"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'start',
         }}
       >
-        <span className="prose-body text-fg-tertiary pb-1">
+        <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (
-            <span className="inline-flex gap-1">
-              Loading more logs
-              <Loader variant="dots" />
-            </span>
+            <>
+              <span className="text-fg-secondary">[</span>
+              <span className="text-accent-info-highlight">loading</span>
+              <span className="text-fg-secondary">]</span>
+              <span>retrieving older logs</span>
+              <Loader variant="dots" size="sm" className="font-mono" />
+            </>
           ) : (
             'Scroll to load more'
           )}
@@ -554,30 +557,6 @@ interface LiveStatusRowProps {
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
   isRunning: boolean
-}
-
-interface SpacerRowProps {
-  virtualRow: VirtualItem
-  virtualizer: Virtualizer<HTMLDivElement, Element>
-}
-
-function SpacerRow({ virtualRow, virtualizer }: SpacerRowProps) {
-  return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      style={{
-        display: 'flex',
-        position: 'absolute',
-        left: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        minWidth: '100%',
-        height: ROW_HEIGHT_PX,
-      }}
-    >
-      <TableCell colSpan={3} className="py-0 w-full" />
-    </TableRow>
-  )
 }
 
 function LiveStatusRow({
@@ -595,12 +574,12 @@ function LiveStatusRow({
         left: 0,
         transform: `translateY(${virtualRow.start}px)`,
         minWidth: '100%',
-        height: ROW_HEIGHT_PX,
+        height: LIVE_STATUS_ROW_HEIGHT_PX,
       }}
     >
       <TableCell
         colSpan={3}
-        className="py-0 w-full"
+        className="py-0 w-full pl-1.5!"
         style={{
           display: 'flex',
           alignItems: 'center',

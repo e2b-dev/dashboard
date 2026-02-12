@@ -45,6 +45,14 @@ export default function SandboxLayout({
         headerAccessory={tabsHeaderAccessory}
       >
         <DashboardTab
+          id="logs"
+          label="Logs"
+          className="flex flex-col max-h-full"
+          icon={<ListIcon className="size-4" />}
+        >
+          {children}
+        </DashboardTab>
+        <DashboardTab
           id="filesystem"
           label="Filesystem"
           className="flex flex-col max-h-full"
@@ -58,14 +66,6 @@ export default function SandboxLayout({
               teamIdOrSlug={teamIdOrSlug}
             />
           )}
-        </DashboardTab>
-        <DashboardTab
-          id="logs"
-          label="Logs"
-          className="flex flex-col max-h-full"
-          icon={<ListIcon className="size-4" />}
-        >
-          {children}
         </DashboardTab>
       </DashboardTabs>
     </div>
