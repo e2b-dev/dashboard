@@ -157,4 +157,50 @@ $function$;
 REVOKE ALL ON FUNCTION public.list_team_builds_rpc(uuid, text[], integer, timestamptz, uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.list_team_builds_rpc(uuid, text[], integer, timestamptz, uuid, text) TO service_role;
 
+CREATE OR REPLACE FUNCTION public.list_team_running_build_statuses_rpc(
+  p_team_id uuid,
+  p_build_ids uuid[]
+)
+RETURNS TABLE (
+  id uuid,
+  status text,
+  reason jsonb,
+  finished_at timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = pg_catalog, public
+AS $function$
+WITH requested_builds AS (
+  SELECT DISTINCT requested.build_id
+  FROM UNNEST(COALESCE(p_build_ids, ARRAY[]::uuid[])) AS requested(build_id)
+),
+authorized_builds AS (
+  SELECT DISTINCT ON (a.build_id)
+    a.build_id
+  FROM requested_builds r
+  JOIN public.env_build_assignments a
+    ON a.build_id = r.build_id
+  JOIN public.envs e
+    ON e.id = a.env_id
+  WHERE e.team_id = p_team_id
+  ORDER BY
+    a.build_id ASC,
+    a.created_at DESC NULLS LAST,
+    a.id DESC
+)
+SELECT
+  b.id,
+  b.status,
+  b.reason::jsonb AS reason,
+  b.finished_at
+FROM authorized_builds ab
+JOIN public.env_builds b
+  ON b.id = ab.build_id;
+$function$;
+
+REVOKE ALL ON FUNCTION public.list_team_running_build_statuses_rpc(uuid, uuid[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.list_team_running_build_statuses_rpc(uuid, uuid[]) TO service_role;
+
 COMMIT;

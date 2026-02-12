@@ -61,19 +61,27 @@ interface ListBuildsResult {
 
 type ListTeamBuildsRpcRow =
   Database['public']['Functions']['list_team_builds_rpc']['Returns'][number]
+type ListTeamRunningBuildStatusesRpcRow =
+  Database['public']['Functions']['list_team_running_build_statuses_rpc']['Returns'][number]
 
-function mapRpcBuildToListedBuildDTO(build: ListTeamBuildsRpcRow): ListedBuildDTO {
+function mapRpcBuildToListedBuildDTO(
+  build: ListTeamBuildsRpcRow
+): ListedBuildDTO {
   return {
     id: build.id,
     template: build.template_alias ?? build.template_id,
     templateId: build.template_id,
-    status: mapDatabaseBuildStatusToBuildStatusDTO(build.status as BuildStatusDB),
+    status: mapDatabaseBuildStatusToBuildStatusDTO(
+      build.status as BuildStatusDB
+    ),
     statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
       build.status,
       build.reason
     ),
     createdAt: new Date(build.created_at).getTime(),
-    finishedAt: build.finished_at ? new Date(build.finished_at).getTime() : null,
+    finishedAt: build.finished_at
+      ? new Date(build.finished_at).getTime()
+      : null,
   }
 }
 
@@ -133,25 +141,23 @@ async function getRunningStatuses(
     return []
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('env_builds')
-    .select('id, status, reason, finished_at, envs!inner(team_id)')
-    .eq('envs.team_id', teamId)
-    .in('id', buildIds)
+  const { data, error } = await supabaseAdmin.rpc(
+    'list_team_running_build_statuses_rpc',
+    {
+      p_team_id: teamId,
+      p_build_ids: buildIds,
+    }
+  )
 
   if (error) throw error
 
-  return (data ?? []).map((build) => ({
-    id: build.id,
-    status: mapDatabaseBuildStatusToBuildStatusDTO(
-      build.status as BuildStatusDB
-    ),
-    finishedAt: build.finished_at
-      ? new Date(build.finished_at).getTime()
-      : null,
+  return ((data ?? []) as ListTeamRunningBuildStatusesRpcRow[]).map((row) => ({
+    id: row.id,
+    status: mapDatabaseBuildStatusToBuildStatusDTO(row.status as BuildStatusDB),
+    finishedAt: row.finished_at ? new Date(row.finished_at).getTime() : null,
     statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
-      build.status,
-      build.reason
+      row.status,
+      row.reason
     ),
   }))
 }
@@ -159,26 +165,25 @@ async function getRunningStatuses(
 // get build details
 
 export async function getBuildInfo(buildId: string, teamId: string) {
-  const { data, error } = await supabaseAdmin
-    .from('env_builds')
-    .select(
-      'created_at, finished_at, status, reason, envs!inner(team_id, env_aliases(alias))'
-    )
-    .eq('id', buildId)
+  const { data: assignment, error: assignmentError } = await supabaseAdmin
+    .from('env_build_assignments')
+    .select('env_id, envs!inner(team_id)')
+    .eq('build_id', buildId)
     .eq('envs.team_id', teamId)
+    .limit(1)
     .maybeSingle()
 
-  if (error) {
+  if (assignmentError) {
     l.error(
       {
         key: 'repositories:builds:get_build_info:supabase_error',
-        error: error,
+        error: assignmentError,
         team_id: teamId,
         context: {
           build_id: buildId,
         },
       },
-      `failed to query env_builds: ${error?.message || 'Unknown error'}`
+      `failed to query env_build_assignments: ${assignmentError?.message || 'Unknown error'}`
     )
 
     throw new TRPCError({
@@ -187,14 +192,33 @@ export async function getBuildInfo(buildId: string, teamId: string) {
     })
   }
 
-  if (!data) {
+  if (!assignment) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: "Build not found or you don't have access to it",
     })
   }
 
-  const alias = data.envs.env_aliases?.[0]?.alias
+  const { data, error } = await supabaseAdmin
+    .from('env_builds')
+    .select('created_at, finished_at, status, reason')
+    .eq('id', buildId)
+    .maybeSingle()
+
+  if (error || !data) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: "Build not found or you don't have access to it",
+    })
+  }
+
+  const { data: aliases } = await supabaseAdmin
+    .from('env_aliases')
+    .select('alias')
+    .eq('env_id', assignment.env_id)
+    .limit(1)
+
+  const alias = aliases?.[0]?.alias
 
   return {
     alias,

@@ -834,12 +834,21 @@ export type Database = {
         }
         Returns: {
           created_at: string
-          finished_at: string | null
+          finished_at: string
           id: string
           reason: Json
           status: string
-          template_alias: string | null
+          template_alias: string
           template_id: string
+        }[]
+      }
+      list_team_running_build_statuses_rpc: {
+        Args: { p_build_ids: string[]; p_team_id: string }
+        Returns: {
+          finished_at: string
+          id: string
+          reason: Json
+          status: string
         }[]
       }
       generate_access_token: { Args: never; Returns: string }
