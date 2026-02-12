@@ -134,9 +134,15 @@ SELECT
   d.status,
   d.reason,
   d.created_at,
-  d.finished_at,
+  CASE
+    WHEN d.finished_at IS NULL THEN NULL::timestamptz
+    ELSE d.finished_at
+  END AS finished_at,
   d.template_id,
-  ea.alias AS template_alias
+  CASE
+    WHEN ea.alias IS NULL THEN NULL::text
+    ELSE ea.alias
+  END AS template_alias
 FROM page_data d
 LEFT JOIN LATERAL (
   SELECT x.alias
