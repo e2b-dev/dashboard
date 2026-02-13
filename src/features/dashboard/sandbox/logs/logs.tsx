@@ -1,5 +1,6 @@
 'use client'
 
+import { LOG_RETENTION_MS } from '@/configs/logs'
 import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -33,10 +34,21 @@ const ROW_HEIGHT_PX = 26
 const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
+const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
 
 interface LogsProps {
   teamIdOrSlug: string
   sandboxId: string
+}
+
+function checkIfSandboxStillHasLogs(startedAtIso: string) {
+  const startedAtUnix = new Date(startedAtIso).getTime()
+
+  if (Number.isNaN(startedAtUnix)) {
+    return true
+  }
+
+  return Date.now() - startedAtUnix < LOG_RETENTION_MS
 }
 
 export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
@@ -57,11 +69,14 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
     )
   }
 
+  const hasRetainedLogs = checkIfSandboxStillHasLogs(sandboxInfo.startedAt)
+
   return (
     <LogsContent
       teamIdOrSlug={teamIdOrSlug}
       sandboxId={sandboxId}
       isRunning={isRunning}
+      hasRetainedLogs={hasRetainedLogs}
     />
   )
 }
@@ -70,15 +85,23 @@ interface LogsContentProps {
   teamIdOrSlug: string
   sandboxId: string
   isRunning: boolean
+  hasRetainedLogs: boolean
 }
 
-function LogsContent({ teamIdOrSlug, sandboxId, isRunning }: LogsContentProps) {
+function LogsContent({
+  teamIdOrSlug,
+  sandboxId,
+  isRunning,
+  hasRetainedLogs,
+}: LogsContentProps) {
   const [scrollContainerElement, setScrollContainerElement] =
     useState<HTMLDivElement | null>(null)
 
   const {
     logs,
     isInitialized,
+    hasCompletedInitialLoad,
+    initialLoadError,
     hasNextPage,
     isFetchingNextPage,
     isFetching,
@@ -90,8 +113,8 @@ function LogsContent({ teamIdOrSlug, sandboxId, isRunning }: LogsContentProps) {
   })
 
   const hasLogs = logs.length > 0
-  const showLoader = isFetching && !hasLogs
-  const showEmpty = !isFetching && !hasLogs
+  const showLoader = (!hasCompletedInitialLoad || isFetching) && !hasLogs
+  const showEmpty = hasCompletedInitialLoad && !isFetching && !hasLogs
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -109,7 +132,12 @@ function LogsContent({ teamIdOrSlug, sandboxId, isRunning }: LogsContentProps) {
           <LogsTableHeader />
 
           {showLoader && <LoaderBody />}
-          {showEmpty && <EmptyBody />}
+          {showEmpty && (
+            <EmptyBody
+              hasRetainedLogs={hasRetainedLogs}
+              errorMessage={initialLoadError}
+            />
+          )}
           {hasLogs && scrollContainerElement && (
             <VirtualizedLogsBody
               logs={logs}
@@ -172,7 +200,12 @@ function LoaderBody() {
   )
 }
 
-function EmptyBody() {
+interface EmptyBodyProps {
+  hasRetainedLogs: boolean
+  errorMessage: string | null
+}
+
+function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
   return (
     <TableBody style={{ display: 'grid' }}>
       <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
@@ -182,9 +215,18 @@ function EmptyBody() {
               <ListIcon className="size-5" />
               <p className="prose-body-highlight">No logs found</p>
             </div>
-            <p className="text-fg-tertiary text-sm">
-              Sandbox logs will appear here once available.
-            </p>
+            {errorMessage ? (
+              <p className="text-fg-tertiary text-sm">{errorMessage}</p>
+            ) : !hasRetainedLogs ? (
+              <p className="text-fg-tertiary text-sm">
+                This sandbox has exceeded the {LOG_RETENTION_DAYS} day retention
+                limit.
+              </p>
+            ) : (
+              <p className="text-fg-tertiary text-sm">
+                Sandbox logs will appear here once available.
+              </p>
+            )}
           </div>
         </TableCell>
       </TableRow>
@@ -305,11 +347,12 @@ function VirtualizedLogsBody({
         }
 
         const logIndex = virtualRow.index - logsStartIndex
+        const log = logs[logIndex]!
 
         return (
           <LogRow
-            key={virtualRow.index}
-            log={logs[logIndex]!}
+            key={virtualRow.key}
+            log={log}
             logIndex={logIndex}
             virtualRow={virtualRow}
             virtualizer={virtualizer}

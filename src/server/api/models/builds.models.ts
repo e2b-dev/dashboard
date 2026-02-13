@@ -1,4 +1,4 @@
-import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
+import { LOG_RETENTION_MS } from '@/configs/logs'
 import type { components } from '@/types/infra-api.types'
 import z from 'zod'
 

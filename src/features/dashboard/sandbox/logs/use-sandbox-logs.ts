@@ -33,6 +33,8 @@ export function useSandboxLogs({
 
   const logs = useStore(store, (s) => s.logs)
   const isInitialized = useStore(store, (s) => s.isInitialized)
+  const hasCompletedInitialLoad = useStore(store, (s) => s.hasCompletedInitialLoad)
+  const initialLoadError = useStore(store, (s) => s.initialLoadError)
   const hasMoreBackwards = useStore(store, (s) => s.hasMoreBackwards)
   const isLoadingBackwards = useStore(store, (s) => s.isLoadingBackwards)
   const isLoadingForwards = useStore(store, (s) => s.isLoadingForwards)
@@ -75,6 +77,8 @@ export function useSandboxLogs({
   return {
     logs,
     isInitialized,
+    hasCompletedInitialLoad,
+    initialLoadError,
     hasNextPage: hasMoreBackwards,
     isFetchingNextPage: isLoadingBackwards,
     isRefetchingForwardLogs: isLoadingForwards || isPolling,

@@ -5,8 +5,6 @@ import type { useTRPCClient } from '@/trpc/client'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
-const FORWARD_CURSOR_PADDING_MS = 1
-
 interface SandboxLogsParams {
   teamIdOrSlug: string
   sandboxId: string
@@ -20,7 +18,10 @@ interface SandboxLogsState {
   isLoadingBackwards: boolean
   isLoadingForwards: boolean
   backwardsCursor: number | null
+  forwardCursor: number | null
   isInitialized: boolean
+  hasCompletedInitialLoad: boolean
+  initialLoadError: string | null
 
   _trpcClient: TRPCClient | null
   _params: SandboxLogsParams | null
@@ -43,25 +44,16 @@ export type SandboxLogsStoreData = SandboxLogsState &
   SandboxLogsMutations &
   SandboxLogsComputed
 
-function getLogKey(log: SandboxLogDTO): string {
-  return `${log.timestampUnix}:${log.level}:${log.message}`
-}
-
-function deduplicateLogs(
-  existingLogs: SandboxLogDTO[],
-  newLogs: SandboxLogDTO[]
-): SandboxLogDTO[] {
-  const existingKeys = new Set(existingLogs.map(getLogKey))
-  return newLogs.filter((log) => !existingKeys.has(getLogKey(log)))
-}
-
 const initialState: SandboxLogsState = {
   logs: [],
   hasMoreBackwards: true,
   isLoadingBackwards: false,
   isLoadingForwards: false,
   backwardsCursor: null,
+  forwardCursor: null,
   isInitialized: false,
+  hasCompletedInitialLoad: false,
+  initialLoadError: null,
   _trpcClient: null,
   _params: null,
   _initVersion: 0,
@@ -79,7 +71,10 @@ export const createSandboxLogsStore = () =>
           state.isLoadingBackwards = false
           state.isLoadingForwards = false
           state.backwardsCursor = null
+          state.forwardCursor = null
           state.isInitialized = false
+          state.hasCompletedInitialLoad = false
+          state.initialLoadError = null
         })
       },
 
@@ -102,14 +97,17 @@ export const createSandboxLogsStore = () =>
           s._trpcClient = trpcClient
           s._params = params
           s.isLoadingBackwards = true
+          s.initialLoadError = null
           s._initVersion = requestVersion
         })
 
         try {
+          const initCursor = Date.now()
+
           const result = await trpcClient.sandbox.logsBackwards.query({
             teamIdOrSlug: params.teamIdOrSlug,
             sandboxId: params.sandboxId,
-            cursor: Date.now(),
+            cursor: initCursor,
           })
 
           // ignore stale response if a newer init was called
@@ -121,10 +119,13 @@ export const createSandboxLogsStore = () =>
             s.logs = result.logs
             s.hasMoreBackwards = result.nextCursor !== null
             s.backwardsCursor = result.nextCursor
+            s.forwardCursor = initCursor
             s.isLoadingBackwards = false
             s.isInitialized = true
+            s.hasCompletedInitialLoad = true
+            s.initialLoadError = null
           })
-        } catch {
+        } catch (error) {
           // ignore errors from stale requests
           if (get()._initVersion !== requestVersion) {
             return
@@ -132,6 +133,11 @@ export const createSandboxLogsStore = () =>
 
           set((s) => {
             s.isLoadingBackwards = false
+            s.hasCompletedInitialLoad = true
+            s.initialLoadError =
+              error instanceof Error
+                ? error.message
+                : 'Failed to load sandbox logs.'
           })
         }
       },
@@ -170,8 +176,7 @@ export const createSandboxLogsStore = () =>
           }
 
           set((s) => {
-            const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
-            s.logs = [...uniqueNewLogs, ...s.logs]
+            s.logs = [...result.logs, ...s.logs]
             s.hasMoreBackwards = result.nextCursor !== null
             s.backwardsCursor = result.nextCursor
             s.isLoadingBackwards = false
@@ -201,10 +206,7 @@ export const createSandboxLogsStore = () =>
         })
 
         try {
-          const newestTimestamp = state.getNewestTimestamp()
-          const cursor = newestTimestamp
-            ? newestTimestamp + FORWARD_CURSOR_PADDING_MS
-            : Date.now()
+          const cursor = state.forwardCursor ?? Date.now()
 
           const result = await state._trpcClient.sandbox.logsForward.query({
             teamIdOrSlug: state._params.teamIdOrSlug,
@@ -217,18 +219,17 @@ export const createSandboxLogsStore = () =>
             return { logsCount: 0 }
           }
 
-          let uniqueLogsCount = 0
+          const logsCount = result.logs.length
 
           set((s) => {
-            const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
-            uniqueLogsCount = uniqueNewLogs.length
-            if (uniqueLogsCount > 0) {
-              s.logs = [...s.logs, ...uniqueNewLogs]
+            if (logsCount > 0) {
+              s.logs = [...s.logs, ...result.logs]
             }
+            s.forwardCursor = result.nextCursor ?? cursor
             s.isLoadingForwards = false
           })
 
-          return { logsCount: uniqueLogsCount }
+          return { logsCount }
         } catch {
           if (get()._initVersion !== requestVersion) {
             return { logsCount: 0 }
