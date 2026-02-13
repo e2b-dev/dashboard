@@ -18,6 +18,7 @@ import {
   Virtualizer,
 } from '@tanstack/react-virtual'
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -35,6 +36,28 @@ const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
+const LOG_LEVEL_BORDER_CLASS: Record<SandboxLogDTO['level'], string> = {
+  debug: '',
+  info: 'border-accent-info-highlight!',
+  warn: 'border-accent-warning-highlight!',
+  error: 'border-accent-error-highlight!',
+}
+const STATUS_ROW_CELL_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'start',
+}
+
+function getVirtualRowStyle(virtualRow: VirtualItem, height: number): CSSProperties {
+  return {
+    display: 'flex',
+    position: 'absolute',
+    left: 0,
+    transform: `translateY(${virtualRow.start}px)`,
+    minWidth: '100%',
+    height,
+  }
+}
 
 interface LogsProps {
   teamIdOrSlug: string
@@ -253,7 +276,6 @@ function VirtualizedLogsBody({
   isInitialized,
   isRunning,
 }: VirtualizedLogsBodyProps) {
-  const tbodyRef = useRef<HTMLTableSectionElement>(null)
   const maxWidthRef = useRef<number>(0)
 
   useScrollLoadMore({
@@ -309,7 +331,6 @@ function VirtualizedLogsBody({
 
   return (
     <TableBody
-      ref={tbodyRef}
       className="[&_tr:last-child]:border-b-0 [&_tr]:border-b-0"
       style={{
         display: 'grid',
@@ -354,7 +375,7 @@ function VirtualizedLogsBody({
           <LogRow
             key={virtualRow.key}
             log={log}
-            logIndex={logIndex}
+            isZebraRow={logIndex % 2 === 1}
             virtualRow={virtualRow}
             virtualizer={virtualizer}
           />
@@ -388,7 +409,9 @@ function useScrollLoadMore({
       }
     }
 
-    scrollContainerElement.addEventListener('scroll', handleScroll)
+    scrollContainerElement.addEventListener('scroll', handleScroll, {
+      passive: true,
+    })
     return () =>
       scrollContainerElement.removeEventListener('scroll', handleScroll)
   }, [scrollContainerElement, hasNextPage, isFetchingNextPage, onLoadMore])
@@ -454,7 +477,9 @@ function useAutoScrollToBottom({
       isAutoScrollEnabledRef.current = distanceFromBottom < ROW_HEIGHT_PX * 2
     }
 
-    scrollContainerElement.addEventListener('scroll', handleScroll)
+    scrollContainerElement.addEventListener('scroll', handleScroll, {
+      passive: true,
+    })
     return () =>
       scrollContainerElement.removeEventListener('scroll', handleScroll)
   }, [scrollContainerElement])
@@ -503,34 +528,20 @@ function useAutoScrollToBottom({
 
 interface LogRowProps {
   log: SandboxLogDTO
-  logIndex: number
+  isZebraRow: boolean
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
 }
 
-function LogRow({ log, logIndex, virtualRow, virtualizer }: LogRowProps) {
-  const logLevelBorderClass: Record<SandboxLogDTO['level'], string> = {
-    debug: '',
-    info: 'border-accent-info-highlight!',
-    warn: 'border-accent-warning-highlight!',
-    error: 'border-accent-error-highlight!',
-  }
-
+function LogRow({ log, isZebraRow, virtualRow, virtualizer }: LogRowProps) {
   return (
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => virtualizer.measureElement(node)}
-      className={`${logIndex % 2 === 1 ? 'bg-bg-1 ' : ''}border-l ${
-        logLevelBorderClass[log.level]
+      className={`${isZebraRow ? 'bg-bg-1/80 ' : ''}border-l ${
+        LOG_LEVEL_BORDER_CLASS[log.level]
       }`}
-      style={{
-        display: 'flex',
-        position: 'absolute',
-        left: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        minWidth: '100%',
-        height: ROW_HEIGHT_PX,
-      }}
+      style={getVirtualRowStyle(virtualRow, ROW_HEIGHT_PX)}
     >
       <TableCell
         className="py-0 pr-4 pl-1.5!"
@@ -577,23 +588,12 @@ function StatusRow({
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => virtualizer.measureElement(node)}
-      style={{
-        display: 'flex',
-        position: 'absolute',
-        left: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        minWidth: '100%',
-        height: ROW_HEIGHT_PX,
-      }}
+      style={getVirtualRowStyle(virtualRow, ROW_HEIGHT_PX)}
     >
       <TableCell
         colSpan={3}
         className="py-0 w-full pl-1.5!"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'start',
-        }}
+        style={STATUS_ROW_CELL_STYLE}
       >
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (
@@ -628,23 +628,12 @@ function LiveStatusRow({
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => virtualizer.measureElement(node)}
-      style={{
-        display: 'flex',
-        position: 'absolute',
-        left: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        minWidth: '100%',
-        height: LIVE_STATUS_ROW_HEIGHT_PX,
-      }}
+      style={getVirtualRowStyle(virtualRow, LIVE_STATUS_ROW_HEIGHT_PX)}
     >
       <TableCell
         colSpan={3}
         className="py-0 w-full pl-1.5!"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'start',
-        }}
+        style={STATUS_ROW_CELL_STYLE}
       >
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           <span className="text-fg-secondary">[</span>

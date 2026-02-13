@@ -37,14 +37,7 @@ interface SandboxLogsMutations {
   reset: () => void
 }
 
-interface SandboxLogsComputed {
-  getNewestTimestamp: () => number | undefined
-  getOldestTimestamp: () => number | undefined
-}
-
-export type SandboxLogsStoreData = SandboxLogsState &
-  SandboxLogsMutations &
-  SandboxLogsComputed
+export type SandboxLogsStoreData = SandboxLogsState & SandboxLogsMutations
 
 function countLeadingAtTimestamp(logs: SandboxLogDTO[], timestamp: number) {
   let count = 0
@@ -202,7 +195,9 @@ export const createSandboxLogsStore = () =>
                 ? 0
                 : countLeadingAtTimestamp(result.logs, backwardsCursor)
             s.forwardCursor = initCursor
-            s.forwardSeenAtCursor = 0
+            // Initial backward snapshot can include logs exactly at initCursor.
+            // Track how many were already consumed so first forward poll does not replay them.
+            s.forwardSeenAtCursor = countTrailingAtTimestamp(result.logs, initCursor)
             s.isLoadingBackwards = false
             s.isInitialized = true
             s.hasCompletedInitialLoad = true
@@ -245,7 +240,7 @@ export const createSandboxLogsStore = () =>
 
         try {
           const cursor =
-            state.backwardsCursor ?? state.getOldestTimestamp() ?? Date.now()
+            state.backwardsCursor ?? state.logs[0]?.timestampUnix ?? Date.now()
 
           const result = await state._trpcClient.sandbox.logsBackwards.query({
             teamIdOrSlug: state._params.teamIdOrSlug,
@@ -356,16 +351,6 @@ export const createSandboxLogsStore = () =>
 
           return { logsCount: 0 }
         }
-      },
-
-      getNewestTimestamp: () => {
-        const state = get()
-        return state.logs[state.logs.length - 1]?.timestampUnix
-      },
-
-      getOldestTimestamp: () => {
-        const state = get()
-        return state.logs[0]?.timestampUnix
       },
     }))
   )

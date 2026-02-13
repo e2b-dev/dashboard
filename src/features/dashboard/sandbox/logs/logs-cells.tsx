@@ -1,12 +1,12 @@
-import { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
-import { Badge, BadgeProps } from '@/ui/primitives/badge'
+import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 
 interface LogLevelProps {
   level: SandboxLogDTO['level']
 }
 
-const mapLogLevelToBadgeProps: Record<SandboxLogDTO['level'], BadgeProps> = {
+const LOG_LEVEL_BADGE_PROPS: Record<SandboxLogDTO['level'], BadgeProps> = {
   debug: {
     variant: 'default',
   },
@@ -21,9 +21,21 @@ const mapLogLevelToBadgeProps: Record<SandboxLogDTO['level'], BadgeProps> = {
   },
 }
 
+const LOCAL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: '2-digit',
+})
+
+const LOCAL_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+
 export const LogLevel = ({ level }: LogLevelProps) => {
   return (
-    <Badge {...mapLogLevelToBadgeProps[level]} className="uppercase h-[18px]">
+    <Badge {...LOG_LEVEL_BADGE_PROPS[level]} className="uppercase h-[18px]">
       {level}
     </Badge>
   )
@@ -39,16 +51,8 @@ export const Timestamp = ({ timestampUnix }: TimestampProps) => {
   const centiseconds = Math.floor((date.getMilliseconds() / 10) % 100)
     .toString()
     .padStart(2, '0')
-  const localDatePart = new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: '2-digit',
-  }).format(date)
-  const localTimePart = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(date)
+  const localDatePart = LOCAL_DATE_FORMATTER.format(date)
+  const localTimePart = LOCAL_TIME_FORMATTER.format(date)
 
   return (
     <CopyButtonInline
