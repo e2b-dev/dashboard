@@ -10,6 +10,8 @@ import {
 } from './sandbox-logs-store'
 
 const REFETCH_INTERVAL_MS = 3_000
+const DRAIN_AFTER_STOP_WINDOW_MS = 10_000
+const MIN_EMPTY_DRAIN_POLLS = 2
 
 interface UseSandboxLogsParams {
   teamIdOrSlug: string
@@ -44,11 +46,26 @@ export function useSandboxLogs({
   }, [store, trpcClient, teamIdOrSlug, sandboxId])
 
   const isDraining = useRef(false)
+  const prevIsRunningRef = useRef(isRunning)
+  const drainUntilTimestampMs = useRef<number | null>(null)
+  const consecutiveEmptyDrainPolls = useRef(0)
 
   useEffect(() => {
     if (isRunning) {
       isDraining.current = true
+      drainUntilTimestampMs.current = null
+      consecutiveEmptyDrainPolls.current = 0
+      prevIsRunningRef.current = true
+      return
     }
+
+    if (prevIsRunningRef.current) {
+      isDraining.current = true
+      drainUntilTimestampMs.current = Date.now() + DRAIN_AFTER_STOP_WINDOW_MS
+      consecutiveEmptyDrainPolls.current = 0
+    }
+
+    prevIsRunningRef.current = false
   }, [isRunning])
 
   const shouldPoll = isInitialized && (isRunning || isDraining.current)
@@ -58,8 +75,30 @@ export function useSandboxLogs({
     queryFn: async () => {
       const { logsCount } = await store.getState().fetchMoreForwards()
 
-      if (!isRunning && logsCount === 0) {
-        isDraining.current = false
+      if (!isRunning) {
+        if (logsCount > 0) {
+          consecutiveEmptyDrainPolls.current = 0
+
+          if (drainUntilTimestampMs.current !== null) {
+            drainUntilTimestampMs.current =
+              Date.now() + DRAIN_AFTER_STOP_WINDOW_MS
+          }
+        } else {
+          consecutiveEmptyDrainPolls.current += 1
+
+          const drainWindowElapsed =
+            drainUntilTimestampMs.current !== null &&
+            Date.now() >= drainUntilTimestampMs.current
+
+          if (
+            drainWindowElapsed &&
+            consecutiveEmptyDrainPolls.current >= MIN_EMPTY_DRAIN_POLLS
+          ) {
+            isDraining.current = false
+            drainUntilTimestampMs.current = null
+            consecutiveEmptyDrainPolls.current = 0
+          }
+        }
       }
 
       return { logsCount }
