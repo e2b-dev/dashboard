@@ -1,24 +1,26 @@
 'use client'
 
 import { LOG_RETENTION_MS } from '@/configs/logs'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
-import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/ui/primitives/table'
+  LOG_LEVEL_LEFT_BORDER_CLASS,
+  type LogLevelValue,
+} from '@/features/dashboard/common/log-cells'
+import {
+  LogsEmptyBody,
+  LogsLoaderBody,
+  LogsTableHeader,
+  LogStatusCell,
+  LogVirtualRow,
+} from '@/features/dashboard/common/log-viewer-ui'
+import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import { Loader } from '@/ui/primitives/loader'
+import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import {
   useVirtualizer,
   VirtualItem,
   Virtualizer,
 } from '@tanstack/react-virtual'
 import {
-  type CSSProperties,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -36,28 +38,6 @@ const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
-const LOG_LEVEL_BORDER_CLASS: Record<SandboxLogDTO['level'], string> = {
-  debug: '',
-  info: 'border-accent-info-highlight!',
-  warn: 'border-accent-warning-highlight!',
-  error: 'border-accent-error-highlight!',
-}
-const STATUS_ROW_CELL_STYLE: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'start',
-}
-
-function getVirtualRowStyle(virtualRow: VirtualItem, height: number): CSSProperties {
-  return {
-    display: 'flex',
-    position: 'absolute',
-    left: 0,
-    transform: `translateY(${virtualRow.start}px)`,
-    minWidth: '100%',
-    height,
-  }
-}
 
 interface LogsProps {
   teamIdOrSlug: string
@@ -84,8 +64,11 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
       <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
         <div className="min-h-0 flex-1 overflow-auto">
           <Table style={{ display: 'grid', minWidth: 'min-content' }}>
-            <LogsTableHeader />
-            <LoaderBody />
+            <LogsTableHeader
+              timestampWidth={COLUMN_WIDTHS_PX.timestamp}
+              levelWidth={COLUMN_WIDTHS_PX.level}
+            />
+            <LogsLoaderBody />
           </Table>
         </div>
       </div>
@@ -152,9 +135,12 @@ function LogsContent({
         className="min-h-0 flex-1 overflow-auto"
       >
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
-          <LogsTableHeader />
+          <LogsTableHeader
+            timestampWidth={COLUMN_WIDTHS_PX.timestamp}
+            levelWidth={COLUMN_WIDTHS_PX.level}
+          />
 
-          {showLoader && <LoaderBody />}
+          {showLoader && <LogsLoaderBody />}
           {showEmpty && (
             <EmptyBody
               hasRetainedLogs={hasRetainedLogs}
@@ -178,82 +164,20 @@ function LogsContent({
   )
 }
 
-function LogsTableHeader() {
-  return (
-    <TableHeader
-      className="bg-bg"
-      style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
-    >
-      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
-        <TableHead
-          data-state="selected"
-          className="px-0 h-min pb-3 pr-4 text-fg"
-          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
-        >
-          Timestamp <ArrowDownIcon className="size-3" />
-        </TableHead>
-        <TableHead
-          className="px-0 h-min pb-3 pr-4"
-          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
-        >
-          Level
-        </TableHead>
-        <TableHead
-          className="px-0 h-min pb-3"
-          style={{ display: 'flex', flex: 1 }}
-        >
-          Message
-        </TableHead>
-      </TableRow>
-    </TableHeader>
-  )
-}
-
-function LoaderBody() {
-  return (
-    <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
-        <TableCell className="flex-1">
-          <div className="h-[35svh] w-full flex justify-center items-center">
-            <Loader variant="slash" size="lg" />
-          </div>
-        </TableCell>
-      </TableRow>
-    </TableBody>
-  )
-}
-
 interface EmptyBodyProps {
   hasRetainedLogs: boolean
   errorMessage: string | null
 }
 
 function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
+  const description = errorMessage
+    ? errorMessage
+    : !hasRetainedLogs
+      ? `This sandbox has exceeded the ${LOG_RETENTION_DAYS} day retention limit.`
+      : 'Sandbox logs will appear here once available.'
+
   return (
-    <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
-        <TableCell className="flex-1">
-          <div className="h-[35vh] w-full gap-2 relative flex flex-col justify-center items-center p-6">
-            <div className="flex items-center gap-2">
-              <ListIcon className="size-5" />
-              <p className="prose-body-highlight">No logs found</p>
-            </div>
-            {errorMessage ? (
-              <p className="text-fg-tertiary text-sm">{errorMessage}</p>
-            ) : !hasRetainedLogs ? (
-              <p className="text-fg-tertiary text-sm">
-                This sandbox has exceeded the {LOG_RETENTION_DAYS} day retention
-                limit.
-              </p>
-            ) : (
-              <p className="text-fg-tertiary text-sm">
-                Sandbox logs will appear here once available.
-              </p>
-            )}
-          </div>
-        </TableCell>
-      </TableRow>
-    </TableBody>
+    <LogsEmptyBody description={description} />
   )
 }
 
@@ -535,13 +459,13 @@ interface LogRowProps {
 
 function LogRow({ log, isZebraRow, virtualRow, virtualizer }: LogRowProps) {
   return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      className={`${isZebraRow ? 'bg-bg-1/80 ' : ''}border-l ${
-        LOG_LEVEL_BORDER_CLASS[log.level]
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+      className={`${isZebraRow ? 'bg-bg-1/70 ' : ''}border-l ${
+        LOG_LEVEL_LEFT_BORDER_CLASS[log.level as LogLevelValue]
       }`}
-      style={getVirtualRowStyle(virtualRow, ROW_HEIGHT_PX)}
     >
       <TableCell
         className="py-0 pr-4 pl-1.5!"
@@ -569,7 +493,7 @@ function LogRow({ log, isZebraRow, virtualRow, virtualizer }: LogRowProps) {
       >
         <Message message={log.message} />
       </TableCell>
-    </TableRow>
+    </LogVirtualRow>
   )
 }
 
@@ -585,16 +509,12 @@ function StatusRow({
   isFetchingNextPage,
 }: StatusRowProps) {
   return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      style={getVirtualRowStyle(virtualRow, ROW_HEIGHT_PX)}
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
     >
-      <TableCell
-        colSpan={3}
-        className="py-0 w-full pl-1.5!"
-        style={STATUS_ROW_CELL_STYLE}
-      >
+      <LogStatusCell>
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (
             <>
@@ -608,8 +528,8 @@ function StatusRow({
             'Scroll to load more'
           )}
         </span>
-      </TableCell>
-    </TableRow>
+      </LogStatusCell>
+    </LogVirtualRow>
   )
 }
 
@@ -625,16 +545,12 @@ function LiveStatusRow({
   isRunning,
 }: LiveStatusRowProps) {
   return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      style={getVirtualRowStyle(virtualRow, LIVE_STATUS_ROW_HEIGHT_PX)}
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={LIVE_STATUS_ROW_HEIGHT_PX}
     >
-      <TableCell
-        colSpan={3}
-        className="py-0 w-full pl-1.5!"
-        style={STATUS_ROW_CELL_STYLE}
-      >
+      <LogStatusCell>
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           <span className="text-fg-secondary">[</span>
           <span
@@ -653,7 +569,7 @@ function LiveStatusRow({
               : 'No more logs to show'}
           </span>
         </span>
-      </TableCell>
-    </TableRow>
+      </LogStatusCell>
+    </LogVirtualRow>
   )
 }

@@ -1,6 +1,17 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import {
+  LOG_LEVEL_LEFT_BORDER_CLASS,
+  type LogLevelValue,
+} from '@/features/dashboard/common/log-cells'
+import {
+  LogsEmptyBody,
+  LogsLoaderBody,
+  LogsTableHeader,
+  LogStatusCell,
+  LogVirtualRow,
+} from '@/features/dashboard/common/log-viewer-ui'
 import type {
   BuildDetailsDTO,
   BuildLogDTO,
@@ -13,26 +24,17 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/ui/primitives/table'
+import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import {
   useVirtualizer,
   VirtualItem,
   Virtualizer,
 } from '@tanstack/react-virtual'
 import {
-  RefObject,
+  type RefObject,
   useCallback,
   useEffect,
-  useReducer,
   useRef,
   useState,
 } from 'react'
@@ -78,8 +80,12 @@ export default function Logs({
         <LevelFilter level={level} onLevelChange={setLevel} />
         <div className="min-h-0 flex-1 overflow-auto">
           <Table style={{ display: 'grid', minWidth: 'min-content' }}>
-            <LogsTableHeader />
-            <LoaderBody />
+            <LogsTableHeader
+              timestampWidth={COLUMN_WIDTHS_PX.timestamp}
+              levelWidth={COLUMN_WIDTHS_PX.level}
+              timestampSortDirection="asc"
+            />
+            <LogsLoaderBody />
           </Table>
         </div>
       </div>
@@ -158,9 +164,13 @@ function LogsContent({
 
       <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
-          <LogsTableHeader />
+          <LogsTableHeader
+            timestampWidth={COLUMN_WIDTHS_PX.timestamp}
+            levelWidth={COLUMN_WIDTHS_PX.level}
+            timestampSortDirection="asc"
+          />
 
-          {showLoader && <LoaderBody />}
+          {showLoader && <LogsLoaderBody />}
           {showEmpty && (
             <EmptyBody hasRetainedLogs={buildDetails.hasRetainedLogs} />
           )}
@@ -200,72 +210,17 @@ function useFilterRefetchTracking(level: LogLevelFilter | null) {
   return { isRefetchingFromFilterChange, onFetchComplete }
 }
 
-function LogsTableHeader() {
-  return (
-    <TableHeader
-      className="bg-bg"
-      style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
-    >
-      <TableRow style={{ display: 'flex', minWidth: '100%' }}>
-        <TableHead
-          data-state="selected"
-          className="px-0 pr-4"
-          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.timestamp }}
-        >
-          Timestamp <ArrowDownIcon className="size-3 rotate-180" />
-        </TableHead>
-        <TableHead
-          className="px-0 pr-4"
-          style={{ display: 'flex', width: COLUMN_WIDTHS_PX.level }}
-        >
-          Level
-        </TableHead>
-        <TableHead className="px-0" style={{ display: 'flex', flex: 1 }}>
-          Message
-        </TableHead>
-      </TableRow>
-    </TableHeader>
-  )
-}
-
-function LoaderBody() {
-  return (
-    <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
-        <TableCell className="flex-1">
-          <div className="h-[35svh] w-full flex justify-center items-center">
-            <Loader variant="slash" size="lg" />
-          </div>
-        </TableCell>
-      </TableRow>
-    </TableBody>
-  )
-}
-
 interface EmptyBodyProps {
   hasRetainedLogs: boolean
 }
 
 function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
+  const description = hasRetainedLogs
+    ? undefined
+    : `This build has exceeded the ${LOG_RETENTION_MS / 24 / 60 / 60 / 1000} day retention limit.`
+
   return (
-    <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
-        <TableCell className="flex-1">
-          <div className="h-[35vh] w-full gap-2 relative flex flex-col justify-center items-center p-6">
-            <div className="flex items-center gap-2">
-              <ListIcon className="size-5" />
-              <p className="prose-body-highlight">No logs found</p>
-            </div>
-            {!hasRetainedLogs && (
-              <p className="text-fg-tertiary text-sm">
-                This build has exceeded the{' '}
-                {LOG_RETENTION_MS / 24 / 60 / 60 / 1000} day retention limit.
-              </p>
-            )}
-          </div>
-        </TableCell>
-      </TableRow>
-    </TableBody>
+    <LogsEmptyBody description={description} />
   )
 }
 
@@ -348,13 +303,7 @@ function VirtualizedLogsBody({
   isInitialized,
   level,
 }: VirtualizedLogsBodyProps) {
-  const tbodyRef = useRef<HTMLTableSectionElement>(null)
   const maxWidthRef = useRef<number>(0)
-  const [, forceRerender] = useReducer(() => ({}), {})
-
-  useEffect(() => {
-    if (scrollContainerRef.current) forceRerender()
-  }, [scrollContainerRef])
 
   useScrollLoadMore({
     scrollContainerRef,
@@ -398,7 +347,6 @@ function VirtualizedLogsBody({
 
   return (
     <TableBody
-      ref={tbodyRef}
       className={cn(
         showRefetchOverlay ? 'opacity-70 transition-opacity' : '',
         '[&_tr:last-child]:border-b-0 [&_tr]:border-b-0'
@@ -429,8 +377,9 @@ function VirtualizedLogsBody({
 
         return (
           <LogRow
-            key={virtualRow.index}
+            key={virtualRow.key}
             log={logs[logIndex]!}
+            isZebraRow={logIndex % 2 === 1}
             virtualRow={virtualRow}
             virtualizer={virtualizer}
             startedAt={startedAt}
@@ -468,7 +417,9 @@ function useScrollLoadMore({
       }
     }
 
-    scrollContainer.addEventListener('scroll', handleScroll)
+    scrollContainer.addEventListener('scroll', handleScroll, {
+      passive: true,
+    })
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [scrollContainerRef, hasNextPage, isFetchingNextPage, onLoadMore])
 }
@@ -532,7 +483,9 @@ function useAutoScrollToBottom({
       isAutoScrollEnabledRef.current = distanceFromBottom < ROW_HEIGHT_PX * 2
     }
 
-    el.addEventListener('scroll', handleScroll)
+    el.addEventListener('scroll', handleScroll, {
+      passive: true,
+    })
     return () => el.removeEventListener('scroll', handleScroll)
   }, [scrollContainerRef])
 
@@ -571,29 +524,32 @@ function useAutoScrollToBottom({
 
 interface LogRowProps {
   log: BuildLogDTO
+  isZebraRow: boolean
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
   startedAt: number
 }
 
-function LogRow({ log, virtualRow, virtualizer, startedAt }: LogRowProps) {
+function LogRow({
+  log,
+  isZebraRow,
+  virtualRow,
+  virtualizer,
+  startedAt,
+}: LogRowProps) {
   const millisAfterStart = log.timestampUnix - startedAt
 
   return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      style={{
-        display: 'flex',
-        position: 'absolute',
-        left: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        minWidth: '100%',
-        height: ROW_HEIGHT_PX,
-      }}
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+      className={`${isZebraRow ? 'bg-bg-1/70 ' : ''}border-l ${
+        LOG_LEVEL_LEFT_BORDER_CLASS[log.level as LogLevelValue]
+      }`}
     >
       <TableCell
-        className="py-0 px-0 pr-4"
+        className="py-0 pr-4 pl-1.5!"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -621,7 +577,7 @@ function LogRow({ log, virtualRow, virtualizer, startedAt }: LogRowProps) {
       >
         <Message message={log.message} />
       </TableCell>
-    </TableRow>
+    </LogVirtualRow>
   )
 }
 
@@ -637,39 +593,22 @@ function StatusRow({
   isFetchingNextPage,
 }: StatusRowProps) {
   return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      className="animate-pulse"
-      style={{
-        display: 'flex',
-        position: 'absolute',
-        left: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        minWidth: '100%',
-        height: ROW_HEIGHT_PX,
-      }}
-    >
-      <TableCell
-        colSpan={3}
-        className="py-0 w-full"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'start',
-        }}
-      >
-        <span className="prose-body text-fg-tertiary pb-1">
+    <LogVirtualRow virtualRow={virtualRow} virtualizer={virtualizer} height={ROW_HEIGHT_PX}>
+      <LogStatusCell>
+        <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (
-            <span className="inline-flex gap-1">
-              Loading more logs
-              <Loader variant="dots" />
-            </span>
+            <>
+              <span className="text-fg-secondary">[</span>
+              <span className="text-accent-info-highlight">loading</span>
+              <span className="text-fg-secondary">]</span>
+              <span>retrieving older logs</span>
+              <Loader variant="dots" size="sm" className="font-mono" />
+            </>
           ) : (
             'Scroll to load more'
           )}
         </span>
-      </TableCell>
-    </TableRow>
+      </LogStatusCell>
+    </LogVirtualRow>
   )
 }
