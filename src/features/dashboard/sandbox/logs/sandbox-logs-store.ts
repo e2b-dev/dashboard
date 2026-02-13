@@ -38,6 +38,7 @@ interface SandboxLogsMutations {
 }
 
 export type SandboxLogsStoreData = SandboxLogsState & SandboxLogsMutations
+const EMPTY_INIT_FORWARD_LOOKBACK_MS = 5_000
 
 function countLeadingAtTimestamp(logs: SandboxLogDTO[], timestamp: number) {
   let count = 0
@@ -186,6 +187,8 @@ export const createSandboxLogsStore = () =>
 
           set((s) => {
             const backwardsCursor = result.nextCursor
+            const newestInitialTimestamp =
+              result.logs[result.logs.length - 1]?.timestampUnix
 
             s.logs = result.logs
             s.hasMoreBackwards = backwardsCursor !== null
@@ -194,10 +197,18 @@ export const createSandboxLogsStore = () =>
               backwardsCursor === null
                 ? 0
                 : countLeadingAtTimestamp(result.logs, backwardsCursor)
-            s.forwardCursor = initCursor
-            // Initial backward snapshot can include logs exactly at initCursor.
-            // Track how many were already consumed so first forward poll does not replay them.
-            s.forwardSeenAtCursor = countTrailingAtTimestamp(result.logs, initCursor)
+            if (newestInitialTimestamp !== undefined) {
+              s.forwardCursor = newestInitialTimestamp
+              s.forwardSeenAtCursor = countTrailingAtTimestamp(
+                result.logs,
+                newestInitialTimestamp
+              )
+            } else {
+              // If the initial snapshot is empty, start slightly in the past so
+              // delayed-ingestion logs around page load are not skipped.
+              s.forwardCursor = initCursor - EMPTY_INIT_FORWARD_LOOKBACK_MS
+              s.forwardSeenAtCursor = 0
+            }
             s.isLoadingBackwards = false
             s.isInitialized = true
             s.hasCompletedInitialLoad = true
