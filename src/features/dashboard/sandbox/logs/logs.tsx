@@ -291,6 +291,7 @@ function VirtualizedLogsBody({
   useAutoScrollToBottom({
     scrollContainerElement,
     logsCount: logs.length,
+    isFetchingNextPage,
     isInitialized,
     isRunning,
     scrollToLatestLog,
@@ -424,6 +425,7 @@ function useMaintainScrollOnPrepend({
 interface UseAutoScrollToBottomParams {
   scrollContainerElement: HTMLDivElement
   logsCount: number
+  isFetchingNextPage: boolean
   isInitialized: boolean
   isRunning: boolean
   scrollToLatestLog: () => void
@@ -432,6 +434,7 @@ interface UseAutoScrollToBottomParams {
 function useAutoScrollToBottom({
   scrollContainerElement,
   logsCount,
+  isFetchingNextPage,
   isInitialized,
   isRunning,
   scrollToLatestLog,
@@ -439,6 +442,7 @@ function useAutoScrollToBottom({
   const isAutoScrollEnabledRef = useRef(true)
   const prevLogsCountRef = useRef(0)
   const prevIsRunningRef = useRef(isRunning)
+  const wasFetchingNextPageRef = useRef(isFetchingNextPage)
   const hasInitialScrolled = useRef(false)
 
   useEffect(() => {
@@ -472,16 +476,29 @@ function useAutoScrollToBottom({
   }, [isRunning])
 
   useEffect(() => {
-    if (!hasInitialScrolled.current) return
+    if (!hasInitialScrolled.current) {
+      wasFetchingNextPageRef.current = isFetchingNextPage
+      return
+    }
 
-    const newLogsCount = logsCount - prevLogsCountRef.current
+    const previousLogsCount = prevLogsCountRef.current
+    const newLogsCount = logsCount - previousLogsCount
+    const justFinishedBackwardFetch =
+      wasFetchingNextPageRef.current && !isFetchingNextPage
+
+    if (justFinishedBackwardFetch && newLogsCount > 0) {
+      prevLogsCountRef.current = logsCount
+      wasFetchingNextPageRef.current = isFetchingNextPage
+      return
+    }
 
     if (newLogsCount > 0 && isAutoScrollEnabledRef.current) {
       scrollContainerElement.scrollTop += newLogsCount * ROW_HEIGHT_PX
     }
 
     prevLogsCountRef.current = logsCount
-  }, [logsCount, scrollContainerElement])
+    wasFetchingNextPageRef.current = isFetchingNextPage
+  }, [isFetchingNextPage, logsCount, scrollContainerElement])
 }
 
 interface LogRowProps {
@@ -643,7 +660,7 @@ function LiveStatusRow({
           <span className="text-fg-secondary">]</span>
           <span>
             {isRunning
-              ? 'No more logs to show. Wating for new entries...'
+              ? 'No more logs to show. Waiting for new entries...'
               : 'No more logs to show'}
           </span>
         </span>

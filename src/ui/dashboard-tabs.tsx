@@ -62,6 +62,21 @@ function DashboardTabsComponent({
     [tabs, hrefForId]
   )
 
+  const tabTriggers = tabsWithHrefs.map((tab) => (
+    <TabsTrigger
+      key={tab.id}
+      layoutkey={layoutKey}
+      value={tab.id}
+      className="w-fit flex-none"
+      asChild
+    >
+      <Link href={tab.href} prefetch>
+        {tab.icon}
+        {tab.label}
+      </Link>
+    </TabsTrigger>
+  ))
+
   return (
     <Tabs
       value={activeTabId}
@@ -73,39 +88,11 @@ function DashboardTabsComponent({
             {headerAccessory}
           </div>
           <TabsList className="bg-bg order-2 w-full justify-start md:order-1 md:flex-1 md:w-full">
-            {tabsWithHrefs.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                layoutkey={layoutKey}
-                value={tab.id}
-                className="w-fit flex-none"
-                asChild
-              >
-                <Link href={tab.href} prefetch>
-                  {tab.icon}
-                  {tab.label}
-                </Link>
-              </TabsTrigger>
-            ))}
+            {tabTriggers}
           </TabsList>
         </div>
       ) : (
-        <TabsList className="bg-bg z-30 w-full justify-start">
-          {tabsWithHrefs.map((tab) => (
-            <TabsTrigger
-              key={tab.id}
-              layoutkey={layoutKey}
-              value={tab.id}
-              className="w-fit flex-none"
-              asChild
-            >
-              <Link href={tab.href} prefetch>
-                {tab.icon}
-                {tab.label}
-              </Link>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <TabsList className="bg-bg z-30 w-full justify-start">{tabTriggers}</TabsList>
       )}
 
       {children}
