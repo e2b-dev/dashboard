@@ -18,7 +18,9 @@ interface SandboxLogsState {
   isLoadingBackwards: boolean
   isLoadingForwards: boolean
   backwardsCursor: number | null
+  backwardsSeenAtCursor: number
   forwardCursor: number | null
+  forwardSeenAtCursor: number
   isInitialized: boolean
   hasCompletedInitialLoad: boolean
   initialLoadError: string | null
@@ -44,13 +46,85 @@ export type SandboxLogsStoreData = SandboxLogsState &
   SandboxLogsMutations &
   SandboxLogsComputed
 
+function countLeadingAtTimestamp(logs: SandboxLogDTO[], timestamp: number) {
+  let count = 0
+
+  while (count < logs.length && logs[count]!.timestampUnix === timestamp) {
+    count += 1
+  }
+
+  return count
+}
+
+function countTrailingAtTimestamp(logs: SandboxLogDTO[], timestamp: number) {
+  let count = 0
+  let index = logs.length - 1
+
+  while (index >= 0 && logs[index]!.timestampUnix === timestamp) {
+    count += 1
+    index -= 1
+  }
+
+  return count
+}
+
+function dropLeadingAtTimestamp(
+  logs: SandboxLogDTO[],
+  timestamp: number,
+  dropCount: number
+) {
+  if (dropCount <= 0) {
+    return logs
+  }
+
+  let index = 0
+  let remainingToDrop = dropCount
+
+  while (
+    index < logs.length &&
+    remainingToDrop > 0 &&
+    logs[index]!.timestampUnix === timestamp
+  ) {
+    index += 1
+    remainingToDrop -= 1
+  }
+
+  return logs.slice(index)
+}
+
+function dropTrailingAtTimestamp(
+  logs: SandboxLogDTO[],
+  timestamp: number,
+  dropCount: number
+) {
+  if (dropCount <= 0) {
+    return logs
+  }
+
+  let end = logs.length
+  let remainingToDrop = dropCount
+
+  while (
+    end > 0 &&
+    remainingToDrop > 0 &&
+    logs[end - 1]!.timestampUnix === timestamp
+  ) {
+    end -= 1
+    remainingToDrop -= 1
+  }
+
+  return logs.slice(0, end)
+}
+
 const initialState: SandboxLogsState = {
   logs: [],
   hasMoreBackwards: true,
   isLoadingBackwards: false,
   isLoadingForwards: false,
   backwardsCursor: null,
+  backwardsSeenAtCursor: 0,
   forwardCursor: null,
+  forwardSeenAtCursor: 0,
   isInitialized: false,
   hasCompletedInitialLoad: false,
   initialLoadError: null,
@@ -71,7 +145,9 @@ export const createSandboxLogsStore = () =>
           state.isLoadingBackwards = false
           state.isLoadingForwards = false
           state.backwardsCursor = null
+          state.backwardsSeenAtCursor = 0
           state.forwardCursor = null
+          state.forwardSeenAtCursor = 0
           state.isInitialized = false
           state.hasCompletedInitialLoad = false
           state.initialLoadError = null
@@ -116,10 +192,17 @@ export const createSandboxLogsStore = () =>
           }
 
           set((s) => {
+            const backwardsCursor = result.nextCursor
+
             s.logs = result.logs
-            s.hasMoreBackwards = result.nextCursor !== null
-            s.backwardsCursor = result.nextCursor
+            s.hasMoreBackwards = backwardsCursor !== null
+            s.backwardsCursor = backwardsCursor
+            s.backwardsSeenAtCursor =
+              backwardsCursor === null
+                ? 0
+                : countLeadingAtTimestamp(result.logs, backwardsCursor)
             s.forwardCursor = initCursor
+            s.forwardSeenAtCursor = 0
             s.isLoadingBackwards = false
             s.isInitialized = true
             s.hasCompletedInitialLoad = true
@@ -176,9 +259,21 @@ export const createSandboxLogsStore = () =>
           }
 
           set((s) => {
-            s.logs = [...result.logs, ...s.logs]
-            s.hasMoreBackwards = result.nextCursor !== null
-            s.backwardsCursor = result.nextCursor
+            const newLogs = dropTrailingAtTimestamp(
+              result.logs,
+              cursor,
+              state.backwardsSeenAtCursor
+            )
+            const nextLogs = newLogs.length > 0 ? [...newLogs, ...s.logs] : s.logs
+            const backwardsCursor = result.nextCursor
+
+            s.logs = nextLogs
+            s.hasMoreBackwards = backwardsCursor !== null
+            s.backwardsCursor = backwardsCursor
+            s.backwardsSeenAtCursor =
+              backwardsCursor === null
+                ? 0
+                : countLeadingAtTimestamp(nextLogs, backwardsCursor)
             s.isLoadingBackwards = false
           })
         } catch {
@@ -207,6 +302,7 @@ export const createSandboxLogsStore = () =>
 
         try {
           const cursor = state.forwardCursor ?? Date.now()
+          const seenAtCursor = state.forwardSeenAtCursor
 
           const result = await state._trpcClient.sandbox.logsForward.query({
             teamIdOrSlug: state._params.teamIdOrSlug,
@@ -219,13 +315,32 @@ export const createSandboxLogsStore = () =>
             return { logsCount: 0 }
           }
 
-          const logsCount = result.logs.length
+          const newLogs = dropLeadingAtTimestamp(
+            result.logs,
+            cursor,
+            seenAtCursor
+          )
+          const logsCount = newLogs.length
 
           set((s) => {
             if (logsCount > 0) {
-              s.logs = [...s.logs, ...result.logs]
+              s.logs = [...s.logs, ...newLogs]
+
+              const newestTimestamp = newLogs[logsCount - 1]!.timestampUnix
+              const trailingAtNewest = countTrailingAtTimestamp(
+                newLogs,
+                newestTimestamp
+              )
+
+              s.forwardCursor = newestTimestamp
+              s.forwardSeenAtCursor =
+                newestTimestamp === cursor
+                  ? seenAtCursor + trailingAtNewest
+                  : trailingAtNewest
+            } else {
+              s.forwardCursor = cursor
+              s.forwardSeenAtCursor = seenAtCursor
             }
-            s.forwardCursor = result.nextCursor ?? cursor
             s.isLoadingForwards = false
           })
 

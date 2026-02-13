@@ -80,7 +80,7 @@ export const sandboxRouter = createTRPCRouter({
         .sort((a, b) => a.timestampUnix - b.timestampUnix)
 
       const newestLog = logs[logs.length - 1]
-      const nextCursor = newestLog ? newestLog.timestampUnix + 1 : cursor
+      const nextCursor = newestLog?.timestampUnix ?? cursor
 
       const result: SandboxLogsDTO = {
         logs,
