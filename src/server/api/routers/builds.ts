@@ -104,13 +104,13 @@ export const buildsRouter = createTRPCRouter({
         { cursor, limit, direction, level }
       )
 
-      const logsToReturn = buildLogs.logs
-
-      const logs: BuildLogDTO[] = logsToReturn.map((log) => ({
-        timestampUnix: new Date(log.timestamp).getTime(),
-        level: log.level,
-        message: log.message,
-      }))
+      const logs: BuildLogDTO[] = buildLogs.logs
+        .map((log) => ({
+          timestampUnix: new Date(log.timestamp).getTime(),
+          level: log.level,
+          message: log.message,
+        }))
+        .sort((a, b) => a.timestampUnix - b.timestampUnix)
 
       const hasMore = logs.length === limit
       const cursorLog = logs[0]
@@ -151,14 +151,16 @@ export const buildsRouter = createTRPCRouter({
         { cursor, limit, direction, level }
       )
 
-      const logs: BuildLogDTO[] = buildLogs.logs.map((log) => ({
-        timestampUnix: new Date(log.timestamp).getTime(),
-        level: log.level,
-        message: log.message,
-      }))
+      const logs: BuildLogDTO[] = buildLogs.logs
+        .map((log) => ({
+          timestampUnix: new Date(log.timestamp).getTime(),
+          level: log.level,
+          message: log.message,
+        }))
+        .sort((a, b) => a.timestampUnix - b.timestampUnix)
 
       const newestLog = logs[logs.length - 1]
-      const nextCursor = newestLog?.timestampUnix ?? null
+      const nextCursor = newestLog?.timestampUnix ?? cursor
 
       const result: BuildLogsDTO = {
         logs,

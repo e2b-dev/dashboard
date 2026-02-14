@@ -47,6 +47,7 @@ import useLogFilters from './use-log-filters'
 // Column width are calculated as max width of the content + padding
 const COLUMN_WIDTHS_PX = { timestamp: 176 + 16, level: 52 + 16 } as const
 const ROW_HEIGHT_PX = 26
+const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 
@@ -151,6 +152,7 @@ function LogsContent({
   const showLoader = (isFetching || isRefetchingFromFilterChange) && !hasLogs
   const showEmpty = !isFetching && !hasLogs && !isRefetchingFromFilterChange
   const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
+  const isBuilding = buildDetails.status === 'building'
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -185,6 +187,7 @@ function LogsContent({
               showRefetchOverlay={showRefetchOverlay}
               isInitialized={isInitialized}
               level={level}
+              isBuilding={isBuilding}
             />
           )}
         </Table>
@@ -290,6 +293,7 @@ interface VirtualizedLogsBodyProps {
   showRefetchOverlay: boolean
   isInitialized: boolean
   level: LogLevelFilter | null
+  isBuilding: boolean
 }
 
 function VirtualizedLogsBody({
@@ -302,6 +306,7 @@ function VirtualizedLogsBody({
   showRefetchOverlay,
   isInitialized,
   level,
+  isBuilding,
 }: VirtualizedLogsBodyProps) {
   const maxWidthRef = useRef<number>(0)
 
@@ -326,10 +331,14 @@ function VirtualizedLogsBody({
   })
 
   const showStatusRow = hasNextPage || isFetchingNextPage
+  const logsStartIndex = showStatusRow ? 1 : 0
+  const liveStatusRowIndex = logsStartIndex + logs.length
+  const virtualRowsCount = logs.length + (showStatusRow ? 1 : 0) + 1
 
   const virtualizer = useVirtualizer({
-    count: logs.length + (showStatusRow ? 1 : 0),
-    estimateSize: () => ROW_HEIGHT_PX,
+    count: virtualRowsCount,
+    estimateSize: (index) =>
+      index === liveStatusRowIndex ? LIVE_STATUS_ROW_HEIGHT_PX : ROW_HEIGHT_PX,
     getScrollElement: () => scrollContainerRef.current,
     overscan: VIRTUAL_OVERSCAN,
     paddingStart: 8,
@@ -365,7 +374,7 @@ function VirtualizedLogsBody({
         if (isStatusRow) {
           return (
             <StatusRow
-              key="status-row"
+              key="load-more-status-row"
               virtualRow={virtualRow}
               virtualizer={virtualizer}
               isFetchingNextPage={isFetchingNextPage}
@@ -373,7 +382,20 @@ function VirtualizedLogsBody({
           )
         }
 
-        const logIndex = showStatusRow ? virtualRow.index - 1 : virtualRow.index
+        const isLiveStatusRow = virtualRow.index === liveStatusRowIndex
+
+        if (isLiveStatusRow) {
+          return (
+            <LiveStatusRow
+              key="live-status-row"
+              virtualRow={virtualRow}
+              virtualizer={virtualizer}
+              isBuilding={isBuilding}
+            />
+          )
+        }
+
+        const logIndex = virtualRow.index - logsStartIndex
 
         return (
           <LogRow
@@ -601,12 +623,53 @@ function StatusRow({
               <span className="text-fg-secondary">[</span>
               <span className="text-accent-info-highlight">loading</span>
               <span className="text-fg-secondary">]</span>
-              <span>retrieving older logs</span>
+              <span>retrieving older build logs</span>
               <Loader variant="dots" size="sm" className="font-mono" />
             </>
           ) : (
-            'Scroll to load more'
+            'Scroll to load older build logs'
           )}
+        </span>
+      </LogStatusCell>
+    </LogVirtualRow>
+  )
+}
+
+interface LiveStatusRowProps {
+  virtualRow: VirtualItem
+  virtualizer: Virtualizer<HTMLDivElement, Element>
+  isBuilding: boolean
+}
+
+function LiveStatusRow({
+  virtualRow,
+  virtualizer,
+  isBuilding,
+}: LiveStatusRowProps) {
+  return (
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={LIVE_STATUS_ROW_HEIGHT_PX}
+    >
+      <LogStatusCell>
+        <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
+          <span className="text-fg-secondary">[</span>
+          <span
+            className={
+              isBuilding
+                ? 'text-accent-positive-highlight'
+                : 'text-accent-info-highlight'
+            }
+          >
+            {isBuilding ? 'live' : 'end'}
+          </span>
+          <span className="text-fg-secondary">]</span>
+          <span>
+            {isBuilding
+              ? 'No more build logs to show. Waiting for new entries...'
+              : 'No more build logs to show'}
+          </span>
         </span>
       </LogStatusCell>
     </LogVirtualRow>
