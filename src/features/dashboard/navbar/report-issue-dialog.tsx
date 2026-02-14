@@ -39,12 +39,12 @@ const MAX_ATTACHMENTS = 5
 const ACCEPTED_FILE_TYPES =
   'image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain'
 
-const reportIssueFormSchema = z.object({
+const supportFormSchema = z.object({
   sandboxId: z.string().optional(),
-  description: z.string().min(1, 'Please describe the issue'),
+  description: z.string().min(1, 'Please describe how we can help'),
 })
 
-type ReportIssueFormValues = z.infer<typeof reportIssueFormSchema>
+type SupportFormValues = z.infer<typeof supportFormSchema>
 
 interface Attachment {
   url: string
@@ -69,8 +69,8 @@ export default function ReportIssueDialog({
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploadingCount, setUploadingCount] = useState(0)
 
-  const form = useForm<ReportIssueFormValues>({
-    resolver: zodResolver(reportIssueFormSchema),
+  const form = useForm<SupportFormValues>({
+    resolver: zodResolver(supportFormSchema),
     defaultValues: {
       sandboxId: '',
       description: '',
@@ -108,7 +108,7 @@ export default function ReportIssueDialog({
   const reportIssueMutation = useMutation(
     trpc.support.reportIssue.mutationOptions({
       onSuccess: (data) => {
-        posthog.capture('issue_reported', {
+        posthog.capture('support_request_submitted', {
           sandbox_id: form.getValues('sandboxId')?.trim() || undefined,
           thread_id: data.threadId,
           team_id: team.id,
@@ -117,7 +117,7 @@ export default function ReportIssueDialog({
         })
         setWasSubmitted(true)
         toast.success(
-          'Issue reported successfully. Our team will review it shortly.'
+          'Message sent successfully. Our team will get back to you shortly.'
         )
         setIsOpen(false)
         resetForm()
@@ -126,7 +126,7 @@ export default function ReportIssueDialog({
         }, 100)
       },
       onError: () => {
-        toast.error('Failed to report issue. Please try again.')
+        toast.error('Failed to send message. Please try again.')
       },
     })
   )
@@ -140,10 +140,10 @@ export default function ReportIssueDialog({
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
-        posthog.capture('issue_report_shown')
+        posthog.capture('support_form_shown')
       }
       if (!open && !wasSubmitted) {
-        posthog.capture('issue_report_dismissed')
+        posthog.capture('support_form_dismissed')
       }
       setIsOpen(open)
       if (!open) {
@@ -167,7 +167,7 @@ export default function ReportIssueDialog({
     setAttachments((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  const onSubmit = (values: ReportIssueFormValues) => {
+  const onSubmit = (values: SupportFormValues) => {
     reportIssueMutation.mutate({
       sandboxId: values.sandboxId?.trim() || undefined,
       description: values.description.trim(),
@@ -189,9 +189,9 @@ export default function ReportIssueDialog({
 
       <DialogContent className="max-w-[540px]">
         <DialogHeader>
-          <DialogTitle>Report Issue</DialogTitle>
+          <DialogTitle>Contact Support</DialogTitle>
           <DialogDescription>
-            Our team will get back to you shortly
+            Tell us how we can help. Our team will get back to you shortly.
           </DialogDescription>
         </DialogHeader>
 
@@ -223,10 +223,10 @@ export default function ReportIssueDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Message</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe the issue you're experiencing..."
+                      placeholder="Describe what you need help with..."
                       className="min-h-28"
                       disabled={isDisabled}
                       {...field}
@@ -290,7 +290,7 @@ export default function ReportIssueDialog({
                 disabled={isDisabled || !form.formState.isValid}
                 loading={isSubmitting}
               >
-                Submit
+                Send
               </Button>
             </DialogFooter>
           </form>

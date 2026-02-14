@@ -7,7 +7,7 @@ import ClientOnly from '@/ui/client-only'
 import { Button } from '@/ui/primitives/button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
-import { Bug } from 'lucide-react'
+import { LifeBuoy } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Fragment } from 'react'
@@ -51,7 +51,7 @@ export default function DashboardLayoutHeader({
           <ReportIssueDialog
             trigger={
               <Button variant="outline" className="gap-1.5 py-2.5 px-3 h-auto max-md:hidden">
-                <Bug className="size-4" />
+                <LifeBuoy className="size-4" />
                 <span>Contact Support</span>
               </Button>
             }
