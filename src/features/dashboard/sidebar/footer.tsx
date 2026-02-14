@@ -15,7 +15,7 @@ import {
 import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
-import ReportIssuePopover from '../navbar/report-issue-popover'
+import ReportIssueDialog from '../navbar/report-issue-dialog'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -105,7 +105,7 @@ export default function DashboardSidebarFooter() {
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >
-              <ReportIssuePopover
+              <ReportIssueDialog
                 trigger={
                   <SidebarMenuButton
                     tooltip="Report Issue"

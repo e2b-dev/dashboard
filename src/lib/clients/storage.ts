@@ -12,10 +12,11 @@ import { supabaseAdmin } from './supabase/admin'
 export async function uploadFile(
   fileBuffer: Buffer,
   destination: string,
-  contentType: string
+  contentType: string,
+  bucketName: string = STORAGE_BUCKET_NAME
 ): Promise<string> {
   const { data, error } = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET_NAME)
+    .from(bucketName)
     .upload(destination, fileBuffer, {
       contentType,
       cacheControl: 'public, max-age=31536000',
@@ -27,7 +28,7 @@ export async function uploadFile(
   }
 
   const { data: urlData } = supabaseAdmin.storage
-    .from(STORAGE_BUCKET_NAME)
+    .from(bucketName)
     .getPublicUrl(destination)
 
   return urlData.publicUrl
@@ -38,9 +39,12 @@ export async function uploadFile(
  * @param folderPath - The path of the folder in the bucket
  * @returns The list of files
  */
-export async function getFiles(folderPath: string): Promise<FileObject[]> {
+export async function getFiles(
+  folderPath: string,
+  bucketName: string = STORAGE_BUCKET_NAME
+): Promise<FileObject[]> {
   const { data, error } = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET_NAME)
+    .from(bucketName)
     .list(folderPath, {
       sortBy: { column: 'name', order: 'asc' },
     })
@@ -55,9 +59,12 @@ export async function getFiles(folderPath: string): Promise<FileObject[]> {
  * Delete a file from Supabase Storage
  * @param filePath - The path of the file in the bucket
  */
-export async function deleteFile(filePath: string): Promise<void> {
+export async function deleteFile(
+  filePath: string,
+  bucketName: string = STORAGE_BUCKET_NAME
+): Promise<void> {
   const { error } = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET_NAME)
+    .from(bucketName)
     .remove([filePath])
 
   if (error) {
@@ -73,10 +80,11 @@ export async function deleteFile(filePath: string): Promise<void> {
  */
 export async function getSignedUrl(
   filePath: string,
-  expiresInMinutes = 15
+  expiresInMinutes = 15,
+  bucketName: string = STORAGE_BUCKET_NAME
 ): Promise<string> {
   const { data, error } = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET_NAME)
+    .from(bucketName)
     .createSignedUrl(filePath, expiresInMinutes * 60)
 
   if (error) {
