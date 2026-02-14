@@ -1,91 +1,87 @@
 'use client'
 
-import type { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { useTRPCClient } from '@/trpc/client'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from 'zustand'
-import { createBuildLogsStore, type BuildLogsStore } from './build-logs-store'
-import { type LogLevelFilter } from './logs-filter-params'
+import {
+  createSandboxLogsStore,
+  type SandboxLogsStore,
+} from './sandbox-logs-store'
 
-const REFETCH_INTERVAL_MS = 1_500
-const DRAIN_AFTER_BUILD_STOP_WINDOW_MS = 10_000
+const REFETCH_INTERVAL_MS = 3_000
+const DRAIN_AFTER_STOP_WINDOW_MS = 10_000
 const MIN_EMPTY_DRAIN_POLLS = 2
 
-interface UseBuildLogsParams {
+interface UseSandboxLogsParams {
   teamIdOrSlug: string
-  templateId: string
-  buildId: string
-  level: LogLevelFilter | null
-  buildStatus: BuildStatusDTO
+  sandboxId: string
+  isRunning: boolean
 }
 
-export function useBuildLogs({
+export function useSandboxLogs({
   teamIdOrSlug,
-  templateId,
-  buildId,
-  level,
-  buildStatus,
-}: UseBuildLogsParams) {
+  sandboxId,
+  isRunning,
+}: UseSandboxLogsParams) {
   const trpcClient = useTRPCClient()
-  const storeRef = useRef<BuildLogsStore | null>(null)
+  const storeRef = useRef<SandboxLogsStore | null>(null)
 
   if (!storeRef.current) {
-    storeRef.current = createBuildLogsStore()
+    storeRef.current = createSandboxLogsStore()
   }
 
   const store = storeRef.current
 
   const logs = useStore(store, (s) => s.logs)
   const isInitialized = useStore(store, (s) => s.isInitialized)
+  const hasCompletedInitialLoad = useStore(store, (s) => s.hasCompletedInitialLoad)
+  const initialLoadError = useStore(store, (s) => s.initialLoadError)
   const hasMoreBackwards = useStore(store, (s) => s.hasMoreBackwards)
   const isLoadingBackwards = useStore(store, (s) => s.isLoadingBackwards)
   const isLoadingForwards = useStore(store, (s) => s.isLoadingForwards)
 
   useEffect(() => {
-    store
-      .getState()
-      .init(trpcClient, { teamIdOrSlug, templateId, buildId }, level)
-  }, [store, trpcClient, teamIdOrSlug, templateId, buildId, level])
+    store.getState().init(trpcClient, { teamIdOrSlug, sandboxId })
+  }, [store, trpcClient, teamIdOrSlug, sandboxId])
 
-  const isBuilding = buildStatus === 'building'
   const isDraining = useRef(false)
-  const prevIsBuildingRef = useRef(isBuilding)
+  const prevIsRunningRef = useRef(isRunning)
   const drainUntilTimestampMs = useRef<number | null>(null)
   const consecutiveEmptyDrainPolls = useRef(0)
 
   useEffect(() => {
-    if (isBuilding) {
+    if (isRunning) {
       isDraining.current = true
       drainUntilTimestampMs.current = null
       consecutiveEmptyDrainPolls.current = 0
-      prevIsBuildingRef.current = true
+      prevIsRunningRef.current = true
       return
     }
 
-    if (prevIsBuildingRef.current) {
+    if (prevIsRunningRef.current) {
       isDraining.current = true
-      drainUntilTimestampMs.current = Date.now() + DRAIN_AFTER_BUILD_STOP_WINDOW_MS
+      drainUntilTimestampMs.current = Date.now() + DRAIN_AFTER_STOP_WINDOW_MS
       consecutiveEmptyDrainPolls.current = 0
     }
 
-    prevIsBuildingRef.current = false
-  }, [isBuilding])
+    prevIsRunningRef.current = false
+  }, [isRunning])
 
-  const shouldPoll = isInitialized && (isBuilding || isDraining.current)
+  const shouldPoll = isInitialized && (isRunning || isDraining.current)
 
   const { isFetching: isPolling } = useQuery({
-    queryKey: ['buildLogsForward', teamIdOrSlug, templateId, buildId, level],
+    queryKey: ['sandboxLogsForward', teamIdOrSlug, sandboxId],
     queryFn: async () => {
       const { logsCount } = await store.getState().fetchMoreForwards()
 
-      if (!isBuilding) {
+      if (!isRunning) {
         if (logsCount > 0) {
           consecutiveEmptyDrainPolls.current = 0
 
           if (drainUntilTimestampMs.current !== null) {
             drainUntilTimestampMs.current =
-              Date.now() + DRAIN_AFTER_BUILD_STOP_WINDOW_MS
+              Date.now() + DRAIN_AFTER_STOP_WINDOW_MS
           }
         } else {
           consecutiveEmptyDrainPolls.current += 1
@@ -120,6 +116,8 @@ export function useBuildLogs({
   return {
     logs,
     isInitialized,
+    hasCompletedInitialLoad,
+    initialLoadError,
     hasNextPage: hasMoreBackwards,
     isFetchingNextPage: isLoadingBackwards,
     isFetching: isLoadingBackwards || isLoadingForwards || isPolling,

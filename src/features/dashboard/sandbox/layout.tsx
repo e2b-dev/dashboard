@@ -3,6 +3,7 @@
 import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
+import { ListIcon, StorageIcon } from '@/ui/primitives/icons'
 import { notFound } from 'next/navigation'
 import { useSandboxContext } from './context'
 import SandboxInspectIncompatible from './inspect/incompatible'
@@ -11,12 +12,14 @@ interface SandboxLayoutProps {
   children: React.ReactNode
   header: React.ReactNode
   teamIdOrSlug: string
+  tabsHeaderAccessory?: React.ReactNode
 }
 
 export default function SandboxLayout({
   teamIdOrSlug,
   children,
   header,
+  tabsHeaderAccessory,
 }: SandboxLayoutProps) {
   const { sandboxInfo } = useSandboxContext()
 
@@ -36,11 +39,24 @@ export default function SandboxLayout({
     <div className="flex max-h-svh h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
       {header}
 
-      <DashboardTabs type="path" layoutKey="tabs-indicator-sandbox">
+      <DashboardTabs
+        type="path"
+        layoutKey="tabs-indicator-sandbox"
+        headerAccessory={tabsHeaderAccessory}
+      >
         <DashboardTab
-          id="inspect"
-          label="Inspect"
+          id="logs"
+          label="Logs"
           className="flex flex-col max-h-full"
+          icon={<ListIcon className="size-4" />}
+        >
+          {children}
+        </DashboardTab>
+        <DashboardTab
+          id="filesystem"
+          label="Filesystem"
+          className="flex flex-col max-h-full"
+          icon={<StorageIcon className="size-4" />}
         >
           {isEnvdVersionCompatibleForInspect ? (
             children

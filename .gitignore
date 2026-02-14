@@ -40,18 +40,6 @@ next-env.d.ts
 # AI agents and related files
 CLAUDE.md
 .agent
-.cursor/
-.claude/
-.agents/
-.vscode/
-.idea/
-.agents/
-.ai/
-.codex/
-.copilot/
-.github/copilot/
-.anthropic/
-.openai/
 
 
 # tooling

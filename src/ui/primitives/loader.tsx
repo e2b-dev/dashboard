@@ -49,7 +49,7 @@ const StyledLoader = styled.div<StyledLoaderProps>`
         case 'dots':
           return css`
             content: '.';
-            animation: dotsAnimation 0.9s step-end infinite;
+            animation: dotsAnimation 0.6s step-end infinite;
           `
         default:
           return css`

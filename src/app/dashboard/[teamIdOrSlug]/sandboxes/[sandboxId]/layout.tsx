@@ -1,4 +1,5 @@
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
+import SandboxDetailsControls from '@/features/dashboard/sandbox/header/controls'
 import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 import SandboxLayoutClient from '@/features/dashboard/sandbox/layout'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
@@ -30,12 +31,8 @@ export default async function SandboxLayout({
     <SandboxProvider serverSandboxInfo={res?.data} isRunning={exists}>
       <SandboxLayoutClient
         teamIdOrSlug={teamIdOrSlug}
-        header={
-          <SandboxDetailsHeader
-            teamIdOrSlug={teamIdOrSlug}
-            state={exists ? 'running' : 'paused'}
-          />
-        }
+        tabsHeaderAccessory={<SandboxDetailsControls />}
+        header={<SandboxDetailsHeader state={exists ? 'running' : 'paused'} />}
       >
         {children}
       </SandboxLayoutClient>
