@@ -1,13 +1,17 @@
 'use client'
 
+import { INCLUDE_REPORT_ISSUE } from '@/configs/flags'
 import { getDashboardLayoutConfig, TitleSegment } from '@/configs/layout'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
+import { Button } from '@/ui/primitives/button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
+import { Bug } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Fragment } from 'react'
+import ReportIssueDialog from '../navbar/report-issue-dialog'
 
 interface DashboardLayoutHeaderProps {
   className?: string
@@ -47,6 +51,17 @@ export default function DashboardLayoutHeader({
         <div className="h-0 overflow-visible shrink-0 flex items-center">
           {children}
         </div>
+
+        {INCLUDE_REPORT_ISSUE && (
+          <ReportIssueDialog
+            trigger={
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Bug className="size-4" />
+                <span className="hidden sm:inline">Report Issue</span>
+              </Button>
+            }
+          />
+        )}
 
         <ClientOnly>
           <ThemeSwitcher />
