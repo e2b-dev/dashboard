@@ -100,35 +100,7 @@ function DashboardTabsComponent({
   )
 }
 
-export const DashboardTabs = memo(DashboardTabsComponent, (prev, next) => {
-  if (
-    prev.layoutKey !== next.layoutKey ||
-    prev.type !== next.type ||
-    prev.className !== next.className ||
-    prev.headerAccessory !== next.headerAccessory
-  ) {
-    return false
-  }
-
-  const prevChildren = Array.isArray(prev.children)
-    ? prev.children
-    : [prev.children]
-  const nextChildren = Array.isArray(next.children)
-    ? next.children
-    : [next.children]
-
-  if (prevChildren.length !== nextChildren.length) return false
-
-  return prevChildren.every((prevChild, index) => {
-    const nextChild = nextChildren[index]
-    if (!nextChild) return false
-    return (
-      prevChild.props.id === nextChild.props.id &&
-      prevChild.props.label === nextChild.props.label &&
-      prevChild.props.icon === nextChild.props.icon
-    )
-  })
-})
+export const DashboardTabs = memo(DashboardTabsComponent)
 
 export interface DashboardTabProps {
   id: string
