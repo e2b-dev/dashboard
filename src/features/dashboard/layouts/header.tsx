@@ -47,21 +47,21 @@ export default function DashboardLayoutHeader({
           <HeaderTitle title={config.title} />
         </h1>
 
-        {/* Ghost element - reserves width but not height */}
-        <div className="h-0 overflow-visible shrink-0 flex items-center">
-          {children}
-        </div>
-
         {INCLUDE_REPORT_ISSUE && (
           <ReportIssueDialog
             trigger={
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button variant="outline" className="gap-1.5 py-2.5 px-3 h-auto max-md:hidden">
                 <Bug className="size-4" />
-                <span className="hidden sm:inline">Report Issue</span>
+                <span>Contact Support</span>
               </Button>
             }
           />
         )}
+
+        {/* Ghost element - reserves width but not height */}
+        <div className="h-0 overflow-visible shrink-0 flex items-center">
+          {children}
+        </div>
 
         <ClientOnly>
           <ThemeSwitcher />
