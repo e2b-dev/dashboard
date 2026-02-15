@@ -21,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { Input } from '@/ui/primitives/input'
 import { Textarea } from '@/ui/primitives/textarea'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
@@ -40,7 +39,6 @@ const ACCEPTED_FILE_TYPES =
   'image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain'
 
 const supportFormSchema = z.object({
-  sandboxId: z.string().optional(),
   description: z.string().min(1, 'Please describe how we can help'),
 })
 
@@ -72,7 +70,6 @@ export default function ReportIssueDialog({
   const form = useForm<SupportFormValues>({
     resolver: zodResolver(supportFormSchema),
     defaultValues: {
-      sandboxId: '',
       description: '',
     },
   })
@@ -109,7 +106,6 @@ export default function ReportIssueDialog({
     trpc.support.reportIssue.mutationOptions({
       onSuccess: (data) => {
         posthog.capture('support_request_submitted', {
-          sandbox_id: form.getValues('sandboxId')?.trim() || undefined,
           thread_id: data.threadId,
           team_id: team.id,
           tier: team.tier,
@@ -169,7 +165,6 @@ export default function ReportIssueDialog({
 
   const onSubmit = (values: SupportFormValues) => {
     reportIssueMutation.mutate({
-      sandboxId: values.sandboxId?.trim() || undefined,
       description: values.description.trim(),
       teamId: team.id,
       teamName: team.name,
@@ -187,7 +182,7 @@ export default function ReportIssueDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-w-[540px]">
+      <DialogContent className="max-w-[640px]">
         <DialogHeader>
           <DialogTitle>Contact Support</DialogTitle>
           <DialogDescription>
@@ -200,24 +195,6 @@ export default function ReportIssueDialog({
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex flex-col gap-3"
           >
-            <FormField
-              control={form.control}
-              name="sandboxId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sandbox ID</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter sandbox ID (optional)"
-                      disabled={isDisabled}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="description"
