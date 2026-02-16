@@ -2,9 +2,14 @@
 
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import {
+  defaultErrorToast,
+  defaultSuccessToast,
+  useToast,
+} from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
+import { AlertDialog } from '@/ui/alert-dialog'
 import { AddonInfo } from '@/types/billing.types'
 import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
@@ -13,7 +18,7 @@ import { InfoIcon, SandboxIcon, UpgradeIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useDashboard } from '../context'
@@ -59,9 +64,21 @@ function AddonItem({ name, priceCents, description, actions }: AddonItemProps) {
 
 interface ActiveAddonsProps {
   addons: Array<{ label: string; price_cents: number }>
+  isDialogOpen: boolean
+  onDialogOpenChange: (open: boolean) => void
+  onRemove: () => void
+  isRemoving: boolean
+  isDisabled: boolean
 }
 
-function ActiveAddons({ addons }: ActiveAddonsProps) {
+function ActiveAddons({
+  addons,
+  isDialogOpen,
+  onDialogOpenChange,
+  onRemove,
+  isRemoving,
+  isDisabled,
+}: ActiveAddonsProps) {
   if (addons.length === 0) return null
 
   return (
@@ -74,9 +91,32 @@ function ActiveAddons({ addons }: ActiveAddonsProps) {
             name={addon.label}
             priceCents={addon.price_cents}
             description="Increases concurrent sandbox limit by 500"
+            actions={
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => onDialogOpenChange(true)}
+                disabled={isDisabled}
+              >
+                Remove
+              </Button>
+            }
           />
         ))}
       </div>
+
+      <AlertDialog
+        open={isDialogOpen}
+        onOpenChange={onDialogOpenChange}
+        title="Remove add-on"
+        description="Remove one +500 Sandboxes add-on from your current plan?"
+        confirm="Remove add-on"
+        onConfirm={onRemove}
+        confirmProps={{
+          loading: isRemoving,
+          disabled: isRemoving,
+        }}
+      />
     </div>
   )
 }
@@ -191,7 +231,9 @@ export default function Addons() {
   const { teamIdOrSlug } =
     useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
   const trpc = useTRPC()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const queryClient = useQueryClient()
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false)
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
   const { teamLimits } = useTeamLimits()
   const currentConcurrentSandboxesLimit = teamLimits?.concurrentInstances ?? 0
@@ -202,13 +244,34 @@ export default function Addons() {
 
   const isOnProTier = selectedTierId === TIER_PRO_ID
 
+  const itemsQueryKey = trpc.billing.getItems.queryOptions({
+    teamIdOrSlug,
+  }).queryKey
+  const teamLimitsQueryKey = trpc.billing.getTeamLimits.queryOptions({
+    teamIdOrSlug,
+  }).queryKey
+
   const createOrderMutation = useMutation(
     trpc.billing.createOrder.mutationOptions({
       onSuccess: () => {
-        setIsDialogOpen(true)
+        setIsPurchaseDialogOpen(true)
       },
       onError: (error) => {
         toast(defaultErrorToast(error.message ?? 'Failed to create order'))
+      },
+    })
+  )
+
+  const removeAddonMutation = useMutation(
+    trpc.billing.removeAddon.mutationOptions({
+      onSuccess: () => {
+        toast(defaultSuccessToast('Add-on removed from your subscription.'))
+        setIsRemoveDialogOpen(false)
+        queryClient.invalidateQueries({ queryKey: itemsQueryKey })
+        queryClient.invalidateQueries({ queryKey: teamLimitsQueryKey })
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message ?? 'Failed to remove add-on'))
       },
     })
   )
@@ -219,6 +282,16 @@ export default function Addons() {
     createOrderMutation.mutate({
       teamIdOrSlug,
       itemId: ADDON_500_SANDBOXES_ID,
+    })
+  }
+
+  const handleRemoveAddon = () => {
+    if (!team) return
+
+    removeAddonMutation.mutate({
+      teamIdOrSlug,
+      itemId: ADDON_500_SANDBOXES_ID,
+      quantity: 1,
     })
   }
 
@@ -246,25 +319,36 @@ export default function Addons() {
       : []
 
   const hasActiveAddons = activeAddons.length > 0
+  const isMutatingAddons =
+    createOrderMutation.isPending || removeAddonMutation.isPending
   const orderData = createOrderMutation.data
 
   return (
     <section className="flex flex-col space-y-6">
-      {hasActiveAddons && <ActiveAddons addons={activeAddons} />}
+      {hasActiveAddons && (
+        <ActiveAddons
+          addons={activeAddons}
+          isDialogOpen={isRemoveDialogOpen}
+          onDialogOpenChange={setIsRemoveDialogOpen}
+          onRemove={handleRemoveAddon}
+          isRemoving={removeAddonMutation.isPending}
+          isDisabled={isMutatingAddons || !team}
+        />
+      )}
 
       {availableAddon && (
         <AvailableAddons
           addon={availableAddon}
           onAdd={handleAddAddon}
           isLoading={createOrderMutation.isPending}
-          disabled={!team}
+          disabled={isMutatingAddons || !team}
         />
       )}
 
       {orderData && availableAddon && (
         <ConcurrentSandboxAddOnPurchaseDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
+          open={isPurchaseDialogOpen}
+          onOpenChange={setIsPurchaseDialogOpen}
           orderId={orderData.id}
           monthlyPriceCents={availableAddon.price_cents}
           amountDueCents={orderData.amount_due}

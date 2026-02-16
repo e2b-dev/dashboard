@@ -5,6 +5,7 @@ import {
 } from '@/features/dashboard/billing/constants'
 import getTeamLimitsMemo from '@/server/team/get-team-limits-memo'
 import {
+  AddOnOrderItem,
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
   BillingLimit,
@@ -313,6 +314,46 @@ export const billingRouter = createTRPCRouter({
       const data = (await res.json()) as AddOnOrderCreateResponse
 
       return data
+    }),
+
+  removeAddon: protectedTeamProcedure
+    .input(
+      z.object({
+        itemId: z.literal(ADDON_500_SANDBOXES_ID),
+        quantity: z.number().int().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { teamId, session } = ctx
+      const { itemId, quantity } = input
+
+      const item: AddOnOrderItem = {
+        name: itemId,
+        quantity,
+      }
+
+      const res = await fetch(
+        `${process.env.BILLING_API_URL}/teams/${teamId}/addons`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+          },
+          body: JSON.stringify({
+            items: [item],
+          }),
+        }
+      )
+
+      if (!res.ok) {
+        const text = await res.text()
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: text ?? 'Failed to remove add-on',
+        })
+      }
     }),
 
   confirmOrder: protectedTeamProcedure
