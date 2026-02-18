@@ -1,9 +1,9 @@
 import { DataTableBody } from '@/ui/data-table'
-import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
 import type { Row } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
 import { memo } from 'react'
+import SandboxesListEmpty from './empty'
 import { useSandboxListTableStore } from './stores/table-store'
 import type { SandboxListRow, SandboxListTable } from './table-config'
 import { SandboxesTableRow } from './table-row'
@@ -22,43 +22,51 @@ export const SandboxesTableBody = memo(function SandboxesTableBody({
   virtualPaddingTop = 0,
 }: SandboxesTableBodyProps) {
   const resetFilters = useSandboxListTableStore((state) => state.resetFilters)
+  const hasFilter = useSandboxListTableStore((state) => {
+    return (
+      state.startedAtFilter !== undefined ||
+      state.templateFilters.length > 0 ||
+      state.cpuCount !== undefined ||
+      state.memoryMB !== undefined ||
+      Boolean(state.globalFilter)
+    )
+  })
   const rows = virtualRows ?? table.getCenterRows()
 
   const isEmpty = rows.length === 0
 
-  const { columnFilters, globalFilter } = table.getState()
-  const hasFilter = columnFilters.length > 0 || Boolean(globalFilter)
-
   if (isEmpty) {
-    if (hasFilter) {
-      return (
-        <Empty
-          title="No Results Found"
-          description="No sandboxes match your current filters"
-          message={
-            <Button variant="default" onClick={resetFilters}>
-              Reset Filters <X className="text-accent-main-highlight size-4" />
-            </Button>
-          }
-          className="h-[70%] max-md:w-screen"
-        />
-      )
-    }
-
-    return (
-      <Empty
+    const emptyState = hasFilter ? (
+      <SandboxesListEmpty
+        title="No Results Found"
+        description="No sandboxes match your current filters."
+        actions={
+          <Button variant="outline" onClick={resetFilters} className="w-full">
+            Reset Filters <X className="text-fg-tertiary size-4" />
+          </Button>
+        }
+        className="h-full max-md:w-screen"
+      />
+    ) : (
+      <SandboxesListEmpty
         title="No Sandboxes Yet"
-        description="Running Sandboxes can be observed here"
-        message={
-          <Button variant="default" asChild>
+        description="Running sandboxes can be observed here."
+        actions={
+          <Button variant="outline" asChild className="w-full gap-2">
             <a href="/docs/quickstart" target="_blank" rel="noopener">
               Create a Sandbox
               <ExternalLink className="size-3.5" />
             </a>
           </Button>
         }
-        className="h-[70%] max-md:w-screen"
+        className="h-full max-md:w-screen"
       />
+    )
+
+    return (
+      <DataTableBody className="h-[calc(100%-2rem-1px)] overflow-hidden">
+        {emptyState}
+      </DataTableBody>
     )
   }
 
