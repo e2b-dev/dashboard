@@ -242,12 +242,10 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   ...props
 }: SandboxesTableFiltersProps) {
   const {
-    globalFilter,
     startedAtFilter,
     templateFilters,
     cpuCount,
     memoryMB,
-    setGlobalFilter,
     setStartedAtFilter,
     setTemplateFilters,
     setCpuCount,
@@ -263,13 +261,13 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-2', className)}
+      className={cn('flex items-center gap-1', className)}
       {...props}
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
+          <Button variant="outline" size="md" className="normal-case gap-2">
+            <ListFilter className="text-fg-tertiary size-4" /> Filter{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -303,13 +301,6 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {globalFilter && (
-        <TableFilterButton
-          label="Search"
-          value={globalFilter}
-          onClick={() => setGlobalFilter('')}
-        />
-      )}
       {startedAtFilter && (
         <TableFilterButton
           label="Started"

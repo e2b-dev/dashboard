@@ -1,11 +1,7 @@
 'use client'
 
 import { createHashStorage } from '@/lib/utils/store'
-import {
-  OnChangeFn,
-  RowPinningState,
-  SortingState,
-} from '@tanstack/react-table'
+import { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { trackTableInteraction } from '../table-config'
@@ -29,7 +25,6 @@ interface SandboxTableState {
   // Table state
   sorting: SortingState
   globalFilter: string
-  rowPinning: RowPinningState
 
   // Filter state
   startedAtFilter: StartedAtFilter
@@ -42,7 +37,6 @@ interface SandboxTableActions {
   // Table actions
   setSorting: OnChangeFn<SortingState>
   setGlobalFilter: OnChangeFn<string>
-  setRowPinning: OnChangeFn<RowPinningState>
 
   // Filter actions
   setStartedAtFilter: (filter: StartedAtFilter) => void
@@ -62,9 +56,8 @@ const initialState: SandboxTableState = {
   pollingInterval: sandboxesPollingIntervals[2]!.value,
 
   // Table state
-  sorting: [],
+  sorting: [{ id: 'startedAt', desc: true }],
   globalFilter: '',
-  rowPinning: {},
 
   // Filter state
   startedAtFilter: undefined,
@@ -110,23 +103,6 @@ export const useSandboxTableStore = create<Store>()(
             ...state,
             globalFilter: newGlobalFilter,
           }
-        })
-      },
-
-      setRowPinning: (rowPinning) => {
-        set((state) => ({
-          ...state,
-          rowPinning:
-            typeof rowPinning === 'function'
-              ? rowPinning(state.rowPinning)
-              : rowPinning,
-        }))
-        trackTableInteraction('pinned row', {
-          pin_count: Object.keys(
-            typeof rowPinning === 'function'
-              ? rowPinning(get().rowPinning)
-              : rowPinning
-          ).length,
         })
       },
 

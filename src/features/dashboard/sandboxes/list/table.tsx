@@ -2,19 +2,24 @@
 
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
-import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
-import { DataTable } from '@/ui/data-table'
+import {
+  DataTable,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from '@/ui/data-table'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
   ColumnSizingState,
   FilterFn,
+  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
@@ -33,7 +38,6 @@ import {
   resourceRangeFilter,
   SandboxWithMetrics,
 } from './table-config'
-import TableHeader from './table-header'
 
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
@@ -43,8 +47,6 @@ const VIRTUAL_OVERSCAN = 8
 export default function SandboxesTable() {
   'use no memo'
 
-  const isMounted = useIsMounted()
-  const searchInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { teamIdOrSlug } =
     useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
@@ -77,12 +79,10 @@ export default function SandboxesTable() {
     templateFilters,
     cpuCount,
     memoryMB,
-    rowPinning,
     sorting,
     globalFilter,
     setSorting,
     setGlobalFilter,
-    setRowPinning,
   } = useSandboxTableStore()
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -150,24 +150,26 @@ export default function SandboxesTable() {
     resetScroll()
   }, [sorting, globalFilter])
 
+  const resolvedSorting =
+    sorting.length > 0 ? sorting : [{ id: 'startedAt', desc: true }]
+
   const table = useReactTable({
     columns: COLUMNS,
     data: data.sandboxes,
     state: {
       globalFilter,
-      sorting,
+      sorting: resolvedSorting,
       columnSizing,
       columnFilters,
-      rowPinning,
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
     enableMultiSort: false,
+    enableSortingRemoval: false,
     columnResizeMode: 'onChange' as const,
     enableColumnResizing: true,
-    keepPinnedRows: true,
     filterFns: {
       fuzzy: fuzzyFilter,
       dateRange: dateRangeFilter,
@@ -177,9 +179,8 @@ export default function SandboxesTable() {
     globalFilterFn: fuzzyFilter as FilterFn<SandboxWithMetrics>,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onColumnSizingChange: setColumnSizing,
-    onRowPinningChange: setRowPinning,
+    onColumnFiltersChange: setColumnFilters,
   })
 
   const columnSizeVars = useColumnSizeVars(table)
@@ -200,14 +201,9 @@ export default function SandboxesTable() {
   const virtualizedTotalHeight = totalHeight
   const virtualPaddingTop = paddingTop
 
-  const visualRowsKey = useMemo(
-    () => visualRows.map((r) => r.original.sandboxID).join(),
-    [visualRows]
-  )
-
   const memoizedVisualRows = useMemo(
     () => visualRows.map((r) => r.original),
-    [visualRowsKey]
+    [visualRows]
   )
 
   useSandboxesMetrics({
@@ -217,7 +213,6 @@ export default function SandboxesTable() {
   return (
     <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
       <SandboxesHeader
-        searchInputRef={searchInputRef}
         table={table}
         onRefresh={refetch}
         isRefreshing={isFetching}
@@ -229,29 +224,53 @@ export default function SandboxesTable() {
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
-        {isMounted && (
-          <DataTable
-            className={cn(
-              'h-full overflow-y-auto md:min-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
-              SIDEBAR_TRANSITION_CLASSNAMES
-            )}
-            style={{ ...columnSizeVars }}
-            ref={scrollRef}
-          >
-            <TableHeader
-              topRows={table.getTopRows()}
-              headerGroups={table.getHeaderGroups()}
-              state={table.getState()}
-            />
-            <TableBody
-              sandboxes={data.sandboxes}
-              table={table}
-              visualRows={visualRows}
-              virtualizedTotalHeight={virtualizedTotalHeight}
-              virtualPaddingTop={virtualPaddingTop}
-            />
-          </DataTable>
-        )}
+        <DataTable
+          className={cn(
+            'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+            SIDEBAR_TRANSITION_CLASSNAMES
+          )}
+          style={{ ...columnSizeVars }}
+          ref={scrollRef}
+        >
+          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <DataTableRow key={headerGroup.id} className="border-b-0">
+                {headerGroup.headers.map((header) => (
+                  <DataTableHead
+                    key={header.id}
+                    header={header}
+                    sorting={
+                      resolvedSorting.find((s) => s.id === header.id)?.desc
+                    }
+                    align={
+                      header.id === 'cpuUsage' ||
+                      header.id === 'ramUsage' ||
+                      header.id === 'diskUsage'
+                        ? 'right'
+                        : 'left'
+                    }
+                  >
+                    <span>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </span>
+                  </DataTableHead>
+                ))}
+              </DataTableRow>
+            ))}
+          </DataTableHeader>
+          <TableBody
+            sandboxes={data.sandboxes}
+            table={table}
+            visualRows={visualRows}
+            virtualizedTotalHeight={virtualizedTotalHeight}
+            virtualPaddingTop={virtualPaddingTop}
+          />
+        </DataTable>
       </div>
     </ClientOnly>
   )

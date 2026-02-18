@@ -8,7 +8,6 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { parseUTCDateComponents } from '@/lib/utils/formatting'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { Template } from '@/types/api.types'
 import { JsonPopover } from '@/ui/json-popover'
@@ -144,7 +143,16 @@ export const CpuUsageCellView = React.memo(function CpuUsageCellView({
   const cpuUsedPct = useSandboxMetricsStore(
     (s) => s.metrics?.[sandboxId]?.cpuUsedPct
   )
-  return <ResourceUsage type="cpu" metrics={cpuUsedPct} total={totalCpu} />
+  return (
+    <ResourceUsage
+      type="cpu"
+      metrics={cpuUsedPct}
+      total={totalCpu}
+      classNames={{
+        wrapper: 'prose-table-numeric text-right',
+      }}
+    />
+  )
 })
 
 type RamUsageProps = { sandboxId: string; totalMem?: number }
@@ -155,7 +163,16 @@ export const RamUsageCellView = React.memo(function RamUsageCellView({
   const memUsedMb = useSandboxMetricsStore(
     (s) => s.metrics?.[sandboxId]?.memUsedMb
   )
-  return <ResourceUsage type="mem" metrics={memUsedMb} total={totalMem} />
+  return (
+    <ResourceUsage
+      type="mem"
+      metrics={memUsedMb}
+      total={totalMem}
+      classNames={{
+        wrapper: 'prose-table-numeric text-right',
+      }}
+    />
+  )
 })
 
 type DiskUsageProps = { sandboxId: string }
@@ -168,25 +185,38 @@ export const DiskUsageCellView = React.memo(function DiskUsageCellView({
   const diskTotalGb = useSandboxMetricsStore(
     (s) => s.metrics?.[sandboxId]?.diskTotalGb
   )
-  return <ResourceUsage type="disk" metrics={diskUsedGb} total={diskTotalGb} />
+  return (
+    <ResourceUsage
+      type="disk"
+      metrics={diskUsedGb}
+      total={diskTotalGb}
+      classNames={{
+        wrapper: 'prose-table-numeric text-right',
+      }}
+    />
+  )
 })
 
 export const CpuUsageCell = ({
   row,
 }: CellContext<SandboxWithMetrics, unknown>) => (
-  <CpuUsageCellView
-    sandboxId={row.original.sandboxID}
-    totalCpu={row.original.cpuCount}
-  />
+  <div className="w-full flex justify-end">
+    <CpuUsageCellView
+      sandboxId={row.original.sandboxID}
+      totalCpu={row.original.cpuCount}
+    />
+  </div>
 )
 
 export const RamUsageCell = ({
   row,
 }: CellContext<SandboxWithMetrics, unknown>) => (
-  <RamUsageCellView
-    sandboxId={row.original.sandboxID}
-    totalMem={row.original.memoryMB}
-  />
+  <div className="w-full flex justify-end">
+    <RamUsageCellView
+      sandboxId={row.original.sandboxID}
+      totalMem={row.original.memoryMB}
+    />
+  </div>
 )
 
 export const DiskUsageCell = ({
@@ -203,11 +233,16 @@ export const DiskUsageCell = ({
   }, [row.original.diskSizeMB])
 
   return (
-    <ResourceUsage
-      type="disk"
-      metrics={metrics?.diskUsedGb}
-      total={diskSizeGB}
-    />
+    <div className="w-full flex justify-end">
+      <ResourceUsage
+        type="disk"
+        metrics={metrics?.diskUsedGb}
+        total={diskSizeGB}
+        classNames={{
+          wrapper: 'prose-table-numeric text-right',
+        }}
+      />
+    </div>
   )
 }
 
@@ -215,7 +250,7 @@ export const DiskUsageCell = ({
 
 export function IdCell({ getValue }: CellContext<SandboxWithMetrics, unknown>) {
   return (
-    <div className="text-fg-tertiary overflow-x-hidden prose-table select-all">
+    <div className="overflow-x-hidden whitespace-nowrap text-fg-tertiary font-mono prose-table-numeric select-all">
       {getValue() as string}
     </div>
   )
@@ -273,16 +308,17 @@ export function StartedAtCell({
   getValue,
 }: CellContext<SandboxWithMetrics, unknown>) {
   const dateValue = getValue() as string
-  const dateComponents = useMemo(
-    () => parseUTCDateComponents(dateValue),
-    [dateValue]
-  )
+  const [datePart, timePart] = useMemo(() => {
+    const date = new Date(dateValue)
+    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
+    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 8) ?? '--']
+  }, [dateValue])
 
   return (
-    <div className="whitespace-nowrap overflow-x-hidden font-mono prose-table-numeric select-all">
-      <span className="text-fg-tertiary">{`${dateComponents.day} ${dateComponents.date} ${dateComponents.month} ${dateComponents.year}`}</span>{' '}
-      <span className="text-fg">{dateComponents.time}</span>{' '}
-      <span className="text-fg-tertiary">{dateComponents.timezone}</span>
+    <div className="h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric">
+      <span className="text-fg-secondary">{datePart}</span>{' '}
+      <span className="text-fg-tertiary">{timePart}</span>{' '}
+      <span className="text-fg-tertiary">UTC</span>
     </div>
   )
 }

@@ -1,53 +1,32 @@
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import useKeydown from '@/lib/hooks/use-keydown'
-import { cn } from '@/lib/utils'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
-import React, { useCallback } from 'react'
+import { useRef } from 'react'
 
-export const SearchInput = React.memo(
-  React.forwardRef<
-    HTMLInputElement,
-    {
-      className?: string
+export const SearchInput = () => {
+  const { setGlobalFilter, globalFilter } = useSandboxTableStore()
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useKeydown((e) => {
+    if (e.key === '/') {
+      e.preventDefault()
+      inputRef.current?.focus()
+      return true
     }
-  >(({ className }, ref) => {
-    const { setGlobalFilter, globalFilter } = useSandboxTableStore()
-
-    useKeydown((e) => {
-      if (e.key === '/') {
-        e.preventDefault()
-        if (ref && 'current' in ref) {
-          ;(ref as React.RefObject<HTMLInputElement>).current?.focus()
-        }
-        return true
-      }
-    })
-
-    const handleChange = useCallback(
-      (value: string | number) => {
-        setGlobalFilter(value as string)
-      },
-      [setGlobalFilter]
-    )
-
-    return (
-      <div className={cn('relative w-full', className)}>
-        <DebouncedInput
-          value={globalFilter}
-          onChange={handleChange}
-          placeholder="Find a sandbox..."
-          className="h-10 w-full pr-14"
-          ref={ref}
-          debounce={500}
-        />
-        <Kbd
-          keys={['/']}
-          className="absolute top-1/2 right-2 -translate-y-1/2"
-        />
-      </div>
-    )
   })
-)
 
-SearchInput.displayName = 'SearchInput'
+  return (
+    <div className="relative w-[280px]">
+      <DebouncedInput
+        value={globalFilter}
+        onChange={(v) => setGlobalFilter(v as string)}
+        placeholder="Search by ID"
+        className="h-9 w-full pr-14"
+        debounce={500}
+        ref={inputRef}
+      />
+      <Kbd keys={['/']} className="absolute top-1/2 right-2 -translate-y-1/2" />
+    </div>
+  )
+}
