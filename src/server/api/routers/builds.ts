@@ -109,8 +109,7 @@ export const buildsRouter = createTRPCRouter({
           timestampUnix: new Date(log.timestamp).getTime(),
           level: log.level,
           message: log.message,
-        }))
-        .sort((a, b) => a.timestampUnix - b.timestampUnix)
+        })).reverse()
 
       const hasMore = logs.length === limit
       const cursorLog = logs[0]
@@ -157,7 +156,6 @@ export const buildsRouter = createTRPCRouter({
           level: log.level,
           message: log.message,
         }))
-        .sort((a, b) => a.timestampUnix - b.timestampUnix)
 
       const newestLog = logs[logs.length - 1]
       const nextCursor = newestLog?.timestampUnix ?? cursor

@@ -330,6 +330,7 @@ export async function getInfraBuildLogs(
           limit: options.limit,
           direction: options.direction,
           level: options.level,
+          source: 'persistent'
         },
       },
       headers: {
