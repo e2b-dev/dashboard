@@ -1,6 +1,6 @@
 'use client'
 
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
@@ -16,33 +16,70 @@ import {
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
-  ColumnFiltersState,
-  ColumnSizingState,
-  FilterFn,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  type ColumnFiltersState,
+  type ColumnSizingState,
   useReactTable,
 } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
-import React, { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
-import { TableBody } from './table-body'
-import {
-  COLUMNS,
-  dateRangeFilter,
-  fuzzyFilter,
-  resourceRangeFilter,
-  SandboxWithMetrics,
-} from './table-config'
-
+import { SandboxesTableBody } from './table-body'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
+import type { SandboxListRow } from './table-config'
+import { sandboxListDefaultSorting } from './stores/table-store'
+import type { SandboxStartedAtFilter } from './stores/table-store'
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
 
-// metrics fetched via useSandboxesMetrics
+const STARTED_AT_FILTER_HOURS: Record<
+  Exclude<SandboxStartedAtFilter, undefined>,
+  number
+> = {
+  '1h ago': 1,
+  '6h ago': 6,
+  '12h ago': 12,
+}
+
+function buildColumnFilters({
+  startedAtFilter,
+  templateFilters,
+  cpuCount,
+  memoryMB,
+}: {
+  startedAtFilter: SandboxStartedAtFilter
+  templateFilters: string[]
+  cpuCount?: number
+  memoryMB?: number
+}): ColumnFiltersState {
+  const filters: ColumnFiltersState = []
+
+  if (startedAtFilter) {
+    const now = new Date()
+    const from = subHours(now, STARTED_AT_FILTER_HOURS[startedAtFilter])
+
+    filters.push({ id: 'startedAt', value: { from, to: now } })
+  }
+
+  if (templateFilters.length > 0) {
+    filters.push({ id: 'template', value: templateFilters })
+  }
+
+  if (cpuCount) {
+    filters.push({ id: 'cpuUsage', value: cpuCount })
+  }
+
+  if (memoryMB) {
+    filters.push({ id: 'ramUsage', value: memoryMB })
+  }
+
+  return filters
+}
 
 export default function SandboxesTable() {
   'use no memo'
@@ -64,9 +101,7 @@ export default function SandboxesTable() {
 
   const { data, refetch, isFetching } = useSuspenseQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
-      {
-        teamIdOrSlug,
-      },
+      { teamIdOrSlug },
       {
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,
@@ -79,86 +114,33 @@ export default function SandboxesTable() {
     templateFilters,
     cpuCount,
     memoryMB,
+    pollingInterval,
     sorting,
     globalFilter,
     setSorting,
     setGlobalFilter,
-  } = useSandboxTableStore()
+  } = useSandboxListTableStore()
 
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+  const columnFilters = useMemo(
+    () =>
+      buildColumnFilters({
+        startedAtFilter,
+        templateFilters,
+        cpuCount,
+        memoryMB,
+      }),
+    [startedAtFilter, templateFilters, cpuCount, memoryMB]
   )
 
-  const resetScroll = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0
-    }
-  }
+  const activeSorting =
+    sorting.length > 0 ? sorting : sandboxListDefaultSorting
 
-  // Effect hooks for filters
-  React.useEffect(() => {
-    let newFilters = [...columnFilters]
-
-    // Handle startedAt filter
-    if (!startedAtFilter) {
-      newFilters = newFilters.filter((f) => f.id !== 'startedAt')
-    } else {
-      const now = new Date()
-      const from =
-        startedAtFilter === '1h ago'
-          ? subHours(now, 1)
-          : startedAtFilter === '6h ago'
-            ? subHours(now, 6)
-            : startedAtFilter === '12h ago'
-              ? subHours(now, 12)
-              : undefined
-
-      newFilters = newFilters.filter((f) => f.id !== 'startedAt')
-      newFilters.push({ id: 'startedAt', value: { from, to: now } })
-    }
-
-    // Handle template filter
-    if (templateFilters.length === 0) {
-      newFilters = newFilters.filter((f) => f.id !== 'template')
-    } else {
-      newFilters = newFilters.filter((f) => f.id !== 'template')
-      newFilters.push({ id: 'template', value: templateFilters })
-    }
-
-    // Handle CPU filter
-    if (!cpuCount) {
-      newFilters = newFilters.filter((f) => f.id !== 'cpuUsage')
-    } else {
-      newFilters = newFilters.filter((f) => f.id !== 'cpuUsage')
-      newFilters.push({ id: 'cpuUsage', value: cpuCount })
-    }
-
-    // Handle memory filter
-    if (!memoryMB) {
-      newFilters = newFilters.filter((f) => f.id !== 'ramUsage')
-    } else {
-      newFilters = newFilters.filter((f) => f.id !== 'ramUsage')
-      newFilters.push({ id: 'ramUsage', value: memoryMB })
-    }
-
-    resetScroll()
-    setColumnFilters(newFilters)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startedAtFilter, templateFilters, cpuCount, memoryMB])
-
-  React.useEffect(() => {
-    resetScroll()
-  }, [sorting, globalFilter])
-
-  const resolvedSorting =
-    sorting.length > 0 ? sorting : [{ id: 'startedAt', desc: true }]
-
-  const table = useReactTable({
-    columns: COLUMNS,
+  const table = useReactTable<SandboxListRow>({
+    columns: sandboxListColumns,
     data: data.sandboxes,
     state: {
       globalFilter,
-      sorting: resolvedSorting,
+      sorting: activeSorting,
       columnSizing,
       columnFilters,
     },
@@ -168,50 +150,48 @@ export default function SandboxesTable() {
     enableSorting: true,
     enableMultiSort: false,
     enableSortingRemoval: false,
-    columnResizeMode: 'onChange' as const,
+    columnResizeMode: 'onChange',
     enableColumnResizing: true,
-    filterFns: {
-      fuzzy: fuzzyFilter,
-      dateRange: dateRangeFilter,
-      resourceRange: resourceRangeFilter,
-    },
     enableGlobalFilter: true,
-    globalFilterFn: fuzzyFilter as FilterFn<SandboxWithMetrics>,
+    globalFilterFn: sandboxIdFuzzyFilter,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnSizingChange: setColumnSizing,
-    onColumnFiltersChange: setColumnFilters,
   })
 
   const columnSizeVars = useColumnSizeVars(table)
 
-  const centerRows = table.getCenterRows()
-
   const {
-    virtualRows: visualRows,
-    totalHeight,
-    paddingTop,
-  } = useVirtualRows<SandboxWithMetrics>({
-    rows: centerRows,
+    virtualRows,
+    totalHeight: virtualizedTotalHeight,
+    paddingTop: virtualPaddingTop,
+  } = useVirtualRows<SandboxListRow>({
+    rows: table.getCenterRows(),
     scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
     estimateSizePx: ROW_HEIGHT_PX,
     overscan: VIRTUAL_OVERSCAN,
   })
 
-  const virtualizedTotalHeight = totalHeight
-  const virtualPaddingTop = paddingTop
-
-  const memoizedVisualRows = useMemo(
-    () => visualRows.map((r) => r.original),
-    [visualRows]
+  const visibleSandboxes = useMemo(
+    () => virtualRows.map((row) => row.original),
+    [virtualRows]
   )
 
   useSandboxesMetrics({
-    sandboxes: memoizedVisualRows,
+    sandboxes: visibleSandboxes,
+    pollingIntervalMs: pollingInterval === 0 ? 0 : pollingInterval * 1_000,
   })
 
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0
+    }
+  }, [activeSorting, globalFilter, columnFilters])
+
+  const tableSorting = table.getState().sorting
+
   return (
-    <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
+    <ClientOnly className="flex h-full min-h-0 flex-col p-3 md:max-w-[calc(100svw-var(--sidebar-width-active))] md:p-6">
       <SandboxesHeader
         table={table}
         onRefresh={refetch}
@@ -220,7 +200,7 @@ export default function SandboxesTable() {
 
       <div
         className={cn(
-          'bg-bg flex-1 mt-4 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+          'bg-bg mt-4 flex-1 w-full overflow-x-auto md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
@@ -232,16 +212,14 @@ export default function SandboxesTable() {
           style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
-          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">
+          <DataTableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow key={headerGroup.id} className="border-b-0">
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
                     key={header.id}
                     header={header}
-                    sorting={
-                      resolvedSorting.find((s) => s.id === header.id)?.desc
-                    }
+                    sorting={tableSorting.find((s) => s.id === header.id)?.desc}
                     align={
                       header.id === 'cpuUsage' ||
                       header.id === 'ramUsage' ||
@@ -263,10 +241,9 @@ export default function SandboxesTable() {
               </DataTableRow>
             ))}
           </DataTableHeader>
-          <TableBody
-            sandboxes={data.sandboxes}
+          <SandboxesTableBody
             table={table}
-            visualRows={visualRows}
+            virtualRows={virtualRows}
             virtualizedTotalHeight={virtualizedTotalHeight}
             virtualPaddingTop={virtualPaddingTop}
           />

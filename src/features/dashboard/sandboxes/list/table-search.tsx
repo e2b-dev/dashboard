@@ -1,11 +1,14 @@
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
 import { useRef } from 'react'
 
 export const SearchInput = () => {
-  const { setGlobalFilter, globalFilter } = useSandboxTableStore()
+  const globalFilter = useSandboxListTableStore((state) => state.globalFilter)
+  const setGlobalFilter = useSandboxListTableStore(
+    (state) => state.setGlobalFilter
+  )
   const inputRef = useRef<HTMLInputElement>(null)
 
   useKeydown((e) => {

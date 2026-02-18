@@ -1,15 +1,15 @@
 import { PollingButton } from '@/ui/polling-button'
 import { Suspense } from 'react'
-import { SandboxesTable } from './table-config'
+import type { SandboxListTable } from './table-config'
 import {
-  sandboxesPollingIntervals,
-  useSandboxTableStore,
+  sandboxListPollingIntervals,
+  useSandboxListTableStore,
 } from './stores/table-store'
 import SandboxesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 
 interface SandboxesHeaderProps {
-  table: SandboxesTable
+  table: SandboxListTable
   onRefresh: () => void
   isRefreshing: boolean
 }
@@ -21,11 +21,14 @@ export function SandboxesHeader({
 }: SandboxesHeaderProps) {
   'use no memo'
 
-  const { pollingInterval, setPollingInterval } = useSandboxTableStore()
+  const pollingInterval = useSandboxListTableStore((state) => state.pollingInterval)
+  const setPollingInterval = useSandboxListTableStore(
+    (state) => state.setPollingInterval
+  )
+  const tableState = table.getState()
+  const { columnFilters, globalFilter } = tableState
 
-  const showFilteredRowCount =
-    Object.keys(table.getState().columnFilters).length > 0 ||
-    table.getState().globalFilter
+  const showFilteredRowCount = columnFilters.length > 0 || Boolean(globalFilter)
 
   const filteredCount = table.getFilteredRowModel().rows.length
   const totalCount = table.getCoreRowModel().rows.length
@@ -64,7 +67,7 @@ export function SandboxesHeader({
 
       <div className="flex w-full justify-end sm:w-auto sm:justify-start sm:self-center">
         <PollingButton
-          intervals={sandboxesPollingIntervals}
+          intervals={sandboxListPollingIntervals}
           interval={pollingInterval}
           onIntervalChange={setPollingInterval}
           onRefresh={onRefresh}

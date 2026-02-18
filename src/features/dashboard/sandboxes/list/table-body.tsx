@@ -1,40 +1,33 @@
-import { Sandbox } from '@/types/api.types'
 import { DataTableBody } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { Row } from '@tanstack/react-table'
+import type { Row } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
-import { memo, useMemo } from 'react'
-import { useSandboxTableStore } from './stores/table-store'
-import { SandboxesTable, SandboxWithMetrics } from './table-config'
-import { TableRow } from './table-row'
+import { memo } from 'react'
+import { useSandboxListTableStore } from './stores/table-store'
+import type { SandboxListRow, SandboxListTable } from './table-config'
+import { SandboxesTableRow } from './table-row'
 
-interface TableBodyProps {
-  sandboxes: Sandbox[] | undefined
-  table: SandboxesTable
-  visualRows: Row<SandboxWithMetrics>[]
+interface SandboxesTableBodyProps {
+  table: SandboxListTable
+  virtualRows?: Row<SandboxListRow>[]
   virtualizedTotalHeight?: number
   virtualPaddingTop?: number
 }
 
-export const TableBody = memo(function TableBody({
-  sandboxes,
+export const SandboxesTableBody = memo(function SandboxesTableBody({
   table,
-  visualRows,
+  virtualRows,
   virtualizedTotalHeight,
   virtualPaddingTop = 0,
-}: TableBodyProps) {
-  const resetFilters = useSandboxTableStore((state) => state.resetFilters)
+}: SandboxesTableBodyProps) {
+  const resetFilters = useSandboxListTableStore((state) => state.resetFilters)
+  const rows = virtualRows ?? table.getCenterRows()
 
-  const isEmpty = sandboxes && visualRows?.length === 0
+  const isEmpty = rows.length === 0
 
-  const hasFilter = useMemo(() => {
-    return (
-      Object.values(table.getState().columnFilters).some(
-        (filter) => filter.value !== undefined
-      ) || table.getState().globalFilter !== ''
-    )
-  }, [table])
+  const { columnFilters, globalFilter } = table.getState()
+  const hasFilter = columnFilters.length > 0 || Boolean(globalFilter)
 
   if (isEmpty) {
     if (hasFilter) {
@@ -72,8 +65,8 @@ export const TableBody = memo(function TableBody({
   return (
     <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
       {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-      {visualRows.map((row) => (
-        <TableRow key={row.id} row={row} />
+      {rows.map((row) => (
+        <SandboxesTableRow key={row.id} row={row} />
       ))}
     </DataTableBody>
   )

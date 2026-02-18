@@ -2,7 +2,7 @@
 
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useTRPC } from '@/trpc/client'
-import { Sandboxes } from '@/types/api.types'
+import type { Sandboxes } from '@/types/api.types'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
@@ -11,13 +11,13 @@ import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface UseSandboxesMetricsProps {
   sandboxes: Sandboxes
-  pollingInterval?: number
+  pollingIntervalMs?: number
   debounceDelay?: number
 }
 
 export function useSandboxesMetrics({
   sandboxes,
-  pollingInterval = SANDBOXES_METRICS_POLLING_MS,
+  pollingIntervalMs = SANDBOXES_METRICS_POLLING_MS,
   debounceDelay = 1000,
 }: UseSandboxesMetricsProps) {
   const { team } = useDashboard()
@@ -31,16 +31,23 @@ export function useSandboxesMetrics({
   const [debouncedSandboxIds] = useDebounceValue(sandboxIds, debounceDelay)
 
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
+  const shouldFetchMetrics =
+    debouncedSandboxIds.length > 0 && pollingIntervalMs !== 0
 
-  const { data, error, isLoading } = useQuery(
+  const metricsQueryInput = useMemo(
+    () => ({
+      teamIdOrSlug: team.slug ?? team.id,
+      sandboxIds: debouncedSandboxIds,
+    }),
+    [debouncedSandboxIds, team.id, team.slug]
+  )
+
+  const { data } = useQuery(
     trpc.sandboxes.getSandboxesMetrics.queryOptions(
+      metricsQueryInput,
       {
-        teamIdOrSlug: team.slug,
-        sandboxIds: debouncedSandboxIds,
-      },
-      {
-        enabled: debouncedSandboxIds.length > 0 && pollingInterval !== 0,
-        refetchInterval: pollingInterval,
+        enabled: shouldFetchMetrics,
+        refetchInterval: pollingIntervalMs,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
         refetchOnReconnect: true,
@@ -54,10 +61,4 @@ export function useSandboxesMetrics({
       setMetrics(data.metrics)
     }
   }, [data, setMetrics])
-
-  return {
-    metrics: data?.metrics ?? null,
-    error,
-    isLoading,
-  }
 }
