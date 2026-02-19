@@ -6,6 +6,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
 import { SandboxIdSchema } from '@/lib/schemas/api'
+import { setTeamCookies } from '@/lib/utils/cookies'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
@@ -24,13 +25,6 @@ interface InspectSandboxRouteContext {
 interface UserTeam {
   id: string
   slug: string
-}
-
-const selectedTeamCookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 60 * 60 * 24 * 30,
 }
 
 function redirectToDashboardWithWarning(
@@ -112,25 +106,6 @@ async function resolveTeamForSandbox(
   }
 
   return null
-}
-
-function setSelectedTeamCookies(
-  response: NextResponse,
-  selectedTeam: UserTeam
-): void {
-  response.cookies.set(
-    COOKIE_KEYS.SELECTED_TEAM_ID,
-    selectedTeam.id,
-    selectedTeamCookieOptions
-  )
-
-  if (selectedTeam.slug !== selectedTeam.id) {
-    response.cookies.set(
-      COOKIE_KEYS.SELECTED_TEAM_SLUG,
-      selectedTeam.slug,
-      selectedTeamCookieOptions
-    )
-  }
 }
 
 export async function GET(
@@ -224,9 +199,8 @@ export async function GET(
       PROTECTED_URLS.SANDBOX_INSPECT(selectedTeam.slug, sandboxId),
       request.url
     )
-    const response = NextResponse.redirect(redirectUrl)
 
-    setSelectedTeamCookies(response, selectedTeam)
+    await setTeamCookies(selectedTeam.id, selectedTeam.slug)
 
     l.info(
       {
@@ -242,7 +216,7 @@ export async function GET(
       `INSPECT_SANDBOX_ROUTE_HANDLER: Redirecting to ${redirectUrl.pathname}`
     )
 
-    return response
+    return NextResponse.redirect(redirectUrl)
   } catch (error) {
     const serializedError = serializeError(error)
     const errorMessage =
