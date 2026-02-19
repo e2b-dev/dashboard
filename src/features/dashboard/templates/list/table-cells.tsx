@@ -389,7 +389,10 @@ export function CreatedAtCell({
   const dateValue = getValue() as string
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue)
+    return formatLocalLogStyleTimestamp(dateValue, {
+      includeSeconds: false,
+      includeYear: true,
+    })
   }, [dateValue])
 
   return (
@@ -415,7 +418,10 @@ export function UpdatedAtCell({
   const dateValue = getValue() as string
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue)
+    return formatLocalLogStyleTimestamp(dateValue, {
+      includeSeconds: false,
+      includeYear: true,
+    })
   }, [dateValue])
 
   return (
