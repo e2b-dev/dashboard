@@ -1,6 +1,7 @@
 'use client'
 
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { areStringArraysEqual } from '@/lib/utils/array'
 import { useTRPC } from '@/trpc/client'
 import type { Sandboxes } from '@/types/api.types'
 import { useQuery } from '@tanstack/react-query'
@@ -14,10 +15,6 @@ interface UseSandboxesMetricsProps {
   isListScrolling?: boolean
 }
 
-const hasSameSandboxIds = (first: string[], second: string[]) =>
-  first.length === second.length &&
-  first.every((sandboxId, index) => sandboxId === second[index])
-
 function useStableSandboxIdsWhileScrolling(
   sandboxIds: string[],
   isListScrolling: boolean
@@ -26,7 +23,7 @@ function useStableSandboxIdsWhileScrolling(
 
   if (
     !isListScrolling &&
-    !hasSameSandboxIds(activeSandboxIdsRef.current, sandboxIds)
+    !areStringArraysEqual(activeSandboxIdsRef.current, sandboxIds)
   ) {
     activeSandboxIdsRef.current = sandboxIds
   }

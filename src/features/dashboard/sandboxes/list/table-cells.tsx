@@ -50,6 +50,22 @@ const RamUsageCellView = ({ sandboxId, totalMem }: RamUsageCellProps) => {
   )
 }
 
+type DiskUsageCellProps = { sandboxId: string; totalDiskGb: number }
+const DiskUsageCellView = ({ sandboxId, totalDiskGb }: DiskUsageCellProps) => {
+  const diskUsedGb = useSandboxMetricsStore(
+    (state) => state.metrics?.[sandboxId]?.diskUsedGb
+  )
+
+  return (
+    <ResourceUsage
+      type="disk"
+      metrics={diskUsedGb}
+      total={totalDiskGb}
+      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    />
+  )
+}
+
 export const CpuUsageCell = ({
   row,
 }: CellContext<SandboxListRow, unknown>) => (
@@ -75,19 +91,13 @@ export const RamUsageCell = ({
 export const DiskUsageCell = ({
   row,
 }: CellContext<SandboxListRow, unknown>) => {
-  const metric = useSandboxMetricsStore(
-    (state) => state.metrics?.[row.original.sandboxID]
-  )
-
   const diskSizeGB = row.original.diskSizeMB / 1024
 
   return (
     <div className="flex w-full justify-end">
-      <ResourceUsage
-        type="disk"
-        metrics={metric?.diskUsedGb}
-        total={diskSizeGB}
-        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      <DiskUsageCellView
+        sandboxId={row.original.sandboxID}
+        totalDiskGb={diskSizeGB}
       />
     </div>
   )

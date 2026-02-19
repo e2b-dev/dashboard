@@ -1,5 +1,6 @@
 'use client'
 
+import { areStringArraysEqual } from '@/lib/utils/array'
 import { createHashStorage } from '@/lib/utils/store'
 import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
@@ -29,10 +30,6 @@ const resolveUpdater = <T>(updater: UpdaterInput<T>, state: T): T =>
   typeof updater === 'function'
     ? (updater as (currentState: T) => T)(state)
     : updater
-
-const hasSameStringItems = (first: string[], second: string[]) =>
-  first.length === second.length &&
-  first.every((value, index) => value === second[index])
 
 interface SandboxListTableState {
   // Page state
@@ -148,7 +145,7 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
 
       setTemplateFilters: (templateFilters) => {
         set((state) => {
-          if (hasSameStringItems(state.templateFilters, templateFilters)) {
+          if (areStringArraysEqual(state.templateFilters, templateFilters)) {
             return state
           }
 
