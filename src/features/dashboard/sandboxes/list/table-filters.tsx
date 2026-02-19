@@ -299,7 +299,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
 
   return (
     <div
-      className={cn('flex items-center gap-1', className)}
+      className={cn('flex min-w-0 flex-wrap items-center gap-1', className)}
       {...props}
     >
       <DropdownMenu>

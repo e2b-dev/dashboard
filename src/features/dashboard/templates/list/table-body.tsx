@@ -49,7 +49,7 @@ export function TemplatesTableBody({
               Reset Filters <X className="text-accent-main-highlight size-4" />
             </Button>
           }
-          className="h-[70%] max-md:w-screen"
+          className="h-[70%] max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
         />
       )
     }
@@ -66,7 +66,7 @@ export function TemplatesTableBody({
             </a>
           </Button>
         }
-        className="h-[70%] max-md:w-screen"
+        className="h-[70%] max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
       />
     )
   }

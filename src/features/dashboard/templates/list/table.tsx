@@ -141,6 +141,7 @@ export default function TemplatesTable() {
   const resetScroll = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
+      scrollRef.current.scrollLeft = 0
     }
   }
 

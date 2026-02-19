@@ -35,18 +35,18 @@ export function SandboxesHeader({
 
   return (
     <header className="flex w-full flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-      <div className="flex flex-wrap items-center gap-1 min-w-0 flex-1">
-        <div className="shrink-0">
+      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1 sm:items-center">
+        <div className="w-full sm:w-auto sm:shrink-0">
           <SearchInput />
         </div>
 
         <Suspense fallback={null}>
-          <SandboxesTableFilters />
+          <SandboxesTableFilters className="w-full sm:w-auto" />
         </Suspense>
 
-        <div className="w-2 shrink-0" aria-hidden="true" />
+        <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />
 
-        <span className="prose-label-highlight uppercase h-9 flex items-center gap-1">
+        <span className="prose-label-highlight h-9 flex w-full min-w-0 items-center gap-1 uppercase sm:w-auto">
           {showFilteredRowCount ? (
             <>
               <span className="text-fg">
@@ -65,7 +65,7 @@ export function SandboxesHeader({
         </span>
       </div>
 
-      <div className="flex w-full justify-end sm:w-auto sm:justify-start sm:self-center">
+      <div className="flex w-full justify-start sm:w-auto sm:justify-start sm:self-center">
         <PollingButton
           intervals={sandboxListPollingIntervals}
           interval={pollingInterval}

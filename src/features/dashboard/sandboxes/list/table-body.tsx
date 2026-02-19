@@ -45,7 +45,7 @@ export const SandboxesTableBody = memo(function SandboxesTableBody({
             Reset Filters <X className="text-fg-tertiary size-4" />
           </Button>
         }
-        className="h-full max-md:w-screen"
+        className="h-full max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
       />
     ) : (
       <SandboxesListEmpty
@@ -59,7 +59,7 @@ export const SandboxesTableBody = memo(function SandboxesTableBody({
             </a>
           </Button>
         }
-        className="h-full max-md:w-screen"
+        className="h-full max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
       />
     )
 

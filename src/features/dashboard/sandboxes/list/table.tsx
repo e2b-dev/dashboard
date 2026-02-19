@@ -188,6 +188,7 @@ export default function SandboxesTable() {
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
+      scrollRef.current.scrollLeft = 0
     }
   }, [activeSorting, globalFilter, columnFilters])
 

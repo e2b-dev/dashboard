@@ -19,7 +19,7 @@ export const SearchInput = () => {
   })
 
   return (
-    <div className="relative w-[280px]">
+    <div className="relative w-full sm:w-[280px]">
       <DebouncedInput
         value={globalFilter}
         onChange={(v) => setGlobalFilter(v as string)}
