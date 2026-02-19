@@ -165,6 +165,7 @@ export default function SandboxesTable() {
     virtualRows,
     totalHeight: virtualizedTotalHeight,
     paddingTop: virtualPaddingTop,
+    virtualizer,
   } = useVirtualRows<SandboxListRow>({
     rows: table.getCenterRows(),
     scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
@@ -176,10 +177,12 @@ export default function SandboxesTable() {
     () => virtualRows.map((row) => row.original),
     [virtualRows]
   )
+  const isListScrolling = virtualizer.isScrolling
 
   useSandboxesMetrics({
     sandboxes: visibleSandboxes,
     pollingIntervalMs: pollingInterval === 0 ? 0 : pollingInterval * 1_000,
+    isListScrolling,
   })
 
   useEffect(() => {

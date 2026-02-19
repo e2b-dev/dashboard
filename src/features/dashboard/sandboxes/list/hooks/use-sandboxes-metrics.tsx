@@ -4,21 +4,40 @@ import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useTRPC } from '@/trpc/client'
 import type { Sandboxes } from '@/types/api.types'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
-import { useDebounceValue } from 'usehooks-ts'
+import { useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface UseSandboxesMetricsProps {
   sandboxes: Sandboxes
   pollingIntervalMs?: number
-  debounceDelay?: number
+  isListScrolling?: boolean
+}
+
+const hasSameSandboxIds = (first: string[], second: string[]) =>
+  first.length === second.length &&
+  first.every((sandboxId, index) => sandboxId === second[index])
+
+function useStableSandboxIdsWhileScrolling(
+  sandboxIds: string[],
+  isListScrolling: boolean
+) {
+  const activeSandboxIdsRef = useRef<string[]>(sandboxIds)
+
+  if (
+    !isListScrolling &&
+    !hasSameSandboxIds(activeSandboxIdsRef.current, sandboxIds)
+  ) {
+    activeSandboxIdsRef.current = sandboxIds
+  }
+
+  return activeSandboxIdsRef.current
 }
 
 export function useSandboxesMetrics({
   sandboxes,
   pollingIntervalMs = SANDBOXES_METRICS_POLLING_MS,
-  debounceDelay = 1000,
+  isListScrolling = false,
 }: UseSandboxesMetricsProps) {
   const { team } = useDashboard()
   const trpc = useTRPC()
@@ -27,19 +46,21 @@ export function useSandboxesMetrics({
     () => sandboxes.map((sbx) => sbx.sandboxID),
     [sandboxes]
   )
-
-  const [debouncedSandboxIds] = useDebounceValue(sandboxIds, debounceDelay)
+  const activeSandboxIds = useStableSandboxIdsWhileScrolling(
+    sandboxIds,
+    isListScrolling
+  )
 
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
   const shouldFetchMetrics =
-    debouncedSandboxIds.length > 0 && pollingIntervalMs !== 0
+    !isListScrolling && activeSandboxIds.length > 0 && pollingIntervalMs !== 0
 
   const metricsQueryInput = useMemo(
     () => ({
       teamIdOrSlug: team.slug ?? team.id,
-      sandboxIds: debouncedSandboxIds,
+      sandboxIds: activeSandboxIds,
     }),
-    [debouncedSandboxIds, team.id, team.slug]
+    [activeSandboxIds, team.id, team.slug]
   )
 
   const { data } = useQuery(
