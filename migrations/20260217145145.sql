@@ -66,7 +66,7 @@ resolved AS (
           ON e.id = ea.env_id
         WHERE e.team_id = p.team_id
           AND ea.alias = p.search_term
-        ORDER BY ea.id ASC
+        ORDER BY ea.alias ASC
         LIMIT 1
       )
     ) AS resolved_template_id
@@ -79,12 +79,12 @@ page_data AS (
     b.reason::jsonb AS reason,
     b.created_at,
     b.finished_at,
-    b.env_id AS template_id
+    b.env_id AS template_id,
+    r.statuses
   FROM public.env_builds b
   JOIN resolved r
     ON r.team_id = b.team_id
-  WHERE b.status = ANY (r.statuses)
-    AND (b.created_at, b.id) < (r.cursor_created_at, r.cursor_id)
+  WHERE (b.created_at, b.id) < (r.cursor_created_at, r.cursor_id)
     AND (
       r.search_term IS NULL
       OR (r.candidate_build_id IS NOT NULL AND b.id = r.candidate_build_id)
@@ -106,10 +106,10 @@ LEFT JOIN LATERAL (
   SELECT x.alias
   FROM public.env_aliases x
   WHERE x.env_id = d.template_id
-  ORDER BY x.id ASC
+  ORDER BY x.alias ASC
   LIMIT 1
 ) ea ON TRUE
-ORDER BY d.created_at DESC, d.id DESC;
+WHERE d.status = ANY (d.statuses);
 $function$;
 
 REVOKE ALL ON FUNCTION public.list_team_builds_rpc(uuid, text[], integer, timestamptz, uuid, text) FROM PUBLIC;
