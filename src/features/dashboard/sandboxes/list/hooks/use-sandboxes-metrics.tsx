@@ -52,8 +52,9 @@ export function useSandboxesMetrics({
   )
 
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
-  const shouldFetchMetrics =
-    !isListScrolling && activeSandboxIds.length > 0 && pollingIntervalMs !== 0
+  const shouldEnableMetricsQuery =
+    !isListScrolling && activeSandboxIds.length > 0
+  const metricsRefetchInterval = pollingIntervalMs > 0 ? pollingIntervalMs : false
 
   const metricsQueryInput = useMemo(
     () => ({
@@ -67,8 +68,8 @@ export function useSandboxesMetrics({
     trpc.sandboxes.getSandboxesMetrics.queryOptions(
       metricsQueryInput,
       {
-        enabled: shouldFetchMetrics,
-        refetchInterval: pollingIntervalMs,
+        enabled: shouldEnableMetricsQuery,
+        refetchInterval: metricsRefetchInterval,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
         refetchOnReconnect: true,
