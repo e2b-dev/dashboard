@@ -173,14 +173,9 @@ const ResourcesFilter = memo(function ResourcesFilter() {
     const nextCpuCount = debouncedValues.cpu || undefined
     const nextMemoryMB = debouncedValues.memory || undefined
 
-    if (nextCpuCount !== cpuCount) {
-      setCpuCount(nextCpuCount)
-    }
-
-    if (nextMemoryMB !== memoryMB) {
-      setMemoryMB(nextMemoryMB)
-    }
-  }, [cpuCount, debouncedValues, memoryMB, setCpuCount, setMemoryMB])
+    setCpuCount(nextCpuCount)
+    setMemoryMB(nextMemoryMB)
+  }, [debouncedValues, setCpuCount, setMemoryMB])
 
   const handleCpuChange = useCallback((value: number) => {
     setLocalValues((prev) => ({ ...prev, cpu: value }))
