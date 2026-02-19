@@ -12,7 +12,7 @@ export default function SandboxLogsView({
   sandboxId,
 }: SandboxLogsViewProps) {
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-3 md:p-6 max-md:sticky max-md:top-0 max-md:min-h-[calc(100vh-var(--protected-navbar-height))]">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-3 md:p-6">
       <SandboxLogs teamIdOrSlug={teamIdOrSlug} sandboxId={sandboxId} />
     </div>
   )

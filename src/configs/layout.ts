@@ -44,6 +44,9 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       ],
       type: 'custom',
       copyValue: sandboxId,
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
     }
   },
   '/dashboard/*/templates': () => ({

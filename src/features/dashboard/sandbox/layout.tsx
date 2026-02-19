@@ -36,18 +36,19 @@ export default function SandboxLayout({
   }
 
   return (
-    <div className="flex max-h-svh h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
+    <div className="flex h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
       {header}
 
       <DashboardTabs
         type="path"
         layoutKey="tabs-indicator-sandbox"
+        className="max-md:sticky max-md:top-0 max-md:z-20 max-md:h-[calc(100svh-var(--protected-navbar-height))] max-md:max-h-[calc(100svh-var(--protected-navbar-height))] max-md:min-h-[calc(100svh-var(--protected-navbar-height))]"
         headerAccessory={tabsHeaderAccessory}
       >
         <DashboardTab
           id="logs"
           label="Logs"
-          className="flex flex-col max-h-full"
+          className="flex min-h-0 flex-1 flex-col"
           icon={<ListIcon className="size-4" />}
         >
           {children}
@@ -55,7 +56,7 @@ export default function SandboxLayout({
         <DashboardTab
           id="filesystem"
           label="Filesystem"
-          className="flex flex-col max-h-full"
+          className="flex min-h-0 flex-1 flex-col"
           icon={<StorageIcon className="size-4" />}
         >
           {isEnvdVersionCompatibleForInspect ? (

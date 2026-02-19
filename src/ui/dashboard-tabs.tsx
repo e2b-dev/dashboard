@@ -92,7 +92,9 @@ function DashboardTabsComponent({
           </TabsList>
         </div>
       ) : (
-        <TabsList className="bg-bg z-30 w-full justify-start">{tabTriggers}</TabsList>
+        <TabsList className="bg-bg z-30 w-full justify-start">
+          {tabTriggers}
+        </TabsList>
       )}
 
       {children}
@@ -114,10 +116,7 @@ export function DashboardTab(props: DashboardTabProps) {
   return (
     <TabsContent
       value={props.id}
-      className={cn(
-        'flex-1 min-h-0 h-full w-full overflow-hidden',
-        props.className
-      )}
+      className={cn('flex-1 min-h-0 w-full overflow-hidden', props.className)}
     >
       {props.children}
     </TabsContent>
