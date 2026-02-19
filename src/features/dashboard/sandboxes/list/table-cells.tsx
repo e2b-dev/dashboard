@@ -3,6 +3,7 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
+import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
 import type { CellContext } from '@tanstack/react-table'
@@ -16,18 +17,6 @@ import type { SandboxListRow } from './table-config'
 const USAGE_TEXT_CLASSNAME = 'prose-table-numeric text-right'
 const MONO_NUMERIC_TEXT_CLASSNAME =
   'overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
-
-const formatUtcTimestamp = (dateValue: string, timeLength: number) => {
-  const date = new Date(dateValue)
-
-  if (Number.isNaN(date.getTime())) {
-    return ['--', '--'] as const
-  }
-
-  const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
-
-  return [isoDate ?? '--', isoTimeWithMillis?.slice(0, timeLength) ?? '--'] as const
-}
 
 type CpuUsageCellProps = { sandboxId: string; totalCpu?: number }
 const CpuUsageCellView = ({ sandboxId, totalCpu }: CpuUsageCellProps) => {
@@ -177,15 +166,19 @@ export function StartedAtCell({
 }: CellContext<SandboxListRow, unknown>) {
   const dateValue = (getValue() as string | undefined) ?? ''
 
-  const [datePart, timePart] = useMemo(() => {
-    return formatUtcTimestamp(dateValue, 8)
+  const formattedTimestamp = useMemo(() => {
+    return formatLocalLogStyleTimestamp(dateValue)
   }, [dateValue])
 
   return (
     <div className={`h-full ${MONO_NUMERIC_TEXT_CLASSNAME}`}>
-      <span className="text-fg-secondary">{datePart}</span>{' '}
-      <span className="text-fg-tertiary">{timePart}</span>{' '}
-      <span className="text-fg-tertiary">UTC</span>
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.datePart ?? '--'}
+      </span>{' '}
+      {formattedTimestamp?.timePart ?? '--'}{' '}
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.timezonePart ?? ''}
+      </span>
     </div>
   )
 }

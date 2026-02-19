@@ -8,6 +8,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
 import { DefaultTemplate, Template } from '@/types/api.types'
@@ -387,10 +388,8 @@ export function CreatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const [datePart, timePart] = useMemo(() => {
-    const date = new Date(dateValue)
-    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
-    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
+  const formattedTimestamp = useMemo(() => {
+    return formatLocalLogStyleTimestamp(dateValue)
   }, [dateValue])
 
   return (
@@ -399,9 +398,13 @@ export function CreatedAtCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-secondary">{datePart}</span>{' '}
-      <span className="text-fg-tertiary">{timePart}</span>{' '}
-      <span className="text-fg-tertiary">UTC</span>
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.datePart ?? '--'}
+      </span>{' '}
+      {formattedTimestamp?.timePart ?? '--'}{' '}
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.timezonePart ?? ''}
+      </span>
     </div>
   )
 }
@@ -411,10 +414,8 @@ export function UpdatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const [datePart, timePart] = useMemo(() => {
-    const date = new Date(dateValue)
-    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
-    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
+  const formattedTimestamp = useMemo(() => {
+    return formatLocalLogStyleTimestamp(dateValue)
   }, [dateValue])
 
   return (
@@ -423,9 +424,13 @@ export function UpdatedAtCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-secondary">{datePart}</span>{' '}
-      <span className="text-fg-tertiary">{timePart}</span>{' '}
-      <span className="text-fg-tertiary">UTC</span>
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.datePart ?? '--'}
+      </span>{' '}
+      {formattedTimestamp?.timePart ?? '--'}{' '}
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.timezonePart ?? ''}
+      </span>
     </div>
   )
 }

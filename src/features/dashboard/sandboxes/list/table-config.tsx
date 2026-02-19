@@ -171,7 +171,7 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     accessorKey: 'startedAt',
     header: 'Started At',
     cell: StartedAtCell,
-    size: 200,
+    size: 150,
     enableResizing: false,
     filterFn: startedAtDateRangeFilter,
     enableColumnFilter: true,
