@@ -1,15 +1,12 @@
 'use client'
 
-import {
-  DashboardNavLink,
-  MAIN_DASHBOARD_LINKS,
-} from '@/configs/dashboard-navs'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
+import { SIDEBAR_MAIN_LINKS, SidebarNavItem } from '@/configs/sidebar'
 import { cn } from '@/lib/utils'
-import Link from 'next/link'
+import micromatch from 'micromatch'
 import { useMemo } from 'react'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarContent,
@@ -21,12 +18,13 @@ import {
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { usePathname } from 'next/navigation'
+import { useDashboard } from '../context'
 
 type GroupedLinks = {
-  [key: string]: DashboardNavLink[]
+  [key: string]: SidebarNavItem[]
 }
 
-const createGroupedLinks = (links: DashboardNavLink[]): GroupedLinks => {
+const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
   return links.reduce((acc, link) => {
     const group = link.group || 'ungrouped'
     if (!acc[group]) {
@@ -38,35 +36,22 @@ const createGroupedLinks = (links: DashboardNavLink[]): GroupedLinks => {
 }
 
 export default function DashboardSidebarContent() {
-  const selectedTeam = useSelectedTeam()
-  const selectedTeamIdentifier = selectedTeam?.slug ?? selectedTeam?.id
+  const { team } = useDashboard()
+  const selectedTeamIdentifier = team.slug ?? team.id
+
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
 
   const groupedNavLinks = useMemo(
-    () => createGroupedLinks(MAIN_DASHBOARD_LINKS),
+    () => createGroupedLinks(SIDEBAR_MAIN_LINKS),
     []
   )
 
-  const isActive = (href: string) => {
-    if (!pathname) return false
+  const isActive = (link: SidebarNavItem) => {
+    if (!pathname || !link.activeMatch) return false
 
-    if (pathname === href) return true
-
-    // split into segments for prefix comparison
-    const hrefSegments = href.split('/').filter(Boolean)
-    const pathSegments = pathname.split('/').filter(Boolean)
-
-    if (pathSegments.length < hrefSegments.length) return false
-
-    for (let i = 0; i < hrefSegments.length; i++) {
-      if (hrefSegments[i] !== pathSegments[i]) {
-        return false
-      }
-    }
-
-    return true
+    return micromatch.isMatch(pathname, link.activeMatch)
   }
 
   return (
@@ -85,14 +70,12 @@ export default function DashboardSidebarContent() {
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
-                    variant={isActive(href) ? 'active' : 'default'}
+                    variant={isActive(item) ? 'active' : 'default'}
                     asChild
                     tooltip={item.label}
                   >
-                    <Link
-                      suppressHydrationWarning
+                    <HoverPrefetchLink
                       href={href}
-                      prefetch
                       onClick={
                         isMobile
                           ? () => {
@@ -105,11 +88,11 @@ export default function DashboardSidebarContent() {
                         className={cn(
                           'group-data-[collapsible=icon]:size-5 transition-[size,color]',
                           SIDEBAR_TRANSITION_CLASSNAMES,
-                          isActive(href) && 'text-accent-main-highlight'
+                          isActive(item) && 'text-accent-main-highlight'
                         )}
                       />
                       <span>{item.label}</span>
-                    </Link>
+                    </HoverPrefetchLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )

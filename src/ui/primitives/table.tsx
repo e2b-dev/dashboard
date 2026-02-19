@@ -80,9 +80,10 @@ const TableHead = React.forwardRef<
     ref={ref}
     className={cn(
       'h-10 px-4 text-left align-middle',
-      'font-mono prose-label-highlight uppercase',
-      'text-fg-secondary',
-      '[&:has([role=checkbox])]:pr-0',
+      'font-mono prose-label uppercase',
+      'text-fg-tertiary',
+      'data-[state=selected]:prose-label-highlight data-[state=selected]:text-fg',
+      '[&:has([role=checkbox])]:pr-0 first:pl-0 last:pr-0',
       className
     )}
     {...props}
@@ -102,7 +103,7 @@ const TableCell = React.forwardRef<
       'p-4 align-middle',
       'font-sans text-xs',
       'text-fg-secondary prose-table',
-      '[&:has([role=checkbox])]:pr-0',
+      '[&:has([role=checkbox])]:pr-0 first:pl-0 last:pr-0',
       className
     )}
     {...props}

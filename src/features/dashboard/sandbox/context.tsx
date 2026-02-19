@@ -2,7 +2,7 @@
 
 import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
 import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
-import { SandboxInfo } from '@/types/api'
+import { SandboxInfo } from '@/types/api.types'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import {
   createContext,
@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react'
 import useSWR from 'swr'
+import { useDashboard } from '../context'
 
 interface SandboxContextValue {
   sandboxInfo?: SandboxInfo
@@ -35,16 +36,16 @@ export function useSandboxContext() {
 interface SandboxProviderProps {
   children: ReactNode
   serverSandboxInfo?: SandboxInfo
-  teamId: string
   isRunning: boolean
 }
 
 export function SandboxProvider({
   children,
   serverSandboxInfo,
-  teamId,
   isRunning,
 }: SandboxProviderProps) {
+  const { team } = useDashboard()
+
   const [isRunningState, setIsRunningState] = useState(isRunning)
   const [lastFallbackData, setLastFallbackData] = useState(serverSandboxInfo)
 
@@ -54,18 +55,18 @@ export function SandboxProvider({
     isLoading: isSandboxInfoLoading,
     isValidating: isSandboxInfoValidating,
   } = useSWR<SandboxInfo | void>(
-    !serverSandboxInfo?.sandboxID
+    !lastFallbackData?.sandboxID
       ? null
-      : [`/api/sandbox/details`, serverSandboxInfo?.sandboxID],
-    async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID) return
+      : [`/api/sandbox/details`, lastFallbackData?.sandboxID, team.id],
+    async ([url, sandboxId, teamId]: [string, string, string]) => {
+      if (!sandboxId || !teamId) return
 
       const origin = document.location.origin
 
       const requestUrl = new URL(url, origin)
 
       requestUrl.searchParams.set('teamId', teamId)
-      requestUrl.searchParams.set('sandboxId', serverSandboxInfo.sandboxID)
+      requestUrl.searchParams.set('sandboxId', sandboxId)
 
       const response = await fetch(requestUrl.toString(), {
         method: 'GET',
@@ -102,21 +103,23 @@ export function SandboxProvider({
   )
 
   const { data: metricsData } = useSWR(
-    !serverSandboxInfo?.sandboxID
+    !lastFallbackData?.sandboxID
       ? null
       : [
-          `/api/teams/${teamId}/sandboxes/metrics`,
-          serverSandboxInfo?.sandboxID,
+          `/api/teams/${team.id}/sandboxes/metrics`,
+          lastFallbackData?.sandboxID,
         ],
-    async ([url]) => {
-      if (!serverSandboxInfo?.sandboxID || !isRunning) return null
+    async (params) => {
+      const [url, sandboxId] = params
+
+      if (!sandboxId || !isRunningState) return null
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sandboxIds: [serverSandboxInfo.sandboxID] }),
+        body: JSON.stringify({ sandboxIds: [sandboxId] }),
         cache: 'no-store',
       })
 
@@ -128,15 +131,19 @@ export function SandboxProvider({
 
       const data = (await response.json()) as MetricsResponse
 
-      return data.metrics[serverSandboxInfo.sandboxID]
+      return data.metrics[sandboxId]
     },
     {
-      refreshInterval: SANDBOXES_DETAILS_METRICS_POLLING_MS,
       errorRetryInterval: 1000,
       errorRetryCount: 3,
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
+      refreshInterval: isRunningState
+        ? SANDBOXES_DETAILS_METRICS_POLLING_MS
+        : 0,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
     }
   )
 

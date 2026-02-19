@@ -5,7 +5,9 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 import { VariantProps } from 'class-variance-authority'
-import { Check, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { Checkbox } from './checkbox'
+import { CheckIcon } from './icons'
 import {
   menuContentStyles,
   menuGroupStyles,
@@ -42,15 +44,15 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       menuItemVariants({ variant }),
-      'data-[state=open]:bg-accent-main-bg data-[state=open]:text-accent-main-highlight ',
-      'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
+      'data-[state=open]:bg-bg-highlight',
+      'focus:bg-bg-highlight',
       inset && 'pl-4',
       className
     )}
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto size-4" />
+    <ChevronRight className="ml-auto size-4 text-fg-tertiary" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =
@@ -109,16 +111,17 @@ DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
 
 const DropdownMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
->(({ className, children, checked, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem> & {
+    checkIndicator?: ({ checked }: { checked: boolean }) => React.ReactNode
+  }
+>(({ className, children, checked, checkIndicator, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'relative flex cursor-default items-center gap-2 select-none',
-      'py-1.5 pr-2 pl-8',
-      'font-mono text-xs',
+      'relative prose-body flex cursor-default items-center gap-2 select-none',
+      'py-1.5 pr-2 pl-1',
       'outline-none',
-      'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
+      'focus:bg-bg-highlight',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       className
@@ -126,11 +129,13 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     checked={checked}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <DropdownMenuPrimitive.ItemIndicator>
-        [×]
-      </DropdownMenuPrimitive.ItemIndicator>
-    </span>
+    {checkIndicator ? (
+      checkIndicator({
+        checked: checked === true,
+      })
+    ) : (
+      <Checkbox checked={checked} className="size-4" />
+    )}
     {children}
   </DropdownMenuPrimitive.CheckboxItem>
 ))
@@ -152,9 +157,10 @@ const DropdownMenuRadioItem = React.forwardRef<
     {...props}
   >
     {children}
+
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="text-accent-main-highlight size-4" />
+        <CheckIcon className="text-fg size-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
   </DropdownMenuPrimitive.RadioItem>
@@ -200,7 +206,7 @@ const DropdownMenuShortcut = ({
   return (
     <span
       className={cn(
-        'text-fg-tertiary ml-auto text-xs tracking-widest',
+        'text-fg-tertiary ml-auto prose-label tracking-widest',
         className
       )}
       {...props}

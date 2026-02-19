@@ -4,19 +4,21 @@ import { cva } from 'class-variance-authority'
 
 export const menuItemVariants = cva(
   [
-    'relative flex cursor-pointer  select-none items-center gap-2',
+    'relative prose-body flex cursor-pointer select-none items-center gap-2',
     'px-2 py-1.5',
-    'font-mono text-xs',
     'outline-none',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
   ],
   {
     variants: {
       variant: {
-        default: 'focus:bg-accent-main-bg focus:text-accent-main-highlight ',
-        error: 'text-red-500 focus:bg-red-500/10 focus:text-red-500',
-        success: 'text-green-500 focus:bg-green-500/10 focus:text-green-500',
-        warning: 'text-yellow-500 focus:bg-yellow-500/10 focus:text-yellow-500',
+        default: 'focus:bg-bg-highlight',
+        error:
+          'text-accent-error-highlight focus:bg-accent-error-bg focus:text-accent-error-highlight',
+        success:
+          'text-accent-positive-highlight focus:bg-accent-positive-bg focus:text-accent-positive-highlight',
+        warning:
+          'text-accent-warning-highlight focus:bg-accent-warning-bg focus:text-accent-warning-highlight',
       },
     },
     defaultVariants: {
@@ -43,7 +45,7 @@ export const menuLabelStyles = cn(
   'text-fg-tertiary'
 )
 
-export const menuSeparatorStyles = cn('-mx-2 my-2', 'border-t border-dashed')
+export const menuSeparatorStyles = cn('-mx-2 my-2', 'border-t')
 
 export const menuViewportStyles = cn('p-1')
 

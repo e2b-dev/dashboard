@@ -6,7 +6,6 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
@@ -30,9 +29,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useDashboard } from '../context'
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name cannot be empty').max(32, 'Max 32 characters'),
+  name: z.string().min(1, 'Name cannot be empty').max(100, 'Max 100 characters'),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -44,7 +44,7 @@ interface NameSettingsProps {
 export function NameSettings({ className }: NameSettingsProps) {
   'use no memo'
 
-  const { user } = useUser()
+  const { user } = useDashboard()
   const { toast } = useToast()
 
   const form = useForm<FormValues>({
@@ -108,7 +108,7 @@ export function NameSettings({ className }: NameSettingsProps) {
           </CardContent>
 
           <CardFooter className="bg-bg-1 justify-between">
-            <p className="text-fg-tertiary ">Max 32 characters.</p>
+            <p className="text-fg-tertiary ">Max 100 characters.</p>
             <Button
               loading={isPending}
               disabled={form.watch('name') === user?.user_metadata?.name}

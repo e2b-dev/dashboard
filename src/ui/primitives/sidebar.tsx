@@ -29,7 +29,7 @@ const SIDEBAR_WIDTH = '14.5rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
 const SIDEBAR_WIDTH_ICON = '3.25rem' // 52px
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
-const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-300 ease-out'
+const SIDEBAR_TRANSITION_CLASSNAMES = 'duration-150 circ-out'
 
 export { SIDEBAR_TRANSITION_CLASSNAMES }
 
@@ -496,13 +496,14 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
   )
 }
 
-const sidebarMenuButtonVariants = cva(
-  'peer/menu-button cursor-pointer whitespace-nowrap prose-body-highlight flex w-full hover:bg-bg-hover items-center gap-2 overflow-hidden p-2 text-left outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight  data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight  group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+export const sidebarMenuButtonVariants = cva(
+  'peer/menu-button cursor-pointer whitespace-nowrap prose-body-highlight flex w-full  items-center gap-2 overflow-hidden p-2 text-left outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight  data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight  group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: '',
-        active: 'bg-bg-hover !text-accent-main-highlight  prose-body-highlight',
+        default: 'hover:bg-bg-hover',
+        active: 'bg-bg-hover !text-accent-main-highlight prose-body-highlight',
+        inverted: 'bg-bg-inverted text-fg-inverted border',
         outline: [
           'border border-stroke bg-transparent',
           'hover:text-accent-main-highlight ',

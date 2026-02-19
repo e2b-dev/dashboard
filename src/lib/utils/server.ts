@@ -1,49 +1,13 @@
-import 'server-cli-only'
+import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { COOKIE_KEYS, KV_KEYS } from '@/configs/keys'
-import { kv } from '@/lib/clients/kv'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { createClient } from '@/lib/clients/supabase/server'
-import { E2BError, UnauthenticatedError } from '@/types/errors'
-import { unstable_noStore } from 'next/cache'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
-import { serializeError } from 'serialize-error'
+import { cache } from 'react'
 import { z } from 'zod'
 import { infra } from '../clients/api'
 import { l } from '../clients/logger/logger'
 import { returnServerError } from './action'
-
-/*
- *  This function checks if the user is authenticated and returns the user and the supabase client.
- *  If the user is not authenticated, it throws an error.
- *
- *  @params request - an optional NextRequest object to create a supabase client for route handlers
- */
-export async function checkAuthenticated() {
-  const supabase = await createClient()
-
-  // retrieve session from storage medium (cookies)
-  // if no stored session found, not authenticated
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    throw UnauthenticatedError()
-  }
-
-  // now retrieve user from supabase to use further
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    throw UnauthenticatedError()
-  }
-
-  return { user, session, supabase }
-}
 
 /*
  *  This function generates an e2b user access token for a given user.
@@ -61,17 +25,20 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   })
 
   if (res.error) {
-    l.error({
-      key: 'GENERATE_E2B_USER_ACCESS_TOKEN:INFRA_ERROR',
-      message: res.error.message,
-      error: res.error,
-      context: {
-        status: res.response.status,
-        method: 'POST',
-        path: '/access-tokens',
-        name: TOKEN_NAME,
+    l.error(
+      {
+        key: 'GENERATE_E2B_USER_ACCESS_TOKEN:INFRA_ERROR',
+        message: res.error.message,
+        error: res.error,
+        context: {
+          status: res.response.status,
+          method: 'POST',
+          path: '/access-tokens',
+          name: TOKEN_NAME,
+        },
       },
-    })
+      'Failed to generate e2b user access token'
+    )
 
     return returnServerError(`Failed to generate e2b user access token`)
   }
@@ -79,153 +46,40 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   return res.data
 }
 
-// TODO: we should probably add some team permission system here
-
-/*
- *  This function checks if a user is authorized to access a team.
- *  If the user is not authorized, it returns false.
- */
-export async function checkUserTeamAuthorization(
-  userId: string,
-  teamId: string
-) {
-  if (
-    !z.string().uuid().safeParse(userId).success ||
-    !z.string().uuid().safeParse(teamId).success
-  ) {
-    return false
-  }
-
-  const { data: userTeamsRelationData, error: userTeamsRelationError } =
-    await supabaseAdmin
-      .from('users_teams')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('team_id', teamId)
-
-  if (userTeamsRelationError) {
-    throw new Error(
-      `Failed to fetch users_teams relation (user: ${userId}, team: ${teamId})`
-    )
-  }
-
-  return !!userTeamsRelationData.length
-}
-
-/**
- * Forces a component to be dynamically rendered at runtime.
- * This opts out of Partial Prerendering (PPR) for the component and its children.
- *
- * Use this when you need to ensure a component is rendered at request time,
- * for example when dealing with user authentication or dynamic data that
- * must be fresh on every request.
- *
- * IMPORTANT: When used in PPR scopes, this must be called before any try-catch blocks
- * to properly opt out of static optimization. Placing it inside try-catch blocks
- * may result in unexpected behavior.
- *
- * @example
- * // Correct usage - before try-catch
- * bailOutFromPPR();
- * try {
- *   // dynamic code
- * } catch (e) {}
- *
- * @see https://nextjs.org/docs/app/api-reference/functions/cookies
- */
-export function bailOutFromPPR() {
-  unstable_noStore()
-}
-
-/**
- * Resolves a team identifier (UUID or slug) to a team ID.
- * If the input is a valid UUID, returns it directly.
- * If it's a slug, attempts to resolve it to an ID using Redis cache first, then database.
- *
- * @param identifier - Team UUID or slug
- * @returns Promise<string> - Resolved team ID
- * @throws E2BError if team not found or identifier invalid
- */
-export async function resolveTeamId(identifier: string): Promise<string> {
-  // If identifier is UUID, return directly
-  if (z.string().uuid().safeParse(identifier).success) {
-    return identifier
-  }
-
-  // Try to get from cache first
-  const cacheKey = KV_KEYS.TEAM_SLUG_TO_ID(identifier)
-  const cachedId = await kv.get<string>(cacheKey)
-
-  if (cachedId) return cachedId
-
-  // Not in cache or invalid cache, query database
-  const { data: team, error } = await supabaseAdmin
-    .from('teams')
-    .select('id')
-    .eq('slug', identifier)
-    .single()
-
-  if (error || !team) {
-    l.error({
-      key: 'resolve_team_id:failed_to_resolve_team_id_from_slug',
-      message: error.message,
-      error: serializeError(error),
-      context: {
-        identifier,
-      },
-    })
-
-    throw new E2BError('INVALID_PARAMETERS', 'Invalid team identifier')
-  }
-  // Cache the result
-  await Promise.all([
-    kv.set(cacheKey, team.id, { ex: 60 * 60 }), // 1 hour
-    kv.set(KV_KEYS.TEAM_ID_TO_SLUG(team.id), identifier, { ex: 60 * 60 }),
-  ])
-
-  return team.id
-}
-
-/**
- * Resolves a team identifier (UUID or slug) to a team ID.
- * If the input is a valid UUID, returns it directly.
- * If it's a slug, attempts to resolve it to an ID using Redis cache first, then database.
- *
- * This function should be used in page components rather than client components for better performance,
- * as it avoids unnecessary database queries by checking cookies first.
- *
- * @param identifier - Team UUID or slug
- * @returns Promise<string> - Resolved team ID
- */
-export async function resolveTeamIdInServerComponent(identifier: string) {
+export const getTeamMetadataFromCookies = async (teamIdOrSlug: string) => {
   const cookiesStore = await cookies()
 
-  let teamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
+  const cookieTeamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
+  const cookieTeamSlug = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
 
-  if (!teamId) {
-    // Middleware should prevent this case, but just in case
-    teamId = await resolveTeamId(identifier)
-    cookiesStore.set(COOKIE_KEYS.SELECTED_TEAM_ID, teamId)
-
-    l.info({
-      key: 'resolve_team_id_in_server_component:resolving_team_id_from_data_sources',
-      team_id: teamId,
-      context: {
-        identifier,
-      },
-    })
+  if (!cookieTeamId || !cookieTeamSlug) {
+    return null
   }
-  return teamId
+
+  const isSensical =
+    cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
+  const isUUID = z.uuid().safeParse(cookieTeamId).success
+
+  if (isUUID && isSensical) {
+    return {
+      id: cookieTeamId,
+      slug: cookieTeamSlug,
+    }
+  }
+
+  return null
 }
 
 /**
- * Resolves a team slug from cookies.
- * If no slug is found, it returns null.
+ * Returns a consistent "now" timestamp for the entire request.
+ * Memoized using React cache() to ensure all server components
+ * in the same request tree get the exact same timestamp.
  *
- *
+ * The timestamp is rounded to the nearest 5 seconds for better cache alignment
+ * and to reduce cache fragmentation.
  */
-export async function resolveTeamSlugInServerComponent() {
-  const cookiesStore = await cookies()
-
-  return cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
-}
+export const getNowMemo = cache(() => {
+  const now = Date.now()
+  // round to nearest 5 seconds for better cache alignment
+  return Math.floor(now / 5000) * 5000
+})

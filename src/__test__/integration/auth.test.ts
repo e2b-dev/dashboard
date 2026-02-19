@@ -20,6 +20,13 @@ const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({
 const originalConsoleError = console.error
 console.error = vi.fn()
 
+// Mock global fetch for health check
+const originalFetch = global.fetch
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
+})
+
 // Mock Supabase client
 const mockSupabaseClient = {
   auth: {
@@ -74,10 +81,14 @@ vi.mock('@/server/auth/validate-email', () => ({
 describe('Auth Actions - Integration Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    // Set up fetch mock for health check
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
+    })
   })
 
   afterEach(() => {
-    vi.resetAllMocks()
     // Restore original console.error after each test
     console.error = originalConsoleError
   })

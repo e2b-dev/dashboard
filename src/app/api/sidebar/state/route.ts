@@ -1,18 +1,10 @@
-import { COOKIE_KEYS } from '@/configs/keys'
-import { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
 
 const SidebarStateSchema = z.object({
   state: z.boolean(),
 })
-
-const COOKIE_SETTINGS: Partial<ResponseCookie> = {
-  path: '/',
-  maxAge: 60 * 60 * 24 * 365, // 1 year
-  sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
-}
 
 export async function POST(request: Request) {
   try {
@@ -22,7 +14,7 @@ export async function POST(request: Request) {
     cookieStore.set(
       COOKIE_KEYS.SIDEBAR_STATE,
       body.state.toString(),
-      COOKIE_SETTINGS
+      COOKIE_OPTIONS[COOKIE_KEYS.SIDEBAR_STATE]
     )
 
     return Response.json({ state: body.state })

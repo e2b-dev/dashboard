@@ -1,63 +1,159 @@
+import { l } from '@/lib/clients/logger/logger'
 import micromatch from 'micromatch'
+import { PROTECTED_URLS } from './urls'
 
-interface DashboardPageConfig {
-  title: string
-  description: string
-  type?: 'default' | 'custom'
+export interface TitleSegment {
+  label: string
+  href?: string
 }
 
-const DASHBOARD_PAGE_CONFIGS: Record<string, DashboardPageConfig> = {
-  '/dashboard/*/sandboxes': {
+/**
+ * Layout configuration for dashboard pages.
+ */
+export interface DashboardLayoutConfig {
+  title: string | TitleSegment[]
+  type: 'default' | 'custom'
+  custom?: {
+    includeHeaderBottomStyles: boolean
+  }
+}
+
+const DASHBOARD_LAYOUT_CONFIGS: Record<
+  string,
+  (pathname: string) => DashboardLayoutConfig
+> = {
+  // base
+  '/dashboard/*/sandboxes': () => ({
     title: 'Sandboxes',
-    description: "Manage your team's sandboxes",
     type: 'custom',
-  },
-  '/dashboard/*/sandboxes/**/*': {
+  }),
+  '/dashboard/*/sandboxes/**/*': () => ({
     title: 'Sandbox',
-    description: "Manage your team's sandbox",
     type: 'custom',
-  },
-  '/dashboard/*/templates': {
+  }),
+  '/dashboard/*/templates': () => ({
     title: 'Templates',
-    description: "Manage your team's templates",
     type: 'custom',
+  }),
+  '/dashboard/*/templates/*/builds/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+    const buildId = parts.pop()!
+    const buildIdSliced = `${buildId.slice(0, 6)}...${buildId.slice(-6)}`
+
+    return {
+      title: [
+        {
+          label: 'Templates',
+          href: PROTECTED_URLS.TEMPLATES_BUILDS(teamIdOrSlug),
+        },
+        { label: `Build ${buildIdSliced}` },
+      ],
+      type: 'custom',
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
+    }
   },
-  '/dashboard/*/usage': {
+
+  // integrations
+  '/dashboard/*/webhooks': () => ({
+    title: 'Webhooks',
+    type: 'default',
+  }),
+
+  // team
+  '/dashboard/*/general': () => ({
+    title: 'General',
+    type: 'default',
+  }),
+  '/dashboard/*/keys': () => ({
+    title: 'API Keys',
+    type: 'default',
+  }),
+  '/dashboard/*/members': () => ({
+    title: 'Members',
+    type: 'default',
+  }),
+
+  // billing
+  '/dashboard/*/usage': () => ({
     title: 'Usage',
-    description: "Manage your team's usage",
+    type: 'custom',
+    custom: {
+      includeHeaderBottomStyles: true,
+    },
+  }),
+  '/dashboard/*/limits': () => ({
+    title: 'Limits',
     type: 'default',
-  },
-  '/dashboard/*/team': {
-    title: 'Team',
-    description: "Manage your team's settings",
-    type: 'default',
-  },
-  '/dashboard/*/keys': {
-    title: 'Keys',
-    description: "Manage your team's keys",
-    type: 'default',
-  },
-  '/dashboard/*/billing': {
+  }),
+  '/dashboard/*/billing': () => ({
     title: 'Billing',
-    description: "Manage your team's billing",
     type: 'default',
+  }),
+  '/dashboard/*/billing/plan': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+
+    return {
+      title: [
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        {
+          label: 'Plan & Add-ons',
+        },
+      ],
+      type: 'default',
+    }
   },
-  '/dashboard/*/budget': {
-    title: 'Budget',
-    description: "Manage your team's budget",
-    type: 'default',
+  '/dashboard/*/billing/plan/select': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+
+    return {
+      title: [
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        {
+          label: 'Plan & Add-ons',
+          href: PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug),
+        },
+        { label: 'Change Plan' },
+      ],
+      type: 'default',
+    }
   },
-  '/dashboard/account': {
+
+  '/dashboard/*/account': () => ({
     title: 'Account',
-    description: "Manage your account's settings",
     type: 'default',
-  },
+  }),
 }
 
-export const getDashboardPageConfig = (pathname: string) => {
-  for (const [pattern, config] of Object.entries(DASHBOARD_PAGE_CONFIGS)) {
+/**
+ * Returns the layout config for a given dashboard pathname.
+ * @param pathname - The current route pathname
+ */
+export const getDashboardLayoutConfig = (
+  pathname: string
+): DashboardLayoutConfig => {
+  for (const [pattern, config] of Object.entries(DASHBOARD_LAYOUT_CONFIGS)) {
     if (micromatch.isMatch(pathname, pattern)) {
-      return config
+      return config(pathname)
     }
+  }
+
+  l.error(
+    {
+      key: 'layout_config:no_layout_config_found',
+      context: {
+        pathname,
+      },
+    },
+    `No layout config found for pathname: ${pathname}`
+  )
+
+  return {
+    title: 'Dashboard',
+    type: 'default',
   }
 }

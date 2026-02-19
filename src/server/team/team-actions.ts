@@ -1,35 +1,31 @@
 'use server'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { KV_KEYS } from '@/configs/keys'
-import { authActionClient } from '@/lib/clients/action'
+import { CACHE_TAGS } from '@/configs/cache'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { returnServerError } from '@/lib/utils/action'
-import { checkUserTeamAuthorization } from '@/lib/utils/server'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
-import { CreateTeamsResponse } from '@/types/billing'
-import { kv } from '@vercel/kv'
+import { CreateTeamsResponse } from '@/types/billing.types'
+import { fileTypeFromBuffer } from 'file-type'
 import { returnValidationErrors } from 'next-safe-action'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { after } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
-import { getTeam } from './get-team'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
   .metadata({ actionName: 'updateTeamName' })
+
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, name } = parsedInput
-    const { user } = ctx
-
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
-
-    if (!isAuthorized) {
-      return returnServerError('User is not authorized to update this team')
-    }
+    const { name, teamIdOrSlug } = parsedInput
+    const { teamId } = ctx
 
     const { data, error } = await supabaseAdmin
       .from('teams')
@@ -42,28 +38,23 @@ export const updateTeamNameAction = authActionClient
       return returnServerError(`Failed to update team name: ${error.message}`)
     }
 
-    revalidatePath('/dashboard', 'layout')
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
 
     return data
   })
 
 const AddTeamMemberSchema = z.object({
-  teamId: z.string().uuid(),
-  email: z.string().email(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  email: z.email(),
 })
 
 export const addTeamMemberAction = authActionClient
   .schema(AddTeamMemberSchema)
   .metadata({ actionName: 'addTeamMember' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, email } = parsedInput
-    const { user } = ctx
-
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
-
-    if (!isAuthorized) {
-      return returnServerError('User is not authorized to add a team member')
-    }
+    const { email, teamIdOrSlug } = parsedInput
+    const { teamId, user } = ctx
 
     const { data: existingUsers, error: userError } = await supabaseAdmin
       .from('auth_users')
@@ -76,9 +67,9 @@ export const addTeamMemberAction = authActionClient
 
     const existingUser = existingUsers?.[0]
 
-    if (!existingUser) {
+    if (!existingUser || !existingUser.id) {
       return returnServerError(
-        'User with this email does not exist. Account must be registered first.'
+        'User with this email address does not exist. Please ask them to sign up first and try again.'
       )
     }
 
@@ -86,7 +77,7 @@ export const addTeamMemberAction = authActionClient
       .from('users_teams')
       .select('*')
       .eq('team_id', teamId)
-      .eq('user_id', existingUser.id!)
+      .eq('user_id', existingUser.id)
       .single()
 
     if (existingTeamMember) {
@@ -97,7 +88,7 @@ export const addTeamMemberAction = authActionClient
       .from('users_teams')
       .insert({
         team_id: teamId,
-        user_id: existingUser.id!,
+        user_id: existingUser.id,
         added_by: user.id,
       })
 
@@ -107,36 +98,24 @@ export const addTeamMemberAction = authActionClient
       )
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
-
-    await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, teamId))
-    getTeam({ teamId }).then(async (result) => {
-      if (!result?.data || result.serverError || result.validationErrors) {
-        return
-      }
-
-      await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, result.data.slug))
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(existingUser.id, teamId), {
+      expire: 0,
     })
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 
 const RemoveTeamMemberSchema = z.object({
-  teamId: z.string().uuid(),
-  userId: z.string().uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  userId: z.uuid(),
 })
 
 export const removeTeamMemberAction = authActionClient
   .schema(RemoveTeamMemberSchema)
   .metadata({ actionName: 'removeTeamMember' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, userId } = parsedInput
-    const { user } = ctx
-
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
-
-    if (!isAuthorized) {
-      return returnServerError('User is not authorized to remove team members')
-    }
+    const { userId, teamIdOrSlug } = parsedInput
+    const { teamId, user } = ctx
 
     const { data: teamMemberData, error: teamMemberError } = await supabaseAdmin
       .from('users_teams')
@@ -179,17 +158,10 @@ export const removeTeamMemberAction = authActionClient
       throw removeError
     }
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
-
-    await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, teamId))
-    getTeam({ teamId }).then(async (result) => {
-      if (!result?.data || result.serverError || result.validationErrors) {
-        return
-      }
-
-      await kv.del(KV_KEYS.USER_TEAM_ACCESS(user.id, result.data.slug))
+    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamId), {
+      expire: 0,
     })
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 
 export const createTeamAction = authActionClient
@@ -209,12 +181,15 @@ export const createTeamAction = authActionClient
     })
 
     if (!response.ok) {
+      const status = response.status
       const error = await response.json()
 
-      throw new Error(error?.message ?? 'Failed to create team')
-    }
+      if (status === 400) {
+        return returnServerError(error?.message ?? 'Failed to create team')
+      }
 
-    revalidatePath('/dashboard', 'layout')
+      return handleDefaultInfraError(status)
+    }
 
     const data = (await response.json()) as CreateTeamsResponse
 
@@ -223,7 +198,7 @@ export const createTeamAction = authActionClient
 
 const UploadTeamProfilePictureSchema = zfd.formData(
   z.object({
-    teamId: zfd.text(),
+    teamIdOrSlug: zfd.text(),
     image: zfd.file(),
   })
 )
@@ -231,14 +206,16 @@ const UploadTeamProfilePictureSchema = zfd.formData(
 export const uploadTeamProfilePictureAction = authActionClient
   .schema(UploadTeamProfilePictureSchema)
   .metadata({ actionName: 'uploadTeamProfilePicture' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, image } = parsedInput
+    const { image, teamIdOrSlug } = parsedInput
+    const { teamId } = ctx
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml']
+    const allowedTypes = ['image/jpeg', 'image/png']
 
     if (!allowedTypes.includes(image.type)) {
       return returnValidationErrors(UploadTeamProfilePictureSchema, {
-        image: { _errors: ['File must be JPG, PNG, or SVG format'] },
+        image: { _errors: ['File must be JPG or PNG format'] },
       })
     }
 
@@ -250,23 +227,37 @@ export const uploadTeamProfilePictureAction = authActionClient
       })
     }
 
-    const { user } = ctx
-
-    const isAuthorized = await checkUserTeamAuthorization(user.id, teamId)
-
-    if (!isAuthorized) {
-      return returnServerError('User is not authorized to update this team')
-    }
-
-    const extension = image.name.split('.').pop() || 'png'
-    const fileName = `${Date.now()}.${extension}`
-    const filePath = `teams/${teamId}/${fileName}`
-
     const arrayBuffer = await image.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    // Verify actual file type using magic bytes (file signature)
+    const fileType = await fileTypeFromBuffer(buffer)
+
+    if (!fileType) {
+      return returnValidationErrors(UploadTeamProfilePictureSchema, {
+        image: { _errors: ['Unable to determine file type'] },
+      })
+    }
+
+    const allowedMimeTypes = ['image/jpeg', 'image/png']
+    if (!allowedMimeTypes.includes(fileType.mime)) {
+      return returnValidationErrors(UploadTeamProfilePictureSchema, {
+        image: {
+          _errors: [
+            'Invalid file type. Only JPEG and PNG images are allowed. File appears to be: ' +
+              fileType.mime,
+          ],
+        },
+      })
+    }
+
+    // Use the actual detected extension from file-type
+    const extension = fileType.ext
+    const fileName = `${Date.now()}.${extension}`
+    const filePath = `teams/${teamId}/${fileName}`
+
     // Upload file to Supabase Storage
-    const publicUrl = await uploadFile(buffer, filePath, image.type)
+    const publicUrl = await uploadFile(buffer, filePath, fileType.mime)
 
     // Update team record with new profile picture URL
     const { data, error } = await supabaseAdmin
@@ -281,8 +272,7 @@ export const uploadTeamProfilePictureAction = authActionClient
     }
 
     // Clean up old profile pictures asynchronously in the background
-    // We don't await this promise, so it runs in the background
-    ;(async () => {
+    after(async () => {
       try {
         // Get the current file name from the path
         const currentFileName = fileName
@@ -311,10 +301,9 @@ export const uploadTeamProfilePictureAction = authActionClient
           },
         })
       }
-    })()
+    })
 
-    revalidatePath(`/dashboard/[teamIdOrSlug]/general`, 'page')
-    revalidatePath(`/dashboard`, 'layout')
+    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
 
     return data
   })

@@ -1,0 +1,50 @@
+'use client'
+
+import { useDashboard } from '@/features/dashboard/context'
+import CopyButton from '@/ui/copy-button'
+import { Badge } from '@/ui/primitives/badge'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/ui/primitives/card'
+
+interface InfoCardProps {
+  className?: string
+}
+
+export function InfoCard({ className }: InfoCardProps) {
+  const { team } = useDashboard()
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Information</CardTitle>
+        <CardDescription>
+          Additional information about this team.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="info">E-Mail</Badge>
+            <span>{team.email}</span>
+            <CopyButton value={team.email} variant="ghost" className="size-5" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge>Team ID</Badge>
+            <span>{team.id}</span>
+            <CopyButton value={team.id} variant="ghost" className="size-5" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge>Team Slug</Badge>
+            <span>{team.slug}</span>
+            <CopyButton value={team.slug} variant="ghost" className="size-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

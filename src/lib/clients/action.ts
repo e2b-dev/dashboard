@@ -1,11 +1,17 @@
-import { UnknownError } from '@/types/errors'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
-import { createSafeActionClient } from 'next-safe-action'
+import checkUserTeamAuthCached from '@/server/auth/check-user-team-auth-cached'
+import { getSessionInsecure } from '@/server/auth/get-session'
+import getUserByToken from '@/server/auth/get-user-by-token'
+import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
+import { UnauthenticatedError, UnknownError } from '@/types/errors'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
+import { Session, User } from '@supabase/supabase-js'
+import { createMiddleware, createSafeActionClient } from 'next-safe-action'
+import { unauthorized } from 'next/navigation'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { ActionError, flattenClientInputValue } from '../utils/action'
-import { checkAuthenticated } from '../utils/server'
 import { l } from './logger/logger'
+import { createClient } from './supabase/server'
 import { getTracer } from './tracer'
 
 export const actionClient = createSafeActionClient({
@@ -59,7 +65,12 @@ export const actionClient = createSafeActionClient({
 
   const startTime = performance.now()
 
-  const result = await next()
+  const result = await context.with(
+    trace.setSpan(context.active(), s),
+    async () => {
+      return next()
+    }
+  )
 
   const duration = performance.now() - startTime
 
@@ -94,8 +105,7 @@ export const actionClient = createSafeActionClient({
     s.setAttribute('user_id', baseLogPayload.user_id)
   }
 
-  const error =
-    result.serverError || result.validationErrors || result.success === false
+  const error = result.serverError || result.validationErrors
 
   if (error) {
     s.setStatus({ code: SpanStatusCode.ERROR })
@@ -129,7 +139,117 @@ export const actionClient = createSafeActionClient({
 })
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const { user, session, supabase } = await checkAuthenticated()
+  const supabase = await createClient()
+
+  // retrieve session from storage medium (cookies)
+  // if no stored session found, not authenticated
+
+  // it's fine to use the "insecure" cookie session here, since we only use it for quick denial and do a proper auth check (auth.getUser) afterwards.
+  const session = await getSessionInsecure(supabase)
+
+  // early return if user is no session already
+  if (!session) {
+    throw UnauthenticatedError()
+  }
+
+  // now retrieve user from supabase to use further
+  const {
+    data: { user },
+  } = await getUserByToken(session.access_token)
+
+  if (!user || !session) {
+    throw UnauthenticatedError()
+  }
+
+  if (!session) {
+    throw UnauthenticatedError()
+  }
 
   return next({ ctx: { user, session, supabase } })
+})
+
+/**
+ * Middleware that automatically resolves team ID from teamIdOrSlug.
+ *
+ * This middleware:
+ * 1. Requires that the client input contains a 'teamIdOrSlug' property
+ * 2. Resolves the teamIdOrSlug to an actual team ID using getTeamIdFromSegmentMemo
+ * 3. Throws unauthorized() if the team ID cannot be resolved (team doesn't exist or user lacks access)
+ * 4. Adds the resolved teamId to the context for use in the action handler
+ * 5. Throws an error if no teamIdOrSlug is provided
+ *
+ * @example
+ * ```ts
+ * const myAction = authActionClient
+ *   .use(withTeamIdResolution)
+ *   .schema(z.object({ teamIdOrSlug: z.string(), ... }))
+ *   .action(async ({ parsedInput, ctx }) => {
+ *     // ctx.teamId is now available and guaranteed to be valid
+ *     const { teamId } = ctx
+ *   })
+ * ```
+ */
+export const withTeamIdResolution = createMiddleware<{
+  ctx: {
+    user: User
+    session: Session
+    supabase: Awaited<ReturnType<typeof createClient>>
+  }
+}>().define(async ({ next, clientInput, ctx }) => {
+  if (
+    !clientInput ||
+    typeof clientInput !== 'object' ||
+    !('teamIdOrSlug' in clientInput)
+  ) {
+    l.error(
+      {
+        key: 'with_team_id_resolution:missing_team_id_or_slug',
+        context: {
+          teamIdOrSlug: (clientInput as { teamIdOrSlug?: string })
+            ?.teamIdOrSlug,
+        },
+      },
+      'Missing teamIdOrSlug when using withTeamIdResolution middleware'
+    )
+
+    throw new Error(
+      'teamIdOrSlug is required when using withTeamIdResolution middleware'
+    )
+  }
+
+  const teamId = await getTeamIdFromSegment(clientInput.teamIdOrSlug as string)
+
+  if (!teamId) {
+    l.warn(
+      {
+        key: 'with_team_id_resolution:invalid_team_id_or_slug',
+        context: {
+          teamIdOrSlug: clientInput.teamIdOrSlug,
+        },
+      },
+      `with_team_id_resolution:invalid_team_id_or_slug - invalid team id or slug provided through withTeamIdResolution middleware: ${clientInput.teamIdOrSlug}`
+    )
+
+    throw unauthorized()
+  }
+
+  const isAuthorized = await checkUserTeamAuthCached(ctx.user.id, teamId)
+
+  if (!isAuthorized) {
+    l.warn(
+      {
+        key: 'with_team_id_resolution:user_not_authorized',
+        context: {
+          teamIdOrSlug: clientInput.teamIdOrSlug,
+        },
+      },
+      `with_team_id_resolution:user_not_authorized - user not authorized to access team: ${clientInput.teamIdOrSlug}`
+    )
+
+    throw unauthorized()
+  }
+
+  return next({
+    ctx: { teamId },
+  })
 })

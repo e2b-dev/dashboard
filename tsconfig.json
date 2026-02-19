@@ -12,7 +12,7 @@
     "moduleResolution": "bundler",
     "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -24,6 +24,12 @@
     },
     "isolatedModules": true
   },
-  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "src",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "stubs"
+  ],
   "exclude": ["node_modules"]
 }

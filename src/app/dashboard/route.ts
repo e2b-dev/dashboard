@@ -1,77 +1,63 @@
-import { COOKIE_KEYS } from '@/configs/keys'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createClient } from '@/lib/clients/supabase/server'
-import { cookies } from 'next/headers'
+import { encodedRedirect } from '@/lib/utils/auth'
+import { setTeamCookies } from '@/lib/utils/cookies'
+import { resolveUserTeam } from '@/server/team/resolve-user-team'
 import { NextRequest, NextResponse } from 'next/server'
 
-const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
+export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   sandboxes: (teamId) => PROTECTED_URLS.SANDBOXES(teamId),
   templates: (teamId) => PROTECTED_URLS.TEMPLATES(teamId),
   usage: (teamId) => PROTECTED_URLS.USAGE(teamId),
   billing: (teamId) => PROTECTED_URLS.BILLING(teamId),
-  budget: (teamId) => PROTECTED_URLS.BUDGET(teamId),
+  limits: (teamId) => PROTECTED_URLS.LIMITS(teamId),
   keys: (teamId) => PROTECTED_URLS.KEYS(teamId),
-  team: (teamId) => PROTECTED_URLS.TEAM(teamId),
+  settings: (teamId) => PROTECTED_URLS.GENERAL(teamId),
+  team: (teamId) => PROTECTED_URLS.GENERAL(teamId),
+  general: (teamId) => PROTECTED_URLS.GENERAL(teamId),
+  members: (teamId) => PROTECTED_URLS.MEMBERS(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
+
+  // back compatibility
+  budget: (teamId) => PROTECTED_URLS.LIMITS(teamId),
 }
 
 export async function GET(request: NextRequest) {
-  // 1. Get the tab parameter
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
 
-  if (!tab || !TAB_URL_MAP[tab]) {
-    // Default to dashboard if no valid tab
-    return NextResponse.redirect(new URL(PROTECTED_URLS.DASHBOARD, request.url))
-  }
-
-  // 2. Create Supabase client and get user
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.getUser()
 
   if (error || !data.user) {
-    // Redirect to sign-in if not authenticated
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
-  const cookieStore = await cookies()
 
-  // 3. Resolve team ID (first try cookie, then fetch default)
-  let teamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
-  let teamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
+  const team = await resolveUserTeam(data.user.id)
 
-  if (!teamId) {
-    // No team in cookie, fetch user's default team
-    const { data: teamsData } = await supabaseAdmin
-      .from('users_teams')
-      .select(
-        `
-        team_id,
-        is_default,
-        team:teams(*)
-      `
-      )
-      .eq('user_id', data.user.id)
+  if (!team) {
+    // UNEXPECTED STATE - sign out and redirect to sign-in
+    await supabase.auth.signOut()
 
-    if (!teamsData?.length) {
-      // No teams, redirect to new team creation
-      return NextResponse.redirect(
-        new URL(PROTECTED_URLS.NEW_TEAM, request.url)
-      )
-    }
+    const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
 
-    // Use default team or first team
-    const defaultTeam = teamsData.find((t) => t.is_default) || teamsData[0]!
-    teamId = defaultTeam.team_id
-    teamSlug = defaultTeam.team?.slug || defaultTeam.team_id
+    return encodedRedirect(
+      'error',
+      signInUrl.toString(),
+      'No personal team found. Please contact support.'
+    )
   }
 
-  // 4. Build the redirect URL using the tab mapping
-  const urlGenerator = TAB_URL_MAP[tab]
-  const redirectPath = urlGenerator(teamSlug || teamId)
+  // Set team cookies for persistence
+  await setTeamCookies(team.id, team.slug)
 
-  // 5. Redirect to the appropriate dashboard section
+  // Determine redirect path based on tab parameter
+  const urlGenerator = tab ? TAB_URL_MAP[tab] : null
+  const redirectPath = urlGenerator
+    ? urlGenerator(team.slug || team.id)
+    : PROTECTED_URLS.SANDBOXES(team.slug || team.id)
+
   return NextResponse.redirect(new URL(redirectPath, request.url))
 }

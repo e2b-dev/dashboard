@@ -1,8 +1,7 @@
 'use client'
 
-import { ALL_DASHBOARD_LINKS } from '@/configs/dashboard-navs'
+import { SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
 import useKeydown from '@/lib/hooks/use-keydown'
-import { useSelectedTeam } from '@/lib/hooks/use-teams'
 import { cn } from '@/lib/utils'
 import {
   CommandDialog,
@@ -21,6 +20,7 @@ import {
 import { ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useDashboard } from '../context'
 
 interface DashboardSidebarCommandProps {
   className?: string
@@ -30,7 +30,7 @@ export default function DashboardSidebarCommand({
   className,
 }: DashboardSidebarCommandProps) {
   const [open, setOpen] = useState(false)
-  const selectedTeam = useSelectedTeam()
+  const { team } = useDashboard()
   const router = useRouter()
 
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
@@ -75,14 +75,13 @@ export default function DashboardSidebarCommand({
         <CommandList className="p-1 pb-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {ALL_DASHBOARD_LINKS.map((link) => (
+            {SIDEBAR_ALL_LINKS.map((link) => (
               <CommandItem
                 key={link.label}
                 onSelect={() => {
                   router.push(
                     link.href({
-                      teamIdOrSlug:
-                        selectedTeam?.slug ?? selectedTeam?.id ?? undefined,
+                      teamIdOrSlug: team.slug ?? team.id,
                     })
                   )
                   setOpen(false)

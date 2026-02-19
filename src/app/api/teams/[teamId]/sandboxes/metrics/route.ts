@@ -2,11 +2,10 @@ import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
-import { createClient } from '@/lib/clients/supabase/server'
-import { transformMetricsToClientMetrics } from '@/lib/utils/sandboxes'
-
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+import { getSessionInsecure } from '@/server/auth/get-session'
+import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { MetricsRequestSchema, MetricsResponse } from './types'
 
 export async function POST(
@@ -16,12 +15,18 @@ export async function POST(
   try {
     const { teamId } = await params
 
-    const { sandboxIds } = MetricsRequestSchema.parse(await request.json())
+    const { success, data } = MetricsRequestSchema.safeParse(
+      await request.json()
+    )
 
-    const supabase = await createClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    if (!success) {
+      return Response.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    const { sandboxIds } = data
+
+    // fine to use here, we only need a token for the infra api request. it will validate the token.
+    const session = await getSessionInsecure()
 
     if (!session) {
       return Response.json({ error: 'Unauthenticated' }, { status: 401 })
@@ -66,6 +71,6 @@ export async function POST(
 
     return Response.json({ metrics } satisfies MetricsResponse)
   } catch (error) {
-    return Response.json({ error: 'Invalid request' }, { status: 400 })
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

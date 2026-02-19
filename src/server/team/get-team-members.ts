@@ -1,22 +1,22 @@
 import 'server-only'
 
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { returnServerError } from '@/lib/utils/action'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { User } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { TeamMemberInfo } from './types'
 
 const GetTeamMembersSchema = z.object({
-  teamId: z.string().uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
 export const getTeamMembers = authActionClient
   .schema(GetTeamMembersSchema)
   .metadata({ serverFunctionName: 'getTeamMembers' })
-  .action(async ({ parsedInput, ctx }) => {
-    const { teamId } = parsedInput
-    const { user } = ctx
+  .use(withTeamIdResolution)
+  .action(async ({ ctx }) => {
+    const { teamId } = ctx
 
     const { data, error } = await supabaseAdmin
       .from('users_teams')
@@ -25,13 +25,6 @@ export const getTeamMembers = authActionClient
 
     if (error) {
       throw error
-    }
-
-    const accessGranted =
-      data.findIndex((userTeam) => userTeam.user_id === user.id) !== -1
-
-    if (!accessGranted) {
-      return returnServerError('User is not authorized to get team members')
     }
 
     if (!data) {

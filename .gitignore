@@ -37,10 +37,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# fuma-docs
-/.source
+# AI agents and related files
+CLAUDE.md
+.agent
+.cursor/
+.claude/
+.agents/
+.vscode/
+.idea/
+.agents/
+.ai/
+.codex/
+.copilot/
+.github/copilot/
+.anthropic/
+.openai/
+
 
 # tooling
 /template
-# Sentry Config File
-.env.sentry-build-plugin

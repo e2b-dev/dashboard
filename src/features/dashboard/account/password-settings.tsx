@@ -6,7 +6,6 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { useUser } from '@/lib/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { getUserProviders } from '@/lib/utils/auth'
 import { updateUserAction } from '@/server/user/user-actions'
@@ -32,6 +31,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useDashboard } from '../context'
 import { ReauthDialog } from './reauth-dialog'
 
 const formSchema = z
@@ -60,7 +60,7 @@ export function PasswordSettings({
 }: PasswordSettingsProps) {
   'use no memo'
 
-  const { user } = useUser()
+  const { user } = useDashboard()
   const { toast } = useToast()
   const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
   const [clientShowPasswordForm, setClientShowPasswordForm] = useState(

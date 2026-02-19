@@ -125,7 +125,7 @@ export default function SandboxInspectIncompatible({
               className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
-              <Link href={PROTECTED_URLS.SANDBOXES(teamIdOrSlug)}>
+              <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug)}>
                 <ChevronLeft className="size-5" />
                 Back to sandboxes
               </Link>
@@ -138,7 +138,7 @@ export default function SandboxInspectIncompatible({
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
                 Documentation{' '}
-                <ArrowUpRight className="text-fill-highlight size-5 !stroke-[1px]" />
+                <ArrowUpRight className="text-fill-highlight size-5 stroke-[1px]!" />
               </Link>
             </Button>
           </CardFooter>

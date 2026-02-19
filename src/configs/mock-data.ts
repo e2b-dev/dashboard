@@ -1,12 +1,21 @@
 import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
-import { DefaultTemplate, Sandbox, Sandboxes, Template } from '@/types/api'
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
+import {
+  DefaultTemplate,
+  Sandbox,
+  Sandboxes,
+  Template,
+} from '@/types/api.types'
+import {
+  ClientSandboxesMetrics,
+  ClientTeamMetrics,
+} from '@/types/sandboxes.types'
 import { addHours, subHours } from 'date-fns'
 import { nanoid } from 'nanoid'
 
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   {
     aliases: ['code-interpreter'],
+    names: ['code-interpreter'],
     buildID: 'build_000',
     cpuCount: 1,
     memoryMB: 1024,
@@ -28,6 +37,7 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   },
   {
     aliases: ['web-starter'],
+    names: ['web-starter'],
     buildID: 'build_005',
     cpuCount: 2,
     memoryMB: 2048,
@@ -46,6 +56,7 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   },
   {
     aliases: ['data-science'],
+    names: ['data-science'],
     buildID: 'build_006',
     cpuCount: 4,
     memoryMB: 8192,
@@ -70,6 +81,7 @@ const DEFAULT_TEMPLATES: DefaultTemplate[] = [
 const TEMPLATES: Template[] = [
   {
     aliases: ['node-typescript', 'node-ts'],
+    names: ['node-typescript', 'node-ts'],
     buildID: 'build_001',
     cpuCount: 2,
     memoryMB: 2048,
@@ -89,6 +101,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['react-vite'],
+    names: ['react-vite'],
     buildID: 'build_002',
     cpuCount: 1,
     memoryMB: 1024,
@@ -105,6 +118,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['postgres', 'pg'],
+    names: ['postgres', 'pg'],
     buildID: 'build_003',
     cpuCount: 2,
     memoryMB: 4096,
@@ -121,6 +135,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['redis'],
+    names: ['redis'],
     buildID: 'build_004',
     cpuCount: 1,
     memoryMB: 2048,
@@ -137,6 +152,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['python-ml', 'ml'],
+    names: ['python-ml', 'ml'],
     buildID: 'build_005',
     cpuCount: 4,
     memoryMB: 8192,
@@ -153,6 +169,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['elastic', 'es'],
+    names: ['elastic', 'es'],
     buildID: 'build_006',
     cpuCount: 2,
     memoryMB: 4096,
@@ -169,6 +186,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['grafana'],
+    names: ['grafana'],
     buildID: 'build_007',
     cpuCount: 1,
     memoryMB: 2048,
@@ -185,6 +203,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['nginx'],
+    names: ['nginx'],
     buildID: 'build_008',
     cpuCount: 1,
     memoryMB: 1024,
@@ -201,6 +220,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['mongodb', 'mongo'],
+    names: ['mongodb', 'mongo'],
     buildID: 'build_009',
     cpuCount: 2,
     memoryMB: 4096,
@@ -217,6 +237,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['mysql'],
+    names: ['mysql'],
     buildID: 'build_010',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -233,6 +254,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['nextjs', 'next'],
+    names: ['nextjs', 'next'],
     buildID: 'build_011',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -252,6 +274,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['vue', 'vue3'],
+    names: ['vue', 'vue3'],
     buildID: 'build_012',
     cpuCount: 1,
     envdVersion: '0.1.0',
@@ -268,6 +291,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['django'],
+    names: ['django'],
     buildID: 'build_013',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -287,6 +311,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['flask'],
+    names: ['flask'],
     buildID: 'build_014',
     envdVersion: '0.1.0',
     cpuCount: 1,
@@ -303,6 +328,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['golang', 'go'],
+    names: ['golang', 'go'],
     buildID: 'build_015',
     envdVersion: '0.1.0',
     cpuCount: 2,
@@ -322,6 +348,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['rust'],
+    names: ['rust'],
     buildID: 'build_016',
     cpuCount: 2,
     memoryMB: 2048,
@@ -338,6 +365,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['java-spring', 'spring'],
+    names: ['java-spring', 'spring'],
     buildID: 'build_017',
     cpuCount: 3,
     memoryMB: 4096,
@@ -357,6 +385,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['dotnet', 'csharp'],
+    names: ['dotnet', 'csharp'],
     buildID: 'build_018',
     cpuCount: 2,
     memoryMB: 3072,
@@ -373,6 +402,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['php-laravel', 'laravel'],
+    names: ['php-laravel', 'laravel'],
     buildID: 'build_019',
     cpuCount: 2,
     memoryMB: 2048,
@@ -392,6 +422,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['ruby-rails', 'rails'],
+    names: ['ruby-rails', 'rails'],
     buildID: 'build_020',
     cpuCount: 2,
     memoryMB: 2048,
@@ -408,6 +439,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['jupyter', 'notebook'],
+    names: ['jupyter', 'notebook'],
     buildID: 'build_021',
     cpuCount: 4,
     memoryMB: 6144,
@@ -427,6 +459,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['tensorflow'],
+    names: ['tensorflow'],
     buildID: 'build_022',
     cpuCount: 8,
     memoryMB: 16384,
@@ -446,6 +479,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['pytorch'],
+    names: ['pytorch'],
     buildID: 'build_023',
     cpuCount: 8,
     memoryMB: 16384,
@@ -465,6 +499,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['cassandra'],
+    names: ['cassandra'],
     buildID: 'build_024',
     cpuCount: 4,
     memoryMB: 8192,
@@ -481,6 +516,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['docker', 'dind'],
+    names: ['docker', 'dind'],
     buildID: 'build_025',
     cpuCount: 2,
     memoryMB: 4096,
@@ -500,6 +536,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['kubernetes', 'k8s'],
+    names: ['kubernetes', 'k8s'],
     buildID: 'build_026',
     cpuCount: 4,
     memoryMB: 8192,
@@ -519,6 +556,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['terraform'],
+    names: ['terraform'],
     buildID: 'build_027',
     cpuCount: 2,
     memoryMB: 2048,
@@ -535,6 +573,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['ansible'],
+    names: ['ansible'],
     buildID: 'build_028',
     cpuCount: 1,
     memoryMB: 1536,
@@ -554,6 +593,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['prometheus'],
+    names: ['prometheus'],
     buildID: 'build_029',
     cpuCount: 2,
     memoryMB: 3072,
@@ -570,6 +610,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['jenkins'],
+    names: ['jenkins'],
     buildID: 'build_030',
     cpuCount: 3,
     envdVersion: '0.1.0',
@@ -589,6 +630,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['gitlab-ci'],
+    names: ['gitlab-ci'],
     buildID: 'build_031',
     cpuCount: 2,
     envdVersion: '0.1.0',
@@ -605,6 +647,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['apache-spark', 'spark'],
+    names: ['apache-spark', 'spark'],
     buildID: 'build_032',
     cpuCount: 8,
     envdVersion: '0.1.0',
@@ -624,6 +667,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['kafka'],
+    names: ['kafka'],
     envdVersion: '0.1.0',
     buildID: 'build_033',
     cpuCount: 3,
@@ -640,6 +684,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['rabbitmq'],
+    names: ['rabbitmq'],
     buildID: 'build_034',
     cpuCount: 2,
     memoryMB: 2048,
@@ -659,6 +704,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['zookeeper'],
+    names: ['zookeeper'],
     envdVersion: '0.1.0',
     buildID: 'build_035',
     cpuCount: 1,
@@ -675,6 +721,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['solr'],
+    names: ['solr'],
     buildID: 'build_036',
     cpuCount: 2,
     memoryMB: 4096,
@@ -694,6 +741,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['logstash'],
+    names: ['logstash'],
     buildID: 'build_037',
     cpuCount: 2,
     memoryMB: 3072,
@@ -710,6 +758,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['kibana'],
+    names: ['kibana'],
     buildID: 'build_038',
     cpuCount: 1,
     memoryMB: 2048,
@@ -726,6 +775,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['minio'],
+    names: ['minio'],
     buildID: 'build_039',
     cpuCount: 2,
     memoryMB: 2048,
@@ -745,6 +795,7 @@ const TEMPLATES: Template[] = [
   },
   {
     aliases: ['vault'],
+    names: ['vault'],
     buildID: 'build_040',
     cpuCount: 1,
     envdVersion: '0.1.0',
@@ -1001,8 +1052,262 @@ function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
   }
 }
 
+/**
+ * This function replicates the back-end step calculation logic from e2b-dev/infra.
+ * https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
+ */
+export function calculateTeamMetricsStep(
+  startMs: number,
+  endMs: number
+): number {
+  const duration = endMs - startMs
+  const hour = 60 * 60 * 1000
+  const minute = 60 * 1000
+  const second = 1000
+
+  switch (true) {
+    case duration < hour:
+      return 5 * second
+    case duration < 6 * hour:
+      return 30 * second
+    case duration < 12 * hour:
+      return minute
+    case duration < 24 * hour:
+      return 2 * minute
+    case duration < 7 * 24 * hour:
+      return 5 * minute
+    default:
+      return 15 * minute
+  }
+}
+
+/**
+ * Generate mock team metrics for monitoring charts
+ * Supports small, medium, and large teams with realistic patterns
+ * Can generate data for the past 30 days from now
+ */
+export function generateMockTeamMetrics(
+  startMs: number,
+  endMs: number
+): { metrics: ClientTeamMetrics; step: number } {
+  const now = Date.now()
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+
+  // Clamp start time to no earlier than 30 days ago
+  if (startMs < thirtyDaysAgo) {
+    startMs = thirtyDaysAgo
+  }
+
+  // Don't generate data beyond current time
+  if (endMs > now) {
+    endMs = now
+  }
+  const profiles = {
+    small: {
+      baseConcurrent: 50,
+      peakConcurrent: 200,
+      baseRate: 0.1,
+      peakRate: 2,
+      volatility: 0.15,
+    },
+    medium: {
+      baseConcurrent: 500,
+      peakConcurrent: 5000,
+      baseRate: 1,
+      peakRate: 10,
+      volatility: 0.2,
+    },
+    large: {
+      baseConcurrent: 20000,
+      peakConcurrent: 80000,
+      baseRate: 5,
+      peakRate: 25,
+      volatility: 0.25,
+    },
+  }
+
+  const profile = profiles.large
+  const metrics: ClientTeamMetrics = []
+
+  // Use the backend's step calculation logic
+  const step = calculateTeamMetricsStep(startMs, endMs)
+
+  // Normalize start time based on step size
+  let normalizedStartMs: number
+  const second = 1000
+  const minute = 60 * second
+
+  if (step < minute) {
+    // For steps less than a minute, normalize to nearest step boundary
+    if (step === 5 * second) {
+      // Normalize to nearest 5 seconds
+      normalizedStartMs = Math.floor(startMs / (5 * second)) * (5 * second)
+    } else if (step === 30 * second) {
+      // Normalize to 00 or 30 seconds
+      normalizedStartMs = Math.floor(startMs / (30 * second)) * (30 * second)
+    } else {
+      normalizedStartMs = startMs
+    }
+  } else {
+    // For minute-based steps, normalize to the minute
+    normalizedStartMs = Math.floor(startMs / minute) * minute
+  }
+
+  // Calculate normalized end time to ensure we generate data up to "now" or requested end
+  let normalizedEndMs: number
+  if (step < minute) {
+    if (step === 5 * second) {
+      normalizedEndMs = Math.floor(endMs / (5 * second)) * (5 * second)
+    } else if (step === 30 * second) {
+      normalizedEndMs = Math.floor(endMs / (30 * second)) * (30 * second)
+    } else {
+      normalizedEndMs = endMs
+    }
+  } else {
+    normalizedEndMs = Math.floor(endMs / minute) * minute
+  }
+
+  const durationMs = normalizedEndMs - normalizedStartMs
+  let numPoints = Math.floor(durationMs / step) + 1 // +1 to include the end point
+
+  // Cap number of points for performance
+  numPoints = Math.min(numPoints, 2000)
+
+  // Generate realistic patterns
+  for (let i = 0; i < numPoints; i++) {
+    const timestamp = normalizedStartMs + i * step
+
+    // Don't generate points beyond the normalized end time or current time
+    if (timestamp > normalizedEndMs || timestamp > now) break
+
+    const date = new Date(timestamp)
+
+    // Time-based patterns
+    const hourOfDay = date.getHours()
+    const dayOfWeek = date.getDay()
+    const minuteOfHour = date.getMinutes()
+
+    // Business hours factor (9-17 in user's timezone)
+    const isBusinessHours = hourOfDay >= 9 && hourOfDay <= 17
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5
+
+    // Calculate load factors
+    let loadFactor = 0.3 // base load
+
+    if (isWeekday) {
+      if (isBusinessHours) {
+        // Peak during business hours
+        loadFactor = 0.7 + Math.sin(((hourOfDay - 9) * Math.PI) / 8) * 0.3
+
+        // Add lunch dip
+        if (hourOfDay === 12 || hourOfDay === 13) {
+          loadFactor *= 0.85
+        }
+      } else if (hourOfDay >= 6 && hourOfDay < 9) {
+        // Morning ramp-up
+        loadFactor = 0.3 + (hourOfDay - 6) * 0.15
+      } else if (hourOfDay > 17 && hourOfDay <= 20) {
+        // Evening wind-down
+        loadFactor = 0.7 - (hourOfDay - 17) * 0.1
+      } else {
+        // Night time
+        loadFactor = 0.2 + Math.random() * 0.1
+      }
+    } else {
+      // Weekend - lower but some activity
+      loadFactor = 0.15 + Math.sin((hourOfDay * Math.PI) / 12) * 0.1
+    }
+
+    // Add some micro-patterns (spikes and dips)
+    const microPattern = Math.sin((minuteOfHour * Math.PI) / 30) * 0.05
+    loadFactor += microPattern
+
+    // Add random volatility
+    const randomVolatility = (Math.random() - 0.5) * profile.volatility
+    loadFactor = Math.max(0.1, Math.min(1, loadFactor + randomVolatility))
+
+    // Calculate metrics based on load
+    const concurrentSandboxes = Math.round(
+      profile.baseConcurrent +
+        (profile.peakConcurrent - profile.baseConcurrent) * loadFactor
+    )
+
+    // Start rate has higher volatility and spikiness
+    const rateVolatility = (Math.random() - 0.5) * profile.volatility * 2
+    const startRateFactor = Math.max(0, loadFactor + rateVolatility)
+
+    // Add occasional spikes in start rate (deployments, CI/CD runs)
+    const hasSpike = Math.random() < 0.02 // 2% chance of spike
+    const spikeFactor = hasSpike ? 1.5 + Math.random() : 1
+
+    const sandboxStartRate = Math.max(
+      0,
+      (profile.baseRate +
+        (profile.peakRate - profile.baseRate) * startRateFactor) *
+        spikeFactor
+    )
+
+    metrics.push({
+      timestamp,
+      concurrentSandboxes,
+      sandboxStartRate: Math.round(sandboxStartRate * 100) / 100, // Round to 2 decimals
+    })
+  }
+
+  // Add some smoothing to make it more realistic
+  for (let i = 1; i < metrics.length - 1; i++) {
+    const prev = metrics[i - 1]!
+    const curr = metrics[i]!
+    const next = metrics[i + 1]!
+
+    // Smooth concurrent sandboxes (they change more gradually)
+    curr.concurrentSandboxes = Math.round(
+      prev.concurrentSandboxes * 0.3 +
+        curr.concurrentSandboxes * 0.4 +
+        next.concurrentSandboxes * 0.3
+    )
+  }
+
+  return { metrics, step }
+}
+
 export const MOCK_METRICS_DATA = (sandboxes: Sandbox[]) =>
   generateMockMetrics(sandboxes)
 export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES
+export const MOCK_TEAM_METRICS_DATA = generateMockTeamMetrics
+
+/**
+ * Generate mock max team metrics data for a given date range and metric
+ */
+export const MOCK_TEAM_METRICS_MAX_DATA = (
+  startDateMs: number,
+  endDateMs: number,
+  metric: 'concurrent_sandboxes' | 'sandbox_start_rate'
+) => {
+  const metrics = generateMockTeamMetrics(startDateMs, endDateMs)
+
+  // find the maximum value for the requested metric
+  let maxValue = 0
+  let maxTimestamp = startDateMs
+
+  for (const m of metrics.metrics) {
+    const value =
+      metric === 'concurrent_sandboxes'
+        ? m.concurrentSandboxes
+        : m.sandboxStartRate
+
+    if (value > maxValue) {
+      maxValue = value
+      maxTimestamp = m.timestamp
+    }
+  }
+
+  return {
+    timestamp: maxTimestamp,
+    timestampUnix: maxTimestamp, // already in milliseconds
+    value: maxValue,
+    metric,
+  }
+}

@@ -7,7 +7,7 @@ import {
   CardTitle,
   cardVariants,
 } from '@/ui/primitives/card'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'motion/react'
 import { AlertTriangle } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSandboxContext } from '../context'

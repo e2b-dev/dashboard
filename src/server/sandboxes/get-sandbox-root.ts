@@ -1,12 +1,13 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 import Sandbox, { NotFoundError } from 'e2b'
 import { z } from 'zod'
 
 export const GetSandboxRootSchema = z.object({
-  teamId: z.string().uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   sandboxId: z.string(),
   rootPath: z.string().default('/'),
 })
@@ -14,9 +15,10 @@ export const GetSandboxRootSchema = z.object({
 export const getSandboxRoot = authActionClient
   .schema(GetSandboxRootSchema)
   .metadata({ serverFunctionName: 'getSandboxRoot' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, sandboxId, rootPath } = parsedInput
-    const { session } = ctx
+    const { sandboxId, rootPath } = parsedInput
+    const { teamId, session } = ctx
 
     const headers = SUPABASE_AUTH_HEADERS(session.access_token, teamId)
 

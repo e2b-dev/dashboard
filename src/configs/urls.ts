@@ -2,6 +2,7 @@ export const AUTH_URLS = {
   FORGOT_PASSWORD: '/forgot-password',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
+  CONFIRM: '/confirm',
   CALLBACK: '/api/auth/callback',
   CLI: '/auth/cli',
 }
@@ -9,20 +10,46 @@ export const AUTH_URLS = {
 export const PROTECTED_URLS = {
   DASHBOARD: '/dashboard',
   ACCOUNT_SETTINGS: '/dashboard/account',
+  RESET_PASSWORD: '/dashboard/account',
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
-  TEAM: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/team`,
-  SANDBOXES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/sandboxes`,
+
+  RESOLVED_ACCOUNT_SETTINGS: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/account`,
+
+  GENERAL: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/general`,
+  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
+  MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
+
+  SANDBOXES: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=monitoring`,
+  SANDBOXES_MONITORING: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=monitoring`,
+  SANDBOXES_LIST: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes?tab=list`,
+
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
   SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
+
+  WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
+
   TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
+  TEMPLATES_LIST: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/templates?tab=list`,
+  TEMPLATES_BUILDS: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/templates?tab=builds`,
+  TEMPLATE_BUILD: (teamIdOrSlug: string, templateId: string, buildId: string) =>
+    `/dashboard/${teamIdOrSlug}/templates/${templateId}/builds/${buildId}`,
+
   USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
   BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
-  BUDGET: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/budget`,
-  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
-  RESET_PASSWORD: '/dashboard/account',
+  BILLING_PLAN: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/billing/plan`,
+  BILLING_PLAN_SELECT: (teamIdOrSlug: string) =>
+    `/dashboard/${teamIdOrSlug}/billing/plan/select`,
+  LIMITS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/limits`,
 }
 
 export const RESOLVER_URLS = {
@@ -38,7 +65,7 @@ export const HELP_URLS = {
 
 export const BASE_URL = process.env.VERCEL_ENV
   ? process.env.VERCEL_ENV === 'production'
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    ? 'https://e2b.dev'
     : `https://${process.env.VERCEL_BRANCH_URL}`
   : 'http://localhost:3000'
 

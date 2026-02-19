@@ -1,18 +1,26 @@
+// NOTE: related to src/configs/rewrites.ts
+export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
+
 /** @type {import('next').NextConfig} */
 const config = {
-  eslint: {
-    dirs: ['src', 'scripts'], // Only run ESLint on these directories during production builds
-  },
   reactStrictMode: true,
+  reactCompiler: true,
   experimental: {
-    reactCompiler: true,
-    ppr: true,
-    staleTimes: {
-      dynamic: 180,
-      static: 180,
-    },
+    useCache: true,
+    turbopackFileSystemCacheForDev: true,
     serverActions: {
       bodySizeLimit: '5mb',
+    },
+    authInterrupts: true,
+  },
+  turbopack: {
+    resolveAlias: {
+      // Stub Node.js modules for browser builds
+      // e2b package bundles these packages. when dealing with browser chunks,
+      // we need to stub these packages for builds.
+      fs: { browser: './stubs/fs.ts' },
+      'node:fs': { browser: './stubs/fs.ts' },
+      'node:fs/promises': { browser: './stubs/fs-promises.ts' },
     },
   },
   logging: {
@@ -20,16 +28,8 @@ const config = {
       fullUrl: true,
     },
   },
-  serverExternalPackages: ['pino', 'pino-loki'],
+  serverExternalPackages: ['pino'],
   trailingSlash: false,
-  webpack: (config) => {
-    config.module.rules.push({
-      test: /\.node$/,
-      use: 'node-loader',
-    })
-
-    return config
-  },
   headers: async () => [
     {
       source: '/(.*)',
@@ -42,20 +42,28 @@ const config = {
       ],
     },
   ],
-  rewrites: async () => [
-    {
-      source: '/ingest/static/:path*',
-      destination: 'https://us-assets.i.posthog.com/static/:path*',
-    },
-    {
-      source: '/ingest/:path*',
-      destination: 'https://us.i.posthog.com/:path*',
-    },
-    {
-      source: '/ingest/decide',
-      destination: 'https://us.i.posthog.com/decide',
-    },
-  ],
+  rewrites: async () => ({
+    beforeFiles: [
+      {
+        source: '/ph-proxy/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ph-proxy/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+
+      // Asset rewrites for Mintlify
+      {
+        source: '/mintlify-assets/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/:path*`,
+      },
+      {
+        source: '/_mintlify/:path*',
+        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`,
+      },
+    ],
+  }),
   redirects: async () => [
     {
       source: '/docs/api/cli',
@@ -77,28 +85,6 @@ const config = {
       source: '/ai-agents/:path*',
       destination: '/',
       permanent: true,
-    },
-    // Campaigns
-    {
-      source: '/start',
-      destination:
-        '/careers?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=start_ooh',
-      permanent: false,
-      statusCode: 302,
-    },
-    {
-      source: '/machines',
-      destination:
-        '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=machines_ooh',
-      permanent: false,
-      statusCode: 302,
-    },
-    {
-      source: '/humans',
-      destination:
-        '/enterprise?utm_source=billboard&utm_medium=outdoor&utm_campaign=launch_2025&utm_content=humans_ooh',
-      permanent: false,
-      statusCode: 302,
     },
   ],
   skipTrailingSlashRedirect: true,

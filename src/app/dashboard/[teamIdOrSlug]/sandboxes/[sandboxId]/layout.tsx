@@ -1,10 +1,7 @@
 import { SandboxProvider } from '@/features/dashboard/sandbox/context'
 import SandboxDetailsHeader from '@/features/dashboard/sandbox/header/header'
 import SandboxLayoutClient from '@/features/dashboard/sandbox/layout'
-import { resolveTeamIdInServerComponent } from '@/lib/utils/server'
 import { getSandboxDetails } from '@/server/sandboxes/get-sandbox-details'
-
-export const fetchCache = 'force-no-store'
 
 interface SandboxLayoutProps {
   children: React.ReactNode
@@ -17,8 +14,7 @@ export default async function SandboxLayout({
 }: SandboxLayoutProps) {
   const { teamIdOrSlug, sandboxId } = await params
 
-  const teamId = await resolveTeamIdInServerComponent(teamIdOrSlug)
-  const res = await getSandboxDetails({ teamId, sandboxId })
+  const res = await getSandboxDetails({ teamIdOrSlug, sandboxId })
 
   const exists = res?.serverError !== 'SANDBOX_NOT_FOUND'
 
@@ -31,11 +27,7 @@ export default async function SandboxLayout({
   }
 
   return (
-    <SandboxProvider
-      teamId={teamId}
-      serverSandboxInfo={res?.data}
-      isRunning={exists}
-    >
+    <SandboxProvider serverSandboxInfo={res?.data} isRunning={exists}>
       <SandboxLayoutClient
         teamIdOrSlug={teamIdOrSlug}
         header={

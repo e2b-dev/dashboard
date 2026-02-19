@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Loader } from '@/ui/primitives/loader'
+import { Loader } from '@/ui/primitives/loader_d'
 import { Textarea } from '@/ui/primitives/textarea'
 import { SurveyQuestion as PostHogSurveyQuestion, Survey } from 'posthog-js'
 import { useCallback, useMemo, useState } from 'react'
@@ -66,7 +66,7 @@ export function SurveyContent({
       switch (question.type) {
         case 'rating':
           return (
-            <div className="flex justify-between">
+            <div className="flex justify-between py-[5px]">
               {question.display === 'emoji'
                 ? // Emoji ratings
                   (question.scale === 3 ? EMOJIS_3 : EMOJIS_5).map(
@@ -127,6 +127,7 @@ export function SurveyContent({
               placeholder={survey?.appearance?.placeholder}
               value={responses[currentQuestionIndex] || ''}
               className="min-h-28"
+              autoFocus
               onChange={(e) =>
                 setResponses((prev) => ({
                   ...prev,
@@ -162,17 +163,17 @@ export function SurveyContent({
   return (
     <div>
       <CardHeader>
-        <CardTitle className="normal-case">
+        <CardTitle>
           {currentQuestion?.question}
         </CardTitle>
         {currentQuestion?.description && (
-          <CardDescription className="text-md">
+          <CardDescription>
             {currentQuestion?.description}
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-8">
+      <CardContent className="pt-1">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {currentQuestion && renderQuestion(currentQuestion)}
           <div className="flex justify-between">
             <Button

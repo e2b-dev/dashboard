@@ -1,21 +1,23 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { z } from 'zod'
 
 export const GetSandboxDetailsSchema = z.object({
-  teamId: z.string().uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   sandboxId: z.string(),
 })
 
 export const getSandboxDetails = authActionClient
   .schema(GetSandboxDetailsSchema)
   .metadata({ serverFunctionName: 'getSandboxDetails' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { session } = ctx
-    const { teamId, sandboxId } = parsedInput
+    const { session, teamId } = ctx
+    const { sandboxId } = parsedInput
 
     const res = await infra.GET('/sandboxes/{sandboxID}', {
       params: {
@@ -32,17 +34,19 @@ export const getSandboxDetails = authActionClient
     if (res.error) {
       const status = res.response.status
 
-      l.error({
-        key: 'get_sandbox_details:infra_error',
-        message: res.error.message,
-        error: res.error,
-        team_id: teamId,
-        user_id: session.user.id,
-        context: {
-          status,
-          sandboxId,
+      l.error(
+        {
+          key: 'get_sandbox_details:infra_error',
+          error: `${status}: ${res.error.message}`,
+          team_id: teamId,
+          user_id: session.user.id,
+          context: {
+            status,
+            sandboxId,
+          },
         },
-      })
+        `Failed to get sandbox details: ${res.error.message}`
+      )
 
       if (status === 404) {
         return returnServerError('SANDBOX_NOT_FOUND')

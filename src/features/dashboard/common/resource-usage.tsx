@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { formatNumber } from '@/lib/utils/formatting'
 import React from 'react'
 
 export interface ResourceUsageProps {
@@ -25,12 +26,24 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
   const hasMetrics = metrics !== null && metrics !== undefined
 
   if (mode === 'simple') {
-    const displayTotal = total ? total.toLocaleString() : 'n/a'
+    const hasValue = total !== null && total !== undefined && total !== 0
+    const displayTotal = hasValue ? formatNumber(total) : '--'
     return (
-      <p className=" text-fg-tertiary">
-        <span className="text-accent-info-highlight"> {displayTotal} </span>{' '}
-        {unit}
-        {isCpu && total && total > 1 ? 's' : ''}
+      <p className="flex justify-end gap-1 prose-table">
+        <span
+          className={cn(
+            'prose-table-numeric',
+            hasValue ? 'text-fg-secondary' : 'text-fg-tertiary'
+          )}
+        >
+          {displayTotal}
+        </span>
+        {hasValue && (
+          <span className="text-fg-tertiary">
+            {unit}
+            {isCpu && total && total > 1 ? 's' : ''}
+          </span>
+        )}
       </p>
     )
   }
@@ -50,8 +63,8 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         : 'text-fg'
   )
 
-  const displayValue = hasMetrics ? metrics.toLocaleString() : 'n/a'
-  const totalValue = total ? total.toLocaleString() : 'n/a'
+  const displayValue = hasMetrics ? formatNumber(metrics) : 'n/a'
+  const totalValue = total ? formatNumber(total) : 'n/a'
 
   return (
     <span

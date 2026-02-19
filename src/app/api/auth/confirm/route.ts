@@ -1,28 +1,25 @@
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
-import { encodedRedirect } from '@/lib/utils/auth'
+import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
+import { OtpTypeSchema } from '@/server/api/models/auth.models'
 import { redirect } from 'next/navigation'
-import { NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
+import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 const confirmSchema = z.object({
   token_hash: z.string().min(1),
-  type: z.enum([
-    'signup',
-    'recovery',
-    'invite',
-    'magiclink',
-    'email',
-    'email_change',
-  ]),
-  next: z.string().url(),
+  type: OtpTypeSchema,
+  next: z.httpUrl(),
 })
 
-const normalizeOrigin = (origin: string) =>
-  origin.replace('www.', '').replace(/\/$/, '')
-
+/**
+ * This route acts as an intermediary for email OTP verification.
+ *
+ * Email providers may prefetch/scan links, consuming OTP tokens before users click.
+ * To prevent this:
+ * - Same-origin requests: Redirect to /confirm page where user must click to verify
+ * - External origin requests: Redirect to Supabase client flow URL (for external apps)
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
 
@@ -51,133 +48,59 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const supabaseTokenHash = result.data.token_hash
-  const supabaseType = result.data.type
-  const supabaseRedirectTo = result.data.next
-  const supabaseClientFlowUrl = new URL(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${supabaseTokenHash}&type=${supabaseType}&redirect_to=${supabaseRedirectTo}`
+  const { token_hash, type, next } = result.data
+  const dashboardOrigin = request.nextUrl.origin
+  const isDifferentOrigin = isExternalOrigin(next, dashboardOrigin)
+
+  l.info(
+    {
+      key: 'auth_confirm:init',
+      context: {
+        token_hash_prefix: token_hash.slice(0, 10),
+        type,
+        next,
+        is_different_origin: isDifferentOrigin,
+        origin: dashboardOrigin,
+      },
+    },
+    `confirming email with OTP token hash: ${token_hash.slice(0, 10)}`
   )
 
-  const dashboardUrl = request.nextUrl
-
-  const isDifferentOrigin =
-    supabaseRedirectTo &&
-    normalizeOrigin(new URL(supabaseRedirectTo).origin) !==
-      normalizeOrigin(dashboardUrl.origin)
-
-  l.info({
-    key: 'auth_confirm:init',
-    context: {
-      supabase_token_hash: supabaseTokenHash
-        ? `${supabaseTokenHash.slice(0, 10)}...`
-        : null,
-      supabaseType,
-      supabaseRedirectTo,
-      isDifferentOrigin,
-      supabaseClientFlowUrl,
-      requestUrl: request.url,
-      origin: request.nextUrl.origin,
-    },
-  })
-
-  // when the next param is an absolute URL, with a different origin,
-  // we need to redirect to the supabase client flow url
   if (isDifferentOrigin) {
+    const supabaseClientFlowUrl = new URL(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${type}&redirect_to=${encodeURIComponent(next)}`
+    )
+
+    l.info(
+      {
+        key: 'auth_confirm:redirect_to_supabase_client_flow',
+        context: {
+          supabase_client_flow_url: supabaseClientFlowUrl.toString(),
+          next,
+        },
+      },
+      `redirecting to supabase client flow: ${supabaseClientFlowUrl.toString()}`
+    )
+
     throw redirect(supabaseClientFlowUrl.toString())
   }
 
-  try {
-    const next =
-      supabaseType === 'recovery'
-        ? `${request.nextUrl.origin}${PROTECTED_URLS.RESET_PASSWORD}`
-        : supabaseRedirectTo
+  const confirmPageUrl = new URL(dashboardOrigin + AUTH_URLS.CONFIRM)
+  confirmPageUrl.searchParams.set('token_hash', token_hash)
+  confirmPageUrl.searchParams.set('type', type)
+  confirmPageUrl.searchParams.set('next', next)
 
-    const redirectUrl = new URL(next)
-
-    const supabase = await createClient()
-
-    const { error, data } = await supabase.auth.verifyOtp({
-      type: supabaseType,
-      token_hash: supabaseTokenHash,
-    })
-
-    if (error) {
-      l.error({
-        key: 'auth_confirm:supabase_error',
-        message: error.message,
-        error: serializeError(error),
-        context: {
-          supabase_token_hash: supabaseTokenHash
-            ? `${supabaseTokenHash.slice(0, 10)}...`
-            : null,
-          supabaseType,
-          supabaseRedirectTo,
-          redirectUrl: redirectUrl.toString(),
-        },
-      })
-
-      let errorMessage = 'Invalid Token'
-      if (error.status === 403 && error.code === 'otp_expired') {
-        errorMessage = 'Email link has expired. Please request a new one.'
-      }
-
-      return encodedRedirect(
-        'error',
-        dashboardSignInUrl.toString(),
-        errorMessage
-      )
-    }
-
-    // handle re-auth
-    if (redirectUrl.pathname === PROTECTED_URLS.ACCOUNT_SETTINGS) {
-      redirectUrl.searchParams.set('reauth', '1')
-
-      return NextResponse.redirect(redirectUrl.toString())
-    }
-
-    l.info({
-      key: 'auth_confirm:success',
-      user_id: data?.user?.id,
+  l.info(
+    {
+      key: 'auth_confirm:redirect_to_confirm_page',
       context: {
-        supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-        supabaseType,
-        supabaseRedirectTo,
-        redirectUrl: redirectUrl.toString(),
-        reauth: redirectUrl.searchParams.get('reauth'),
+        token_hash_prefix: token_hash.slice(0, 10),
+        type,
+        confirm_page_url: confirmPageUrl.toString(),
       },
-    })
+    },
+    `redirecting to confirm page: ${confirmPageUrl.toString()}`
+  )
 
-    return NextResponse.redirect(redirectUrl.toString())
-  } catch (e) {
-    const sE = serializeError(e) as object
-
-    // nextjs internally throws redirects (encodedRedirect with error message in this case)
-    // and captures them to do the actual redirect.
-
-    // we need to throw the error to let nextjs handle it
-    if (
-      'message' in sE &&
-      typeof sE.message === 'string' &&
-      sE.message.includes('NEXT_REDIRECT')
-    ) {
-      throw e
-    }
-
-    l.error({
-      key: 'AUTH_CONFIRM:ERROR',
-      message: 'message' in sE ? sE.message : undefined,
-      error: sE,
-      context: {
-        supabaseTokenHash: `${supabaseTokenHash.slice(0, 10)}...`,
-        supabaseType,
-        supabaseRedirectTo,
-      },
-    })
-
-    return encodedRedirect(
-      'error',
-      dashboardSignInUrl.toString(),
-      'Invalid Token'
-    )
-  }
+  throw redirect(confirmPageUrl.toString())
 }

@@ -1,3 +1,4 @@
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { Database } from '@/types/database.types'
 import { z } from 'zod'
 
@@ -14,7 +15,7 @@ export type TeamMember = {
 }
 
 /**
- * Valid: "Team 1", "DevOps2023", "Engineering Team", "Dev-Ops", "Team_Name"
+ * Valid: "Team 1", "DevOps2023", "Engineering Team", "Dev-Ops", "Team_Name", "Team.Name"
  * Invalid: empty strings, "Team@Work", "Team--Name", names > 32 chars
  */
 export const TeamNameSchema = z
@@ -22,15 +23,15 @@ export const TeamNameSchema = z
   .trim()
   .min(1, { message: 'Team name cannot be empty' })
   .max(32, { message: 'Team name cannot be longer than 32 characters' })
-  .regex(/^[a-zA-Z0-9]+(?:[ _-][a-zA-Z0-9]+)*$/, {
+  .regex(/^[a-zA-Z0-9]+(?:[ _.\-][a-zA-Z0-9]+)*$/, {
     message:
-      'Names can only contain letters and numbers, separated by spaces, underscores, or hyphens',
+      'Names can only contain letters and numbers, separated by spaces, underscores, hyphens, or dots',
   })
 
 // Shared schemas
 
 const UpdateTeamNameSchema = z.object({
-  teamId: z.string().uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   name: TeamNameSchema,
 })
 
@@ -39,3 +40,12 @@ const CreateTeamSchema = z.object({
 })
 
 export { CreateTeamSchema, UpdateTeamNameSchema }
+
+/**
+ * The result of resolving a team for a user.
+ * Contains the team ID, slug.
+ */
+export interface ResolvedTeam {
+  id: string
+  slug: string
+}

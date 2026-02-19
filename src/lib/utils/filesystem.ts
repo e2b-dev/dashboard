@@ -86,6 +86,6 @@ export async function determineFileContentState(
     const content = new TextDecoder('utf-8', { fatal: true }).decode(data)
     return { type: 'text', text: content }
   } catch {
-    return { type: 'unreadable' }
+    return { type: 'unreadable', reason: 'file_type' }
   }
 }
