@@ -64,7 +64,7 @@ export default function DashboardSidebarFooter() {
       {(INCLUDE_DASHBOARD_FEEDBACK_SURVEY || INCLUDE_REPORT_ISSUE) && (
         <SidebarMenu
           className={cn(
-            'flex-row gap-0 border-t group-data-[collapsible=icon]:flex-col h-protected-statusbar',
+            'flex-row gap-0 border-t group-data-[collapsible=icon]:flex-col',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
         >
@@ -82,7 +82,7 @@ export default function DashboardSidebarFooter() {
                     tooltip="Feedback"
                     variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all w-full h-full justify-center group-data-[collapsible=icon]:justify-start',
+                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
@@ -111,7 +111,7 @@ export default function DashboardSidebarFooter() {
                     tooltip="Report Issue"
                     variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all w-full h-full justify-center group-data-[collapsible=icon]:justify-start',
+                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
