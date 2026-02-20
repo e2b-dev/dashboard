@@ -320,14 +320,15 @@ async function getDefaultTemplatesCached() {
       continue
     }
 
-    const invalidDiskSize =
-      latestBuild.total_disk_size_mb == null ||
-      latestBuild.total_disk_size_mb <= 0
-    const invalidEnvdVersion =
-      latestBuild.envd_version == null ||
-      latestBuild.envd_version.trim().length === 0
+    const diskSizeMB = latestBuild.total_disk_size_mb
+    const envdVersion = latestBuild.envd_version
 
-    if (invalidDiskSize || invalidEnvdVersion) {
+    if (
+      diskSizeMB == null ||
+      diskSizeMB <= 0 ||
+      envdVersion == null ||
+      envdVersion.trim().length === 0
+    ) {
       l.error(
         {
           key: 'trpc:templates:get_default_templates:env_builds_missing_values',
@@ -343,8 +344,8 @@ async function getDefaultTemplatesCached() {
       buildID: latestBuild.id,
       cpuCount: latestBuild.vcpu,
       memoryMB: latestBuild.ram_mb,
-      diskSizeMB: latestBuild.total_disk_size_mb,
-      envdVersion: latestBuild.envd_version,
+      diskSizeMB,
+      envdVersion,
       public: env.public,
       aliases: aliases.map((a) => a.alias),
       names: aliases.map((a) => {
