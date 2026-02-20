@@ -14,7 +14,7 @@ import {
   DataTableRow,
 } from '@/ui/data-table'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { keepPreviousData, useSuspenseQuery } from '@tanstack/react-query'
 import {
   flexRender,
   getCoreRowModel,
@@ -105,6 +105,7 @@ export default function SandboxesTable() {
       {
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,
+        placeholderData: keepPreviousData,
       }
     )
   )
