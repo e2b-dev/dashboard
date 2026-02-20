@@ -52,6 +52,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
   NEXT_PUBLIC_INCLUDE_ARGUS: z.string().optional(),
   NEXT_PUBLIC_INCLUDE_REPORT_ISSUE: z.string().optional(),
+  NEXT_PUBLIC_INCLUDE_STATUS_INDICATOR: z.string().optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
