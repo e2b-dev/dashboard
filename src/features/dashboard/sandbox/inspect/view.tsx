@@ -3,7 +3,6 @@
 import SandboxInspectProvider from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
-import { cn } from '@/lib/utils'
 import type { EntryInfo } from 'e2b'
 
 interface SandboxInspectViewProps {
@@ -17,12 +16,7 @@ export default function SandboxInspectView({
 }: SandboxInspectViewProps) {
   return (
     <SandboxInspectProvider rootPath={rootPath} seedEntries={seedEntries}>
-      <div
-        className={cn(
-          'flex flex-1 gap-4 overflow-hidden p-3 md:p-6',
-          'max-md:sticky max-md:top-0 max-md:min-h-[calc(100vh-var(--protected-navbar-height))]'
-        )}
-      >
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden p-3 md:p-6">
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />
       </div>

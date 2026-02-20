@@ -1225,6 +1225,23 @@ export const ListIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const StorageIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M3.33301 10H12.6663M8.66634 12H8.67301M10.6663 12H10.673M3.33301 2H12.6663V14H3.33301V2Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+  </svg>
+)
+
 export const InfoIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}

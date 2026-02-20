@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { LOG_RETENTION_MS } from '@/configs/logs'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
@@ -12,18 +12,7 @@ import {
   LogStatusCell,
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
-import type {
-  BuildDetailsDTO,
-  BuildLogDTO,
-} from '@/server/api/models/builds.models'
-import { Button } from '@/ui/primitives/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/ui/primitives/dropdown-menu'
+import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import {
@@ -32,53 +21,47 @@ import {
   Virtualizer,
 } from '@tanstack/react-virtual'
 import {
-  type RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
-import { LOG_RETENTION_MS } from '../templates/builds/constants'
+import { useSandboxContext } from '../context'
 import { LogLevel, Message, Timestamp } from './logs-cells'
-import { type LogLevelFilter } from './logs-filter-params'
-import { useBuildLogs } from './use-build-logs'
-import useLogFilters from './use-log-filters'
+import { useSandboxLogs } from './use-sandbox-logs'
 
-// Column width are calculated as max width of the content + padding
-const COLUMN_WIDTHS_PX = { timestamp: 176 + 16, level: 52 + 16 } as const
+// column widths are calculated as max width of the content + padding
+const COLUMN_WIDTHS_PX = { timestamp: 148 + 16, level: 48 + 16 } as const
 const ROW_HEIGHT_PX = 26
 const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
-
-const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
-  { value: 'debug', label: 'Debug' },
-  { value: 'info', label: 'Info' },
-  { value: 'warn', label: 'Warn' },
-  { value: 'error', label: 'Error' },
-]
+const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
 
 interface LogsProps {
-  buildDetails: BuildDetailsDTO | undefined
   teamIdOrSlug: string
-  templateId: string
-  buildId: string
+  sandboxId: string
 }
 
-export default function Logs({
-  buildDetails,
-  teamIdOrSlug,
-  templateId,
-  buildId,
-}: LogsProps) {
+function checkIfSandboxStillHasLogs(startedAtIso: string) {
+  const startedAtUnix = new Date(startedAtIso).getTime()
+
+  if (Number.isNaN(startedAtUnix)) {
+    return true
+  }
+
+  return Date.now() - startedAtUnix < LOG_RETENTION_MS
+}
+
+export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
   'use no memo'
 
-  const { level, setLevel } = useLogFilters()
+  const { sandboxInfo, isRunning } = useSandboxContext()
 
-  if (!buildDetails) {
+  if (!sandboxInfo) {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-        <LevelFilter level={level} onLevelChange={setLevel} />
         <div className="min-h-0 flex-1 overflow-auto">
           <Table style={{ display: 'grid', minWidth: 'min-content' }}>
             <LogsTableHeader
@@ -93,66 +76,52 @@ export default function Logs({
     )
   }
 
+  const hasRetainedLogs = checkIfSandboxStillHasLogs(sandboxInfo.startedAt)
+
   return (
     <LogsContent
-      buildDetails={buildDetails}
       teamIdOrSlug={teamIdOrSlug}
-      templateId={templateId}
-      buildId={buildId}
-      level={level}
-      setLevel={setLevel}
+      sandboxId={sandboxId}
+      isRunning={isRunning}
+      hasRetainedLogs={hasRetainedLogs}
     />
   )
 }
 
 interface LogsContentProps {
-  buildDetails: BuildDetailsDTO
   teamIdOrSlug: string
-  templateId: string
-  buildId: string
-  level: LogLevelFilter | null
-  setLevel: (level: LogLevelFilter | null) => void
+  sandboxId: string
+  isRunning: boolean
+  hasRetainedLogs: boolean
 }
 
 function LogsContent({
-  buildDetails,
   teamIdOrSlug,
-  templateId,
-  buildId,
-  level,
-  setLevel,
+  sandboxId,
+  isRunning,
+  hasRetainedLogs,
 }: LogsContentProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-  const { isRefetchingFromFilterChange, onFetchComplete } =
-    useFilterRefetchTracking(level)
+  const [scrollContainerElement, setScrollContainerElement] =
+    useState<HTMLDivElement | null>(null)
 
   const {
     logs,
     isInitialized,
+    hasCompletedInitialLoad,
+    initialLoadError,
     hasNextPage,
     isFetchingNextPage,
     isFetching,
     fetchNextPage,
-  } = useBuildLogs({
+  } = useSandboxLogs({
     teamIdOrSlug,
-    templateId,
-    buildId,
-    level,
-    buildStatus: buildDetails.status,
+    sandboxId,
+    isRunning,
   })
 
-  useEffect(() => {
-    if (!isFetching && isRefetchingFromFilterChange) {
-      onFetchComplete()
-    }
-  }, [isFetching, isRefetchingFromFilterChange, onFetchComplete])
-
   const hasLogs = logs.length > 0
-  const showLoader = (isFetching || isRefetchingFromFilterChange) && !hasLogs
-  const showEmpty = !isFetching && !hasLogs && !isRefetchingFromFilterChange
-  const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
-  const isBuilding = buildDetails.status === 'building'
+  const showLoader = (!hasCompletedInitialLoad || isFetching) && !hasLogs
+  const showEmpty = hasCompletedInitialLoad && !isFetching && !hasLogs
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -162,9 +131,10 @@ function LogsContent({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-      <LevelFilter level={level} onLevelChange={setLevel} />
-
-      <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
+      <div
+        ref={setScrollContainerElement}
+        className="min-h-0 flex-1 overflow-auto"
+      >
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
           <LogsTableHeader
             timestampWidth={COLUMN_WIDTHS_PX.timestamp}
@@ -174,20 +144,20 @@ function LogsContent({
 
           {showLoader && <LogsLoaderBody />}
           {showEmpty && (
-            <EmptyBody hasRetainedLogs={buildDetails.hasRetainedLogs} />
+            <EmptyBody
+              hasRetainedLogs={hasRetainedLogs}
+              errorMessage={initialLoadError}
+            />
           )}
-          {hasLogs && (
+          {hasLogs && scrollContainerElement && (
             <VirtualizedLogsBody
               logs={logs}
-              scrollContainerRef={scrollContainerRef}
-              startedAt={buildDetails.startedAt}
+              scrollContainerElement={scrollContainerElement}
               onLoadMore={handleLoadMore}
               hasNextPage={hasNextPage}
               isFetchingNextPage={isFetchingNextPage}
-              showRefetchOverlay={showRefetchOverlay}
               isInitialized={isInitialized}
-              level={level}
-              isBuilding={isBuilding}
+              isRunning={isRunning}
             />
           )}
         </Table>
@@ -196,156 +166,87 @@ function LogsContent({
   )
 }
 
-function useFilterRefetchTracking(level: LogLevelFilter | null) {
-  const [isRefetchingFromFilterChange, setIsRefetching] = useState(false)
-  const isInitialRender = useRef(true)
-
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false
-      return
-    }
-    setIsRefetching(true)
-  }, [level])
-
-  const onFetchComplete = useCallback(() => setIsRefetching(false), [])
-
-  return { isRefetchingFromFilterChange, onFetchComplete }
-}
-
 interface EmptyBodyProps {
   hasRetainedLogs: boolean
+  errorMessage: string | null
 }
 
-function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
-  const description = hasRetainedLogs
-    ? undefined
-    : `This build has exceeded the ${LOG_RETENTION_MS / 24 / 60 / 60 / 1000} day retention limit.`
+function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
+  const description = errorMessage
+    ? errorMessage
+    : !hasRetainedLogs
+      ? `This sandbox has exceeded the ${LOG_RETENTION_DAYS} day retention limit.`
+      : 'Sandbox logs will appear here once available.'
 
   return (
     <LogsEmptyBody description={description} />
   )
 }
 
-interface LevelFilterProps {
-  level: LogLevelFilter | null
-  onLevelChange: (level: LogLevelFilter | null) => void
-}
-
-function LevelFilter({ level, onLevelChange }: LevelFilterProps) {
-  const selectedLevel = level ?? 'debug'
-  const selectedLabel = LEVEL_OPTIONS.find(
-    (o) => o.value === selectedLevel
-  )?.label
-
-  return (
-    <div className="flex w-full min-h-0 justify-between gap-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="font-sans w-min normal-case prose-body-highlight h-9"
-          >
-            <LevelIndicator level={selectedLevel} />
-            Min Level · {selectedLabel}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={selectedLevel}
-            onValueChange={(value) => onLevelChange(value as LogLevelFilter)}
-          >
-            {LEVEL_OPTIONS.map((option) => (
-              <DropdownMenuRadioItem key={option.value} value={option.value}>
-                <LogLevel level={option.value} />
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
-
-function LevelIndicator({ level }: { level: LogLevelFilter }) {
-  return (
-    <div
-      className={cn(
-        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
-        {
-          'border-fg-tertiary': level === 'debug',
-          'border-accent-info-highlight': level === 'info',
-          'border-accent-warning-highlight': level === 'warn',
-          'border-accent-error-highlight': level === 'error',
-        }
-      )}
-    />
-  )
-}
-
 interface VirtualizedLogsBodyProps {
-  logs: BuildLogDTO[]
-  scrollContainerRef: RefObject<HTMLDivElement | null>
-  startedAt: number
+  logs: SandboxLogDTO[]
+  scrollContainerElement: HTMLDivElement
   onLoadMore: () => void
   hasNextPage: boolean
   isFetchingNextPage: boolean
-  showRefetchOverlay: boolean
   isInitialized: boolean
-  level: LogLevelFilter | null
-  isBuilding: boolean
+  isRunning: boolean
 }
 
 function VirtualizedLogsBody({
   logs,
-  scrollContainerRef,
-  startedAt,
+  scrollContainerElement,
   onLoadMore,
   hasNextPage,
   isFetchingNextPage,
-  showRefetchOverlay,
   isInitialized,
-  level,
-  isBuilding,
+  isRunning,
 }: VirtualizedLogsBodyProps) {
   const maxWidthRef = useRef<number>(0)
 
   useScrollLoadMore({
-    scrollContainerRef,
+    scrollContainerElement,
     hasNextPage,
     isFetchingNextPage,
     onLoadMore,
   })
 
-  useAutoScrollToBottom({
-    scrollContainerRef,
-    logsCount: logs.length,
-    isInitialized,
-    level,
-  })
-
   useMaintainScrollOnPrepend({
-    scrollContainerRef,
+    scrollContainerElement,
     logsCount: logs.length,
     isFetchingNextPage,
   })
 
-  const showStatusRow = hasNextPage || isFetchingNextPage
-  const logsStartIndex = showStatusRow ? 1 : 0
+  const showLoadMoreStatusRow = hasNextPage || isFetchingNextPage
+  const logsStartIndex = showLoadMoreStatusRow ? 1 : 0
   const liveStatusRowIndex = logsStartIndex + logs.length
-  const virtualRowsCount = logs.length + (showStatusRow ? 1 : 0) + 1
+  const virtualRowsCount = logs.length + (showLoadMoreStatusRow ? 1 : 0) + 1
 
   const virtualizer = useVirtualizer({
     count: virtualRowsCount,
     estimateSize: (index) =>
       index === liveStatusRowIndex ? LIVE_STATUS_ROW_HEIGHT_PX : ROW_HEIGHT_PX,
-    getScrollElement: () => scrollContainerRef.current,
+    getScrollElement: () => scrollContainerElement,
     overscan: VIRTUAL_OVERSCAN,
     paddingStart: 8,
   })
 
-  const containerWidth = scrollContainerRef.current?.clientWidth ?? 0
-  const contentWidth = scrollContainerRef.current?.scrollWidth ?? 0
+  const scrollToLatestLog = useCallback(() => {
+    if (logs.length === 0) return
+    virtualizer.scrollToIndex(liveStatusRowIndex, { align: 'end' })
+  }, [logs.length, liveStatusRowIndex, virtualizer])
+
+  useAutoScrollToBottom({
+    scrollContainerElement,
+    logsCount: logs.length,
+    isFetchingNextPage,
+    isInitialized,
+    isRunning,
+    scrollToLatestLog,
+  })
+
+  const containerWidth = scrollContainerElement.clientWidth
+  const contentWidth = scrollContainerElement.scrollWidth
   const SCROLLBAR_BUFFER_PX = 20
   const hasHorizontalOverflow =
     contentWidth > containerWidth + SCROLLBAR_BUFFER_PX
@@ -356,10 +257,7 @@ function VirtualizedLogsBody({
 
   return (
     <TableBody
-      className={cn(
-        showRefetchOverlay ? 'opacity-70 transition-opacity' : '',
-        '[&_tr:last-child]:border-b-0 [&_tr]:border-b-0'
-      )}
+      className="[&_tr:last-child]:border-b-0 [&_tr]:border-b-0"
       style={{
         display: 'grid',
         height: `${virtualizer.getTotalSize()}px`,
@@ -369,9 +267,10 @@ function VirtualizedLogsBody({
       }}
     >
       {virtualizer.getVirtualItems().map((virtualRow) => {
-        const isStatusRow = showStatusRow && virtualRow.index === 0
+        const isLoadMoreStatusRow =
+          showLoadMoreStatusRow && virtualRow.index === 0
 
-        if (isStatusRow) {
+        if (isLoadMoreStatusRow) {
           return (
             <StatusRow
               key="load-more-status-row"
@@ -390,21 +289,21 @@ function VirtualizedLogsBody({
               key="live-status-row"
               virtualRow={virtualRow}
               virtualizer={virtualizer}
-              isBuilding={isBuilding}
+              isRunning={isRunning}
             />
           )
         }
 
         const logIndex = virtualRow.index - logsStartIndex
+        const log = logs[logIndex]!
 
         return (
           <LogRow
             key={virtualRow.key}
-            log={logs[logIndex]!}
+            log={log}
             isZebraRow={logIndex % 2 === 1}
             virtualRow={virtualRow}
             virtualizer={virtualizer}
-            startedAt={startedAt}
           />
         )
       })}
@@ -413,25 +312,22 @@ function VirtualizedLogsBody({
 }
 
 interface UseScrollLoadMoreParams {
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   hasNextPage: boolean
   isFetchingNextPage: boolean
   onLoadMore: () => void
 }
 
 function useScrollLoadMore({
-  scrollContainerRef,
+  scrollContainerElement,
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
 }: UseScrollLoadMoreParams) {
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current
-    if (!scrollContainer) return
-
     const handleScroll = () => {
       if (
-        scrollContainer.scrollTop < SCROLL_LOAD_THRESHOLD_PX &&
+        scrollContainerElement.scrollTop < SCROLL_LOAD_THRESHOLD_PX &&
         hasNextPage &&
         !isFetchingNextPage
       ) {
@@ -439,21 +335,22 @@ function useScrollLoadMore({
       }
     }
 
-    scrollContainer.addEventListener('scroll', handleScroll, {
+    scrollContainerElement.addEventListener('scroll', handleScroll, {
       passive: true,
     })
-    return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [scrollContainerRef, hasNextPage, isFetchingNextPage, onLoadMore])
+    return () =>
+      scrollContainerElement.removeEventListener('scroll', handleScroll)
+  }, [scrollContainerElement, hasNextPage, isFetchingNextPage, onLoadMore])
 }
 
 interface UseMaintainScrollOnPrependParams {
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   logsCount: number
   isFetchingNextPage: boolean
 }
 
 function useMaintainScrollOnPrepend({
-  scrollContainerRef,
+  scrollContainerElement,
   logsCount,
   isFetchingNextPage,
 }: UseMaintainScrollOnPrependParams) {
@@ -461,106 +358,108 @@ function useMaintainScrollOnPrepend({
   const wasFetchingRef = useRef(false)
 
   useEffect(() => {
-    const el = scrollContainerRef.current
-    if (!el) return
-
     const justFinishedFetching = wasFetchingRef.current && !isFetchingNextPage
     const logsWerePrepended = logsCount > prevLogsCountRef.current
 
     if (justFinishedFetching && logsWerePrepended) {
       const addedCount = logsCount - prevLogsCountRef.current
-      el.scrollTop += addedCount * ROW_HEIGHT_PX
+      scrollContainerElement.scrollTop += addedCount * ROW_HEIGHT_PX
     }
 
     wasFetchingRef.current = isFetchingNextPage
     prevLogsCountRef.current = logsCount
-  }, [scrollContainerRef, logsCount, isFetchingNextPage])
+  }, [scrollContainerElement, logsCount, isFetchingNextPage])
 }
 
 interface UseAutoScrollToBottomParams {
-  scrollContainerRef: RefObject<HTMLDivElement | null>
+  scrollContainerElement: HTMLDivElement
   logsCount: number
+  isFetchingNextPage: boolean
   isInitialized: boolean
-  level: LogLevelFilter | null
+  isRunning: boolean
+  scrollToLatestLog: () => void
 }
 
 function useAutoScrollToBottom({
-  scrollContainerRef,
+  scrollContainerElement,
   logsCount,
+  isFetchingNextPage,
   isInitialized,
-  level,
+  isRunning,
+  scrollToLatestLog,
 }: UseAutoScrollToBottomParams) {
   const isAutoScrollEnabledRef = useRef(true)
   const prevLogsCountRef = useRef(0)
-  const prevLevelRef = useRef(level)
+  const prevIsRunningRef = useRef(isRunning)
+  const wasFetchingNextPageRef = useRef(isFetchingNextPage)
   const hasInitialScrolled = useRef(false)
 
   useEffect(() => {
-    const el = scrollContainerRef.current
-    if (!el) return
-
     const handleScroll = () => {
       const distanceFromBottom =
-        el.scrollHeight - el.scrollTop - el.clientHeight
+        scrollContainerElement.scrollHeight -
+        scrollContainerElement.scrollTop -
+        scrollContainerElement.clientHeight
       isAutoScrollEnabledRef.current = distanceFromBottom < ROW_HEIGHT_PX * 2
     }
 
-    el.addEventListener('scroll', handleScroll, {
+    scrollContainerElement.addEventListener('scroll', handleScroll, {
       passive: true,
     })
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [scrollContainerRef])
+    return () =>
+      scrollContainerElement.removeEventListener('scroll', handleScroll)
+  }, [scrollContainerElement])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isInitialized && !hasInitialScrolled.current && logsCount > 0) {
       hasInitialScrolled.current = true
       prevLogsCountRef.current = logsCount
-      requestAnimationFrame(() => {
-        const el = scrollContainerRef.current
-        if (el) el.scrollTop = el.scrollHeight
-      })
+      scrollToLatestLog()
     }
-  }, [isInitialized, logsCount, scrollContainerRef])
+  }, [isInitialized, logsCount, scrollToLatestLog])
 
   useEffect(() => {
-    if (prevLevelRef.current !== level) {
-      prevLevelRef.current = level
+    if (prevIsRunningRef.current !== isRunning) {
+      prevIsRunningRef.current = isRunning
       hasInitialScrolled.current = false
       prevLogsCountRef.current = 0
     }
-  }, [level])
+  }, [isRunning])
 
   useEffect(() => {
-    if (!hasInitialScrolled.current) return
+    if (!hasInitialScrolled.current) {
+      wasFetchingNextPageRef.current = isFetchingNextPage
+      return
+    }
 
-    const newLogsCount = logsCount - prevLogsCountRef.current
+    const previousLogsCount = prevLogsCountRef.current
+    const newLogsCount = logsCount - previousLogsCount
+    const justFinishedBackwardFetch =
+      wasFetchingNextPageRef.current && !isFetchingNextPage
+
+    if (justFinishedBackwardFetch && newLogsCount > 0) {
+      prevLogsCountRef.current = logsCount
+      wasFetchingNextPageRef.current = isFetchingNextPage
+      return
+    }
 
     if (newLogsCount > 0 && isAutoScrollEnabledRef.current) {
-      const el = scrollContainerRef.current
-      if (el) el.scrollTop += newLogsCount * ROW_HEIGHT_PX
+      scrollContainerElement.scrollTop += newLogsCount * ROW_HEIGHT_PX
     }
 
     prevLogsCountRef.current = logsCount
-  }, [logsCount, scrollContainerRef])
+    wasFetchingNextPageRef.current = isFetchingNextPage
+  }, [isFetchingNextPage, logsCount, scrollContainerElement])
 }
 
 interface LogRowProps {
-  log: BuildLogDTO
+  log: SandboxLogDTO
   isZebraRow: boolean
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
-  startedAt: number
 }
 
-function LogRow({
-  log,
-  isZebraRow,
-  virtualRow,
-  virtualizer,
-  startedAt,
-}: LogRowProps) {
-  const millisAfterStart = log.timestampUnix - startedAt
-
+function LogRow({ log, isZebraRow, virtualRow, virtualizer }: LogRowProps) {
   return (
     <LogVirtualRow
       virtualRow={virtualRow}
@@ -578,10 +477,7 @@ function LogRow({
           width: COLUMN_WIDTHS_PX.timestamp,
         }}
       >
-        <Timestamp
-          timestampUnix={log.timestampUnix}
-          millisAfterStart={millisAfterStart}
-        />
+        <Timestamp timestampUnix={log.timestampUnix} />
       </TableCell>
       <TableCell
         className="py-0 px-0 pr-4"
@@ -615,7 +511,11 @@ function StatusRow({
   isFetchingNextPage,
 }: StatusRowProps) {
   return (
-    <LogVirtualRow virtualRow={virtualRow} virtualizer={virtualizer} height={ROW_HEIGHT_PX}>
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+    >
       <LogStatusCell>
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (
@@ -623,11 +523,11 @@ function StatusRow({
               <span className="text-fg-secondary">[</span>
               <span className="text-accent-info-highlight">loading</span>
               <span className="text-fg-secondary">]</span>
-              <span>retrieving older build logs</span>
+              <span>retrieving older logs</span>
               <Loader variant="dots" size="sm" className="font-mono" />
             </>
           ) : (
-            'Scroll to load older build logs'
+            'Scroll to load more'
           )}
         </span>
       </LogStatusCell>
@@ -638,13 +538,13 @@ function StatusRow({
 interface LiveStatusRowProps {
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
-  isBuilding: boolean
+  isRunning: boolean
 }
 
 function LiveStatusRow({
   virtualRow,
   virtualizer,
-  isBuilding,
+  isRunning,
 }: LiveStatusRowProps) {
   return (
     <LogVirtualRow
@@ -657,18 +557,18 @@ function LiveStatusRow({
           <span className="text-fg-secondary">[</span>
           <span
             className={
-              isBuilding
+              isRunning
                 ? 'text-accent-positive-highlight'
                 : 'text-accent-info-highlight'
             }
           >
-            {isBuilding ? 'live' : 'end'}
+            {isRunning ? 'live' : 'end'}
           </span>
           <span className="text-fg-secondary">]</span>
           <span>
-            {isBuilding
-              ? 'No more build logs to show. Waiting for new entries...'
-              : 'No more build logs to show'}
+            {isRunning
+              ? 'No more logs to show. Waiting for new entries...'
+              : 'No more logs to show'}
           </span>
         </span>
       </LogStatusCell>

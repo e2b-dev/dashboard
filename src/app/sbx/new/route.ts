@@ -44,12 +44,12 @@ export const GET = async (req: NextRequest) => {
       },
     })
 
-    const inspectUrl = PROTECTED_URLS.SANDBOX_INSPECT(
+    const filesystemUrl = PROTECTED_URLS.SANDBOX_FILESYSTEM(
       defaultTeam.slug,
       sbx.sandboxId
     )
 
-    return NextResponse.redirect(new URL(inspectUrl, req.url))
+    return NextResponse.redirect(new URL(filesystemUrl, req.url))
   } catch (error) {
     l.warn(
       {

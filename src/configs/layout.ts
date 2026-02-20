@@ -13,6 +13,7 @@ export interface TitleSegment {
 export interface DashboardLayoutConfig {
   title: string | TitleSegment[]
   type: 'default' | 'custom'
+  copyValue?: string
   custom?: {
     includeHeaderBottomStyles: boolean
   }
@@ -27,10 +28,27 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Sandboxes',
     type: 'custom',
   }),
-  '/dashboard/*/sandboxes/**/*': () => ({
-    title: 'Sandbox',
-    type: 'custom',
-  }),
+  '/dashboard/*/sandboxes/*/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamIdOrSlug = parts[2]!
+    const sandboxId = parts[4]!
+    const sandboxIdSliced = `${sandboxId.slice(0, 6)}...${sandboxId.slice(-6)}`
+
+    return {
+      title: [
+        {
+          label: 'Sandboxes',
+          href: PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug),
+        },
+        { label: sandboxIdSliced },
+      ],
+      type: 'custom',
+      copyValue: sandboxId,
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
+    }
+  },
   '/dashboard/*/templates': () => ({
     title: 'Templates',
     type: 'custom',
@@ -50,6 +68,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
         { label: `Build ${buildIdSliced}` },
       ],
       type: 'custom',
+      copyValue: buildId,
       custom: {
         includeHeaderBottomStyles: true,
       },

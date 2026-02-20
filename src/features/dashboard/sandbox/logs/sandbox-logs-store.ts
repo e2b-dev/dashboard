@@ -1,6 +1,6 @@
 'use client'
 
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import type { useTRPCClient } from '@/trpc/client'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
@@ -9,21 +9,17 @@ import {
   countTrailingAtTimestamp,
   dropLeadingAtTimestamp,
   dropTrailingAtTimestamp,
-} from '../common/log-timestamp-utils'
-import type { LogLevelFilter } from './logs-filter-params'
+} from '../../common/log-timestamp-utils'
 
-const EMPTY_INIT_FORWARD_LOOKBACK_MS = 5_000
-
-interface BuildLogsParams {
+interface SandboxLogsParams {
   teamIdOrSlug: string
-  templateId: string
-  buildId: string
+  sandboxId: string
 }
 
 type TRPCClient = ReturnType<typeof useTRPCClient>
 
-interface BuildLogsState {
-  logs: BuildLogDTO[]
+interface SandboxLogsState {
+  logs: SandboxLogDTO[]
   hasMoreBackwards: boolean
   isLoadingBackwards: boolean
   isLoadingForwards: boolean
@@ -31,28 +27,26 @@ interface BuildLogsState {
   backwardsSeenAtCursor: number
   forwardCursor: number | null
   forwardSeenAtCursor: number
-  level: LogLevelFilter | null
   isInitialized: boolean
+  hasCompletedInitialLoad: boolean
+  initialLoadError: string | null
 
   _trpcClient: TRPCClient | null
-  _params: BuildLogsParams | null
+  _params: SandboxLogsParams | null
   _initVersion: number
 }
 
-interface BuildLogsMutations {
-  init: (
-    trpcClient: TRPCClient,
-    params: BuildLogsParams,
-    level: LogLevelFilter | null
-  ) => Promise<void>
+interface SandboxLogsMutations {
+  init: (trpcClient: TRPCClient, params: SandboxLogsParams) => Promise<void>
   fetchMoreBackwards: () => Promise<void>
   fetchMoreForwards: () => Promise<{ logsCount: number }>
   reset: () => void
 }
 
-export type BuildLogsStoreData = BuildLogsState & BuildLogsMutations
+export type SandboxLogsStoreData = SandboxLogsState & SandboxLogsMutations
+const EMPTY_INIT_FORWARD_LOOKBACK_MS = 5_000
 
-const initialState: BuildLogsState = {
+const initialState: SandboxLogsState = {
   logs: [],
   hasMoreBackwards: true,
   isLoadingBackwards: false,
@@ -61,15 +55,16 @@ const initialState: BuildLogsState = {
   backwardsSeenAtCursor: 0,
   forwardCursor: null,
   forwardSeenAtCursor: 0,
-  level: null,
   isInitialized: false,
+  hasCompletedInitialLoad: false,
+  initialLoadError: null,
   _trpcClient: null,
   _params: null,
   _initVersion: 0,
 }
 
-export const createBuildLogsStore = () =>
-  create<BuildLogsStoreData>()(
+export const createSandboxLogsStore = () =>
+  create<SandboxLogsStoreData>()(
     immer((set, get) => ({
       ...initialState,
 
@@ -83,49 +78,45 @@ export const createBuildLogsStore = () =>
           state.backwardsSeenAtCursor = 0
           state.forwardCursor = null
           state.forwardSeenAtCursor = 0
-          state.level = null
           state.isInitialized = false
+          state.hasCompletedInitialLoad = false
+          state.initialLoadError = null
         })
       },
 
-      init: async (trpcClient, params, level) => {
+      init: async (trpcClient, params) => {
         const state = get()
 
-        // Reset if params or level changed
+        // reset if params changed
         const paramsChanged =
-          state._params?.buildId !== params.buildId ||
-          state._params?.templateId !== params.templateId ||
+          state._params?.sandboxId !== params.sandboxId ||
           state._params?.teamIdOrSlug !== params.teamIdOrSlug
-        const levelChanged = state.level !== level
 
-        if (paramsChanged || levelChanged || !state.isInitialized) {
+        if (paramsChanged || !state.isInitialized) {
           get().reset()
         }
 
-        // Increment version to invalidate any in-flight requests
+        // increment version to invalidate any in-flight requests
         const requestVersion = state._initVersion + 1
 
         set((s) => {
           s._trpcClient = trpcClient
           s._params = params
-          s.level = level
           s.isLoadingBackwards = true
+          s.initialLoadError = null
           s._initVersion = requestVersion
         })
 
         try {
           const initCursor = Date.now()
 
-          const result =
-            await trpcClient.builds.buildLogsBackwardsReversed.query({
-              teamIdOrSlug: params.teamIdOrSlug,
-              templateId: params.templateId,
-              buildId: params.buildId,
-              level: level ?? undefined,
-              cursor: initCursor,
-            })
+          const result = await trpcClient.sandbox.logsBackwardsReversed.query({
+            teamIdOrSlug: params.teamIdOrSlug,
+            sandboxId: params.sandboxId,
+            cursor: initCursor,
+          })
 
-          // Ignore stale response if a newer init was called
+          // ignore stale response if a newer init was called
           if (get()._initVersion !== requestVersion) {
             return
           }
@@ -142,7 +133,6 @@ export const createBuildLogsStore = () =>
               backwardsCursor === null
                 ? 0
                 : countLeadingAtTimestamp(result.logs, backwardsCursor)
-
             if (newestInitialTimestamp !== undefined) {
               s.forwardCursor = newestInitialTimestamp
               s.forwardSeenAtCursor = countTrailingAtTimestamp(
@@ -150,21 +140,29 @@ export const createBuildLogsStore = () =>
                 newestInitialTimestamp
               )
             } else {
+              // If the initial snapshot is empty, start slightly in the past so
+              // delayed-ingestion logs around page load are not skipped.
               s.forwardCursor = initCursor - EMPTY_INIT_FORWARD_LOOKBACK_MS
               s.forwardSeenAtCursor = 0
             }
-
             s.isLoadingBackwards = false
             s.isInitialized = true
+            s.hasCompletedInitialLoad = true
+            s.initialLoadError = null
           })
-        } catch {
-          // Ignore errors from stale requests
+        } catch (error) {
+          // ignore errors from stale requests
           if (get()._initVersion !== requestVersion) {
             return
           }
 
           set((s) => {
             s.isLoadingBackwards = false
+            s.hasCompletedInitialLoad = true
+            s.initialLoadError =
+              error instanceof Error
+                ? error.message
+                : 'Failed to load sandbox logs.'
           })
         }
       },
@@ -192,15 +190,13 @@ export const createBuildLogsStore = () =>
             state.backwardsCursor ?? state.logs[0]?.timestampUnix ?? Date.now()
 
           const result =
-            await state._trpcClient.builds.buildLogsBackwardsReversed.query({
+            await state._trpcClient.sandbox.logsBackwardsReversed.query({
               teamIdOrSlug: state._params.teamIdOrSlug,
-              templateId: state._params.templateId,
-              buildId: state._params.buildId,
-              level: state.level ?? undefined,
+              sandboxId: state._params.sandboxId,
               cursor,
             })
 
-          // Ignore stale response if init was called during fetch
+          // ignore stale response if init was called during fetch
           if (get()._initVersion !== requestVersion) {
             return
           }
@@ -252,15 +248,13 @@ export const createBuildLogsStore = () =>
           const cursor = state.forwardCursor ?? Date.now()
           const seenAtCursor = state.forwardSeenAtCursor
 
-          const result = await state._trpcClient.builds.buildLogsForward.query({
+          const result = await state._trpcClient.sandbox.logsForward.query({
             teamIdOrSlug: state._params.teamIdOrSlug,
-            templateId: state._params.templateId,
-            buildId: state._params.buildId,
-            level: state.level ?? undefined,
+            sandboxId: state._params.sandboxId,
             cursor,
           })
 
-          // Ignore stale response if init was called during fetch
+          // ignore stale response if init was called during fetch
           if (get()._initVersion !== requestVersion) {
             return { logsCount: 0 }
           }
@@ -310,4 +304,4 @@ export const createBuildLogsStore = () =>
     }))
   )
 
-export type BuildLogsStore = ReturnType<typeof createBuildLogsStore>
+export type SandboxLogsStore = ReturnType<typeof createSandboxLogsStore>
