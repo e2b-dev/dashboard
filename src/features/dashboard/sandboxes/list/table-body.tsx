@@ -1,79 +1,83 @@
-import { Sandbox } from '@/types/api.types'
 import { DataTableBody } from '@/ui/data-table'
-import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { Row } from '@tanstack/react-table'
+import type { Row } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
-import { memo, useMemo } from 'react'
-import { useSandboxTableStore } from './stores/table-store'
-import { SandboxesTable, SandboxWithMetrics } from './table-config'
-import { TableRow } from './table-row'
+import { memo } from 'react'
+import SandboxesListEmpty from './empty'
+import { useSandboxListTableStore } from './stores/table-store'
+import type { SandboxListRow, SandboxListTable } from './table-config'
+import { SandboxesTableRow } from './table-row'
 
-interface TableBodyProps {
-  sandboxes: Sandbox[] | undefined
-  table: SandboxesTable
-  visualRows: Row<SandboxWithMetrics>[]
+interface SandboxesTableBodyProps {
+  table: SandboxListTable
+  virtualRows?: Row<SandboxListRow>[]
   virtualizedTotalHeight?: number
   virtualPaddingTop?: number
 }
 
-export const TableBody = memo(function TableBody({
-  sandboxes,
+export const SandboxesTableBody = memo(function SandboxesTableBody({
   table,
-  visualRows,
+  virtualRows,
   virtualizedTotalHeight,
   virtualPaddingTop = 0,
-}: TableBodyProps) {
-  const resetFilters = useSandboxTableStore((state) => state.resetFilters)
-
-  const isEmpty = sandboxes && visualRows?.length === 0
-
-  const hasFilter = useMemo(() => {
+}: SandboxesTableBodyProps) {
+  const resetFilters = useSandboxListTableStore((state) => state.resetFilters)
+  const hasFilter = useSandboxListTableStore((state) => {
     return (
-      Object.values(table.getState().columnFilters).some(
-        (filter) => filter.value !== undefined
-      ) || table.getState().globalFilter !== ''
+      state.startedAtFilter !== undefined ||
+      state.templateFilters.length > 0 ||
+      state.cpuCount !== undefined ||
+      state.memoryMB !== undefined ||
+      Boolean(state.globalFilter)
     )
-  }, [table])
+  })
+  const centerRows = table.getCenterRows()
+  // During initial virtualizer mount, virtualRows can be temporarily empty
+  // even when centerRows already has data.
+  const rows =
+    virtualRows && virtualRows.length > 0 ? virtualRows : centerRows
+  const isEmpty = centerRows.length === 0
 
   if (isEmpty) {
-    if (hasFilter) {
-      return (
-        <Empty
-          title="No Results Found"
-          description="No sandboxes match your current filters"
-          message={
-            <Button variant="default" onClick={resetFilters}>
-              Reset Filters <X className="text-accent-main-highlight size-4" />
-            </Button>
-          }
-          className="h-[70%] max-md:w-screen"
-        />
-      )
-    }
-
-    return (
-      <Empty
+    const emptyState = hasFilter ? (
+      <SandboxesListEmpty
+        title="No Results Found"
+        description="No sandboxes match your current filters."
+        actions={
+          <Button variant="outline" onClick={resetFilters} className="w-full">
+            Reset Filters <X className="text-fg-tertiary size-4" />
+          </Button>
+        }
+        className="h-full max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
+      />
+    ) : (
+      <SandboxesListEmpty
         title="No Sandboxes Yet"
-        description="Running Sandboxes can be observed here"
-        message={
-          <Button variant="default" asChild>
+        description="Running sandboxes can be observed here."
+        actions={
+          <Button variant="outline" asChild className="w-full gap-2">
             <a href="/docs/quickstart" target="_blank" rel="noopener">
               Create a Sandbox
               <ExternalLink className="size-3.5" />
             </a>
           </Button>
         }
-        className="h-[70%] max-md:w-screen"
+        className="h-full max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
       />
+    )
+
+    return (
+      <DataTableBody className="h-[calc(100%-2rem-1px)] overflow-hidden">
+        {emptyState}
+      </DataTableBody>
     )
   }
 
   return (
     <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
       {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-      {visualRows.map((row) => (
-        <TableRow key={row.id} row={row} />
+      {rows.map((row) => (
+        <SandboxesTableRow key={row.id} row={row} />
       ))}
     </DataTableBody>
   )

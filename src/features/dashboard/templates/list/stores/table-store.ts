@@ -33,7 +33,7 @@ type Store = TemplateTableState & TemplateTableActions
 
 const initialState: TemplateTableState = {
   // Table state
-  sorting: [{ id: 'createdAt', desc: true }],
+  sorting: [{ id: 'updatedAt', desc: true }],
   globalFilter: '',
   // Filter state
   cpuCount: undefined,

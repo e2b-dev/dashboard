@@ -36,34 +36,34 @@ export const sandboxesRouter = createTRPCRouter({
       }
     }
 
-    const sandboxesRes = await infra.GET('/sandboxes', {
+    const sandboxesResponse = await infra.GET('/sandboxes', {
       headers: {
         ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
       },
       cache: 'no-store',
     })
 
-    if (!sandboxesRes.response.ok || sandboxesRes.error) {
-      const status = sandboxesRes.response.status
+    if (!sandboxesResponse.response.ok || sandboxesResponse.error) {
+      const status = sandboxesResponse.response.status
 
       l.error(
         {
           key: 'trpc:sandboxes:get_team_sandboxes:infra_error',
-          error: sandboxesRes.error,
+          error: sandboxesResponse.error,
           team_id: teamId,
           user_id: session.user.id,
           context: {
             status,
           },
         },
-        `failed to fetch /sandboxes: ${sandboxesRes.error?.message || 'Unknown error'}`
+        `failed to fetch /sandboxes: ${sandboxesResponse.error?.message || 'Unknown error'}`
       )
 
       throw apiError(status)
     }
 
     return {
-      sandboxes: sandboxesRes.data,
+      sandboxes: sandboxesResponse.data,
     }
   }),
 
@@ -83,7 +83,7 @@ export const sandboxesRouter = createTRPCRouter({
         }
       }
 
-      const infraRes = await infra.GET('/sandboxes/metrics', {
+      const metricsResponse = await infra.GET('/sandboxes/metrics', {
         params: {
           query: {
             sandbox_ids: sandboxIds,
@@ -95,13 +95,13 @@ export const sandboxesRouter = createTRPCRouter({
         cache: 'no-store',
       })
 
-      if (!infraRes.response.ok || infraRes.error) {
-        const status = infraRes.response.status
+      if (!metricsResponse.response.ok || metricsResponse.error) {
+        const status = metricsResponse.response.status
 
         l.error(
           {
             key: 'trpc:sandboxes:get_team_sandboxes_metrics:infra_error',
-            error: infraRes.error,
+            error: metricsResponse.error,
             team_id: teamId,
             user_id: session.user.id,
             context: {
@@ -110,13 +110,15 @@ export const sandboxesRouter = createTRPCRouter({
               path: '/sandboxes/metrics',
             },
           },
-          `failed to fetch /sandboxes/metrics: ${infraRes.error?.message || 'Unknown error'}`
+          `failed to fetch /sandboxes/metrics: ${metricsResponse.error?.message || 'Unknown error'}`
         )
 
         throw apiError(status)
       }
 
-      const metrics = transformMetricsToClientMetrics(infraRes.data.sandboxes)
+      const metrics = transformMetricsToClientMetrics(
+        metricsResponse.data.sandboxes
+      )
 
       return {
         metrics,

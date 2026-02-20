@@ -7,9 +7,92 @@ import * as chrono from 'chrono-node'
 import { format, isThisYear, isValid } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
+const LOCAL_LOG_STYLE_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: '2-digit',
+})
+
+const LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat(
+  undefined,
+  {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  }
+)
+
+const LOCAL_LOG_STYLE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+
+const LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER = new Intl.DateTimeFormat(
+  undefined,
+  {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }
+)
+
+const LOCAL_LOG_STYLE_TIMEZONE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  timeZoneName: 'short',
+})
+
 // ============================================================================
 // Date & Time Formatting
 // ============================================================================
+
+/**
+ * Format timestamp parts in local timezone, matching logs table style.
+ * Example: "Jan 05 14:32:09"
+ */
+export function formatLocalLogStyleTimestamp(
+  timestamp: number | string | Date,
+  {
+    includeSeconds = true,
+    includeYear = false,
+  }: {
+    includeSeconds?: boolean
+    includeYear?: boolean
+  } = {}
+): {
+  datePart: string
+  timePart: string
+  timezonePart: string
+  iso: string
+} | null {
+  const date = new Date(timestamp)
+
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  const timezonePart =
+    LOCAL_LOG_STYLE_TIMEZONE_FORMATTER
+      .formatToParts(date)
+      .find((part) => part.type === 'timeZoneName')
+      ?.value ??
+    Intl.DateTimeFormat().resolvedOptions().timeZone ??
+    'Local'
+
+  return {
+    datePart: (
+      includeYear
+        ? LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER
+        : LOCAL_LOG_STYLE_DATE_FORMATTER
+    ).format(date),
+    timePart: (
+      includeSeconds
+        ? LOCAL_LOG_STYLE_TIME_FORMATTER
+        : LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER
+    ).format(date),
+    timezonePart,
+    iso: date.toISOString(),
+  }
+}
 
 /**
  * Format a timestamp for display in charts and tooltips in user's local timezone

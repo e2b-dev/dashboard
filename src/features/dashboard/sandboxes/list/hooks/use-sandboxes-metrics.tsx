@@ -1,24 +1,40 @@
 'use client'
 
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { areStringArraysEqual } from '@/lib/utils/array'
 import { useTRPC } from '@/trpc/client'
-import { Sandboxes } from '@/types/api.types'
+import type { Sandboxes } from '@/types/api.types'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
-import { useDebounceValue } from 'usehooks-ts'
+import { useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface UseSandboxesMetricsProps {
   sandboxes: Sandboxes
-  pollingInterval?: number
-  debounceDelay?: number
+  pollingIntervalMs?: number
+  isListScrolling?: boolean
+}
+
+function useStableSandboxIdsWhileScrolling(
+  sandboxIds: string[],
+  isListScrolling: boolean
+) {
+  const activeSandboxIdsRef = useRef<string[]>(sandboxIds)
+
+  if (
+    !isListScrolling &&
+    !areStringArraysEqual(activeSandboxIdsRef.current, sandboxIds)
+  ) {
+    activeSandboxIdsRef.current = sandboxIds
+  }
+
+  return activeSandboxIdsRef.current
 }
 
 export function useSandboxesMetrics({
   sandboxes,
-  pollingInterval = SANDBOXES_METRICS_POLLING_MS,
-  debounceDelay = 1000,
+  pollingIntervalMs = SANDBOXES_METRICS_POLLING_MS,
+  isListScrolling = false,
 }: UseSandboxesMetricsProps) {
   const { team } = useDashboard()
   const trpc = useTRPC()
@@ -27,20 +43,30 @@ export function useSandboxesMetrics({
     () => sandboxes.map((sbx) => sbx.sandboxID),
     [sandboxes]
   )
-
-  const [debouncedSandboxIds] = useDebounceValue(sandboxIds, debounceDelay)
+  const activeSandboxIds = useStableSandboxIdsWhileScrolling(
+    sandboxIds,
+    isListScrolling
+  )
 
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
+  const shouldEnableMetricsQuery =
+    !isListScrolling && activeSandboxIds.length > 0
+  const metricsRefetchInterval = pollingIntervalMs > 0 ? pollingIntervalMs : false
 
-  const { data, error, isLoading } = useQuery(
+  const metricsQueryInput = useMemo(
+    () => ({
+      teamIdOrSlug: team.slug ?? team.id,
+      sandboxIds: activeSandboxIds,
+    }),
+    [activeSandboxIds, team.id, team.slug]
+  )
+
+  const { data } = useQuery(
     trpc.sandboxes.getSandboxesMetrics.queryOptions(
+      metricsQueryInput,
       {
-        teamIdOrSlug: team.slug,
-        sandboxIds: debouncedSandboxIds,
-      },
-      {
-        enabled: debouncedSandboxIds.length > 0 && pollingInterval !== 0,
-        refetchInterval: pollingInterval,
+        enabled: shouldEnableMetricsQuery,
+        refetchInterval: metricsRefetchInterval,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
         refetchOnReconnect: true,
@@ -54,10 +80,4 @@ export function useSandboxesMetrics({
       setMetrics(data.metrics)
     }
   }, [data, setMetrics])
-
-  return {
-    metrics: data?.metrics ?? null,
-    error,
-    isLoading,
-  }
 }

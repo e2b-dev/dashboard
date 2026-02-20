@@ -28,10 +28,16 @@ export function TemplatesTableBody({
 
   const centerRows = table.getCenterRows()
   const visualRows = useMemo(() => {
-    return virtualRows ?? centerRows
+    // During initial virtualizer mount, virtualRows can be temporarily empty
+    // even when centerRows already has data.
+    if (virtualRows && virtualRows.length > 0) {
+      return virtualRows
+    }
+
+    return centerRows
   }, [centerRows, virtualRows])
 
-  const isEmpty = templates && visualRows?.length === 0
+  const isEmpty = templates && centerRows.length === 0
 
   const hasFilter =
     Object.values(table.getState().columnFilters).some(
@@ -49,7 +55,7 @@ export function TemplatesTableBody({
               Reset Filters <X className="text-accent-main-highlight size-4" />
             </Button>
           }
-          className="h-[70%] max-md:w-screen"
+          className="h-[70%] max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
         />
       )
     }
@@ -66,7 +72,7 @@ export function TemplatesTableBody({
             </a>
           </Button>
         }
-        className="h-[70%] max-md:w-screen"
+        className="h-[70%] max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
       />
     )
   }

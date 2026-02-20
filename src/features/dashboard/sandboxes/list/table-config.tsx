@@ -1,15 +1,11 @@
 'use client'
 
-import { Sandbox } from '@/types/api.types'
+import type { Sandbox } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
-import { ColumnDef, FilterFn, useReactTable } from '@tanstack/react-table'
+import { ColumnDef, FilterFn, type Table } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'
-import { DateRange } from 'react-day-picker'
+import type { DateRange } from 'react-day-picker'
 
-import { l } from '@/lib/clients/logger/logger'
-import { ClientSandboxMetric } from '@/types/sandboxes.types'
-import posthog from 'posthog-js'
-import { serializeError } from 'serialize-error'
 import {
   CpuUsageCell,
   DiskUsageCell,
@@ -20,70 +16,36 @@ import {
   TemplateCell,
 } from './table-cells'
 
-export type SandboxWithMetrics = Sandbox & {
-  metrics?: ClientSandboxMetric | null
-}
-export type SandboxesTable = ReturnType<
-  typeof useReactTable<SandboxWithMetrics>
->
-
-export const trackTableInteraction = (
-  action: string,
-  properties: Record<string, unknown> = {}
-) => {
-  posthog.capture('sandbox table interacted', {
-    action,
-    ...properties,
-  })
-}
+export type SandboxListRow = Sandbox
+export type SandboxListTable = Table<SandboxListRow>
 
 // FILTERS
 
-export const fuzzyFilter: FilterFn<SandboxWithMetrics> = (
+export const sandboxIdFuzzyFilter: FilterFn<SandboxListRow> = (
   row,
   columnId,
   value,
   addMeta
 ) => {
-  // try catch to avoid crash by serialization issues
-  try {
-    if (columnId === 'metadata') {
-      const metadata = row.original.metadata
+  if (!value) return true
 
-      if (!metadata) return false
+  const rowValue = row.getValue(columnId)
+  if (rowValue == null) return false
 
-      const stringifiedMetadata = JSON.stringify(metadata)
-
-      return stringifiedMetadata.includes(value)
-    }
-  } catch (error) {
-    l.error(
-      {
-        key: 'sandboxes_table_config:fuzzy_filter:unexpected_error',
-        error: serializeError(error),
-        context: {
-          row,
-          columnId,
-          value,
-        },
-      },
-      `Fuzzy filter failed with error: ${error instanceof Error ? error.message : String(error)}`
-    )
-    return false
-  }
-
-  const itemRank = rankItem(row.getValue(columnId), value)
+  const itemRank = rankItem(
+    String(rowValue).toLowerCase(),
+    String(value).toLowerCase()
+  )
 
   addMeta({ itemRank })
 
   return itemRank.passed
 }
 
-export const dateRangeFilter: FilterFn<SandboxWithMetrics> = (
+export const startedAtDateRangeFilter: FilterFn<SandboxListRow> = (
   row,
   columnId,
-  value: DateRange,
-  addMeta
+  value: DateRange
 ) => {
   const startedAt = row.getValue(columnId) as string
 
@@ -99,7 +61,7 @@ export const dateRangeFilter: FilterFn<SandboxWithMetrics> = (
   })
 }
 
-export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
+export const resourceEqualsFilter: FilterFn<SandboxListRow> = (
   row,
   columnId,
   value: number
@@ -119,7 +81,7 @@ export const resourceRangeFilter: FilterFn<SandboxWithMetrics> = (
   return true
 }
 
-export const templateFilter: FilterFn<SandboxWithMetrics> = (
+export const templateIdentifierFilter: FilterFn<SandboxListRow> = (
   row,
   _,
   value: string[]
@@ -139,24 +101,14 @@ export const templateFilter: FilterFn<SandboxWithMetrics> = (
 
 // TABLE CONFIG
 
-export const fallbackData: SandboxWithMetrics[] = []
-
-export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
-  // TODO: add actions column back in as soon as performance is stabilized
-  // {
-  //   id: 'actions',
-  //   enableSorting: false,
-  //   enableGlobalFilter: false,
-  //   enableResizing: false,
-  //   size: 35,
-  //   cell: ActionsCell,
-  // },
+export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
   {
     accessorKey: 'sandboxID',
     header: 'ID',
     cell: IdCell,
-    size: 190,
+    size: 165,
     minSize: 100,
+    enableResizing: false,
     enableColumnFilter: false,
     enableSorting: false,
     enableGlobalFilter: true,
@@ -167,39 +119,40 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     header: 'TEMPLATE',
     cell: TemplateCell,
     size: 250,
-    minSize: 180,
-    filterFn: templateFilter,
-    enableGlobalFilter: true,
+    minSize: 100,
+    maxSize: 350,
+    enableResizing: true,
+    filterFn: templateIdentifierFilter,
+    enableGlobalFilter: false,
   },
   {
     id: 'cpuUsage',
-    header: 'CPU Usage',
+    header: 'CPU',
     cell: (props) => <CpuUsageCell {...props} />,
-    size: 175,
-    minSize: 120,
+    size: 100,
+    enableResizing: false,
     enableSorting: false,
     enableColumnFilter: true,
-    filterFn: resourceRangeFilter,
+    filterFn: resourceEqualsFilter,
   },
   {
     id: 'ramUsage',
-    header: 'Memory Usage',
+    header: 'Memory',
     cell: (props) => <RamUsageCell {...props} />,
-    size: 175,
-    minSize: 160,
+    size: 140,
+    enableResizing: false,
     enableSorting: false,
     enableColumnFilter: true,
-    filterFn: resourceRangeFilter,
+    filterFn: resourceEqualsFilter,
   },
   {
     id: 'diskUsage',
-    header: 'Disk Usage',
+    header: 'Disk',
     cell: (props) => <DiskUsageCell {...props} />,
-    size: 175,
-    minSize: 160,
+    size: 100,
+    enableResizing: false,
     enableSorting: false,
     enableColumnFilter: false,
-    filterFn: resourceRangeFilter,
   },
   {
     id: 'metadata',
@@ -207,9 +160,10 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     header: 'Metadata',
     cell: MetadataCell,
     filterFn: 'includesStringSensitive',
-    enableGlobalFilter: true,
+    enableGlobalFilter: false,
     size: 200,
     minSize: 160,
+    enableResizing: true,
     enableSorting: false,
   },
   {
@@ -217,10 +171,9 @@ export const COLUMNS: ColumnDef<SandboxWithMetrics>[] = [
     accessorKey: 'startedAt',
     header: 'Started At',
     cell: StartedAtCell,
-    size: 250,
-    minSize: 140,
-    // @ts-expect-error dateRange is not a valid filterFn
-    filterFn: 'dateRange',
+    size: 150,
+    enableResizing: false,
+    filterFn: startedAtDateRangeFilter,
     enableColumnFilter: true,
     enableGlobalFilter: false,
     sortingFn: (rowA, rowB) => {
