@@ -67,6 +67,7 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
             <LogsTableHeader
               timestampWidth={COLUMN_WIDTHS_PX.timestamp}
               levelWidth={COLUMN_WIDTHS_PX.level}
+              timestampSortDirection="asc"
             />
             <LogsLoaderBody />
           </Table>
@@ -138,6 +139,7 @@ function LogsContent({
           <LogsTableHeader
             timestampWidth={COLUMN_WIDTHS_PX.timestamp}
             levelWidth={COLUMN_WIDTHS_PX.level}
+            timestampSortDirection="asc"
           />
 
           {showLoader && <LogsLoaderBody />}
