@@ -108,87 +108,131 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
       },
 
       setGlobalFilter: (globalFilterUpdater) => {
+        let didChangeGlobalFilter = false
+        let nextGlobalFilter = ''
+
         set((state) => {
-          const newGlobalFilter =
+          const resolvedGlobalFilter =
             resolveUpdater(globalFilterUpdater, state.globalFilter)
 
-          if (newGlobalFilter === state.globalFilter) {
+          if (resolvedGlobalFilter === state.globalFilter) {
             return state
           }
 
-          trackSandboxListInteraction('searched', {
-            has_query: Boolean(newGlobalFilter),
-            query: newGlobalFilter,
-          })
+          didChangeGlobalFilter = true
+          nextGlobalFilter = resolvedGlobalFilter
 
           return {
-            globalFilter: newGlobalFilter,
+            globalFilter: resolvedGlobalFilter,
           }
+        })
+
+        if (!didChangeGlobalFilter) {
+          return
+        }
+
+        trackSandboxListInteraction('searched', {
+          has_query: Boolean(nextGlobalFilter),
+          query: nextGlobalFilter,
         })
       },
 
       // Filter actions
       setStartedAtFilter: (startedAtFilter) => {
+        let didChangeStartedAtFilter = false
+
         set((state) => {
           if (state.startedAtFilter === startedAtFilter) {
             return state
           }
 
-          trackSandboxListInteraction('filtered', {
-            type: 'started_at',
-            value: startedAtFilter,
-          })
+          didChangeStartedAtFilter = true
 
           return { startedAtFilter }
+        })
+
+        if (!didChangeStartedAtFilter) {
+          return
+        }
+
+        trackSandboxListInteraction('filtered', {
+          type: 'started_at',
+          value: startedAtFilter,
         })
       },
 
       setTemplateFilters: (templateFilters) => {
+        let didChangeTemplateFilters = false
+
         set((state) => {
           if (areStringArraysEqual(state.templateFilters, templateFilters)) {
             return state
           }
 
-          trackSandboxListInteraction('filtered', {
-            type: 'template',
-            count: templateFilters.length,
-          })
+          didChangeTemplateFilters = true
 
           return { templateFilters }
+        })
+
+        if (!didChangeTemplateFilters) {
+          return
+        }
+
+        trackSandboxListInteraction('filtered', {
+          type: 'template',
+          count: templateFilters.length,
         })
       },
 
       setCpuCount: (cpuCount) => {
+        let didChangeCpuCount = false
+
         set((state) => {
           if (state.cpuCount === cpuCount) {
             return state
           }
 
-          trackSandboxListInteraction('filtered', {
-            type: 'cpu',
-            value: cpuCount,
-          })
+          didChangeCpuCount = true
 
           return { cpuCount }
+        })
+
+        if (!didChangeCpuCount) {
+          return
+        }
+
+        trackSandboxListInteraction('filtered', {
+          type: 'cpu',
+          value: cpuCount,
         })
       },
 
       setMemoryMB: (memoryMB) => {
+        let didChangeMemoryMB = false
+
         set((state) => {
           if (state.memoryMB === memoryMB) {
             return state
           }
 
-          trackSandboxListInteraction('filtered', {
-            type: 'memory',
-            value: memoryMB,
-          })
+          didChangeMemoryMB = true
 
           return { memoryMB }
+        })
+
+        if (!didChangeMemoryMB) {
+          return
+        }
+
+        trackSandboxListInteraction('filtered', {
+          type: 'memory',
+          value: memoryMB,
         })
       },
 
       resetFilters: () => {
+        let didResetFilters = false
+
         set((state) => {
           const hasFilterChanges =
             state.startedAtFilter !== initialState.startedAtFilter ||
@@ -201,7 +245,7 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
             return state
           }
 
-          trackSandboxListInteraction('reset filters')
+          didResetFilters = true
 
           return {
             startedAtFilter: initialState.startedAtFilter,
@@ -211,20 +255,34 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
             globalFilter: initialState.globalFilter,
           }
         })
+
+        if (!didResetFilters) {
+          return
+        }
+
+        trackSandboxListInteraction('reset filters')
       },
 
       // Page actions
       setPollingInterval: (pollingInterval) => {
+        let didChangePollingInterval = false
+
         set((state) => {
           if (state.pollingInterval === pollingInterval) {
             return state
           }
 
-          trackSandboxListInteraction('changed polling interval', {
-            interval: pollingInterval,
-          })
+          didChangePollingInterval = true
 
           return { pollingInterval }
+        })
+
+        if (!didChangePollingInterval) {
+          return
+        }
+
+        trackSandboxListInteraction('changed polling interval', {
+          interval: pollingInterval,
         })
       },
     }),
