@@ -180,13 +180,14 @@ export const createBuildLogsStore = () =>
         try {
           const initCursor = Date.now()
 
-          const result = await trpcClient.builds.buildLogsBackwards.query({
-            teamIdOrSlug: params.teamIdOrSlug,
-            templateId: params.templateId,
-            buildId: params.buildId,
-            level: level ?? undefined,
-            cursor: initCursor,
-          })
+          const result =
+            await trpcClient.builds.buildLogsBackwardsReversed.query({
+              teamIdOrSlug: params.teamIdOrSlug,
+              templateId: params.templateId,
+              buildId: params.buildId,
+              level: level ?? undefined,
+              cursor: initCursor,
+            })
 
           // Ignore stale response if a newer init was called
           if (get()._initVersion !== requestVersion) {
@@ -254,13 +255,14 @@ export const createBuildLogsStore = () =>
           const cursor =
             state.backwardsCursor ?? state.logs[0]?.timestampUnix ?? Date.now()
 
-          const result = await state._trpcClient.builds.buildLogsBackwards.query({
-            teamIdOrSlug: state._params.teamIdOrSlug,
-            templateId: state._params.templateId,
-            buildId: state._params.buildId,
-            level: state.level ?? undefined,
-            cursor,
-          })
+          const result =
+            await state._trpcClient.builds.buildLogsBackwardsReversed.query({
+              teamIdOrSlug: state._params.teamIdOrSlug,
+              templateId: state._params.templateId,
+              buildId: state._params.buildId,
+              level: state.level ?? undefined,
+              cursor,
+            })
 
           // Ignore stale response if init was called during fetch
           if (get()._initVersion !== requestVersion) {
@@ -273,7 +275,8 @@ export const createBuildLogsStore = () =>
               cursor,
               state.backwardsSeenAtCursor
             )
-            const nextLogs = newLogs.length > 0 ? [...newLogs, ...s.logs] : s.logs
+            const nextLogs =
+              newLogs.length > 0 ? [...newLogs, ...s.logs] : s.logs
             const backwardsCursor = result.nextCursor
 
             s.logs = nextLogs
@@ -326,7 +329,11 @@ export const createBuildLogsStore = () =>
             return { logsCount: 0 }
           }
 
-          const newLogs = dropLeadingAtTimestamp(result.logs, cursor, seenAtCursor)
+          const newLogs = dropLeadingAtTimestamp(
+            result.logs,
+            cursor,
+            seenAtCursor
+          )
           const logsCount = newLogs.length
 
           set((s) => {

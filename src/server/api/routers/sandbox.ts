@@ -11,7 +11,7 @@ import { sandboxesRepo } from '../repositories/sandboxes.repository'
 export const sandboxRouter = createTRPCRouter({
   // QUERIES
 
-  logsBackwards: protectedTeamProcedure
+  logsBackwardsReversed: protectedTeamProcedure
     .input(
       z.object({
         sandboxId: z.string(),
@@ -36,7 +36,8 @@ export const sandboxRouter = createTRPCRouter({
       )
 
       const logs: SandboxLogDTO[] = sandboxLogs.logs
-        .map(mapInfraSandboxLogToDTO).reverse()
+        .map(mapInfraSandboxLogToDTO)
+        .reverse()
 
       const hasMore = logs.length === limit
       const cursorLog = logs[0]
@@ -74,8 +75,9 @@ export const sandboxRouter = createTRPCRouter({
         { cursor, limit, direction }
       )
 
-      const logs: SandboxLogDTO[] = sandboxLogs.logs
-        .map(mapInfraSandboxLogToDTO)
+      const logs: SandboxLogDTO[] = sandboxLogs.logs.map(
+        mapInfraSandboxLogToDTO
+      )
 
       const newestLog = logs[logs.length - 1]
       const nextCursor = newestLog?.timestampUnix ?? cursor

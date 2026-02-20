@@ -174,7 +174,7 @@ export const createSandboxLogsStore = () =>
         try {
           const initCursor = Date.now()
 
-          const result = await trpcClient.sandbox.logsBackwards.query({
+          const result = await trpcClient.sandbox.logsBackwardsReversed.query({
             teamIdOrSlug: params.teamIdOrSlug,
             sandboxId: params.sandboxId,
             cursor: initCursor,
@@ -253,11 +253,12 @@ export const createSandboxLogsStore = () =>
           const cursor =
             state.backwardsCursor ?? state.logs[0]?.timestampUnix ?? Date.now()
 
-          const result = await state._trpcClient.sandbox.logsBackwards.query({
-            teamIdOrSlug: state._params.teamIdOrSlug,
-            sandboxId: state._params.sandboxId,
-            cursor,
-          })
+          const result =
+            await state._trpcClient.sandbox.logsBackwardsReversed.query({
+              teamIdOrSlug: state._params.teamIdOrSlug,
+              sandboxId: state._params.sandboxId,
+              cursor,
+            })
 
           // ignore stale response if init was called during fetch
           if (get()._initVersion !== requestVersion) {
@@ -270,7 +271,8 @@ export const createSandboxLogsStore = () =>
               cursor,
               state.backwardsSeenAtCursor
             )
-            const nextLogs = newLogs.length > 0 ? [...newLogs, ...s.logs] : s.logs
+            const nextLogs =
+              newLogs.length > 0 ? [...newLogs, ...s.logs] : s.logs
             const backwardsCursor = result.nextCursor
 
             s.logs = nextLogs

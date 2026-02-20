@@ -77,7 +77,7 @@ export const buildsRouter = createTRPCRouter({
       return result
     }),
 
-  buildLogsBackwards: protectedTeamProcedure
+  buildLogsBackwardsReversed: protectedTeamProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -109,7 +109,8 @@ export const buildsRouter = createTRPCRouter({
           timestampUnix: new Date(log.timestamp).getTime(),
           level: log.level,
           message: log.message,
-        })).reverse()
+        }))
+        .reverse()
 
       const hasMore = logs.length === limit
       const cursorLog = logs[0]
@@ -150,12 +151,11 @@ export const buildsRouter = createTRPCRouter({
         { cursor, limit, direction, level }
       )
 
-      const logs: BuildLogDTO[] = buildLogs.logs
-        .map((log) => ({
-          timestampUnix: new Date(log.timestamp).getTime(),
-          level: log.level,
-          message: log.message,
-        }))
+      const logs: BuildLogDTO[] = buildLogs.logs.map((log) => ({
+        timestampUnix: new Date(log.timestamp).getTime(),
+        level: log.level,
+        message: log.message,
+      }))
 
       const newestLog = logs[logs.length - 1]
       const nextCursor = newestLog?.timestampUnix ?? cursor
