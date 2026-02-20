@@ -4,6 +4,12 @@ import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import type { useTRPCClient } from '@/trpc/client'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import {
+  countLeadingAtTimestamp,
+  countTrailingAtTimestamp,
+  dropLeadingAtTimestamp,
+  dropTrailingAtTimestamp,
+} from '../../common/log-timestamp-utils'
 
 interface SandboxLogsParams {
   teamIdOrSlug: string
@@ -39,76 +45,6 @@ interface SandboxLogsMutations {
 
 export type SandboxLogsStoreData = SandboxLogsState & SandboxLogsMutations
 const EMPTY_INIT_FORWARD_LOOKBACK_MS = 5_000
-
-function countLeadingAtTimestamp(logs: SandboxLogDTO[], timestamp: number) {
-  let count = 0
-
-  while (count < logs.length && logs[count]!.timestampUnix === timestamp) {
-    count += 1
-  }
-
-  return count
-}
-
-function countTrailingAtTimestamp(logs: SandboxLogDTO[], timestamp: number) {
-  let count = 0
-  let index = logs.length - 1
-
-  while (index >= 0 && logs[index]!.timestampUnix === timestamp) {
-    count += 1
-    index -= 1
-  }
-
-  return count
-}
-
-function dropLeadingAtTimestamp(
-  logs: SandboxLogDTO[],
-  timestamp: number,
-  dropCount: number
-) {
-  if (dropCount <= 0) {
-    return logs
-  }
-
-  let index = 0
-  let remainingToDrop = dropCount
-
-  while (
-    index < logs.length &&
-    remainingToDrop > 0 &&
-    logs[index]!.timestampUnix === timestamp
-  ) {
-    index += 1
-    remainingToDrop -= 1
-  }
-
-  return logs.slice(index)
-}
-
-function dropTrailingAtTimestamp(
-  logs: SandboxLogDTO[],
-  timestamp: number,
-  dropCount: number
-) {
-  if (dropCount <= 0) {
-    return logs
-  }
-
-  let end = logs.length
-  let remainingToDrop = dropCount
-
-  while (
-    end > 0 &&
-    remainingToDrop > 0 &&
-    logs[end - 1]!.timestampUnix === timestamp
-  ) {
-    end -= 1
-    remainingToDrop -= 1
-  }
-
-  return logs.slice(0, end)
-}
 
 const initialState: SandboxLogsState = {
   logs: [],
