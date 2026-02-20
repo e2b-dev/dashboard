@@ -1,3 +1,4 @@
+import { INCLUDE_STATUS_INDICATOR } from '@/configs/flags'
 import { LiveSandboxCounterServer } from '../sandboxes/live-counter.server'
 import DashboardLayoutFooter from './footer'
 import DashboardLayoutHeader from './header'
@@ -22,7 +23,11 @@ export default function DashboardLayout({
         />
       </DashboardLayoutHeader>
       <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>
-      <DashboardLayoutFooter statusBanner={<DashboardStatusBadgeServer />} />
+      <DashboardLayoutFooter
+        statusBanner={
+          INCLUDE_STATUS_INDICATOR ? <DashboardStatusBadgeServer /> : null
+        }
+      />
     </div>
   )
 }
