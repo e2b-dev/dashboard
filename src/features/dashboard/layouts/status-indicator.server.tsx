@@ -1,10 +1,9 @@
 import 'server-only'
 
+import { l } from '@/lib/clients/logger/logger'
 import { LiveDot } from '@/ui/live'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { cacheLife } from 'next/cache'
 import Link from 'next/link'
-import { Suspense } from 'react'
 
 const STATUS_PAGE_URL = 'https://status.e2b.dev'
 const STATUS_PAGE_INDEX_URL = `${STATUS_PAGE_URL}/index.json`
@@ -89,6 +88,14 @@ async function getStatusPageState(): Promise<AggregateState> {
     })
 
     if (!response.ok) {
+      l.error(
+        {
+          key: 'dashboard:status-indicator:get_status_page_state:fetch_failed',
+          error: response.statusText,
+          status: response.status,
+        },
+        `Failed to fetch status page state: ${response.statusText}`
+      )
       return 'unknown'
     }
 
@@ -99,11 +106,7 @@ async function getStatusPageState(): Promise<AggregateState> {
   }
 }
 
-export function DashboardStatusBadgeFallback() {
-  return <Skeleton className="h-5 w-[120px] shrink-0" />
-}
-
-async function DashboardStatusBadgeResolver() {
+export default async function DashboardStatusBadgeServer() {
   const status = await getStatusPageState()
   const ui = getStatusUI(status)
 
@@ -125,13 +128,5 @@ async function DashboardStatusBadgeResolver() {
         {ui.label}
       </span>
     </Link>
-  )
-}
-
-export default function DashboardStatusBadgeServer() {
-  return (
-    <Suspense fallback={<DashboardStatusBadgeFallback />}>
-      <DashboardStatusBadgeResolver />
-    </Suspense>
   )
 }
