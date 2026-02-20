@@ -1,5 +1,7 @@
 import { LiveSandboxCounterServer } from '../sandboxes/live-counter.server'
+import DashboardLayoutFooter from './footer'
 import DashboardLayoutHeader from './header'
+import DashboardStatusBadgeServer from './status-badge.server'
 import DashboardLayoutWrapper from './wrapper'
 
 interface DashboardLayoutProps {
@@ -20,6 +22,7 @@ export default function DashboardLayout({
         />
       </DashboardLayoutHeader>
       <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>
+      <DashboardLayoutFooter statusBanner={<DashboardStatusBadgeServer />} />
     </div>
   )
 }
