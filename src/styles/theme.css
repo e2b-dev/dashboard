@@ -34,6 +34,7 @@
   --protected-navbar-height: 32px;
   --protected-sidebar-width: 0px;
   --protected-statusbar-height: 36px;
+  --protected-footer-height: var(--protected-statusbar-height);
 
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
@@ -251,6 +252,7 @@
   --height-protected-navbar: var(--protected-navbar-height);
   --width-protected-sidebar: var(--protected-sidebar-width);
   --height-protected-statusbar: var(--protected-statusbar-height);
+  --height-protected-footer: var(--protected-footer-height);
 
   /* Colors */
   --color-ring: var(--stroke-active);
@@ -598,4 +600,3 @@
 @utility loader-xl {
   font-size: 1.5rem;
 }
-
