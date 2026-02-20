@@ -16,7 +16,7 @@ export default function DashboardLayoutFooter({
   const config = getDashboardLayoutConfig(pathname)
 
   return (
-    <footer className="flex min-h-protected-footer items-center justify-between gap-2 border-t bg-bg px-3 md:px-6">
+    <footer className="flex h-protected-footer min-h-protected-footer shrink-0 items-center justify-between gap-2 border-t bg-bg px-3 md:px-6">
       <span className="min-w-0 flex-1 truncate pr-2 font-mono text-xs text-fg-tertiary uppercase md:pr-4 md:prose-label">
         {'>_'}
         {user.email ?? 'ANONYMOUS@UNKNOWN.COM'}
