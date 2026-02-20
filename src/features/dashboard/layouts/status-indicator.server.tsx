@@ -6,6 +6,7 @@ import Link from 'next/link'
 
 const STATUS_PAGE_URL = 'https://status.e2b.dev'
 const STATUS_PAGE_INDEX_URL = `${STATUS_PAGE_URL}/index.json`
+const STATUS_PAGE_FETCH_TIMEOUT_MS = 5_000
 
 type AggregateState =
   | 'operational'
@@ -91,7 +92,9 @@ async function getStatusPageState(): Promise<AggregateState> {
   })
 
   try {
-    const response = await fetch(STATUS_PAGE_INDEX_URL)
+    const response = await fetch(STATUS_PAGE_INDEX_URL, {
+      signal: AbortSignal.timeout(STATUS_PAGE_FETCH_TIMEOUT_MS),
+    })
 
     if (!response.ok) {
       return 'unknown'
