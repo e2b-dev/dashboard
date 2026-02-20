@@ -84,6 +84,8 @@ async function getStatusPageState(): Promise<AggregateState> {
 
   try {
     const response = await fetch(STATUS_PAGE_INDEX_URL, {
+      cache: 'force-cache',
+      next: { revalidate: STATUS_PAGE_CACHE_SECONDS },
       signal: AbortSignal.timeout(STATUS_PAGE_FETCH_TIMEOUT_MS),
     })
 
