@@ -125,7 +125,7 @@ export function TemplateCell({
   return (
     <Button
       variant="link"
-      className="text-fg h-auto p-0 font-sans prose-table normal-case"
+      className="text-fg prose-table h-auto w-full min-w-0 justify-start overflow-hidden p-0 font-sans normal-case"
       onClick={(event) => {
         event.stopPropagation()
         event.preventDefault()
@@ -138,8 +138,8 @@ export function TemplateCell({
         router.push(PROTECTED_URLS.TEMPLATES(team.slug ?? team.id))
       }}
     >
-      {templateIdentifier}
-      <ArrowUpRight className="size-3" />
+      <span className="truncate">{templateIdentifier}</span>
+      <ArrowUpRight className="size-3 shrink-0" />
     </Button>
   )
 }
@@ -158,15 +158,15 @@ export function MetadataCell({
   }, [value])
 
   if (!parsedValue || value.trim() === '{}') {
-    return <span className="text-fg-tertiary">n/a</span>
+    return <span className="text-fg-tertiary block w-full truncate">n/a</span>
   }
 
   return (
     <JsonPopover
-      className="text-fg-tertiary hover:text-fg hover:underline"
+      className="text-fg-tertiary hover:text-fg hover:underline min-w-0"
       json={parsedValue}
     >
-      {value}
+      <span className="block w-full truncate">{value}</span>
     </JsonPopover>
   )
 }

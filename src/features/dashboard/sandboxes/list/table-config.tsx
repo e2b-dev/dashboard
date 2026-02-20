@@ -119,7 +119,7 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     header: 'TEMPLATE',
     cell: TemplateCell,
     size: 250,
-    minSize: 120,
+    minSize: 100,
     maxSize: 350,
     enableResizing: true,
     filterFn: templateIdentifierFilter,
