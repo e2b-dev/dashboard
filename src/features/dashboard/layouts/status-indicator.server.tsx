@@ -1,12 +1,15 @@
 import 'server-only'
 
 import { LiveDot } from '@/ui/live'
+import { Skeleton } from '@/ui/primitives/skeleton'
 import { cacheLife } from 'next/cache'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 const STATUS_PAGE_URL = 'https://status.e2b.dev'
 const STATUS_PAGE_INDEX_URL = `${STATUS_PAGE_URL}/index.json`
 const STATUS_PAGE_FETCH_TIMEOUT_MS = 5_000
+const STATUS_PAGE_CACHE_SECONDS = 300
 
 type AggregateState =
   | 'operational'
@@ -75,9 +78,9 @@ function getStatusUI(state: AggregateState): StatusUI {
 async function getStatusPageState(): Promise<AggregateState> {
   'use cache'
   cacheLife({
-    stale: 30,
-    revalidate: 30,
-    expire: 60,
+    stale: STATUS_PAGE_CACHE_SECONDS,
+    revalidate: STATUS_PAGE_CACHE_SECONDS,
+    expire: STATUS_PAGE_CACHE_SECONDS * 2,
   })
 
   try {
@@ -96,7 +99,11 @@ async function getStatusPageState(): Promise<AggregateState> {
   }
 }
 
-export default async function DashboardStatusBadgeServer() {
+export function DashboardStatusBadgeFallback() {
+  return <Skeleton className="h-5 w-[120px] shrink-0" />
+}
+
+async function DashboardStatusBadgeResolver() {
   const status = await getStatusPageState()
   const ui = getStatusUI(status)
 
@@ -118,5 +125,13 @@ export default async function DashboardStatusBadgeServer() {
         {ui.label}
       </span>
     </Link>
+  )
+}
+
+export default function DashboardStatusBadgeServer() {
+  return (
+    <Suspense fallback={<DashboardStatusBadgeFallback />}>
+      <DashboardStatusBadgeResolver />
+    </Suspense>
   )
 }
