@@ -1,7 +1,7 @@
 import { LiveSandboxCounterServer } from '../sandboxes/live-counter.server'
 import DashboardLayoutFooter from './footer'
 import DashboardLayoutHeader from './header'
-import DashboardStatusBadgeServer from './status-badge.server'
+import DashboardStatusBadgeServer from './status-indicator.server'
 import DashboardLayoutWrapper from './wrapper'
 
 interface DashboardLayoutProps {

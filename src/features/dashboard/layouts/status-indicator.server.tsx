@@ -1,8 +1,8 @@
 import 'server-only'
 
+import { LiveDot } from '@/ui/live'
 import { cacheLife } from 'next/cache'
 import Link from 'next/link'
-import { Badge } from '@/ui/primitives/badge'
 
 const STATUS_PAGE_URL = 'https://status.e2b.dev'
 const STATUS_PAGE_INDEX_URL = `${STATUS_PAGE_URL}/index.json`
@@ -24,7 +24,8 @@ interface StatusPageIndexResponse {
 
 interface StatusUI {
   label: string
-  variant: 'positive' | 'warning' | 'error' | 'info'
+  indicatorClassName: string
+  dotCircleClassName: string
   dotClassName: string
 }
 
@@ -40,32 +41,42 @@ function getStatusUI(state: AggregateState): StatusUI {
   switch (state) {
     case 'operational':
       return {
-        label: 'Operational',
-        variant: 'positive',
+        label: 'ALL SYSTEMS OPERATIONAL',
+        indicatorClassName:
+          'border-accent-positive-highlight/40 bg-accent-positive-bg text-accent-positive-highlight hover:bg-accent-positive-bg/80',
+        dotCircleClassName: 'bg-accent-positive-highlight/30',
         dotClassName: 'bg-accent-positive-highlight',
       }
     case 'degraded':
       return {
-        label: 'Degraded',
-        variant: 'warning',
+        label: 'SYSTEMS DEGRADED',
+        indicatorClassName:
+          'border-accent-warning-highlight/40 bg-accent-warning-bg text-accent-warning-highlight hover:bg-accent-warning-bg-large',
+        dotCircleClassName: 'bg-accent-warning-highlight/30',
         dotClassName: 'bg-accent-warning-highlight',
       }
     case 'downtime':
       return {
-        label: 'Downtime',
-        variant: 'error',
+        label: 'DOWNTIME',
+        indicatorClassName:
+          'border-accent-error-highlight/40 bg-accent-error-bg text-accent-error-highlight hover:bg-accent-error-bg-large',
+        dotCircleClassName: 'bg-accent-error-highlight/30',
         dotClassName: 'bg-accent-error-highlight',
       }
     case 'maintenance':
       return {
-        label: 'Maintenance',
-        variant: 'info',
+        label: 'MAINTENANCE',
+        indicatorClassName:
+          'border-accent-info-highlight/40 bg-accent-info-bg text-accent-info-highlight hover:bg-accent-info-bg-large',
+        dotCircleClassName: 'bg-accent-info-highlight/30',
         dotClassName: 'bg-accent-info-highlight',
       }
     default:
       return {
-        label: 'Status Unknown',
-        variant: 'info',
+        label: 'UNKNOWN SYSTEM STATUS',
+        indicatorClassName:
+          'border-stroke bg-bg-hover text-fg-secondary hover:bg-bg-highlight',
+        dotCircleClassName: 'bg-icon-secondary/30',
         dotClassName: 'bg-icon-secondary',
       }
   }
@@ -98,19 +109,22 @@ export default async function DashboardStatusBadgeServer() {
   const ui = getStatusUI(status)
 
   return (
-    <Link href={STATUS_PAGE_URL} target="_blank" rel="noopener noreferrer">
-      <Badge
-        size="sm"
-        variant={ui.variant}
-        typography="highlight"
-        className="uppercase"
-      >
-        <span
-          aria-hidden
-          className={`size-1.5 rounded-full ${ui.dotClassName}`}
-        />
+    <Link
+      href={STATUS_PAGE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex h-5 shrink-0 items-center gap-1.5"
+      aria-label={`System status: ${ui.label}`}
+    >
+      <LiveDot
+        classNames={{
+          circle: `size-3.5 p-0.5 ${ui.dotCircleClassName}`,
+          dot: `size-1.5 ${ui.dotClassName}`,
+        }}
+      />
+      <span className="whitespace-nowrap text-xs text-fg-tertiary uppercase md:prose-label">
         {ui.label}
-      </Badge>
+      </span>
     </Link>
   )
 }
