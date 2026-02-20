@@ -31,9 +31,12 @@ export const SandboxesTableBody = memo(function SandboxesTableBody({
       Boolean(state.globalFilter)
     )
   })
-  const rows = virtualRows ?? table.getCenterRows()
-
-  const isEmpty = rows.length === 0
+  const centerRows = table.getCenterRows()
+  // During initial virtualizer mount, virtualRows can be temporarily empty
+  // even when centerRows already has data.
+  const rows =
+    virtualRows && virtualRows.length > 0 ? virtualRows : centerRows
+  const isEmpty = centerRows.length === 0
 
   if (isEmpty) {
     const emptyState = hasFilter ? (

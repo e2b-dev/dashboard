@@ -28,10 +28,16 @@ export function TemplatesTableBody({
 
   const centerRows = table.getCenterRows()
   const visualRows = useMemo(() => {
-    return virtualRows ?? centerRows
+    // During initial virtualizer mount, virtualRows can be temporarily empty
+    // even when centerRows already has data.
+    if (virtualRows && virtualRows.length > 0) {
+      return virtualRows
+    }
+
+    return centerRows
   }, [centerRows, virtualRows])
 
-  const isEmpty = templates && visualRows?.length === 0
+  const isEmpty = templates && centerRows.length === 0
 
   const hasFilter =
     Object.values(table.getState().columnFilters).some(
