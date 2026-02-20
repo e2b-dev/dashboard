@@ -2,7 +2,7 @@ import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/st
 import useKeydown from '@/lib/hooks/use-keydown'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 export const SearchInput = () => {
   const globalFilter = useSandboxListTableStore((state) => state.globalFilter)
@@ -10,6 +10,12 @@ export const SearchInput = () => {
     (state) => state.setGlobalFilter
   )
   const inputRef = useRef<HTMLInputElement>(null)
+  const handleGlobalFilterChange = useCallback(
+    (value: string | number) => {
+      setGlobalFilter(String(value))
+    },
+    [setGlobalFilter]
+  )
 
   useKeydown((e) => {
     if (e.key === '/') {
@@ -23,7 +29,7 @@ export const SearchInput = () => {
     <div className="relative w-full sm:w-[280px]">
       <DebouncedInput
         value={globalFilter}
-        onChange={(v) => setGlobalFilter(v as string)}
+        onChange={handleGlobalFilterChange}
         placeholder="Search by ID"
         className="h-9 w-full pr-14"
         debounce={500}
