@@ -24,6 +24,11 @@ export const sandboxListDefaultSorting: SortingState = [
   { id: 'startedAt', desc: true },
 ]
 
+export const getSandboxListEffectiveSorting = (
+  sorting: SortingState
+): SortingState =>
+  sorting.length > 0 ? sorting : sandboxListDefaultSorting
+
 type UpdaterInput<T> = T | ((state: T) => T)
 
 const resolveUpdater = <T>(updater: UpdaterInput<T>, state: T): T =>
@@ -88,7 +93,10 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
         let didChangeSorting = false
 
         set((state) => {
-          const nextSorting = resolveUpdater(sortingUpdater, state.sorting)
+          const nextSorting = resolveUpdater(
+            sortingUpdater,
+            getSandboxListEffectiveSorting(state.sorting)
+          )
 
           if (nextSorting === state.sorting) {
             return state

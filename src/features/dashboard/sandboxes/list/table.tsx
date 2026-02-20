@@ -32,7 +32,7 @@ import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { SandboxesTableBody } from './table-body'
 import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 import type { SandboxListRow } from './table-config'
-import { sandboxListDefaultSorting } from './stores/table-store'
+import { getSandboxListEffectiveSorting } from './stores/table-store'
 import type { SandboxStartedAtFilter } from './stores/table-store'
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
@@ -133,8 +133,7 @@ export default function SandboxesTable() {
     [startedAtFilter, templateFilters, cpuCount, memoryMB]
   )
 
-  const activeSorting =
-    sorting.length > 0 ? sorting : sandboxListDefaultSorting
+  const activeSorting = getSandboxListEffectiveSorting(sorting)
 
   const table = useReactTable<SandboxListRow>({
     columns: sandboxListColumns,
