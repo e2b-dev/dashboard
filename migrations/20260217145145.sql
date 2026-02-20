@@ -71,45 +71,34 @@ resolved AS (
       )
     ) AS resolved_template_id
   FROM params p
-),
-page_data AS (
-  SELECT
-    b.id,
-    b.status,
-    b.reason::jsonb AS reason,
-    b.created_at,
-    b.finished_at,
-    b.env_id AS template_id,
-    r.statuses
-  FROM public.env_builds b
-  JOIN resolved r
-    ON r.team_id = b.team_id
-  WHERE (b.created_at, b.id) < (r.cursor_created_at, r.cursor_id)
-    AND (
-      r.search_term IS NULL
-      OR (r.candidate_build_id IS NOT NULL AND b.id = r.candidate_build_id)
-      OR (r.resolved_template_id IS NOT NULL AND b.env_id = r.resolved_template_id)
-    )
-  ORDER BY b.created_at DESC, b.id DESC
-  LIMIT (SELECT requested_limit + 1 FROM params)
 )
 SELECT
-  d.id,
-  d.status,
-  d.reason,
-  d.created_at,
-  d.finished_at,
-  d.template_id,
+  b.id,
+  b.status,
+  b.reason::jsonb AS reason,
+  b.created_at,
+  b.finished_at,
+  b.env_id AS template_id,
   ea.alias AS template_alias
-FROM page_data d
+FROM public.env_builds b
+JOIN resolved r
+  ON r.team_id = b.team_id
 LEFT JOIN LATERAL (
   SELECT x.alias
   FROM public.env_aliases x
-  WHERE x.env_id = d.template_id
+  WHERE x.env_id = b.env_id
   ORDER BY x.alias ASC
   LIMIT 1
 ) ea ON TRUE
-WHERE d.status = ANY (d.statuses);
+WHERE (b.created_at, b.id) < (r.cursor_created_at, r.cursor_id)
+  AND (
+    r.search_term IS NULL
+    OR (r.candidate_build_id IS NOT NULL AND b.id = r.candidate_build_id)
+    OR (r.resolved_template_id IS NOT NULL AND b.env_id = r.resolved_template_id)
+  )
+  AND b.status = ANY (r.statuses)
+ORDER BY b.created_at DESC, b.id DESC
+LIMIT (SELECT requested_limit + 1 FROM params)
 $function$;
 
 REVOKE ALL ON FUNCTION public.list_team_builds_rpc(uuid, text[], integer, timestamptz, uuid, text) FROM PUBLIC;
