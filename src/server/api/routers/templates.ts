@@ -238,38 +238,43 @@ async function getDefaultTemplatesCached() {
     throw envsError
   }
 
-  const { data: assignments, error: assignmentsError } = await supabaseAdmin
-    .from('env_build_assignments')
-    .select('id, env_id, build_id, created_at')
-    .in('env_id', envIds)
-    .order('created_at', { ascending: false, nullsFirst: false })
-    .order('id', { ascending: false })
-
-  if (assignmentsError) {
-    throw assignmentsError
-  }
-
-  const latestBuildAssignmentByEnvId = new Map<string, string>()
-  for (const assignment of assignments ?? []) {
-    if (!latestBuildAssignmentByEnvId.has(assignment.env_id)) {
-      latestBuildAssignmentByEnvId.set(assignment.env_id, assignment.build_id)
-    }
-  }
-
   const templates: DefaultTemplate[] = []
 
   for (const env of envs) {
-    const latestBuildId = latestBuildAssignmentByEnvId.get(env.id)
-    if (!latestBuildId) {
+    const { data: latestAssignment, error: latestAssignmentError } =
+      await supabaseAdmin
+        .from('env_build_assignments')
+        .select('build_id, env_builds!inner(status)')
+        .eq('env_id', env.id)
+        .eq('env_builds.status', 'uploaded')
+        .order('created_at', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (latestAssignmentError) {
+      l.error(
+        {
+          key: 'trpc:templates:get_default_templates:env_build_assignments_supabase_error',
+          error: latestAssignmentError,
+          template_id: env.id,
+        },
+        `Failed to query latest uploaded template build assignment: ${latestAssignmentError.message || 'Unknown error'}`
+      )
+      continue
+    }
+
+    if (!latestAssignment) {
       l.error(
         {
           key: 'trpc:templates:get_default_templates:env_build_assignments_missing_latest',
           template_id: env.id,
         },
-        `Failed to get latest template build assignment: assignment not found`
+        `Failed to get latest uploaded template build assignment: assignment not found`
       )
       continue
     }
+    const latestBuildId = latestAssignment.build_id
 
     const { data: latestBuild, error: buildError } = await supabaseAdmin
       .from('env_builds')
