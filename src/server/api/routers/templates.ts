@@ -273,7 +273,7 @@ async function getDefaultTemplatesCached() {
 
     const { data: latestBuild, error: buildError } = await supabaseAdmin
       .from('env_builds')
-      .select('id, ram_mb, vcpu, total_disk_size_mb, envd_version')
+      .select('id, env_id, ram_mb, vcpu, total_disk_size_mb, envd_version')
       .eq('id', latestBuildId)
       .single()
 
@@ -286,6 +286,19 @@ async function getDefaultTemplatesCached() {
           build_id: latestBuildId,
         },
         `Failed to get template builds: ${buildError.message || 'Unknown error'}`
+      )
+      continue
+    }
+
+    if (latestBuild.env_id !== env.id) {
+      l.error(
+        {
+          key: 'trpc:templates:get_default_templates:env_build_assignment_mismatch',
+          template_id: env.id,
+          build_id: latestBuildId,
+          build_env_id: latestBuild.env_id,
+        },
+        'Build assignment env_id mismatch with template env_id'
       )
       continue
     }
@@ -307,7 +320,14 @@ async function getDefaultTemplatesCached() {
       continue
     }
 
-    if (!latestBuild.total_disk_size_mb || !latestBuild.envd_version) {
+    const invalidDiskSize =
+      latestBuild.total_disk_size_mb == null ||
+      latestBuild.total_disk_size_mb <= 0
+    const invalidEnvdVersion =
+      latestBuild.envd_version == null ||
+      latestBuild.envd_version.trim().length === 0
+
+    if (invalidDiskSize || invalidEnvdVersion) {
       l.error(
         {
           key: 'trpc:templates:get_default_templates:env_builds_missing_values',
