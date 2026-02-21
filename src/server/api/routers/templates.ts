@@ -244,7 +244,7 @@ async function getDefaultTemplatesCached() {
     const { data: latestAssignment, error: latestAssignmentError } =
       await supabaseAdmin
         .from('env_build_assignments')
-        .select('build_id, env_builds!inner(status)')
+        .select('build_id, env_id, env_builds!inner(status)')
         .eq('env_id', env.id)
         .eq('env_builds.status', 'uploaded')
         .order('created_at', { ascending: false, nullsFirst: false })
@@ -295,13 +295,13 @@ async function getDefaultTemplatesCached() {
       continue
     }
 
-    if (latestBuild.env_id !== env.id) {
+    if (latestAssignment.env_id !== env.id) {
       l.error(
         {
           key: 'trpc:templates:get_default_templates:env_build_assignment_mismatch',
           template_id: env.id,
           build_id: latestBuildId,
-          build_env_id: latestBuild.env_id,
+          assignment_env_id: latestAssignment.env_id,
         },
         'Build assignment env_id mismatch with template env_id'
       )
