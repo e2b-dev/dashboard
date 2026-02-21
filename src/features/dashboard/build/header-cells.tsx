@@ -1,4 +1,5 @@
 import { PROTECTED_URLS } from '@/configs/urls'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   formatCompactDate,
   formatDurationCompact,
@@ -8,7 +9,7 @@ import { cn } from '@/lib/utils/ui'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Button } from '@/ui/primitives/button'
 import { ArrowUpRight } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useTemplateTableStore } from '../templates/list/stores/table-store'
 
@@ -23,9 +24,7 @@ export function Template({
 }) {
   const router = useRouter()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
 
   return (
     <Button

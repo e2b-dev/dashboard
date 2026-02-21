@@ -36,6 +36,7 @@ Our Dashboard is a modern, feature-rich web application built to manage and moni
 - Vercel account
 - Supabase account
 - PostHog account (optional for analytics)
+- Plain account (optional for customer support)
 
 ### Local Development Setup
 

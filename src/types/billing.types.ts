@@ -5,6 +5,7 @@ interface Invoice {
   paid: boolean
   url: string
   date_created: string
+  credits_used: number
 }
 
 interface BillingLimit {
@@ -76,7 +77,7 @@ interface TierInfo {
 }
 
 interface AddonInfo {
-  id: string
+  id: typeof ADDON_500_SANDBOXES_ID
   name: string
   price_cents: number
   quantity?: number

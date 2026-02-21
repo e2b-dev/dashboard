@@ -241,13 +241,45 @@ async function getDefaultTemplatesCached() {
   const templates: DefaultTemplate[] = []
 
   for (const env of envs) {
+    const { data: latestAssignment, error: latestAssignmentError } =
+      await supabaseAdmin
+        .from('env_build_assignments')
+        .select('build_id, env_id, env_builds!inner(status)')
+        .eq('env_id', env.id)
+        .eq('env_builds.status', 'uploaded')
+        .order('created_at', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (latestAssignmentError) {
+      l.error(
+        {
+          key: 'trpc:templates:get_default_templates:env_build_assignments_supabase_error',
+          error: latestAssignmentError,
+          template_id: env.id,
+        },
+        `Failed to query latest uploaded template build assignment: ${latestAssignmentError.message || 'Unknown error'}`
+      )
+      continue
+    }
+
+    if (!latestAssignment) {
+      l.error(
+        {
+          key: 'trpc:templates:get_default_templates:env_build_assignments_missing_latest',
+          template_id: env.id,
+        },
+        `Failed to get latest uploaded template build assignment: assignment not found`
+      )
+      continue
+    }
+    const latestBuildId = latestAssignment.build_id
+
     const { data: latestBuild, error: buildError } = await supabaseAdmin
       .from('env_builds')
-      .select('id, ram_mb, vcpu, total_disk_size_mb, envd_version')
-      .eq('env_id', env.id)
-      .eq('status', 'uploaded')
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .select('id, env_id, ram_mb, vcpu, total_disk_size_mb, envd_version')
+      .eq('id', latestBuildId)
       .single()
 
     if (buildError) {
@@ -256,15 +288,29 @@ async function getDefaultTemplatesCached() {
           key: 'trpc:templates:get_default_templates:env_builds_supabase_error',
           error: buildError,
           template_id: env.id,
+          build_id: latestBuildId,
         },
         `Failed to get template builds: ${buildError.message || 'Unknown error'}`
       )
       continue
     }
 
+    if (latestAssignment.env_id !== env.id) {
+      l.error(
+        {
+          key: 'trpc:templates:get_default_templates:env_build_assignment_mismatch',
+          template_id: env.id,
+          build_id: latestBuildId,
+          assignment_env_id: latestAssignment.env_id,
+        },
+        'Build assignment env_id mismatch with template env_id'
+      )
+      continue
+    }
+
     const { data: aliases, error: aliasesError } = await supabaseAdmin
       .from('env_aliases')
-      .select('alias')
+      .select('alias, namespace')
       .eq('env_id', env.id)
 
     if (aliasesError) {
@@ -279,7 +325,15 @@ async function getDefaultTemplatesCached() {
       continue
     }
 
-    if (!latestBuild.total_disk_size_mb || !latestBuild.envd_version) {
+    const diskSizeMB = latestBuild.total_disk_size_mb
+    const envdVersion = latestBuild.envd_version
+
+    if (
+      diskSizeMB == null ||
+      diskSizeMB <= 0 ||
+      envdVersion == null ||
+      envdVersion.trim().length === 0
+    ) {
       l.error(
         {
           key: 'trpc:templates:get_default_templates:env_builds_missing_values',
@@ -295,10 +349,16 @@ async function getDefaultTemplatesCached() {
       buildID: latestBuild.id,
       cpuCount: latestBuild.vcpu,
       memoryMB: latestBuild.ram_mb,
-      diskSizeMB: latestBuild.total_disk_size_mb,
-      envdVersion: latestBuild.envd_version,
+      diskSizeMB,
+      envdVersion,
       public: env.public,
       aliases: aliases.map((a) => a.alias),
+      names: aliases.map((a) => {
+        if (a.namespace && a.namespace.length > 0) {
+          return `${a.namespace}/${a.alias}`
+        }
+        return a.alias
+      }),
       createdAt: env.created_at,
       updatedAt: env.updated_at,
       createdBy: null,

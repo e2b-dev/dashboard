@@ -3,6 +3,7 @@
 import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
@@ -20,7 +21,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
-import { useParams } from 'next/navigation'
 import React, { useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
@@ -47,9 +47,7 @@ export default function SandboxesTable() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/sandboxes'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
 
   const trpc = useTRPC()
 

@@ -1,11 +1,12 @@
 'use client'
 
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
@@ -28,7 +29,6 @@ import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
 import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -50,9 +50,7 @@ export function ActionsCell({
   const template = row.original
   const { team } = useDashboard()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -289,10 +287,15 @@ export function TemplateIdCell({
 
 export function TemplateNameCell({
   row,
-  getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const names = row.original.names
+
+  // Prefer a name without "/" as the primary display name
+  const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
+  const additionalNames = names.filter((name) => name !== primaryName)
+
   const [wasCopied, copy] = useClipboard(2000)
-  const nameValue = (getValue() as string) ?? '--'
+  const nameValue = (primaryName as string) ?? '--'
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -307,12 +310,34 @@ export function TemplateNameCell({
       className={cn(
         'flex items-center gap-2 prose-body min-w-0 relative group/name w-full h-9',
         {
-          'text-fg-tertiary': !getValue(),
+          'text-fg-tertiary': !primaryName,
           'cursor-pointer': nameValue !== '--',
         }
       )}
     >
       <span className="truncate">{nameValue}</span>
+      {additionalNames.length > 0 && (
+        <HelpTooltip
+          trigger={
+            <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+              +{additionalNames.length}
+            </span>
+          }
+        >
+          <div className="flex flex-col gap-1">
+            <span className="text-fg-secondary text-xs">
+              Also available under:
+            </span>
+            <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
+              {additionalNames.map((name) => (
+                <li key={name} className="font-mono text-xs text-fg-tertiary">
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </HelpTooltip>
+      )}
       {'isDefault' in row.original && row.original.isDefault && (
         <E2BTemplateBadge />
       )}
@@ -369,7 +394,11 @@ export function CreatedAtCell({
   }, [dateValue])
 
   return (
-    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric')}>
+    <div
+      className={cn(
+        'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
+      )}
+    >
       <span className="text-fg-secondary">{datePart}</span>{' '}
       <span className="text-fg-tertiary">{timePart}</span>{' '}
       <span className="text-fg-tertiary">UTC</span>
@@ -389,7 +418,11 @@ export function UpdatedAtCell({
   }, [dateValue])
 
   return (
-    <div className={cn('h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric')}>
+    <div
+      className={cn(
+        'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
+      )}
+    >
       <span className="text-fg-secondary">{datePart}</span>{' '}
       <span className="text-fg-tertiary">{timePart}</span>{' '}
       <span className="text-fg-tertiary">UTC</span>

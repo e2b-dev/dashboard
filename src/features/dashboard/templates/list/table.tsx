@@ -1,6 +1,7 @@
 'use client'
 
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
@@ -23,7 +24,6 @@ import {
   TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import TemplatesHeader from './header'
@@ -39,9 +39,7 @@ export default function TemplatesTable() {
 
   const trpc = useTRPC()
   const { teamIdOrSlug } =
-    useParams<
-      Awaited<PageProps<'/dashboard/[teamIdOrSlug]/templates'>['params']>
-    >()
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
 
   const { data: templatesData, error: templatesError } = useSuspenseQuery(
     trpc.templates.getTemplates.queryOptions(
@@ -80,7 +78,7 @@ export default function TemplatesTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
-    'templates:columnSizing:v2',
+    'templates:columnSizing:v3',
     {},
     {
       deserializer: (value) => JSON.parse(value),

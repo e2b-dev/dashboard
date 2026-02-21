@@ -10,7 +10,7 @@ export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   templates: (teamId) => PROTECTED_URLS.TEMPLATES(teamId),
   usage: (teamId) => PROTECTED_URLS.USAGE(teamId),
   billing: (teamId) => PROTECTED_URLS.BILLING(teamId),
-  budget: (teamId) => PROTECTED_URLS.BUDGET(teamId),
+  limits: (teamId) => PROTECTED_URLS.LIMITS(teamId),
   keys: (teamId) => PROTECTED_URLS.KEYS(teamId),
   settings: (teamId) => PROTECTED_URLS.GENERAL(teamId),
   team: (teamId) => PROTECTED_URLS.GENERAL(teamId),
@@ -18,6 +18,9 @@ export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   members: (teamId) => PROTECTED_URLS.MEMBERS(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
+
+  // back compatibility
+  budget: (teamId) => PROTECTED_URLS.LIMITS(teamId),
 }
 
 export async function GET(request: NextRequest) {
