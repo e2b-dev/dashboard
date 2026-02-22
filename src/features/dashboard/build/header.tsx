@@ -125,8 +125,6 @@ function StatusBanner({ status, statusMessage }: StatusBannerProps) {
           <CopyButton
             value={statusMessage}
             className="absolute top-2 right-2"
-            variant="ghost"
-            size="slate"
           />
         </>
       )}
