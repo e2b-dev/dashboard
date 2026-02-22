@@ -65,7 +65,7 @@ async function DangerZoneContent({ teamId }: { teamId: string }) {
           confirm="Leave"
           onConfirm={() => {}}
           trigger={
-            <Button variant="muted" disabled={!team || team?.is_default}>
+            <Button variant="error" disabled={!team || team?.is_default}>
               Leave Team
             </Button>
           }

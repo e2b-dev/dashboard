@@ -71,7 +71,7 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('flex gap-2', className)}
+        className={cn('flex gap-1', className)}
       >
         <FormField
           control={form.control}
@@ -79,15 +79,15 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
           render={({ field }) => (
             <FormItem className="relative flex-1">
               <FormLabel className="">E-mail</FormLabel>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <FormControl>
                   <Input placeholder="member@acme.com" {...field} />
                 </FormControl>
                 <Button
-                  loading={isExecuting}
+                  loading={isExecuting ? 'Adding...' : undefined}
                   type="submit"
                   disabled={!form.formState.isValid}
-                  variant="outline"
+                  variant="secondary"
                 >
                   Add Member
                 </Button>

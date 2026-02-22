@@ -10,7 +10,8 @@ import { removeTeamMemberAction } from '@/server/team/team-actions'
 import { TeamMember } from '@/server/team/types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
+import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
@@ -90,12 +91,12 @@ export default function MemberTableRow({
             confirm="Remove"
             onConfirm={() => handleRemoveMember(member.info.id)}
             confirmProps={{
-              loading: isRemoving,
+              loading: isRemoving ? 'Removing...' : undefined,
             }}
             trigger={
-              <Button variant="muted" size="icon-sm">
-                <span className="text-xs">X</span>
-              </Button>
+              <IconButton>
+                <TrashIcon />
+              </IconButton>
             }
             open={removeDialogOpen}
             onOpenChange={setRemoveDialogOpen}
