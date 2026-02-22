@@ -51,17 +51,16 @@ export default function KillButton({ className }: KillButtonProps) {
       trigger={
         <Button
           variant="error"
-          size="sm"
           className={className}
           disabled={!isRunning}
         >
-          <TrashIcon className="size-4" />
+          <TrashIcon />
           Kill
         </Button>
       }
       confirmProps={{
         disabled: isExecuting,
-        loading: isExecuting,
+        loading: isExecuting ? 'Killing...' : undefined,
       }}
       onConfirm={handleKill}
       onCancel={() => setOpen(false)}

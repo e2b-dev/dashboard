@@ -32,11 +32,11 @@ export default function StartedAt() {
   })
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-1">
       <p>
         {prefix}, {timeStr}
       </p>
-      <CopyButton value={startedAt} className="text-fg-secondary size-3.5" />
+      <CopyButton value={startedAt} />
     </div>
   )
 }

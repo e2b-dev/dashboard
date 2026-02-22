@@ -44,7 +44,7 @@ export default async function SandboxDetailsHeader({
           </Link>
           <SandboxDetailsTitle />
         </div>
-        <div className="flex items-center gap-2 pt-4 sm:pt-0">
+        <div className="flex items-center gap-1 pt-4 sm:pt-0">
           <RefreshControl
             initialPollingInterval={
               initialPollingInterval
