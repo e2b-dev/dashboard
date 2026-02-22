@@ -15,20 +15,22 @@ const iconButtonVariants = cva(
         secondary: [
           'h-9 w-9 [&_svg]:size-4',
           'border',
-          'hover:border-stroke-active',
-          'data-[display-state=hover]:border-stroke-active',
-          'active:bg-bg-1',
-          'data-[display-state=active]:bg-bg-1',
-          'disabled:opacity-50',
-          'data-[state=open]:bg-bg-1',
+          'hover:border-stroke-active', // hover
+          'data-[display-state=hover]:border-stroke-active', // display hover
+          'active:bg-bg-1', // active
+          'data-[display-state=active]:bg-bg-1', // display active
+          'disabled:opacity-50', // disabled
+          'data-[state=open]:bg-bg-1', // open (e.g. popover trigger)
         ].join(' '),
         tertiary: [
           'size-4 [&_svg]:size-4',
-          'hover:[&_svg]:text-icon',
-          'data-[display-state=hover]:[&_svg]:text-icon',
-          'active:[&_svg]:text-icon',
-          'data-[display-state=active]:[&_svg]:text-icon',
-          'disabled:opacity-50',
+          // auto-shrink to 12×12 when nested inside a Badge (data-slot="badge")
+          'in-data-[slot=badge]:size-3 in-data-[slot=badge]:[&_svg]:size-3',
+          'hover:[&_svg]:text-icon', // hover
+          'data-[display-state=hover]:[&_svg]:text-icon', // display hover
+          'active:[&_svg]:text-icon', // active
+          'data-[display-state=active]:[&_svg]:text-icon', // display active
+          'disabled:opacity-50', // disabled
         ].join(' '),
       },
     },
