@@ -5,7 +5,7 @@ import * as React from 'react'
 
 const iconButtonVariants = cva(
   [
-    'inline-flex items-center cursor-pointer justify-center',
+    'inline-flex items-center cursor-pointer justify-center shrink-0',
     'transition-colors [&_svg]:transition-colors disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
     '[&_svg]:text-icon-tertiary',
   ].join(' '),
