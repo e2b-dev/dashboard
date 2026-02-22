@@ -70,7 +70,6 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           )}
         </Button>
         <CopyButton
-          size="icon"
           variant="secondary"
           value={token ?? ''}
           disabled={!token}
