@@ -84,8 +84,7 @@ const ResourcesFilter = () => {
             />
             {localValues.cpu > 0 && (
               <Button
-                variant="error"
-                size="sm"
+                variant="secondary"
                 onClick={handleClearCpu}
                 className="h-9 text-xs"
               >
@@ -113,10 +112,8 @@ const ResourcesFilter = () => {
             />
             {localValues.memory > 0 && (
               <Button
-                variant="error"
-                size="sm"
+                variant="secondary"
                 onClick={handleClearMemory}
-                className="h-9 text-xs"
               >
                 Clear
               </Button>

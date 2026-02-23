@@ -16,6 +16,7 @@ import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -217,24 +218,22 @@ export function ActionsCell({
         onConfirm={() => deleteTemplate()}
         confirmProps={{
           disabled: isDeleting,
-          loading: isDeleting,
+          loading: isDeleting ? 'Deleting...' : undefined,
         }}
       />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-fg-tertiary size-5"
+          <IconButton
+            className="size-5"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
           >
             {isUpdating ? (
               <Loader className="size-4" />
             ) : (
-              <MoreVertical className="size-4" />
+              <MoreVertical />
             )}
-          </Button>
+          </IconButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuGroup>

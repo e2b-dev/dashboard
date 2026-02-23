@@ -45,8 +45,8 @@ export function TemplatesTableBody({
           title="No Results Found"
           description="No templates match your current filters"
           message={
-            <Button variant="default" onClick={resetFilters}>
-              Reset Filters <X className="text-accent-main-highlight size-4" />
+            <Button onClick={resetFilters}>
+              Reset Filters <X />
             </Button>
           }
           className="h-[70%] max-md:w-screen"
@@ -59,10 +59,10 @@ export function TemplatesTableBody({
         title="No Templates Yet"
         description="Your Templates can be managed here"
         message={
-          <Button variant="default" asChild>
+          <Button asChild>
             <a href="/docs/sandbox-template" target="_blank" rel="noopener">
               Create a Template
-              <ExternalLink className="size-3.5" />
+              <ExternalLink />
             </a>
           </Button>
         }
