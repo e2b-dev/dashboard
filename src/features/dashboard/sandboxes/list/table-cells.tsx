@@ -125,7 +125,7 @@ export function TemplateCell({
   return (
     <Button
       variant="link"
-      className="text-fg prose-table h-auto w-full min-w-0 justify-start overflow-hidden p-0 font-sans normal-case"
+      className="text-fg prose-table h-auto max-w-full justify-start overflow-hidden p-0 font-sans normal-case"
       onClick={(event) => {
         event.stopPropagation()
         event.preventDefault()
@@ -138,7 +138,7 @@ export function TemplateCell({
         router.push(PROTECTED_URLS.TEMPLATES(team.slug ?? team.id))
       }}
     >
-      <span className="truncate">{templateIdentifier}</span>
+      <span className="min-w-0 truncate">{templateIdentifier}</span>
       <ArrowUpRight className="size-3 shrink-0" />
     </Button>
   )
