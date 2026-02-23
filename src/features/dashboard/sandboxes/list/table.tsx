@@ -3,7 +3,6 @@
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
@@ -28,14 +27,11 @@ import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
-import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { SandboxesTableBody } from './table-body'
 import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 import type { SandboxListRow } from './table-config'
 import { getSandboxListEffectiveSorting } from './stores/table-store'
 import type { SandboxStartedAtFilter } from './stores/table-store'
-const ROW_HEIGHT_PX = 32
-const VIRTUAL_OVERSCAN = 8
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -115,7 +111,6 @@ export default function SandboxesTable() {
     templateFilters,
     cpuCount,
     memoryMB,
-    pollingInterval,
     sorting,
     globalFilter,
     setSorting,
@@ -160,30 +155,6 @@ export default function SandboxesTable() {
   })
 
   const columnSizeVars = useColumnSizeVars(table)
-
-  const {
-    virtualRows,
-    totalHeight: virtualizedTotalHeight,
-    paddingTop: virtualPaddingTop,
-    virtualizer,
-  } = useVirtualRows<SandboxListRow>({
-    rows: table.getCenterRows(),
-    scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
-    estimateSizePx: ROW_HEIGHT_PX,
-    overscan: VIRTUAL_OVERSCAN,
-  })
-
-  const visibleSandboxes = useMemo(
-    () => virtualRows.map((row) => row.original),
-    [virtualRows]
-  )
-  const isListScrolling = virtualizer.isScrolling
-
-  useSandboxesMetrics({
-    sandboxes: visibleSandboxes,
-    pollingIntervalMs: pollingInterval === 0 ? 0 : pollingInterval * 1_000,
-    isListScrolling,
-  })
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -247,9 +218,7 @@ export default function SandboxesTable() {
           </DataTableHeader>
           <SandboxesTableBody
             table={table}
-            virtualRows={virtualRows}
-            virtualizedTotalHeight={virtualizedTotalHeight}
-            virtualPaddingTop={virtualPaddingTop}
+            scrollRef={scrollRef}
           />
         </DataTable>
       </div>

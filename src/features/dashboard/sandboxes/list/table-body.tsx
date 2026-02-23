@@ -1,27 +1,32 @@
+import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { DataTableBody } from '@/ui/data-table'
 import { Button } from '@/ui/primitives/button'
-import type { Row } from '@tanstack/react-table'
+import { useMemo, type RefObject } from 'react'
 import { ExternalLink, X } from 'lucide-react'
-import { memo } from 'react'
+import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import SandboxesListEmpty from './empty'
 import { useSandboxListTableStore } from './stores/table-store'
 import type { SandboxListRow, SandboxListTable } from './table-config'
 import { SandboxesTableRow } from './table-row'
 
+const ROW_HEIGHT_PX = 32
+const VIRTUAL_OVERSCAN = 8
+
 interface SandboxesTableBodyProps {
   table: SandboxListTable
-  virtualRows?: Row<SandboxListRow>[]
-  virtualizedTotalHeight?: number
-  virtualPaddingTop?: number
+  scrollRef: RefObject<HTMLDivElement | null>
 }
 
-export const SandboxesTableBody = memo(function SandboxesTableBody({
+export const SandboxesTableBody = ({
   table,
-  virtualRows,
-  virtualizedTotalHeight,
-  virtualPaddingTop = 0,
-}: SandboxesTableBodyProps) {
+  scrollRef,
+}: SandboxesTableBodyProps) => {
+  'use no memo'
+
   const resetFilters = useSandboxListTableStore((state) => state.resetFilters)
+  const pollingInterval = useSandboxListTableStore(
+    (state) => state.pollingInterval
+  )
   const hasFilter = useSandboxListTableStore((state) => {
     return (
       state.startedAtFilter !== undefined ||
@@ -31,11 +36,36 @@ export const SandboxesTableBody = memo(function SandboxesTableBody({
       Boolean(state.globalFilter)
     )
   })
+
   const centerRows = table.getCenterRows()
+  const {
+    virtualRows,
+    totalHeight: virtualizedTotalHeight,
+    paddingTop: virtualPaddingTop,
+    virtualizer,
+  } = useVirtualRows<SandboxListRow>({
+    rows: centerRows,
+    scrollRef,
+    estimateSizePx: ROW_HEIGHT_PX,
+    overscan: VIRTUAL_OVERSCAN,
+  })
+
   // During initial virtualizer mount, virtualRows can be temporarily empty
   // even when centerRows already has data.
-  const rows =
-    virtualRows && virtualRows.length > 0 ? virtualRows : centerRows
+  const rows = virtualRows.length > 0 ? virtualRows : centerRows
+
+  const visibleSandboxes = useMemo(
+    () => rows.map((row) => row.original),
+    [rows]
+  )
+  const isListScrolling = virtualizer.isScrolling
+
+  useSandboxesMetrics({
+    sandboxes: visibleSandboxes,
+    pollingIntervalMs: pollingInterval === 0 ? 0 : pollingInterval * 1_000,
+    isListScrolling,
+  })
+
   const isEmpty = centerRows.length === 0
 
   if (isEmpty) {
@@ -81,4 +111,4 @@ export const SandboxesTableBody = memo(function SandboxesTableBody({
       ))}
     </DataTableBody>
   )
-})
+}

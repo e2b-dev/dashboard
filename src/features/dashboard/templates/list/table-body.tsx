@@ -1,41 +1,46 @@
+import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { Template } from '@/types/api.types'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
 import { flexRender, Row, Table } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
-import { useMemo } from 'react'
+import { type RefObject } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
+
+const ROW_HEIGHT_PX = 32
+const VIRTUAL_OVERSCAN = 8
 
 interface TemplatesTableBodyProps {
   templates: Template[] | undefined
   table: Table<Template>
-  virtualizedTotalHeight?: number
-  virtualPaddingTop?: number
-  virtualRows?: Row<Template>[]
+  scrollRef: RefObject<HTMLDivElement | null>
 }
 
 export function TemplatesTableBody({
   templates,
   table,
-  virtualizedTotalHeight,
-  virtualPaddingTop = 0,
-  virtualRows,
+  scrollRef,
 }: TemplatesTableBodyProps) {
   'use no memo'
 
   const resetFilters = useTemplateTableStore((state) => state.resetFilters)
 
   const centerRows = table.getCenterRows()
-  const visualRows = useMemo(() => {
-    // During initial virtualizer mount, virtualRows can be temporarily empty
-    // even when centerRows already has data.
-    if (virtualRows && virtualRows.length > 0) {
-      return virtualRows
-    }
+  const {
+    virtualRows,
+    totalHeight: virtualizedTotalHeight,
+    paddingTop: virtualPaddingTop,
+  } = useVirtualRows<Template>({
+    rows: centerRows,
+    scrollRef,
+    estimateSizePx: ROW_HEIGHT_PX,
+    overscan: VIRTUAL_OVERSCAN,
+  })
 
-    return centerRows
-  }, [centerRows, virtualRows])
+  // During initial virtualizer mount, virtualRows can be temporarily empty
+  // even when centerRows already has data.
+  const rows = virtualRows.length > 0 ? virtualRows : centerRows
 
   const isEmpty = templates && centerRows.length === 0
 
@@ -80,7 +85,7 @@ export function TemplatesTableBody({
   return (
     <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
       {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-      {visualRows.map((row) => (
+      {rows.map((row) => (
         <DataTableRow
           key={row.id}
           isSelected={row.getIsSelected()}

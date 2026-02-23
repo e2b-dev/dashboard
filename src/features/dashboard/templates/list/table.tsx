@@ -2,7 +2,6 @@
 
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Template } from '@/types/api.types'
@@ -30,9 +29,6 @@ import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
-
-const ROW_HEIGHT_PX = 32
-const VIRTUAL_OVERSCAN = 8
 
 export default function TemplatesTable() {
   'use no memo'
@@ -150,14 +146,6 @@ export default function TemplatesTable() {
     resetScroll()
   }, [sorting, globalFilter])
 
-  const centerRows = table.getCenterRows()
-  const { virtualRows, totalHeight, paddingTop } = useVirtualRows<Template>({
-    rows: centerRows,
-    scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
-    estimateSizePx: ROW_HEIGHT_PX,
-    overscan: VIRTUAL_OVERSCAN,
-  })
-
   if (templatesError) {
     return (
       <ErrorBoundary
@@ -226,9 +214,7 @@ export default function TemplatesTable() {
           <TableBody
             templates={templates}
             table={table}
-            virtualizedTotalHeight={totalHeight}
-            virtualPaddingTop={paddingTop}
-            virtualRows={virtualRows}
+            scrollRef={scrollRef}
           />
         </DataTable>
       </div>
