@@ -2,7 +2,7 @@
 
 import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
 import { cn } from '@/lib/utils'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   Card,
   CardContent,
@@ -95,18 +95,17 @@ function UsageMetricChartContent({
             onBrushEnd={onBrushEnd}
           />
           {isChartHovered && !isFullscreen && (
-            <Button
+            <IconButton
               onClick={() => setFullscreenMetric(metric)}
-              variant="ghost"
-              size="icon-sm"
+              variant="secondary"
               className={cn(
                 cardVariants({ variant: 'layer' }),
                 'hidden lg:flex absolute top-4 right-4 opacity-70 hover:opacity-100 animate-fade-slide-in'
               )}
               aria-label="Expand chart to fullscreen"
             >
-              <Maximize2 className="size-4" />
-            </Button>
+              <Maximize2 />
+            </IconButton>
           )}
         </div>
       </CardContent>
@@ -145,7 +144,6 @@ export function UsageMetricChart({
       >
         <DialogContent
           className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full p-0"
-          closeButtonClassName="top-7.5 right-6.5"
         >
           {/* title just here to avoid accessibility dev error from radix */}
           <DialogTitle className="sr-only">

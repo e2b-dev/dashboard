@@ -132,8 +132,7 @@ export function UsageTimeRangeControls({
   return (
     <div className={cn('flex items-end', className)}>
       <Button
-        size="sm"
-        variant="outline"
+        variant="secondary"
         onClick={handlePreviousRange}
         className="border-r-0 px-2"
         title="Move back by one-quarter of the range"
@@ -142,16 +141,14 @@ export function UsageTimeRangeControls({
       </Button>
       <CopyButton
         value={rangeCopyValue}
-        size="sm"
-        variant="outline"
+        variant="secondary"
         title="Copy ISO 8601 time interval"
         className="border-r-0"
       />
       <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
         <PopoverTrigger asChild>
           <Button
-            size="sm"
-            variant="outline"
+            variant="secondary"
             className={cn('prose-label font-sans', 'border-r-0')}
           >
             {rangeLabel}
@@ -185,8 +182,7 @@ export function UsageTimeRangeControls({
         </PopoverContent>
       </Popover>
       <Button
-        size="sm"
-        variant="outline"
+        variant="secondary"
         onClick={handleNextRange}
         className="px-2"
         title="Move forward by one-quarter of the range"
