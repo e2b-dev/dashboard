@@ -6,7 +6,8 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--fg-tertiary);
+  background-color: var(--bg-highlight);
+  border-radius: 2px;
 }
 
 *::selection {

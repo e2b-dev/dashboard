@@ -1,28 +1,26 @@
-'use client'
-
 import DashboardEmptyFrame from '@/features/dashboard/common/empty-frame'
 import type { ReactNode } from 'react'
 
-interface SandboxInspectEmptyFrameProps {
+interface SandboxesListEmptyProps {
   title: ReactNode
   description: ReactNode
   actions?: ReactNode
   className?: string
 }
 
-export default function SandboxInspectEmptyFrame({
+export default function SandboxesListEmpty({
   title,
   description,
   actions,
   className,
-}: SandboxInspectEmptyFrameProps) {
+}: SandboxesListEmptyProps) {
   return (
     <DashboardEmptyFrame
       title={title}
-      description={<p>{description}</p>}
+      description={description}
       actions={actions}
       className={className}
-      descriptionPlacement="content"
+      descriptionPlacement="header"
     />
   )
 }
