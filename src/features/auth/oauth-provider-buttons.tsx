@@ -14,7 +14,7 @@ export function OAuthProviders() {
   return (
     <div className="mt-4 flex flex-col gap-2">
       <Button
-        variant="muted"
+        variant="secondary"
         onClick={() => execute({ provider: 'google', returnTo: returnTo || undefined })}
         className="flex items-center gap-2"
         disabled={isTransitioning}
@@ -41,7 +41,7 @@ export function OAuthProviders() {
       </Button>
 
       <Button
-        variant="muted"
+        variant="secondary"
         onClick={() => execute({ provider: 'github', returnTo: returnTo || undefined })}
         className="flex items-center gap-2"
         disabled={isTransitioning}

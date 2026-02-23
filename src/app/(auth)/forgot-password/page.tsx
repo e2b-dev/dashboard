@@ -103,7 +103,7 @@ export default function ForgotPassword() {
           placeholder="you@example.com"
           required
         />
-        <Button type="submit" loading={isExecuting}>
+        <Button type="submit" loading={isExecuting ? 'Sending...' : undefined}>
           Reset Password
         </Button>
       </form>

@@ -181,7 +181,7 @@ export default function SignUp() {
 
           <Button
             type="submit"
-            loading={isExecuting}
+            loading={isExecuting ? 'Signing up...' : undefined}
             disabled={CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken}
           >
             Sign up
