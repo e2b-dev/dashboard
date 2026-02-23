@@ -257,7 +257,7 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
             type="submit"
             disabled={!form.formState.isDirty}
             className="w-fit self-end mt-auto"
-            variant="outline"
+            variant="secondary"
           >
             Apply
           </Button>

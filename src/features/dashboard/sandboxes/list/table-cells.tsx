@@ -13,6 +13,7 @@ import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { Template } from '@/types/api.types'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,18 +82,16 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
           e.preventDefault()
         }}
       >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-fg-tertiary size-5"
+        <IconButton
+          className="size-5"
           disabled={isKilling || sandbox.state !== 'running'}
         >
           {isKilling ? (
-            <Loader className="size-4" />
+            <Loader />
           ) : (
-            <MoreVertical className="size-4" />
+            <MoreVertical />
           )}
-        </Button>
+        </IconButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
@@ -115,13 +114,12 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
                   <div className="flex items-center gap-2 justify-end">
                     <Button
                       variant="error"
-                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleKill()
                       }}
                       disabled={isKilling}
-                      loading={isKilling}
+                      loading={isKilling ? 'Killing...' : undefined}
                     >
                       Kill Sandbox
                     </Button>
