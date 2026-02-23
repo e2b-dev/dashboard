@@ -117,9 +117,9 @@ function PlanDetails({
       <div className="flex items-start justify-between gap-4 max-lg:flex-col">
         <PlanTitle selectedTier={selectedTier} isLoading={isLoading} />
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap">
           {isOnPlanPage ? (
-            <Button variant="outline" asChild>
+            <Button variant="secondary" asChild>
               <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
                 Change Plan
               </Link>
@@ -129,23 +129,23 @@ function PlanDetails({
           ) : (
             <>
               {isBaseTier ? (
-                <Button variant="default" asChild>
+                <Button asChild>
                   <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
                     <UpgradeIcon className="size-4" />
                     Upgrade for higher concurrency
                   </Link>
                 </Button>
               ) : (
-                <Button variant="outline" asChild>
+                <Button variant="secondary" asChild>
                   <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)}>
                     Manage plan & add-ons
                   </Link>
                 </Button>
               )}
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={handleManagePayment}
-                loading={isPortalLoading}
+                loading={isPortalLoading ? 'Loading...' : undefined}
                 disabled={isPortalLoading}
               >
                 Manage payment

@@ -174,10 +174,10 @@ export default function BillingInvoicesTable() {
                   {formatCurrency(invoice.cost)}
                 </TableCell>
                 <TableCell className="text-end py-0">
-                  <Button variant="ghost" size="slate" asChild>
+                  <Button variant="tertiary" size="none" asChild>
                     <Link href={invoice.url} target="_blank">
                       View
-                      <ExternalLinkIcon className="size-3 text-fg-tertiary" />
+                      <ExternalLinkIcon />
                     </Link>
                   </Button>
                 </TableCell>

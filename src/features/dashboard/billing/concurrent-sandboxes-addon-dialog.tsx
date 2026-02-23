@@ -189,11 +189,9 @@ function DialogContent_Inner({
 
         {!showPaymentForm && !isProcessing ? (
           <Button
-            variant="default"
-            size="lg"
             className="w-full justify-center"
             onClick={handlePurchase}
-            loading={isProcessing}
+            loading={isProcessing ? 'Processing...' : undefined}
             disabled={isProcessing}
           >
             Increase Concurrency Limit
@@ -377,10 +375,8 @@ function PaymentElementForm({
       {!isProcessing ? (
         <Button
           type="submit"
-          variant="default"
-          size="lg"
           className="w-full justify-center mt-6"
-          loading={isProcessing}
+          loading={isProcessing ? 'Processing...' : undefined}
           disabled={!stripe || isProcessing}
         >
           Increase Concurrency Limit
