@@ -42,7 +42,7 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
             'overflow-hidden border'
           )}
         >
-          <CardHeader className="!p-4">
+          <CardHeader className="p-4!">
             <CardTitle className="inline-flex items-center gap-2">
               <AlertTriangle className="size-5 text-accent-warning-highlight" />
               <span className="prose-headline-small uppercase">

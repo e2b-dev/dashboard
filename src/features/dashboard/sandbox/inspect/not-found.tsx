@@ -86,42 +86,42 @@ export default function SandboxInspectNotFound() {
                 : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'}
             </p>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 pt-4">
+          <CardFooter className="flex flex-col gap-1 pt-4">
             {isRunning ? (
               <>
-                <div className="flex w-full justify-between gap-4">
+                <div className="flex w-full gap-1">
                   <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
+                    variant="secondary"
+                    className="flex-1"
                     onClick={() => setRootPath('')}
                     disabled={isPending && pendingPath === ''}
                   >
-                    <Home className="text-fg-tertiary h-4 w-4" />
+                    <Home />
                     Reset
                   </Button>
                   <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
+                    variant="secondary"
+                    className="flex-1"
                     onClick={() => setRootPath('/')}
                     disabled={isPending && pendingPath === '/'}
                   >
-                    <ArrowUp className="text-fg-tertiary h-4 w-4" />
+                    <ArrowUp />
                     To Root
                   </Button>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() =>
                     resetTransition(async () => {
                       router.refresh()
                     })
                   }
-                  className="w-full gap-2"
+                  className="w-full"
                   disabled={isResetPending}
                 >
                   <RefreshCw
                     className={cn(
-                      'text-fg-tertiary h-4 w-4 transition-transform',
+                      'transition-transform',
                       {
                         'animate-spin': isResetPending,
                       }
@@ -132,13 +132,13 @@ export default function SandboxInspectNotFound() {
               </>
             ) : (
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() =>
                   router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
                 }
-                className="w-full gap-2"
+                className="w-full"
               >
-                <ArrowLeft className="text-fg-tertiary h-4 w-4" />
+                <ArrowLeft />
                 Back to Sandboxes
               </Button>
             )}

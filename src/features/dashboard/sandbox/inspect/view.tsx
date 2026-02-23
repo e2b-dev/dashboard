@@ -19,7 +19,7 @@ export default function SandboxInspectView({
     <SandboxInspectProvider rootPath={rootPath} seedEntries={seedEntries}>
       <div
         className={cn(
-          'flex flex-1 gap-4 overflow-hidden p-3 md:p-6',
+          'flex flex-1 gap-1 overflow-hidden p-3 md:p-6',
           'max-md:sticky max-md:top-0 max-md:min-h-[calc(100vh-var(--protected-navbar-height))]'
         )}
       >

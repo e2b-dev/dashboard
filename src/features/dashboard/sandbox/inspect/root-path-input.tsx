@@ -77,8 +77,8 @@ export default function RootPathInput({
       />
 
       <Button
-        className="z-20 mr-1.5 h-7 absolute right-0 top-1/2 -translate-y-1/2 active:-translate-y-1/2"
-        size="sm"
+        className="z-20 mr-1.5 absolute right-0 top-1/2 -translate-y-1/2 active:-translate-y-1/2"
+        variant="tertiary"
         disabled={isPending || !isDirty}
         type="submit"
       >

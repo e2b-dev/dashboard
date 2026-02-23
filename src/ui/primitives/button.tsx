@@ -46,7 +46,7 @@ const buttonVariants = cva(
           'data-[display-state=hover]:text-fg data-[display-state=hover]:underline', // duplicated hover, for display purposes
           'active:text-fg active:[&_svg]:text-icon', // active
           'data-[display-state=active]:text-fg data-[display-state=active]:[&_svg]:text-icon', // duplicated active, for display purposes
-          'disabled:opacity-65 text-fg-tertiary', // disabled
+          'disabled:opacity-65 disabled:text-fg-tertiary', // disabled
         ].join(' '),
         quaternary: [
           'prose-body-highlight',

@@ -1,5 +1,5 @@
 import CopyButton from '@/ui/copy-button'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { FileContentState } from './filesystem/store'
@@ -30,16 +30,11 @@ export default function SandboxInspectViewerHeader({
         <CopyButton value={fileContentState.text} />
       )}
 
-      <Button variant="quaternary" size="icon-sm" onClick={onDownload}>
-        <Download className="h-4 w-4" />
-      </Button>
+      <IconButton onClick={onDownload}>
+        <Download />
+      </IconButton>
 
-      <Button
-        variant="quaternary"
-        size="icon-sm"
-        onClick={onRefresh}
-        disabled={isLoading}
-      >
+      <IconButton onClick={onRefresh} disabled={isLoading}>
         <motion.div
           initial={false}
           animate={{ rotate: isLoading ? 360 : 0 }}
@@ -51,13 +46,13 @@ export default function SandboxInspectViewerHeader({
             bounce: 0,
           }}
         >
-          <RefreshCcw className="h-4 w-4" />
+          <RefreshCcw />
         </motion.div>
-      </Button>
+      </IconButton>
 
-      <Button variant="quaternary" size="icon-sm" onClick={onClose}>
-        <X className="h-4 w-4" />
-      </Button>
+      <IconButton onClick={onClose}>
+        <X />
+      </IconButton>
     </div>
   )
 }

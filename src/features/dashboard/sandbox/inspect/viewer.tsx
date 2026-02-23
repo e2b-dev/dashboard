@@ -155,9 +155,9 @@ function TextContent({
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
         <span className="text-fg-secondary">This file is empty.</span>
-        <Button variant="warning" size="sm" onClick={onDownload}>
+        <Button variant="secondary" onClick={onDownload}>
           Download
-          <Download className="ml-1.5 h-4 w-4" />
+          <Download />
         </Button>
       </div>
     )
@@ -216,9 +216,9 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
         <span className="text-fg-secondary">
           File is too large to preview ({sizeMB} MB). Limit is {maxSizeMB} MB.
         </span>
-        <Button variant="warning" size="sm" onClick={onDownload}>
+        <Button variant="secondary" onClick={onDownload}>
           Download
-          <Download className="ml-1.5 h-4 w-4" />
+          <Download />
         </Button>
       </div>
     )
@@ -227,9 +227,9 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3">
       <span className="text-fg-secondary">This file is not readable.</span>
-      <Button variant="warning" size="sm" onClick={onDownload}>
+      <Button variant="secondary" onClick={onDownload}>
         Download
-        <Download className="ml-1.5 h-4 w-4" />
+        <Download />
       </Button>
     </div>
   )
