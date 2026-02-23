@@ -1,7 +1,7 @@
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { DataTableBody } from '@/ui/data-table'
 import { Button } from '@/ui/primitives/button'
-import { useMemo, type RefObject } from 'react'
+import { type RefObject } from 'react'
 import { ExternalLink, X } from 'lucide-react'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import SandboxesListEmpty from './empty'
@@ -54,10 +54,7 @@ export const SandboxesTableBody = ({
   // even when centerRows already has data.
   const rows = virtualRows.length > 0 ? virtualRows : centerRows
 
-  const visibleSandboxes = useMemo(
-    () => rows.map((row) => row.original),
-    [rows]
-  )
+  const visibleSandboxes = rows.map((row) => row.original)
   const isListScrolling = virtualizer.isScrolling
 
   useSandboxesMetrics({

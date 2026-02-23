@@ -1,10 +1,28 @@
-import { DataTableRow } from '@/ui/data-table'
-import NodeLabel from './node-label'
+'use client'
 
-export default function SandboxInspectEmptyNode() {
+import DashboardEmptyFrame from '@/features/dashboard/common/empty-frame'
+import type { ReactNode } from 'react'
+
+interface SandboxInspectEmptyFrameProps {
+  title: ReactNode
+  description: ReactNode
+  actions?: ReactNode
+  className?: string
+}
+
+export default function SandboxInspectEmptyFrame({
+  title,
+  description,
+  actions,
+  className,
+}: SandboxInspectEmptyFrameProps) {
   return (
-    <DataTableRow className="text-fg-tertiary border-b-0 h-7 cursor-default gap-1.5 px-2.25 italic select-none group-[data-slot=inspect-dir]:px-2">
-      <NodeLabel name="[empty directory]" className="text-fg-tertiary" />
-    </DataTableRow>
+    <DashboardEmptyFrame
+      title={title}
+      description={<p>{description}</p>}
+      actions={actions}
+      className={className}
+      descriptionPlacement="content"
+    />
   )
 }

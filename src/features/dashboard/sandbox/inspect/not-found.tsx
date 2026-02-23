@@ -10,7 +10,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { serializeError } from 'serialize-error'
 import { useSandboxContext } from '../context'
-import SandboxInspectEmptyFrame from './empty-frame'
+import SandboxInspectEmptyFrame from './empty'
 
 export default function SandboxInspectNotFound() {
   const router = useRouter()
