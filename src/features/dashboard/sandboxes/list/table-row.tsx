@@ -15,13 +15,12 @@ export const SandboxesTableRow = memo(function SandboxesTableRow({
 }: SandboxesTableRowProps) {
   const { teamIdOrSlug } =
     useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
-  const sandboxDetailHref = PROTECTED_URLS.SANDBOX_INSPECT(
-    teamIdOrSlug,
-    row.original.sandboxID
-  )
 
   return (
-    <Link href={sandboxDetailHref} prefetch={false}>
+    <Link
+      href={PROTECTED_URLS.SANDBOX_LOGS(teamIdOrSlug, row.original.sandboxID)}
+      prefetch={false}
+    >
       <DataTableRow
         className="h-8 cursor-pointer hover:bg-bg-1"
         isSelected={row.getIsSelected()}
