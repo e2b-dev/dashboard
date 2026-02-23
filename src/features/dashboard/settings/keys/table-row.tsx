@@ -11,7 +11,7 @@ import { exponentialSmoothing } from '@/lib/utils'
 import { deleteApiKeyAction } from '@/server/keys/key-actions'
 import { TeamAPIKey } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +93,7 @@ export default function ApiKeyTableRow({
         onConfirm={deleteKey}
         confirmProps={{
           disabled: isDeleting,
-          loading: isDeleting,
+          loading: isDeleting ? 'Deleting...' : undefined,
         }}
       />
 
@@ -123,7 +123,7 @@ export default function ApiKeyTableRow({
         <TableCell className="text-right">
           <DropdownMenu onOpenChange={setDropDownOpen}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-xs" asChild>
+              <IconButton asChild>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -135,9 +135,9 @@ export default function ApiKeyTableRow({
                     ease: exponentialSmoothing(5),
                   }}
                 >
-                  <MoreHorizontal className="size-4" />
+                  <MoreHorizontal />
                 </motion.button>
-              </Button>
+              </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuGroup>
@@ -148,7 +148,7 @@ export default function ApiKeyTableRow({
                   onClick={() => setIsDeleteDialogOpen(true)}
                   disabled={isDeleting}
                 >
-                  X Delete
+                  Delete
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>

@@ -110,7 +110,7 @@ export function NameCard({ className }: NameCardProps) {
         <Form {...form}>
           <form
             onSubmit={handleSubmitWithAction}
-            className="flex max-w-sm gap-2 mt-auto"
+            className="flex max-w-sm gap-1 mt-auto"
           >
             <FormField
               control={form.control}

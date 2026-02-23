@@ -1,7 +1,7 @@
 'use client'
 
 import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,9 +100,9 @@ export default function WebhookTableRow({
       <TableCell className="text-right w-[5%]">
         <DropdownMenu onOpenChange={setDropDownOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="tertiary" size="icon-sm">
-              <MoreHorizontal className="size-4" />
-            </Button>
+            <IconButton>
+              <MoreHorizontal />
+            </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
