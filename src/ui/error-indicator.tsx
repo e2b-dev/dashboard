@@ -50,12 +50,12 @@ export function ErrorIndicator({
       )}
       <CardFooter className="px-auto flex flex-col gap-4 py-4">
         <Button
-          variant="outline"
+          variant="secondary"
           onClick={() => startTransition(() => router.refresh())}
-          className="w-full max-w-md gap-2"
+          className="w-full max-w-md gap-1"
         >
           <RefreshCcw
-            className={`text-fg-tertiary h-4 w-4 duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
+            className={`duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
           />
           Refresh
         </Button>

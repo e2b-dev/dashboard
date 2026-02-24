@@ -129,9 +129,7 @@ export const CodeBlock = forwardRef<HTMLElement, CodeBlockProps>(
         ) : (
           allowCopy && (
             <CopyButton
-              className="absolute top-2 right-2 z-[2]"
-              variant="ghost"
-              size="slate"
+              className="absolute top-2 right-2 z-2"
               value={typeof children === 'string' ? children : ''}
             />
           )

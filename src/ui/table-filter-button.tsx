@@ -16,7 +16,7 @@ export const TableFilterButton = React.forwardRef<
     <Button
       ref={ref}
       variant="secondary"
-      className="max-w-56 gap-2"
+      className="max-w-56"
       suppressHydrationWarning
       {...props}
     >
@@ -27,7 +27,7 @@ export const TableFilterButton = React.forwardRef<
           <span className="truncate text-fg">{value}</span>
         </>
       )}
-      <X className="size-4 min-w-4 text-fg-tertiary" />
+      <X />
     </Button>
   )
 })

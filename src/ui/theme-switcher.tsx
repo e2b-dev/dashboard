@@ -1,7 +1,7 @@
 'use client'
 
 import useIsMounted from '@/lib/hooks/use-is-mounted'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,18 +24,16 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
     return null
   }
 
-  const ICON_SIZE = 16
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={className} asChild>
-        <Button variant="tertiary" size="icon-sm">
+        <IconButton>
           {resolvedTheme === 'light' ? (
-            <Sun key="light" size={ICON_SIZE} className={'text-fg-secondary'} />
+            <Sun key="light" />
           ) : (
-            <Moon key="dark" size={ICON_SIZE} className={'text-fg-secondary'} />
+            <Moon key="dark" />
           )}
-        </Button>
+        </IconButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-[130px]" align="start">
         <DropdownMenuRadioGroup

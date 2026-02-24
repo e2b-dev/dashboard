@@ -161,7 +161,8 @@ function CopyButton({
       type="button"
       className={cn(
         buttonVariants({
-          variant: 'ghost',
+          variant: 'tertiary',
+          size: 'none',
         }),
         'transition-opacity group-hover:opacity-100 [&_svg]:size-3.5',
         !isCopied && '[@media(hover:hover)]:opacity-0',

@@ -11,7 +11,7 @@ import {
 } from '@/lib/utils/formatting'
 
 import { NumberInput } from './number-input'
-import { Button } from './primitives/button'
+import { IconButton } from './primitives/icon-button'
 import { Calendar } from './primitives/calendar'
 import { Input } from './primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
@@ -150,16 +150,13 @@ export const TimeInput = memo(function TimeInput({
               'placeholder:prose-label'
             )}
           />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2">
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
             <PopoverTrigger asChild>
-              <Button
-                variant="tertiary"
-                size="icon"
-                className=" h-8 w-8"
+              <IconButton
                 tabIndex={-1}
               >
-                <CalendarIcon className="size-4 text-fg-tertiary" />
-              </Button>
+                <CalendarIcon />
+              </IconButton>
             </PopoverTrigger>
           </div>
         </div>
@@ -196,20 +193,17 @@ export const TimeInput = memo(function TimeInput({
                 'placeholder:prose-label'
               )}
             />
-            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <span className="prose-label text-fg-tertiary font-mono">
                 {getTimezoneIdentifier()}
               </span>
 
               <PopoverTrigger asChild>
-                <Button
-                  variant="tertiary"
-                  size="icon"
-                  className="h-8 w-8"
+                <IconButton
                   tabIndex={-1}
                 >
-                  <ClockIcon className="size-4 text-fg-tertiary" />
-                </Button>
+                  <ClockIcon />
+                </IconButton>
               </PopoverTrigger>
             </div>
           </div>

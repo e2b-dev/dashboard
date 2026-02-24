@@ -257,32 +257,32 @@ function DataTablePagination({
         </div>
         <div className="flex items-center gap-1">
           <Button
-            variant="secondary"
-            size="icon-sm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(0)}
             disabled={pageIndex === 0}
           >
             ««
           </Button>
           <Button
-            variant="secondary"
-            size="icon-sm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(pageIndex - 1)}
             disabled={pageIndex === 0}
           >
             «
           </Button>
           <Button
-            variant="secondary"
-            size="icon-sm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(pageIndex + 1)}
             disabled={pageIndex === pageCount - 1}
           >
             »
           </Button>
           <Button
-            variant="secondary"
-            size="icon-sm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(pageCount - 1)}
             disabled={pageIndex === pageCount - 1}
           >

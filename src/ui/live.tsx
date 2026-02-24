@@ -51,7 +51,6 @@ export function LiveBadge({
   return (
     <Badge
       variant="positive"
-      typography="regular"
       className={cn(
         'transition-all duration-200',
         {
