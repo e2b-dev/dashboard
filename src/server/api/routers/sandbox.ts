@@ -114,9 +114,7 @@ export const sandboxRouter = createTRPCRouter({
         }
       )
 
-      return {
-        metrics,
-      }
+      return metrics
     }),
 
   // MUTATIONS

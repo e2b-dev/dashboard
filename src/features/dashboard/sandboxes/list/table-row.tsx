@@ -18,7 +18,7 @@ export const SandboxesTableRow = memo(function SandboxesTableRow({
 
   return (
     <Link
-      href={PROTECTED_URLS.SANDBOX_LOGS(teamIdOrSlug, row.original.sandboxID)}
+      href={PROTECTED_URLS.SANDBOX(teamIdOrSlug, row.original.sandboxID)}
       prefetch={false}
     >
       <DataTableRow

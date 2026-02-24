@@ -30,6 +30,8 @@ export const PROTECTED_URLS = {
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/logs`,
+  SANDBOX_MONITORING: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/monitoring`,
   SANDBOX_FILESYSTEM: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/filesystem`,
   SANDBOX_LOGS: (teamIdOrSlug: string, sandboxId: string) =>

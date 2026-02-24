@@ -3,7 +3,6 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { TRPCError } from '@trpc/server'
 import { apiError } from '../errors'
-import { SandboxMetricsDTO } from '../models/sandboxes.models'
 
 // get sandbox logs
 
@@ -124,11 +123,7 @@ export async function getSandboxMetrics(
     throw apiError(status)
   }
 
-  const dto: SandboxMetricsDTO = {
-    metrics: result.data,
-  }
-
-  return dto
+  return result.data
 }
 
 export const sandboxesRepo = {

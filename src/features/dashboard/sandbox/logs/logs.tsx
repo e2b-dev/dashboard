@@ -178,9 +178,7 @@ function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
       ? `This sandbox has exceeded the ${LOG_RETENTION_DAYS} day retention limit.`
       : 'Sandbox logs will appear here once available.'
 
-  return (
-    <LogsEmptyBody description={description} />
-  )
+  return <LogsEmptyBody description={description} />
 }
 
 interface VirtualizedLogsBodyProps {
