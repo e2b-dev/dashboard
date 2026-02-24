@@ -93,14 +93,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, loading, ...props }, ref) => {
     if (loading) {
       return (
-        <div
-          className={cn(
-            buttonVariants({ variant: 'quaternary', size, className }),
-            'gap-2! hover:text-fg-tertiary cursor-default active:text-fg-tertiary select-none'
-          )}
+        <button
+          {...props}
+          className={cn(buttonVariants({ variant, size, className }))}
+          disabled
+          ref={ref}
         >
           <Loader variant="slash" className="min-w-2" /> {loading}
-        </div>
+        </button>
       )
     }
 
