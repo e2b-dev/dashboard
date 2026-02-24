@@ -3,7 +3,7 @@
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { getUserAccessTokenAction } from '@/server/user/user-actions'
 import CopyButton from '@/ui/copy-button'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
 import { Eye, EyeOff } from 'lucide-react'
@@ -43,10 +43,9 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           readOnly
           className="bg-bg-1 font-mono"
         />
-        <Button
+        <IconButton
           type="button"
           variant="secondary"
-          size="icon"
           onClick={() => {
             if (token) {
               setIsVisible(!isVisible)
@@ -68,7 +67,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           ) : (
             <Eye />
           )}
-        </Button>
+        </IconButton>
         <CopyButton
           variant="secondary"
           value={token ?? ''}
