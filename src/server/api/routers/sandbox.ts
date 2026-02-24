@@ -1,3 +1,4 @@
+import { SandboxIdSchema } from '@/lib/schemas/api'
 import { z } from 'zod'
 import { createTRPCRouter } from '../init'
 import {
@@ -14,7 +15,7 @@ export const sandboxRouter = createTRPCRouter({
   logsBackwardsReversed: protectedTeamProcedure
     .input(
       z.object({
-        sandboxId: z.string(),
+        sandboxId: SandboxIdSchema,
         cursor: z.number().optional(),
       })
     )
@@ -54,7 +55,7 @@ export const sandboxRouter = createTRPCRouter({
   logsForward: protectedTeamProcedure
     .input(
       z.object({
-        sandboxId: z.string(),
+        sandboxId: SandboxIdSchema,
         cursor: z.number().optional(),
       })
     )
@@ -88,6 +89,34 @@ export const sandboxRouter = createTRPCRouter({
       }
 
       return result
+    }),
+
+  resourceMetrics: protectedTeamProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema,
+        startMs: z.number(),
+        endMs: z.number(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId, session } = ctx
+      const { sandboxId } = input
+      const { startMs, endMs } = input
+
+      const metrics = await sandboxesRepo.getSandboxMetrics(
+        session.access_token,
+        teamId,
+        sandboxId,
+        {
+          startUnixMs: startMs,
+          endUnixMs: endMs,
+        }
+      )
+
+      return {
+        metrics,
+      }
     }),
 
   // MUTATIONS
