@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   CardContent,
   CardDescription,
@@ -71,19 +72,16 @@ export function SurveyContent({
                 ? // Emoji ratings
                   (question.scale === 3 ? EMOJIS_3 : EMOJIS_5).map(
                     (emoji, emojiIndex) => (
-                      <Button
+                      <IconButton
                         key={emojiIndex}
                         type="button"
-                        variant={'tertiary'}
-                        size="icon-lg"
-                        className={cn(
-                          'text-fg-tertiary hover:text-fg-secondary size-14 hover:scale-[1.03]',
-                          {
-                            'bg-bg-highlight focus:bg-bg-highlight text-fg border':
-                              responses[currentQuestionIndex] ===
-                              String(emojiIndex + 1),
-                          }
-                        )}
+                        variant="secondary"
+                        size="xl"
+                        className="border-transparent hover:scale-[1.03]"
+                        data-selected={
+                          responses[currentQuestionIndex] ===
+                          String(emojiIndex + 1)
+                        }
                         onClick={() =>
                           setResponses((prev) => ({
                             ...prev,
@@ -92,7 +90,7 @@ export function SurveyContent({
                         }
                       >
                         {emoji}
-                      </Button>
+                      </IconButton>
                     )
                   )
                 : // Numeric ratings
@@ -104,9 +102,10 @@ export function SurveyContent({
                         variant={
                           responses[currentQuestionIndex] === String(num)
                             ? 'primary'
-                            : 'secondary'
+                            : 'tertiary'
                         }
-                        size="icon-lg"
+                        size="none"
+                        className="size-9"
                         onClick={() =>
                           setResponses((prev) => ({
                             ...prev,

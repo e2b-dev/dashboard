@@ -21,6 +21,7 @@ const iconButtonVariants = cva(
           'data-[display-state=active]:bg-bg-1', // display active
           'disabled:opacity-50', // disabled
           'data-[state=open]:bg-bg-1', // open (e.g. popover trigger)
+          'data-[selected=true]:bg-bg-1 data-[selected=true]:border-stroke-active data-[selected=true]:[&_svg]:text-fg', // selected
         ].join(' '),
         tertiary: [
           'size-4 [&_svg]:size-4',
@@ -33,9 +34,14 @@ const iconButtonVariants = cva(
           'disabled:opacity-50', // disabled
         ].join(' '),
       },
+      size: {
+        default: '',
+        xl: 'size-14 [&_svg]:size-7',
+      },
     },
     defaultVariants: {
       variant: 'tertiary',
+      size: 'default',
     },
   }
 )
@@ -47,11 +53,11 @@ export interface IconButtonProps
 }
 
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, variant, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     return (
       <Comp
-        className={cn(iconButtonVariants({ variant, className }))}
+        className={cn(iconButtonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
       />
