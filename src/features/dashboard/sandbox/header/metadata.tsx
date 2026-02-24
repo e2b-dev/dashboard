@@ -8,10 +8,7 @@ import { useSandboxContext } from '../context'
 export default function Metadata() {
   const { sandboxInfo } = useSandboxContext()
 
-  // TODO: remove mock metadata
-  const mockMetadata = { env: 'production', version: '1.2.3', user: 'test-user' }
-
-  if (!sandboxInfo?.metadata && !mockMetadata) {
+  if (!sandboxInfo?.metadata) {
     return (
       <Badge>
         <CircleSlash className="size-3.5" /> N/A
@@ -21,7 +18,7 @@ export default function Metadata() {
 
   return (
     <JsonPopover
-      json={sandboxInfo?.metadata || mockMetadata}
+      json={sandboxInfo?.metadata}
     >
       <Braces className="size-3.5" />
       Metadata
