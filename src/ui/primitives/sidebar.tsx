@@ -283,8 +283,8 @@ function SidebarTrigger({
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="tertiary"
-      size="icon"
-      className={cn('size-6 text-fg-tertiary', className)}
+      size="none"
+      className={className}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()

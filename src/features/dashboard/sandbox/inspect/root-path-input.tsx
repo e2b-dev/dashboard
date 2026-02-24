@@ -82,7 +82,7 @@ export default function RootPathInput({
         disabled={isPending || !isDirty}
         type="submit"
       >
-        Go {isPending ? <Loader /> : <ArrowRight className="size-4" />}
+        Go {isPending ? <Loader /> : <ArrowRight />}
       </Button>
     </form>
   )

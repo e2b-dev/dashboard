@@ -255,7 +255,7 @@ function CalendarDayButton({
     <Button
       ref={ref}
       variant="tertiary"
-      size="icon"
+      size='none'
       data-day={day.date.toLocaleDateString()}
       data-selected-single={
         modifiers.selected &&
@@ -270,7 +270,7 @@ function CalendarDayButton({
       data-outside={modifiers.outside}
       className={cn(
         // base styles
-        'p-auto',
+        'size-[30px] p-auto',
         'text-fg prose-body',
         'hover:bg-bg-highlight transition-colors',
         'focus-visible:ring-1 focus-visible:ring-accent-main-highlight focus-visible:ring-offset-0',
