@@ -1,0 +1,301 @@
+'use client'
+
+import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateAxisMax } from '@/lib/utils/chart'
+import { formatAxisNumber } from '@/lib/utils/formatting'
+import { EChartsOption, SeriesOption } from 'echarts'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import { LineChart } from 'echarts/charts'
+import {
+  BrushComponent,
+  GridComponent,
+  ToolboxComponent,
+  TooltipComponent,
+} from 'echarts/components'
+import * as echarts from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { useTheme } from 'next-themes'
+import { memo, useCallback, useMemo, useRef } from 'react'
+import type {
+  SandboxMetricsChartConfig,
+  SandboxMetricsChartProps,
+  SandboxMetricsChartType,
+} from './types'
+
+export const SANDBOX_METRICS_CHART_CONFIG: Record<
+  SandboxMetricsChartType,
+  SandboxMetricsChartConfig
+> = {
+  cpu: {
+    id: 'cpu-metric',
+    lineColorVar: '--bg-inverted',
+    yAxisScaleFactor: 1.8,
+    yAxisFormatter: formatAxisNumber,
+  },
+  ram: {
+    id: 'ram-metric',
+    lineColorVar: '--bg-inverted',
+    yAxisScaleFactor: 1.8,
+    yAxisFormatter: formatAxisNumber,
+  },
+  disk: {
+    id: 'disk-metric',
+    lineColorVar: '--bg-inverted',
+    yAxisScaleFactor: 1.8,
+    yAxisFormatter: formatAxisNumber,
+  },
+} as const
+
+echarts.use([
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  BrushComponent,
+  CanvasRenderer,
+  ToolboxComponent,
+])
+
+function SandboxMetricsChart({
+  type,
+  data,
+  className,
+  onBrushEnd,
+}: SandboxMetricsChartProps) {
+  const chartRef = useRef<ReactEChartsCore | null>(null)
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null)
+  const { resolvedTheme } = useTheme()
+
+  const onBrushEndRef = useRef(onBrushEnd)
+
+  onBrushEndRef.current = onBrushEnd
+
+  const config = SANDBOX_METRICS_CHART_CONFIG[type]
+
+  const cssVars = useCssVars([
+    config.lineColorVar,
+    '--stroke',
+    '--fg-tertiary',
+    '--bg-inverted',
+    '--font-mono',
+  ] as const)
+
+  const barColor = cssVars[config.lineColorVar] || '#000'
+  const stroke = cssVars['--stroke'] || '#000'
+  const fgTertiary = cssVars['--fg-tertiary'] || '#666'
+  const bgInverted = cssVars['--bg-inverted'] || '#fff'
+  const fontMono = cssVars['--font-mono'] || 'monospace'
+
+  const handleBrushEnd = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (params: any) => {
+      const areas = params.areas
+      if (areas && areas.length > 0) {
+        const area = areas[0]
+        const coordRange = area.coordRange
+
+        if (coordRange && coordRange.length === 2 && onBrushEndRef.current) {
+          const startIndex = coordRange[0]
+          const endIndex = coordRange[1]
+
+          onBrushEndRef.current(startIndex, endIndex)
+
+          chartInstanceRef.current?.dispatchAction({
+            type: 'brush',
+            command: 'clear',
+            areas: [],
+          })
+        }
+      }
+    },
+    []
+  )
+
+  const handleChartReady = useCallback((chart: echarts.ECharts) => {
+    chartInstanceRef.current = chart
+
+    // activate brush selection mode
+    chart.dispatchAction(
+      {
+        type: 'takeGlobalCursor',
+        key: 'brush',
+        brushOption: {
+          brushType: 'lineX',
+          brushMode: 'single',
+        },
+      },
+      { flush: true }
+    )
+
+    chart.group = 'usage'
+    echarts.connect('usage')
+  }, [])
+
+  const option = useMemo<EChartsOption>(() => {
+    const yAxisMax = calculateAxisMax(
+      data.map((d) => d.y),
+      config.yAxisScaleFactor
+    )
+
+    const seriesItem: SeriesOption = {
+      id: config.id,
+      type: 'bar',
+      itemStyle: {
+        color: 'transparent',
+        borderColor: barColor,
+        borderWidth: 0.25,
+        borderCap: 'square',
+        opacity: 0.8,
+        decal: {
+          symbol: 'line',
+          symbolSize: 0.8,
+          rotation: -Math.PI / 4,
+          dashArrayX: [1, 0],
+          dashArrayY: [1, 1.5],
+          color: barColor,
+        },
+      },
+      barCategoryGap: '28%',
+      emphasis: {
+        itemStyle: {
+          opacity: 1,
+        },
+      },
+      data: data.map((d) => d.y),
+    }
+
+    const series: EChartsOption['series'] = [seriesItem]
+
+    return {
+      backgroundColor: 'transparent',
+      animation: false,
+      toolbox: {
+        show: false,
+      },
+      brush: {
+        brushType: 'lineX',
+        brushMode: 'single',
+        xAxisIndex: 0,
+        brushLink: 'all',
+        brushStyle: {
+          color: bgInverted,
+          opacity: 0.2,
+          borderType: 'solid',
+          borderWidth: 1,
+          borderColor: bgInverted,
+        },
+        inBrush: {
+          opacity: 1,
+        },
+        outOfBrush: {
+          color: 'transparent',
+          opacity: 0.6,
+        },
+      },
+      grid: {
+        top: 10,
+        bottom: 20,
+        left: 0,
+        right: 0,
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: data.map((d) => d.x),
+          axisPointer: {
+            show: true,
+            type: 'line',
+            lineStyle: { color: stroke, type: 'solid', width: 1 },
+            snap: false,
+          },
+          axisLine: {
+            show: true,
+            lineStyle: { color: stroke },
+          },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: {
+            show: true,
+            color: fgTertiary,
+            fontFamily: fontMono,
+            fontSize: 12,
+            showMinLabel: true,
+            showMaxLabel: true,
+            alignMinLabel: 'center',
+            alignMaxLabel: 'center',
+            formatter: (value: string, index: number) => {
+              const isStartOfPeriod = index === 0
+              const isEndOfPeriod = index === data.length - 1
+
+              if (isStartOfPeriod || isEndOfPeriod) {
+                return value
+              }
+              return ''
+            },
+          },
+        },
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          min: 0,
+          max: yAxisMax,
+          interval: yAxisMax / 2,
+          axisLine: {
+            show: false,
+          },
+          axisTick: { show: false },
+          splitLine: {
+            show: true,
+            lineStyle: { color: stroke, type: 'dashed' },
+            interval: 0,
+          },
+          axisLabel: {
+            show: true,
+            color: fgTertiary,
+            fontFamily: fontMono,
+            fontSize: 12,
+            interval: 0,
+            formatter: config.yAxisFormatter,
+          },
+          axisPointer: {
+            show: false,
+          },
+        },
+      ],
+      series,
+    }
+  }, [data, config, barColor, bgInverted, stroke, fgTertiary, fontMono])
+
+  return (
+    <ReactEChartsCore
+      ref={chartRef}
+      key={resolvedTheme}
+      echarts={echarts}
+      option={option}
+      notMerge={false}
+      lazyUpdate={false}
+      style={{ width: '100%', height: '100%' }}
+      onChartReady={handleChartReady}
+      className={className}
+      onEvents={{
+        brushEnd: handleBrushEnd,
+      }}
+    />
+  )
+}
+
+const MemoizedSandboxMetricsChart = memo(
+  SandboxMetricsChart,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.type === nextProps.type &&
+      prevProps.data === nextProps.data &&
+      prevProps.className === nextProps.className
+      // exclude onHover and onHoverEnd - they're handled via refs
+    )
+  }
+)
+
+MemoizedSandboxMetricsChart.displayName = 'SandboxMetricsChart'
+
+export default MemoizedSandboxMetricsChart
