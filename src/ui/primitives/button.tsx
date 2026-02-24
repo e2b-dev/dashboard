@@ -96,7 +96,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         <div
           className={cn(
             buttonVariants({ variant: 'quaternary', size, className }),
-            'hover:text-fg-tertiary cursor-default active:text-fg-tertiary select-none'
+            'gap-2! hover:text-fg-tertiary cursor-default active:text-fg-tertiary select-none'
           )}
         >
           <Loader variant="slash" className="min-w-2" /> {loading}
