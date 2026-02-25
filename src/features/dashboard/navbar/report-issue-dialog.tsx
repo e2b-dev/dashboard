@@ -50,7 +50,7 @@ export default function ContactSupportDialog({
   trigger,
 }: ContactSupportDialogProps) {
   const posthog = usePostHog()
-  const { team, user } = useDashboard()
+  const { team } = useDashboard()
 
   const [isOpen, setIsOpen] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
@@ -127,11 +127,7 @@ export default function ContactSupportDialog({
   const onSubmit = (values: SupportFormValues) => {
     const formData = new FormData()
     formData.append('description', values.description.trim())
-    formData.append('teamId', team.id)
-    formData.append('teamName', team.name)
-    formData.append('customerEmail', user.email!)
-    formData.append('accountOwnerEmail', team.email)
-    formData.append('customerTier', team.tier)
+    formData.append('teamIdOrSlug', team.id)
 
     for (const file of files) {
       formData.append('files', file)

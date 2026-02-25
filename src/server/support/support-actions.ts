@@ -1,7 +1,8 @@
 'use server'
 
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
+import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { ActionError } from '@/lib/utils/action'
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
 import { z } from 'zod'
@@ -13,11 +14,7 @@ const MAX_FILES = 5
 const ContactSupportSchema = zfd.formData(
   z.object({
     description: zfd.text(z.string().min(1)),
-    teamId: zfd.text(z.string().min(1)),
-    teamName: zfd.text(z.string().min(1)),
-    customerEmail: zfd.text(z.string().email()),
-    accountOwnerEmail: zfd.text(z.string().email()),
-    customerTier: zfd.text(z.string().min(1)),
+    teamIdOrSlug: zfd.text(z.string().min(1)),
     files: zfd.repeatableOfType(zfd.file()).optional(),
   })
 )
@@ -147,10 +144,11 @@ async function uploadAttachmentToPlain(
 export const contactSupportAction = authActionClient
   .schema(ContactSupportSchema)
   .metadata({ actionName: 'contactSupport' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { description, teamId, teamName, customerEmail, accountOwnerEmail, customerTier, files } =
-      parsedInput
-    const email = ctx.user.email
+    const { description, files } = parsedInput
+    const { teamId, user } = ctx
+    const email = user.email
 
     if (!process.env.PLAIN_API_KEY) {
       l.error(
@@ -163,6 +161,29 @@ export const contactSupportAction = authActionClient
     if (!email) {
       throw new ActionError('Email not found')
     }
+
+    // Fetch team data server-side to prevent spoofing
+    const { data: team, error: teamError } = await supabaseAdmin
+      .from('teams')
+      .select('name, email, tier')
+      .eq('id', teamId)
+      .single()
+
+    if (teamError || !team) {
+      l.error(
+        {
+          key: 'support:contact:fetch_team_error',
+          error: teamError,
+          team_id: teamId,
+        },
+        `failed to fetch team data: ${teamError?.message}`
+      )
+      throw new ActionError('Failed to load team information')
+    }
+
+    const teamName = team.name
+    const accountOwnerEmail = team.email
+    const customerTier = team.tier
 
     const client = new PlainClient({
       apiKey: process.env.PLAIN_API_KEY,
@@ -231,7 +252,7 @@ export const contactSupportAction = authActionClient
     const threadText = formatThreadText({
       description,
       teamId,
-      customerEmail,
+      customerEmail: email,
       accountOwnerEmail,
       customerTier,
     })
