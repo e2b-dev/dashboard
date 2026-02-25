@@ -57,7 +57,7 @@ async function uploadAttachmentToPlain(
     customerId,
     fileName: file.name,
     fileSizeBytes: file.size,
-    attachmentType: AttachmentType.CustomTimelineEntry,
+    attachmentType: AttachmentType.Chat,
   })
 
   if (uploadUrlResult.error) {
@@ -170,7 +170,7 @@ export const contactSupportAction = authActionClient
       }
     }
 
-    // Create thread with only the customer's message
+    // Create thread (without deprecated components/attachmentIds)
     const title = `Support Request [${teamName}]`
     const truncatedDescription = description.slice(0, 10000)
 
@@ -179,14 +179,6 @@ export const contactSupportAction = authActionClient
       customerIdentifier: {
         customerId,
       },
-      components: [
-        {
-          componentText: {
-            text: truncatedDescription,
-          },
-        },
-      ],
-      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     })
 
     if (result.error) {
@@ -201,6 +193,29 @@ export const contactSupportAction = authActionClient
       throw new Error('Failed to create support ticket')
     }
 
+    const threadId = result.data.id
+
+    // Send customer message with attachments via sendCustomerChat
+    const chatResult = await client.sendCustomerChat({
+      customerId,
+      threadId,
+      text: truncatedDescription,
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
+    })
+
+    if (chatResult.error) {
+      l.error(
+        {
+          key: 'support:contact:send_chat_error',
+          error: chatResult.error,
+          user_id: ctx.user.id,
+        },
+        `failed to send customer chat: ${chatResult.error.message}`
+      )
+      // Thread exists but message failed — still report as error
+      throw new Error('Failed to send support message')
+    }
+
     // Add metadata as an internal note (not visible in email replies)
     const noteText = formatNoteText({
       teamId,
@@ -211,7 +226,7 @@ export const contactSupportAction = authActionClient
 
     const noteResult = await client.createNote({
       customerId,
-      threadId: result.data.id,
+      threadId,
       text: noteText,
     })
 
@@ -227,5 +242,5 @@ export const contactSupportAction = authActionClient
       // Non-fatal: thread was already created successfully
     }
 
-    return { success: true, threadId: result.data.id }
+    return { success: true, threadId }
   })
