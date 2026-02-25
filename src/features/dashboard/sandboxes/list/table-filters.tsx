@@ -1,4 +1,5 @@
-import { useSandboxTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import type { SandboxStartedAtFilter } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { formatCPUCores, formatMemory } from '@/lib/utils/formatting'
 import { NumberInput } from '@/ui/number-input'
@@ -24,14 +25,17 @@ import * as React from 'react'
 import { memo, useCallback } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
 
-export type StartedAtFilter = '1h ago' | '6h ago' | '12h ago' | undefined
-
 // Components
 const RunningSinceFilter = memo(function RunningSinceFilter() {
-  const { startedAtFilter, setStartedAtFilter } = useSandboxTableStore()
+  const startedAtFilter = useSandboxListTableStore(
+    (state) => state.startedAtFilter
+  )
+  const setStartedAtFilter = useSandboxListTableStore(
+    (state) => state.setStartedAtFilter
+  )
 
   const handleRunningSince = useCallback(
-    (value?: StartedAtFilter) => {
+    (value?: SandboxStartedAtFilter) => {
       if (!value) {
         setStartedAtFilter(undefined)
       } else {
@@ -81,7 +85,12 @@ const RunningSinceFilter = memo(function RunningSinceFilter() {
 })
 
 const TemplateFilter = memo(function TemplateFilter() {
-  const { templateFilters, setTemplateFilters } = useSandboxTableStore()
+  const templateFilters = useSandboxListTableStore(
+    (state) => state.templateFilters
+  )
+  const setTemplateFilters = useSandboxListTableStore(
+    (state) => state.setTemplateFilters
+  )
 
   const [localValue, setLocalValue] = React.useState('')
 
@@ -130,8 +139,10 @@ const TemplateFilter = memo(function TemplateFilter() {
 })
 
 const ResourcesFilter = memo(function ResourcesFilter() {
-  const { cpuCount, setCpuCount, memoryMB, setMemoryMB } =
-    useSandboxTableStore()
+  const cpuCount = useSandboxListTableStore((state) => state.cpuCount)
+  const setCpuCount = useSandboxListTableStore((state) => state.setCpuCount)
+  const memoryMB = useSandboxListTableStore((state) => state.memoryMB)
+  const setMemoryMB = useSandboxListTableStore((state) => state.setMemoryMB)
 
   const [localValues, setLocalValues] = React.useState({
     cpu: cpuCount || 0,
@@ -141,8 +152,29 @@ const ResourcesFilter = memo(function ResourcesFilter() {
   const [debouncedValues] = useDebounceValue(localValues, 300)
 
   React.useEffect(() => {
-    setCpuCount(debouncedValues.cpu || undefined)
-    setMemoryMB(debouncedValues.memory || undefined)
+    setLocalValues((previousValues) => {
+      const syncedValues = {
+        cpu: cpuCount || 0,
+        memory: memoryMB || 0,
+      }
+
+      if (
+        previousValues.cpu === syncedValues.cpu &&
+        previousValues.memory === syncedValues.memory
+      ) {
+        return previousValues
+      }
+
+      return syncedValues
+    })
+  }, [cpuCount, memoryMB])
+
+  React.useEffect(() => {
+    const nextCpuCount = debouncedValues.cpu || undefined
+    const nextMemoryMB = debouncedValues.memory || undefined
+
+    setCpuCount(nextCpuCount)
+    setMemoryMB(nextMemoryMB)
   }, [debouncedValues, setCpuCount, setMemoryMB])
 
   const handleCpuChange = useCallback((value: number) => {
@@ -241,18 +273,22 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   className,
   ...props
 }: SandboxesTableFiltersProps) {
-  const {
-    globalFilter,
-    startedAtFilter,
-    templateFilters,
-    cpuCount,
-    memoryMB,
-    setGlobalFilter,
-    setStartedAtFilter,
-    setTemplateFilters,
-    setCpuCount,
-    setMemoryMB,
-  } = useSandboxTableStore()
+  const startedAtFilter = useSandboxListTableStore(
+    (state) => state.startedAtFilter
+  )
+  const templateFilters = useSandboxListTableStore(
+    (state) => state.templateFilters
+  )
+  const cpuCount = useSandboxListTableStore((state) => state.cpuCount)
+  const memoryMB = useSandboxListTableStore((state) => state.memoryMB)
+  const setStartedAtFilter = useSandboxListTableStore(
+    (state) => state.setStartedAtFilter
+  )
+  const setTemplateFilters = useSandboxListTableStore(
+    (state) => state.setTemplateFilters
+  )
+  const setCpuCount = useSandboxListTableStore((state) => state.setCpuCount)
+  const setMemoryMB = useSandboxListTableStore((state) => state.setMemoryMB)
 
   const handleTemplateFilterClick = useCallback(
     (filter: string) => {
@@ -263,13 +299,13 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-2', className)}
+      className={cn('flex min-w-0 flex-wrap items-center gap-1', className)}
       {...props}
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
+          <Button variant="outline" size="md" className="normal-case gap-2">
+            <ListFilter className="text-fg-tertiary size-4" /> Filter{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -303,13 +339,6 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {globalFilter && (
-        <TableFilterButton
-          label="Search"
-          value={globalFilter}
-          onClick={() => setGlobalFilter('')}
-        />
-      )}
       {startedAtFilter && (
         <TableFilterButton
           label="Started"

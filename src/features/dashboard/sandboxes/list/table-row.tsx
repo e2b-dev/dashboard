@@ -1,31 +1,29 @@
 import { PROTECTED_URLS } from '@/configs/urls'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { DataTableCell, DataTableRow } from '@/ui/data-table'
-import { flexRender, Row } from '@tanstack/react-table'
+import { flexRender, type Row } from '@tanstack/react-table'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
 import { memo } from 'react'
-import { SandboxWithMetrics } from './table-config'
+import type { SandboxListRow } from './table-config'
 
-interface TableRowProps {
-  row: Row<SandboxWithMetrics>
+interface SandboxesTableRowProps {
+  row: Row<SandboxListRow>
 }
 
-export const TableRow = memo(function TableRow({ row }: TableRowProps) {
-  const { teamIdOrSlug } = useParams()
-
-  if (!teamIdOrSlug || typeof teamIdOrSlug !== 'string') {
-    return null
-  }
+export const SandboxesTableRow = memo(function SandboxesTableRow({
+  row,
+}: SandboxesTableRowProps) {
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
 
   return (
     <Link
-      href={PROTECTED_URLS.SANDBOX_LOGS(teamIdOrSlug, row.original.sandboxID)}
+      href={PROTECTED_URLS.SANDBOX(teamIdOrSlug, row.original.sandboxID)}
       prefetch={false}
       passHref
     >
       <DataTableRow
-        key={row.id}
-        className="hover:bg-bg-1 h-8 cursor-pointer "
+        className="h-8 cursor-pointer hover:bg-bg-1"
         isSelected={row.getIsSelected()}
       >
         {row.getVisibleCells().map((cell) => (
