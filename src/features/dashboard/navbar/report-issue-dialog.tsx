@@ -1,8 +1,7 @@
 'use client'
 
 import { useDashboard } from '@/features/dashboard/context'
-import { uploadIssueAttachmentAction } from '@/server/support/support-actions'
-import { useTRPC } from '@/trpc/client'
+import { contactSupportAction } from '@/server/support/support-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -23,8 +22,7 @@ import {
 } from '@/ui/primitives/form'
 import { Textarea } from '@/ui/primitives/textarea'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { Loader2, Paperclip, X } from 'lucide-react'
+import { Paperclip, X } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
@@ -44,28 +42,19 @@ const supportFormSchema = z.object({
 
 type SupportFormValues = z.infer<typeof supportFormSchema>
 
-interface Attachment {
-  url: string
-  fileName: string
-  mimeType: string
-  size: number
-}
-
-interface ReportIssueDialogProps {
+interface ContactSupportDialogProps {
   trigger: React.ReactNode
 }
 
-export default function ReportIssueDialog({
+export default function ContactSupportDialog({
   trigger,
-}: ReportIssueDialogProps) {
+}: ContactSupportDialogProps) {
   const posthog = usePostHog()
-  const trpc = useTRPC()
   const { team, user } = useDashboard()
 
   const [isOpen, setIsOpen] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [uploadingCount, setUploadingCount] = useState(0)
+  const [files, setFiles] = useState<File[]>([])
 
   const form = useForm<SupportFormValues>({
     resolver: zodResolver(supportFormSchema),
@@ -74,42 +63,15 @@ export default function ReportIssueDialog({
     },
   })
 
-  const { execute: uploadAttachment } = useAction(
-    uploadIssueAttachmentAction,
+  const { execute: submitSupport, isExecuting } = useAction(
+    contactSupportAction,
     {
       onSuccess: ({ data }) => {
-        if (data) {
-          setAttachments((prev) => [
-            ...prev,
-            {
-              url: data.url,
-              fileName: data.fileName,
-              mimeType: data.mimeType,
-              size: data.size,
-            },
-          ])
-        }
-        setUploadingCount((c) => c - 1)
-      },
-      onError: ({ error }) => {
-        setUploadingCount((c) => c - 1)
-        const message =
-          error.validationErrors?.fieldErrors?.file?.[0] ??
-          error.serverError ??
-          'Failed to upload file'
-        toast.error(message)
-      },
-    }
-  )
-
-  const reportIssueMutation = useMutation(
-    trpc.support.reportIssue.mutationOptions({
-      onSuccess: (data) => {
         posthog.capture('support_request_submitted', {
-          thread_id: data.threadId,
+          thread_id: data?.threadId,
           team_id: team.id,
           tier: team.tier,
-          attachment_count: attachments.length,
+          attachment_count: files.length,
         })
         setWasSubmitted(true)
         toast.success(
@@ -121,16 +83,15 @@ export default function ReportIssueDialog({
           setWasSubmitted(false)
         }, 100)
       },
-      onError: () => {
-        toast.error('Failed to send message. Please try again.')
+      onError: ({ error }) => {
+        toast.error(error.serverError ?? 'Failed to send message. Please try again.')
       },
-    })
+    }
   )
 
   const resetForm = useCallback(() => {
     form.reset()
-    setAttachments([])
-    setUploadingCount(0)
+    setFiles([])
   }, [form])
 
   const handleOpenChange = useCallback(
@@ -150,33 +111,33 @@ export default function ReportIssueDialog({
   )
 
   const handleFilesSelected = useCallback(
-    (files: File[]) => {
-      for (const file of files) {
-        setUploadingCount((c) => c + 1)
-        uploadAttachment({ file })
-      }
+    (newFiles: File[]) => {
+      setFiles((prev) => {
+        const remaining = MAX_ATTACHMENTS - prev.length
+        return [...prev, ...newFiles.slice(0, remaining)]
+      })
     },
-    [uploadAttachment]
+    []
   )
 
-  const removeAttachment = useCallback((index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index))
+  const removeFile = useCallback((index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
   const onSubmit = (values: SupportFormValues) => {
-    reportIssueMutation.mutate({
-      description: values.description.trim(),
-      teamId: team.id,
-      teamName: team.name,
-      customerEmail: user.email!,
-      customerTier: team.tier,
-      attachments: attachments.length > 0 ? attachments : undefined,
-    })
-  }
+    const formData = new FormData()
+    formData.append('description', values.description.trim())
+    formData.append('teamId', team.id)
+    formData.append('teamName', team.name)
+    formData.append('customerEmail', user.email!)
+    formData.append('customerTier', team.tier)
 
-  const isSubmitting = reportIssueMutation.isPending
-  const isUploading = uploadingCount > 0
-  const isDisabled = isSubmitting || isUploading
+    for (const file of files) {
+      formData.append('files', file)
+    }
+
+    submitSupport(formData)
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -205,7 +166,7 @@ export default function ReportIssueDialog({
                     <Textarea
                       placeholder="Describe what you need help with..."
                       className="min-h-28"
-                      disabled={isDisabled}
+                      disabled={isExecuting}
                       {...field}
                     />
                   </FormControl>
@@ -218,33 +179,26 @@ export default function ReportIssueDialog({
               <FileDropZone
                 onFilesSelected={handleFilesSelected}
                 maxFiles={MAX_ATTACHMENTS}
-                currentFileCount={attachments.length}
-                isUploading={isUploading}
-                disabled={isDisabled}
+                currentFileCount={files.length}
+                isUploading={false}
+                disabled={isExecuting}
                 accept={ACCEPTED_FILE_TYPES}
               />
 
-              {isUploading && (
-                <div className="flex items-center gap-2 text-sm text-fg-secondary">
-                  <Loader2 className="size-3.5 animate-spin" />
-                  <span>
-                    Uploading {uploadingCount} file
-                    {uploadingCount !== 1 ? 's' : ''}...
-                  </span>
-                </div>
-              )}
-
-              {attachments.map((att, i) => (
+              {files.map((file, i) => (
                 <div
-                  key={`${att.fileName}-${i}`}
+                  key={`${file.name}-${i}`}
                   className="flex items-center gap-2 text-sm text-fg-secondary"
                 >
                   <Paperclip className="size-3.5 shrink-0 text-fg-tertiary" />
-                  <span className="truncate flex-1">{att.fileName}</span>
+                  <span className="truncate flex-1">{file.name}</span>
+                  <span className="shrink-0 text-xs text-fg-tertiary">
+                    {(file.size / 1024).toFixed(0)}KB
+                  </span>
                   <button
                     type="button"
-                    onClick={() => removeAttachment(i)}
-                    disabled={isDisabled}
+                    onClick={() => removeFile(i)}
+                    disabled={isExecuting}
                     className="shrink-0 text-fg-tertiary hover:text-fg transition-colors"
                   >
                     <X className="size-3.5" />
@@ -258,14 +212,14 @@ export default function ReportIssueDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
-                disabled={isSubmitting}
+                disabled={isExecuting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isDisabled || !form.formState.isValid}
-                loading={isSubmitting}
+                disabled={isExecuting || !form.formState.isValid}
+                loading={isExecuting}
               >
                 Send
               </Button>

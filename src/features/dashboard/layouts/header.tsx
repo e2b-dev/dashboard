@@ -11,7 +11,7 @@ import { LifeBuoy } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Fragment } from 'react'
-import ReportIssueDialog from '../navbar/report-issue-dialog'
+import ContactSupportDialog from '../navbar/report-issue-dialog'
 
 interface DashboardLayoutHeaderProps {
   className?: string
@@ -48,7 +48,7 @@ export default function DashboardLayoutHeader({
         </h1>
 
         {INCLUDE_REPORT_ISSUE && (
-          <ReportIssueDialog
+          <ContactSupportDialog
             trigger={
               <Button variant="outline" className="gap-1.5 py-2.5 px-3 h-auto max-md:hidden">
                 <LifeBuoy className="size-4" />
