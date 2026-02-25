@@ -180,8 +180,8 @@ export const contactSupportAction = authActionClient
       customerIdentifier: {
         customerId,
       },
-      // description is used as thread preview in Plain UI
       description: truncatedDescription,
+      channel: 'CHAT' as any,
     })
 
     if (result.error) {
@@ -215,7 +215,7 @@ export const contactSupportAction = authActionClient
         },
         `failed to send customer chat: ${chatResult.error.message}`
       )
-      throw new ActionError('Failed to send support message')
+      throw new ActionError(`Failed to send support message: ${chatResult.error.message}`)
     }
 
     // Add metadata as an internal note (not visible in email replies)
