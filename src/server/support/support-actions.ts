@@ -15,6 +15,7 @@ const ContactSupportSchema = zfd.formData(
     teamId: zfd.text(z.string().min(1)),
     teamName: zfd.text(z.string().min(1)),
     customerEmail: zfd.text(z.string().email()),
+    accountOwnerEmail: zfd.text(z.string().email()),
     customerTier: zfd.text(z.string().min(1)),
     files: zfd.repeatableOfType(zfd.file()).optional(),
   })
@@ -23,22 +24,24 @@ const ContactSupportSchema = zfd.formData(
 function formatThreadText(input: {
   description: string
   teamId: string
-  teamName: string
   customerEmail: string
+  accountOwnerEmail: string
   customerTier: string
 }): string {
-  const { description, teamId, teamName, customerEmail, customerTier } = input
+  const { description, teamId, customerEmail, accountOwnerEmail, customerTier } = input
 
-  const sections: string[] = []
-
-  sections.push(`**Customer Email:** ${customerEmail}`)
-  sections.push(`**Team:** ${teamName} (${teamId})`)
-  sections.push(`**Tier:** ${customerTier}`)
+  const header = [
+    '########',
+    `Customer: ${customerEmail}`,
+    `Account Owner: ${accountOwnerEmail}`,
+    `Tier: ${customerTier}`,
+    `TeamID: ${teamId}`,
+    '########',
+  ].join('\n')
 
   const truncatedDescription = description.slice(0, 10000)
-  sections.push(`\n**Message:**\n${truncatedDescription}`)
 
-  return sections.join('\n')
+  return `${header}\n\n${truncatedDescription}`
 }
 
 async function uploadAttachmentToPlain(
@@ -85,7 +88,7 @@ export const contactSupportAction = authActionClient
   .schema(ContactSupportSchema)
   .metadata({ actionName: 'contactSupport' })
   .action(async ({ parsedInput, ctx }) => {
-    const { description, teamId, teamName, customerEmail, customerTier, files } =
+    const { description, teamId, teamName, customerEmail, accountOwnerEmail, customerTier, files } =
       parsedInput
     const email = ctx.user.email
 
@@ -168,8 +171,8 @@ export const contactSupportAction = authActionClient
     const threadText = formatThreadText({
       description,
       teamId,
-      teamName,
       customerEmail,
+      accountOwnerEmail,
       customerTier,
     })
 

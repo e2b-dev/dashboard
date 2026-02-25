@@ -130,6 +130,7 @@ export default function ContactSupportDialog({
     formData.append('teamId', team.id)
     formData.append('teamName', team.name)
     formData.append('customerEmail', user.email!)
+    formData.append('accountOwnerEmail', team.email)
     formData.append('customerTier', team.tier)
 
     for (const file of files) {
