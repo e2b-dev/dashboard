@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
+import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
 import {
@@ -18,8 +19,6 @@ import {
 } from 'date-fns/constants'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  SANDBOX_MONITORING_CUSTOM_RANGE_END_TIME,
-  SANDBOX_MONITORING_CUSTOM_RANGE_START_TIME,
   SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FIRST_HOUR_PRESET_ID,
@@ -215,6 +214,14 @@ export default function SandboxMonitoringTimeRangeControls({
     [lifecycle.anchorEndMs, lifecycle.isRunning, pickerMaxDateMs]
   )
 
+  const pickerBounds = useMemo(
+    () => ({
+      min: new Date(lifecycle.startMs),
+      max: pickerMaxDate,
+    }),
+    [lifecycle.startMs, pickerMaxDate]
+  )
+
   const handlePresetSelect = useCallback(
     (preset: TimeRangePreset) => {
       const { start, end } = preset.getValue()
@@ -228,12 +235,12 @@ export default function SandboxMonitoringTimeRangeControls({
 
   const handleApply = useCallback(
     (values: TimeRangeValues) => {
-      const startTime = values.startTime || SANDBOX_MONITORING_CUSTOM_RANGE_START_TIME
-      const endTime = values.endTime || SANDBOX_MONITORING_CUSTOM_RANGE_END_TIME
+      const timestamps = parseTimeRangeValuesToTimestamps(values)
+      if (!timestamps) {
+        return
+      }
 
-      const start = new Date(`${values.startDate} ${startTime}`).getTime()
-      const end = new Date(`${values.endDate} ${endTime}`).getTime()
-      const next = clampToLifecycle(start, end)
+      const next = clampToLifecycle(timestamps.start, timestamps.end)
 
       onTimeRangeChange(next.start, next.end, {
         isLiveUpdating: false,
@@ -303,8 +310,7 @@ export default function SandboxMonitoringTimeRangeControls({
             <TimeRangePicker
               startDateTime={new Date(timeframe.start).toISOString()}
               endDateTime={new Date(timeframe.end).toISOString()}
-              minDate={new Date(lifecycle.startMs)}
-              maxDate={pickerMaxDate}
+              bounds={pickerBounds}
               onApply={handleApply}
               className="p-3 w-56 max-md:w-full"
             />

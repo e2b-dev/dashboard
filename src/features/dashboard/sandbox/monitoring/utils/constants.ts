@@ -16,8 +16,6 @@ export const SANDBOX_MONITORING_QUERY_LIVE_FALSE = '0'
 export const SANDBOX_MONITORING_METRICS_FETCH_ERROR_MESSAGE =
   'Failed to fetch sandbox monitoring metrics.'
 
-export const SANDBOX_MONITORING_CUSTOM_RANGE_START_TIME = '00:00:00'
-export const SANDBOX_MONITORING_CUSTOM_RANGE_END_TIME = '23:59:59'
 export const SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS = millisecondsInMinute
 
 export const SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_ID = 'full-lifecycle'
