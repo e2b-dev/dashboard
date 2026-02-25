@@ -1,6 +1,6 @@
 'use client'
 
-import SandboxMetricsCharts from './charts'
+import SandboxMetricsCharts from './monitoring-charts'
 
 interface SandboxMonitoringViewProps {
   sandboxId: string

@@ -1,4 +1,4 @@
-import SandboxMonitoringView from '@/features/dashboard/sandbox/monitoring/view'
+import SandboxMonitoringView from '@/features/dashboard/sandbox/monitoring/components/monitoring-view'
 
 export default async function SandboxMonitoringPage({
   params,

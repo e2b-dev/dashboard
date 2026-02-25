@@ -6,6 +6,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { endOfDay, startOfDay } from 'date-fns'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -53,6 +54,65 @@ interface TimeRangePickerProps {
   hideTime?: boolean
 }
 
+function toSecondPrecision(date: Date): Date {
+  return new Date(Math.floor(date.getTime() / 1000) * 1000)
+}
+
+function clampDateTimeToBounds(
+  date: string,
+  time: string | null,
+  options: {
+    fallbackTime: string
+    minDate?: Date
+    maxDate?: Date
+  }
+): { date: string; time: string | null } {
+  const timestamp = tryParseDatetime(
+    `${date} ${time || options.fallbackTime}`
+  )?.getTime()
+
+  if (!timestamp) {
+    return { date, time }
+  }
+
+  const minTimestamp = options.minDate?.getTime()
+  const maxTimestamp = options.maxDate?.getTime()
+  let clampedTimestamp = timestamp
+
+  if (minTimestamp !== undefined && clampedTimestamp < minTimestamp) {
+    clampedTimestamp = minTimestamp
+  }
+
+  if (maxTimestamp !== undefined && clampedTimestamp > maxTimestamp) {
+    clampedTimestamp = maxTimestamp
+  }
+
+  if (clampedTimestamp === timestamp) {
+    return { date, time }
+  }
+
+  const next = parseDateTimeComponents(new Date(clampedTimestamp).toISOString())
+  return {
+    date: next.date,
+    time: next.time || null,
+  }
+}
+
+function formatBoundaryDateTime(date: Date, hideTime: boolean): string {
+  if (hideTime) {
+    return date.toLocaleDateString()
+  }
+
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
 export function TimeRangePicker({
   startDateTime,
   endDateTime,
@@ -73,23 +133,25 @@ export function TimeRangePicker({
     () => parseDateTimeComponents(endDateTime),
     [endDateTime]
   )
+  const calendarMinDate = useMemo(
+    () => (minDate ? startOfDay(minDate) : undefined),
+    [minDate]
+  )
+  const calendarMaxDate = useMemo(
+    () => (maxDate ? endOfDay(maxDate) : undefined),
+    [maxDate]
+  )
+  const minDateValue = useMemo(
+    () => (minDate ? toSecondPrecision(minDate) : undefined),
+    [minDate]
+  )
+  const maxDateValue = useMemo(
+    () => (maxDate ? toSecondPrecision(maxDate) : undefined),
+    [maxDate]
+  )
 
   // Create dynamic zod schema based on min/max dates
   const schema = useMemo(() => {
-    // When hideTime is true, allow dates up to end of today
-    // Otherwise, allow up to now + 10 seconds (for time drift)
-    const defaultMaxDate = hideTime
-      ? (() => {
-          const endOfToday = new Date()
-          endOfToday.setDate(endOfToday.getDate() + 1)
-          endOfToday.setHours(0, 0, 0, 0)
-          return endOfToday
-        })()
-      : new Date(Date.now() + 10000)
-
-    const maxDateValue = maxDate || defaultMaxDate
-    const minDateValue = minDate
-
     return z
       .object({
         startDate: z.string().min(1, 'Start date is required'),
@@ -129,8 +191,16 @@ export function TimeRangePicker({
         if (minDateValue && startTimestamp < minDateValue.getTime()) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `Start date cannot be before ${minDateValue.toLocaleDateString()}`,
+            message: `Start date cannot be before ${formatBoundaryDateTime(minDateValue, hideTime)}`,
             path: ['startDate'],
+          })
+        }
+
+        if (maxDateValue && endTimestamp > maxDateValue.getTime()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `End date cannot be after ${formatBoundaryDateTime(maxDateValue, hideTime)}`,
+            path: ['endDate'],
           })
         }
 
@@ -143,7 +213,25 @@ export function TimeRangePicker({
           })
         }
       })
-  }, [minDate, maxDate, hideTime])
+  }, [hideTime, maxDateValue, minDateValue])
+
+  const clampStartDateTime = useCallback(
+    (date: string, time: string | null) =>
+      clampDateTimeToBounds(date, time, {
+        fallbackTime: '00:00:00',
+        minDate: minDateValue,
+      }),
+    [minDateValue]
+  )
+
+  const clampEndDateTime = useCallback(
+    (date: string, time: string | null) =>
+      clampDateTimeToBounds(date, time, {
+        fallbackTime: '23:59:59',
+        maxDate: maxDateValue,
+      }),
+    [maxDateValue]
+  )
 
   const form = useForm<TimeRangeValues>({
     resolver: zodResolver(schema),
@@ -234,14 +322,26 @@ export function TimeRangePicker({
                 <TimeInput
                   dateValue={dateField.value}
                   timeValue={form.watch('startTime') || ''}
-                  minDate={minDate}
-                  maxDate={maxDate}
+                  minDate={calendarMinDate}
+                  maxDate={calendarMaxDate}
                   onDateChange={(value) => {
-                    dateField.onChange(value)
+                    const currentTime = form.getValues('startTime') || null
+                    const next = clampStartDateTime(value, currentTime)
+                    dateField.onChange(next.date)
+                    form.setValue('startTime', next.time, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
                     form.trigger(['startDate', 'endDate'])
                   }}
                   onTimeChange={(value) => {
-                    form.setValue('startTime', value || null, {
+                    const currentDate = form.getValues('startDate')
+                    const next = clampStartDateTime(currentDate, value || null)
+                    form.setValue('startDate', next.date, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                    form.setValue('startTime', next.time, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
@@ -268,14 +368,26 @@ export function TimeRangePicker({
                 <TimeInput
                   dateValue={dateField.value}
                   timeValue={form.watch('endTime') || ''}
-                  minDate={minDate}
-                  maxDate={maxDate}
+                  minDate={calendarMinDate}
+                  maxDate={calendarMaxDate}
                   onDateChange={(value) => {
-                    dateField.onChange(value)
+                    const currentTime = form.getValues('endTime') || null
+                    const next = clampEndDateTime(value, currentTime)
+                    dateField.onChange(next.date)
+                    form.setValue('endTime', next.time, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
                     form.trigger(['startDate', 'endDate'])
                   }}
                   onTimeChange={(value) => {
-                    form.setValue('endTime', value || null, {
+                    const currentDate = form.getValues('endDate')
+                    const next = clampEndDateTime(currentDate, value || null)
+                    form.setValue('endDate', next.date, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                    form.setValue('endTime', next.time, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })

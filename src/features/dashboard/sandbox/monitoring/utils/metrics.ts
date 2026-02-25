@@ -1,21 +1,35 @@
 import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
-import { calculateStepForRange } from '../utils'
-import type { SandboxMetricsSeries } from './sandbox-metrics-chart/types'
-
-export const SANDBOX_MONITORING_CPU_LINE_COLOR_VAR = '--graph-3'
-export const SANDBOX_MONITORING_CPU_AREA_COLOR_VAR = '--graph-area-3-from'
-export const SANDBOX_MONITORING_RAM_LINE_COLOR_VAR = '--graph-1'
-export const SANDBOX_MONITORING_RAM_AREA_COLOR_VAR = '--graph-area-1-from'
-export const SANDBOX_MONITORING_DISK_LINE_COLOR_VAR = '--graph-2'
+import { millisecondsInSecond } from 'date-fns/constants'
+import {
+  SANDBOX_MONITORING_CHART_MIN_STEP_MS,
+  SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
+  SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
+  SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
+  SANDBOX_MONITORING_CPU_SERIES_ID,
+  SANDBOX_MONITORING_CPU_SERIES_LABEL,
+  SANDBOX_MONITORING_DISK_AREA_COLOR_VAR,
+  SANDBOX_MONITORING_DISK_AREA_TO_COLOR_VAR,
+  SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
+  SANDBOX_MONITORING_DISK_SERIES_ID,
+  SANDBOX_MONITORING_DISK_SERIES_LABEL,
+  SANDBOX_MONITORING_PERCENT_MAX,
+  SANDBOX_MONITORING_RAM_AREA_COLOR_VAR,
+  SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
+  SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
+  SANDBOX_MONITORING_RAM_SERIES_ID,
+  SANDBOX_MONITORING_RAM_SERIES_LABEL,
+} from './constants'
+import type { SandboxMetricsSeries } from '../types/sandbox-metrics-chart'
+import { calculateStepForRange } from './timeframe'
 
 function clampPercent(value: number): number {
   if (Number.isNaN(value)) return 0
-  return Math.max(0, Math.min(100, value))
+  return Math.max(0, Math.min(SANDBOX_MONITORING_PERCENT_MAX, value))
 }
 
 function getMetricTimestampMs(metric: SandboxMetric): number {
   if (typeof metric.timestampUnix === 'number') {
-    return metric.timestampUnix * 1000
+    return metric.timestampUnix * millisecondsInSecond
   }
 
   return new Date(metric.timestamp).getTime()
@@ -44,9 +58,11 @@ export function buildTimelineCategories(
   }
 
   const stepMs = Math.max(
-    1_000,
-    Math.floor(calculateStepForRange(normalizedStart, normalizedEnd) / 1000) *
-      1000
+    SANDBOX_MONITORING_CHART_MIN_STEP_MS,
+    Math.floor(
+      calculateStepForRange(normalizedStart, normalizedEnd) /
+        millisecondsInSecond
+    ) * millisecondsInSecond
   )
 
   const categories: number[] = []
@@ -117,24 +133,24 @@ export function buildResourceSeries(
   metrics: SandboxMetric[],
   categories: number[]
 ): SandboxMetricsSeries[] {
-  const sorted = sortSandboxMetricsByTime(metrics)
-
   return [
     {
-      id: 'cpu',
-      name: 'CPU',
+      id: SANDBOX_MONITORING_CPU_SERIES_ID,
+      name: SANDBOX_MONITORING_CPU_SERIES_LABEL,
       lineColorVar: SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
-      data: createSeriesData(sorted, categories, (metric) =>
+      areaToColorVar: SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
+      data: createSeriesData(metrics, categories, (metric) =>
         clampPercent(metric.cpuUsedPct)
       ),
     },
     {
-      id: 'ram',
-      name: 'RAM',
+      id: SANDBOX_MONITORING_RAM_SERIES_ID,
+      name: SANDBOX_MONITORING_RAM_SERIES_LABEL,
       lineColorVar: SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_RAM_AREA_COLOR_VAR,
-      data: createSeriesData(sorted, categories, (metric) =>
+      areaToColorVar: SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
+      data: createSeriesData(metrics, categories, (metric) =>
         toPercent(metric.memUsed, metric.memTotal)
       ),
     },
@@ -145,14 +161,14 @@ export function buildDiskSeries(
   metrics: SandboxMetric[],
   categories: number[]
 ): SandboxMetricsSeries[] {
-  const sorted = sortSandboxMetricsByTime(metrics)
-
   return [
     {
-      id: 'disk',
-      name: 'DISK',
+      id: SANDBOX_MONITORING_DISK_SERIES_ID,
+      name: SANDBOX_MONITORING_DISK_SERIES_LABEL,
       lineColorVar: SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
-      data: createSeriesData(sorted, categories, (metric) =>
+      areaColorVar: SANDBOX_MONITORING_DISK_AREA_COLOR_VAR,
+      areaToColorVar: SANDBOX_MONITORING_DISK_AREA_TO_COLOR_VAR,
+      data: createSeriesData(metrics, categories, (metric) =>
         toPercent(metric.diskUsed, metric.diskTotal)
       ),
     },

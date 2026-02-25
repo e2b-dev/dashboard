@@ -1,6 +1,6 @@
 export type SandboxMetricsDataPoint = {
-  x: number // timestamp
-  y: number | null // value
+  x: number
+  y: number | null
 }
 
 export interface SandboxMetricsSeries {
@@ -9,6 +9,7 @@ export interface SandboxMetricsSeries {
   data: SandboxMetricsDataPoint[]
   lineColorVar?: string
   areaColorVar?: string
+  areaToColorVar?: string
 }
 
 export interface SandboxMetricsChartProps {
@@ -16,9 +17,8 @@ export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
   className?: string
   stacked?: boolean
+  showArea?: boolean
   showXAxisLabels?: boolean
-  xAxisMin?: number
-  xAxisMax?: number
   yAxisMax?: number
   yAxisFormatter?: (value: number) => string
   onHover?: (index: number) => void

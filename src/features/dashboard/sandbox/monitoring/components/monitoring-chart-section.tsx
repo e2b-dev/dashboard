@@ -14,7 +14,7 @@ export default function MonitoringChartSection({
 }: MonitoringChartSectionProps) {
   return (
     <section className={cn('flex min-h-0 flex-col overflow-hidden', className)}>
-      {header ? header : null}
+      {header}
       <div className="min-h-0 flex-1">{children}</div>
     </section>
   )
