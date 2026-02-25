@@ -1,35 +1,12 @@
 import { formatDurationCompact } from '@/lib/utils/formatting'
-import { BuildLogDTO } from '@/server/api/models/builds.models'
+import { LogLevelBadge, LogMessage } from '@/features/dashboard/common/log-cells'
+import type { BuildLogDTO } from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
-import { Badge, BadgeProps } from '@/ui/primitives/badge'
 import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale/en-US'
 
-interface LogLevelProps {
-  level: BuildLogDTO['level']
-}
-
-const mapLogLevelToBadgeProps: Record<BuildLogDTO['level'], BadgeProps> = {
-  debug: {
-    variant: 'default',
-  },
-  info: {
-    variant: 'info',
-  },
-  warn: {
-    variant: 'warning',
-  },
-  error: {
-    variant: 'error',
-  },
-}
-
-export const LogLevel = ({ level }: LogLevelProps) => {
-  return (
-    <Badge {...mapLogLevelToBadgeProps[level]} className="uppercase h-[18px]">
-      {level}
-    </Badge>
-  )
+export const LogLevel = ({ level }: { level: BuildLogDTO['level'] }) => {
+  return <LogLevelBadge level={level} />
 }
 
 interface TimestampProps {
@@ -63,5 +40,5 @@ interface MessageProps {
 }
 
 export const Message = ({ message }: MessageProps) => {
-  return <span className="prose-body whitespace-nowrap">{message}</span>
+  return <LogMessage message={message} />
 }

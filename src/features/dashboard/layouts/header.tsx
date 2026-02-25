@@ -3,6 +3,7 @@
 import { getDashboardLayoutConfig, TitleSegment } from '@/configs/layout'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
+import CopyButton from '@/ui/copy-button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
 import Link from 'next/link'
@@ -20,6 +21,7 @@ export default function DashboardLayoutHeader({
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
+  const copyableValue = config.copyValue ?? null
 
   return (
     <div
@@ -39,18 +41,29 @@ export default function DashboardLayoutHeader({
       <div className="flex items-center w-full relative min-h-6 gap-2">
         <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1 shrink-0" />
 
-        <h1 className="truncate min-w-0 flex-1">
-          <HeaderTitle title={config.title} />
-        </h1>
-
-        {/* Ghost element - reserves width but not height */}
-        <div className="h-0 overflow-visible shrink-0 flex items-center">
-          {children}
+        <div className="min-w-0 flex-1 flex items-center gap-2">
+          <h1 className="truncate min-w-0">
+            <HeaderTitle title={config.title} />
+          </h1>
+          {copyableValue && (
+            <CopyButton
+              value={copyableValue}
+              size="iconSm"
+              variant="ghost"
+              className="text-fg-tertiary shrink-0"
+              aria-label="Copy identifier"
+            />
+          )}
         </div>
 
         <ClientOnly>
           <ThemeSwitcher />
         </ClientOnly>
+
+        {/* Ghost element - reserves width but not height */}
+        <div className="h-0 overflow-visible shrink-0 flex items-center">
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -65,7 +78,9 @@ function HeaderTitle({ title }: { title: string | TitleSegment[] }) {
     <span className="flex items-center gap-1">
       {title.map((segment, index) => (
         <Fragment key={index}>
-          {index > 0 && <span className="text-fg-tertiary select-none shrink-0">/</span>}
+          {index > 0 && (
+            <span className="text-fg-tertiary select-none shrink-0">/</span>
+          )}
           {segment.href ? (
             <Link
               href={segment.href}

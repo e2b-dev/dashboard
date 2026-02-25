@@ -134,9 +134,9 @@ async function listBuilds(
     data: trimmedBuilds.map(mapRpcBuildToListedBuildDTO),
     nextCursor: hasMore
       ? encodeCursor(
-          trimmedBuilds[trimmedBuilds.length - 1]!.created_at,
-          trimmedBuilds[trimmedBuilds.length - 1]!.id
-        )
+        trimmedBuilds[trimmedBuilds.length - 1]!.created_at,
+        trimmedBuilds[trimmedBuilds.length - 1]!.id
+      )
       : null,
   }
 }
