@@ -99,7 +99,7 @@ export default function FileDropZone({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed p-4 transition-colors cursor-pointer',
+        'flex flex-col items-center justify-center gap-1.5 border border-dashed p-4 transition-colors cursor-pointer',
         isDragOver && 'border-fg-accent bg-bg-accent/10',
         !isDragOver && !isDisabled && 'border-stroke hover:border-fg-tertiary hover:bg-bg-hover',
         isDisabled && 'cursor-not-allowed opacity-50 border-stroke'
