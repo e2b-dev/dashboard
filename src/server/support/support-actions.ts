@@ -8,7 +8,7 @@ import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB (Plain's limit for threads)
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
 const MAX_FILES = 5
 
 const ContactSupportSchema = zfd.formData(

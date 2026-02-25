@@ -1,6 +1,9 @@
 'use client'
 
-import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY } from '@/configs/flags'
+import {
+  INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
+  INCLUDE_REPORT_ISSUE,
+} from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'
@@ -12,9 +15,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Github, MessageSquarePlus } from 'lucide-react'
+import { Book, Github, LifeBuoy, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
+import ContactSupportDialog from '../navbar/report-issue-dialog'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -60,36 +64,63 @@ export default function DashboardSidebarFooter() {
         </SidebarGroup>
       </SidebarFooter>
 
-      {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
+      {(INCLUDE_DASHBOARD_FEEDBACK_SURVEY || INCLUDE_REPORT_ISSUE) && (
         <SidebarMenu
           className={cn(
             'flex-row gap-0 border-t group-data-[collapsible=icon]:flex-col',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
         >
-          <SidebarMenuItem
-            key="survey"
-            className={cn(
-              'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
-              SIDEBAR_TRANSITION_CLASSNAMES
-            )}
-          >
-            <DashboardSurveyPopover
-              trigger={
-                <SidebarMenuButton
-                  tooltip="Feedback"
-                  variant="ghost"
-                  className={cn(
-                    'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
-                    SIDEBAR_TRANSITION_CLASSNAMES
-                  )}
-                >
-                  <MessageSquarePlus className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
-                  Feedback
-                </SidebarMenuButton>
-              }
-            />
-          </SidebarMenuItem>
+          {INCLUDE_REPORT_ISSUE && (
+            <SidebarMenuItem
+              key="support"
+              className={cn(
+                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                SIDEBAR_TRANSITION_CLASSNAMES
+              )}
+            >
+              <ContactSupportDialog
+                trigger={
+                  <SidebarMenuButton
+                    tooltip="Contact Support"
+                    variant="ghost"
+                    className={cn(
+                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                      SIDEBAR_TRANSITION_CLASSNAMES
+                    )}
+                  >
+                    <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    Contact Support
+                  </SidebarMenuButton>
+                }
+              />
+            </SidebarMenuItem>
+          )}
+          {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
+            <SidebarMenuItem
+              key="survey"
+              className={cn(
+                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                SIDEBAR_TRANSITION_CLASSNAMES
+              )}
+            >
+              <DashboardSurveyPopover
+                trigger={
+                  <SidebarMenuButton
+                    tooltip="Feedback"
+                    variant="ghost"
+                    className={cn(
+                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                      SIDEBAR_TRANSITION_CLASSNAMES
+                    )}
+                  >
+                    <MessageSquarePlus className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    Feedback
+                  </SidebarMenuButton>
+                }
+              />
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       )}
     </>

@@ -32,6 +32,7 @@ import { z } from 'zod'
 import FileDropZone from './file-drop-zone'
 
 const MAX_ATTACHMENTS = 5
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
 
 const ACCEPTED_FILE_TYPES =
   'image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain'
@@ -112,9 +113,14 @@ export default function ContactSupportDialog({
 
   const handleFilesSelected = useCallback(
     (newFiles: File[]) => {
+      const oversized = newFiles.filter((f) => f.size > MAX_FILE_SIZE)
+      if (oversized.length > 0) {
+        toast.error(`${oversized.length} file${oversized.length > 1 ? 's' : ''} exceeded the 10MB limit and ${oversized.length > 1 ? 'were' : 'was'} not added.`)
+      }
+      const valid = newFiles.filter((f) => f.size <= MAX_FILE_SIZE)
       setFiles((prev) => {
         const remaining = MAX_ATTACHMENTS - prev.length
-        return [...prev, ...newFiles.slice(0, remaining)]
+        return [...prev, ...valid.slice(0, remaining)]
       })
     },
     []

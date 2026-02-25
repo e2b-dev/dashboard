@@ -1,17 +1,13 @@
 'use client'
 
-import { INCLUDE_REPORT_ISSUE } from '@/configs/flags'
 import { getDashboardLayoutConfig, TitleSegment } from '@/configs/layout'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
-import { Button } from '@/ui/primitives/button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
-import { LifeBuoy } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Fragment } from 'react'
-import ContactSupportDialog from '../navbar/report-issue-dialog'
 
 interface DashboardLayoutHeaderProps {
   className?: string
@@ -46,17 +42,6 @@ export default function DashboardLayoutHeader({
         <h1 className="truncate min-w-0 flex-1">
           <HeaderTitle title={config.title} />
         </h1>
-
-        {INCLUDE_REPORT_ISSUE && (
-          <ContactSupportDialog
-            trigger={
-              <Button variant="outline" className="gap-1.5 py-2.5 px-3 h-auto max-md:hidden">
-                <LifeBuoy className="size-4" />
-                <span>Contact Support</span>
-              </Button>
-            }
-          />
-        )}
 
         {/* Ghost element - reserves width but not height */}
         <div className="h-0 overflow-visible shrink-0 flex items-center">
