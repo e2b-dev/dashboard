@@ -20,6 +20,7 @@ export const SandboxesTableRow = memo(function SandboxesTableRow({
     <Link
       href={PROTECTED_URLS.SANDBOX(teamIdOrSlug, row.original.sandboxID)}
       prefetch={false}
+      passHref
     >
       <DataTableRow
         className="h-8 cursor-pointer hover:bg-bg-1"

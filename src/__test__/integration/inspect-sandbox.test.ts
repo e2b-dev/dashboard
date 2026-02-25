@@ -1,4 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  SUPABASE_TEAM_HEADER,
+  SUPABASE_TOKEN_HEADER,
+} from '@/configs/api'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -33,39 +38,6 @@ vi.mock('@/lib/clients/kv', () => ({
 vi.mock('@/lib/clients/api', () => ({
   infra: {
     GET: vi.fn(),
-  },
-}))
-
-vi.mock('@/configs/api', () => ({
-  SUPABASE_AUTH_HEADERS: vi.fn((token: string, teamId: string) => ({
-    Authorization: `Bearer ${token}`,
-    'X-Team-ID': teamId,
-  })),
-}))
-
-vi.mock('@/configs/keys', () => ({
-  COOKIE_KEYS: {
-    SELECTED_TEAM_ID: 'selected_team_id',
-    SELECTED_TEAM_SLUG: 'selected_team_slug',
-  },
-  KV_KEYS: {
-    TEAM_ID_TO_SLUG: (teamId: string) => `team_id_to_slug:${teamId}`,
-    TEAM_SLUG_TO_ID: (slug: string) => `team_slug_to_id:${slug}`,
-  },
-}))
-
-vi.mock('@/configs/urls', () => ({
-  PROTECTED_URLS: {
-    DASHBOARD: '/dashboard',
-    SANDBOX_INSPECT: (teamSlug: string, sandboxId: string) =>
-      `/dashboard/${teamSlug}/sandboxes/${sandboxId}/inspect`,
-  },
-  RESOLVER_URLS: {
-    INSPECT_SANDBOX: (sandboxId: string) =>
-      `/dashboard/inspect/sandbox/${sandboxId}`,
-  },
-  AUTH_URLS: {
-    SIGN_IN: '/sign-in',
   },
 }))
 
@@ -114,27 +86,6 @@ vi.mock('next/server', async () => {
 // Import mocked modules after mock setup
 import { infra } from '@/lib/clients/api'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-
-// Constants for testing
-const COOKIE_KEYS = {
-  SELECTED_TEAM_ID: 'selected_team_id',
-  SELECTED_TEAM_SLUG: 'selected_team_slug',
-}
-
-const KV_KEYS = {
-  TEAM_ID_TO_SLUG: (teamId: string) => `team_id_to_slug:${teamId}`,
-  TEAM_SLUG_TO_ID: (slug: string) => `team_slug_to_id:${slug}`,
-}
-
-const PROTECTED_URLS = {
-  DASHBOARD: '/dashboard',
-  SANDBOX_INSPECT: (teamSlug: string, sandboxId: string) =>
-    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/inspect`,
-}
-
-const AUTH_URLS = {
-  SIGN_IN: '/sign-in',
-}
 
 // ============================================================================
 // TEST HELPERS
@@ -197,7 +148,8 @@ function setupSandboxResponse(
     if (
       path === '/sandboxes/{sandboxID}' &&
       options.params.path.sandboxID === sandboxId &&
-      options.headers['X-Team-ID'] === teamId
+      options.headers[SUPABASE_TEAM_HEADER] === teamId &&
+      Boolean(options.headers[SUPABASE_TOKEN_HEADER])
     ) {
       if (found) {
         return Promise.resolve({
@@ -324,7 +276,9 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
         await GET(request, params)
 
         const lastRedirect = mockRedirectCalls[mockRedirectCalls.length - 1]
-        expect(lastRedirect?.url).toContain(`/sandboxes/${validId}/inspect`)
+        expect(lastRedirect?.url).toContain(
+          PROTECTED_URLS.SANDBOX('team-slug', validId)
+        )
       }
     })
   })
@@ -344,7 +298,7 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
 
       await GET(request, params)
 
-      expect(mockRedirectCalls[0]?.url).toContain('/sign-in')
+      expect(mockRedirectCalls[0]?.url).toContain(AUTH_URLS.SIGN_IN)
     })
 
     /**
@@ -363,7 +317,7 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
 
       await GET(request, params)
 
-      expect(mockRedirectCalls[0]?.url).toContain('/sign-in')
+      expect(mockRedirectCalls[0]?.url).toContain(AUTH_URLS.SIGN_IN)
     })
   })
 
@@ -475,7 +429,7 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
       await GET(request, params)
 
       expect(mockRedirectCalls[0]?.url).toContain(
-        '/dashboard/my-team/sandboxes/sbx456/inspect'
+        PROTECTED_URLS.SANDBOX('my-team', 'sbx456')
       )
     })
   })
@@ -496,7 +450,7 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
 
       expect(response).toBeDefined()
       expect(mockRedirectCalls[0]?.url).toContain(
-        '/dashboard/new-team/sandboxes/sbx789/inspect'
+        PROTECTED_URLS.SANDBOX('new-team', 'sbx789')
       )
     })
   })

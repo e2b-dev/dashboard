@@ -87,7 +87,7 @@ export default function SandboxesTable() {
   const trpc = useTRPC()
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
-    'sandboxes:columnSizing',
+    'sandboxes:columnSizing:v2',
     {},
     {
       deserializer: (value) => JSON.parse(value),
@@ -197,8 +197,8 @@ export default function SandboxesTable() {
                     sorting={tableSorting.find((s) => s.id === header.id)?.desc}
                     align={
                       header.id === 'cpuUsage' ||
-                      header.id === 'ramUsage' ||
-                      header.id === 'diskUsage'
+                        header.id === 'ramUsage' ||
+                        header.id === 'diskUsage'
                         ? 'right'
                         : 'left'
                     }
@@ -207,9 +207,9 @@ export default function SandboxesTable() {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </span>
                   </DataTableHead>
                 ))}

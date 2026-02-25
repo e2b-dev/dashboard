@@ -25,10 +25,10 @@ export default function SandboxLayout({
 
   const isEnvdVersionCompatibleForInspect = Boolean(
     sandboxInfo?.envdVersion &&
-      isVersionCompatible(
-        sandboxInfo.envdVersion,
-        SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
-      )
+    isVersionCompatible(
+      sandboxInfo.envdVersion,
+      SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
+    )
   )
 
   if (!sandboxInfo) {

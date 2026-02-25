@@ -128,5 +128,5 @@ export async function getSandboxMetrics(
 
 export const sandboxesRepo = {
   getSandboxLogs,
-  getSandboxMetrics,
+  getSandboxMetrics
 }
