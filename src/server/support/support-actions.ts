@@ -36,6 +36,7 @@ function formatThreadText(input: {
     `Account Owner: ${accountOwnerEmail}`,
     `Tier: ${customerTier}`,
     `TeamID: ${teamId}`,
+    `Orbit: https://orbit.e2b.dev/teams/${teamId}/users`,
     '########',
   ].join('\n')
 
