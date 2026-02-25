@@ -30,15 +30,16 @@ function formatTierName(tier: string): string {
   return tierMap[tier] ?? tier
 }
 
-function formatNoteText(input: {
+function formatThreadText(input: {
+  description: string
   teamId: string
   customerEmail: string
   accountOwnerEmail: string
   customerTier: string
 }): string {
-  const { teamId, customerEmail, accountOwnerEmail, customerTier } = input
+  const { description, teamId, customerEmail, accountOwnerEmail, customerTier } = input
 
-  return [
+  const header = [
     '########',
     `Customer: ${customerEmail}`,
     `Account Owner: ${accountOwnerEmail}`,
@@ -47,6 +48,10 @@ function formatNoteText(input: {
     `Orbit: https://orbit.e2b.dev/teams/${teamId}/users`,
     '########',
   ].join('\n')
+
+  const truncatedDescription = description.slice(0, 10000)
+
+  return `${header}\n\n${truncatedDescription}`
 }
 
 async function uploadAttachmentToPlain(
@@ -54,6 +59,17 @@ async function uploadAttachmentToPlain(
   customerId: string,
   file: File
 ): Promise<string> {
+  l.info(
+    {
+      key: 'support:contact:attachment_upload_start',
+      file_name: file.name,
+      file_size: file.size,
+      file_type: file.type,
+      customer_id: customerId,
+    },
+    `starting attachment upload for ${file.name} (${file.size} bytes, type: ${file.type})`
+  )
+
   const uploadUrlResult = await client.createAttachmentUploadUrl({
     customerId,
     fileName: file.name,
@@ -62,12 +78,31 @@ async function uploadAttachmentToPlain(
   })
 
   if (uploadUrlResult.error) {
+    l.error(
+      {
+        key: 'support:contact:attachment_create_url_error',
+        error: uploadUrlResult.error,
+        file_name: file.name,
+      },
+      `failed to create upload URL for ${file.name}: ${uploadUrlResult.error.message}`
+    )
     throw new Error(
       `Failed to create upload URL for ${file.name}: ${uploadUrlResult.error.message}`
     )
   }
 
   const { uploadFormUrl, uploadFormData, attachment } = uploadUrlResult.data
+
+  l.info(
+    {
+      key: 'support:contact:attachment_uploading',
+      file_name: file.name,
+      attachment_id: attachment.id,
+      upload_url: uploadFormUrl,
+      form_data_keys: uploadFormData.map((d) => d.key),
+    },
+    `uploading ${file.name} to Plain (attachment: ${attachment.id})`
+  )
 
   const formData = new FormData()
   for (const { key, value } of uploadFormData) {
@@ -81,10 +116,30 @@ async function uploadAttachmentToPlain(
   })
 
   if (!uploadResponse.ok) {
+    const responseText = await uploadResponse.text().catch(() => 'unable to read response body')
+    l.error(
+      {
+        key: 'support:contact:attachment_upload_failed',
+        file_name: file.name,
+        status: uploadResponse.status,
+        status_text: uploadResponse.statusText,
+        response_body: responseText,
+      },
+      `failed to upload ${file.name}: ${uploadResponse.status} ${uploadResponse.statusText} - ${responseText}`
+    )
     throw new Error(
       `Failed to upload ${file.name}: ${uploadResponse.status} ${uploadResponse.statusText}`
     )
   }
+
+  l.info(
+    {
+      key: 'support:contact:attachment_upload_success',
+      file_name: file.name,
+      attachment_id: attachment.id,
+    },
+    `successfully uploaded ${file.name} (attachment: ${attachment.id})`
+  )
 
   return attachment.id
 }
@@ -171,9 +226,15 @@ export const contactSupportAction = authActionClient
       }
     }
 
-    // Create thread with customer's message and attachments
+    // Create thread with header + customer's message and attachments
     const title = `Support Request [${teamName}]`
-    const truncatedDescription = description.slice(0, 10000)
+    const threadText = formatThreadText({
+      description,
+      teamId,
+      customerEmail,
+      accountOwnerEmail,
+      customerTier,
+    })
 
     const result = await client.createThread({
       title,
@@ -183,7 +244,7 @@ export const contactSupportAction = authActionClient
       components: [
         {
           componentText: {
-            text: truncatedDescription,
+            text: threadText,
           },
         },
       ],
@@ -202,33 +263,5 @@ export const contactSupportAction = authActionClient
       throw new ActionError('Failed to create support ticket')
     }
 
-    const threadId = result.data.id
-
-    // Add metadata as an internal note (not visible in email replies)
-    const noteText = formatNoteText({
-      teamId,
-      customerEmail,
-      accountOwnerEmail,
-      customerTier,
-    })
-
-    const noteResult = await client.createNote({
-      customerId,
-      threadId,
-      text: noteText,
-    })
-
-    if (noteResult.error) {
-      l.warn(
-        {
-          key: 'support:contact:create_note_error',
-          error: noteResult.error,
-          user_id: ctx.user.id,
-        },
-        `failed to add metadata note to thread: ${noteResult.error.message}`
-      )
-      // Non-fatal: thread was already created successfully
-    }
-
-    return { success: true, threadId }
+    return { success: true, threadId: result.data.id }
   })
