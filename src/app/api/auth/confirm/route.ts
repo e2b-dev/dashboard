@@ -9,7 +9,7 @@ import { z } from 'zod'
 const confirmSchema = z.object({
   token_hash: z.string().min(1),
   type: OtpTypeSchema,
-  next: z.httpUrl(),
+  next: z.url({ protocol: /^https?$/ }),
 })
 
 /**

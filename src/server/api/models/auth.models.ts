@@ -14,7 +14,7 @@ export type OtpType = z.infer<typeof OtpTypeSchema>
 export const ConfirmEmailInputSchema = z.object({
   token_hash: z.string().min(1),
   type: OtpTypeSchema,
-  next: z.httpUrl(),
+  next: z.url({ protocol: /^https?$/ }),
 })
 
 export type ConfirmEmailInput = z.infer<typeof ConfirmEmailInputSchema>
