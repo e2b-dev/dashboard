@@ -13,6 +13,8 @@ export interface SandboxLogsDTO {
   nextCursor: number | null
 }
 
+export type SandboxMetric = components['schemas']['SandboxMetric']
+
 // mappings
 
 export function mapInfraSandboxLogToDTO(

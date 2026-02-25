@@ -330,8 +330,6 @@ export async function getInfraBuildLogs(
           limit: options.limit,
           direction: options.direction,
           level: options.level,
-          // TODO: remove once template manger is deployed ~ Thu, Feb 19, 2026
-          source: 'persistent'
         },
       },
       headers: {
