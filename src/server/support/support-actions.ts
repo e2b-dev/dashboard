@@ -2,6 +2,7 @@
 
 import { authActionClient } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
+import { ActionError } from '@/lib/utils/action'
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
@@ -101,11 +102,11 @@ export const contactSupportAction = authActionClient
         { key: 'support:contact:plain_not_configured' },
         'PLAIN_API_KEY not configured'
       )
-      throw new Error('Support API not configured')
+      throw new ActionError('Support API not configured')
     }
 
     if (!email) {
-      throw new Error('Email not found')
+      throw new ActionError('Email not found')
     }
 
     const client = new PlainClient({
@@ -136,7 +137,7 @@ export const contactSupportAction = authActionClient
         },
         `failed to upsert customer in Plain: ${customerResult.error.message}`
       )
-      throw new Error('Failed to create support ticket')
+      throw new ActionError('Failed to create support ticket')
     }
 
     const customerId = customerResult.data.customer.id
@@ -170,7 +171,7 @@ export const contactSupportAction = authActionClient
       }
     }
 
-    // Create thread (without deprecated components/attachmentIds)
+    // Create thread with customer's message
     const title = `Support Request [${teamName}]`
     const truncatedDescription = description.slice(0, 10000)
 
@@ -179,6 +180,8 @@ export const contactSupportAction = authActionClient
       customerIdentifier: {
         customerId,
       },
+      // description is used as thread preview in Plain UI
+      description: truncatedDescription,
     })
 
     if (result.error) {
@@ -190,7 +193,7 @@ export const contactSupportAction = authActionClient
         },
         `failed to create Plain thread: ${result.error.message}`
       )
-      throw new Error('Failed to create support ticket')
+      throw new ActionError('Failed to create support ticket')
     }
 
     const threadId = result.data.id
@@ -212,8 +215,7 @@ export const contactSupportAction = authActionClient
         },
         `failed to send customer chat: ${chatResult.error.message}`
       )
-      // Thread exists but message failed — still report as error
-      throw new Error('Failed to send support message')
+      throw new ActionError('Failed to send support message')
     }
 
     // Add metadata as an internal note (not visible in email replies)
