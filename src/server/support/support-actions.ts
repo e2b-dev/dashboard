@@ -21,28 +21,31 @@ const ContactSupportSchema = zfd.formData(
   })
 )
 
-function formatThreadText(input: {
-  description: string
+function formatTierName(tier: string): string {
+  const tierMap: Record<string, string> = {
+    base_v1: 'Hobby',
+    pro_v1: 'Pro',
+  }
+  return tierMap[tier] ?? tier
+}
+
+function formatNoteText(input: {
   teamId: string
   customerEmail: string
   accountOwnerEmail: string
   customerTier: string
 }): string {
-  const { description, teamId, customerEmail, accountOwnerEmail, customerTier } = input
+  const { teamId, customerEmail, accountOwnerEmail, customerTier } = input
 
-  const header = [
+  return [
     '########',
     `Customer: ${customerEmail}`,
     `Account Owner: ${accountOwnerEmail}`,
-    `Tier: ${customerTier}`,
+    `Tier: ${formatTierName(customerTier)}`,
     `TeamID: ${teamId}`,
     `Orbit: https://orbit.e2b.dev/teams/${teamId}/users`,
     '########',
   ].join('\n')
-
-  const truncatedDescription = description.slice(0, 10000)
-
-  return `${header}\n\n${truncatedDescription}`
 }
 
 async function uploadAttachmentToPlain(
@@ -167,15 +170,9 @@ export const contactSupportAction = authActionClient
       }
     }
 
-    // Create thread
+    // Create thread with only the customer's message
     const title = `Support Request [${teamName}]`
-    const threadText = formatThreadText({
-      description,
-      teamId,
-      customerEmail,
-      accountOwnerEmail,
-      customerTier,
-    })
+    const truncatedDescription = description.slice(0, 10000)
 
     const result = await client.createThread({
       title,
@@ -185,7 +182,7 @@ export const contactSupportAction = authActionClient
       components: [
         {
           componentText: {
-            text: threadText,
+            text: truncatedDescription,
           },
         },
       ],
@@ -202,6 +199,32 @@ export const contactSupportAction = authActionClient
         `failed to create Plain thread: ${result.error.message}`
       )
       throw new Error('Failed to create support ticket')
+    }
+
+    // Add metadata as an internal note (not visible in email replies)
+    const noteText = formatNoteText({
+      teamId,
+      customerEmail,
+      accountOwnerEmail,
+      customerTier,
+    })
+
+    const noteResult = await client.createNote({
+      customerId,
+      threadId: result.data.id,
+      text: noteText,
+    })
+
+    if (noteResult.error) {
+      l.warn(
+        {
+          key: 'support:contact:create_note_error',
+          error: noteResult.error,
+          user_id: ctx.user.id,
+        },
+        `failed to add metadata note to thread: ${noteResult.error.message}`
+      )
+      // Non-fatal: thread was already created successfully
     }
 
     return { success: true, threadId: result.data.id }
