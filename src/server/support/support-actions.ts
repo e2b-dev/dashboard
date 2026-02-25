@@ -58,7 +58,7 @@ async function uploadAttachmentToPlain(
     customerId,
     fileName: file.name,
     fileSizeBytes: file.size,
-    attachmentType: AttachmentType.Chat,
+    attachmentType: AttachmentType.CustomTimelineEntry,
   })
 
   if (uploadUrlResult.error) {
@@ -171,7 +171,7 @@ export const contactSupportAction = authActionClient
       }
     }
 
-    // Create thread with customer's message
+    // Create thread with customer's message and attachments
     const title = `Support Request [${teamName}]`
     const truncatedDescription = description.slice(0, 10000)
 
@@ -180,8 +180,14 @@ export const contactSupportAction = authActionClient
       customerIdentifier: {
         customerId,
       },
-      description: truncatedDescription,
-      channel: 'CHAT' as any,
+      components: [
+        {
+          componentText: {
+            text: truncatedDescription,
+          },
+        },
+      ],
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     })
 
     if (result.error) {
@@ -197,26 +203,6 @@ export const contactSupportAction = authActionClient
     }
 
     const threadId = result.data.id
-
-    // Send customer message with attachments via sendCustomerChat
-    const chatResult = await client.sendCustomerChat({
-      customerId,
-      threadId,
-      text: truncatedDescription,
-      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
-    })
-
-    if (chatResult.error) {
-      l.error(
-        {
-          key: 'support:contact:send_chat_error',
-          error: chatResult.error,
-          user_id: ctx.user.id,
-        },
-        `failed to send customer chat: ${chatResult.error.message}`
-      )
-      throw new ActionError(`Failed to send support message: ${chatResult.error.message}`)
-    }
 
     // Add metadata as an internal note (not visible in email replies)
     const noteText = formatNoteText({
