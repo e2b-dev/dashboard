@@ -71,36 +71,11 @@ export default function DashboardSidebarFooter() {
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
         >
-          {INCLUDE_REPORT_ISSUE && (
-            <SidebarMenuItem
-              key="support"
-              className={cn(
-                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
-                SIDEBAR_TRANSITION_CLASSNAMES
-              )}
-            >
-              <ContactSupportDialog
-                trigger={
-                  <SidebarMenuButton
-                    tooltip="Contact Support"
-                    variant="ghost"
-                    className={cn(
-                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
-                      SIDEBAR_TRANSITION_CLASSNAMES
-                    )}
-                  >
-                    <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
-                    Contact Support
-                  </SidebarMenuButton>
-                }
-              />
-            </SidebarMenuItem>
-          )}
           {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && (
             <SidebarMenuItem
               key="survey"
               className={cn(
-                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >
@@ -116,6 +91,31 @@ export default function DashboardSidebarFooter() {
                   >
                     <MessageSquarePlus className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
                     Feedback
+                  </SidebarMenuButton>
+                }
+              />
+            </SidebarMenuItem>
+          )}
+          {INCLUDE_REPORT_ISSUE && (
+            <SidebarMenuItem
+              key="support"
+              className={cn(
+                'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
+                SIDEBAR_TRANSITION_CLASSNAMES
+              )}
+            >
+              <ContactSupportDialog
+                trigger={
+                  <SidebarMenuButton
+                    tooltip="Contact Support"
+                    variant="ghost"
+                    className={cn(
+                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                      SIDEBAR_TRANSITION_CLASSNAMES
+                    )}
+                  >
+                    <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    Contact Support
                   </SidebarMenuButton>
                 }
               />

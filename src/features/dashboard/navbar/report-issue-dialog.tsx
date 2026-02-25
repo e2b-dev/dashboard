@@ -131,15 +131,11 @@ export default function ContactSupportDialog({
   }, [])
 
   const onSubmit = (values: SupportFormValues) => {
-    const formData = new FormData()
-    formData.append('description', values.description.trim())
-    formData.append('teamIdOrSlug', team.id)
-
-    for (const file of files) {
-      formData.append('files', file)
-    }
-
-    submitSupport(formData)
+    submitSupport({
+      description: values.description.trim(),
+      teamIdOrSlug: team.id,
+      files,
+    })
   }
 
   return (
