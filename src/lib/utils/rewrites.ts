@@ -1,7 +1,7 @@
 import {
   MIDDLEWARE_REWRITE_CONFIG,
-  RewriteConfigType,
   ROUTE_REWRITE_CONFIG,
+  RewriteConfigType,
 } from '@/configs/rewrites'
 import { RewriteConfig } from '@/types/rewrites.types'
 import * as cheerio from 'cheerio'

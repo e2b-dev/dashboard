@@ -1,6 +1,6 @@
 import { getTracer } from '@/lib/clients/tracer'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { context, SpanStatusCode, trace } from '@opentelemetry/api'
+import { SpanStatusCode, context, trace } from '@opentelemetry/api'
 import z from 'zod'
 import checkUserTeamAuthCached from '../auth/check-user-team-auth-cached'
 import { getTeamIdFromSegment } from '../team/get-team-id-from-segment'

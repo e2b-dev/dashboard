@@ -120,15 +120,20 @@ export async function GET(
 
     const parsedSandboxId = SandboxIdSchema.safeParse(requestedSandboxId)
     if (!parsedSandboxId.success) {
-      return redirectToDashboardWithWarning(request, 'inspect_sandbox:invalid_id', {
-        sandbox_id: requestedSandboxId,
-        validation_errors: parsedSandboxId.error.flatten(),
-      })
+      return redirectToDashboardWithWarning(
+        request,
+        'inspect_sandbox:invalid_id',
+        {
+          sandbox_id: requestedSandboxId,
+          validation_errors: parsedSandboxId.error.flatten(),
+        }
+      )
     }
 
     const sandboxId = parsedSandboxId.data
     const supabase = await createClient()
-    const { data: userResponse, error: userError } = await supabase.auth.getUser()
+    const { data: userResponse, error: userError } =
+      await supabase.auth.getUser()
 
     if (userError || !userResponse.user) {
       l.info({
@@ -167,10 +172,14 @@ export async function GET(
         error: teamQueryError,
       })
 
-      return redirectToDashboardWithWarning(request, 'inspect_sandbox:no_teams', {
-        user_id: userId,
-        sandbox_id: sandboxId,
-      })
+      return redirectToDashboardWithWarning(
+        request,
+        'inspect_sandbox:no_teams',
+        {
+          user_id: userId,
+          sandbox_id: sandboxId,
+        }
+      )
     }
 
     const userTeams: UserTeam[] = userTeamRows.map((row) => ({
@@ -188,11 +197,15 @@ export async function GET(
     )
 
     if (!selectedTeam) {
-      return redirectToDashboardWithWarning(request, 'inspect_sandbox:not_found', {
-        user_id: userId,
-        sandbox_id: sandboxId,
-        teams_checked: userTeams.map((team) => team.id),
-      })
+      return redirectToDashboardWithWarning(
+        request,
+        'inspect_sandbox:not_found',
+        {
+          user_id: userId,
+          sandbox_id: sandboxId,
+          teams_checked: userTeams.map((team) => team.id),
+        }
+      )
     }
 
     const redirectUrl = new URL(

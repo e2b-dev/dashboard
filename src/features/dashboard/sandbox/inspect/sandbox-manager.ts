@@ -5,15 +5,15 @@ import {
   normalizePath,
 } from '@/lib/utils/filesystem'
 import {
-  FilesystemEventType,
   type EntryInfo,
   type FilesystemEvent,
+  FilesystemEventType,
   type Sandbox,
   type WatchHandle,
 } from 'e2b'
 import {
-  MAX_VIEWABLE_FILE_SIZE_BYTES,
   type FilesystemStore,
+  MAX_VIEWABLE_FILE_SIZE_BYTES,
 } from './filesystem/store'
 import { FilesystemNode } from './filesystem/types'
 

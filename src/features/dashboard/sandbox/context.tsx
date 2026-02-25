@@ -5,8 +5,8 @@ import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
 import { SandboxInfo } from '@/types/api.types'
 import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import {
-  createContext,
   ReactNode,
+  createContext,
   useContext,
   useEffect,
   useState,

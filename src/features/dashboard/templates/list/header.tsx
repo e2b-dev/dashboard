@@ -40,14 +40,10 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
               {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
             </span>
             <span className="text-fg-tertiary"> · </span>
-            <span className="text-fg-tertiary">
-              {totalCount} total
-            </span>
+            <span className="text-fg-tertiary">{totalCount} total</span>
           </>
         ) : (
-          <span className="text-fg-tertiary">
-            {totalCount} total
-          </span>
+          <span className="text-fg-tertiary">{totalCount} total</span>
         )}
       </span>
     </div>

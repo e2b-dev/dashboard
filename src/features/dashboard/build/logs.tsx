@@ -24,9 +24,9 @@ import {
   TableRow,
 } from '@/ui/primitives/table'
 import {
-  useVirtualizer,
   VirtualItem,
   Virtualizer,
+  useVirtualizer,
 } from '@tanstack/react-virtual'
 import {
   RefObject,

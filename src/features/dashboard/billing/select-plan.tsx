@@ -166,7 +166,11 @@ function PlanCard({
     <UpgradeIcon className="size-7" />
   )
 
-  const displayName = tier ? formatTierDisplayName(tier.name) : isBaseTier ? 'Hobby' : 'Professional'
+  const displayName = tier
+    ? formatTierDisplayName(tier.name)
+    : isBaseTier
+      ? 'Hobby'
+      : 'Professional'
   const priceDisplay = tier?.price_cents
     ? formatCurrency(tier.price_cents / 100)
     : 'FREE'

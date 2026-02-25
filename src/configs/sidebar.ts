@@ -25,7 +25,6 @@ export type SidebarNavItem = {
     | ForwardRefExoticComponent<
         Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
       >
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | ((...args: any[]) => JSX.Element)
   group?: string
   activeMatch?: string

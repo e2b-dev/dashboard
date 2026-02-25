@@ -163,13 +163,9 @@ export function SurveyContent({
   return (
     <div>
       <CardHeader>
-        <CardTitle>
-          {currentQuestion?.question}
-        </CardTitle>
+        <CardTitle>{currentQuestion?.question}</CardTitle>
         {currentQuestion?.description && (
-          <CardDescription>
-            {currentQuestion?.description}
-          </CardDescription>
+          <CardDescription>{currentQuestion?.description}</CardDescription>
         )}
       </CardHeader>
       <CardContent className="pt-1">

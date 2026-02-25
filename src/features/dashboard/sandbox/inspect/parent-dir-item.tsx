@@ -1,10 +1,10 @@
 'use client'
 
+import path from 'path'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
 import { FolderUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import path from 'path'
 import { useTransition } from 'react'
 
 interface SandboxInspectParentDirItemProps {

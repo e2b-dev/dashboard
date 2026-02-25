@@ -5,10 +5,10 @@ import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ColumnDef,
   FilterFn,
+  TableOptions,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  TableOptions,
 } from '@tanstack/react-table'
 import posthog from 'posthog-js'
 import { useMemo } from 'react'

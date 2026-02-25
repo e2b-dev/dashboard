@@ -44,13 +44,18 @@ export default function DashboardEmptyFrame({
           </CardHeader>
           {descriptionPlacement === 'content' ? (
             <CardContent
-              className={cn('text-fg-tertiary text-center', descriptionContentClassName)}
+              className={cn(
+                'text-fg-tertiary text-center',
+                descriptionContentClassName
+              )}
             >
               {description}
             </CardContent>
           ) : null}
           {actions ? (
-            <CardFooter className="flex flex-col gap-4 pt-4">{actions}</CardFooter>
+            <CardFooter className="flex flex-col gap-4 pt-4">
+              {actions}
+            </CardFooter>
           ) : null}
         </Card>
       </div>

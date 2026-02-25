@@ -31,7 +31,7 @@ export function ConcurrentSandboxesClient({
         value={lastConcurrentSandboxes}
         className="prose-value-big mt-1"
       />
-      {!!(limit) && (
+      {!!limit && (
         <span className="absolute right-3 bottom-3 md:right-6 md:bottom-4 text-fg-tertiary prose-label">
           LIMIT: {formatNumber(limit)}
         </span>

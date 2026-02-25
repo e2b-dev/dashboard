@@ -1,7 +1,7 @@
 import { getTracer } from '@/lib/clients/tracer'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
-import { context, SpanStatusCode, trace } from '@opentelemetry/api'
+import { SpanStatusCode, context, trace } from '@opentelemetry/api'
 import {
   createServerClient,
   parseCookieHeader,

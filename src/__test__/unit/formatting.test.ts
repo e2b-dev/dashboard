@@ -1,9 +1,9 @@
 import {
   formatAveragingPeriod,
+  formatCPUCores,
   formatChartTimestampLocal,
   formatChartTimestampUTC,
   formatCompactDate,
-  formatCPUCores,
   formatDecimal,
   formatDuration,
   formatMemory,

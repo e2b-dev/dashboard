@@ -2,8 +2,8 @@
 
 import { AUTH_URLS } from '@/configs/urls'
 import {
-  getTimeoutMsFromUserMessage,
   USER_MESSAGES,
+  getTimeoutMsFromUserMessage,
 } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { forgotPasswordAction } from '@/server/auth/auth-actions'

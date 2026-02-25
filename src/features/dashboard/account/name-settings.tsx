@@ -32,7 +32,10 @@ import { z } from 'zod'
 import { useDashboard } from '../context'
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name cannot be empty').max(100, 'Max 100 characters'),
+  name: z
+    .string()
+    .min(1, 'Name cannot be empty')
+    .max(100, 'Max 100 characters'),
 })
 
 type FormValues = z.infer<typeof formSchema>

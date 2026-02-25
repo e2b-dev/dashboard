@@ -150,7 +150,6 @@ describe('Auth Actions - Integration Tests', () => {
       expect(result?.validationErrors?.fieldErrors.returnTo).toBeDefined()
     })
 
-
     it('should throw validation error if returnTo is a malicious URL', async () => {
       mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
         data: { user: { id: 'user-123' } },

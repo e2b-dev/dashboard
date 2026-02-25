@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { memo, ReactElement, ReactNode, useCallback, useMemo } from 'react'
+import { ReactElement, ReactNode, memo, useCallback, useMemo } from 'react'
 
 type DashboardTabElement = ReactElement<DashboardTabProps, typeof DashboardTab>
 

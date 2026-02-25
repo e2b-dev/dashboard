@@ -4,10 +4,10 @@ import { getTracer } from '@/lib/clients/tracer'
 import { flattenClientInputValue } from '@/lib/utils/action'
 import type { Span } from '@opentelemetry/api'
 import {
-  context,
   Counter,
   Histogram,
   SpanStatusCode,
+  context,
   trace,
 } from '@opentelemetry/api'
 import { User } from '@supabase/supabase-js'

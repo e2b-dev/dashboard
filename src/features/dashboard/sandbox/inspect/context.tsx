@@ -8,8 +8,8 @@ import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import Sandbox, { EntryInfo } from 'e2b'
 import { useRouter } from 'next/navigation'
 import {
-  createContext,
   ReactNode,
+  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -18,7 +18,7 @@ import {
 } from 'react'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
-import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
+import { type FilesystemStore, createFilesystemStore } from './filesystem/store'
 import { FilesystemNode, FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
 

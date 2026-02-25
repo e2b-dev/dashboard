@@ -3,10 +3,10 @@
 import { AUTH_URLS } from '@/configs/urls'
 import { AuthFormMessage } from '@/features/auth/form-message'
 import {
-  ConfirmEmailInputSchema,
-  OtpTypeSchema,
   type ConfirmEmailInput,
+  ConfirmEmailInputSchema,
   type OtpType,
+  OtpTypeSchema,
 } from '@/server/api/models/auth.models'
 import { Button } from '@/ui/primitives/button'
 import { useMutation } from '@tanstack/react-query'

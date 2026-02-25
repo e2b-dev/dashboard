@@ -12,7 +12,7 @@ import {
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
-import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
+import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { TIME_RANGE_PRESETS } from './constants'

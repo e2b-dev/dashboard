@@ -134,8 +134,10 @@ bun run dev         # Start development server
 bun run build      # Create production build
 bun run start      # Start production server
 bun run preview    # Build and preview production
-bun run lint       # Run ESLint
-bun run lint:fix   # Auto-fix ESLint issues
+bun run lint       # Run Biome linter
+bun run lint:fix   # Auto-fix Biome lint issues
+bun run format     # Format with Biome
+bun run check      # Run full Biome check (lint + format + imports)
 SUPABASE_PROJECT_ID=your-project-id bun run db:types   # Generate DB types
 bun run db:migration # Create migration
 

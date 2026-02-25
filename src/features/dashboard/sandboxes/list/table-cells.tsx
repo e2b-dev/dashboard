@@ -66,9 +66,7 @@ const DiskUsageCellView = ({ sandboxId, totalDiskGb }: DiskUsageCellProps) => {
   )
 }
 
-export const CpuUsageCell = ({
-  row,
-}: CellContext<SandboxListRow, unknown>) => (
+export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
     <CpuUsageCellView
       sandboxId={row.original.sandboxID}
@@ -77,9 +75,7 @@ export const CpuUsageCell = ({
   </div>
 )
 
-export const RamUsageCell = ({
-  row,
-}: CellContext<SandboxListRow, unknown>) => (
+export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
     <RamUsageCellView
       sandboxId={row.original.sandboxID}

@@ -15,23 +15,23 @@ import {
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { keepPreviousData, useSuspenseQuery } from '@tanstack/react-query'
 import {
+  type ColumnFiltersState,
+  type ColumnSizingState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  type ColumnFiltersState,
-  type ColumnSizingState,
   useReactTable,
 } from '@tanstack/react-table'
 import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
+import { getSandboxListEffectiveSorting } from './stores/table-store'
+import type { SandboxStartedAtFilter } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 import type { SandboxListRow } from './table-config'
-import { getSandboxListEffectiveSorting } from './stores/table-store'
-import type { SandboxStartedAtFilter } from './stores/table-store'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -216,10 +216,7 @@ export default function SandboxesTable() {
               </DataTableRow>
             ))}
           </DataTableHeader>
-          <SandboxesTableBody
-            table={table}
-            scrollRef={scrollRef}
-          />
+          <SandboxesTableBody table={table} scrollRef={scrollRef} />
         </DataTable>
       </div>
     </ClientOnly>

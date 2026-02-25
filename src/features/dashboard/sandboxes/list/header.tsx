@@ -1,10 +1,10 @@
 import { PollingButton } from '@/ui/polling-button'
 import { Suspense } from 'react'
-import type { SandboxListTable } from './table-config'
 import {
   sandboxListPollingIntervals,
   useSandboxListTableStore,
 } from './stores/table-store'
+import type { SandboxListTable } from './table-config'
 import SandboxesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 
@@ -21,7 +21,9 @@ export function SandboxesHeader({
 }: SandboxesHeaderProps) {
   'use no memo'
 
-  const pollingInterval = useSandboxListTableStore((state) => state.pollingInterval)
+  const pollingInterval = useSandboxListTableStore(
+    (state) => state.pollingInterval
+  )
   const setPollingInterval = useSandboxListTableStore(
     (state) => state.setPollingInterval
   )
@@ -53,14 +55,10 @@ export function SandboxesHeader({
                 {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
               </span>
               <span className="text-fg-tertiary"> · </span>
-              <span className="text-fg-tertiary">
-                {totalCount} total
-              </span>
+              <span className="text-fg-tertiary">{totalCount} total</span>
             </>
           ) : (
-            <span className="text-fg-tertiary">
-              {totalCount} total
-            </span>
+            <span className="text-fg-tertiary">{totalCount} total</span>
           )}
         </span>
       </div>

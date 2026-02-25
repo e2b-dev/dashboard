@@ -3,8 +3,8 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
-  calculateTeamMetricsStep,
   MOCK_TEAM_METRICS_DATA,
+  calculateTeamMetricsStep,
 } from '@/configs/mock-data'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'

@@ -84,7 +84,10 @@ export function RanFor({
   const formattedTimestamp = formatCompactDate(finishedAt)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary group/time">
+    <CopyButtonInline
+      value={iso}
+      className="whitespace-nowrap text-fg-secondary group/time"
+    >
       In {formatDurationCompact(duration)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}
@@ -99,7 +102,10 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const formattedTimestamp = formatCompactDate(timestamp)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary group/time">
+    <CopyButtonInline
+      value={iso}
+      className="whitespace-nowrap text-fg-secondary group/time"
+    >
       {formatTimeAgoCompact(elapsed)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}

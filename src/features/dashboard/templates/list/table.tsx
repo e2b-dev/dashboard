@@ -19,8 +19,8 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   ColumnFiltersState,
   ColumnSizingState,
-  flexRender,
   TableOptions,
+  flexRender,
   useReactTable,
 } from '@tanstack/react-table'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -111,7 +111,6 @@ export default function TemplatesTable() {
     }
 
     setColumnFilters(newFilters)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cpuCount, memoryMB, isPublic])
 
   const columns = useColumns([])
@@ -193,9 +192,8 @@ export default function TemplatesTable() {
                     {header.id === 'public' ? (
                       <HelpTooltip>
                         Public templates can be used by all users to start
-                        Sandboxes, but can only be edited by your team.
-                        
-                        Internal templates can only be used and edited by your team.
+                        Sandboxes, but can only be edited by your team. Internal
+                        templates can only be used and edited by your team.
                       </HelpTooltip>
                     ) : null}
                     <span>

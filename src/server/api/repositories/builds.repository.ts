@@ -7,11 +7,11 @@ import { TRPCError } from '@trpc/server'
 import z from 'zod'
 import { apiError } from '../errors'
 import {
+  type BuildStatusDB,
   ListedBuildDTO,
+  type RunningBuildStatusDTO,
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
-  type BuildStatusDB,
-  type RunningBuildStatusDTO,
 } from '../models/builds.models'
 
 // helpers

@@ -3,8 +3,8 @@
 import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
-  getTimeoutMsFromUserMessage,
   USER_MESSAGES,
+  getTimeoutMsFromUserMessage,
 } from '@/configs/user-messages'
 import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'

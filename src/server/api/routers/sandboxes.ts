@@ -1,10 +1,10 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
-  calculateTeamMetricsStep,
   MOCK_SANDBOXES_DATA,
   MOCK_TEAM_METRICS_DATA,
   MOCK_TEAM_METRICS_MAX_DATA,
+  calculateTeamMetricsStep,
 } from '@/configs/mock-data'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'

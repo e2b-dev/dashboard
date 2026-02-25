@@ -1,6 +1,9 @@
 'use client'
 
-import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY, INCLUDE_REPORT_ISSUE } from '@/configs/flags'
+import {
+  INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
+  INCLUDE_REPORT_ISSUE,
+} from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'

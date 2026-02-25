@@ -191,7 +191,6 @@ interface ImageContentProps {
 function ImageContent({ name, dataUri }: ImageContentProps) {
   return (
     <div className="flex h-full w-full items-center justify-center overflow-auto p-2">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={dataUri}
         alt={name}

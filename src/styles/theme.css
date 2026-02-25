@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -105,12 +105,7 @@
   --graph-area-accent-main-from: rgba(229, 111, 0, 0.16);
   --graph-area-accent-main-to: rgba(250, 250, 250, 0.16);
 
-  --graph-area-accent-positive-from: rgba(
-    0,
-    166,
-    112,
-    0.16
-  ); /* Success/positive area gradient */
+  --graph-area-accent-positive-from: rgba(0, 166, 112, 0.16); /* Success/positive area gradient */
   --graph-area-accent-positive-to: rgba(250, 250, 250, 0.2);
 
   --graph-area-fg-from: rgba(108, 108, 108, 0.2);
@@ -125,20 +120,10 @@
   --graph-area-3-from: rgba(226, 124, 29, 0.18); /* Dark orange area gradient */
   --graph-area-3-to: rgba(250, 250, 250, 0.2);
 
-  --graph-area-4-from: rgba(
-    192,
-    155,
-    184,
-    0.18
-  ); /* Pastel purple-peach area gradient */
+  --graph-area-4-from: rgba(192, 155, 184, 0.18); /* Pastel purple-peach area gradient */
   --graph-area-4-to: rgba(250, 250, 250, 0.2);
 
-  --graph-area-5-from: rgba(
-    166,
-    127,
-    169,
-    0.18
-  ); /* Pastel purple area gradient */
+  --graph-area-5-from: rgba(166, 127, 169, 0.18); /* Pastel purple area gradient */
   --graph-area-5-to: rgba(250, 250, 250, 0.2);
 
   --graph-area-6-from: rgba(140, 92, 165, 0.18); /* Purple area gradient */
@@ -204,12 +189,7 @@
   --graph-area-accent-main-from: rgba(255, 136, 0, 0.22);
   --graph-area-accent-main-to: rgba(10, 10, 10, 0.2);
 
-  --graph-area-accent-positive-from: rgba(
-    0,
-    217,
-    146,
-    0.22
-  ); /* Success/positive area gradient */
+  --graph-area-accent-positive-from: rgba(0, 217, 146, 0.22); /* Success/positive area gradient */
   --graph-area-accent-positive-to: rgba(10, 10, 10, 0.2);
 
   --graph-area-1-from: rgba(252, 232, 216, 0.35); /* Peachy area gradient */
@@ -224,20 +204,10 @@
   --graph-area-fg-from: rgba(108, 108, 108, 0.2);
   --graph-area-fg-to: rgba(10, 10, 10, 0.2);
 
-  --graph-area-4-from: rgba(
-    212,
-    176,
-    204,
-    0.25
-  ); /* Pastel purple-peach area gradient */
+  --graph-area-4-from: rgba(212, 176, 204, 0.25); /* Pastel purple-peach area gradient */
   --graph-area-4-to: rgba(10, 10, 10, 0.2);
 
-  --graph-area-5-from: rgba(
-    186,
-    148,
-    189,
-    0.25
-  ); /* Pastel purple area gradient */
+  --graph-area-5-from: rgba(186, 148, 189, 0.25); /* Pastel purple area gradient */
   --graph-area-5-to: rgba(10, 10, 10, 0.2);
 
   --graph-area-6-from: rgba(162, 117, 187, 0.25); /* Purple area gradient */
@@ -319,53 +289,49 @@
   --color-chart-5: var(--accent-error-highlight);
 
   /* Shadows */
-  --shadow-xs:
-    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+  --shadow-xs: 0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
     0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-sm:
-    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+  --shadow-sm: 0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
     0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-md:
-    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
+  --shadow-md: 0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
     0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-lg:
-    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --shadow-xl:
-    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-lg: 0 10px 15px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 4px 6px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --shadow-xl: 0 20px 25px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 8px 10px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
   --shadow-2xl: 0 25px 50px
     hsl(from var(--shadow) h s l / var(--shadow-strength));
   --shadow-inner: inset 0 2px 4px
     hsl(from var(--shadow) h s l / var(--shadow-strength));
 
-  --drop-shadow-xs:
-    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 1px 1px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-sm:
-    0 1px 3px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 1px 2px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-md:
-    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 2px 4px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-lg:
-    0 10px 15px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 4px 6px hsl(from var(--shadow) h s l / var(--shadow-strength));
-  --drop-shadow-xl:
-    0 20px 25px hsl(from var(--shadow) h s l / var(--shadow-strength)),
-    0 8px 10px hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-xs: 0 1px 2px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 1px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-sm: 0 1px 3px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 1px 2px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-md: 0 4px 6px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 2px 4px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-lg: 0 10px 15px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 4px 6px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
+  --drop-shadow-xl: 0 20px 25px
+    hsl(from var(--shadow) h s l / var(--shadow-strength)), 0 8px 10px
+    hsl(from var(--shadow) h s l / var(--shadow-strength));
   --drop-shadow-2xl: 0 25px 50px
     hsl(from var(--shadow) h s l / var(--shadow-strength));
 
   /* Font Family */
   --font-sans:
-    'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  --font-mono:
-    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
-  --font-fira-code: 'Fira Code', monospace;
+    "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-fira-code: "Fira Code", monospace;
 
   /* Animations */
   @keyframes accordion-down {
@@ -433,37 +399,37 @@
 
   @keyframes loader-slash {
     0% {
-      content: '|';
+      content: "|";
     }
     25% {
-      content: '/';
+      content: "/";
     }
     50% {
-      content: '-';
+      content: "-";
     }
     75% {
-      content: '\\';
+      content: "\\";
     }
     100% {
-      content: '|';
+      content: "|";
     }
   }
 
   @keyframes loader-square {
     0% {
-      content: '◰';
+      content: "◰";
     }
     25% {
-      content: '◳';
+      content: "◳";
     }
     50% {
-      content: '◲';
+      content: "◲";
     }
     75% {
-      content: '◱';
+      content: "◱";
     }
     100% {
-      content: '◰';
+      content: "◰";
     }
   }
 
