@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
   const redirectUrl = new URL(redirectPath, request.url)
 
-  // Forward ?support=true to auto-open the Contact Support dialog
+  // Forward ?support=true query param to auto-open the Contact Support dialog on the target page
   if (searchParams.get('support') === 'true') {
     redirectUrl.searchParams.set('support', 'true')
   }
