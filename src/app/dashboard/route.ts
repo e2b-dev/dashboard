@@ -18,6 +18,8 @@ export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   members: (teamId) => PROTECTED_URLS.MEMBERS(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
+  support: (teamId) =>
+    `${PROTECTED_URLS.SANDBOXES(teamId)}?support=true`,
 
   // back compatibility
   budget: (teamId) => PROTECTED_URLS.LIMITS(teamId),
