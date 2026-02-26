@@ -24,8 +24,9 @@ import { Textarea } from '@/ui/primitives/textarea'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Paperclip, X } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -52,10 +53,24 @@ export default function ContactSupportDialog({
 }: ContactSupportDialogProps) {
   const posthog = usePostHog()
   const { team } = useDashboard()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   const [isOpen, setIsOpen] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
   const [files, setFiles] = useState<File[]>([])
+
+  // Auto-open dialog when ?support=true is in the URL
+  useEffect(() => {
+    if (searchParams.get('support') === 'true') {
+      setIsOpen(true)
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('support')
+      const query = params.toString()
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+    }
+  }, [searchParams, router, pathname])
 
   const form = useForm<SupportFormValues>({
     resolver: zodResolver(supportFormSchema),
