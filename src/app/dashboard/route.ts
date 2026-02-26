@@ -18,8 +18,6 @@ export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   members: (teamId) => PROTECTED_URLS.MEMBERS(teamId),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
-  support: (teamId) =>
-    `${PROTECTED_URLS.SANDBOXES(teamId)}?support=true`,
 
   // back compatibility
   budget: (teamId) => PROTECTED_URLS.LIMITS(teamId),
@@ -61,5 +59,12 @@ export async function GET(request: NextRequest) {
     ? urlGenerator(team.slug || team.id)
     : PROTECTED_URLS.SANDBOXES(team.slug || team.id)
 
-  return NextResponse.redirect(new URL(redirectPath, request.url))
+  const redirectUrl = new URL(redirectPath, request.url)
+
+  // Forward ?support=true to auto-open the Contact Support dialog
+  if (searchParams.get('support') === 'true') {
+    redirectUrl.searchParams.set('support', 'true')
+  }
+
+  return NextResponse.redirect(redirectUrl)
 }
