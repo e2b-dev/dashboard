@@ -38,9 +38,6 @@ export const serverSchema = z.object({
 })
 
 export const clientSchema = z.object({
-  NEXT_PUBLIC_DASHBOARD_API_URL: z.url(),
-  NEXT_PUBLIC_INFRA_API_URL: z.url(),
-
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
@@ -62,6 +59,9 @@ export const clientSchema = z.object({
 
   NEXT_PUBLIC_CAPTCHA_ENABLED: z.string().optional(),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+
+  NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
+  NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 })
 
 export const testEnvSchema = z.object({
