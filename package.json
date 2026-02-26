@@ -19,6 +19,7 @@
     "db:migrations:apply": "bun run scripts:apply-migrations",
     "<<<<<<< Gen": "",
     "generate:infra": "bunx openapi-typescript ./spec/openapi.infra.yaml -o ./src/types/infra-api.types.ts",
+    "generate:dashboard-api": "bunx openapi-typescript ./spec/openapi.dashboard-api.yaml -o ./src/types/dashboard-api.types.ts",
     "generate:argus": "bunx openapi-typescript ./spec/openapi.argus.yaml -o ./src/types/argus-api.types.ts",
     "generate:supabase": "bunx supabase@latest gen types typescript --schema public > src/types/database.types.ts --project-id $SUPABASE_PROJECT_ID",
     "<<<<<<< Scripts": "",

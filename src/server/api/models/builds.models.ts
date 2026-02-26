@@ -37,6 +37,7 @@ export interface BuildLogsDTO {
 }
 
 export interface BuildDetailsDTO {
+  templateNames: string[] | null
   // id or alias
   template: string
   startedAt: number

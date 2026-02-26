@@ -32,6 +32,7 @@ export const buildsRouter = createTRPCRouter({
       )
 
       return await buildsRepo.listBuilds(
+        ctx.session.access_token,
         teamId,
         buildIdOrTemplate,
         dbStatuses,
@@ -49,7 +50,11 @@ export const buildsRouter = createTRPCRouter({
       const { teamId } = ctx
       const { buildIds } = input
 
-      return await buildsRepo.getRunningStatuses(teamId, buildIds)
+      return await buildsRepo.getRunningStatuses(
+        ctx.session.access_token,
+        teamId,
+        buildIds
+      )
     }),
 
   buildDetails: protectedTeamProcedure
@@ -63,10 +68,15 @@ export const buildsRouter = createTRPCRouter({
       const { teamId } = ctx
       const { buildId, templateId } = input
 
-      const buildInfo = await buildsRepo.getBuildInfo(buildId, teamId)
+      const buildInfo = await buildsRepo.getBuildInfo(
+        ctx.session.access_token,
+        buildId,
+        teamId
+      )
 
       const result: BuildDetailsDTO = {
-        template: buildInfo.alias ?? templateId,
+        templateNames: buildInfo.names,
+        template: buildInfo.names?.[0] ?? templateId,
         startedAt: buildInfo.createdAt,
         finishedAt: buildInfo.finishedAt,
         status: buildInfo.status,
