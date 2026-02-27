@@ -1,9 +1,9 @@
-import { formatDurationCompact } from '@/lib/utils/formatting'
-import { BuildLogDTO } from '@/server/api/models/builds.models'
-import CopyButtonInline from '@/ui/copy-button-inline'
-import { Badge, BadgeProps } from '@/ui/primitives/badge'
 import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale/en-US'
+import { formatDurationCompact } from '@/lib/utils/formatting'
+import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import CopyButtonInline from '@/ui/copy-button-inline'
+import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 
 interface LogLevelProps {
   level: BuildLogDTO['level']

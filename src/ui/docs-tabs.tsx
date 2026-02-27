@@ -1,7 +1,5 @@
 'use client'
 
-import { IconsMap } from '@/configs/docs'
-import { cn } from '@/lib/utils'
 import type {
   TabsProps as BaseProps,
   TabsContentProps,
@@ -16,6 +14,8 @@ import {
   useRef,
   useState,
 } from 'react'
+import { IconsMap } from '@/configs/docs'
+import { cn } from '@/lib/utils'
 import * as Primitive from './primitives/tabs'
 
 export { Primitive }

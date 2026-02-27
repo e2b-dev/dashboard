@@ -1,4 +1,7 @@
-import { MIDDLEWARE_REDIRECTS, MiddlewareRedirect } from '@/configs/redirects'
+import {
+  MIDDLEWARE_REDIRECTS,
+  type MiddlewareRedirect,
+} from '@/configs/redirects'
 
 /**
  * Finds a middleware redirect configuration for the given pathname.

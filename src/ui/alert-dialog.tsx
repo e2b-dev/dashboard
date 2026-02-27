@@ -1,7 +1,7 @@
 'use client'
 
+import type { FC } from 'react'
 import { cn } from '@/lib/utils'
-import { FC } from 'react'
 import { Button } from './primitives/button'
 import {
   Dialog,

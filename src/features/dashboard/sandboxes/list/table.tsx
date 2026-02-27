@@ -1,18 +1,5 @@
 'use client'
 
-import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
-import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { cn } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
-import ClientOnly from '@/ui/client-only'
-import {
-  DataTable,
-  DataTableHead,
-  DataTableHeader,
-  DataTableRow,
-} from '@/ui/data-table'
-import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { keepPreviousData, useSuspenseQuery } from '@tanstack/react-query'
 import {
   type ColumnFiltersState,
@@ -26,12 +13,25 @@ import {
 import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
+import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
+import ClientOnly from '@/ui/client-only'
+import {
+  DataTable,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from '@/ui/data-table'
+import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { SandboxesHeader } from './header'
-import { getSandboxListEffectiveSorting } from './stores/table-store'
 import type { SandboxStartedAtFilter } from './stores/table-store'
+import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
-import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 import type { SandboxListRow } from './table-config'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,

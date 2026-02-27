@@ -1,7 +1,7 @@
+import { describe, expect, it } from 'vitest'
 import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
-import { ClientTeamMetric } from '@/types/sandboxes.types'
-import { describe, expect, it } from 'vitest'
+import type { ClientTeamMetric } from '@/types/sandboxes.types'
 
 describe('team-metrics-chart-utils', () => {
   describe('calculateYAxisMax', () => {

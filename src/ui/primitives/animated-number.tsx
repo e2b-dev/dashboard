@@ -1,8 +1,8 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'motion/react'
 import { memo, useEffect, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface AnimatedNumberProps {
   value: string | number

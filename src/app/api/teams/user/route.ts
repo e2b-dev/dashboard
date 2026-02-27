@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/clients/supabase/server'
 import getUserTeamsMemo from '@/server/team/get-user-teams-memo'
-import { UserTeamsResponse } from './types'
+import type { UserTeamsResponse } from './types'
 
 export async function GET() {
   try {

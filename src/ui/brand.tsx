@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Badge, BadgeProps } from '@/ui/primitives/badge'
+import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 
 export const E2BLogo = ({
   className,

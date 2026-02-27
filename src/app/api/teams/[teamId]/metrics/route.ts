@@ -1,10 +1,10 @@
 import 'server-cli-only'
 
+import { serializeError } from 'serialize-error'
 import { l } from '@/lib/clients/logger/logger'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import { getTeamMetricsCore } from '@/server/sandboxes/get-team-metrics-core'
-import { serializeError } from 'serialize-error'
-import { TeamMetricsRequestSchema, TeamMetricsResponse } from './types'
+import { TeamMetricsRequestSchema, type TeamMetricsResponse } from './types'
 
 export async function POST(
   request: Request,

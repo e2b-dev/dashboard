@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
@@ -20,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import Link from 'next/link'
 import { useInvoices } from './hooks'
 import { TableEmptyRowBorder } from './table-empty-row-border'
 

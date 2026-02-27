@@ -1,12 +1,12 @@
-import { getTracer } from '@/lib/clients/tracer'
-import { getSessionInsecure } from '@/server/auth/get-session'
-import getUserByToken from '@/server/auth/get-user-by-token'
-import { SpanStatusCode, context, trace } from '@opentelemetry/api'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import {
   createServerClient,
   parseCookieHeader,
   serializeCookieHeader,
 } from '@supabase/ssr'
+import { getTracer } from '@/lib/clients/tracer'
+import { getSessionInsecure } from '@/server/auth/get-session'
+import getUserByToken from '@/server/auth/get-user-by-token'
 import { unauthorizedUserError } from '../errors'
 import { t } from '../init'
 

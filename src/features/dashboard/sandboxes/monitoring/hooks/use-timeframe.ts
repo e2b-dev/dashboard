@@ -1,12 +1,12 @@
 'use client'
 
+import { parseAsInteger, useQueryStates } from 'nuqs'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   TEAM_METRICS_INITIAL_RANGE_MS,
   TEAM_METRICS_TIMEFRAME_UPDATE_MS,
 } from '@/configs/intervals'
-import { TIME_RANGES, TimeRangeKey } from '@/lib/utils/timeframe'
-import { parseAsInteger, useQueryStates } from 'nuqs'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { TIME_RANGES, type TimeRangeKey } from '@/lib/utils/timeframe'
 import { calculateIsLive } from '../utils'
 
 const MAX_DAYS_AGO = 31 * 24 * 60 * 60 * 1000

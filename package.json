@@ -10,8 +10,7 @@
     "preview": "next build --turbopack && next start | pino-pretty --colorize",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
+    "format": "biome check --write . --max-diagnostics none",
     "check": "biome check .",
     "prebuild": "bun scripts:check-app-env",
     "<<<<<<< Development Tools": "",
@@ -157,7 +156,7 @@
     "zustand-computed": "^2.0.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.4",
     "@bufbuild/buf": "^1.54.0",
     "@bufbuild/protobuf": "^2.5.2",
     "@bufbuild/protoc-gen-es": "^2.5.2",

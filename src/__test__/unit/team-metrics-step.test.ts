@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest'
 import { calculateTeamMetricsStep } from '@/configs/mock-data'
 import { formatAveragingPeriod } from '@/lib/utils/formatting'
-import { describe, expect, it } from 'vitest'
 
 describe('Team Metrics Step Calculation', () => {
   describe('calculateTeamMetricsStep', () => {

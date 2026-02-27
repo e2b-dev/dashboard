@@ -1,10 +1,10 @@
 import 'server-cli-only'
 
+import type { User } from '@supabase/supabase-js'
+import { serializeError } from 'serialize-error'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { ClientTeam } from '@/types/dashboard.types'
-import { User } from '@supabase/supabase-js'
-import { serializeError } from 'serialize-error'
+import type { ClientTeam } from '@/types/dashboard.types'
 
 export async function getUserTeams(user: User): Promise<ClientTeam[]> {
   const { data: usersTeamsData, error } = await supabaseAdmin

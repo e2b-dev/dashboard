@@ -1,4 +1,4 @@
-import { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
+import type { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
 
 interface Invoice {
   cost: number

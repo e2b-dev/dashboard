@@ -1,8 +1,8 @@
-import CopyButton from '@/ui/copy-button'
-import { Button } from '@/ui/primitives/button'
 import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
 import { motion } from 'motion/react'
-import { FileContentState } from './filesystem/store'
+import CopyButton from '@/ui/copy-button'
+import { Button } from '@/ui/primitives/button'
+import type { FileContentState } from './filesystem/store'
 
 interface SandboxInspectViewerHeaderProps {
   name: string

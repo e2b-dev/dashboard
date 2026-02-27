@@ -1,11 +1,11 @@
+import { flexRender, Row, type Table } from '@tanstack/react-table'
+import { ExternalLink, X } from 'lucide-react'
+import type { RefObject } from 'react'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
-import { Template } from '@/types/api.types'
+import type { Template } from '@/types/api.types'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
-import { Row, Table, flexRender } from '@tanstack/react-table'
-import { ExternalLink, X } from 'lucide-react'
-import { type RefObject } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
 
 const ROW_HEIGHT_PX = 32

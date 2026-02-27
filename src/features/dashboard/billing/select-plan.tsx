@@ -1,10 +1,12 @@
 'use client'
 
+import { useMutation } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
-import { TierInfo } from '@/types/billing.types'
+import type { TierInfo } from '@/types/billing.types'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -17,8 +19,6 @@ import {
 } from '@/ui/primitives/icons'
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useMutation } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
 import { useDashboard } from '../context'
 import { TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { useBillingItems } from './hooks'

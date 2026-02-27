@@ -1,8 +1,8 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { getDashboardLayoutConfig } from '@/configs/layout'
 import { useDashboard } from '@/features/dashboard/context'
-import { usePathname } from 'next/navigation'
 
 interface DashboardLayoutFooterProps {
   statusBanner: React.ReactNode

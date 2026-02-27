@@ -7,15 +7,15 @@
  * is discoverable by search engines.
  */
 
+import { XMLParser } from 'fast-xml-parser'
+import type { MetadataRoute } from 'next'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import {
   LANDING_PAGE_DOMAIN,
   ROUTE_REWRITE_CONFIG,
   SDK_REFERENCE_DOMAIN,
 } from '@/configs/rewrites'
-import { DomainConfig } from '@/types/rewrites.types'
-import { XMLParser } from 'fast-xml-parser'
-import { MetadataRoute } from 'next'
+import type { DomainConfig } from '@/types/rewrites.types'
 import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Cache the sitemap for 15 minutes (in seconds)

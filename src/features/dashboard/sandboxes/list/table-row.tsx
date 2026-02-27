@@ -1,9 +1,9 @@
+import { flexRender, type Row } from '@tanstack/react-table'
+import Link from 'next/link'
+import { memo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { DataTableCell, DataTableRow } from '@/ui/data-table'
-import { type Row, flexRender } from '@tanstack/react-table'
-import Link from 'next/link'
-import { memo } from 'react'
 import type { SandboxListRow } from './table-config'
 
 interface SandboxesTableRowProps {

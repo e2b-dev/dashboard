@@ -1,17 +1,22 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
-  USER_MESSAGES,
   getTimeoutMsFromUserMessage,
+  USER_MESSAGES,
 } from '@/configs/user-messages'
-import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
+import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { useTurnstile } from '@/features/auth/use-turnstile'
-import { signUpAction } from '@/server/auth/auth-actions'
 import { signUpSchema } from '@/server/auth/auth.types'
+import { signUpAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -23,11 +28,6 @@ import {
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
 import TextSeparator from '@/ui/text-separator'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useRef, useState } from 'react'
 
 export default function SignUp() {
   'use no memo'

@@ -1,9 +1,9 @@
 'use client'
 
-import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { Button, ButtonProps } from '@/ui/primitives/button'
 import { CheckIcon } from 'lucide-react'
-import { FC } from 'react'
+import type { FC } from 'react'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { Button, type ButtonProps } from '@/ui/primitives/button'
 import { CopyIcon } from './primitives/icons'
 
 interface CopyButtonProps extends ButtonProps {

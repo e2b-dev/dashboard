@@ -1,17 +1,17 @@
 'use client'
 
-import { DefaultTemplate, Template } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import {
-  ColumnDef,
-  FilterFn,
-  TableOptions,
+  type ColumnDef,
+  type FilterFn,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  type TableOptions,
 } from '@tanstack/react-table'
 import posthog from 'posthog-js'
 import { useMemo } from 'react'
+import type { DefaultTemplate, Template } from '@/types/api.types'
 import {
   ActionsCell,
   CpuCell,

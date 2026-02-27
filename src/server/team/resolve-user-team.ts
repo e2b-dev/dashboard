@@ -1,12 +1,12 @@
 import 'server-only'
 
+import { cookies } from 'next/headers'
+import { serializeError } from 'serialize-error'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { cookies } from 'next/headers'
-import { serializeError } from 'serialize-error'
 import { checkUserTeamAuth } from '../auth/check-user-team-auth-cached'
-import { ResolvedTeam } from './types'
+import type { ResolvedTeam } from './types'
 
 /**
  * Resolves team ID and slug for a user using this priority:

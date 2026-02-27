@@ -1,9 +1,9 @@
 'use client'
 
+import { useParams } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { GTMBody } from '@/features/google-tag-manager'
 import { cn } from '@/lib/utils'
-import { useParams } from 'next/navigation'
-import { type ReactNode } from 'react'
 
 export function Body({
   children,

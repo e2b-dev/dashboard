@@ -1,3 +1,14 @@
+import type {
+  SurveyQuestion as PostHogSurveyQuestion,
+  Survey,
+} from 'posthog-js'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  PiSmileyAngryFill,
+  PiSmileyFill,
+  PiSmileyMehFill,
+  PiSmileySadFill,
+} from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -8,14 +19,6 @@ import {
 } from '@/ui/primitives/card'
 import { Loader } from '@/ui/primitives/loader_d'
 import { Textarea } from '@/ui/primitives/textarea'
-import { SurveyQuestion as PostHogSurveyQuestion, Survey } from 'posthog-js'
-import { useCallback, useMemo, useState } from 'react'
-import {
-  PiSmileyAngryFill,
-  PiSmileyFill,
-  PiSmileyMehFill,
-  PiSmileySadFill,
-} from 'react-icons/pi'
 import { PiSmileyStarEyesFill } from './icons'
 
 const EMOJI_SIZE = '38px'

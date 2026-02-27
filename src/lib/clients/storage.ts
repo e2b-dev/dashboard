@@ -1,5 +1,5 @@
+import type { FileObject } from '@supabase/storage-js'
 import { STORAGE_BUCKET_NAME } from '@/configs/storage'
-import { FileObject } from '@supabase/storage-js'
 import { supabaseAdmin } from './supabase/admin'
 
 /**

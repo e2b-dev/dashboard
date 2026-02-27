@@ -1,20 +1,20 @@
 'use client'
 
-import { AUTH_URLS } from '@/configs/urls'
-import {
-  USER_MESSAGES,
-  getTimeoutMsFromUserMessage,
-} from '@/configs/user-messages'
-import { AuthFormMessage, AuthMessage } from '@/features/auth/form-message'
-import { forgotPasswordAction } from '@/server/auth/auth-actions'
-import { forgotPasswordSchema } from '@/server/auth/auth.types'
-import { Button } from '@/ui/primitives/button'
-import { Input } from '@/ui/primitives/input'
-import { Label } from '@/ui/primitives/label'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { AUTH_URLS } from '@/configs/urls'
+import {
+  getTimeoutMsFromUserMessage,
+  USER_MESSAGES,
+} from '@/configs/user-messages'
+import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
+import { forgotPasswordSchema } from '@/server/auth/auth.types'
+import { forgotPasswordAction } from '@/server/auth/auth-actions'
+import { Button } from '@/ui/primitives/button'
+import { Input } from '@/ui/primitives/input'
+import { Label } from '@/ui/primitives/label'
 
 export default function ForgotPassword() {
   const searchParams = useSearchParams()

@@ -1,17 +1,17 @@
 'use client'
 
-import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
-import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
-import { SandboxInfo } from '@/types/api.types'
-import { ClientSandboxMetric } from '@/types/sandboxes.types'
 import {
-  ReactNode,
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
 } from 'react'
 import useSWR from 'swr'
+import type { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
+import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
+import type { SandboxInfo } from '@/types/api.types'
+import type { ClientSandboxMetric } from '@/types/sandboxes.types'
 import { useDashboard } from '../context'
 
 interface SandboxContextValue {

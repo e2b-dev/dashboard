@@ -1,5 +1,8 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { AnimatePresence, motion } from 'motion/react'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { useDashboard } from '@/features/dashboard/context'
 import {
@@ -26,9 +29,6 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { AnimatePresence, motion } from 'motion/react'
 
 interface NameCardProps {
   className?: string

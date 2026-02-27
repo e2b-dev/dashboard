@@ -1,13 +1,13 @@
 import 'server-only'
 
-import { CACHE_TAGS } from '@/configs/cache'
-import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { cacheLife } from 'next/dist/server/use-cache/cache-life'
 import { cacheTag } from 'next/dist/server/use-cache/cache-tag'
 import { serializeError } from 'serialize-error'
 import z from 'zod'
+import { CACHE_TAGS } from '@/configs/cache'
+import { l } from '@/lib/clients/logger/logger'
+import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 
 export const getTeamIdFromSegment = async (segment: string) => {
   'use cache'

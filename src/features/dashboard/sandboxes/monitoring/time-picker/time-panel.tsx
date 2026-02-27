@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { UseFormReturn, useForm } from 'react-hook-form'
+import { type UseFormReturn, useForm } from 'react-hook-form'
 
 import {
   parseDateTimeComponents,

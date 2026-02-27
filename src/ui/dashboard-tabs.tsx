@@ -1,10 +1,16 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { ReactElement, ReactNode, memo, useCallback, useMemo } from 'react'
+import {
+  memo,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useMemo,
+} from 'react'
+import { cn } from '@/lib/utils'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 
 type DashboardTabElement = ReactElement<DashboardTabProps, typeof DashboardTab>
 

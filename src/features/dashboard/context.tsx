@@ -1,8 +1,8 @@
 'use client'
 
-import { ClientTeam } from '@/types/dashboard.types'
-import { User } from '@supabase/supabase-js'
-import { ReactNode, createContext, useContext, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { createContext, type ReactNode, useContext, useState } from 'react'
+import type { ClientTeam } from '@/types/dashboard.types'
 
 interface DashboardContextValue {
   team: ClientTeam

@@ -1,8 +1,8 @@
 'use client'
 
-import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { AnimatePresence, motion } from 'motion/react'
 import { memo } from 'react'
+import { AnimatedNumber } from '@/ui/primitives/animated-number'
 
 interface AnimatedMetricDisplayProps {
   value: string | number

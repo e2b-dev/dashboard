@@ -1,15 +1,15 @@
 'use client'
 
+import { ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, useTransition } from 'react'
+import { serializeError } from 'serialize-error'
 import { l } from '@/lib/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
-import { ArrowRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
 
 interface RootPathInputProps {
   className?: string

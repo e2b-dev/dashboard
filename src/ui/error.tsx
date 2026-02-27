@@ -1,10 +1,10 @@
 'use client'
 
-import { l } from '@/lib/clients/logger/logger'
-import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
 import { serializeError } from 'serialize-error'
+import { l } from '@/lib/clients/logger/logger'
+import { cn } from '@/lib/utils'
 import { ErrorIndicator } from './error-indicator'
 import Frame from './frame'
 

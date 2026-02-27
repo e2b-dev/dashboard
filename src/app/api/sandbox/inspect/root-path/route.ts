@@ -1,8 +1,8 @@
 'use server'
 
-import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
+import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
 
 const BodySchema = z.object({ path: z.string() })
 

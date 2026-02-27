@@ -2,7 +2,7 @@
 
 import ErrorBoundary from '@/ui/error'
 
-export default function Error({
+export default function AppError({
   error,
 }: {
   error: Error & { digest?: string }

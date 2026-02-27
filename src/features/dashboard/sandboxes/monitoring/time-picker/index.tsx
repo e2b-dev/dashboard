@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
-import { ReactNode, memo, useCallback, useEffect, useRef } from 'react'
+import { memo, type ReactNode, useCallback, useEffect, useRef } from 'react'
 
 import { cn } from '@/lib/utils'
 import { tryParseDatetime } from '@/lib/utils/formatting'

@@ -1,10 +1,10 @@
 import 'server-only'
 
+import { z } from 'zod'
 import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import { z } from 'zod'
 import { getTeamMetricsCore } from './get-team-metrics-core'
 
 export const GetTeamMetricsSchema = z

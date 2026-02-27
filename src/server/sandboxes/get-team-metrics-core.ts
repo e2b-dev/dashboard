@@ -1,17 +1,17 @@
 import 'server-only'
 
+import { cache } from 'react'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
-  MOCK_TEAM_METRICS_DATA,
   calculateTeamMetricsStep,
+  MOCK_TEAM_METRICS_DATA,
 } from '@/configs/mock-data'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { fillTeamMetricsWithZeros } from '@/server/sandboxes/utils'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
-import { cache } from 'react'
+import type { ClientTeamMetrics } from '@/types/sandboxes.types'
 
 interface GetTeamMetricsCoreParams {
   accessToken: string

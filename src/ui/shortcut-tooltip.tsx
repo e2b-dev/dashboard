@@ -1,8 +1,8 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { ReactNode } from 'react'
-import { Kbd, KbdProps } from './primitives/kbd'
+import { Kbd, type KbdProps } from './primitives/kbd'
 import { Separator } from './primitives/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from './primitives/tooltip'
 

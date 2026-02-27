@@ -1,8 +1,8 @@
 'use client'
 
+import { useMemo } from 'react'
 import CopyButton from '@/ui/copy-button'
 import { Badge } from '@/ui/primitives/badge'
-import { useMemo } from 'react'
 import { useSandboxContext } from '../context'
 
 export default function TemplateId() {

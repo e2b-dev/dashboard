@@ -1,6 +1,6 @@
+import createClient from 'openapi-fetch'
 import type { paths as ArgusPaths } from '@/types/argus-api.types'
 import type { paths as InfraPaths } from '@/types/infra-api.types'
-import createClient from 'openapi-fetch'
 
 type CombinedPaths = InfraPaths & ArgusPaths
 
@@ -11,7 +11,7 @@ export const infra = createClient<CombinedPaths>({
       headers,
       body,
       method,
-      duplex: !!body ? 'half' : undefined,
+      duplex: body ? 'half' : undefined,
       ...options,
     } as RequestInit)
   },

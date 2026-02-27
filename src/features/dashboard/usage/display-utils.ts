@@ -10,7 +10,7 @@ import {
   normalizeToEndOfSamplingPeriod,
   normalizeToStartOfSamplingPeriod,
 } from './sampling-utils'
-import {
+import type {
   DisplayValue,
   SampledDataPoint,
   SamplingMode,

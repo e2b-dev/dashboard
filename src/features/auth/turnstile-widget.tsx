@@ -1,9 +1,9 @@
 'use client'
 
-import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
-import { cn } from '@/lib/utils'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { forwardRef } from 'react'
+import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
+import { cn } from '@/lib/utils'
 
 interface TurnstileWidgetProps {
   onSuccess: (token: string) => void

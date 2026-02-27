@@ -1,6 +1,6 @@
-import { PROTECTED_URLS } from '@/configs/urls'
 import { NextRequest, NextResponse } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PROTECTED_URLS } from '@/configs/urls'
 
 /**
  * Integration tests for /dashboard route

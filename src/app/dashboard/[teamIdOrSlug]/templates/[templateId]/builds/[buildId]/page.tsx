@@ -1,12 +1,12 @@
 'use client'
 
-import BuildHeader from '@/features/dashboard/build/header'
-import Logs from '@/features/dashboard/build/logs'
-import { useTRPC } from '@/trpc/client'
 import { useQuery } from '@tanstack/react-query'
 import { TRPCClientError } from '@trpc/client'
 import { notFound } from 'next/navigation'
 import { use } from 'react'
+import BuildHeader from '@/features/dashboard/build/header'
+import Logs from '@/features/dashboard/build/logs'
+import { useTRPC } from '@/trpc/client'
 
 const REFETCH_INTERVAL_MS = 1_500
 

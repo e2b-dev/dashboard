@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { AsciiBackgroundPattern } from '@/ui/patterns'
 import {
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import type { ReactNode } from 'react'
 
 interface DashboardEmptyFrameProps {
   title: ReactNode

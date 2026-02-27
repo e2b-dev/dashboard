@@ -1,5 +1,7 @@
 'use client'
 
+import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
+import Link from 'next/link'
 import {
   INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
   INCLUDE_REPORT_ISSUE,
@@ -15,8 +17,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
-import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import ReportIssuePopover from '../navbar/report-issue-popover'
 import TeamBlockageAlert from './blocked-banner'

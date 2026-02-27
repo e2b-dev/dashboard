@@ -33,7 +33,7 @@ export async function getSessionInsecure(
   ]
 
   // Override console.warn to filter out specific warnings
-  console.warn = function (...args) {
+  console.warn = (...args) => {
     if (
       !args.some(
         (arg) =>
@@ -46,7 +46,7 @@ export async function getSessionInsecure(
   }
 
   // Override console.log to filter out specific warnings
-  console.log = function (...args) {
+  console.log = (...args) => {
     if (
       !args.some(
         (arg) =>

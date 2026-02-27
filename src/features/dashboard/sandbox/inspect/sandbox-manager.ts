@@ -1,10 +1,4 @@
 import {
-  determineFileContentState,
-  getParentPath,
-  joinPath,
-  normalizePath,
-} from '@/lib/utils/filesystem'
-import {
   type EntryInfo,
   type FilesystemEvent,
   FilesystemEventType,
@@ -12,10 +6,16 @@ import {
   type WatchHandle,
 } from 'e2b'
 import {
+  determineFileContentState,
+  getParentPath,
+  joinPath,
+  normalizePath,
+} from '@/lib/utils/filesystem'
+import {
   type FilesystemStore,
   MAX_VIEWABLE_FILE_SIZE_BYTES,
 } from './filesystem/store'
-import { FilesystemNode } from './filesystem/types'
+import type { FilesystemNode } from './filesystem/types'
 
 export const HANDLED_ERRORS = {
   'signal timed out': 'The operation timed out. Please try again later.',

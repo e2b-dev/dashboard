@@ -1,8 +1,8 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import type { ResourceUsageProps } from '@/features/dashboard/common/resource-usage'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { memo, useMemo } from 'react'
 import { useSandboxContext } from '../context'
 
 interface ResourceUsageClientProps extends ResourceUsageProps {}

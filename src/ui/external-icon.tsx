@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ExternalIconProps {
   className?: string

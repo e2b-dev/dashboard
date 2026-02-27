@@ -1,5 +1,8 @@
 'use client'
 
+import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
+import Link from 'next/link'
+import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { signOutAction } from '@/server/auth/auth-actions'
@@ -13,9 +16,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
-import Link from 'next/link'
-import { useState } from 'react'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'

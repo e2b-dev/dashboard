@@ -1,5 +1,5 @@
-import DashboardEmptyFrame from '@/features/dashboard/common/empty-frame'
 import type { ReactNode } from 'react'
+import DashboardEmptyFrame from '@/features/dashboard/common/empty-frame'
 
 interface SandboxesListEmptyProps {
   title: ReactNode

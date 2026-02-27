@@ -1,8 +1,8 @@
 'use client'
 
-import { supabase } from '@/lib/clients/supabase/client'
 import { usePostHog } from 'posthog-js/react'
 import { useEffect } from 'react'
+import { supabase } from '@/lib/clients/supabase/client'
 
 export function GeneralAnalyticsCollector() {
   const posthog = usePostHog()

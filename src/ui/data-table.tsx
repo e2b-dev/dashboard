@@ -1,3 +1,10 @@
+import type { Cell, Header } from '@tanstack/react-table'
+import {
+  ArrowDownWideNarrow,
+  ArrowUpDown,
+  ArrowUpNarrowWide,
+} from 'lucide-react'
+import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -8,13 +15,6 @@ import {
   SelectValue,
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
-import { Cell, Header } from '@tanstack/react-table'
-import {
-  ArrowDownWideNarrow,
-  ArrowUpDown,
-  ArrowUpNarrowWide,
-} from 'lucide-react'
-import * as React from 'react'
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {

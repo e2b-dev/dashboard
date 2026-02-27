@@ -1,15 +1,15 @@
 'use client'
 
+import { enableMapSet } from 'immer'
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
 import {
   getBasename,
   getParentPath,
   isChildPath,
   normalizePath,
 } from '@/lib/utils/filesystem'
-import { enableMapSet } from 'immer'
-import { create } from 'zustand'
-import { immer } from 'zustand/middleware/immer'
-import { FilesystemNode } from './types'
+import type { FilesystemNode } from './types'
 
 enableMapSet()
 

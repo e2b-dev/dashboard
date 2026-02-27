@@ -1,3 +1,5 @@
+import { AlertTriangle } from 'lucide-react'
+import { Suspense } from 'react'
 import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
@@ -6,8 +8,6 @@ import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { AlertTriangle } from 'lucide-react'
-import { Suspense } from 'react'
 import {
   ConcurrentSandboxesClient,
   SandboxesStartRateClient,

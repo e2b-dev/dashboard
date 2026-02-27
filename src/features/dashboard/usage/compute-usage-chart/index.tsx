@@ -1,9 +1,6 @@
 'use client'
 
-import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { calculateAxisMax } from '@/lib/utils/chart'
-import { EChartsOption, SeriesOption } from 'echarts'
-import ReactEChartsCore from 'echarts-for-react/lib/core'
+import type { EChartsOption, SeriesOption } from 'echarts'
 import { BarChart } from 'echarts/charts'
 import {
   BrushComponent,
@@ -13,8 +10,11 @@ import {
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
+import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { COMPUTE_CHART_CONFIGS } from '../constants'
 import type { ComputeUsageChartProps } from './types'
 

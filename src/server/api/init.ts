@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
-import { ZodError, flattenError } from 'zod'
+import { flattenError, ZodError } from 'zod'
 
 /**
  * TRPC Context Factory

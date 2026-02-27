@@ -1,25 +1,25 @@
 'use client'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { AUTH_URLS } from '@/configs/urls'
-import { supabase } from '@/lib/clients/supabase/client'
-import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
-import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
-import Sandbox, { EntryInfo } from 'e2b'
+import Sandbox, { type EntryInfo } from 'e2b'
 import { useRouter } from 'next/navigation'
 import {
-  ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
 } from 'react'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { AUTH_URLS } from '@/configs/urls'
+import { supabase } from '@/lib/clients/supabase/client'
+import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
+import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
-import { type FilesystemStore, createFilesystemStore } from './filesystem/store'
-import { FilesystemNode, FilesystemOperations } from './filesystem/types'
+import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
+import type { FilesystemNode, FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
 
 interface SandboxInspectContextValue {

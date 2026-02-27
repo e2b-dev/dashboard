@@ -1,5 +1,8 @@
 'use client'
 
+import { useMutation } from '@tanstack/react-query'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useMemo, useTransition } from 'react'
 import { AUTH_URLS } from '@/configs/urls'
 import { AuthFormMessage } from '@/features/auth/form-message'
 import {
@@ -9,9 +12,6 @@ import {
   OtpTypeSchema,
 } from '@/server/api/models/auth.models'
 import { Button } from '@/ui/primitives/button'
-import { useMutation } from '@tanstack/react-query'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useTransition } from 'react'
 
 const OTP_TYPE_LABELS: Record<OtpType, string> = {
   signup: 'Welcome to E2B',

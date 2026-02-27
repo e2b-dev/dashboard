@@ -1,8 +1,8 @@
 'use client'
 
-import { Row } from '@tanstack/react-table'
-import { Virtualizer, useVirtualizer } from '@tanstack/react-virtual'
-import { RefObject, useMemo } from 'react'
+import type { Row } from '@tanstack/react-table'
+import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual'
+import { type RefObject, useMemo } from 'react'
 
 interface UseVirtualRowsParams<TData> {
   rows: Row<TData>[]

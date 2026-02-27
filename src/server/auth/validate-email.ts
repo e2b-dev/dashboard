@@ -1,7 +1,7 @@
-import { KV_KEYS } from '@/configs/keys'
-import { l } from '@/lib/clients/logger/logger'
 import { kv } from '@vercel/kv'
 import { serializeError } from 'serialize-error'
+import { KV_KEYS } from '@/configs/keys'
+import { l } from '@/lib/clients/logger/logger'
 
 /**
  * Response type from the ZeroBounce email validation API

@@ -1,5 +1,9 @@
 'use client'
 
+import { MoreHorizontal } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
 import { API_KEYS_LAST_USED_FIRST_COLLECTION_DATE } from '@/configs/versioning'
 import { useDashboard } from '@/features/dashboard/context'
 import {
@@ -9,7 +13,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
 import { deleteApiKeyAction } from '@/server/keys/key-actions'
-import { TeamAPIKey } from '@/types/api.types'
+import type { TeamAPIKey } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -21,10 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { TableCell, TableRow } from '@/ui/primitives/table'
-import { MoreHorizontal } from 'lucide-react'
-import { motion } from 'motion/react'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
 
 interface TableRowProps {
   apiKey: TeamAPIKey

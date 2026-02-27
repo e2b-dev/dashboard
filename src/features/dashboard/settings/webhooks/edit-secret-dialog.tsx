@@ -1,5 +1,8 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useState } from 'react'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -26,10 +29,7 @@ import {
 import { CheckIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { useState } from 'react'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 interface WebhookEditSecretDialogProps {
   children: React.ReactNode

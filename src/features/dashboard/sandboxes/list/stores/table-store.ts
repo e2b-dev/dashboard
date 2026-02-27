@@ -1,10 +1,10 @@
 'use client'
 
-import { areStringArraysEqual } from '@/lib/utils/array'
-import { createHashStorage } from '@/lib/utils/store'
 import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { areStringArraysEqual } from '@/lib/utils/array'
+import { createHashStorage } from '@/lib/utils/store'
 import { trackSandboxListInteraction } from '../tracking'
 
 export const sandboxListPollingIntervals = [

@@ -1,5 +1,18 @@
 'use client'
 
+import {
+  useVirtualizer,
+  type VirtualItem,
+  type Virtualizer,
+} from '@tanstack/react-virtual'
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { cn } from '@/lib/utils'
 import type {
   BuildDetailsDTO,
@@ -23,22 +36,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import {
-  VirtualItem,
-  Virtualizer,
-  useVirtualizer,
-} from '@tanstack/react-virtual'
-import {
-  RefObject,
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from 'react'
 import { LOG_RETENTION_MS } from '../templates/builds/constants'
 import { LogLevel, Message, Timestamp } from './logs-cells'
-import { type LogLevelFilter } from './logs-filter-params'
+import type { LogLevelFilter } from './logs-filter-params'
 import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 

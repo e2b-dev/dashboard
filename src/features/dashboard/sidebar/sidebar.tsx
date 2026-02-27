@@ -1,4 +1,8 @@
-import { Sidebar, SidebarProps, SidebarRail } from '@/ui/primitives/sidebar'
+import {
+  Sidebar,
+  type SidebarProps,
+  SidebarRail,
+} from '@/ui/primitives/sidebar'
 import DashboardSidebarContent from './content'
 import DashboardSidebarFooter from './footer'
 import DashboardSidebarHeader from './header'

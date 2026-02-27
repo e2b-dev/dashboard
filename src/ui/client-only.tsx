@@ -1,7 +1,7 @@
 'use client'
 
-import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { AnimatePresence, motion } from 'motion/react'
+import useIsMounted from '@/lib/hooks/use-is-mounted'
 
 export interface ClientOnlyProps {
   children: React.ReactNode

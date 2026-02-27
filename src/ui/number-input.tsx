@@ -1,8 +1,8 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 import { Button } from './primitives/button'
 import { Input } from './primitives/input'
 
