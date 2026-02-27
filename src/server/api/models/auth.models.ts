@@ -1,3 +1,4 @@
+import { absoluteHttpOrHttpsUrlSchema } from '@/lib/schemas/url'
 import z from 'zod'
 
 export const OtpTypeSchema = z.enum([
@@ -14,7 +15,7 @@ export type OtpType = z.infer<typeof OtpTypeSchema>
 export const ConfirmEmailInputSchema = z.object({
   token_hash: z.string().min(1),
   type: OtpTypeSchema,
-  next: z.url({ protocol: /^https?$/ }),
+  next: absoluteHttpOrHttpsUrlSchema,
 })
 
 export type ConfirmEmailInput = z.infer<typeof ConfirmEmailInputSchema>

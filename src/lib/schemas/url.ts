@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+/**
+ * Absolute URL constrained to HTTP(S) protocols.
+ * This intentionally allows localhost/IP hosts for local development flows.
+ */
+export const absoluteHttpOrHttpsUrlSchema = z.url({ protocol: /^https?$/ })
+
 export const relativeUrlSchema = z
   .string()
   .trim()

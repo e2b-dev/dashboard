@@ -1,16 +1,9 @@
 import { AUTH_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
-import { OtpTypeSchema } from '@/server/api/models/auth.models'
+import { ConfirmEmailInputSchema } from '@/server/api/models/auth.models'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
-import { z } from 'zod'
-
-const confirmSchema = z.object({
-  token_hash: z.string().min(1),
-  type: OtpTypeSchema,
-  next: z.url({ protocol: /^https?$/ }),
-})
 
 /**
  * This route acts as an intermediary for email OTP verification.
@@ -23,7 +16,7 @@ const confirmSchema = z.object({
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
 
-  const result = confirmSchema.safeParse({
+  const result = ConfirmEmailInputSchema.safeParse({
     token_hash: searchParams.get('token_hash'),
     type: searchParams.get('type'),
     next: searchParams.get('next'),
