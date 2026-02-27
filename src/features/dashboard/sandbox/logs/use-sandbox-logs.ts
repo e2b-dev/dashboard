@@ -1,9 +1,9 @@
 'use client'
 
-import { useTRPCClient } from '@/trpc/client'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from 'zustand'
+import { useTRPCClient } from '@/trpc/client'
 import {
   createSandboxLogsStore,
   type SandboxLogsStore,
@@ -35,7 +35,10 @@ export function useSandboxLogs({
 
   const logs = useStore(store, (s) => s.logs)
   const isInitialized = useStore(store, (s) => s.isInitialized)
-  const hasCompletedInitialLoad = useStore(store, (s) => s.hasCompletedInitialLoad)
+  const hasCompletedInitialLoad = useStore(
+    store,
+    (s) => s.hasCompletedInitialLoad
+  )
   const initialLoadError = useStore(store, (s) => s.initialLoadError)
   const hasMoreBackwards = useStore(store, (s) => s.hasMoreBackwards)
   const isLoadingBackwards = useStore(store, (s) => s.isLoadingBackwards)

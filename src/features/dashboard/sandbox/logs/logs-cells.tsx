@@ -1,4 +1,7 @@
-import { LogLevelBadge, LogMessage } from '@/features/dashboard/common/log-cells'
+import {
+  LogLevelBadge,
+  LogMessage,
+} from '@/features/dashboard/common/log-cells'
 import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
 

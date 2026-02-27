@@ -13,18 +13,18 @@ import {
   useRef,
   useState,
 } from 'react'
-import { cn } from '@/lib/utils'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
 } from '@/features/dashboard/common/log-cells'
 import {
+  LogStatusCell,
   LogsEmptyBody,
   LogsLoaderBody,
   LogsTableHeader,
-  LogStatusCell,
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
+import { cn } from '@/lib/utils'
 import type {
   BuildDetailsDTO,
   BuildLogDTO,
@@ -230,9 +230,7 @@ function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
     ? undefined
     : `This build has exceeded the ${LOG_RETENTION_MS / 24 / 60 / 60 / 1000} day retention limit.`
 
-  return (
-    <LogsEmptyBody description={description} />
-  )
+  return <LogsEmptyBody description={description} />
 }
 
 interface LevelFilterProps {
@@ -623,7 +621,11 @@ function StatusRow({
   isFetchingNextPage,
 }: StatusRowProps) {
   return (
-    <LogVirtualRow virtualRow={virtualRow} virtualizer={virtualizer} height={ROW_HEIGHT_PX}>
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+    >
       <LogStatusCell>
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (

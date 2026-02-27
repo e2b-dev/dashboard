@@ -65,7 +65,8 @@ export function useBuildLogs({
 
     if (prevIsBuildingRef.current) {
       isDraining.current = true
-      drainUntilTimestampMs.current = Date.now() + DRAIN_AFTER_BUILD_STOP_WINDOW_MS
+      drainUntilTimestampMs.current =
+        Date.now() + DRAIN_AFTER_BUILD_STOP_WINDOW_MS
       consecutiveEmptyDrainPolls.current = 0
     }
 

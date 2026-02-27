@@ -1,3 +1,5 @@
+import type { VirtualItem, Virtualizer } from '@tanstack/react-virtual'
+import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -8,8 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import type { VirtualItem, Virtualizer } from '@tanstack/react-virtual'
-import type { CSSProperties, ReactNode } from 'react'
 
 interface LogsTableHeaderProps {
   timestampWidth: number
@@ -35,7 +35,9 @@ export function LogsTableHeader({
         >
           Timestamp{' '}
           <ArrowDownIcon
-            className={timestampSortDirection === 'asc' ? 'size-3 rotate-180' : 'size-3'}
+            className={
+              timestampSortDirection === 'asc' ? 'size-3 rotate-180' : 'size-3'
+            }
           />
         </TableHead>
         <TableHead
@@ -83,7 +85,9 @@ export function LogsEmptyBody({ description }: LogsEmptyBodyProps) {
               <ListIcon className="size-5" />
               <p className="prose-body-highlight">No logs found</p>
             </div>
-            {description ? <p className="text-fg-tertiary text-sm">{description}</p> : null}
+            {description ? (
+              <p className="text-fg-tertiary text-sm">{description}</p>
+            ) : null}
           </div>
         </TableCell>
       </TableRow>
