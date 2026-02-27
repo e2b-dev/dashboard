@@ -57,7 +57,7 @@ export interface paths {
                     statuses?: components["parameters"]["build_statuses"];
                     /** @description Maximum number of items to return per page. */
                     limit?: components["parameters"]["builds_limit"];
-                    /** @description Cursor returned by the previous list response. Supports both legacy (`created_at`) and stable (`created_at|build_id`) formats. */
+                    /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
                     cursor?: components["parameters"]["builds_cursor"];
                 };
                 header?: never;
@@ -315,7 +315,7 @@ export interface components {
         build_id: string;
         /** @description Maximum number of items to return per page. */
         builds_limit: number;
-        /** @description Cursor returned by the previous list response. Supports both legacy (`created_at`) and stable (`created_at|build_id`) formats. */
+        /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
         builds_cursor: string;
         /** @description Optional filter by build identifier, template identifier, or template alias. */
         build_id_or_template: string;
