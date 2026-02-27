@@ -61,8 +61,8 @@ export async function verifyTurnstileToken(
         key: 'turnstile:verification_error',
         error: error instanceof Error ? error.message : String(error),
       },
-      'Turnstile verification error - failing open to avoid blocking users'
+      'Turnstile verification error - failing closed to prevent bypass'
     )
-    return true
+    return false
   }
 }
