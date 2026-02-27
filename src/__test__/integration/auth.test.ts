@@ -16,6 +16,10 @@ const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({
   shouldWarnAboutAlternateEmail: vi.fn(),
 }))
 
+const { verifyTurnstileToken } = vi.hoisted(() => ({
+  verifyTurnstileToken: vi.fn(),
+}))
+
 // Mock console.error to prevent output during tests
 const originalConsoleError = console.error
 console.error = vi.fn()
@@ -78,6 +82,10 @@ vi.mock('@/server/auth/validate-email', () => ({
   shouldWarnAboutAlternateEmail,
 }))
 
+vi.mock('@/lib/captcha/turnstile', () => ({
+  verifyTurnstileToken,
+}))
+
 describe('Auth Actions - Integration Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -86,6 +94,7 @@ describe('Auth Actions - Integration Tests', () => {
       ok: true,
       json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
     })
+    verifyTurnstileToken.mockResolvedValue(true)
   })
 
   afterEach(() => {
@@ -219,6 +228,7 @@ describe('Auth Actions - Integration Tests', () => {
         email: 'newuser@example.com',
         password: 'Password123!',
         confirmPassword: 'Password123!',
+        captchaToken: 'test-captcha-token',
       })
 
       // Verify: Check that encodedRedirect was called with success message
@@ -237,6 +247,7 @@ describe('Auth Actions - Integration Tests', () => {
         email: 'newuser@example.com',
         password: 'Password123!',
         confirmPassword: 'DifferentPassword!',
+        captchaToken: 'test-captcha-token',
       })
 
       // Verify: Check that encodedRedirect was called with error message
@@ -291,6 +302,7 @@ describe('Auth Actions - Integration Tests', () => {
         email: 'newuser@example.com',
         password: 'Password123!',
         confirmPassword: 'Password123!',
+        captchaToken: 'test-captcha-token',
       })
 
       // Verify: Check that encodedRedirect was called with error message

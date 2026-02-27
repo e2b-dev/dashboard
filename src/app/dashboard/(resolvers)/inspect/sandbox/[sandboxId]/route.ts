@@ -209,7 +209,7 @@ export async function GET(
     }
 
     const redirectUrl = new URL(
-      PROTECTED_URLS.SANDBOX_INSPECT(selectedTeam.slug, sandboxId),
+      PROTECTED_URLS.SANDBOX(selectedTeam.slug, sandboxId),
       request.url
     )
 

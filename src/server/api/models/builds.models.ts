@@ -1,5 +1,5 @@
 import z from 'zod'
-import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
+import { LOG_RETENTION_MS } from '@/configs/logs'
 import type { components } from '@/types/infra-api.types'
 
 export const BuildStatusDTOSchema = z.enum(['building', 'failed', 'success'])

@@ -3,6 +3,7 @@
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils/ui'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
@@ -50,12 +51,12 @@ export default function KillButton({ className }: KillButtonProps) {
       confirm="Kill Sandbox"
       trigger={
         <Button
-          variant="error"
-          size="sm"
-          className={className}
+          variant="ghost"
+          size="slate"
+          className={cn('text-accent-error-highlight', className)}
           disabled={!isRunning}
         >
-          <TrashIcon className="size-4" />
+          <TrashIcon className="size-3.5" />
           Kill
         </Button>
       }

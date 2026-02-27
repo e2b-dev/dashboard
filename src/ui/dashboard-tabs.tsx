@@ -19,6 +19,7 @@ export interface DashboardTabsProps {
   type: 'query' | 'path'
   children: Array<DashboardTabElement> | DashboardTabElement
   className?: string
+  headerAccessory?: ReactNode
 }
 
 // COMPONENT
@@ -28,6 +29,7 @@ function DashboardTabsComponent({
   type,
   children,
   className,
+  headerAccessory,
 }: DashboardTabsProps) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -66,61 +68,47 @@ function DashboardTabsComponent({
     [tabs, hrefForId]
   )
 
+  const tabTriggers = tabsWithHrefs.map((tab) => (
+    <TabsTrigger
+      key={tab.id}
+      layoutkey={layoutKey}
+      value={tab.id}
+      className="w-fit flex-none"
+      asChild
+    >
+      <Link href={tab.href} prefetch>
+        {tab.icon}
+        {tab.label}
+      </Link>
+    </TabsTrigger>
+  ))
+
   return (
     <Tabs
       value={activeTabId}
       className={cn('min-h-0 w-full flex-1 h-full', className)}
     >
-      <TabsList className="bg-bg z-30 w-full justify-start">
-        {tabsWithHrefs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            layoutkey={layoutKey}
-            value={tab.id}
-            className="w-fit flex-none"
-            asChild
-          >
-            <Link href={tab.href} prefetch>
-              {tab.icon}
-              {tab.label}
-            </Link>
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      {headerAccessory ? (
+        <div className="bg-bg z-30 flex w-full flex-col gap-2 md:flex-row md:items-end md:justify-between md:gap-0">
+          <div className="order-1 px-3 md:order-2 md:border-b md:px-6 md:flex md:items-end">
+            {headerAccessory}
+          </div>
+          <TabsList className="bg-bg order-2 w-full justify-start md:order-1 md:flex-1 md:w-full">
+            {tabTriggers}
+          </TabsList>
+        </div>
+      ) : (
+        <TabsList className="bg-bg z-30 w-full justify-start">
+          {tabTriggers}
+        </TabsList>
+      )}
 
       {children}
     </Tabs>
   )
 }
 
-export const DashboardTabs = memo(DashboardTabsComponent, (prev, next) => {
-  if (
-    prev.layoutKey !== next.layoutKey ||
-    prev.type !== next.type ||
-    prev.className !== next.className
-  ) {
-    return false
-  }
-
-  const prevChildren = Array.isArray(prev.children)
-    ? prev.children
-    : [prev.children]
-  const nextChildren = Array.isArray(next.children)
-    ? next.children
-    : [next.children]
-
-  if (prevChildren.length !== nextChildren.length) return false
-
-  return prevChildren.every((prevChild, index) => {
-    const nextChild = nextChildren[index]
-    if (!nextChild) return false
-    return (
-      prevChild.props.id === nextChild.props.id &&
-      prevChild.props.label === nextChild.props.label &&
-      prevChild.props.icon === nextChild.props.icon
-    )
-  })
-})
+export const DashboardTabs = memo(DashboardTabsComponent)
 
 export interface DashboardTabProps {
   id: string
@@ -134,10 +122,7 @@ export function DashboardTab(props: DashboardTabProps) {
   return (
     <TabsContent
       value={props.id}
-      className={cn(
-        'flex-1 min-h-0 h-full w-full overflow-hidden',
-        props.className
-      )}
+      className={cn('flex-1 min-h-0 w-full overflow-hidden', props.className)}
     >
       {props.children}
     </TabsContent>
