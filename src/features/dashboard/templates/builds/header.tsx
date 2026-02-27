@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { BuildStatusDTO } from '@/server/api/models/builds.models'
+import { BuildStatus } from '@/server/api/models/builds.models'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import { Status } from './table-cells'
 import useFilters from './use-filters'
 
 interface DashedStatusCircleIconProps {
-  status: BuildStatusDTO
+  status: BuildStatus
   index: number
 }
 
@@ -42,9 +42,9 @@ const DashedStatusCircleIcon = ({
 const StatusIcons = ({
   selectedStatuses,
 }: {
-  selectedStatuses: BuildStatusDTO[]
+  selectedStatuses: BuildStatus[]
 }) => {
-  const statusOrder: BuildStatusDTO[] = ['building', 'failed', 'success']
+  const statusOrder: BuildStatus[] = ['building', 'failed', 'success']
   const sortedStatuses = statusOrder.filter((s) => selectedStatuses.includes(s))
 
   return (
@@ -56,7 +56,7 @@ const StatusIcons = ({
   )
 }
 
-const STATUS_OPTIONS: Array<{ value: BuildStatusDTO; label: string }> = [
+const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
   { value: 'building', label: 'Building' },
   { value: 'success', label: 'Success' },
   { value: 'failed', label: 'Failed' },
@@ -70,7 +70,7 @@ export default function BuildsHeader() {
     buildIdOrTemplate ?? ''
   )
 
-  const [localStatuses, setLocalStatuses] = useState<BuildStatusDTO[]>(statuses)
+  const [localStatuses, setLocalStatuses] = useState<BuildStatus[]>(statuses)
 
   useEffect(() => {
     setLocalBuildIdOrTemplate(buildIdOrTemplate ?? '')
@@ -80,7 +80,7 @@ export default function BuildsHeader() {
     setLocalStatuses(statuses)
   }, [statuses])
 
-  const toggleStatus = (status: BuildStatusDTO) => {
+  const toggleStatus = (status: BuildStatus) => {
     const isSelected = localStatuses.includes(status)
 
     if (isSelected && localStatuses.length === 1) {

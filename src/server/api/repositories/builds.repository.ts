@@ -1,26 +1,15 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import type { Database } from '@/types/database.types'
-import { TRPCError } from '@trpc/server'
-import z from 'zod'
-import { apiError } from '../errors'
+import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
+import { api, infra } from '@/lib/clients/api'
+import { handleDashboardApiError, handleInfraApiError } from '../errors'
 import {
+  BuildStatus,
   ListedBuildDTO,
-  mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
-  mapDatabaseBuildStatusToBuildStatusDTO,
-  type BuildStatusDB,
   type RunningBuildStatusDTO,
 } from '../models/builds.models'
 
 // helpers
 
-function isUUID(value: string): boolean {
-  return z.uuid().safeParse(value).success
-}
-
-const CURSOR_SEPARATOR = '|'
 const LIST_BUILDS_DEFAULT_LIMIT = 50
 const LIST_BUILDS_MIN_LIMIT = 1
 const LIST_BUILDS_MAX_LIMIT = 100
@@ -30,31 +19,6 @@ function normalizeListBuildsLimit(limit?: number): number {
     LIST_BUILDS_MIN_LIMIT,
     Math.min(limit ?? LIST_BUILDS_DEFAULT_LIMIT, LIST_BUILDS_MAX_LIMIT)
   )
-}
-
-function decodeCursor(cursor?: string): {
-  cursorCreatedAt: string | null
-  cursorId: string | null
-} {
-  if (!cursor) {
-    return { cursorCreatedAt: null, cursorId: null }
-  }
-
-  // Backward-compatible with old cursor format (created_at only)
-  if (!cursor.includes(CURSOR_SEPARATOR)) {
-    return { cursorCreatedAt: cursor, cursorId: null }
-  }
-
-  const [cursorCreatedAtRaw, cursorIdRaw] = cursor.split(CURSOR_SEPARATOR, 2)
-
-  return {
-    cursorCreatedAt: cursorCreatedAtRaw || null,
-    cursorId: cursorIdRaw && isUUID(cursorIdRaw) ? cursorIdRaw : null,
-  }
-}
-
-function encodeCursor(createdAt: string, id: string): string {
-  return `${createdAt}${CURSOR_SEPARATOR}${id}`
 }
 
 // list builds
@@ -69,81 +33,76 @@ interface ListBuildsResult {
   nextCursor: string | null
 }
 
-type ListTeamBuildsRpcRow =
-  Database['public']['Functions']['list_team_builds_rpc']['Returns'][number]
-type ListTeamRunningBuildStatusesRpcRow =
-  Database['public']['Functions']['list_team_running_build_statuses_rpc']['Returns'][number]
-
-function mapRpcBuildToListedBuildDTO(
-  build: ListTeamBuildsRpcRow
-): ListedBuildDTO {
-  return {
-    id: build.id,
-    template: build.template_alias ?? build.template_id,
-    templateId: build.template_id,
-    status: mapDatabaseBuildStatusToBuildStatusDTO(
-      build.status as BuildStatusDB
-    ),
-    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
-      build.status,
-      build.reason
-    ),
-    createdAt: new Date(build.created_at).getTime(),
-    finishedAt: build.finished_at
-      ? new Date(build.finished_at).getTime()
-      : null,
-  }
+interface BuildInfoResult {
+  names: string[] | null
+  createdAt: number
+  finishedAt: number | null
+  status: ListedBuildDTO['status']
+  statusMessage: string | null
 }
 
 async function listBuilds(
+  accessToken: string,
   teamId: string,
   buildIdOrTemplate?: string,
-  statuses: BuildStatusDB[] = ['waiting', 'building', 'uploaded', 'failed'],
+  statuses: BuildStatus[] = INITIAL_BUILD_STATUSES,
   options: ListBuildsOptions = {}
 ): Promise<ListBuildsResult> {
   const limit = normalizeListBuildsLimit(options.limit)
-  const { cursorCreatedAt, cursorId } = decodeCursor(options.cursor)
+  const result = await api.GET('/builds', {
+    params: {
+      query: {
+        build_id_or_template: buildIdOrTemplate?.trim() || undefined,
+        statuses,
+        limit,
+        cursor: options.cursor,
+      },
+    },
+    headers: {
+      ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+    },
+  })
 
-  const { data: rawBuilds, error } = await supabaseAdmin.rpc(
-    'list_team_builds_rpc',
-    {
-      p_team_id: teamId,
-      p_statuses: statuses,
-      p_limit: limit,
-      p_cursor_created_at: cursorCreatedAt ?? undefined,
-      p_cursor_id: cursorId ?? undefined,
-      p_build_id_or_template: buildIdOrTemplate?.trim() || undefined,
-    }
-  )
-
-  if (error) {
-    throw error
+  if (!result.response.ok || result.error) {
+    handleDashboardApiError({
+      status: result.response.status,
+      error: result.error,
+      teamId,
+      path: '/builds',
+      logKey: 'repositories:builds:list_builds:dashboard_api_error',
+    })
   }
 
-  if (!rawBuilds || rawBuilds.length === 0) {
+  const builds = result.data?.data ?? []
+  if (builds.length === 0) {
     return {
       data: [],
       nextCursor: null,
     }
   }
 
-  const hasMore = rawBuilds.length > limit
-  const trimmedBuilds = hasMore ? rawBuilds.slice(0, limit) : rawBuilds
-
   return {
-    data: trimmedBuilds.map(mapRpcBuildToListedBuildDTO),
-    nextCursor: hasMore
-      ? encodeCursor(
-        trimmedBuilds[trimmedBuilds.length - 1]!.created_at,
-        trimmedBuilds[trimmedBuilds.length - 1]!.id
-      )
-      : null,
+    data: builds.map(
+      (build): ListedBuildDTO => ({
+        id: build.id,
+        template: build.template,
+        templateId: build.templateId,
+        status: build.status,
+        statusMessage: build.statusMessage,
+        createdAt: new Date(build.createdAt).getTime(),
+        finishedAt: build.finishedAt
+          ? new Date(build.finishedAt).getTime()
+          : null,
+      })
+    ),
+    nextCursor: result.data?.nextCursor ?? null,
   }
 }
 
 // get running build statuses
 
 async function getRunningStatuses(
+  accessToken: string,
   teamId: string,
   buildIds: string[]
 ): Promise<RunningBuildStatusDTO[]> {
@@ -151,98 +110,74 @@ async function getRunningStatuses(
     return []
   }
 
-  const { data, error } = await supabaseAdmin.rpc(
-    'list_team_running_build_statuses_rpc',
-    {
-      p_team_id: teamId,
-      p_build_ids: buildIds,
-    }
-  )
+  const result = await api.GET('/builds/statuses', {
+    params: {
+      query: {
+        build_ids: buildIds,
+      },
+    },
+    headers: {
+      ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+    },
+  })
 
-  if (error) throw error
+  if (!result.response.ok || result.error) {
+    handleDashboardApiError({
+      status: result.response.status,
+      error: result.error,
+      teamId,
+      path: '/builds/statuses',
+      logKey: 'repositories:builds:get_running_statuses:dashboard_api_error',
+    })
+  }
 
-  return ((data ?? []) as ListTeamRunningBuildStatusesRpcRow[]).map((row) => ({
+  return (result.data?.buildStatuses ?? []).map((row) => ({
     id: row.id,
-    status: mapDatabaseBuildStatusToBuildStatusDTO(row.status as BuildStatusDB),
-    finishedAt: row.finished_at ? new Date(row.finished_at).getTime() : null,
-    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
-      row.status,
-      row.reason
-    ),
+    status: row.status,
+    finishedAt: row.finishedAt ? new Date(row.finishedAt).getTime() : null,
+    statusMessage: row.statusMessage,
   }))
 }
 
 // get build details
 
-export async function getBuildInfo(buildId: string, teamId: string) {
-  const { data: assignment, error: assignmentError } = await supabaseAdmin
-    .from('env_build_assignments')
-    .select('env_id, envs!inner(team_id)')
-    .eq('build_id', buildId)
-    .eq('envs.team_id', teamId)
-    .order('created_at', { ascending: false, nullsFirst: false })
-    .order('id', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (assignmentError) {
-    l.error(
-      {
-        key: 'repositories:builds:get_build_info:supabase_error',
-        error: assignmentError,
-        team_id: teamId,
-        context: {
-          build_id: buildId,
-        },
+export async function getBuildInfo(
+  accessToken: string,
+  buildId: string,
+  teamId: string
+): Promise<BuildInfoResult> {
+  const result = await api.GET('/builds/{build_id}', {
+    params: {
+      path: {
+        build_id: buildId,
       },
-      `failed to query env_build_assignments: ${assignmentError?.message || 'Unknown error'}`
-    )
+    },
+    headers: {
+      ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+    },
+  })
 
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: "Build not found or you don't have access to it",
+  if (!result.response.ok || result.error) {
+    handleDashboardApiError({
+      status: result.response.status,
+      error: result.error,
+      teamId,
+      path: '/builds/{build_id}',
+      logKey: 'repositories:builds:get_build_info:dashboard_api_error',
+      context: {
+        build_id: buildId,
+      },
     })
   }
 
-  if (!assignment) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: "Build not found or you don't have access to it",
-    })
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from('env_builds')
-    .select('created_at, finished_at, status, reason')
-    .eq('id', buildId)
-    .maybeSingle()
-
-  if (error || !data) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: "Build not found or you don't have access to it",
-    })
-  }
-
-  const { data: aliases } = await supabaseAdmin
-    .from('env_aliases')
-    .select('alias')
-    .eq('env_id', assignment.env_id)
-    .limit(1)
-
-  const alias = aliases?.[0]?.alias
+  const data = result.data
 
   return {
-    alias,
-    createdAt: new Date(data.created_at).getTime(),
-    finishedAt: data.finished_at ? new Date(data.finished_at).getTime() : null,
-    status: mapDatabaseBuildStatusToBuildStatusDTO(
-      data.status as BuildStatusDB
-    ),
-    statusMessage: mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
-      data.status,
-      data.reason
-    ),
+    names: data.names ?? null,
+    createdAt: new Date(data.createdAt).getTime(),
+    finishedAt: data.finishedAt ? new Date(data.finishedAt).getTime() : null,
+    status: data.status,
+    statusMessage: data.statusMessage,
   }
 }
 
@@ -273,29 +208,13 @@ export async function getInfraBuildStatus(
   )
 
   if (!result.response.ok || result.error) {
-    const status = result.response.status
-
-    l.error(
-      {
-        key: 'repositories:builds:get_build_status:infra_error',
-        error: result.error,
-        team_id: teamId,
-        context: {
-          status,
-          path: '/templates/{templateID}/builds/{buildID}/status',
-        },
-      },
-      `failed to fetch /templates/{templateID}/builds/{buildID}/status: ${result.error?.message || 'Unknown error'}`
-    )
-
-    if (status === 404) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: "Build not found or you don't have access to it",
-      })
-    }
-
-    throw apiError(status)
+    handleInfraApiError({
+      status: result.response.status,
+      error: result.error,
+      teamId,
+      path: '/templates/{templateID}/builds/{buildID}/status',
+      logKey: 'repositories:builds:get_build_status:infra_error',
+    })
   }
 
   return result.data
@@ -339,29 +258,13 @@ export async function getInfraBuildLogs(
   )
 
   if (!result.response.ok || result.error) {
-    const status = result.response.status
-
-    l.error(
-      {
-        key: 'repositories:builds:get_build_logs:infra_error',
-        error: result.error,
-        team_id: teamId,
-        context: {
-          status,
-          path: '/templates/{templateID}/builds/{buildID}/logs',
-        },
-      },
-      `failed to fetch /templates/{templateID}/builds/{buildID}/logs: ${result.error?.message || 'Unknown error'}`
-    )
-
-    if (status === 404) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: "Build not found or you don't have access to it",
-      })
-    }
-
-    throw apiError(status)
+    handleInfraApiError({
+      status: result.response.status,
+      error: result.error,
+      teamId,
+      path: '/templates/{templateID}/builds/{buildID}/logs',
+      logKey: 'repositories:builds:get_build_logs:infra_error',
+    })
   }
 
   return result.data
