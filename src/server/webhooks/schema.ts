@@ -33,12 +33,12 @@ export const UpsertWebhookSchema = z
   )
 
 export const DeleteWebhookSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   webhookId: z.uuid(),
 })
 
 export const UpdateWebhookSecretSchema = z.object({
-  teamId: z.uuid(),
+  teamIdOrSlug: TeamIdOrSlugSchema,
   webhookId: z.uuid(),
   signatureSecret: WebhookSecretSchema,
 })

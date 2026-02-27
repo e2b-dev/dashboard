@@ -58,7 +58,7 @@ export default function WebhookEditSecretDialog({
       formProps: {
         mode: 'onChange',
         defaultValues: {
-          teamId: webhook.teamId,
+          teamIdOrSlug: webhook.teamId,
           webhookId: webhook.id,
           signatureSecret: '',
         },
@@ -135,7 +135,7 @@ export default function WebhookEditSecretDialog({
         <Form {...form}>
           <form onSubmit={handleSubmitWithAction} className="min-w-0">
             {/* Hidden fields */}
-            <input type="hidden" {...form.register('teamId')} />
+            <input type="hidden" {...form.register('teamIdOrSlug')} />
             <input type="hidden" {...form.register('webhookId')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0">
