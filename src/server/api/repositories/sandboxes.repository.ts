@@ -64,6 +64,69 @@ export async function getSandboxLogs(
   return result.data
 }
 
+// get sandbox metrics
+
+export interface GetSandboxMetricsOptions {
+  startUnixMs: number
+  endUnixMs: number
+}
+
+export async function getSandboxMetrics(
+  accessToken: string,
+  teamId: string,
+  sandboxId: string,
+  options: GetSandboxMetricsOptions
+) {
+  // convert milliseconds to seconds for the API
+  const startUnixSeconds = Math.floor(options.startUnixMs / 1000)
+  const endUnixSeconds = Math.floor(options.endUnixMs / 1000)
+
+  const result = await infra.GET('/sandboxes/{sandboxID}/metrics', {
+    params: {
+      path: {
+        sandboxID: sandboxId,
+      },
+      query: {
+        start: startUnixSeconds,
+        end: endUnixSeconds,
+      },
+    },
+    headers: {
+      ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+    },
+  })
+
+  if (!result.response.ok || result.error) {
+    const status = result.response.status
+
+    l.error(
+      {
+        key: 'repositories:sandboxes:get_sandbox_metrics:infra_error',
+        error: result.error,
+        team_id: teamId,
+        context: {
+          status,
+          path: '/sandboxes/{sandboxID}/metrics',
+          sandbox_id: sandboxId,
+        },
+      },
+      `failed to fetch /sandboxes/{sandboxID}/metrics: ${result.error?.message || 'Unknown error'}`
+    )
+
+    if (status === 404) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: "Sandbox not found or you don't have access to it",
+      })
+    }
+
+    throw apiError(status)
+  }
+
+  return result.data
+}
+
 export const sandboxesRepo = {
   getSandboxLogs,
+  getSandboxMetrics
 }

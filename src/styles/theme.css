@@ -92,9 +92,9 @@
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgb(255, 135, 99, 0.16);
 
-  --graph-1: #fce8d8;
-  --graph-2: #f7b076;
-  --graph-3: #e27c1d;
+  --graph-1: #f3cfb0;
+  --graph-2: #eea064;
+  --graph-3: #d5751c;
   --graph-4: #c09bb8; /* Pastel purple-peach */
   --graph-5: #a67fa9; /* Pastel purple leaning to graph-6 */
   --graph-6: #8c5ca5; /* Purple with orange contrast */
@@ -116,14 +116,14 @@
   --graph-area-fg-from: rgba(108, 108, 108, 0.2);
   --graph-area-fg-to: rgba(250, 250, 250, 0.2);
 
-  --graph-area-1-from: rgba(252, 232, 216, 0.25); /* Peachy area gradient */
-  --graph-area-1-to: rgba(250, 250, 250, 0.2);
+  --graph-area-1-from: rgba(243, 207, 176, 0.32); /* Peachy area gradient */
+  --graph-area-1-to: rgba(250, 250, 250, 0.16);
 
-  --graph-area-2-from: rgba(247, 176, 118, 0.2); /* Orange area gradient */
-  --graph-area-2-to: rgba(250, 250, 250, 0.2);
+  --graph-area-2-from: rgba(238, 160, 100, 0.26); /* Orange area gradient */
+  --graph-area-2-to: rgba(250, 250, 250, 0.16);
 
-  --graph-area-3-from: rgba(226, 124, 29, 0.18); /* Dark orange area gradient */
-  --graph-area-3-to: rgba(250, 250, 250, 0.2);
+  --graph-area-3-from: rgba(213, 117, 28, 0.22); /* Dark orange area gradient */
+  --graph-area-3-to: rgba(250, 250, 250, 0.16);
 
   --graph-area-4-from: rgba(
     192,

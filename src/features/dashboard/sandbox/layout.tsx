@@ -3,7 +3,7 @@
 import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
-import { ListIcon, StorageIcon } from '@/ui/primitives/icons'
+import { ListIcon, StorageIcon, TrendIcon } from '@/ui/primitives/icons'
 import { notFound } from 'next/navigation'
 import { useSandboxContext } from './context'
 import SandboxInspectIncompatible from './inspect/incompatible'
@@ -25,10 +25,10 @@ export default function SandboxLayout({
 
   const isEnvdVersionCompatibleForInspect = Boolean(
     sandboxInfo?.envdVersion &&
-      isVersionCompatible(
-        sandboxInfo.envdVersion,
-        SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
-      )
+    isVersionCompatible(
+      sandboxInfo.envdVersion,
+      SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
+    )
   )
 
   if (!sandboxInfo) {
@@ -50,6 +50,14 @@ export default function SandboxLayout({
           label="Logs"
           className="flex min-h-0 flex-1 flex-col"
           icon={<ListIcon className="size-4" />}
+        >
+          {children}
+        </DashboardTab>
+        <DashboardTab
+          id="monitoring"
+          label="Monitoring"
+          className="flex min-h-0 flex-1 flex-col"
+          icon={<TrendIcon className="size-4" />}
         >
           {children}
         </DashboardTab>
