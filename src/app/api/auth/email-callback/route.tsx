@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   if (!code && message) {
     // E-Mail updates can be validated on both e-mails. This case is for the first validation link press.
     // `message` should inform the user that he has to validate on the other e-mail address as well for successful update.
-    redirect(`${next}?message=${message}&type=update_email`)
+    redirect(`${next}?message=${encodeURIComponent(message)}&type=update_email`)
   }
 
   if (!code && !message) {
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   }
 
   if (message) {
-    redirect(`${next}?message=${message}&type=update_email`)
+    redirect(`${next}?message=${encodeURIComponent(message)}&type=update_email`)
   }
 
   const supabase = await createClient()
