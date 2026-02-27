@@ -1,9 +1,10 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
 import { api, infra } from '@/lib/clients/api'
 import { handleDashboardApiError, handleInfraApiError } from '../errors'
 import {
+  BuildStatus,
   ListedBuildDTO,
-  type BuildStatusDB,
   type RunningBuildStatusDTO,
 } from '../models/builds.models'
 
@@ -44,7 +45,7 @@ async function listBuilds(
   accessToken: string,
   teamId: string,
   buildIdOrTemplate?: string,
-  statuses: BuildStatusDB[] = ['waiting', 'building', 'uploaded', 'failed'],
+  statuses: BuildStatus[] = INITIAL_BUILD_STATUSES,
   options: ListBuildsOptions = {}
 ): Promise<ListBuildsResult> {
   const limit = normalizeListBuildsLimit(options.limit)

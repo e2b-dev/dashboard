@@ -9,7 +9,7 @@ import {
   formatTimeAgoCompact,
 } from '@/lib/utils/formatting'
 import type {
-  BuildStatusDTO,
+  BuildStatus,
   ListedBuildDTO,
 } from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
@@ -147,12 +147,12 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
 }
 
 interface StatusProps {
-  status: BuildStatusDTO
+  status: BuildStatus
 }
 
 export function Status({ status }: StatusProps) {
   const config: Record<
-    BuildStatusDTO,
+    BuildStatus,
     {
       label: string
       variant: 'default' | 'positive' | 'error'

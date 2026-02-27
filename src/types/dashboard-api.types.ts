@@ -53,7 +53,7 @@ export interface paths {
                 query?: {
                     /** @description Optional filter by build identifier, template identifier, or template alias. */
                     build_id_or_template?: components["parameters"]["build_id_or_template"];
-                    /** @description Comma-separated list of DB build statuses to include. */
+                    /** @description Comma-separated list of build statuses to include. */
                     statuses?: components["parameters"]["build_statuses"];
                     /** @description Maximum number of items to return per page. */
                     limit?: components["parameters"]["builds_limit"];
@@ -193,11 +193,6 @@ export interface components {
          * @enum {string}
          */
         BuildStatus: "building" | "failed" | "success";
-        /**
-         * @description Internal build status values used for filtering.
-         * @enum {string}
-         */
-        BuildStatusDB: "waiting" | "building" | "uploaded" | "failed";
         ListedBuild: {
             /**
              * Format: uuid
@@ -324,8 +319,8 @@ export interface components {
         builds_cursor: string;
         /** @description Optional filter by build identifier, template identifier, or template alias. */
         build_id_or_template: string;
-        /** @description Comma-separated list of DB build statuses to include. */
-        build_statuses: components["schemas"]["BuildStatusDB"][];
+        /** @description Comma-separated list of build statuses to include. */
+        build_statuses: components["schemas"]["BuildStatus"][];
         /** @description Comma-separated list of build IDs to get statuses for. */
         build_ids: string[];
     };
