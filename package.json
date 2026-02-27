@@ -11,7 +11,7 @@
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "format": "biome check --write . --max-diagnostics none",
-    "format:check": "biome check --linter-enabled=false --assist-enabled=false .",
+    "format:check": "biome check --linter-enabled=false --assist-enabled=true .",
     "check": "biome check .",
     "prebuild": "bun scripts:check-app-env",
     "<<<<<<< Development Tools": "",
