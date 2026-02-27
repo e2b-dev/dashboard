@@ -1,13 +1,13 @@
 'use client'
 
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils/ui'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 

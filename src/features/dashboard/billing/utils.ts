@@ -1,7 +1,7 @@
 import { l } from '@/lib/clients/logger/logger'
-import { TeamItems } from '@/types/billing.types'
+import type { TeamItems } from '@/types/billing.types'
 import { ADDON_500_SANDBOXES_ID, TIER_BASE_ID, TIER_PRO_ID } from './constants'
-import { BillingAddonData, BillingTierData } from './types'
+import type { BillingAddonData, BillingTierData } from './types'
 
 export function formatTierDisplayName(name: string): string {
   if (name.toLowerCase().includes('base')) return 'Hobby'

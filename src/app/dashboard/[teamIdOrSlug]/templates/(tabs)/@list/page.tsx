@@ -1,6 +1,6 @@
+import { Suspense } from 'react'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import TemplatesTable from '@/features/dashboard/templates/list/table'
-import { Suspense } from 'react'
 
 export default async function ListPage() {
   return (

@@ -1,10 +1,10 @@
 'use client'
 
-import type { Sandbox } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
-import { ColumnDef, FilterFn, type Table } from '@tanstack/react-table'
+import type { ColumnDef, FilterFn, Table } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
+import type { Sandbox } from '@/types/api.types'
 
 import {
   CpuUsageCell,

@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils/ui'
-import { BuildDetailsDTO } from '@/server/api/models/builds.models'
+import type { BuildDetailsDTO } from '@/server/api/models/builds.models'
 import CopyButton from '@/ui/copy-button'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'

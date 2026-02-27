@@ -2,8 +2,8 @@ import { z } from 'zod'
 import { createTRPCRouter } from '../init'
 import {
   mapInfraSandboxLogToDTO,
-  SandboxLogDTO,
-  SandboxLogsDTO,
+  type SandboxLogDTO,
+  type SandboxLogsDTO,
 } from '../models/sandboxes.models'
 import { protectedTeamProcedure } from '../procedures'
 import { sandboxesRepo } from '../repositories/sandboxes.repository'

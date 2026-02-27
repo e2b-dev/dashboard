@@ -1,5 +1,9 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { PlusIcon } from 'lucide-react'
+import { useState } from 'react'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -19,14 +23,10 @@ import {
 import { Form } from '@/ui/primitives/form'
 import { CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { PlusIcon } from 'lucide-react'
-import { useState } from 'react'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
 import { WEBHOOK_EVENTS } from './constants'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 type WebhookAddEditDialogProps =
   | {

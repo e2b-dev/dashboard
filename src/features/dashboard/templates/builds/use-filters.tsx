@@ -1,9 +1,9 @@
 'use client'
 
-import { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
+import type { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { INITIAL_BUILD_STATUSES } from './constants'
 import { templateBuildsFilterParams } from './filter-params'
 

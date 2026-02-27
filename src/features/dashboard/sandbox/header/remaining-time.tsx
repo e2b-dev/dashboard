@@ -1,11 +1,11 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
 import { RefreshCw, Square } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
 import { useSandboxContext } from '../context'
 
 export default function RemainingTime() {

@@ -1,3 +1,6 @@
+import { ArrowUpRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -8,9 +11,6 @@ import {
 import { cn } from '@/lib/utils/ui'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Button } from '@/ui/primitives/button'
-import { ArrowUpRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { useTemplateTableStore } from '../templates/list/stores/table-store'
 
 export function Template({
@@ -84,7 +84,10 @@ export function RanFor({
   const formattedTimestamp = formatCompactDate(finishedAt)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary group/time">
+    <CopyButtonInline
+      value={iso}
+      className="whitespace-nowrap text-fg-secondary group/time"
+    >
       In {formatDurationCompact(duration)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}
@@ -99,7 +102,10 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const formattedTimestamp = formatCompactDate(timestamp)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary group/time">
+    <CopyButtonInline
+      value={iso}
+      className="whitespace-nowrap text-fg-secondary group/time"
+    >
       {formatTimeAgoCompact(elapsed)}{' '}
       <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
         · {formattedTimestamp}

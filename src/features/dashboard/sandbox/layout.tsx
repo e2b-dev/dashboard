@@ -1,10 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
 import { ListIcon, StorageIcon } from '@/ui/primitives/icons'
-import { notFound } from 'next/navigation'
 import { useSandboxContext } from './context'
 import SandboxInspectIncompatible from './inspect/incompatible'
 

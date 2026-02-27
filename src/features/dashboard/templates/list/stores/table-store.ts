@@ -1,7 +1,7 @@
-import { createHashStorage } from '@/lib/utils/store'
-import { OnChangeFn, SortingState } from '@tanstack/react-table'
+import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { createHashStorage } from '@/lib/utils/store'
 import { trackTemplateTableInteraction } from '../table-config'
 
 interface TemplateTableState {

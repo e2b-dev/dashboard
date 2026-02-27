@@ -1,7 +1,7 @@
+import { type NextRequest, NextResponse } from 'next/server'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
 import { createClient } from '@/lib/clients/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()

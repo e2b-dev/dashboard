@@ -1,19 +1,5 @@
 'use client'
 
-import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { useTRPC } from '@/trpc/client'
-import { AsciiSandbox } from '@/ui/patterns'
-import { Alert, AlertDescription } from '@/ui/primitives/alert'
-import { Button } from '@/ui/primitives/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/ui/primitives/dialog'
-import { SandboxIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 import {
   Elements,
   PaymentElement,
@@ -29,6 +15,20 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
+import { AsciiSandbox } from '@/ui/patterns'
+import { Alert, AlertDescription } from '@/ui/primitives/alert'
+import { Button } from '@/ui/primitives/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/primitives/dialog'
+import { SandboxIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../context'
 import {
   ADDON_PURCHASE_ACTION_ERRORS,

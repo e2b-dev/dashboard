@@ -3,7 +3,7 @@
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { cn } from '@/lib/utils'
 import HelpTooltip from './help-tooltip'
-import { Badge, BadgeProps } from './primitives/badge'
+import { Badge, type BadgeProps } from './primitives/badge'
 
 interface LiveDotProps {
   classNames?: {

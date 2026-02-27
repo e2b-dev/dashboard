@@ -1,10 +1,13 @@
 'use client'
 
+import { useMutation } from '@tanstack/react-query'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
-import { TeamLimits } from '@/server/team/get-team-limits'
+import type { TeamLimits } from '@/server/team/get-team-limits'
 import { useTRPC } from '@/trpc/client'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -20,12 +23,9 @@ import {
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useMutation } from '@tanstack/react-query'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
 import { useBillingItems, useTeamLimits } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
-import { BillingTierData } from './types'
+import type { BillingTierData } from './types'
 import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
 
 function formatCpu(vcpu: number): string {

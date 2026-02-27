@@ -1,16 +1,16 @@
-import { GaugeIcon, WebhookIcon } from '@/ui/primitives/icons'
 import {
   Activity,
   Box,
   Container,
   CreditCard,
   Key,
-  LucideProps,
+  type LucideProps,
   Settings,
   UserRoundCog,
   Users,
 } from 'lucide-react'
-import { ForwardRefExoticComponent, JSX, RefAttributes } from 'react'
+import type { ForwardRefExoticComponent, JSX, RefAttributes } from 'react'
+import { GaugeIcon, WebhookIcon } from '@/ui/primitives/icons'
 import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
@@ -25,7 +25,6 @@ export type SidebarNavItem = {
     | ForwardRefExoticComponent<
         Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
       >
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | ((...args: any[]) => JSX.Element)
   group?: string
   activeMatch?: string

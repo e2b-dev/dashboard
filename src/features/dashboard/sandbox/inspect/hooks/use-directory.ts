@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { useStore } from 'zustand'
 import { useSandboxInspectContext } from '../context'
-import { FilesystemNode } from '../filesystem/types'
+import type { FilesystemNode } from '../filesystem/types'
 
 /**
  * Hook for accessing directory children with automatic updates

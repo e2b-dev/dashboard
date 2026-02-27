@@ -1,10 +1,10 @@
-import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { z } from 'zod'
+import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { createTRPCRouter } from '../init'
 import {
-  BuildDetailsDTO,
-  BuildLogDTO,
-  BuildLogsDTO,
+  type BuildDetailsDTO,
+  type BuildLogDTO,
+  type BuildLogsDTO,
   BuildStatusDTOSchema,
   checkIfBuildStillHasLogs,
   mapBuildStatusDTOToDatabaseBuildStatus,

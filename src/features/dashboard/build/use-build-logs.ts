@@ -1,12 +1,12 @@
 'use client'
 
-import type { BuildStatusDTO } from '@/server/api/models/builds.models'
-import { useTRPCClient } from '@/trpc/client'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from 'zustand'
-import { createBuildLogsStore, type BuildLogsStore } from './build-logs-store'
-import { type LogLevelFilter } from './logs-filter-params'
+import type { BuildStatusDTO } from '@/server/api/models/builds.models'
+import { useTRPCClient } from '@/trpc/client'
+import { type BuildLogsStore, createBuildLogsStore } from './build-logs-store'
+import type { LogLevelFilter } from './logs-filter-params'
 
 const REFETCH_INTERVAL_MS = 1_500
 const DRAIN_AFTER_BUILD_STOP_WINDOW_MS = 10_000
@@ -65,7 +65,8 @@ export function useBuildLogs({
 
     if (prevIsBuildingRef.current) {
       isDraining.current = true
-      drainUntilTimestampMs.current = Date.now() + DRAIN_AFTER_BUILD_STOP_WINDOW_MS
+      drainUntilTimestampMs.current =
+        Date.now() + DRAIN_AFTER_BUILD_STOP_WINDOW_MS
       consecutiveEmptyDrainPolls.current = 0
     }
 

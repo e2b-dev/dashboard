@@ -1,6 +1,0 @@
-**/*.mdx
-**/*.md
-
-/.next/
-
-package.json

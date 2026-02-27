@@ -1,5 +1,9 @@
 'use client'
 
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { CellContext } from '@tanstack/react-table'
+import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -11,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
-import { DefaultTemplate, Template } from '@/types/api.types'
+import type { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
@@ -27,10 +31,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader_d'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CellContext } from '@tanstack/react-table'
-import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
 

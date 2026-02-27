@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
@@ -12,7 +13,6 @@ import {
   fillTeamMetricsWithZeros,
   transformMetricsToClientMetrics,
 } from '@/server/sandboxes/utils'
-import { z } from 'zod'
 import { apiError } from '../errors'
 import { createTRPCRouter } from '../init'
 import { protectedTeamProcedure } from '../procedures'

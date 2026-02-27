@@ -1,5 +1,5 @@
-import { BuildLogDTO } from '@/server/api/models/builds.models'
 import { createLoader, parseAsStringEnum } from 'nuqs/server'
+import type { BuildLogDTO } from '@/server/api/models/builds.models'
 
 export type LogLevelFilter = BuildLogDTO['level']
 

@@ -1,6 +1,6 @@
+import { z } from 'zod'
 import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
 import { relativeUrlSchema } from '@/lib/schemas/url'
-import { z } from 'zod'
 
 export const emailSchema = z.email('Valid email is required')
 

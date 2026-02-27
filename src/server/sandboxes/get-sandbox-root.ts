@@ -1,10 +1,10 @@
+import Sandbox, { NotFoundError } from 'e2b'
+import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import Sandbox, { NotFoundError } from 'e2b'
-import { z } from 'zod'
 
 export const GetSandboxRootSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,

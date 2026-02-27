@@ -1,17 +1,30 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import {
+  useVirtualizer,
+  type VirtualItem,
+  type Virtualizer,
+} from '@tanstack/react-virtual'
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
 } from '@/features/dashboard/common/log-cells'
 import {
+  LogStatusCell,
   LogsEmptyBody,
   LogsLoaderBody,
   LogsTableHeader,
-  LogStatusCell,
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
+import { cn } from '@/lib/utils'
 import type {
   BuildDetailsDTO,
   BuildLogDTO,
@@ -25,22 +38,17 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader'
-import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import {
-  useVirtualizer,
-  VirtualItem,
-  Virtualizer,
-} from '@tanstack/react-virtual'
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/ui/primitives/table'
 import { LOG_RETENTION_MS } from '../templates/builds/constants'
 import { LogLevel, Message, Timestamp } from './logs-cells'
-import { type LogLevelFilter } from './logs-filter-params'
+import type { LogLevelFilter } from './logs-filter-params'
 import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 
@@ -222,9 +230,7 @@ function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
     ? undefined
     : `This build has exceeded the ${LOG_RETENTION_MS / 24 / 60 / 60 / 1000} day retention limit.`
 
-  return (
-    <LogsEmptyBody description={description} />
-  )
+  return <LogsEmptyBody description={description} />
 }
 
 interface LevelFilterProps {
@@ -615,7 +621,11 @@ function StatusRow({
   isFetchingNextPage,
 }: StatusRowProps) {
   return (
-    <LogVirtualRow virtualRow={virtualRow} virtualizer={virtualizer} height={ROW_HEIGHT_PX}>
+    <LogVirtualRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+    >
       <LogStatusCell>
         <span className="pb-1 text-fg-tertiary font-mono text-xs whitespace-nowrap inline-flex items-center gap-1 uppercase">
           {isFetchingNextPage ? (

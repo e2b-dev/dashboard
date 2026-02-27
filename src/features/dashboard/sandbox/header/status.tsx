@@ -1,7 +1,7 @@
 'use client'
 
-import { Badge } from '@/ui/primitives/badge'
 import { Circle, Square } from 'lucide-react'
+import { Badge } from '@/ui/primitives/badge'
 import { useSandboxContext } from '../context'
 
 export default function Status() {

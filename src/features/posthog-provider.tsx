@@ -1,8 +1,6 @@
-import posthog, { Survey } from 'posthog-js'
+import posthog, { type Survey } from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
-import { useEffect, useState } from 'react'
-
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 interface AppPostHogContextValue {
   isInitialized: boolean

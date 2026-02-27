@@ -1,16 +1,16 @@
+import { TRPCError } from '@trpc/server'
+import z from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import type { Database } from '@/types/database.types'
-import { TRPCError } from '@trpc/server'
-import z from 'zod'
 import { apiError } from '../errors'
 import {
-  ListedBuildDTO,
+  type BuildStatusDB,
+  type ListedBuildDTO,
   mapDatabaseBuildReasonToListedBuildDTOStatusMessage,
   mapDatabaseBuildStatusToBuildStatusDTO,
-  type BuildStatusDB,
   type RunningBuildStatusDTO,
 } from '../models/builds.models'
 
@@ -134,9 +134,9 @@ async function listBuilds(
     data: trimmedBuilds.map(mapRpcBuildToListedBuildDTO),
     nextCursor: hasMore
       ? encodeCursor(
-        trimmedBuilds[trimmedBuilds.length - 1]!.created_at,
-        trimmedBuilds[trimmedBuilds.length - 1]!.id
-      )
+          trimmedBuilds[trimmedBuilds.length - 1]!.created_at,
+          trimmedBuilds[trimmedBuilds.length - 1]!.id
+        )
       : null,
   }
 }

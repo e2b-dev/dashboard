@@ -1,4 +1,4 @@
-import { components as InfraComponents } from '@/types/infra-api.types'
+import type { components as InfraComponents } from '@/types/infra-api.types'
 
 type Sandbox = InfraComponents['schemas']['ListedSandbox']
 

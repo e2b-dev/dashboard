@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react'
 import { usePolling } from '@/lib/hooks/use-polling'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -8,7 +9,6 @@ import {
   SelectTrigger,
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
-import { RefreshCw } from 'lucide-react'
 
 export interface PollingInterval {
   value: number

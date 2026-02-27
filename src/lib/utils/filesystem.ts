@@ -1,7 +1,6 @@
-import { FileContentState } from '@/features/dashboard/sandbox/inspect/filesystem/store'
-
 // Leverage pathe (a tiny, browser-friendly path replacement)
 import { basename, dirname, join, normalize } from 'pathe'
+import type { FileContentState } from '@/features/dashboard/sandbox/inspect/filesystem/store'
 
 /**
  * Normalize a path so that it:

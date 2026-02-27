@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils'
 import {
   TIME_RANGES,
-  type TimeRangeKey,
   type TimeframeState,
+  type TimeRangeKey,
 } from '@/lib/utils/timeframe'
 import { Button } from '@/ui/primitives/button'
 import { TimePicker } from '../../../time-picker'

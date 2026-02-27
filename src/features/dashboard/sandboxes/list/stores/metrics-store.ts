@@ -1,7 +1,7 @@
 'use client'
 
-import { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 import { create } from 'zustand'
+import type { ClientSandboxesMetrics } from '@/types/sandboxes.types'
 
 // maximum number of sandbox metrics to keep in memory
 // this is to prevent the store from growing too large and causing performance issues

@@ -1,9 +1,10 @@
 'use client'
 
-import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { calculateAxisMax } from '@/lib/utils/chart'
-import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
-import ReactEChartsCore from 'echarts-for-react/lib/core'
+import type {
+  EChartsOption,
+  MarkPointComponentOption,
+  SeriesOption,
+} from 'echarts'
 import { LineChart } from 'echarts/charts'
 import {
   AxisPointerComponent,
@@ -15,8 +16,11 @@ import {
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
+import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { CHART_CONFIGS, LIVE_PADDING_MULTIPLIER } from './constants'
 import type { TeamMetricsChartProps } from './types'
 import {
@@ -102,53 +106,45 @@ function TeamMetricsChart({
   const bg1 = cssVars['--bg-1'] || '#fff'
 
   // tooltip formatter that extracts data and calls onTooltipValueChange
-  const tooltipFormatter = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (params: any) => {
-      // params is an array when trigger is 'axis'
-      const paramArray = Array.isArray(params) ? params : [params]
+  const tooltipFormatter = useCallback((params: any) => {
+    // params is an array when trigger is 'axis'
+    const paramArray = Array.isArray(params) ? params : [params]
 
-      if (paramArray.length > 0 && paramArray[0]?.value) {
-        const [timestamp, value] = paramArray[0].value
+    if (paramArray.length > 0 && paramArray[0]?.value) {
+      const [timestamp, value] = paramArray[0].value
 
-        if (
-          onTooltipValueChangeRef.current &&
-          timestamp !== undefined &&
-          value !== undefined
-        ) {
-          onTooltipValueChangeRef.current(timestamp, value)
-        }
+      if (
+        onTooltipValueChangeRef.current &&
+        timestamp !== undefined &&
+        value !== undefined
+      ) {
+        onTooltipValueChangeRef.current(timestamp, value)
       }
+    }
 
-      return ''
-    },
-    []
-  )
+    return ''
+  }, [])
 
-  const handleBrushEnd = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (params: any) => {
-      const areas = params.areas
-      if (areas && areas.length > 0) {
-        const coordRange = areas[0].coordRange
+  const handleBrushEnd = useCallback((params: any) => {
+    const areas = params.areas
+    if (areas && areas.length > 0) {
+      const coordRange = areas[0].coordRange
 
-        if (coordRange && coordRange.length === 2 && onZoomEndRef.current) {
-          const startValue = Math.round(coordRange[0])
-          const endValue = Math.round(coordRange[1])
+      if (coordRange && coordRange.length === 2 && onZoomEndRef.current) {
+        const startValue = Math.round(coordRange[0])
+        const endValue = Math.round(coordRange[1])
 
-          onZoomEndRef.current(startValue, endValue)
+        onZoomEndRef.current(startValue, endValue)
 
-          // clears brush after selection
-          chartInstanceRef.current?.dispatchAction({
-            type: 'brush',
-            command: 'clear',
-            areas: [],
-          })
-        }
+        // clears brush after selection
+        chartInstanceRef.current?.dispatchAction({
+          type: 'brush',
+          command: 'clear',
+          areas: [],
+        })
       }
-    },
-    []
-  )
+    }
+  }, [])
 
   // chart ready handler - stable reference
   const handleChartReady = useCallback((chart: echarts.ECharts) => {

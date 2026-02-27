@@ -1,9 +1,9 @@
 import 'server-only'
 
-import { l } from '@/lib/clients/logger/logger'
-import { LiveDot } from '@/ui/live'
 import { cacheLife } from 'next/cache'
 import Link from 'next/link'
+import { l } from '@/lib/clients/logger/logger'
+import { LiveDot } from '@/ui/live'
 
 const STATUS_PAGE_URL = 'https://status.e2b.dev'
 const STATUS_PAGE_INDEX_URL = `${STATUS_PAGE_URL}/index.json`

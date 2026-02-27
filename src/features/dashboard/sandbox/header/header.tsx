@@ -1,4 +1,4 @@
-import { SandboxInfo } from '@/types/api.types'
+import type { SandboxInfo } from '@/types/api.types'
 import { DetailsItem, DetailsRow } from '../../layouts/details-row'
 import Metadata from './metadata'
 import RanFor from './ran-for'

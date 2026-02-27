@@ -1,11 +1,11 @@
-import {
-  MIDDLEWARE_REWRITE_CONFIG,
-  RewriteConfigType,
-  ROUTE_REWRITE_CONFIG,
-} from '@/configs/rewrites'
-import { RewriteConfig } from '@/types/rewrites.types'
 import * as cheerio from 'cheerio'
 import { serializeError } from 'serialize-error'
+import {
+  MIDDLEWARE_REWRITE_CONFIG,
+  type RewriteConfigType,
+  ROUTE_REWRITE_CONFIG,
+} from '@/configs/rewrites'
+import type { RewriteConfig } from '@/types/rewrites.types'
 import { l } from '../clients/logger/logger'
 
 function getRewriteForPath(

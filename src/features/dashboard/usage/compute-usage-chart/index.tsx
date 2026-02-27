@@ -1,9 +1,6 @@
 'use client'
 
-import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { calculateAxisMax } from '@/lib/utils/chart'
-import { EChartsOption, SeriesOption } from 'echarts'
-import ReactEChartsCore from 'echarts-for-react/lib/core'
+import type { EChartsOption, SeriesOption } from 'echarts'
 import { BarChart } from 'echarts/charts'
 import {
   BrushComponent,
@@ -13,8 +10,11 @@ import {
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
+import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { calculateAxisMax } from '@/lib/utils/chart'
 import { COMPUTE_CHART_CONFIGS } from '../constants'
 import type { ComputeUsageChartProps } from './types'
 
@@ -63,19 +63,15 @@ function ComputeUsageChart({
   const bgInverted = cssVars['--bg-inverted'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
 
-  const handleAxisPointer = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (params: any) => {
-      const index = params.seriesData[0].dataIndex
+  const handleAxisPointer = useCallback((params: any) => {
+    const index = params.seriesData[0].dataIndex
 
-      if (index !== undefined && onHoverRef.current) {
-        onHoverRef.current(index)
-      }
+    if (index !== undefined && onHoverRef.current) {
+      onHoverRef.current(index)
+    }
 
-      return ''
-    },
-    []
-  )
+    return ''
+  }, [])
 
   const handleGlobalOut = useCallback(() => {
     if (onHoverEndRef.current) {
@@ -83,30 +79,26 @@ function ComputeUsageChart({
     }
   }, [])
 
-  const handleBrushEnd = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (params: any) => {
-      const areas = params.areas
-      if (areas && areas.length > 0) {
-        const area = areas[0]
-        const coordRange = area.coordRange
+  const handleBrushEnd = useCallback((params: any) => {
+    const areas = params.areas
+    if (areas && areas.length > 0) {
+      const area = areas[0]
+      const coordRange = area.coordRange
 
-        if (coordRange && coordRange.length === 2 && onBrushEndRef.current) {
-          const startIndex = coordRange[0]
-          const endIndex = coordRange[1]
+      if (coordRange && coordRange.length === 2 && onBrushEndRef.current) {
+        const startIndex = coordRange[0]
+        const endIndex = coordRange[1]
 
-          onBrushEndRef.current(startIndex, endIndex)
+        onBrushEndRef.current(startIndex, endIndex)
 
-          chartInstanceRef.current?.dispatchAction({
-            type: 'brush',
-            command: 'clear',
-            areas: [],
-          })
-        }
+        chartInstanceRef.current?.dispatchAction({
+          type: 'brush',
+          command: 'clear',
+          areas: [],
+        })
       }
-    },
-    []
-  )
+    }
+  }, [])
 
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart

@@ -1,7 +1,7 @@
-import { l } from '@/lib/clients/logger/logger'
 import { PlainClient } from '@team-plain/typescript-sdk'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { l } from '@/lib/clients/logger/logger'
 import { createTRPCRouter } from '../init'
 import { protectedProcedure } from '../procedures'
 

@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest'
 import { fillTeamMetricsWithZeros } from '@/server/sandboxes/utils'
 import type { ClientTeamMetrics } from '@/types/sandboxes.types'
-import { describe, expect, it } from 'vitest'
 
 describe('fillTeamMetricsWithZeros', () => {
   describe('Empty data handling', () => {

@@ -1,5 +1,5 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils/ui'
-import { ReactNode } from 'react'
 
 interface DetailItemProps extends React.HTMLAttributes<HTMLDivElement> {
   label: string

@@ -1,4 +1,4 @@
-import { ComputUsageAxisPoint, SamplingMode } from '../types'
+import type { ComputUsageAxisPoint, SamplingMode } from '../types'
 
 export type ComputeChartType = 'cost' | 'ram' | 'vcpu' | 'sandboxes'
 

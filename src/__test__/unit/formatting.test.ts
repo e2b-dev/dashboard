@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   formatAveragingPeriod,
   formatChartTimestampLocal,
@@ -11,7 +12,6 @@ import {
   formatTimeAxisLabel,
   parseUTCDateComponents,
 } from '@/lib/utils/formatting'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('Date & Time Formatting', () => {
   beforeEach(() => {

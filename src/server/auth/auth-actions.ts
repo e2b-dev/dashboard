@@ -1,5 +1,9 @@
 'use server'
 
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { returnValidationErrors } from 'next-safe-action'
+import { z } from 'zod'
 import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
@@ -14,10 +18,6 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/server/auth/validate-email'
-import { returnValidationErrors } from 'next-safe-action'
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { z } from 'zod'
 import { forgotPasswordSchema, signInSchema, signUpSchema } from './auth.types'
 
 async function validateCaptcha(captchaToken: string | undefined) {

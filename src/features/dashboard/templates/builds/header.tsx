@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { BuildStatusDTO } from '@/server/api/models/builds.models'
 import { Button } from '@/ui/primitives/button'
@@ -11,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Input } from '@/ui/primitives/input'
-import { useEffect, useState } from 'react'
 import { Status } from './table-cells'
 import useFilters from './use-filters'
 

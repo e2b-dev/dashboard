@@ -1,14 +1,14 @@
 'use client'
 
+import { Eye, EyeOff } from 'lucide-react'
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { getUserAccessTokenAction } from '@/server/user/user-actions'
 import CopyButton from '@/ui/copy-button'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
-import { Eye, EyeOff } from 'lucide-react'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
 
 interface UserAccessTokenProps {
   className?: string

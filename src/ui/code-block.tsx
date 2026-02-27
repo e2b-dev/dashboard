@@ -1,17 +1,16 @@
 'use client'
+import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
 import {
+  forwardRef,
   type HTMLAttributes,
   type ReactNode,
-  forwardRef,
   useCallback,
   useRef,
 } from 'react'
-
+import ShikiHighlighter from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
-import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
-import ShikiHighlighter from 'react-shiki'
 import CopyButton from './copy-button'
 import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
 

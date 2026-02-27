@@ -1,7 +1,7 @@
+import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import SandboxInspectView from '@/features/dashboard/sandbox/inspect/view'
 import { getSandboxRoot } from '@/server/sandboxes/get-sandbox-root'
-import { cookies } from 'next/headers'
 
 const DEFAULT_ROOT_PATH = '/home/user'
 

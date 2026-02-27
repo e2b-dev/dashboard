@@ -71,23 +71,20 @@ export function formatLocalLogStyleTimestamp(
   }
 
   const timezonePart =
-    LOCAL_LOG_STYLE_TIMEZONE_FORMATTER
-      .formatToParts(date)
-      .find((part) => part.type === 'timeZoneName')
-      ?.value ??
+    LOCAL_LOG_STYLE_TIMEZONE_FORMATTER.formatToParts(date).find(
+      (part) => part.type === 'timeZoneName'
+    )?.value ??
     Intl.DateTimeFormat().resolvedOptions().timeZone ??
     'Local'
 
   return {
-    datePart: (
-      includeYear
-        ? LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER
-        : LOCAL_LOG_STYLE_DATE_FORMATTER
+    datePart: (includeYear
+      ? LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER
+      : LOCAL_LOG_STYLE_DATE_FORMATTER
     ).format(date),
-    timePart: (
-      includeSeconds
-        ? LOCAL_LOG_STYLE_TIME_FORMATTER
-        : LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER
+    timePart: (includeSeconds
+      ? LOCAL_LOG_STYLE_TIME_FORMATTER
+      : LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER
     ).format(date),
     timezonePart,
     iso: date.toISOString(),

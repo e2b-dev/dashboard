@@ -1,8 +1,8 @@
 'use client'
 
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { InferSafeActionFnResult } from 'next-safe-action'
-import { NonUndefined } from 'react-hook-form'
+import type { InferSafeActionFnResult } from 'next-safe-action'
+import type { NonUndefined } from 'react-hook-form'
+import type { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { LiveSandboxCounter } from './live-counter'
 import { useRecentMetrics } from './monitoring/hooks/use-recent-metrics'
 

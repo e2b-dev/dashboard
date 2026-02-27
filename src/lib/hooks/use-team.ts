@@ -1,9 +1,9 @@
 'use client'
 
-import { useDashboard } from '@/features/dashboard/context'
-import { ClientTeam } from '@/types/dashboard.types'
 import { useEffect } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
+import { useDashboard } from '@/features/dashboard/context'
+import type { ClientTeam } from '@/types/dashboard.types'
 
 export const useTeamCookieManager = () => {
   const { team } = useDashboard()

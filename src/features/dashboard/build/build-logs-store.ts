@@ -1,9 +1,9 @@
 'use client'
 
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
-import type { useTRPCClient } from '@/trpc/client'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,
   countTrailingAtTimestamp,

@@ -1,15 +1,15 @@
 'use client'
 
+import { AnimatePresence } from 'framer-motion'
+import { Download } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import ShikiHighlighter, { type Language } from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { Drawer, DrawerContent } from '@/ui/primitives/drawer'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
-import { AnimatePresence } from 'framer-motion'
-import { Download } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import ShikiHighlighter, { Language } from 'react-shiki'
 
 import {
   MAX_VIEWABLE_FILE_SIZE_BYTES,
@@ -191,7 +191,6 @@ interface ImageContentProps {
 function ImageContent({ name, dataUri }: ImageContentProps) {
   return (
     <div className="flex h-full w-full items-center justify-center overflow-auto p-2">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={dataUri}
         alt={name}

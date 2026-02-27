@@ -1,5 +1,5 @@
-import { COOKIE_KEYS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import KillButton from './kill-button'
 import RefreshControl from './refresh'
 

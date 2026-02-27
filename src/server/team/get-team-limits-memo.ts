@@ -1,9 +1,9 @@
 import 'server-cli-only'
 
-import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { cache } from 'react'
 import { serializeError } from 'serialize-error'
+import { l } from '@/lib/clients/logger/logger'
+import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import type { TeamLimits } from './get-team-limits'
 
 /**

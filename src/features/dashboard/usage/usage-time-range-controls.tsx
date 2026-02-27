@@ -1,5 +1,7 @@
 'use client'
 
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
@@ -12,9 +14,7 @@ import {
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
-import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import { TIME_RANGE_PRESETS } from './constants'
 import {
   determineSamplingMode,

@@ -1,11 +1,11 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useRef } from 'react'
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import { areStringArraysEqual } from '@/lib/utils/array'
 import { useTRPC } from '@/trpc/client'
 import type { Sandboxes } from '@/types/api.types'
-import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
@@ -51,7 +51,8 @@ export function useSandboxesMetrics({
   const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
   const shouldEnableMetricsQuery =
     !isListScrolling && activeSandboxIds.length > 0
-  const metricsRefetchInterval = pollingIntervalMs > 0 ? pollingIntervalMs : false
+  const metricsRefetchInterval =
+    pollingIntervalMs > 0 ? pollingIntervalMs : false
 
   const metricsQueryInput = useMemo(
     () => ({
@@ -62,17 +63,14 @@ export function useSandboxesMetrics({
   )
 
   const { data } = useQuery(
-    trpc.sandboxes.getSandboxesMetrics.queryOptions(
-      metricsQueryInput,
-      {
-        enabled: shouldEnableMetricsQuery,
-        refetchInterval: metricsRefetchInterval,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false,
-        refetchOnReconnect: true,
-        refetchIntervalInBackground: false,
-      }
-    )
+    trpc.sandboxes.getSandboxesMetrics.queryOptions(metricsQueryInput, {
+      enabled: shouldEnableMetricsQuery,
+      refetchInterval: metricsRefetchInterval,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: true,
+      refetchIntervalInBackground: false,
+    })
   )
 
   useEffect(() => {

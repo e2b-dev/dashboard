@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
 import { InfoIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   Tooltip,
   TooltipContent,

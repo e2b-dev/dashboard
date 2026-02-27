@@ -1,7 +1,7 @@
 'use client'
 
-import DashboardEmptyFrame from '@/features/dashboard/common/empty-frame'
 import type { ReactNode } from 'react'
+import DashboardEmptyFrame from '@/features/dashboard/common/empty-frame'
 
 interface SandboxInspectEmptyFrameProps {
   title: ReactNode
