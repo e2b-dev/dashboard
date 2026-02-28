@@ -302,17 +302,17 @@ export interface components {
             statusMessage: string | null;
         };
         /**
-         * Format: int32
+         * Format: int64
          * @description CPU cores for the sandbox
          */
         CPUCount: number;
         /**
-         * Format: int32
+         * Format: int64
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
         /**
-         * Format: int32
+         * Format: int64
          * @description Disk size for the sandbox in MiB
          */
         DiskSizeMB: number;
