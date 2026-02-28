@@ -17,8 +17,9 @@ interface KillButtonProps {
 
 export default function KillButton({ className }: KillButtonProps) {
   const [open, setOpen] = useState(false)
-  const { sandboxInfo, refetchSandboxInfo, isRunning } = useSandboxContext()
+  const { sandboxInfo, refetchSandboxInfo } = useSandboxContext()
   const { team } = useDashboard()
+  const canKill = Boolean(sandboxInfo?.sandboxID && sandboxInfo.state !== 'killed')
 
   const { execute, isExecuting } = useAction(killSandboxAction, {
     onSuccess: async () => {
@@ -34,7 +35,7 @@ export default function KillButton({ className }: KillButtonProps) {
   })
 
   const handleKill = () => {
-    if (!sandboxInfo?.sandboxID || !isRunning) return
+    if (!canKill || !sandboxInfo?.sandboxID) return
 
     execute({
       teamIdOrSlug: team.id,
@@ -54,7 +55,7 @@ export default function KillButton({ className }: KillButtonProps) {
           variant="ghost"
           size="slate"
           className={cn('text-accent-error-highlight', className)}
-          disabled={!isRunning}
+          disabled={!canKill}
         >
           <TrashIcon className="size-3.5" />
           Kill

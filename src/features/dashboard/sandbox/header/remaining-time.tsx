@@ -32,7 +32,7 @@ export default function RemainingTime() {
     }, 1000)
 
     return () => clearInterval(id)
-  }, [endAt, getRemainingSeconds])
+  }, [getRemainingSeconds])
 
   const hours = Math.floor(remaining / 3600)
   const minutes = Math.floor((remaining % 3600) / 60)

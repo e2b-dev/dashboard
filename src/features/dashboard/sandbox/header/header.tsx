@@ -3,72 +3,71 @@
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { DetailsItem, DetailsRow } from '../../layouts/details-row'
 import { useSandboxContext } from '../context'
+import EndedAt from './ended-at'
 import Metadata from './metadata'
 import RanFor from './ran-for'
 import RemainingTime from './remaining-time'
 import { ResourceUsageClient } from './resource-usage-client'
 import StartedAt from './started-at'
 import Status from './status'
-import StoppedAt from './stopped-at'
 import TemplateId from './template-id'
 
 export default function SandboxDetailsHeader() {
   const { isRunning, sandboxInfo, isSandboxInfoLoading } = useSandboxContext()
+
   const isInitialLoading = isSandboxInfoLoading && !sandboxInfo
   const isKilled = sandboxInfo?.state === 'killed'
+  const isPaused = sandboxInfo?.state === 'paused'
+
   const runningLabel = isInitialLoading || isRunning ? 'running for' : 'ran for'
+  const timeoutLabel = isKilled
+    ? 'stopped at'
+    : isPaused
+      ? 'paused at'
+      : 'timeout in'
+
+  const timeoutContent = isKilled || isPaused ? <EndedAt /> : <RemainingTime />
+  const statusContent = <Status />
+  const templateContent = <TemplateId />
+  const metadataContent = <Metadata />
+  const createdAtContent = <StartedAt />
+  const runningDurationContent = <RanFor />
+  const cpuUsageContent = <ResourceUsageClient type="cpu" mode="usage" />
+  const memoryUsageContent = <ResourceUsageClient type="mem" mode="usage" />
+  const diskUsageContent = <ResourceUsageClient type="disk" mode="usage" />
+
+  const renderContent = (content: React.ReactNode, skeletonWidth: string) =>
+    isInitialLoading ? <Skeleton className={`h-5 ${skeletonWidth}`} /> : content
 
   return (
     <header className="bg-bg relative z-30 w-full p-3 md:p-6">
       <DetailsRow>
         <DetailsItem label="status">
-          {isInitialLoading ? <Skeleton className="h-5 w-20" /> : <Status />}
+          {renderContent(statusContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="template">
-          {isInitialLoading ? (
-            <Skeleton className="h-5 w-28" />
-          ) : (
-            <TemplateId />
-          )}
+          {renderContent(templateContent, 'w-28')}
         </DetailsItem>
         <DetailsItem label="metadata">
-          {isInitialLoading ? <Skeleton className="h-5 w-20" /> : <Metadata />}
+          {renderContent(metadataContent, 'w-20')}
         </DetailsItem>
-        <DetailsItem label={isKilled ? 'stopped at' : 'timeout in'}>
-          {isInitialLoading ? (
-            <Skeleton className="h-5 w-22" />
-          ) : isKilled ? (
-            <StoppedAt />
-          ) : (
-            <RemainingTime />
-          )}
+        <DetailsItem label={timeoutLabel}>
+          {renderContent(timeoutContent, 'w-22')}
         </DetailsItem>
         <DetailsItem label="created at">
-          {isInitialLoading ? <Skeleton className="h-5 w-32" /> : <StartedAt />}
+          {renderContent(createdAtContent, 'w-32')}
         </DetailsItem>
         <DetailsItem label={runningLabel}>
-          {isInitialLoading ? <Skeleton className="h-5 w-22" /> : <RanFor />}
+          {renderContent(runningDurationContent, 'w-22')}
         </DetailsItem>
         <DetailsItem label="CPU Usage">
-          {isInitialLoading ? (
-            <Skeleton className="h-5 w-20" />
-          ) : (
-            <ResourceUsageClient type="cpu" mode="usage" />
-          )}
+          {renderContent(cpuUsageContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="Memory Usage">
-          {isInitialLoading ? (
-            <Skeleton className="h-5 w-20" />
-          ) : (
-            <ResourceUsageClient type="mem" mode="usage" />
-          )}
+          {renderContent(memoryUsageContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="Disk Usage">
-          {isInitialLoading ? (
-            <Skeleton className="h-5 w-20" />
-          ) : (
-            <ResourceUsageClient type="disk" mode="usage" />
-          )}
+          {renderContent(diskUsageContent, 'w-20')}
         </DetailsItem>
       </DetailsRow>
     </header>

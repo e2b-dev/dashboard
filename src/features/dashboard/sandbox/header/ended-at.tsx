@@ -3,19 +3,20 @@
 import CopyButton from '@/ui/copy-button'
 import { useSandboxContext } from '../context'
 
-export default function StoppedAt() {
+export default function EndedAt() {
   const { sandboxInfo } = useSandboxContext()
 
-  if (!sandboxInfo || sandboxInfo.state !== 'killed') {
+  if (!sandboxInfo || (sandboxInfo.state !== 'killed' && sandboxInfo.state !== 'paused')) {
     return null
   }
 
-  const stoppedAt = sandboxInfo.stoppedAt
-  if (!stoppedAt) {
+  const endedAt = sandboxInfo.state === 'killed' ? sandboxInfo.stoppedAt : sandboxInfo.endAt
+
+  if (!endedAt) {
     return <p>N/A</p>
   }
 
-  const date = new Date(stoppedAt)
+  const date = new Date(endedAt)
   const now = new Date()
   const isToday = date.toDateString() === now.toDateString()
   const isYesterday =
@@ -40,7 +41,7 @@ export default function StoppedAt() {
         {prefix}, {timeStr}
       </p>
       <CopyButton
-        value={stoppedAt}
+        value={endedAt}
         variant="ghost"
         size="slate"
         className="text-fg-secondary size-3.5"
