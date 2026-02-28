@@ -2,9 +2,6 @@ import type { components as DashboardComponents } from '@/types/dashboard-api.ty
 import type { components as InfraComponents } from '@/types/infra-api.types'
 
 export type SandboxLogLevel = InfraComponents['schemas']['LogLevel']
-export type SandboxDetailsState =
-  | InfraComponents['schemas']['SandboxState']
-  | 'killed'
 
 interface SandboxDetailsBaseDTO {
   templateID: string
@@ -26,8 +23,8 @@ interface ActiveSandboxDetailsDTO extends SandboxDetailsBaseDTO {
 }
 
 interface KilledSandboxDetailsDTO extends SandboxDetailsBaseDTO {
-  endAt: string
-  stoppedAt: string
+  endAt: string | null
+  stoppedAt: string | null
   state: 'killed'
 }
 
@@ -81,7 +78,7 @@ export function mapInfraSandboxDetailsToDTO(
 export function mapApiSandboxRecordToDTO(
   sandbox: DashboardComponents['schemas']['SandboxRecord']
 ): KilledSandboxDetailsDTO {
-  const stoppedAt = sandbox.stoppedAt ?? sandbox.startedAt
+  const stoppedAt = sandbox.stoppedAt ?? null
 
   return {
     templateID: sandbox.templateID,

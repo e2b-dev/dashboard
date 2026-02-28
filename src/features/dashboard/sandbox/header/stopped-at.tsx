@@ -11,6 +11,10 @@ export default function StoppedAt() {
   }
 
   const stoppedAt = sandboxInfo.stoppedAt
+  if (!stoppedAt) {
+    return <p>N/A</p>
+  }
+
   const date = new Date(stoppedAt)
   const now = new Date()
   const isToday = date.toDateString() === now.toDateString()
