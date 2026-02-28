@@ -29,18 +29,16 @@ export default function SandboxInspectFilesystem({
         header={<SandboxInspectFilesystemHeader rootPath={rootPath} />}
       >
         <div className="h-full flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            {children.length > 0 ? (
-              <>
-                <SandboxInspectParentDirItem rootPath={rootPath} />
-                {children.map((child) => (
-                  <SandboxInspectNode key={child.path} path={child.path} />
-                ))}
-              </>
-            ) : (
-              <SandboxInspectNotFound />
-            )}
-          </ScrollArea>
+          {!children.length ? (
+            <SandboxInspectNotFound />
+          ) : (
+            <ScrollArea className="h-full">
+              <SandboxInspectParentDirItem rootPath={rootPath} />
+              {children.map((child) => (
+                <SandboxInspectNode key={child.path} path={child.path} />
+              ))}
+            </ScrollArea>
+          )}
         </div>
       </SandboxInspectFrame>
     </div>
