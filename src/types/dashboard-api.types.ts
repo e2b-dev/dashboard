@@ -175,14 +175,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/sandboxes/{sandboxID}/log": {
+    "/sandboxes/{sandboxID}/record": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get sandbox details */
+        /** Get sandbox record */
         get: {
             parameters: {
                 query?: never;
@@ -201,7 +201,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SandboxDetail"];
+                        "application/json": components["schemas"]["SandboxRecord"];
                     };
                 };
                 401: components["responses"]["401"];
@@ -316,7 +316,7 @@ export interface components {
          * @description Disk size for the sandbox in MiB
          */
         DiskSizeMB: number;
-        SandboxDetail: {
+        SandboxRecord: {
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
             /** @description Alias of the template */

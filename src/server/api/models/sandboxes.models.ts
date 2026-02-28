@@ -78,9 +78,9 @@ export function mapInfraSandboxDetailsToDTO(
   }
 }
 
-export function mapDashboardSandboxDetailsToDTO(
-  sandbox: DashboardComponents['schemas']['SandboxDetail']
-): SandboxDetailsDTO {
+export function mapApiSandboxRecordToDTO(
+  sandbox: DashboardComponents['schemas']['SandboxRecord']
+): KilledSandboxDetailsDTO {
   const stoppedAt = sandbox.stoppedAt ?? sandbox.startedAt
 
   return {

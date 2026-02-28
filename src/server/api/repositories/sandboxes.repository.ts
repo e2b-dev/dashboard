@@ -1,8 +1,6 @@
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api, infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import type { components as DashboardComponents } from '@/types/dashboard-api.types'
-import type { components as InfraComponents } from '@/types/infra-api.types'
 import { TRPCError } from '@trpc/server'
 import {
   apiError,
@@ -90,7 +88,7 @@ export async function getSandboxDetails(
   if (infraResult.response.ok && infraResult.data) {
     return {
       source: 'infra' as const,
-      details: infraResult.data as InfraComponents['schemas']['SandboxDetail'],
+      details: infraResult.data,
     }
   }
 
@@ -109,7 +107,7 @@ export async function getSandboxDetails(
     })
   }
 
-  const dashboardResult = await api.GET('/sandboxes/{sandboxID}/log', {
+  const dashboardResult = await api.GET('/sandboxes/{sandboxID}/record', {
     params: {
       path: {
         sandboxID: sandboxId,
@@ -124,8 +122,7 @@ export async function getSandboxDetails(
   if (dashboardResult.response.ok && dashboardResult.data) {
     return {
       source: 'dashboard-log' as const,
-      details:
-        dashboardResult.data as DashboardComponents['schemas']['SandboxDetail'],
+      details: dashboardResult.data,
     }
   }
 
@@ -142,7 +139,7 @@ export async function getSandboxDetails(
     status: dashboardStatus,
     error: dashboardResult.error,
     teamId,
-    path: '/sandboxes/{sandboxID}/log',
+    path: '/sandboxes/{sandboxID}/record',
     logKey: 'repositories:sandboxes:get_sandbox_details:fallback_error',
     context: {
       infra_status: infraStatus,

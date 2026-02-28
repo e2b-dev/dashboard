@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter } from '../init'
 import {
-  mapDashboardSandboxDetailsToDTO,
+  mapApiSandboxRecordToDTO,
   mapInfraSandboxDetailsToDTO,
   mapInfraSandboxLogToDTO,
   type SandboxDetailsDTO,
@@ -33,7 +33,7 @@ export const sandboxRouter = createTRPCRouter({
       const mappedDetails: SandboxDetailsDTO =
         detailsResult.source === 'infra'
           ? mapInfraSandboxDetailsToDTO(detailsResult.details)
-          : mapDashboardSandboxDetailsToDTO(detailsResult.details)
+          : mapApiSandboxRecordToDTO(detailsResult.details)
 
       return mappedDetails
     }),
