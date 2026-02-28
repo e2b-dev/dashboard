@@ -1,26 +1,24 @@
 'use client'
 
-import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
 import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
-import { SandboxInfo } from '@/types/api.types'
-import { ClientSandboxMetric } from '@/types/sandboxes.types'
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
-import useSWR from 'swr'
-import { useDashboard } from '../context'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
+import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
+import type { TRPCAppRouter } from '@/server/api/routers'
+import { useTRPC } from '@/trpc/client'
+import type { ClientSandboxMetric } from '@/types/sandboxes.types'
+import { useQuery } from '@tanstack/react-query'
+import { TRPCClientError, type TRPCClientErrorLike } from '@trpc/client'
+import type { ReactNode } from 'react'
+import { createContext, useCallback, useContext } from 'react'
 
 interface SandboxContextValue {
-  sandboxInfo?: SandboxInfo
+  sandboxInfo?: SandboxDetailsDTO
   lastMetrics?: ClientSandboxMetric
   isRunning: boolean
+  isSandboxNotFound: boolean
 
   isSandboxInfoLoading: boolean
-  refetchSandboxInfo: () => void
+  refetchSandboxInfo: () => Promise<void>
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -35,131 +33,97 @@ export function useSandboxContext() {
 
 interface SandboxProviderProps {
   children: ReactNode
-  serverSandboxInfo?: SandboxInfo
-  isRunning: boolean
 }
 
-export function SandboxProvider({
-  children,
-  serverSandboxInfo,
-  isRunning,
-}: SandboxProviderProps) {
-  const { team } = useDashboard()
+export function SandboxProvider({ children }: SandboxProviderProps) {
+  const { teamIdOrSlug, sandboxId } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
 
-  const [isRunningState, setIsRunningState] = useState(isRunning)
-  const [lastFallbackData, setLastFallbackData] = useState(serverSandboxInfo)
+  const trpc = useTRPC()
+  const isNotFoundError = (
+    error: unknown
+  ): error is
+    | TRPCClientErrorLike<TRPCAppRouter>
+    | TRPCClientError<TRPCAppRouter> => {
+    if (error instanceof TRPCClientError) {
+      return error.data?.code === 'NOT_FOUND'
+    }
+
+    if (typeof error !== 'object' || error === null) {
+      return false
+    }
+
+    const trpcLikeError = error as {
+      data?: { code?: string }
+      shape?: { data?: { code?: string } }
+    }
+
+    return (
+      trpcLikeError.data?.code === 'NOT_FOUND' ||
+      trpcLikeError.shape?.data?.code === 'NOT_FOUND'
+    )
+  }
 
   const {
     data: sandboxInfoData,
-    mutate: refetchSandboxInfo,
+    error: sandboxInfoError,
     isLoading: isSandboxInfoLoading,
-    isValidating: isSandboxInfoValidating,
-  } = useSWR<SandboxInfo | void>(
-    !lastFallbackData?.sandboxID
-      ? null
-      : [`/api/sandbox/details`, lastFallbackData?.sandboxID, team.id],
-    async ([url, sandboxId, teamId]: [string, string, string]) => {
-      if (!sandboxId || !teamId) return
-
-      const origin = document.location.origin
-
-      const requestUrl = new URL(url, origin)
-
-      requestUrl.searchParams.set('teamId', teamId)
-      requestUrl.searchParams.set('sandboxId', sandboxId)
-
-      const response = await fetch(requestUrl.toString(), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        const status = response.status
-
-        if (status === 404) {
-          setIsRunningState(false)
-          return
-        }
-
-        if (!isRunningState) {
-          setIsRunningState(true)
-        }
-
-        throw new Error(`Failed to fetch sandbox info: ${status}`)
+    isFetching: isSandboxInfoFetching,
+    refetch,
+  } = useQuery(
+    trpc.sandbox.details.queryOptions(
+      { teamIdOrSlug, sandboxId },
+      {
+        retry: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        refetchOnMount: false,
+        staleTime: Number.POSITIVE_INFINITY,
       }
-
-      return (await response.json()) as SandboxInfo
-    },
-    {
-      fallbackData: lastFallbackData,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      revalidateOnMount: false,
-    }
+    )
   )
 
-  const { data: metricsData } = useSWR(
-    !lastFallbackData?.sandboxID
-      ? null
-      : [
-          `/api/teams/${team.id}/sandboxes/metrics`,
-          lastFallbackData?.sandboxID,
-        ],
-    async (params) => {
-      const [url, sandboxId] = params
+  const refetchSandboxInfo = useCallback(async () => {
+    await refetch()
+  }, [refetch])
 
-      if (!sandboxId || !isRunningState) return null
+  const sandboxInfoId = sandboxInfoData?.sandboxID
+  const isRunning = sandboxInfoData?.state === 'running'
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sandboxIds: [sandboxId] }),
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        const { error } = await response.json()
-
-        throw new Error(error || 'Failed to fetch metrics')
+  const { data: sandboxesMetricsData } = useQuery(
+    trpc.sandboxes.getSandboxesMetrics.queryOptions(
+      { teamIdOrSlug, sandboxIds: [sandboxInfoId ?? sandboxId] },
+      {
+        enabled: Boolean(sandboxInfoId) && isRunning,
+        retry: 3,
+        retryDelay: 1_000,
+        refetchInterval: isRunning
+          ? SANDBOXES_DETAILS_METRICS_POLLING_MS
+          : false,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
       }
-
-      const data = (await response.json()) as MetricsResponse
-
-      return data.metrics[sandboxId]
-    },
-    {
-      errorRetryInterval: 1000,
-      errorRetryCount: 3,
-      revalidateIfStale: true,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      refreshInterval: isRunningState
-        ? SANDBOXES_DETAILS_METRICS_POLLING_MS
-        : 0,
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-    }
+    )
   )
 
-  useEffect(() => {
-    if (serverSandboxInfo) {
-      setLastFallbackData(serverSandboxInfo)
-    }
-  }, [serverSandboxInfo])
+  const metricsData = sandboxInfoId
+    ? sandboxesMetricsData?.metrics[sandboxInfoId]
+    : undefined
+
+  const isSandboxNotFound =
+    !sandboxInfoData && isNotFoundError(sandboxInfoError)
+
+  const isSandboxInfoPending = isSandboxInfoLoading || isSandboxInfoFetching
 
   return (
     <SandboxContext.Provider
       value={{
-        sandboxInfo: sandboxInfoData || undefined,
-        isRunning: isRunningState,
-        lastMetrics: metricsData || undefined,
-        isSandboxInfoLoading: isSandboxInfoLoading || isSandboxInfoValidating,
+        sandboxInfo: sandboxInfoData,
+        isRunning,
+        isSandboxNotFound,
+        lastMetrics: metricsData,
+        isSandboxInfoLoading: isSandboxInfoPending,
         refetchSandboxInfo,
       }}
     >

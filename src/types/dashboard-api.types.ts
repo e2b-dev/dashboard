@@ -175,6 +175,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get sandbox details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the sandbox. */
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned sandbox details. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxDetail"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -258,6 +301,44 @@ export interface components {
             /** @description Failure message when status is `failed`, otherwise `null`. */
             statusMessage: string | null;
         };
+        /**
+         * Format: int32
+         * @description CPU cores for the sandbox
+         */
+        CPUCount: number;
+        /**
+         * Format: int32
+         * @description Memory for the sandbox in MiB
+         */
+        MemoryMB: number;
+        /**
+         * Format: int32
+         * @description Disk size for the sandbox in MiB
+         */
+        DiskSizeMB: number;
+        SandboxDetail: {
+            /** @description Identifier of the template from which is the sandbox created */
+            templateID: string;
+            /** @description Alias of the template */
+            alias?: string;
+            /** @description Identifier of the sandbox */
+            sandboxID: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was started
+             */
+            startedAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was stopped
+             */
+            stoppedAt?: string | null;
+            /** @description Base domain where the sandbox traffic is accessible */
+            domain?: string | null;
+            cpuCount: components["schemas"]["CPUCount"];
+            memoryMB: components["schemas"]["MemoryMB"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
+        };
         HealthResponse: {
             /** @description Human-readable health check result. */
             message: string;
@@ -313,6 +394,8 @@ export interface components {
     parameters: {
         /** @description Identifier of the build. */
         build_id: string;
+        /** @description Identifier of the sandbox. */
+        sandboxID: string;
         /** @description Maximum number of items to return per page. */
         builds_limit: number;
         /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
