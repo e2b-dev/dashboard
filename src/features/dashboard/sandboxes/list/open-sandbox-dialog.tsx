@@ -3,7 +3,7 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { SandboxIdSchema } from '@/lib/schemas/api'
-import type { TRPCAppRouter } from '@/server/api/routers'
+import { isNotFoundError } from '@/lib/utils/trpc-errors'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -17,36 +17,11 @@ import {
 } from '@/ui/primitives/dialog'
 import { Input } from '@/ui/primitives/input'
 import { useQueryClient } from '@tanstack/react-query'
-import { TRPCClientError, type TRPCClientErrorLike } from '@trpc/client'
 import { useRouter } from 'next/navigation'
 import { type FormEvent, useState } from 'react'
 import { SANDBOX_RECORD_RETENTION_DAYS } from './constants'
 
 type LookupState = 'idle' | 'not-found' | 'error'
-
-function isNotFoundError(
-  error: unknown
-): error is
-  | TRPCClientErrorLike<TRPCAppRouter>
-  | TRPCClientError<TRPCAppRouter> {
-  if (error instanceof TRPCClientError) {
-    return error.data?.code === 'NOT_FOUND'
-  }
-
-  if (typeof error !== 'object' || error === null) {
-    return false
-  }
-
-  const trpcLikeError = error as {
-    data?: { code?: string }
-    shape?: { data?: { code?: string } }
-  }
-
-  return (
-    trpcLikeError.data?.code === 'NOT_FOUND' ||
-    trpcLikeError.shape?.data?.code === 'NOT_FOUND'
-  )
-}
 
 export function OpenSandboxDialog() {
   'use no memo'
