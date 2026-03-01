@@ -1,6 +1,7 @@
 import { AUTH_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
+import { httpUrlSchema } from '@/lib/schemas/url'
 import { OtpTypeSchema } from '@/server/api/models/auth.models'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
@@ -9,7 +10,7 @@ import { z } from 'zod'
 const confirmSchema = z.object({
   token_hash: z.string().min(1),
   type: OtpTypeSchema,
-  next: z.httpUrl(),
+  next: httpUrlSchema,
 })
 
 /**
