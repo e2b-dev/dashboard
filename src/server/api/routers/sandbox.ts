@@ -1,15 +1,42 @@
 import { z } from 'zod'
 import { createTRPCRouter } from '../init'
 import {
+  mapApiSandboxRecordToDTO,
+  mapInfraSandboxDetailsToDTO,
   mapInfraSandboxLogToDTO,
-  SandboxLogDTO,
-  SandboxLogsDTO,
+  type SandboxDetailsDTO,
+  type SandboxLogDTO,
+  type SandboxLogsDTO,
 } from '../models/sandboxes.models'
 import { protectedTeamProcedure } from '../procedures'
 import { sandboxesRepo } from '../repositories/sandboxes.repository'
 
 export const sandboxRouter = createTRPCRouter({
   // QUERIES
+
+  details: protectedTeamProcedure
+    .input(
+      z.object({
+        sandboxId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId, session } = ctx
+      const { sandboxId } = input
+
+      const detailsResult = await sandboxesRepo.getSandboxDetails(
+        session.access_token,
+        teamId,
+        sandboxId
+      )
+
+      const mappedDetails: SandboxDetailsDTO =
+        detailsResult.source === 'infra'
+          ? mapInfraSandboxDetailsToDTO(detailsResult.details)
+          : mapApiSandboxRecordToDTO(detailsResult.details)
+
+      return mappedDetails
+    }),
 
   logsBackwardsReversed: protectedTeamProcedure
     .input(

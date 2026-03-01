@@ -1,6 +1,7 @@
 'use client'
 
 import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
 import { ListIcon, StorageIcon } from '@/ui/primitives/icons'
@@ -11,28 +12,37 @@ import SandboxInspectIncompatible from './inspect/incompatible'
 interface SandboxLayoutProps {
   children: React.ReactNode
   header: React.ReactNode
-  teamIdOrSlug: string
   tabsHeaderAccessory?: React.ReactNode
 }
 
 export default function SandboxLayout({
-  teamIdOrSlug,
   children,
   header,
   tabsHeaderAccessory,
 }: SandboxLayoutProps) {
-  const { sandboxInfo } = useSandboxContext()
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
 
-  const isEnvdVersionCompatibleForInspect = Boolean(
-    sandboxInfo?.envdVersion &&
-      isVersionCompatible(
+  const { sandboxInfo, isSandboxInfoLoading, isSandboxNotFound } =
+    useSandboxContext()
+
+  const shouldShowInspectIncompatible = Boolean(
+    sandboxInfo?.state !== 'killed' &&
+      sandboxInfo?.envdVersion &&
+      !isVersionCompatible(
         sandboxInfo.envdVersion,
         SANDBOX_INSPECT_MINIMUM_ENVD_VERSION
       )
   )
 
-  if (!sandboxInfo) {
+  if (isSandboxNotFound) {
     throw notFound()
+  }
+
+  if (!sandboxInfo) {
+    if (!isSandboxInfoLoading) {
+      throw notFound()
+    }
   }
 
   return (
@@ -59,7 +69,7 @@ export default function SandboxLayout({
           className="flex min-h-0 flex-1 flex-col"
           icon={<StorageIcon className="size-4" />}
         >
-          {isEnvdVersionCompatibleForInspect ? (
+          {!sandboxInfo || !shouldShowInspectIncompatible ? (
             children
           ) : (
             <SandboxInspectIncompatible

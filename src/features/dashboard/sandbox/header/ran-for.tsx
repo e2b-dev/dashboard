@@ -18,6 +18,7 @@ export default function RanFor() {
 
   const calcRanFor = useCallback(() => {
     if (!startDate) return '-'
+    if (state !== 'running' && !endDate) return 'N/A'
 
     const end = state === 'running' ? new Date() : (endDate ?? new Date())
     const start = startDate
