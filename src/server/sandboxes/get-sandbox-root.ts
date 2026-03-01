@@ -27,6 +27,8 @@ export const getSandboxRoot = authActionClient
     try {
       sandbox = await Sandbox.connect(sandboxId, {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+        // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
+        timeoutMs: 1_000,
         headers,
       })
 

@@ -224,6 +224,8 @@ export default function SandboxInspectProvider({
 
     const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+      // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
+      timeoutMs: 1_000,
       headers: {
         ...SUPABASE_AUTH_HEADERS(data.session.access_token, teamId),
       },
