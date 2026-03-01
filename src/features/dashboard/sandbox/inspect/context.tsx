@@ -5,11 +5,11 @@ import { AUTH_URLS } from '@/configs/urls'
 import { supabase } from '@/lib/clients/supabase/client'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
-import Sandbox, { EntryInfo } from 'e2b'
+import Sandbox from 'e2b'
 import { useRouter } from 'next/navigation'
+import type { ReactNode } from 'react'
 import {
   createContext,
-  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -19,7 +19,7 @@ import {
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
-import { FilesystemNode, FilesystemOperations } from './filesystem/types'
+import type { FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
 
 interface SandboxInspectContextValue {
@@ -34,13 +34,11 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 interface SandboxInspectProviderProps {
   children: ReactNode
   rootPath: string
-  seedEntries?: EntryInfo[]
 }
 
 export default function SandboxInspectProvider({
   children,
   rootPath,
-  seedEntries,
 }: SandboxInspectProviderProps) {
   const { team } = useDashboard()
   const teamId = team.id
@@ -52,12 +50,7 @@ export default function SandboxInspectProvider({
   const router = useRouter()
   const { trackInteraction } = useSandboxInspectAnalytics()
 
-  /*
-   * ---------- synchronous store initialisation ----------
-   * We want the tree to render immediately using the "seedEntries" streamed from the
-   * server component (see page.tsx).  We therefore build / populate the Zustand store
-   * right here during render, instead of doing it later inside an effect.
-   */
+  // ---------- synchronous store initialisation ----------
   {
     const normalizedRoot = normalizePath(rootPath)
     const needsNewStore =
@@ -94,34 +87,7 @@ export default function SandboxInspectProvider({
         },
       ])
 
-      state.setLoaded(normalizedRoot, true)
-
-      if (seedEntries && seedEntries.length) {
-        const seedNodes: FilesystemNode[] = seedEntries.map((entry) => {
-          const base = {
-            name: entry.name,
-            path: normalizePath(entry.path),
-          }
-
-          if (entry.type === 'dir') {
-            state.setLoaded(base.path, false)
-
-            return {
-              ...base,
-              type: 'dir',
-              isExpanded: false,
-              children: [],
-            }
-          }
-
-          return {
-            ...base,
-            type: 'file',
-          }
-        })
-
-        state.addNodes(normalizedRoot, seedNodes)
-      }
+      state.setLoaded(normalizedRoot, false)
     }
   }
 
@@ -236,6 +202,7 @@ export default function SandboxInspectProvider({
       sandbox,
       rootPath
     )
+    await sandboxManagerRef.current.loadDirectory(rootPath)
 
     trackInteraction('started_watching', {
       sandbox_id: sandboxInfo?.sandboxID,
