@@ -2,12 +2,11 @@
 
 import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
+import { isNotFoundError } from '@/lib/utils/trpc-errors'
 import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
-import type { TRPCAppRouter } from '@/server/api/routers'
 import { useTRPC } from '@/trpc/client'
 import type { ClientSandboxMetric } from '@/types/sandboxes.types'
 import { useQuery } from '@tanstack/react-query'
-import { TRPCClientError, type TRPCClientErrorLike } from '@trpc/client'
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext } from 'react'
 
@@ -33,30 +32,6 @@ export function useSandboxContext() {
 
 interface SandboxProviderProps {
   children: ReactNode
-}
-
-const isNotFoundError = (
-  error: unknown
-): error is
-  | TRPCClientErrorLike<TRPCAppRouter>
-  | TRPCClientError<TRPCAppRouter> => {
-  if (error instanceof TRPCClientError) {
-    return error.data?.code === 'NOT_FOUND'
-  }
-
-  if (typeof error !== 'object' || error === null) {
-    return false
-  }
-
-  const trpcLikeError = error as {
-    data?: { code?: string }
-    shape?: { data?: { code?: string } }
-  }
-
-  return (
-    trpcLikeError.data?.code === 'NOT_FOUND' ||
-    trpcLikeError.shape?.data?.code === 'NOT_FOUND'
-  )
 }
 
 export function SandboxProvider({ children }: SandboxProviderProps) {
