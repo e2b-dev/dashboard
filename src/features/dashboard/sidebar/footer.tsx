@@ -1,6 +1,9 @@
 'use client'
 
-import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY, INCLUDE_REPORT_ISSUE } from '@/configs/flags'
+import {
+  INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
+  INCLUDE_REPORT_ISSUE,
+} from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'
@@ -12,10 +15,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
+import { Book, Github, LifeBuoy, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
-import ReportIssuePopover from '../navbar/report-issue-popover'
+import ContactSupportDialog from '../navbar/report-issue-dialog'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -72,7 +75,7 @@ export default function DashboardSidebarFooter() {
             <SidebarMenuItem
               key="survey"
               className={cn(
-                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >
@@ -93,30 +96,26 @@ export default function DashboardSidebarFooter() {
               />
             </SidebarMenuItem>
           )}
-          {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && INCLUDE_REPORT_ISSUE && (
-            /* separator */
-            <div className="border-r h-full hidden group-data-[collapsible=icon]:hidden group-data-[state=expanded]:block" />
-          )}
           {INCLUDE_REPORT_ISSUE && (
             <SidebarMenuItem
-              key="report-issue"
+              key="support"
               className={cn(
-                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >
-              <ReportIssuePopover
+              <ContactSupportDialog
                 trigger={
                   <SidebarMenuButton
-                    tooltip="Report Issue"
+                    tooltip="Contact Support"
                     variant="ghost"
                     className={cn(
                       'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
-                    <Bug className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
-                    Report Issue
+                    <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    Contact Support
                   </SidebarMenuButton>
                 }
               />

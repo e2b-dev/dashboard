@@ -59,5 +59,12 @@ export async function GET(request: NextRequest) {
     ? urlGenerator(team.slug || team.id)
     : PROTECTED_URLS.SANDBOXES(team.slug || team.id)
 
-  return NextResponse.redirect(new URL(redirectPath, request.url))
+  const redirectUrl = new URL(redirectPath, request.url)
+
+  // Forward ?support=true query param to auto-open the Contact Support dialog on the target page
+  if (searchParams.get('support') === 'true') {
+    redirectUrl.searchParams.set('support', 'true')
+  }
+
+  return NextResponse.redirect(redirectUrl)
 }
