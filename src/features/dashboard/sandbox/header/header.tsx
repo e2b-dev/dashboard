@@ -51,11 +51,11 @@ export default function SandboxDetailsHeader() {
         <DetailsItem label="metadata">
           {renderContent(metadataContent, 'w-20')}
         </DetailsItem>
-        <DetailsItem label={timeoutLabel}>
-          {renderContent(timeoutContent, 'w-22')}
-        </DetailsItem>
         <DetailsItem label="created at">
           {renderContent(createdAtContent, 'w-32')}
+        </DetailsItem>
+        <DetailsItem label={timeoutLabel}>
+          {renderContent(timeoutContent, 'w-22')}
         </DetailsItem>
         <DetailsItem label={runningLabel}>
           {renderContent(runningDurationContent, 'w-22')}
