@@ -1,5 +1,12 @@
 'use server'
 
+import { fileTypeFromBuffer } from 'file-type'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { after } from 'next/server'
+import { returnValidationErrors } from 'next-safe-action'
+import { serializeError } from 'serialize-error'
+import { z } from 'zod'
+import { zfd } from 'zod-form-data'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
@@ -9,14 +16,7 @@ import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import { CreateTeamSchema, UpdateTeamNameSchema } from '@/server/team/types'
-import { CreateTeamsResponse } from '@/types/billing.types'
-import { fileTypeFromBuffer } from 'file-type'
-import { returnValidationErrors } from 'next-safe-action'
-import { revalidatePath, revalidateTag } from 'next/cache'
-import { after } from 'next/server'
-import { serializeError } from 'serialize-error'
-import { z } from 'zod'
-import { zfd } from 'zod-form-data'
+import type { CreateTeamsResponse } from '@/types/billing.types'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)

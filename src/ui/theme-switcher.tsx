@@ -1,5 +1,7 @@
 'use client'
 
+import { Laptop, Moon, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -9,8 +11,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { Laptop, Moon, Sun } from 'lucide-react'
-import { useTheme } from 'next-themes'
 
 interface ThemeSwitcherProps {
   className?: string

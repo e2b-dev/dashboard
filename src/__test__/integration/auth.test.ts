@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { encodedRedirect } from '@/lib/utils/auth'
 import {
@@ -7,8 +9,6 @@ import {
   signOutAction,
   signUpAction,
 } from '@/server/auth/auth-actions'
-import { redirect } from 'next/navigation'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Create hoisted mock functions that can be used throughout the file
 const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({

@@ -1,6 +1,11 @@
 'use client'
 
-import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY, INCLUDE_REPORT_ISSUE } from '@/configs/flags'
+import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
+import Link from 'next/link'
+import {
+  INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
+  INCLUDE_REPORT_ISSUE,
+} from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import ExternalIcon from '@/ui/external-icon'
@@ -12,8 +17,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
-import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import ReportIssuePopover from '../navbar/report-issue-popover'
 import TeamBlockageAlert from './blocked-banner'

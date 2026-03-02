@@ -1,9 +1,9 @@
 import 'server-cli-only'
 
+import { z } from 'zod'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import { z } from 'zod'
 import getTeamMemo from './get-team-memo'
 import getUserTeamsMemo from './get-user-teams-memo'
 

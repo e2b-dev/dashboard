@@ -1,8 +1,14 @@
 'use client'
 
-import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from 'react'
 import useSWR from 'swr'
+import type { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
 import { useDashboard } from '../../context'
 import { useTimeframe } from './hooks/use-timeframe'
 

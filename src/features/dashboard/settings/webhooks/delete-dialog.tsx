@@ -1,5 +1,7 @@
 'use client'
 
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -11,9 +13,7 @@ import { TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 interface WebhookDeleteDialogProps {
   children: React.ReactNode

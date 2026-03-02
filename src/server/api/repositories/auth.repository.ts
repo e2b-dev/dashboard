@@ -1,7 +1,7 @@
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
 import { TRPCError } from '@trpc/server'
 import { serializeError } from 'serialize-error'
+import { l } from '@/lib/clients/logger/logger'
+import { createClient } from '@/lib/clients/supabase/server'
 import type { OtpType } from '../models/auth.models'
 
 interface VerifyOtpResult {

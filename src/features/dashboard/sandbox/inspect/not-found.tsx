@@ -1,14 +1,14 @@
 'use client'
 
+import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState, useTransition } from 'react'
+import { serializeError } from 'serialize-error'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
-import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
 import { useSandboxContext } from '../context'
 import SandboxInspectEmptyFrame from './empty'
 

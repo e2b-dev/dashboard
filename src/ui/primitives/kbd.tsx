@@ -1,10 +1,10 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import * as React from 'react'
 import { useEffect, useState } from 'react'
-import ClientOnly, { ClientOnlyProps } from '../client-only'
-import { Badge, BadgeProps } from './badge'
+import { cn } from '@/lib/utils'
+import ClientOnly, { type ClientOnlyProps } from '../client-only'
+import { Badge, type BadgeProps } from './badge'
 
 export interface KbdProps {
   keys: string[]

@@ -1,9 +1,9 @@
 'use client'
 
+import { AlertCircle, FileIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { AlertCircle, FileIcon } from 'lucide-react'
-import { FilesystemNode } from './filesystem/types'
+import type { FilesystemNode } from './filesystem/types'
 import { useFile } from './hooks/use-file'
 import NodeLabel from './node-label'
 

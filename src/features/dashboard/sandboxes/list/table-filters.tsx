@@ -1,5 +1,9 @@
-import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import { ListFilter, Plus } from 'lucide-react'
+import * as React from 'react'
+import { memo, useCallback } from 'react'
+import { useDebounceValue } from 'usehooks-ts'
 import type { SandboxStartedAtFilter } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { formatCPUCores, formatMemory } from '@/lib/utils/formatting'
 import { NumberInput } from '@/ui/number-input'
@@ -20,10 +24,6 @@ import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { ListFilter, Plus } from 'lucide-react'
-import * as React from 'react'
-import { memo, useCallback } from 'react'
-import { useDebounceValue } from 'usehooks-ts'
 
 // Components
 const RunningSinceFilter = memo(function RunningSinceFilter() {

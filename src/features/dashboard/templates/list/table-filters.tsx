@@ -1,5 +1,8 @@
 'use client'
 
+import { ListFilter } from 'lucide-react'
+import * as React from 'react'
+import { useDebounceValue } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
@@ -18,9 +21,6 @@ import {
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { ListFilter } from 'lucide-react'
-import * as React from 'react'
-import { useDebounceValue } from 'usehooks-ts'
 import { useTemplateTableStore } from './stores/table-store'
 
 // Components

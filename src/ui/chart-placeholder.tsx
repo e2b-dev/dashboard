@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
+import { Area, AreaChart } from 'recharts'
 import { cn } from '@/lib/utils'
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
-import { Area, AreaChart } from 'recharts'
 import { Card } from './primitives/card'
 
 interface ChartPlaceholderProps {

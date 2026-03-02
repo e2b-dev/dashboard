@@ -1,7 +1,7 @@
+import { TRPCError } from '@trpc/server'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api, infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { TRPCError } from '@trpc/server'
 import {
   apiError,
   handleDashboardApiError,

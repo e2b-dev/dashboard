@@ -1,8 +1,8 @@
 'use client'
 
-import { PROTECTED_URLS } from '@/configs/urls'
 import { ArrowLeft, HomeIcon, LayoutDashboard } from 'lucide-react'
 import Link from 'next/link'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { Button } from './primitives/button'
 import {
   Card,

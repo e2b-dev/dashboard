@@ -1,3 +1,7 @@
+import { cookies } from 'next/headers'
+import { redirect, unauthorized } from 'next/navigation'
+import type { Metadata } from 'next/types'
+import { serializeError } from 'serialize-error'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
@@ -9,10 +13,6 @@ import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
 import { getTeam } from '@/server/team/get-team'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
-import { cookies } from 'next/headers'
-import { redirect, unauthorized } from 'next/navigation'
-import { Metadata } from 'next/types'
-import { serializeError } from 'serialize-error'
 
 export const metadata: Metadata = {
   title: 'Dashboard - E2B',

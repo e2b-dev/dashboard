@@ -1,4 +1,4 @@
-import { AccountPageSearchParams } from '@/app/dashboard/[teamIdOrSlug]/account/page'
+import type { AccountPageSearchParams } from '@/app/dashboard/[teamIdOrSlug]/account/page'
 import { PasswordSettings } from './password-settings'
 
 interface PasswordSettingsServerProps {

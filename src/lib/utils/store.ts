@@ -1,4 +1,4 @@
-import { StateStorage } from 'zustand/middleware'
+import type { StateStorage } from 'zustand/middleware'
 
 export const createHashStorage = <T extends object>(
   initialState: T
