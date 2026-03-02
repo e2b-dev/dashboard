@@ -1,9 +1,9 @@
 'use client'
 
+import { useCallback, useRef } from 'react'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
-import { useCallback, useRef } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
 
 export const SearchInput = () => {

@@ -1,14 +1,14 @@
 'use client'
 
+import { PopoverTrigger } from '@radix-ui/react-popover'
+import { usePostHog } from 'posthog-js/react'
+import { useCallback, useState } from 'react'
+import { toast } from 'sonner'
 import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY } from '@/configs/flags'
 import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { l } from '@/lib/clients/logger/logger'
 import { Popover, PopoverContent } from '@/ui/primitives/popover'
 import { SurveyContent } from '@/ui/survey'
-import { PopoverTrigger } from '@radix-ui/react-popover'
-import { usePostHog } from 'posthog-js/react'
-import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
 
 interface DashboardSurveyPopoverProps {
   trigger: React.ReactNode

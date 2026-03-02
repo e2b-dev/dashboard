@@ -1,5 +1,5 @@
-import { l } from '@/lib/clients/logger/logger'
 import micromatch from 'micromatch'
+import { l } from '@/lib/clients/logger/logger'
 import { PROTECTED_URLS } from './urls'
 
 export interface TitleSegment {

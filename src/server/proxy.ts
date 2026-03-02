@@ -1,7 +1,7 @@
 import 'server-cli-only'
 
+import { type NextRequest, NextResponse } from 'next/server'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { NextRequest, NextResponse } from 'next/server'
 
 export function isAuthRoute(pathname: string): boolean {
   return (

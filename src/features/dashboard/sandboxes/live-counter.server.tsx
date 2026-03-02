@@ -1,9 +1,9 @@
+import { Suspense } from 'react'
 import { l } from '@/lib/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { getNowMemo } from '@/lib/utils/server'
 import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { Suspense } from 'react'
 import { LiveSandboxCounterClient } from './live-counter.client'
 
 interface LiveSandboxCounterServerProps {

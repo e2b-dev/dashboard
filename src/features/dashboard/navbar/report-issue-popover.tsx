@@ -1,5 +1,9 @@
 'use client'
 
+import { useMutation } from '@tanstack/react-query'
+import { usePostHog } from 'posthog-js/react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -15,10 +19,6 @@ import {
   PopoverTrigger,
 } from '@/ui/primitives/popover'
 import { Textarea } from '@/ui/primitives/textarea'
-import { useMutation } from '@tanstack/react-query'
-import { usePostHog } from 'posthog-js/react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface ReportIssuePopoverProps {
   trigger: React.ReactNode

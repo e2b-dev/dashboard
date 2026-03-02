@@ -1,3 +1,5 @@
+import type { NextRequest } from 'next/server'
+import { serializeError } from 'serialize-error'
 import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
@@ -7,8 +9,6 @@ import {
   getRewriteForPath,
   rewriteContentPagesHtml,
 } from '@/lib/utils/rewrites'
-import { NextRequest } from 'next/server'
-import { serializeError } from 'serialize-error'
 
 export const dynamic = 'force-static'
 export const revalidate = 900

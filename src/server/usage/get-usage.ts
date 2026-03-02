@@ -1,13 +1,13 @@
 import 'server-only'
 
+import { cacheLife, cacheTag } from 'next/cache'
+import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import { UsageResponse } from '@/types/billing.types'
-import { cacheLife, cacheTag } from 'next/cache'
-import { z } from 'zod'
+import type { UsageResponse } from '@/types/billing.types'
 
 const GetUsageAuthActionSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,

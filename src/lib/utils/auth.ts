@@ -1,4 +1,4 @@
-import { User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
 /**

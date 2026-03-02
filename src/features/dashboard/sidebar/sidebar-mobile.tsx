@@ -1,6 +1,6 @@
+import { Sidebar as SidebarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/ui/primitives/drawer'
-import { Sidebar as SidebarIcon } from 'lucide-react'
 import Sidebar from './sidebar'
 
 interface SidebarMobileProps {

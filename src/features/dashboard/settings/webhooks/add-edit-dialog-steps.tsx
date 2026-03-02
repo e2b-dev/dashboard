@@ -1,7 +1,11 @@
 'use client'
 
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useMemo, useState } from 'react'
+import type { UseFormReturn } from 'react-hook-form'
+import ShikiHighlighter from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
-import { UpsertWebhookSchemaType } from '@/server/webhooks/schema'
+import type { UpsertWebhookSchemaType } from '@/server/webhooks/schema'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
 import {
@@ -17,10 +21,6 @@ import { Label } from '@/ui/primitives/label'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
-import { UseFormReturn } from 'react-hook-form'
-import ShikiHighlighter from 'react-shiki'
 import {
   WEBHOOK_EVENTS,
   WEBHOOK_EXAMPLE_PAYLOAD,
@@ -242,9 +242,9 @@ export function WebhookAddEditDialogSteps({
             </p>
             <p className="text-fg-tertiary prose-body">
               This secret is used to verify webhook authenticity. Each request
-              includes an <code className="text-fg">e2b-signature</code>{' '}
-              header generated with HMAC SHA-256. Validate this in your endpoint
-              to ensure requests are from E2B and untampered.
+              includes an <code className="text-fg">e2b-signature</code> header
+              generated with HMAC SHA-256. Validate this in your endpoint to
+              ensure requests are from E2B and untampered.
             </p>
             <a
               href={WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL}

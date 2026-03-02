@@ -1,7 +1,5 @@
 'use client'
 
-import { IconsMap } from '@/configs/docs'
-import { cn } from '@/lib/utils'
 import type {
   TabsProps as BaseProps,
   TabsContentProps,
@@ -16,6 +14,8 @@ import {
   useRef,
   useState,
 } from 'react'
+import { IconsMap } from '@/configs/docs'
+import { cn } from '@/lib/utils'
 import * as Primitive from './primitives/tabs'
 
 export { Primitive }
@@ -78,7 +78,6 @@ export function Tabs({
   const [value, setValue] = useState(values[defaultIndex])
 
   const valueToIdMap = useMemo(() => new Map<string, string>(), [])
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- re-reconstruct the collection if items changed
   const collection = useMemo(() => createCollection(), [items])
 
   const onChange: ChangeListener = (v) => {
@@ -184,10 +183,7 @@ export type TabProps = Omit<TabsContentProps, 'value'> & {
 
 export function Tab({ value, className, ...props }: TabProps) {
   const ctx = useContext(TabsContext)
-  const resolvedValue =
-    value ??
-    // eslint-disable-next-line react-hooks/rules-of-hooks -- `value` is not supposed to change
-    ctx?.items.at(useCollectionIndex())
+  const resolvedValue = value ?? ctx?.items.at(useCollectionIndex())
   if (!resolvedValue)
     throw new Error(
       'Failed to resolve tab `value`, please pass a `value` prop to the Tab component.'
@@ -243,12 +239,10 @@ function useCollectionIndex() {
     // re-order the item to the bottom if registered
     unregister()
     register()
-    // eslint-disable-next-line -- register
   }, [list])
 
   useEffect(() => {
     return unregister
-    // eslint-disable-next-line -- clean up only
   }, [])
 
   return list.indexOf(key)

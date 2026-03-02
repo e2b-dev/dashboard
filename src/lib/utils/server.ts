@@ -1,10 +1,10 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { COOKIE_KEYS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
 import { z } from 'zod'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { infra } from '../clients/api'
 import { l } from '../clients/logger/logger'
 import { returnServerError } from './action'

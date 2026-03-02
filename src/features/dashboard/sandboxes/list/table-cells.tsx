@@ -1,15 +1,15 @@
 'use client'
 
+import type { CellContext } from '@tanstack/react-table'
+import { ArrowUpRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
-import type { CellContext } from '@tanstack/react-table'
-import { ArrowUpRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useMemo } from 'react'
 import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
@@ -66,9 +66,7 @@ const DiskUsageCellView = ({ sandboxId, totalDiskGb }: DiskUsageCellProps) => {
   )
 }
 
-export const CpuUsageCell = ({
-  row,
-}: CellContext<SandboxListRow, unknown>) => (
+export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
     <CpuUsageCellView
       sandboxId={row.original.sandboxID}
@@ -77,9 +75,7 @@ export const CpuUsageCell = ({
   </div>
 )
 
-export const RamUsageCell = ({
-  row,
-}: CellContext<SandboxListRow, unknown>) => (
+export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
     <RamUsageCellView
       sandboxId={row.original.sandboxID}

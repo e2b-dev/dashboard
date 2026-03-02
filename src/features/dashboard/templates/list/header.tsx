@@ -1,8 +1,8 @@
-import { Template } from '@/types/api.types'
-import { Badge } from '@/ui/primitives/badge'
-import { Table } from '@tanstack/react-table'
+import type { Table } from '@tanstack/react-table'
 import { Hexagon, ListFilter } from 'lucide-react'
 import { Suspense } from 'react'
+import type { Template } from '@/types/api.types'
+import { Badge } from '@/ui/primitives/badge'
 import TemplatesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 
@@ -40,14 +40,10 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
               {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
             </span>
             <span className="text-fg-tertiary"> · </span>
-            <span className="text-fg-tertiary">
-              {totalCount} total
-            </span>
+            <span className="text-fg-tertiary">{totalCount} total</span>
           </>
         ) : (
-          <span className="text-fg-tertiary">
-            {totalCount} total
-          </span>
+          <span className="text-fg-tertiary">{totalCount} total</span>
         )}
       </span>
     </div>

@@ -6,11 +6,15 @@ import { useSandboxContext } from '../context'
 export default function EndedAt() {
   const { sandboxInfo } = useSandboxContext()
 
-  if (!sandboxInfo || (sandboxInfo.state !== 'killed' && sandboxInfo.state !== 'paused')) {
+  if (
+    !sandboxInfo ||
+    (sandboxInfo.state !== 'killed' && sandboxInfo.state !== 'paused')
+  ) {
     return null
   }
 
-  const endedAt = sandboxInfo.state === 'killed' ? sandboxInfo.stoppedAt : sandboxInfo.endAt
+  const endedAt =
+    sandboxInfo.state === 'killed' ? sandboxInfo.stoppedAt : sandboxInfo.endAt
 
   if (!endedAt) {
     return <p>N/A</p>

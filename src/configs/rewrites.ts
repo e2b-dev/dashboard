@@ -1,7 +1,8 @@
-import { DomainConfig } from '@/types/rewrites.types'
+import type { DomainConfig } from '@/types/rewrites.types'
 
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
 export const SDK_REFERENCE_DOMAIN = 'e2b-docs.vercel.app'
+
 // NOTE: DOCUMENTATION_DOMAIN has to be defined in next.config.mjs, such that we are able to use it there
 import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 

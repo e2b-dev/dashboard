@@ -47,11 +47,29 @@ jobs:
         with:
           bun-version: "1.2.0"
 
+      - name: Install dependencies
+        if: steps.check-spec-changes.outputs.has_changes == 'true'
+        run: bun install --frozen-lockfile
+
       - name: Regenerate API types
         if: steps.check-spec-changes.outputs.has_changes == 'true'
         run: |
           bun run generate:infra
           bun run generate:dashboard-api
+
+      - name: Autofix generated type files
+        if: steps.check-spec-changes.outputs.has_changes == 'true'
+        run: |
+          GENERATED_TYPE_FILES=$(git diff --name-only -- src/types/infra-api.types.ts src/types/dashboard-api.types.ts | tr '\n' ' ')
+
+          if [[ -z "${GENERATED_TYPE_FILES}" ]]; then
+            echo "No generated type changes detected; skipping autofix."
+            exit 0
+          fi
+
+          echo "Running format/lint autofix on generated types: ${GENERATED_TYPE_FILES}"
+          bunx biome format --write ${GENERATED_TYPE_FILES}
+          bunx biome lint --write ${GENERATED_TYPE_FILES}
 
       - name: Create Pull Request
         if: steps.check-spec-changes.outputs.has_changes == 'true'
@@ -65,7 +83,7 @@ jobs:
             - `spec/openapi.infra.yaml`
             - `spec/openapi.dashboard-api.yaml`
 
-            It also regenerates dependent TypeScript API types.
+            It also regenerates dependent TypeScript API types and applies formatting/lint autofixes.
 
             ---
             *This PR was automatically created by the sync-infra-specs workflow.*

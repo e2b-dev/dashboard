@@ -1,5 +1,5 @@
-import type { TRPCAppRouter } from '@/server/api/routers'
 import { TRPCClientError, type TRPCClientErrorLike } from '@trpc/client'
+import type { TRPCAppRouter } from '@/server/api/routers'
 
 export function isNotFoundError(
   error: unknown

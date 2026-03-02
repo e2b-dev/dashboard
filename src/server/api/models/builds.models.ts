@@ -1,6 +1,6 @@
+import { z } from 'zod'
 import type { components as dashboardComponents } from '@/types/dashboard-api.types'
 import type { components as infraComponents } from '@/types/infra-api.types'
-import { z } from 'zod'
 
 export type BuildStatus = dashboardComponents['schemas']['BuildStatus']
 

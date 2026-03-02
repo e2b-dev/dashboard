@@ -1,9 +1,9 @@
+import { redirect } from 'next/navigation'
+import { serializeError } from 'serialize-error'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
-import { redirect } from 'next/navigation'
-import { serializeError } from 'serialize-error'
 
 export async function GET(request: Request) {
   // The `/auth/callback` route is required for the server-side auth flow implemented

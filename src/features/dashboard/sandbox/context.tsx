@@ -1,14 +1,14 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
+import { createContext, useCallback, useContext } from 'react'
 import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
 import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
 import { useTRPC } from '@/trpc/client'
 import type { ClientSandboxMetric } from '@/types/sandboxes.types'
-import { useQuery } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
-import { createContext, useCallback, useContext } from 'react'
 
 interface SandboxContextValue {
   sandboxInfo?: SandboxDetailsDTO

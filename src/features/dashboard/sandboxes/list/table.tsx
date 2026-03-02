@@ -1,5 +1,18 @@
 'use client'
 
+import { keepPreviousData, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  type ColumnFiltersState,
+  type ColumnSizingState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { subHours } from 'date-fns'
+import { useEffect, useMemo, useRef } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -13,25 +26,12 @@ import {
   DataTableRow,
 } from '@/ui/data-table'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import { keepPreviousData, useSuspenseQuery } from '@tanstack/react-query'
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  type ColumnFiltersState,
-  type ColumnSizingState,
-  useReactTable,
-} from '@tanstack/react-table'
-import { subHours } from 'date-fns'
-import { useEffect, useMemo, useRef } from 'react'
-import { useLocalStorage } from 'usehooks-ts'
 import { SandboxesHeader } from './header'
-import { SandboxesTableBody } from './table-body'
-import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
-import type { SandboxListRow } from './table-config'
-import { getSandboxListEffectiveSorting } from './stores/table-store'
 import type { SandboxStartedAtFilter } from './stores/table-store'
+import { getSandboxListEffectiveSorting } from './stores/table-store'
+import { SandboxesTableBody } from './table-body'
+import type { SandboxListRow } from './table-config'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -197,8 +197,8 @@ export default function SandboxesTable() {
                     sorting={tableSorting.find((s) => s.id === header.id)?.desc}
                     align={
                       header.id === 'cpuUsage' ||
-                        header.id === 'ramUsage' ||
-                        header.id === 'diskUsage'
+                      header.id === 'ramUsage' ||
+                      header.id === 'diskUsage'
                         ? 'right'
                         : 'left'
                     }
@@ -207,19 +207,16 @@ export default function SandboxesTable() {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </span>
                   </DataTableHead>
                 ))}
               </DataTableRow>
             ))}
           </DataTableHeader>
-          <SandboxesTableBody
-            table={table}
-            scrollRef={scrollRef}
-          />
+          <SandboxesTableBody table={table} scrollRef={scrollRef} />
         </DataTable>
       </div>
     </ClientOnly>

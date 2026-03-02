@@ -1,5 +1,7 @@
 'use client'
 
+import { ArrowLeft, HomeIcon, ShieldX, UsersIcon } from 'lucide-react'
+import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { AsciiBackgroundPattern } from '@/ui/patterns'
 import { Button } from '@/ui/primitives/button'
@@ -10,8 +12,6 @@ import {
   CardFooter,
   CardHeader,
 } from '@/ui/primitives/card'
-import { ArrowLeft, HomeIcon, ShieldX, UsersIcon } from 'lucide-react'
-import Link from 'next/link'
 
 export default function Unauthorized() {
   return (

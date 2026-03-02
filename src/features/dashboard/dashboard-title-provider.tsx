@@ -1,8 +1,8 @@
 'use client'
 
-import { METADATA } from '@/configs/metadata'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
+import { METADATA } from '@/configs/metadata'
 import { useDashboard } from './context'
 
 /**
