@@ -1,5 +1,9 @@
-import { SandboxInfo } from '@/types/api.types'
+'use client'
+
+import { Skeleton } from '@/ui/primitives/skeleton'
 import { DetailsItem, DetailsRow } from '../../layouts/details-row'
+import { useSandboxContext } from '../context'
+import EndedAt from './ended-at'
 import Metadata from './metadata'
 import RanFor from './ran-for'
 import RemainingTime from './remaining-time'
@@ -8,42 +12,62 @@ import StartedAt from './started-at'
 import Status from './status'
 import TemplateId from './template-id'
 
-interface SandboxDetailsHeaderProps {
-  state: SandboxInfo['state']
-}
+export default function SandboxDetailsHeader() {
+  const { isRunning, sandboxInfo, isSandboxInfoLoading } = useSandboxContext()
 
-export default async function SandboxDetailsHeader({
-  state,
-}: SandboxDetailsHeaderProps) {
+  const isInitialLoading = isSandboxInfoLoading && !sandboxInfo
+  const isKilled = sandboxInfo?.state === 'killed'
+  const isPaused = sandboxInfo?.state === 'paused'
+
+  const runningLabel = isInitialLoading || isRunning ? 'running for' : 'ran for'
+  const timeoutLabel = isKilled
+    ? 'stopped at'
+    : isPaused
+      ? 'paused at'
+      : 'timeout in'
+
+  const timeoutContent = isKilled || isPaused ? <EndedAt /> : <RemainingTime />
+  const statusContent = <Status />
+  const templateContent = <TemplateId />
+  const metadataContent = <Metadata />
+  const createdAtContent = <StartedAt />
+  const runningDurationContent = <RanFor />
+  const cpuUsageContent = <ResourceUsageClient type="cpu" mode="usage" />
+  const memoryUsageContent = <ResourceUsageClient type="mem" mode="usage" />
+  const diskUsageContent = <ResourceUsageClient type="disk" mode="usage" />
+
+  const renderContent = (content: React.ReactNode, skeletonWidth: string) =>
+    isInitialLoading ? <Skeleton className={`h-5 ${skeletonWidth}`} /> : content
+
   return (
     <header className="bg-bg relative z-30 w-full p-3 md:p-6">
       <DetailsRow>
         <DetailsItem label="status">
-          <Status />
+          {renderContent(statusContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="template">
-          <TemplateId />
+          {renderContent(templateContent, 'w-28')}
         </DetailsItem>
         <DetailsItem label="metadata">
-          <Metadata />
-        </DetailsItem>
-        <DetailsItem label="timeout in">
-          <RemainingTime />
+          {renderContent(metadataContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="created at">
-          <StartedAt />
+          {renderContent(createdAtContent, 'w-32')}
         </DetailsItem>
-        <DetailsItem label={state === 'running' ? 'running for' : 'ran for'}>
-          <RanFor />
+        <DetailsItem label={timeoutLabel}>
+          {renderContent(timeoutContent, 'w-22')}
+        </DetailsItem>
+        <DetailsItem label={runningLabel}>
+          {renderContent(runningDurationContent, 'w-22')}
         </DetailsItem>
         <DetailsItem label="CPU Usage">
-          <ResourceUsageClient type="cpu" mode="usage" />
+          {renderContent(cpuUsageContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="Memory Usage">
-          <ResourceUsageClient type="mem" mode="usage" />
+          {renderContent(memoryUsageContent, 'w-20')}
         </DetailsItem>
         <DetailsItem label="Disk Usage">
-          <ResourceUsageClient type="disk" mode="usage" />
+          {renderContent(diskUsageContent, 'w-20')}
         </DetailsItem>
       </DetailsRow>
     </header>

@@ -40,7 +40,6 @@ jobs:
       KV_REST_API_TOKEN: test-api-token
       KV_REST_API_URL: https://test-kv-api.example.com
       SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
-      INFRA_API_URL: https://api.e2b-test.dev
       BILLING_API_URL: https://billing.e2b-test.dev
       NEXT_PUBLIC_E2B_DOMAIN: e2b-test.dev
       NEXT_PUBLIC_POSTHOG_KEY: test-posthog-key

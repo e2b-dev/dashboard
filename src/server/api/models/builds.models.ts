@@ -1,18 +1,33 @@
-import { LOG_RETENTION_MS } from '@/configs/logs'
-import type { components } from '@/types/infra-api.types'
-import z from 'zod'
+import type { components as dashboardComponents } from '@/types/dashboard-api.types'
+import type { components as infraComponents } from '@/types/infra-api.types'
+import { z } from 'zod'
 
-export const BuildStatusDTOSchema = z.enum(['building', 'failed', 'success'])
+export type BuildStatus = dashboardComponents['schemas']['BuildStatus']
 
-export type BuildStatusDTO = z.infer<typeof BuildStatusDTOSchema>
-export type BuildStatusDB = 'waiting' | 'building' | 'uploaded' | 'failed'
+// TypeCheck: BuildStatus enum is exhaustive
 
+const BUILD_STATUS_VALUES = [
+  'building',
+  'failed',
+  'success',
+] as const satisfies readonly BuildStatus[]
+
+type AssertTrue<T extends true> = T
+type _BuildStatusExhaustiveCheck = AssertTrue<
+  Exclude<BuildStatus, (typeof BUILD_STATUS_VALUES)[number]> extends never
+    ? true
+    : false
+>
+
+// TypeCheck: End
+
+export const BuildStatusSchema = z.enum(BUILD_STATUS_VALUES)
 export interface ListedBuildDTO {
   id: string
   // id or alias
   template: string
   templateId: string
-  status: BuildStatusDTO
+  status: BuildStatus
   statusMessage: string | null
   createdAt: number
   finishedAt: number | null
@@ -20,14 +35,14 @@ export interface ListedBuildDTO {
 
 export interface RunningBuildStatusDTO {
   id: string
-  status: BuildStatusDTO
+  status: BuildStatus
   finishedAt: number | null
   statusMessage: string | null
 }
 
 export interface BuildLogDTO {
   timestampUnix: number
-  level: components['schemas']['LogLevel']
+  level: infraComponents['schemas']['LogLevel']
   message: string
 }
 
@@ -37,70 +52,12 @@ export interface BuildLogsDTO {
 }
 
 export interface BuildDetailsDTO {
+  templateNames: string[] | null
   // id or alias
   template: string
   startedAt: number
   finishedAt: number | null
-  status: BuildStatusDTO
+  status: BuildStatus
   statusMessage: string | null
   hasRetainedLogs: boolean
-}
-
-// mappings
-
-export function checkIfBuildStillHasLogs(createdAt: number): boolean {
-  return new Date().getTime() - createdAt < LOG_RETENTION_MS
-}
-
-export function mapDatabaseBuildReasonToListedBuildDTOStatusMessage(
-  status: string,
-  reason: unknown
-): string | null {
-  if (status !== 'failed') return null
-  if (!reason || typeof reason !== 'object') return null
-  if (!('message' in reason)) return null
-  if (typeof reason.message !== 'string') return null
-  return reason.message
-}
-
-export function mapBuildStatusDTOToDatabaseBuildStatus(
-  buildStatusDTO: BuildStatusDTO
-): BuildStatusDB[] {
-  switch (buildStatusDTO) {
-    case 'building':
-      return ['building', 'waiting']
-    case 'failed':
-      return ['failed']
-    case 'success':
-      return ['uploaded']
-  }
-}
-
-export function mapDatabaseBuildStatusToBuildStatusDTO(
-  dbStatus: BuildStatusDB
-): BuildStatusDTO {
-  switch (dbStatus) {
-    case 'waiting':
-    case 'building':
-      return 'building'
-    case 'uploaded':
-      return 'success'
-    case 'failed':
-      return 'failed'
-  }
-}
-
-export function mapInfraBuildStatusToBuildStatusDTO(
-  status: components['schemas']['TemplateBuild']['status']
-): BuildStatusDTO {
-  switch (status) {
-    case 'building':
-      return 'building'
-    case 'waiting':
-      return 'building'
-    case 'ready':
-      return 'success'
-    case 'error':
-      return 'failed'
-  }
 }

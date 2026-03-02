@@ -8,7 +8,7 @@ import { useSandboxContext } from '../context'
 export default function Metadata() {
   const { sandboxInfo } = useSandboxContext()
 
-  if (!sandboxInfo?.metadata) {
+  if (!sandboxInfo || sandboxInfo.state === 'killed' || !sandboxInfo.metadata) {
     return (
       <Badge>
         <CircleSlash className="size-3.5" /> N/A
