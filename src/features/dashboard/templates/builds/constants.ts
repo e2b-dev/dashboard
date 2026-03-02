@@ -1,5 +1,5 @@
 import { millisecondsInDay } from 'date-fns/constants'
-import { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildStatus } from '@/server/api/models/builds.models'
 
 export const LOG_RETENTION_MS = 7 * millisecondsInDay // 7 days
 
