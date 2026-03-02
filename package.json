@@ -10,7 +10,7 @@
     "preview": "next build --turbopack && next start | pino-pretty --colorize",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
-    "format": "biome check --write . --max-diagnostics none",
+    "format": "biome check --write --linter-enabled=false --assist-enabled=true . --max-diagnostics none",
     "format:check": "biome check --linter-enabled=false --assist-enabled=true .",
     "check": "biome check .",
     "prebuild": "bun scripts:check-app-env",
