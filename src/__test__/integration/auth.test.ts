@@ -26,10 +26,11 @@ console.error = vi.fn()
 
 // Mock global fetch for health check
 const originalFetch = global.fetch
-global.fetch = vi.fn().mockResolvedValue({
+const fetchMock = vi.fn().mockResolvedValue({
   ok: true,
   json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
 })
+global.fetch = fetchMock as unknown as typeof fetch
 
 // Mock Supabase client
 const mockSupabaseClient = {
@@ -90,7 +91,7 @@ describe('Auth Actions - Integration Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     // Set up fetch mock for health check
-    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
     })

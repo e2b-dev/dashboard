@@ -924,6 +924,7 @@ function generateMockSandboxes(count: number): Sandboxes {
       startedAt: startDate.toISOString(),
       templateID: template.templateID,
       state: 'running',
+      volumeMounts: [],
     })
   }
 
