@@ -14,6 +14,8 @@ export interface GetSandboxLogsOptions {
   cursor?: number
   limit?: number
   direction?: 'forward' | 'backward'
+  level?: 'debug' | 'info' | 'warn' | 'error'
+  search?: string
 }
 
 export async function getSandboxLogs(
@@ -31,6 +33,8 @@ export async function getSandboxLogs(
         cursor: options.cursor,
         limit: options.limit,
         direction: options.direction,
+        level: options.level,
+        search: options.search,
       },
     },
     headers: {
@@ -121,7 +125,7 @@ export async function getSandboxDetails(
 
   if (dashboardResult.response.ok && dashboardResult.data) {
     return {
-      source: 'dashboard-log' as const,
+      source: 'database-record' as const,
       details: dashboardResult.data,
     }
   }

@@ -17,6 +17,7 @@ import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
 } from '@/features/dashboard/common/log-cells'
+import { LogLevelFilter } from '@/features/dashboard/common/log-level-filter'
 import {
   LogStatusCell,
   LogsEmptyBody,
@@ -25,10 +26,13 @@ import {
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
 import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import { DebouncedInput } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import { useSandboxContext } from '../context'
 import { LogLevel, Message, Timestamp } from './logs-cells'
+import type { LogLevelFilter as SandboxLogLevelFilter } from './logs-filter-params'
+import useLogFilters from './use-log-filters'
 import { useSandboxLogs } from './use-sandbox-logs'
 
 // column widths are calculated as max width of the content + padding
@@ -58,10 +62,17 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
   'use no memo'
 
   const { sandboxInfo, isRunning } = useSandboxContext()
+  const { level, setLevel, search, setSearch } = useLogFilters()
 
   if (!sandboxInfo) {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3 md:gap-6">
+        <FiltersRow
+          level={level}
+          onLevelChange={setLevel}
+          search={search}
+          onSearchChange={setSearch}
+        />
         <div className="min-h-0 flex-1 overflow-auto">
           <Table style={{ display: 'grid', minWidth: 'min-content' }}>
             <LogsTableHeader
@@ -84,6 +95,10 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
       sandboxId={sandboxId}
       isRunning={isRunning}
       hasRetainedLogs={hasRetainedLogs}
+      level={level}
+      search={search}
+      setLevel={setLevel}
+      setSearch={setSearch}
     />
   )
 }
@@ -93,6 +108,10 @@ interface LogsContentProps {
   sandboxId: string
   isRunning: boolean
   hasRetainedLogs: boolean
+  level: SandboxLogLevelFilter | null
+  search: string
+  setLevel: (level: SandboxLogLevelFilter | null) => void
+  setSearch: (search: string) => void
 }
 
 function LogsContent({
@@ -100,6 +119,10 @@ function LogsContent({
   sandboxId,
   isRunning,
   hasRetainedLogs,
+  level,
+  search,
+  setLevel,
+  setSearch,
 }: LogsContentProps) {
   const [scrollContainerElement, setScrollContainerElement] =
     useState<HTMLDivElement | null>(null)
@@ -117,6 +140,8 @@ function LogsContent({
     teamIdOrSlug,
     sandboxId,
     isRunning,
+    level,
+    search,
   })
 
   const hasLogs = logs.length > 0
@@ -131,6 +156,12 @@ function LogsContent({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
+      <FiltersRow
+        level={level}
+        onLevelChange={setLevel}
+        search={search}
+        onSearchChange={setSearch}
+      />
       <div
         ref={setScrollContainerElement}
         className="min-h-0 flex-1 overflow-auto"
@@ -158,6 +189,8 @@ function LogsContent({
               isFetchingNextPage={isFetchingNextPage}
               isInitialized={isInitialized}
               isRunning={isRunning}
+              level={level}
+              search={search}
             />
           )}
         </Table>
@@ -181,6 +214,36 @@ function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
   return <LogsEmptyBody description={description} />
 }
 
+interface FiltersRowProps {
+  level: SandboxLogLevelFilter | null
+  onLevelChange: (level: SandboxLogLevelFilter | null) => void
+  search: string
+  onSearchChange: (search: string) => void
+}
+
+function FiltersRow({
+  level,
+  onLevelChange,
+  search,
+  onSearchChange,
+}: FiltersRowProps) {
+  return (
+    <div className="flex w-full min-h-0 justify-between gap-3">
+      <LogLevelFilter
+        level={level}
+        onLevelChange={onLevelChange}
+        renderOption={(optionLevel) => <LogLevel level={optionLevel} />}
+      />
+      <DebouncedInput
+        value={search}
+        onChange={(value) => onSearchChange(String(value))}
+        placeholder="Filter log message..."
+        className="h-9 max-w-sm"
+      />
+    </div>
+  )
+}
+
 interface VirtualizedLogsBodyProps {
   logs: SandboxLogDTO[]
   scrollContainerElement: HTMLDivElement
@@ -189,6 +252,8 @@ interface VirtualizedLogsBodyProps {
   isFetchingNextPage: boolean
   isInitialized: boolean
   isRunning: boolean
+  level: SandboxLogLevelFilter | null
+  search: string
 }
 
 function VirtualizedLogsBody({
@@ -199,6 +264,8 @@ function VirtualizedLogsBody({
   isFetchingNextPage,
   isInitialized,
   isRunning,
+  level,
+  search,
 }: VirtualizedLogsBodyProps) {
   const maxWidthRef = useRef<number>(0)
 
@@ -240,6 +307,8 @@ function VirtualizedLogsBody({
     isFetchingNextPage,
     isInitialized,
     isRunning,
+    level,
+    search,
     scrollToLatestLog,
   })
 
@@ -293,7 +362,10 @@ function VirtualizedLogsBody({
         }
 
         const logIndex = virtualRow.index - logsStartIndex
-        const log = logs[logIndex]!
+        const log = logs[logIndex]
+        if (!log) {
+          return null
+        }
 
         return (
           <LogRow
@@ -375,6 +447,8 @@ interface UseAutoScrollToBottomParams {
   isFetchingNextPage: boolean
   isInitialized: boolean
   isRunning: boolean
+  level: SandboxLogLevelFilter | null
+  search: string
   scrollToLatestLog: () => void
 }
 
@@ -384,11 +458,15 @@ function useAutoScrollToBottom({
   isFetchingNextPage,
   isInitialized,
   isRunning,
+  level,
+  search,
   scrollToLatestLog,
 }: UseAutoScrollToBottomParams) {
   const isAutoScrollEnabledRef = useRef(true)
   const prevLogsCountRef = useRef(0)
   const prevIsRunningRef = useRef(isRunning)
+  const prevLevelRef = useRef(level)
+  const prevSearchRef = useRef(search)
   const wasFetchingNextPageRef = useRef(isFetchingNextPage)
   const hasInitialScrolled = useRef(false)
 
@@ -423,6 +501,15 @@ function useAutoScrollToBottom({
       prevLogsCountRef.current = 0
     }
   }, [isRunning])
+
+  useEffect(() => {
+    if (prevLevelRef.current !== level || prevSearchRef.current !== search) {
+      prevLevelRef.current = level
+      prevSearchRef.current = search
+      hasInitialScrolled.current = false
+      prevLogsCountRef.current = 0
+    }
+  }, [level, search])
 
   useEffect(() => {
     if (!hasInitialScrolled.current) {

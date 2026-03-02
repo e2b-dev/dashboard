@@ -5,18 +5,12 @@ import {
   type VirtualItem,
   type Virtualizer,
 } from '@tanstack/react-virtual'
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from 'react'
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
 } from '@/features/dashboard/common/log-cells'
+import { LogLevelFilter } from '@/features/dashboard/common/log-level-filter'
 import {
   LogStatusCell,
   LogsEmptyBody,
@@ -29,26 +23,11 @@ import type {
   BuildDetailsDTO,
   BuildLogDTO,
 } from '@/server/api/models/builds.models'
-import { Button } from '@/ui/primitives/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/ui/primitives/table'
+import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import { LOG_RETENTION_MS } from '../templates/builds/constants'
 import { LogLevel, Message, Timestamp } from './logs-cells'
-import type { LogLevelFilter } from './logs-filter-params'
+import type { LogLevelFilter as BuildLogLevelFilter } from './logs-filter-params'
 import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 
@@ -58,13 +37,6 @@ const ROW_HEIGHT_PX = 26
 const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
-
-const LEVEL_OPTIONS: Array<{ value: LogLevelFilter; label: string }> = [
-  { value: 'debug', label: 'Debug' },
-  { value: 'info', label: 'Info' },
-  { value: 'warn', label: 'Warn' },
-  { value: 'error', label: 'Error' },
-]
 
 interface LogsProps {
   buildDetails: BuildDetailsDTO | undefined
@@ -86,7 +58,11 @@ export default function Logs({
   if (!buildDetails) {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-        <LevelFilter level={level} onLevelChange={setLevel} />
+        <LogLevelFilter
+          level={level}
+          onLevelChange={setLevel}
+          renderOption={(optionLevel) => <LogLevel level={optionLevel} />}
+        />
         <div className="min-h-0 flex-1 overflow-auto">
           <Table style={{ display: 'grid', minWidth: 'min-content' }}>
             <LogsTableHeader
@@ -118,8 +94,8 @@ interface LogsContentProps {
   teamIdOrSlug: string
   templateId: string
   buildId: string
-  level: LogLevelFilter | null
-  setLevel: (level: LogLevelFilter | null) => void
+  level: BuildLogLevelFilter | null
+  setLevel: (level: BuildLogLevelFilter | null) => void
 }
 
 function LogsContent({
@@ -170,7 +146,11 @@ function LogsContent({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
-      <LevelFilter level={level} onLevelChange={setLevel} />
+      <LogLevelFilter
+        level={level}
+        onLevelChange={setLevel}
+        renderOption={(optionLevel) => <LogLevel level={optionLevel} />}
+      />
 
       <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
         <Table style={{ display: 'grid', minWidth: 'min-content' }}>
@@ -204,11 +184,12 @@ function LogsContent({
   )
 }
 
-function useFilterRefetchTracking(level: LogLevelFilter | null) {
+function useFilterRefetchTracking(level: BuildLogLevelFilter | null) {
   const [isRefetchingFromFilterChange, setIsRefetching] = useState(false)
   const isInitialRender = useRef(true)
 
   useEffect(() => {
+    void level
     if (isInitialRender.current) {
       isInitialRender.current = false
       return
@@ -233,62 +214,6 @@ function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
   return <LogsEmptyBody description={description} />
 }
 
-interface LevelFilterProps {
-  level: LogLevelFilter | null
-  onLevelChange: (level: LogLevelFilter | null) => void
-}
-
-function LevelFilter({ level, onLevelChange }: LevelFilterProps) {
-  const selectedLevel = level ?? 'debug'
-  const selectedLabel = LEVEL_OPTIONS.find(
-    (o) => o.value === selectedLevel
-  )?.label
-
-  return (
-    <div className="flex w-full min-h-0 justify-between gap-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="font-sans w-min normal-case prose-body-highlight h-9"
-          >
-            <LevelIndicator level={selectedLevel} />
-            Min Level · {selectedLabel}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={selectedLevel}
-            onValueChange={(value) => onLevelChange(value as LogLevelFilter)}
-          >
-            {LEVEL_OPTIONS.map((option) => (
-              <DropdownMenuRadioItem key={option.value} value={option.value}>
-                <LogLevel level={option.value} />
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
-
-function LevelIndicator({ level }: { level: LogLevelFilter }) {
-  return (
-    <div
-      className={cn(
-        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
-        {
-          'border-fg-tertiary': level === 'debug',
-          'border-accent-info-highlight': level === 'info',
-          'border-accent-warning-highlight': level === 'warn',
-          'border-accent-error-highlight': level === 'error',
-        }
-      )}
-    />
-  )
-}
-
 interface VirtualizedLogsBodyProps {
   logs: BuildLogDTO[]
   scrollContainerRef: RefObject<HTMLDivElement | null>
@@ -298,7 +223,7 @@ interface VirtualizedLogsBodyProps {
   isFetchingNextPage: boolean
   showRefetchOverlay: boolean
   isInitialized: boolean
-  level: LogLevelFilter | null
+  level: BuildLogLevelFilter | null
   isBuilding: boolean
 }
 
@@ -402,11 +327,15 @@ function VirtualizedLogsBody({
         }
 
         const logIndex = virtualRow.index - logsStartIndex
+        const log = logs[logIndex]
+        if (!log) {
+          return null
+        }
 
         return (
           <LogRow
             key={virtualRow.key}
-            log={logs[logIndex]!}
+            log={log}
             isZebraRow={logIndex % 2 === 1}
             virtualRow={virtualRow}
             virtualizer={virtualizer}
@@ -487,7 +416,7 @@ interface UseAutoScrollToBottomParams {
   scrollContainerRef: RefObject<HTMLDivElement | null>
   logsCount: number
   isInitialized: boolean
-  level: LogLevelFilter | null
+  level: BuildLogLevelFilter | null
 }
 
 function useAutoScrollToBottom({
