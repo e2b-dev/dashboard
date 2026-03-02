@@ -1,10 +1,10 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useQuery } from '@tanstack/react-query'
 import AlertCard from './alert-card'
 import LimitCard from './limit-card'
 

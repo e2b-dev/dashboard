@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -359,13 +359,13 @@
 
   /* Font Family */
   --font-sans:
-    'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono:
-    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
-  --font-fira-code: 'Fira Code', monospace;
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --font-fira-code: "Fira Code", monospace;
 
   /* Animations */
   @keyframes accordion-down {
@@ -433,37 +433,37 @@
 
   @keyframes loader-slash {
     0% {
-      content: '|';
+      content: "|";
     }
     25% {
-      content: '/';
+      content: "/";
     }
     50% {
-      content: '-';
+      content: "-";
     }
     75% {
-      content: '\\';
+      content: "\\";
     }
     100% {
-      content: '|';
+      content: "|";
     }
   }
 
   @keyframes loader-square {
     0% {
-      content: '◰';
+      content: "◰";
     }
     25% {
-      content: '◳';
+      content: "◳";
     }
     50% {
-      content: '◲';
+      content: "◲";
     }
     75% {
-      content: '◱';
+      content: "◱";
     }
     100% {
-      content: '◰';
+      content: "◰";
     }
   }
 

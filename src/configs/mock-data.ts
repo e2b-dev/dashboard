@@ -1,16 +1,16 @@
-import { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
-import {
+import { addHours, subHours } from 'date-fns'
+import { nanoid } from 'nanoid'
+import type { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
+import type {
   DefaultTemplate,
   Sandbox,
   Sandboxes,
   Template,
 } from '@/types/api.types'
-import {
+import type {
   ClientSandboxesMetrics,
   ClientTeamMetrics,
 } from '@/types/sandboxes.types'
-import { addHours, subHours } from 'date-fns'
-import { nanoid } from 'nanoid'
 
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   {

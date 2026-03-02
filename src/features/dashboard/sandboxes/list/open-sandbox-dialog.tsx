@@ -1,5 +1,8 @@
 'use client'
 
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
+import { type FormEvent, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { SandboxIdSchema } from '@/lib/schemas/api'
@@ -16,9 +19,6 @@ import {
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import { Input } from '@/ui/primitives/input'
-import { useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
-import { type FormEvent, useState } from 'react'
 import { SANDBOX_RECORD_RETENTION_DAYS } from './constants'
 
 type LookupState = 'idle' | 'not-found' | 'error'

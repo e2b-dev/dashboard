@@ -1,8 +1,8 @@
+import { useCallback, useRef } from 'react'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
-import { useCallback, useRef } from 'react'
 
 export const SearchInput = () => {
   const globalFilter = useSandboxListTableStore((state) => state.globalFilter)

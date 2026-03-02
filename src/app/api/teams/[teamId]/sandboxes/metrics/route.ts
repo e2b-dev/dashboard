@@ -6,7 +6,7 @@ import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
-import { MetricsRequestSchema, MetricsResponse } from './types'
+import { MetricsRequestSchema, type MetricsResponse } from './types'
 
 export async function POST(
   request: Request,

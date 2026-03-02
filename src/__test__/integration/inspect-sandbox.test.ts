@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  SUPABASE_TEAM_HEADER,
-  SUPABASE_TOKEN_HEADER,
-} from '@/configs/api'
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { SUPABASE_TEAM_HEADER, SUPABASE_TOKEN_HEADER } from '@/configs/api'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 
 // ============================================================================
 // MOCKS SETUP

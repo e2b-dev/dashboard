@@ -1,24 +1,9 @@
 'use client'
 
-import { LOG_RETENTION_MS } from '@/configs/logs'
-import {
-  LOG_LEVEL_LEFT_BORDER_CLASS,
-  type LogLevelValue,
-} from '@/features/dashboard/common/log-cells'
-import {
-  LogsEmptyBody,
-  LogsLoaderBody,
-  LogsTableHeader,
-  LogStatusCell,
-  LogVirtualRow,
-} from '@/features/dashboard/common/log-viewer-ui'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
-import { Loader } from '@/ui/primitives/loader'
-import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import {
   useVirtualizer,
-  VirtualItem,
-  Virtualizer,
+  type VirtualItem,
+  type Virtualizer,
 } from '@tanstack/react-virtual'
 import {
   useCallback,
@@ -27,6 +12,21 @@ import {
   useRef,
   useState,
 } from 'react'
+import { LOG_RETENTION_MS } from '@/configs/logs'
+import {
+  LOG_LEVEL_LEFT_BORDER_CLASS,
+  type LogLevelValue,
+} from '@/features/dashboard/common/log-cells'
+import {
+  LogStatusCell,
+  LogsEmptyBody,
+  LogsLoaderBody,
+  LogsTableHeader,
+  LogVirtualRow,
+} from '@/features/dashboard/common/log-viewer-ui'
+import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import { Loader } from '@/ui/primitives/loader'
+import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import { useSandboxContext } from '../context'
 import { LogLevel, Message, Timestamp } from './logs-cells'
 import { useSandboxLogs } from './use-sandbox-logs'
@@ -178,9 +178,7 @@ function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
       ? `This sandbox has exceeded the ${LOG_RETENTION_DAYS} day retention limit.`
       : 'Sandbox logs will appear here once available.'
 
-  return (
-    <LogsEmptyBody description={description} />
-  )
+  return <LogsEmptyBody description={description} />
 }
 
 interface VirtualizedLogsBodyProps {

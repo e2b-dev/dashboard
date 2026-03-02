@@ -1,14 +1,14 @@
 'use client'
 
-import { getDashboardLayoutConfig, TitleSegment } from '@/configs/layout'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Fragment } from 'react'
+import { getDashboardLayoutConfig, type TitleSegment } from '@/configs/layout'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import CopyButton from '@/ui/copy-button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Fragment } from 'react'
 
 interface DashboardLayoutHeaderProps {
   className?: string

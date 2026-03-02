@@ -1,5 +1,8 @@
 'use client'
 
+import { DialogTitle } from '@radix-ui/react-dialog'
+import { Maximize2 } from 'lucide-react'
+import { useState } from 'react'
 import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -10,9 +13,6 @@ import {
   cardVariants,
 } from '@/ui/primitives/card'
 import { Dialog, DialogContent } from '@/ui/primitives/dialog'
-import { DialogTitle } from '@radix-ui/react-dialog'
-import { Maximize2 } from 'lucide-react'
-import { useState } from 'react'
 import ComputeUsageChart from './compute-usage-chart'
 import { useUsageCharts } from './usage-charts-context'
 import { UsageTimeRangeControls } from './usage-time-range-controls'

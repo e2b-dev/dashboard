@@ -1,10 +1,9 @@
 'use client'
 
 import * as TabsPrimitive from '@radix-ui/react-tabs'
-import * as React from 'react'
-
-import { cn, exponentialSmoothing } from '@/lib/utils'
 import { motion } from 'motion/react'
+import * as React from 'react'
+import { cn, exponentialSmoothing } from '@/lib/utils'
 
 const TabsContext = React.createContext<{
   value?: string

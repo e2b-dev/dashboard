@@ -1,12 +1,12 @@
 'use client'
 
-import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { useTRPC } from '@/trpc/client'
 import { loadStripe } from '@stripe/stripe-js'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { useState } from 'react'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
 import { ADDON_PURCHASE_MESSAGES } from './constants'
 import { extractAddonData, extractTierData } from './utils'
 

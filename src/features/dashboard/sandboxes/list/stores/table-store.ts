@@ -1,10 +1,10 @@
 'use client'
 
-import { areStringArraysEqual } from '@/lib/utils/array'
-import { createHashStorage } from '@/lib/utils/store'
 import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { areStringArraysEqual } from '@/lib/utils/array'
+import { createHashStorage } from '@/lib/utils/store'
 import { trackSandboxListInteraction } from '../tracking'
 
 export const sandboxListPollingIntervals = [
@@ -26,8 +26,7 @@ export const sandboxListDefaultSorting: SortingState = [
 
 export const getSandboxListEffectiveSorting = (
   sorting: SortingState
-): SortingState =>
-  sorting.length > 0 ? sorting : sandboxListDefaultSorting
+): SortingState => (sorting.length > 0 ? sorting : sandboxListDefaultSorting)
 
 type UpdaterInput<T> = T | ((state: T) => T)
 
@@ -120,8 +119,10 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
         let nextGlobalFilter = ''
 
         set((state) => {
-          const resolvedGlobalFilter =
-            resolveUpdater(globalFilterUpdater, state.globalFilter)
+          const resolvedGlobalFilter = resolveUpdater(
+            globalFilterUpdater,
+            state.globalFilter
+          )
 
           if (resolvedGlobalFilter === state.globalFilter) {
             return state

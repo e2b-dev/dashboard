@@ -1,4 +1,4 @@
-import { ClassValue } from 'class-variance-authority/types'
+import type { ClassValue } from 'class-variance-authority/types'
 
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -29,7 +29,6 @@ export function exponentialSmoothing(speed: number = 10) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
   wait: number

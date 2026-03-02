@@ -1,13 +1,13 @@
 'use client'
 
-import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
-import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
-import { SWR_KEYS } from '@/configs/keys'
-import { useDashboard } from '@/features/dashboard/context'
 import { usePathname } from 'next/navigation'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import useSWR from 'swr'
+import type { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
+import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
+import { SWR_KEYS } from '@/configs/keys'
+import { useDashboard } from '@/features/dashboard/context'
 import { calculateIsLive } from '../utils'
 
 interface UseRecentMetricsOptions {

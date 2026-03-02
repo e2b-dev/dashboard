@@ -1,8 +1,8 @@
 import 'server-only'
 
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { AuthSessionMissingError } from '@supabase/supabase-js'
 import { cache } from 'react'
+import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 
 /**
  * Retrieves a user from Supabase using their access token.
