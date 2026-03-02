@@ -1,8 +1,11 @@
 'use client'
 
+import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
 import { ScrollArea } from '@/ui/primitives/scroll-area'
+import { useSandboxContext } from '../context'
 import SandboxInspectFrame from './frame'
+import { useDirectoryState } from './hooks/use-directory'
 import { useRootChildren } from './hooks/use-node'
 import SandboxInspectNode from './node'
 import SandboxInspectNotFound from './not-found'
@@ -16,7 +19,11 @@ interface SandboxInspectFilesystemProps {
 export default function SandboxInspectFilesystem({
   rootPath,
 }: SandboxInspectFilesystemProps) {
+  const { isRunning } = useSandboxContext()
   const children = useRootChildren()
+  const { isLoaded, isLoading } = useDirectoryState(rootPath)
+  const showRootLoading =
+    isRunning && children.length === 0 && (!isLoaded || isLoading)
 
   return (
     <div className="h-full flex-1 flex flex-col gap-4 overflow-hidden">
@@ -29,18 +36,18 @@ export default function SandboxInspectFilesystem({
         header={<SandboxInspectFilesystemHeader rootPath={rootPath} />}
       >
         <div className="h-full flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            {children.length > 0 ? (
-              <>
-                <SandboxInspectParentDirItem rootPath={rootPath} />
-                {children.map((child) => (
-                  <SandboxInspectNode key={child.path} path={child.path} />
-                ))}
-              </>
-            ) : (
-              <SandboxInspectNotFound />
-            )}
-          </ScrollArea>
+          {showRootLoading ? (
+            <LoadingLayout />
+          ) : !children.length ? (
+            <SandboxInspectNotFound />
+          ) : (
+            <ScrollArea className="h-full">
+              <SandboxInspectParentDirItem rootPath={rootPath} />
+              {children.map((child) => (
+                <SandboxInspectNode key={child.path} path={child.path} />
+              ))}
+            </ScrollArea>
+          )}
         </div>
       </SandboxInspectFrame>
     </div>

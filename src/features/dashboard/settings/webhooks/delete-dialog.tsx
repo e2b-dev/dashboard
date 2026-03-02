@@ -81,7 +81,7 @@ export default function WebhookDeleteDialog({
       }}
       onConfirm={() => {
         executeDeleteWebhook({
-          teamId: webhook.teamId,
+          teamIdOrSlug: webhook.teamId,
           webhookId: webhook.id,
         })
       }}

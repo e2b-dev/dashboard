@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { PollingButton } from '@/ui/polling-button'
+import { OpenSandboxDialog } from './open-sandbox-dialog'
 import {
   sandboxListPollingIntervals,
   useSandboxListTableStore,
@@ -36,14 +37,14 @@ export function SandboxesHeader({
   const totalCount = table.getCoreRowModel().rows.length
 
   return (
-    <header className="flex w-full flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1 sm:items-center">
+    <header className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-start md:justify-between">
+      <div className="flex min-w-0 flex-1 basis-full flex-wrap items-start gap-1 md:basis-0 md:items-center">
         <div className="w-full sm:w-auto sm:shrink-0">
           <SearchInput />
         </div>
 
         <Suspense fallback={null}>
-          <SandboxesTableFilters className="w-full sm:w-auto" />
+          <SandboxesTableFilters className="w-full min-w-0 sm:w-auto" />
         </Suspense>
 
         <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />
@@ -63,7 +64,7 @@ export function SandboxesHeader({
         </span>
       </div>
 
-      <div className="flex w-full justify-start sm:w-auto sm:justify-start sm:self-center">
+      <div className="flex w-full items-center justify-between gap-2 md:ml-auto md:w-auto md:shrink-0 md:justify-start md:self-center">
         <PollingButton
           intervals={sandboxListPollingIntervals}
           interval={pollingInterval}
@@ -71,6 +72,7 @@ export function SandboxesHeader({
           onRefresh={onRefresh}
           isRefreshing={isRefreshing}
         />
+        <OpenSandboxDialog />
       </div>
     </header>
   )

@@ -7,15 +7,13 @@ import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
 
 interface SandboxInspectViewProps {
   rootPath: string
-  seedEntries: EntryInfo[]
 }
 
 export default function SandboxInspectView({
   rootPath,
-  seedEntries,
 }: SandboxInspectViewProps) {
   return (
-    <SandboxInspectProvider rootPath={rootPath} seedEntries={seedEntries}>
+    <SandboxInspectProvider rootPath={rootPath}>
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden p-3 md:p-6">
         <SandboxInspectFilesystem rootPath={rootPath} />
         <SandboxInspectViewer />

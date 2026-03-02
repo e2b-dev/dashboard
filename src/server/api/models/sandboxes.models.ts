@@ -1,6 +1,36 @@
-import type { components } from '@/types/infra-api.types'
+import type { components as DashboardComponents } from '@/types/dashboard-api.types'
+import type { components as InfraComponents } from '@/types/infra-api.types'
 
-export type SandboxLogLevel = components['schemas']['LogLevel']
+export type SandboxLogLevel = InfraComponents['schemas']['LogLevel']
+
+interface SandboxDetailsBaseDTO {
+  templateID: string
+  alias?: string
+  sandboxID: string
+  startedAt: string
+  domain?: string | null
+  cpuCount: number
+  memoryMB: number
+  diskSizeMB: number
+}
+
+interface ActiveSandboxDetailsDTO extends SandboxDetailsBaseDTO {
+  endAt: string
+  envdVersion: string
+  envdAccessToken?: string
+  metadata?: InfraComponents['schemas']['SandboxMetadata']
+  state: InfraComponents['schemas']['SandboxState']
+}
+
+interface KilledSandboxDetailsDTO extends SandboxDetailsBaseDTO {
+  endAt: string | null
+  stoppedAt: string | null
+  state: 'killed'
+}
+
+export type SandboxDetailsDTO =
+  | ActiveSandboxDetailsDTO
+  | KilledSandboxDetailsDTO
 
 export interface SandboxLogDTO {
   timestampUnix: number
@@ -16,11 +46,51 @@ export interface SandboxLogsDTO {
 // mappings
 
 export function mapInfraSandboxLogToDTO(
-  log: components['schemas']['SandboxLogEntry']
+  log: InfraComponents['schemas']['SandboxLogEntry']
 ): SandboxLogDTO {
   return {
     timestampUnix: new Date(log.timestamp).getTime(),
     level: log.level,
     message: log.message,
+  }
+}
+
+export function mapInfraSandboxDetailsToDTO(
+  sandbox: InfraComponents['schemas']['SandboxDetail']
+): SandboxDetailsDTO {
+  return {
+    templateID: sandbox.templateID,
+    alias: sandbox.alias,
+    sandboxID: sandbox.sandboxID,
+    startedAt: sandbox.startedAt,
+    endAt: sandbox.endAt,
+    envdVersion: sandbox.envdVersion,
+    envdAccessToken: sandbox.envdAccessToken,
+    domain: sandbox.domain,
+    cpuCount: sandbox.cpuCount,
+    memoryMB: sandbox.memoryMB,
+    diskSizeMB: sandbox.diskSizeMB,
+    metadata: sandbox.metadata,
+    state: sandbox.state,
+  }
+}
+
+export function mapApiSandboxRecordToDTO(
+  sandbox: DashboardComponents['schemas']['SandboxRecord']
+): KilledSandboxDetailsDTO {
+  const stoppedAt = sandbox.stoppedAt ?? null
+
+  return {
+    templateID: sandbox.templateID,
+    alias: sandbox.alias,
+    sandboxID: sandbox.sandboxID,
+    startedAt: sandbox.startedAt,
+    endAt: stoppedAt,
+    stoppedAt,
+    domain: sandbox.domain,
+    cpuCount: sandbox.cpuCount,
+    memoryMB: sandbox.memoryMB,
+    diskSizeMB: sandbox.diskSizeMB,
+    state: 'killed',
   }
 }
