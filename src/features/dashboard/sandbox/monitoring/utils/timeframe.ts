@@ -1,4 +1,4 @@
-import type { SandboxInfo } from '@/types/api.types'
+import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
 import {
   millisecondsInDay,
   millisecondsInHour,
@@ -36,17 +36,32 @@ export interface SandboxLifecycleBounds {
 }
 
 export function getSandboxLifecycleBounds(
-  sandboxInfo: Pick<SandboxInfo, 'startedAt' | 'endAt' | 'state'>,
+  sandboxInfo: SandboxDetailsDTO,
   now: number = Date.now()
 ): SandboxLifecycleBounds | null {
   const startMs = new Date(sandboxInfo.startedAt).getTime()
-  const endMs = new Date(sandboxInfo.endAt).getTime()
+  const isRunning = sandboxInfo.state === 'running'
 
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+  if (!Number.isFinite(startMs)) {
     return null
   }
 
-  const isRunning = sandboxInfo.state === 'running'
+  let endAt: string
+  if (sandboxInfo.state === 'killed') {
+    if (!sandboxInfo.endAt) {
+      return null
+    }
+    endAt = sandboxInfo.endAt
+  } else {
+    endAt = sandboxInfo.endAt
+  }
+
+  const endMs = new Date(endAt).getTime()
+
+  if (!Number.isFinite(endMs)) {
+    return null
+  }
+
   const anchorEndMs = isRunning ? Math.min(now, endMs) : endMs
 
   const normalizedStart = Math.floor(Math.min(startMs, anchorEndMs))
