@@ -1,3 +1,5 @@
+import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
+
 export type SandboxMetricsDataPoint = {
   x: number
   y: number | null
@@ -24,4 +26,24 @@ export interface SandboxMetricsChartProps {
   onHover?: (index: number) => void
   onHoverEnd?: () => void
   onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
+}
+
+export interface MonitoringResourceHoveredContext {
+  cpuPercent: number | null
+  ramPercent: number | null
+  timestampMs: number
+}
+
+export interface MonitoringDiskHoveredContext {
+  diskPercent: number | null
+  timestampMs: number
+}
+
+export interface MonitoringChartModel {
+  categories: number[]
+  latestMetric: SandboxMetric | undefined
+  resourceSeries: SandboxMetricsSeries[]
+  diskSeries: SandboxMetricsSeries[]
+  resourceHoveredContext: MonitoringResourceHoveredContext | null
+  diskHoveredContext: MonitoringDiskHoveredContext | null
 }

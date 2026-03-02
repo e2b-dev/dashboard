@@ -1,4 +1,5 @@
 import {
+  millisecondsInDay,
   millisecondsInHour,
   millisecondsInMinute,
   millisecondsInSecond,
@@ -6,7 +7,10 @@ import {
 
 export const SANDBOX_MONITORING_DEFAULT_RANGE_MS = millisecondsInHour
 export const SANDBOX_MONITORING_MIN_RANGE_MS = 90 * millisecondsInSecond
+export const SANDBOX_MONITORING_MAX_RANGE_MS = 31 * millisecondsInDay
 export const SANDBOX_MONITORING_LIVE_POLLING_MS = 10_000
+export const SANDBOX_MONITORING_MIN_TIMESTAMP_MS = -8_640_000_000_000_000
+export const SANDBOX_MONITORING_MAX_TIMESTAMP_MS = 8_640_000_000_000_000
 
 export const SANDBOX_MONITORING_QUERY_START_PARAM = 'start'
 export const SANDBOX_MONITORING_QUERY_END_PARAM = 'end'
@@ -72,6 +76,7 @@ export const SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA = 0.25
 export const SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE = 12
 export const SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR = 1.5
 export const SANDBOX_MONITORING_CHART_MIN_STEP_MS = millisecondsInSecond
+export const SANDBOX_MONITORING_CHART_MAX_POINTS = 2_000
 export const SANDBOX_MONITORING_CHART_LIVE_WINDOW_MS = 2 * millisecondsInMinute
 export const SANDBOX_MONITORING_CHART_LIVE_OUTER_DOT_SIZE = 16
 export const SANDBOX_MONITORING_CHART_LIVE_MIDDLE_DOT_SIZE = 10

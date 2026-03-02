@@ -39,6 +39,22 @@ import {
   type SandboxLifecycleBounds,
 } from '../utils/timeframe'
 
+function isValidDate(date: Date): boolean {
+  return Number.isFinite(date.getTime())
+}
+
+function toSafeIsoDateTime(
+  timestampMs: number,
+  fallbackTimestampMs: number = Date.now()
+): string {
+  const candidate = new Date(timestampMs)
+  if (isValidDate(candidate)) {
+    return candidate.toISOString()
+  }
+
+  return new Date(fallbackTimestampMs).toISOString()
+}
+
 interface SandboxMonitoringTimeRangeControlsProps {
   timeframe: {
     start: number
@@ -197,7 +213,13 @@ export default function SandboxMonitoringTimeRangeControls({
       SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS
     )
 
-    return `${formatter.format(timeframe.start)} - ${formatter.format(timeframe.end)}`
+    const startDate = new Date(timeframe.start)
+    const endDate = new Date(timeframe.end)
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+      return '--'
+    }
+
+    return `${formatter.format(startDate)} - ${formatter.format(endDate)}`
   }, [timeframe.end, timeframe.start])
 
   useEffect(() => {
@@ -256,32 +278,11 @@ export default function SandboxMonitoringTimeRangeControls({
       return
     }
 
-    if (isLiveUpdating) {
-      onLiveChange(false)
-      return
-    }
-
-    const duration = timeframe.end - timeframe.start
-    const anchorEndMs = lifecycle.isRunning
-      ? Date.now()
-      : lifecycle.anchorEndMs
-    const next = clampToLifecycle(
-      anchorEndMs - duration,
-      anchorEndMs
-    )
-
-    onTimeRangeChange(next.start, next.end, {
-      isLiveUpdating: true,
-    })
+    onLiveChange(!isLiveUpdating)
   }, [
-    clampToLifecycle,
     isLiveUpdating,
-    lifecycle.anchorEndMs,
     lifecycle.isRunning,
     onLiveChange,
-    onTimeRangeChange,
-    timeframe.end,
-    timeframe.start,
   ])
 
   return (
@@ -308,8 +309,8 @@ export default function SandboxMonitoringTimeRangeControls({
         <PopoverContent className="w-auto p-0 max-md:w-[calc(100vw-2rem)]">
           <div className="flex max-md:flex-col max-h-[500px] max-md:max-h-[600px]">
             <TimeRangePicker
-              startDateTime={new Date(timeframe.start).toISOString()}
-              endDateTime={new Date(timeframe.end).toISOString()}
+              startDateTime={toSafeIsoDateTime(timeframe.start, timeframe.end)}
+              endDateTime={toSafeIsoDateTime(timeframe.end)}
               bounds={pickerBounds}
               onApply={handleApply}
               className="p-3 w-56 max-md:w-full"

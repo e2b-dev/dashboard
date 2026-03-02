@@ -5,7 +5,163 @@ import {
   millisecondsInMinute,
   millisecondsInSecond,
 } from 'date-fns/constants'
-import { SANDBOX_MONITORING_MIN_RANGE_MS } from './constants'
+import {
+  SANDBOX_MONITORING_DEFAULT_RANGE_MS,
+  SANDBOX_MONITORING_MAX_RANGE_MS,
+  SANDBOX_MONITORING_MAX_TIMESTAMP_MS,
+  SANDBOX_MONITORING_MIN_RANGE_MS,
+  SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
+  SANDBOX_MONITORING_QUERY_LIVE_FALSE,
+  SANDBOX_MONITORING_QUERY_LIVE_TRUE,
+} from './constants'
+
+export interface NormalizedMonitoringTimeframe {
+  start: number
+  end: number
+}
+
+export interface MonitoringQueryState {
+  start: number | null
+  end: number | null
+  live: boolean | null
+}
+
+interface NormalizeMonitoringTimeframeInput {
+  start: number
+  end: number
+  now?: number
+  minRangeMs?: number
+  maxRangeMs?: number
+}
+
+interface ParseMonitoringQueryStateInput {
+  start: string | null
+  end: string | null
+  live: string | null
+}
+
+function clampToBounds(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return max
+  }
+
+  return Math.max(min, Math.min(max, Math.floor(value)))
+}
+
+function parseTimestampParam(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+  if (!/^-?\d+$/.test(normalizedValue)) {
+    return null
+  }
+
+  const parsed = Number(normalizedValue)
+  if (!Number.isFinite(parsed)) {
+    return null
+  }
+
+  if (
+    parsed < SANDBOX_MONITORING_MIN_TIMESTAMP_MS ||
+    parsed > SANDBOX_MONITORING_MAX_TIMESTAMP_MS
+  ) {
+    return null
+  }
+
+  return parsed
+}
+
+function parseLiveParam(value: string | null): boolean | null {
+  if (value === SANDBOX_MONITORING_QUERY_LIVE_TRUE) {
+    return true
+  }
+
+  if (value === SANDBOX_MONITORING_QUERY_LIVE_FALSE) {
+    return false
+  }
+
+  return null
+}
+
+function parseDateTimestampMs(value: string | null | undefined): number | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = new Date(value).getTime()
+  if (!Number.isFinite(parsed)) {
+    return null
+  }
+
+  return parsed
+}
+
+export function parseMonitoringQueryState({
+  start,
+  end,
+  live,
+}: ParseMonitoringQueryStateInput): MonitoringQueryState {
+  return {
+    start: parseTimestampParam(start),
+    end: parseTimestampParam(end),
+    live: parseLiveParam(live),
+  }
+}
+
+export function normalizeMonitoringTimeframe({
+  start,
+  end,
+  now = Date.now(),
+  minRangeMs = SANDBOX_MONITORING_MIN_RANGE_MS,
+  maxRangeMs = SANDBOX_MONITORING_MAX_RANGE_MS,
+}: NormalizeMonitoringTimeframeInput): NormalizedMonitoringTimeframe {
+  const safeNow = clampToBounds(
+    now,
+    SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
+    SANDBOX_MONITORING_MAX_TIMESTAMP_MS
+  )
+  const safeMinBound = SANDBOX_MONITORING_MIN_TIMESTAMP_MS
+  const safeMaxBound = safeNow
+  const fallbackEnd = safeNow
+  const fallbackStart = fallbackEnd - SANDBOX_MONITORING_DEFAULT_RANGE_MS
+
+  let safeStart = Number.isFinite(start) ? start : fallbackStart
+  let safeEnd = Number.isFinite(end) ? end : fallbackEnd
+
+  safeStart = clampToBounds(safeStart, safeMinBound, safeMaxBound)
+  safeEnd = clampToBounds(safeEnd, safeMinBound, safeMaxBound)
+
+  if (safeEnd < safeStart) {
+    ;[safeStart, safeEnd] = [safeEnd, safeStart]
+  }
+
+  if (safeEnd - safeStart > maxRangeMs) {
+    safeStart = safeEnd - maxRangeMs
+  }
+
+  if (safeEnd - safeStart < minRangeMs) {
+    safeStart = safeEnd - minRangeMs
+  }
+
+  safeStart = clampToBounds(safeStart, safeMinBound, safeMaxBound)
+  safeEnd = clampToBounds(safeEnd, safeMinBound, safeMaxBound)
+
+  if (safeEnd - safeStart < minRangeMs) {
+    safeEnd = clampToBounds(safeStart + minRangeMs, safeMinBound, safeMaxBound)
+    safeStart = clampToBounds(safeEnd - minRangeMs, safeMinBound, safeMaxBound)
+  }
+
+  if (safeEnd - safeStart > maxRangeMs) {
+    safeStart = safeEnd - maxRangeMs
+  }
+
+  return {
+    start: safeStart,
+    end: safeEnd,
+  }
+}
 
 export function calculateStepForRange(startMs: number, endMs: number): number {
   const duration = endMs - startMs
@@ -36,33 +192,27 @@ export interface SandboxLifecycleBounds {
 }
 
 export function getSandboxLifecycleBounds(
-  sandboxInfo: SandboxDetailsDTO,
+  sandboxInfo: Pick<SandboxDetailsDTO, 'startedAt' | 'endAt' | 'state'>,
   now: number = Date.now()
 ): SandboxLifecycleBounds | null {
-  const startMs = new Date(sandboxInfo.startedAt).getTime()
+  const startMs = parseDateTimestampMs(sandboxInfo.startedAt)
   const isRunning = sandboxInfo.state === 'running'
 
-  if (!Number.isFinite(startMs)) {
+  if (startMs === null) {
     return null
   }
 
-  let endAt: string
-  if (sandboxInfo.state === 'killed') {
-    if (!sandboxInfo.endAt) {
-      return null
-    }
-    endAt = sandboxInfo.endAt
-  } else {
-    endAt = sandboxInfo.endAt
-  }
-
-  const endMs = new Date(endAt).getTime()
-
-  if (!Number.isFinite(endMs)) {
+  const endMs = parseDateTimestampMs(sandboxInfo.endAt)
+  if (endMs === null) {
     return null
   }
 
-  const anchorEndMs = isRunning ? Math.min(now, endMs) : endMs
+  const safeNow = clampToBounds(
+    now,
+    SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
+    SANDBOX_MONITORING_MAX_TIMESTAMP_MS
+  )
+  const anchorEndMs = Math.min(safeNow, endMs)
 
   const normalizedStart = Math.floor(Math.min(startMs, anchorEndMs))
   const normalizedEnd = Math.floor(Math.max(startMs, anchorEndMs))
