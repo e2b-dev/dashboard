@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { buildTimelineCategories } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
 import {
+  SANDBOX_MONITORING_CHART_MAX_POINTS,
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
   SANDBOX_MONITORING_MIN_RANGE_MS,
-  SANDBOX_MONITORING_CHART_MAX_POINTS,
 } from '@/features/dashboard/sandbox/monitoring/utils/constants'
-import { buildTimelineCategories } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
 import {
   getSandboxLifecycleBounds,
   normalizeMonitoringTimeframe,
