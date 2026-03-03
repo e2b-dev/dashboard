@@ -228,8 +228,9 @@ function FiltersRow({
   onSearchChange,
 }: FiltersRowProps) {
   return (
-    <div className="flex w-full min-h-0 justify-between gap-3">
+    <div className="flex w-full min-h-0 items-center gap-3">
       <LogLevelFilter
+        className="w-auto shrink-0"
         level={level}
         onLevelChange={onLevelChange}
         renderOption={(optionLevel) => <LogLevel level={optionLevel} />}
@@ -238,6 +239,7 @@ function FiltersRow({
         value={search}
         onChange={(value) => onSearchChange(String(value))}
         placeholder="Filter log message..."
+        maxLength={256}
         className="h-9 max-w-sm"
       />
     </div>

@@ -22,6 +22,7 @@ interface LogLevelFilterProps {
   onLevelChange: (level: LogLevelValue | null) => void
   options?: Array<{ value: LogLevelValue; label: string }>
   renderOption?: (level: LogLevelValue) => ReactNode
+  className?: string
 }
 
 export function LogLevelFilter({
@@ -29,12 +30,13 @@ export function LogLevelFilter({
   onLevelChange,
   options = DEFAULT_OPTIONS,
   renderOption,
+  className,
 }: LogLevelFilterProps) {
   const selectedLevel = level ?? 'debug'
   const selectedLabel = options.find((o) => o.value === selectedLevel)?.label
 
   return (
-    <div className="flex w-full min-h-0 justify-between gap-3">
+    <div className={cn('flex w-full min-h-0 justify-between gap-3', className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

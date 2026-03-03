@@ -44,7 +44,7 @@ export const sandboxRouter = createTRPCRouter({
         sandboxId: z.string(),
         cursor: z.number().optional(),
         level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
-        search: z.string().optional(),
+        search: z.string().max(256).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -86,7 +86,7 @@ export const sandboxRouter = createTRPCRouter({
         sandboxId: z.string(),
         cursor: z.number().optional(),
         level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
-        search: z.string().optional(),
+        search: z.string().max(256).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
