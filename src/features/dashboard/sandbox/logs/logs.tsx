@@ -233,15 +233,25 @@ function useFilterRefetchTracking(
 ) {
   const [isRefetchingFromFilterChange, setIsRefetching] = useState(false)
   const isInitialRender = useRef(true)
+  const previousLevelRef = useRef<SandboxLogLevelFilter | null>(level)
+  const previousSearchRef = useRef(search)
 
   useEffect(() => {
-    void level
-    void search
     if (isInitialRender.current) {
       isInitialRender.current = false
+      previousLevelRef.current = level
+      previousSearchRef.current = search
       return
     }
-    setIsRefetching(true)
+
+    const levelChanged = previousLevelRef.current !== level
+    const searchChanged = previousSearchRef.current !== search
+
+    if (levelChanged || searchChanged) {
+      previousLevelRef.current = level
+      previousSearchRef.current = search
+      setIsRefetching(true)
+    }
   }, [level, search])
 
   const onFetchComplete = useCallback(() => setIsRefetching(false), [])

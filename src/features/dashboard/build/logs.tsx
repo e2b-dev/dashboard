@@ -199,14 +199,19 @@ function LogsContent({
 function useFilterRefetchTracking(level: BuildLogLevelFilter | null) {
   const [isRefetchingFromFilterChange, setIsRefetching] = useState(false)
   const isInitialRender = useRef(true)
+  const previousLevelRef = useRef<BuildLogLevelFilter | null>(level)
 
   useEffect(() => {
-    void level
     if (isInitialRender.current) {
       isInitialRender.current = false
+      previousLevelRef.current = level
       return
     }
-    setIsRefetching(true)
+
+    if (previousLevelRef.current !== level) {
+      previousLevelRef.current = level
+      setIsRefetching(true)
+    }
   }, [level])
 
   const onFetchComplete = useCallback(() => setIsRefetching(false), [])
