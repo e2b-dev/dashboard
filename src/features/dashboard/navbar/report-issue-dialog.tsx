@@ -1,5 +1,14 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Paperclip, X } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useAction } from 'next-safe-action/hooks'
+import { usePostHog } from 'posthog-js/react'
+import { useCallback, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import { useDashboard } from '@/features/dashboard/context'
 import { contactSupportAction } from '@/server/support/support-actions'
 import { Button } from '@/ui/primitives/button'
@@ -21,15 +30,6 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Textarea } from '@/ui/primitives/textarea'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Paperclip, X } from 'lucide-react'
-import { useAction } from 'next-safe-action/hooks'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { usePostHog } from 'posthog-js/react'
-import { useCallback, useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 import FileDropZone from './file-drop-zone'
 
 const MAX_ATTACHMENTS = 5
@@ -68,7 +68,9 @@ export default function ContactSupportDialog({
       const params = new URLSearchParams(searchParams.toString())
       params.delete('support')
       const query = params.toString()
-      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, {
+        scroll: false,
+      })
     }
   }, [searchParams, router, pathname])
 
@@ -100,7 +102,9 @@ export default function ContactSupportDialog({
         }, 100)
       },
       onError: ({ error }) => {
-        toast.error(error.serverError ?? 'Failed to send message. Please try again.')
+        toast.error(
+          error.serverError ?? 'Failed to send message. Please try again.'
+        )
       },
     }
   )
@@ -126,20 +130,19 @@ export default function ContactSupportDialog({
     [posthog, wasSubmitted, resetForm]
   )
 
-  const handleFilesSelected = useCallback(
-    (newFiles: File[]) => {
-      const oversized = newFiles.filter((f) => f.size > MAX_FILE_SIZE)
-      if (oversized.length > 0) {
-        toast.error(`${oversized.length} file${oversized.length > 1 ? 's' : ''} exceeded the 10MB limit and ${oversized.length > 1 ? 'were' : 'was'} not added.`)
-      }
-      const valid = newFiles.filter((f) => f.size <= MAX_FILE_SIZE)
-      setFiles((prev) => {
-        const remaining = MAX_ATTACHMENTS - prev.length
-        return [...prev, ...valid.slice(0, remaining)]
-      })
-    },
-    []
-  )
+  const handleFilesSelected = useCallback((newFiles: File[]) => {
+    const oversized = newFiles.filter((f) => f.size > MAX_FILE_SIZE)
+    if (oversized.length > 0) {
+      toast.error(
+        `${oversized.length} file${oversized.length > 1 ? 's' : ''} exceeded the 10MB limit and ${oversized.length > 1 ? 'were' : 'was'} not added.`
+      )
+    }
+    const valid = newFiles.filter((f) => f.size <= MAX_FILE_SIZE)
+    setFiles((prev) => {
+      const remaining = MAX_ATTACHMENTS - prev.length
+      return [...prev, ...valid.slice(0, remaining)]
+    })
+  }, [])
 
   const removeFile = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index))

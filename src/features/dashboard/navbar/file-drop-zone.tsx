@@ -1,8 +1,8 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { Upload } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface FileDropZoneProps {
   onFilesSelected: (files: File[]) => void
@@ -84,24 +84,20 @@ export default function FileDropZone({
   const isDisabled = disabled || remaining <= 0
 
   return (
-    <div
-      role="button"
-      tabIndex={isDisabled ? -1 : 0}
+    <button
+      type="button"
+      disabled={isDisabled}
       onClick={handleClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleClick()
-        }
-      }}
       onDragOver={handleDragOver}
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 border border-dashed p-4 transition-colors cursor-pointer',
+        'flex w-full flex-col items-center justify-center gap-1.5 border border-dashed p-4 transition-colors cursor-pointer',
         isDragOver && 'border-fg-accent bg-bg-accent/10',
-        !isDragOver && !isDisabled && 'border-stroke hover:border-fg-tertiary hover:bg-bg-hover',
+        !isDragOver &&
+          !isDisabled &&
+          'border-stroke hover:border-fg-tertiary hover:bg-bg-hover',
         isDisabled && 'cursor-not-allowed opacity-50 border-stroke'
       )}
     >
@@ -115,7 +111,8 @@ export default function FileDropZone({
       </p>
       {remaining > 0 && !isUploading && (
         <p className="text-xs text-fg-tertiary">
-          Up to {remaining} more file{remaining !== 1 ? 's' : ''} (max 10MB each)
+          Up to {remaining} more file{remaining !== 1 ? 's' : ''} (max 10MB
+          each)
         </p>
       )}
       <input
@@ -127,6 +124,6 @@ export default function FileDropZone({
         className="hidden"
         disabled={isDisabled}
       />
-    </div>
+    </button>
   )
 }

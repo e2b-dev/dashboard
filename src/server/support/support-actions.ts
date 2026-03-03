@@ -1,12 +1,12 @@
 'use server'
 
+import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
+import { z } from 'zod'
+import { zfd } from 'zod-form-data'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { ActionError } from '@/lib/utils/action'
-import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
-import { z } from 'zod'
-import { zfd } from 'zod-form-data'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
 const MAX_FILES = 5
@@ -34,7 +34,13 @@ function formatThreadText(input: {
   accountOwnerEmail: string
   customerTier: string
 }): string {
-  const { description, teamId, customerEmail, accountOwnerEmail, customerTier } = input
+  const {
+    description,
+    teamId,
+    customerEmail,
+    accountOwnerEmail,
+    customerTier,
+  } = input
 
   const header = [
     '########',
@@ -113,7 +119,9 @@ async function uploadAttachmentToPlain(
   })
 
   if (!uploadResponse.ok) {
-    const responseText = await uploadResponse.text().catch(() => 'unable to read response body')
+    const responseText = await uploadResponse
+      .text()
+      .catch(() => 'unable to read response body')
     l.error(
       {
         key: 'support:contact:attachment_upload_failed',
