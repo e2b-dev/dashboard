@@ -2207,14 +2207,13 @@ export interface components {
       maskRequestHost?: string
     }
     /**
-     * @description Auto-resume policy for paused sandboxes. Default is off.
-     * @default off
-     * @enum {string}
+     * @description Auto-resume enabled flag for paused sandboxes. Default false.
+     * @default false
      */
-    SandboxAutoResumePolicy: 'any' | 'off'
-    /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+    SandboxAutoResumeEnabled: boolean
+    /** @description Auto-resume configuration for paused sandboxes. */
     SandboxAutoResumeConfig: {
-      policy: components['schemas']['SandboxAutoResumePolicy']
+      enabled: components['schemas']['SandboxAutoResumeEnabled']
     }
     /** @description Log entry with timestamp and line */
     SandboxLog: {
