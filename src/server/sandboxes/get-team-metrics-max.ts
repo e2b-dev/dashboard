@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_TEAM_METRICS_MAX_DATA } from '@/configs/mock-data'
@@ -9,7 +10,6 @@ import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { z } from 'zod'
 
 export const GetTeamMetricsMaxSchema = z
   .object({

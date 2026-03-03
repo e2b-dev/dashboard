@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -34,6 +34,7 @@
   --protected-navbar-height: 32px;
   --protected-sidebar-width: 0px;
   --protected-statusbar-height: 36px;
+  --protected-footer-height: var(--protected-statusbar-height);
 
   --shadow: hsl(0 0% 90%);
   --shadow-strength: 0.3;
@@ -251,6 +252,7 @@
   --height-protected-navbar: var(--protected-navbar-height);
   --width-protected-sidebar: var(--protected-sidebar-width);
   --height-protected-statusbar: var(--protected-statusbar-height);
+  --height-protected-footer: var(--protected-footer-height);
 
   /* Colors */
   --color-ring: var(--stroke-active);
@@ -357,13 +359,13 @@
 
   /* Font Family */
   --font-sans:
-    'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono:
-    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
-  --font-fira-code: 'Fira Code', monospace;
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --font-fira-code: "Fira Code", monospace;
 
   /* Animations */
   @keyframes accordion-down {
@@ -431,37 +433,37 @@
 
   @keyframes loader-slash {
     0% {
-      content: '|';
+      content: "|";
     }
     25% {
-      content: '/';
+      content: "/";
     }
     50% {
-      content: '-';
+      content: "-";
     }
     75% {
-      content: '\\';
+      content: "\\";
     }
     100% {
-      content: '|';
+      content: "|";
     }
   }
 
   @keyframes loader-square {
     0% {
-      content: '◰';
+      content: "◰";
     }
     25% {
-      content: '◳';
+      content: "◳";
     }
     50% {
-      content: '◲';
+      content: "◲";
     }
     75% {
-      content: '◱';
+      content: "◱";
     }
     100% {
-      content: '◰';
+      content: "◰";
     }
   }
 
@@ -598,4 +600,3 @@
 @utility loader-xl {
   font-size: 1.5rem;
 }
-

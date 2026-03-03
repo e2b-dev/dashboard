@@ -1,3 +1,4 @@
+import { type FC, Suspense } from 'react'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Loader } from '@/ui/primitives/loader_d'
@@ -9,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { FC, Suspense } from 'react'
 import MemberTableBody from './member-table-body'
 
 interface MemberTableProps {

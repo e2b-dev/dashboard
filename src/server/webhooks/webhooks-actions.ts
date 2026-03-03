@@ -1,13 +1,13 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
 import {
   DeleteWebhookSchema,
   UpdateWebhookSecretSchema,
@@ -99,9 +99,10 @@ export const upsertWebhookAction = authActionClient
 export const deleteWebhookAction = authActionClient
   .schema(DeleteWebhookSchema)
   .metadata({ actionName: 'deleteWebhook' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, webhookId } = parsedInput
-    const { session } = ctx
+    const { webhookId } = parsedInput
+    const { session, teamId } = ctx
 
     const accessToken = session.access_token
 
@@ -148,9 +149,10 @@ export const deleteWebhookAction = authActionClient
 export const updateWebhookSecretAction = authActionClient
   .schema(UpdateWebhookSecretSchema)
   .metadata({ actionName: 'updateWebhookSecret' })
+  .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
-    const { teamId, webhookId, signatureSecret } = parsedInput
-    const { session } = ctx
+    const { webhookId, signatureSecret } = parsedInput
+    const { session, teamId } = ctx
 
     const accessToken = session.access_token
 

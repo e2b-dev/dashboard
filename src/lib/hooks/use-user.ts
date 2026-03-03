@@ -1,6 +1,6 @@
 'use client'
 
-import { User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import useSWR from 'swr'
 import { supabase } from '../clients/supabase/client'
 

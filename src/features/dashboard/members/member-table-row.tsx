@@ -1,5 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import {
   defaultErrorToast,
@@ -7,14 +10,11 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { removeTeamMemberAction } from '@/server/team/team-actions'
-import { TeamMember } from '@/server/team/types'
+import type { TeamMember } from '@/server/team/types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Button } from '@/ui/primitives/button'
 import { TableCell, TableRow } from '@/ui/primitives/table'
-import { useAction } from 'next-safe-action/hooks'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 import { useDashboard } from '../context'
 
 interface TableRowProps {

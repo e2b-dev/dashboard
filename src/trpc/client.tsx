@@ -1,14 +1,14 @@
 'use client'
 
-import type { TRPCAppRouter } from '@/server/api/routers'
 import type { QueryClient } from '@tanstack/react-query'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createTRPCClient, httpBatchStreamLink, loggerLink } from '@trpc/client'
-import { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import { createTRPCContext } from '@trpc/tanstack-react-query'
 import { useState } from 'react'
 import SuperJSON from 'superjson'
+import type { TRPCAppRouter } from '@/server/api/routers'
 import { createQueryClient } from './query-client'
 
 export const { TRPCProvider, useTRPC, useTRPCClient } =

@@ -2,7 +2,10 @@
 
 import { useQueryStates } from 'nuqs'
 import { useCallback } from 'react'
-import { buildLogsFilterParams, LogLevelFilter } from './logs-filter-params'
+import {
+  buildLogsFilterParams,
+  type LogLevelFilter,
+} from './logs-filter-params'
 
 export default function useLogFilters() {
   const [filters, setFilters] = useQueryStates(buildLogsFilterParams, {

@@ -1,5 +1,5 @@
-import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
 import { cookies } from 'next/headers'
+import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
 
 /**
  * Sets the team ID and slug cookies for the dashboard.

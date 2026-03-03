@@ -1,12 +1,13 @@
 'use client'
 
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils/ui'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 
@@ -16,8 +17,11 @@ interface KillButtonProps {
 
 export default function KillButton({ className }: KillButtonProps) {
   const [open, setOpen] = useState(false)
-  const { sandboxInfo, refetchSandboxInfo, isRunning } = useSandboxContext()
+  const { sandboxInfo, refetchSandboxInfo } = useSandboxContext()
   const { team } = useDashboard()
+  const canKill = Boolean(
+    sandboxInfo?.sandboxID && sandboxInfo.state !== 'killed'
+  )
 
   const { execute, isExecuting } = useAction(killSandboxAction, {
     onSuccess: async () => {
@@ -33,7 +37,7 @@ export default function KillButton({ className }: KillButtonProps) {
   })
 
   const handleKill = () => {
-    if (!sandboxInfo?.sandboxID || !isRunning) return
+    if (!canKill || !sandboxInfo?.sandboxID) return
 
     execute({
       teamIdOrSlug: team.id,
@@ -50,12 +54,12 @@ export default function KillButton({ className }: KillButtonProps) {
       confirm="Kill Sandbox"
       trigger={
         <Button
-          variant="error"
-          size="sm"
-          className={className}
-          disabled={!isRunning}
+          variant="ghost"
+          size="slate"
+          className={cn('text-accent-error-highlight', className)}
+          disabled={!canKill}
         >
-          <TrashIcon className="size-4" />
+          <TrashIcon className="size-3.5" />
           Kill
         </Button>
       }

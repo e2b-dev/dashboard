@@ -1,5 +1,8 @@
 'use client'
 
+import { ArrowUpRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -9,7 +12,7 @@ import {
   formatTimeAgoCompact,
 } from '@/lib/utils/formatting'
 import type {
-  BuildStatusDTO,
+  BuildStatus,
   ListedBuildDTO,
 } from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
@@ -17,9 +20,6 @@ import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import { ArrowUpRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 
 export function BuildId({ id }: { id: string }) {
   return (
@@ -147,12 +147,12 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
 }
 
 interface StatusProps {
-  status: BuildStatusDTO
+  status: BuildStatus
 }
 
 export function Status({ status }: StatusProps) {
   const config: Record<
-    BuildStatusDTO,
+    BuildStatus,
     {
       label: string
       variant: 'default' | 'positive' | 'error'

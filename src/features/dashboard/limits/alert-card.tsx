@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { BillingLimit } from '@/types/billing.types'
+import type { BillingLimit } from '@/types/billing.types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
 import { useDashboard } from '../context'
 import LimitForm from './limit-form'

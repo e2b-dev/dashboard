@@ -1,10 +1,10 @@
 import 'server-only'
 
+import { cacheTag } from 'next/cache'
+import { serializeError } from 'serialize-error'
 import { CACHE_TAGS } from '@/configs/cache'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { cacheTag } from 'next/cache'
-import { serializeError } from 'serialize-error'
 
 export async function checkUserTeamAuth(userId: string, teamId: string) {
   const { data: userTeamsRelationData, error: userTeamsRelationError } =

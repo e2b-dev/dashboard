@@ -1,17 +1,17 @@
 'use client'
 
-import { AUTH_URLS } from '@/configs/urls'
-import { AuthFormMessage } from '@/features/auth/form-message'
-import {
-  ConfirmEmailInputSchema,
-  OtpTypeSchema,
-  type ConfirmEmailInput,
-  type OtpType,
-} from '@/server/api/models/auth.models'
-import { Button } from '@/ui/primitives/button'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useTransition } from 'react'
+import { AUTH_URLS } from '@/configs/urls'
+import { AuthFormMessage } from '@/features/auth/form-message'
+import {
+  type ConfirmEmailInput,
+  ConfirmEmailInputSchema,
+  type OtpType,
+  OtpTypeSchema,
+} from '@/server/api/models/auth.models'
+import { Button } from '@/ui/primitives/button'
 
 const OTP_TYPE_LABELS: Record<OtpType, string> = {
   signup: 'Welcome to E2B',

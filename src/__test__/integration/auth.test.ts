@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { encodedRedirect } from '@/lib/utils/auth'
 import {
@@ -7,13 +9,15 @@ import {
   signOutAction,
   signUpAction,
 } from '@/server/auth/auth-actions'
-import { redirect } from 'next/navigation'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Create hoisted mock functions that can be used throughout the file
 const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({
   validateEmail: vi.fn(),
   shouldWarnAboutAlternateEmail: vi.fn(),
+}))
+
+const { verifyTurnstileToken } = vi.hoisted(() => ({
+  verifyTurnstileToken: vi.fn(),
 }))
 
 // Mock console.error to prevent output during tests
@@ -22,10 +26,11 @@ console.error = vi.fn()
 
 // Mock global fetch for health check
 const originalFetch = global.fetch
-global.fetch = vi.fn().mockResolvedValue({
+const fetchMock = vi.fn().mockResolvedValue({
   ok: true,
   json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
 })
+global.fetch = fetchMock as unknown as typeof fetch
 
 // Mock Supabase client
 const mockSupabaseClient = {
@@ -78,14 +83,19 @@ vi.mock('@/server/auth/validate-email', () => ({
   shouldWarnAboutAlternateEmail,
 }))
 
+vi.mock('@/lib/captcha/turnstile', () => ({
+  verifyTurnstileToken,
+}))
+
 describe('Auth Actions - Integration Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     // Set up fetch mock for health check
-    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
     })
+    verifyTurnstileToken.mockResolvedValue(true)
   })
 
   afterEach(() => {
@@ -149,7 +159,6 @@ describe('Auth Actions - Integration Tests', () => {
 
       expect(result?.validationErrors?.fieldErrors.returnTo).toBeDefined()
     })
-
 
     it('should throw validation error if returnTo is a malicious URL', async () => {
       mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
@@ -220,6 +229,7 @@ describe('Auth Actions - Integration Tests', () => {
         email: 'newuser@example.com',
         password: 'Password123!',
         confirmPassword: 'Password123!',
+        captchaToken: 'test-captcha-token',
       })
 
       // Verify: Check that encodedRedirect was called with success message
@@ -238,6 +248,7 @@ describe('Auth Actions - Integration Tests', () => {
         email: 'newuser@example.com',
         password: 'Password123!',
         confirmPassword: 'DifferentPassword!',
+        captchaToken: 'test-captcha-token',
       })
 
       // Verify: Check that encodedRedirect was called with error message
@@ -292,6 +303,7 @@ describe('Auth Actions - Integration Tests', () => {
         email: 'newuser@example.com',
         password: 'Password123!',
         confirmPassword: 'Password123!',
+        captchaToken: 'test-captcha-token',
       })
 
       // Verify: Check that encodedRedirect was called with error message

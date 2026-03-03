@@ -1,5 +1,7 @@
 'use client'
 
+import { Book, Github, LifeBuoy, MessageSquarePlus } from 'lucide-react'
+import Link from 'next/link'
 import {
   INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
   INCLUDE_REPORT_ISSUE,
@@ -15,8 +17,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Github, LifeBuoy, MessageSquarePlus } from 'lucide-react'
-import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import ContactSupportDialog from '../navbar/report-issue-dialog'
 import TeamBlockageAlert from './blocked-banner'
@@ -67,7 +67,7 @@ export default function DashboardSidebarFooter() {
       {(INCLUDE_DASHBOARD_FEEDBACK_SURVEY || INCLUDE_REPORT_ISSUE) && (
         <SidebarMenu
           className={cn(
-            'flex-row gap-0 border-t group-data-[collapsible=icon]:flex-col',
+            'h-protected-statusbar shrink-0 flex-row gap-0 border-t group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:flex-col',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
         >
@@ -85,7 +85,7 @@ export default function DashboardSidebarFooter() {
                     tooltip="Feedback"
                     variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                      'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
@@ -110,7 +110,7 @@ export default function DashboardSidebarFooter() {
                     tooltip="Contact Support"
                     variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all w-full min-h-protected-statusbar justify-center group-data-[collapsible=icon]:justify-start',
+                      'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >

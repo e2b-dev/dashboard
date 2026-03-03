@@ -1,8 +1,8 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { getDashboardLayoutConfig } from '@/configs/layout'
 import { CatchErrorBoundary } from '@/ui/error'
-import { usePathname } from 'next/navigation'
 
 export function DefaultDashboardLayout({
   children,

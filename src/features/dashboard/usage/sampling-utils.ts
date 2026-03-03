@@ -1,10 +1,10 @@
-import { UsageResponse } from '@/types/billing.types'
 import { startOfISOWeek } from 'date-fns'
+import type { UsageResponse } from '@/types/billing.types'
 import {
   HOURLY_SAMPLING_THRESHOLD_DAYS,
   WEEKLY_SAMPLING_THRESHOLD_DAYS,
 } from './constants'
-import { SampledDataPoint, SamplingMode, Timeframe } from './types'
+import type { SampledDataPoint, SamplingMode, Timeframe } from './types'
 
 export function determineSamplingMode(timeframe: Timeframe): SamplingMode {
   const rangeDays = (timeframe.end - timeframe.start) / (24 * 60 * 60 * 1000)
@@ -79,11 +79,12 @@ export function normalizeToEndOfSamplingPeriod(
       date.setHours(23, 59, 59, 999)
       return date.getTime()
 
-    case 'weekly':
+    case 'weekly': {
       const weekStart = startOfISOWeek(date)
       weekStart.setDate(weekStart.getDate() + 6)
       weekStart.setHours(23, 59, 59, 999)
       return weekStart.getTime()
+    }
   }
 }
 

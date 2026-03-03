@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react'
 import CreateApiKeyDialog from '@/features/dashboard/settings/keys/create-api-key-dialog'
 import ApiKeysTable from '@/features/dashboard/settings/keys/table'
 import Frame from '@/ui/frame'
@@ -9,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Plus } from 'lucide-react'
 
 interface KeysPageClientProps {
   params: Promise<{

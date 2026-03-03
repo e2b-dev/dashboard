@@ -1,8 +1,8 @@
 import 'server-cli-only'
 
+import { serializeError } from 'serialize-error'
 import { l } from '@/lib/clients/logger/logger'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { serializeError } from 'serialize-error'
 
 export async function getDefaultTeamRelation(userId: string) {
   const { data, error } = await supabaseAdmin

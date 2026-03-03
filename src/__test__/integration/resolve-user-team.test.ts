@@ -1,5 +1,5 @@
-import { COOKIE_KEYS } from '@/configs/cookies'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { COOKIE_KEYS } from '@/configs/cookies'
 
 /**
  * Integration tests for resolveUserTeam function

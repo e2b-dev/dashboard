@@ -1,5 +1,9 @@
 'use client'
 
+import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
+import { motion } from 'motion/react'
+import Link from 'next/link'
+import { useEffect } from 'react'
 import { HELP_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { CodeBlock } from '@/ui/code-block'
@@ -14,10 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
-import { motion } from 'motion/react'
-import Link from 'next/link'
-import { useEffect } from 'react'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string

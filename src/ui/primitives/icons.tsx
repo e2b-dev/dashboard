@@ -1,5 +1,5 @@
+import type React from 'react'
 import { cn } from '@/lib/utils/index'
-import React from 'react'
 
 const DEFAULT_CLASS_NAMES = 'size-6'
 
@@ -1221,6 +1221,23 @@ export const ListIcon = ({ className, ...props }: IconProps) => (
       fill="currentColor"
       x="2.6665"
       y="10"
+    />
+  </svg>
+)
+
+export const StorageIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M3.33301 10H12.6663M8.66634 12H8.67301M10.6663 12H10.673M3.33301 2H12.6663V14H3.33301V2Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
     />
   </svg>
 )

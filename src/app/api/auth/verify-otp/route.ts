@@ -1,3 +1,5 @@
+import { type NextRequest, NextResponse } from 'next/server'
+import { flattenError } from 'zod'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { isExternalOrigin } from '@/lib/utils/auth'
@@ -6,8 +8,6 @@ import {
   type OtpType,
 } from '@/server/api/models/auth.models'
 import { authRepo } from '@/server/api/repositories/auth.repository'
-import { NextRequest, NextResponse } from 'next/server'
-import { flattenError } from 'zod'
 
 /**
  * Determines the redirect URL based on OTP type.

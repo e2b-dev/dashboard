@@ -1,5 +1,5 @@
 import { formatAxisNumber } from '@/lib/utils/formatting'
-import { ClientTeamMetric } from '@/types/sandboxes.types'
+import type { ClientTeamMetric } from '@/types/sandboxes.types'
 import type { TeamMetricDataPoint } from './types'
 
 /**

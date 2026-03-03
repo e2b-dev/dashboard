@@ -1,18 +1,18 @@
+import type { Span } from '@opentelemetry/api'
+import {
+  type Counter,
+  context,
+  type Histogram,
+  SpanStatusCode,
+  trace,
+} from '@opentelemetry/api'
+import type { User } from '@supabase/supabase-js'
+import { TRPCError } from '@trpc/server'
+import { serializeError } from 'serialize-error'
 import { l } from '@/lib/clients/logger/logger'
 import { getMeter } from '@/lib/clients/meter'
 import { getTracer } from '@/lib/clients/tracer'
 import { flattenClientInputValue } from '@/lib/utils/action'
-import type { Span } from '@opentelemetry/api'
-import {
-  context,
-  Counter,
-  Histogram,
-  SpanStatusCode,
-  trace,
-} from '@opentelemetry/api'
-import { User } from '@supabase/supabase-js'
-import { TRPCError } from '@trpc/server'
-import { serializeError } from 'serialize-error'
 import { internalServerError } from '../errors'
 import { t } from '../init'
 

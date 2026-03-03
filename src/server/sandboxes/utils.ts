@@ -1,6 +1,6 @@
 import { TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS } from '@/configs/intervals'
-import { SandboxesMetricsRecord } from '@/types/api.types'
-import {
+import type { SandboxesMetricsRecord } from '@/types/api.types'
+import type {
   ClientSandboxesMetrics,
   ClientTeamMetrics,
 } from '@/types/sandboxes.types'
