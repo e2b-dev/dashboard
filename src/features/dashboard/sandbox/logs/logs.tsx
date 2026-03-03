@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { cn } from '@/lib/utils'
 import { LOG_RETENTION_MS } from '@/configs/logs'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
@@ -26,6 +25,7 @@ import {
   LogsTableHeader,
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
+import { cn } from '@/lib/utils'
 import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
