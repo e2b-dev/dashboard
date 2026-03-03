@@ -10,6 +10,7 @@ import {
   dropLeadingAtTimestamp,
   dropTrailingAtTimestamp,
 } from '../../common/log-timestamp-utils'
+import type { LogLevelFilter } from './logs-filter-params'
 
 interface SandboxLogsParams {
   teamIdOrSlug: string
@@ -30,6 +31,8 @@ interface SandboxLogsState {
   isInitialized: boolean
   hasCompletedInitialLoad: boolean
   initialLoadError: string | null
+  level: LogLevelFilter | null
+  search: string
 
   _trpcClient: TRPCClient | null
   _params: SandboxLogsParams | null
@@ -37,7 +40,12 @@ interface SandboxLogsState {
 }
 
 interface SandboxLogsMutations {
-  init: (trpcClient: TRPCClient, params: SandboxLogsParams) => Promise<void>
+  init: (
+    trpcClient: TRPCClient,
+    params: SandboxLogsParams,
+    level: LogLevelFilter | null,
+    search: string
+  ) => Promise<void>
   fetchMoreBackwards: () => Promise<void>
   fetchMoreForwards: () => Promise<{ logsCount: number }>
   reset: () => void
@@ -58,6 +66,8 @@ const initialState: SandboxLogsState = {
   isInitialized: false,
   hasCompletedInitialLoad: false,
   initialLoadError: null,
+  level: null,
+  search: '',
   _trpcClient: null,
   _params: null,
   _initVersion: 0,
@@ -81,18 +91,21 @@ export const createSandboxLogsStore = () =>
           state.isInitialized = false
           state.hasCompletedInitialLoad = false
           state.initialLoadError = null
+          state.level = null
+          state.search = ''
         })
       },
 
-      init: async (trpcClient, params) => {
+      init: async (trpcClient, params, level, search) => {
         const state = get()
 
         // reset if params changed
         const paramsChanged =
           state._params?.sandboxId !== params.sandboxId ||
           state._params?.teamIdOrSlug !== params.teamIdOrSlug
+        const filterChanged = state.level !== level || state.search !== search
 
-        if (paramsChanged || !state.isInitialized) {
+        if (paramsChanged || filterChanged || !state.isInitialized) {
           get().reset()
         }
 
@@ -102,6 +115,8 @@ export const createSandboxLogsStore = () =>
         set((s) => {
           s._trpcClient = trpcClient
           s._params = params
+          s.level = level
+          s.search = search
           s.isLoadingBackwards = true
           s.initialLoadError = null
           s._initVersion = requestVersion
@@ -114,6 +129,8 @@ export const createSandboxLogsStore = () =>
             teamIdOrSlug: params.teamIdOrSlug,
             sandboxId: params.sandboxId,
             cursor: initCursor,
+            level: level ?? undefined,
+            search: search || undefined,
           })
 
           // ignore stale response if a newer init was called
@@ -194,6 +211,8 @@ export const createSandboxLogsStore = () =>
               teamIdOrSlug: state._params.teamIdOrSlug,
               sandboxId: state._params.sandboxId,
               cursor,
+              level: state.level ?? undefined,
+              search: state.search || undefined,
             })
 
           // ignore stale response if init was called during fetch
@@ -252,6 +271,8 @@ export const createSandboxLogsStore = () =>
             teamIdOrSlug: state._params.teamIdOrSlug,
             sandboxId: state._params.sandboxId,
             cursor,
+            level: state.level ?? undefined,
+            search: state.search || undefined,
           })
 
           // ignore stale response if init was called during fetch
@@ -270,7 +291,12 @@ export const createSandboxLogsStore = () =>
             if (logsCount > 0) {
               s.logs = [...s.logs, ...newLogs]
 
-              const newestTimestamp = newLogs[logsCount - 1]!.timestampUnix
+              const newestLog = newLogs[logsCount - 1]
+              if (!newestLog) {
+                s.isLoadingForwards = false
+                return
+              }
+              const newestTimestamp = newestLog.timestampUnix
               const trailingAtNewest = countTrailingAtTimestamp(
                 newLogs,
                 newestTimestamp

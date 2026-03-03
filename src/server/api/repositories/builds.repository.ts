@@ -2,10 +2,10 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
 import { api, infra } from '@/lib/clients/api'
 import { handleDashboardApiError, handleInfraApiError } from '../errors'
-import {
+import type {
   BuildStatus,
   ListedBuildDTO,
-  type RunningBuildStatusDTO,
+  RunningBuildStatusDTO,
 } from '../models/builds.models'
 
 // helpers

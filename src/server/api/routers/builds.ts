@@ -3,9 +3,9 @@ import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constant
 import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { createTRPCRouter } from '../init'
 import {
-  BuildDetailsDTO,
-  BuildLogDTO,
-  BuildLogsDTO,
+  type BuildDetailsDTO,
+  type BuildLogDTO,
+  type BuildLogsDTO,
   BuildStatusSchema,
 } from '../models/builds.models'
 import { protectedTeamProcedure } from '../procedures'
