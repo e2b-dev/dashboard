@@ -13,7 +13,7 @@ const baseMetric = {
 >
 
 describe('buildMonitoringChartModel', () => {
-  it('should build deterministic chart data and hovered contexts', () => {
+  it('builds deterministic time-series data sorted by timestamp', () => {
     const metrics: SandboxMetric[] = [
       {
         ...baseMetric,
@@ -42,13 +42,27 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
-      hoveredIndex: 1,
+      hoveredTimestampMs: 6_000,
     })
 
-    expect(result.categories).toEqual([0, 5_000, 10_000])
     expect(result.latestMetric?.timestampUnix).toBe(10)
     expect(result.resourceSeries).toHaveLength(2)
     expect(result.diskSeries).toHaveLength(1)
+    expect(result.resourceSeries[0]?.data).toEqual([
+      [0, 10],
+      [5_000, 20],
+      [10_000, 30],
+    ])
+    expect(result.resourceSeries[1]?.data).toEqual([
+      [0, 10],
+      [5_000, 20],
+      [10_000, 30],
+    ])
+    expect(result.diskSeries[0]?.data).toEqual([
+      [0, 10],
+      [5_000, 20],
+      [10_000, 30],
+    ])
     expect(result.resourceHoveredContext).toEqual({
       cpuPercent: 20,
       ramPercent: 20,
@@ -60,29 +74,19 @@ describe('buildMonitoringChartModel', () => {
     })
   })
 
-  it('should return null hovered contexts when hovered index is invalid', () => {
-    const metrics: SandboxMetric[] = [
-      {
-        ...baseMetric,
-        timestampUnix: 1,
-        cpuUsedPct: 10,
-        memUsed: 100,
-        diskUsed: 200,
-      },
-    ]
-
+  it('returns null hovered contexts when no data is available', () => {
     const result = buildMonitoringChartModel({
-      metrics,
+      metrics: [],
       startMs: 0,
       endMs: 10_000,
-      hoveredIndex: 10,
+      hoveredTimestampMs: 1_000,
     })
 
     expect(result.resourceHoveredContext).toBeNull()
     expect(result.diskHoveredContext).toBeNull()
   })
 
-  it('should ignore metrics outside selected timeframe', () => {
+  it('filters out metrics outside range and invalid timestamps', () => {
     const metrics: SandboxMetric[] = [
       {
         ...baseMetric,
@@ -90,6 +94,13 @@ describe('buildMonitoringChartModel', () => {
         cpuUsedPct: 5,
         memUsed: 50,
         diskUsed: 100,
+      },
+      {
+        ...baseMetric,
+        timestampUnix: Number.NaN,
+        cpuUsedPct: 55,
+        memUsed: 550,
+        diskUsed: 1_100,
       },
       {
         ...baseMetric,
@@ -104,9 +115,11 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
-      hoveredIndex: null,
+      hoveredTimestampMs: null,
     })
 
     expect(result.latestMetric?.timestampUnix).toBe(1)
+    expect(result.resourceSeries[0]?.data).toEqual([[1_000, 5]])
+    expect(result.diskSeries[0]?.data).toEqual([[1_000, 5]])
   })
 })

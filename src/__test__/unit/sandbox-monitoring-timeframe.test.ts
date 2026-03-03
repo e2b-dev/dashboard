@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTimelineCategories } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
 import {
-  SANDBOX_MONITORING_CHART_MAX_POINTS,
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
   SANDBOX_MONITORING_MIN_RANGE_MS,
@@ -63,25 +61,6 @@ describe('sandbox-monitoring-timeframe', () => {
 
       expect(result.end).toBe(now)
       expect(result.start).toBe(now - SANDBOX_MONITORING_MIN_RANGE_MS)
-    })
-  })
-
-  describe('buildTimelineCategories', () => {
-    it('should cap category count for very large ranges', () => {
-      const end = 31 * 24 * 60 * 60 * 1_000
-
-      const categories = buildTimelineCategories(0, end)
-
-      expect(categories.length).toBeLessThanOrEqual(
-        SANDBOX_MONITORING_CHART_MAX_POINTS
-      )
-      expect(categories[0]).toBe(0)
-      expect(categories[categories.length - 1]).toBe(end)
-    })
-
-    it('should return empty categories for invalid timestamps', () => {
-      const categories = buildTimelineCategories(Number.NaN, Number.NaN)
-      expect(categories).toEqual([])
     })
   })
 

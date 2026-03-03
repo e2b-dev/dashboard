@@ -1,12 +1,12 @@
 'use client'
 
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSandboxContext } from '@/features/dashboard/sandbox/context'
 import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import { useTRPCClient } from '@/trpc/client'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_LIVE_POLLING_MS,
@@ -71,7 +71,9 @@ function toTimeframe(start: number, end: number): SandboxMonitoringTimeframe {
   }
 }
 
-function getDefaultTimeframe(now: number = Date.now()): SandboxMonitoringTimeframe {
+function getDefaultTimeframe(
+  now: number = Date.now()
+): SandboxMonitoringTimeframe {
   const normalized = normalizeMonitoringTimeframe({
     start: now - SANDBOX_MONITORING_DEFAULT_RANGE_MS,
     end: now,
@@ -195,6 +197,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     undefined,
     createInitialState
   )
+  const stateRef = useRef(state)
   const durationRef = useRef(state.timeframe.duration)
 
   const queryStart = searchParams.get(SANDBOX_MONITORING_QUERY_START_PARAM)
@@ -227,6 +230,10 @@ export function useSandboxMonitoringController(sandboxId: string) {
     })
   }, [lifecycleEndAt, lifecycleStartedAt, lifecycleState])
 
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+
   const applyTimeframe = useCallback(
     (
       start: number,
@@ -235,15 +242,24 @@ export function useSandboxMonitoringController(sandboxId: string) {
         isLiveUpdating?: boolean
       }
     ) => {
+      const currentState = stateRef.current
       const now = Date.now()
       const timeframe = resolveTimeframe(start, end, now, lifecycleBounds)
       const requestedLiveUpdating =
-        options?.isLiveUpdating ?? state.isLiveUpdating
+        options?.isLiveUpdating ?? currentState.isLiveUpdating
       const nextLiveUpdating = lifecycleBounds?.isRunning
         ? requestedLiveUpdating
         : lifecycleBounds
           ? false
           : requestedLiveUpdating
+
+      if (
+        currentState.timeframe.start === timeframe.start &&
+        currentState.timeframe.end === timeframe.end &&
+        currentState.isLiveUpdating === nextLiveUpdating
+      ) {
+        return
+      }
 
       dispatch({
         type: 'setTimeframe',
@@ -253,7 +269,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
         },
       })
     },
-    [lifecycleBounds, state.isLiveUpdating]
+    [lifecycleBounds]
   )
 
   const setLiveUpdating = useCallback(
@@ -281,15 +297,11 @@ export function useSandboxMonitoringController(sandboxId: string) {
         ? now
         : (lifecycleBounds?.anchorEndMs ?? now)
 
-      applyTimeframe(
-        anchorEndMs - state.timeframe.duration,
-        anchorEndMs,
-        {
-          isLiveUpdating: true,
-        }
-      )
+      applyTimeframe(anchorEndMs - durationRef.current, anchorEndMs, {
+        isLiveUpdating: true,
+      })
     },
-    [applyTimeframe, lifecycleBounds, state.timeframe.duration]
+    [applyTimeframe, lifecycleBounds]
   )
 
   useEffect(() => {
@@ -298,9 +310,29 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   useEffect(() => {
     const now = Date.now()
+    const currentState = stateRef.current
+    const hasExplicitRange =
+      queryState.start !== null && queryState.end !== null
     const requestedLiveUpdating = queryState.live ?? true
-    const start = queryState.start ?? now - SANDBOX_MONITORING_DEFAULT_RANGE_MS
-    const end = queryState.end ?? now
+    const start = hasExplicitRange
+      ? queryState.start
+      : currentState.isInitialized && currentState.sandboxId === sandboxId
+        ? requestedLiveUpdating
+          ? now - durationRef.current
+          : currentState.timeframe.start
+        : now - SANDBOX_MONITORING_DEFAULT_RANGE_MS
+    const end = hasExplicitRange
+      ? queryState.end
+      : currentState.isInitialized && currentState.sandboxId === sandboxId
+        ? requestedLiveUpdating
+          ? now
+          : currentState.timeframe.end
+        : now
+
+    if (start === null || end === null) {
+      return
+    }
+
     const timeframe = resolveTimeframe(start, end, now, lifecycleBounds)
 
     dispatch({
@@ -342,7 +374,10 @@ export function useSandboxMonitoringController(sandboxId: string) {
       })
     }
 
-    const intervalId = window.setInterval(tick, SANDBOX_MONITORING_LIVE_POLLING_MS)
+    const intervalId = window.setInterval(
+      tick,
+      SANDBOX_MONITORING_LIVE_POLLING_MS
+    )
 
     return () => {
       window.clearInterval(intervalId)
@@ -359,24 +394,32 @@ export function useSandboxMonitoringController(sandboxId: string) {
       return
     }
 
-    const nextStart = String(state.timeframe.start)
-    const nextEnd = String(state.timeframe.end)
     const nextLive = state.isLiveUpdating
       ? SANDBOX_MONITORING_QUERY_LIVE_TRUE
       : SANDBOX_MONITORING_QUERY_LIVE_FALSE
+    const nextStart = String(state.timeframe.start)
+    const nextEnd = String(state.timeframe.end)
+    const shouldPersistExplicitRange = !state.isLiveUpdating
 
     if (
-      queryStart === nextStart &&
-      queryEnd === nextEnd &&
-      queryLive === nextLive
+      queryLive === nextLive &&
+      (shouldPersistExplicitRange
+        ? queryStart === nextStart && queryEnd === nextEnd
+        : queryStart === null && queryEnd === null)
     ) {
       return
     }
 
     const nextParams = new URLSearchParams(searchParamsString)
-    nextParams.set(SANDBOX_MONITORING_QUERY_START_PARAM, nextStart)
-    nextParams.set(SANDBOX_MONITORING_QUERY_END_PARAM, nextEnd)
     nextParams.set(SANDBOX_MONITORING_QUERY_LIVE_PARAM, nextLive)
+
+    if (shouldPersistExplicitRange) {
+      nextParams.set(SANDBOX_MONITORING_QUERY_START_PARAM, nextStart)
+      nextParams.set(SANDBOX_MONITORING_QUERY_END_PARAM, nextEnd)
+    } else {
+      nextParams.delete(SANDBOX_MONITORING_QUERY_START_PARAM)
+      nextParams.delete(SANDBOX_MONITORING_QUERY_END_PARAM)
+    }
 
     router.replace(`${pathname}?${nextParams.toString()}`, {
       scroll: false,
@@ -395,13 +438,14 @@ export function useSandboxMonitoringController(sandboxId: string) {
   ])
 
   const queryKey = useMemo(
-    () => [
-      'sandboxMonitoringMetrics',
-      team?.id ?? '',
-      sandboxId,
-      state.timeframe.start,
-      state.timeframe.end,
-    ] as const,
+    () =>
+      [
+        'sandboxMonitoringMetrics',
+        team?.id ?? '',
+        sandboxId,
+        state.timeframe.start,
+        state.timeframe.end,
+      ] as const,
     [sandboxId, state.timeframe.end, state.timeframe.start, team?.id]
   )
 
@@ -409,6 +453,9 @@ export function useSandboxMonitoringController(sandboxId: string) {
     queryKey,
     enabled: state.isInitialized && Boolean(team?.id),
     placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: SANDBOX_MONITORING_LIVE_POLLING_MS,
     queryFn: async () => {
       if (!team?.id) {
         return []
@@ -434,6 +481,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     timeframe: state.timeframe,
     metrics: metricsQuery.data ?? [],
     isLiveUpdating: state.isLiveUpdating,
+    isRefetching: metricsQuery.isFetching,
     isLoading: metricsQuery.isLoading || metricsQuery.isFetching,
     error,
     setTimeframe: applyTimeframe,

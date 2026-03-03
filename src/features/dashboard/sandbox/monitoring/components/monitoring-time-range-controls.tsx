@@ -1,5 +1,8 @@
 'use client'
 
+import { millisecondsInHour, millisecondsInMinute } from 'date-fns/constants'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { LiveDot } from '@/ui/live'
@@ -10,14 +13,9 @@ import {
   PopoverTrigger,
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
-import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
-import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
-import {
-  millisecondsInHour,
-  millisecondsInMinute,
-} from 'date-fns/constants'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
+import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
   SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_SHORTCUT,
@@ -25,10 +23,10 @@ import {
   SANDBOX_MONITORING_FIRST_HOUR_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_ID,
   SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_ID,
-  SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_6_HOURS_PRESET_ID,
   SANDBOX_MONITORING_LAST_6_HOURS_PRESET_SHORTCUT,
+  SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_ID,
+  SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_HOUR_PRESET_ID,
   SANDBOX_MONITORING_LAST_HOUR_PRESET_SHORTCUT,
   SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS,
@@ -71,6 +69,32 @@ interface SandboxMonitoringTimeRangeControlsProps {
   className?: string
 }
 
+interface TimeRangeHistoryEntry {
+  start: number
+  end: number
+  isLiveUpdating: boolean
+}
+
+interface TimeRangeHistoryState {
+  entries: TimeRangeHistoryEntry[]
+  index: number
+}
+
+function isSameHistoryEntry(
+  a: TimeRangeHistoryEntry | undefined,
+  b: TimeRangeHistoryEntry
+): boolean {
+  if (!a) {
+    return false
+  }
+
+  return (
+    a.start === b.start &&
+    a.end === b.end &&
+    a.isLiveUpdating === b.isLiveUpdating
+  )
+}
+
 export default function SandboxMonitoringTimeRangeControls({
   timeframe,
   lifecycle,
@@ -81,6 +105,19 @@ export default function SandboxMonitoringTimeRangeControls({
 }: SandboxMonitoringTimeRangeControlsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [pickerMaxDateMs, setPickerMaxDateMs] = useState(() => Date.now())
+  const [historyState, setHistoryState] = useState<TimeRangeHistoryState>(
+    () => ({
+      entries: [
+        {
+          start: timeframe.start,
+          end: timeframe.end,
+          isLiveUpdating,
+        },
+      ],
+      index: 0,
+    })
+  )
+  const isHistoryNavigationRef = useRef(false)
 
   const clampToLifecycle = useCallback(
     (start: number, end: number) => {
@@ -88,12 +125,7 @@ export default function SandboxMonitoringTimeRangeControls({
         ? Date.now()
         : lifecycle.anchorEndMs
 
-      return clampTimeframeToBounds(
-        start,
-        end,
-        lifecycle.startMs,
-        maxBoundMs
-      )
+      return clampTimeframeToBounds(start, end, lifecycle.startMs, maxBoundMs)
     },
     [lifecycle.anchorEndMs, lifecycle.isRunning, lifecycle.startMs]
   )
@@ -228,6 +260,51 @@ export default function SandboxMonitoringTimeRangeControls({
     }
   }, [isOpen, lifecycle.isRunning])
 
+  useEffect(() => {
+    const snapshot: TimeRangeHistoryEntry = {
+      start: timeframe.start,
+      end: timeframe.end,
+      isLiveUpdating,
+    }
+
+    setHistoryState((previous) => {
+      const currentEntry = previous.entries[previous.index]
+
+      if (isSameHistoryEntry(currentEntry, snapshot)) {
+        isHistoryNavigationRef.current = false
+        return previous
+      }
+
+      if (isHistoryNavigationRef.current) {
+        isHistoryNavigationRef.current = false
+        const nextEntries = [...previous.entries]
+        nextEntries[previous.index] = snapshot
+        return {
+          entries: nextEntries,
+          index: previous.index,
+        }
+      }
+
+      if (currentEntry?.isLiveUpdating && snapshot.isLiveUpdating) {
+        return previous
+      }
+
+      const trimmedEntries = previous.entries.slice(0, previous.index + 1)
+      const lastEntry = trimmedEntries[trimmedEntries.length - 1]
+      if (isSameHistoryEntry(lastEntry, snapshot)) {
+        return {
+          entries: trimmedEntries,
+          index: trimmedEntries.length - 1,
+        }
+      }
+
+      return {
+        entries: [...trimmedEntries, snapshot],
+        index: trimmedEntries.length,
+      }
+    })
+  }, [isLiveUpdating, timeframe.end, timeframe.start])
+
   const pickerMaxDate = useMemo(
     () =>
       lifecycle.isRunning
@@ -279,23 +356,48 @@ export default function SandboxMonitoringTimeRangeControls({
     }
 
     onLiveChange(!isLiveUpdating)
-  }, [
-    isLiveUpdating,
-    lifecycle.isRunning,
-    onLiveChange,
-  ])
+  }, [isLiveUpdating, lifecycle.isRunning, onLiveChange])
+
+  const canGoBackward = historyState.index > 0
+  const canGoForward = historyState.index < historyState.entries.length - 1
+
+  const handleHistoryNavigation = useCallback(
+    (targetIndex: number) => {
+      const target = historyState.entries[targetIndex]
+      if (!target) {
+        return
+      }
+
+      isHistoryNavigationRef.current = true
+      setHistoryState((previous) => ({
+        entries: previous.entries,
+        index: targetIndex,
+      }))
+      onTimeRangeChange(target.start, target.end, {
+        isLiveUpdating: target.isLiveUpdating,
+      })
+    },
+    [historyState.entries, onTimeRangeChange]
+  )
+
+  const handleGoBackward = useCallback(() => {
+    if (!canGoBackward) {
+      return
+    }
+
+    handleHistoryNavigation(historyState.index - 1)
+  }, [canGoBackward, handleHistoryNavigation, historyState.index])
+
+  const handleGoForward = useCallback(() => {
+    if (!canGoForward) {
+      return
+    }
+
+    handleHistoryNavigation(historyState.index + 1)
+  }, [canGoForward, handleHistoryNavigation, historyState.index])
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={handleLiveToggle}
-        className="prose-label font-sans h-8"
-      >
-        <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
-        {isLiveUpdating && lifecycle.isRunning ? 'Live' : 'Paused'}
-      </Button>
+    <div className={cn('flex items-center gap-4', className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -315,7 +417,10 @@ export default function SandboxMonitoringTimeRangeControls({
               onApply={handleApply}
               className="p-3 w-56 max-md:w-full"
             />
-            <Separator orientation="vertical" className="h-auto max-md:hidden" />
+            <Separator
+              orientation="vertical"
+              className="h-auto max-md:hidden"
+            />
             <Separator orientation="horizontal" className="w-auto md:hidden" />
             <TimeRangePresets
               presets={presets}
@@ -326,6 +431,39 @@ export default function SandboxMonitoringTimeRangeControls({
           </div>
         </PopoverContent>
       </Popover>
+
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleLiveToggle}
+        className="prose-label font-sans h-8"
+      >
+        <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
+        {isLiveUpdating && lifecycle.isRunning ? 'Live' : 'Paused'}
+      </Button>
+
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleGoBackward}
+          disabled={!canGoBackward}
+          className="h-8 w-8 p-0"
+          title="Go to previous timeframe"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleGoForward}
+          disabled={!canGoForward}
+          className="h-8 w-8 p-0"
+          title="Go to next timeframe"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
     </div>
   )
 }

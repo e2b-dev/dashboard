@@ -1,27 +1,42 @@
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import { millisecondsInSecond } from 'date-fns/constants'
-import type { MonitoringChartModel } from '../types/sandbox-metrics-chart'
+import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
+import type {
+  MonitoringChartModel,
+  SandboxMetricsDataPoint,
+} from '../types/sandbox-metrics-chart'
 import {
-  SANDBOX_MONITORING_CHART_MAX_POINTS,
-  SANDBOX_MONITORING_CHART_MIN_STEP_MS,
   SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
+  SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
+  SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
   SANDBOX_MONITORING_CPU_SERIES_ID,
   SANDBOX_MONITORING_CPU_SERIES_LABEL,
-  SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
-  SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
-  SANDBOX_MONITORING_DISK_SERIES_ID,
-  SANDBOX_MONITORING_DISK_SERIES_LABEL,
-  SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
   SANDBOX_MONITORING_DISK_AREA_COLOR_VAR,
   SANDBOX_MONITORING_DISK_AREA_TO_COLOR_VAR,
+  SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
+  SANDBOX_MONITORING_DISK_SERIES_ID,
+  SANDBOX_MONITORING_DISK_SERIES_LABEL,
   SANDBOX_MONITORING_PERCENT_MAX,
   SANDBOX_MONITORING_RAM_AREA_COLOR_VAR,
+  SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
+  SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
   SANDBOX_MONITORING_RAM_SERIES_ID,
   SANDBOX_MONITORING_RAM_SERIES_LABEL,
-  SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
-  SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
 } from './constants'
-import { calculateStepForRange } from './timeframe'
+
+interface NormalizedSandboxMetric {
+  metric: SandboxMetric
+  timestampMs: number
+  cpuPercent: number
+  ramPercent: number
+  diskPercent: number
+}
+
+interface BuildMonitoringChartModelOptions {
+  metrics: SandboxMetric[]
+  startMs: number
+  endMs: number
+  hoveredTimestampMs: number | null
+}
 
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) {
@@ -39,64 +54,93 @@ function toPercent(used: number, total: number): number {
   return clampPercent((used / total) * 100)
 }
 
-function getMetricTimestampMs(metric: SandboxMetric): number {
-  return Math.floor(metric.timestampUnix * millisecondsInSecond)
-}
+function getMetricTimestampMs(metric: SandboxMetric): number | null {
+  const timestampMs = Math.floor(metric.timestampUnix * millisecondsInSecond)
 
-function filterSandboxMetricsByTimeRange(
-  metrics: SandboxMetric[],
-  startMs: number,
-  endMs: number
-): SandboxMetric[] {
-  return metrics.filter((metric) => {
-    const timestampMs = getMetricTimestampMs(metric)
-    return timestampMs >= startMs && timestampMs <= endMs
-  })
-}
-
-function sortSandboxMetricsByTime(metrics: SandboxMetric[]): SandboxMetric[] {
-  return [...metrics].sort(
-    (a, b) => getMetricTimestampMs(a) - getMetricTimestampMs(b)
-  )
-}
-
-function createSeriesData(
-  metrics: SandboxMetric[],
-  categories: number[],
-  getValue: (metric: SandboxMetric) => number
-) {
-  const sums = Array<number>(categories.length).fill(0)
-  const counts = Array<number>(categories.length).fill(0)
-  if (categories.length === 0) {
-    return []
+  if (!Number.isFinite(timestampMs)) {
+    return null
   }
 
-  const start = categories[0]!
-  const end = categories[categories.length - 1]!
-  const step = categories.length > 1 ? categories[1]! - categories[0]! : 1
+  return timestampMs
+}
 
-  for (const metric of metrics) {
-    const timestampMs = getMetricTimestampMs(metric)
-    if (timestampMs < start || timestampMs > end) {
-      continue
+function normalizeMetric(
+  metric: SandboxMetric
+): NormalizedSandboxMetric | null {
+  const timestampMs = getMetricTimestampMs(metric)
+  if (timestampMs === null) {
+    return null
+  }
+
+  return {
+    metric,
+    timestampMs,
+    cpuPercent: clampPercent(metric.cpuUsedPct),
+    ramPercent: toPercent(metric.memUsed, metric.memTotal),
+    diskPercent: toPercent(metric.diskUsed, metric.diskTotal),
+  }
+}
+
+function sortMetricsByTimestamp(
+  metrics: NormalizedSandboxMetric[]
+): NormalizedSandboxMetric[] {
+  return [...metrics].sort((a, b) => a.timestampMs - b.timestampMs)
+}
+
+function buildSeriesData(
+  metrics: NormalizedSandboxMetric[],
+  getValue: (metric: NormalizedSandboxMetric) => number
+): SandboxMetricsDataPoint[] {
+  return metrics.map((metric) => [metric.timestampMs, getValue(metric)])
+}
+
+function findClosestMetric(
+  metrics: NormalizedSandboxMetric[],
+  timestampMs: number
+): NormalizedSandboxMetric | null {
+  if (metrics.length === 0 || !Number.isFinite(timestampMs)) {
+    return null
+  }
+
+  let low = 0
+  let high = metrics.length - 1
+
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2)
+    const middleTimestamp = metrics[middle]?.timestampMs
+    if (middleTimestamp === undefined) {
+      break
     }
 
-    const index = Math.max(
-      0,
-      Math.min(categories.length - 1, Math.round((timestampMs - start) / step))
-    )
+    if (middleTimestamp === timestampMs) {
+      return metrics[middle] ?? null
+    }
 
-    sums[index] = (sums[index] ?? 0) + getValue(metric)
-    counts[index] = (counts[index] ?? 0) + 1
+    if (middleTimestamp < timestampMs) {
+      low = middle + 1
+    } else {
+      high = middle - 1
+    }
   }
 
-  return categories.map((x, idx) => ({
-    x,
-    y: counts[idx]! > 0 ? sums[idx]! / counts[idx]! : null,
-  }))
+  const nextMetric = metrics[low]
+  const previousMetric = metrics[low - 1]
+
+  if (!nextMetric) {
+    return previousMetric ?? null
+  }
+
+  if (!previousMetric) {
+    return nextMetric
+  }
+
+  const nextDistance = Math.abs(nextMetric.timestampMs - timestampMs)
+  const previousDistance = Math.abs(previousMetric.timestampMs - timestampMs)
+
+  return previousDistance <= nextDistance ? previousMetric : nextMetric
 }
 
-function buildResourceSeries(metrics: SandboxMetric[], categories: number[]) {
+function buildResourceSeries(metrics: NormalizedSandboxMetric[]) {
   return [
     {
       id: SANDBOX_MONITORING_CPU_SERIES_ID,
@@ -104,9 +148,9 @@ function buildResourceSeries(metrics: SandboxMetric[], categories: number[]) {
       lineColorVar: SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
-      data: createSeriesData(metrics, categories, (metric) =>
-        clampPercent(metric.cpuUsedPct)
-      ),
+      showArea: false,
+      zIndex: 2,
+      data: buildSeriesData(metrics, (metric) => metric.cpuPercent),
     },
     {
       id: SANDBOX_MONITORING_RAM_SERIES_ID,
@@ -114,14 +158,14 @@ function buildResourceSeries(metrics: SandboxMetric[], categories: number[]) {
       lineColorVar: SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_RAM_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
-      data: createSeriesData(metrics, categories, (metric) =>
-        toPercent(metric.memUsed, metric.memTotal)
-      ),
+      showArea: false,
+      zIndex: 1,
+      data: buildSeriesData(metrics, (metric) => metric.ramPercent),
     },
   ]
 }
 
-function buildDiskSeries(metrics: SandboxMetric[], categories: number[]) {
+function buildDiskSeries(metrics: NormalizedSandboxMetric[]) {
   return [
     {
       id: SANDBOX_MONITORING_DISK_SERIES_ID,
@@ -129,80 +173,40 @@ function buildDiskSeries(metrics: SandboxMetric[], categories: number[]) {
       lineColorVar: SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_DISK_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_DISK_AREA_TO_COLOR_VAR,
-      data: createSeriesData(metrics, categories, (metric) =>
-        toPercent(metric.diskUsed, metric.diskTotal)
-      ),
+      data: buildSeriesData(metrics, (metric) => metric.diskPercent),
     },
   ]
-}
-
-interface BuildMonitoringChartModelOptions {
-  metrics: SandboxMetric[]
-  startMs: number
-  endMs: number
-  hoveredIndex: number | null
-}
-
-export function buildTimelineCategories(startMs: number, endMs: number): number[] {
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
-    return []
-  }
-
-  const normalizedStart = Math.floor(startMs)
-  const normalizedEnd = Math.floor(endMs)
-  if (normalizedEnd <= normalizedStart) {
-    return [normalizedStart]
-  }
-
-  const baseStepMs = Math.max(
-    SANDBOX_MONITORING_CHART_MIN_STEP_MS,
-    Math.floor(
-      calculateStepForRange(normalizedStart, normalizedEnd) /
-        millisecondsInSecond
-    ) * millisecondsInSecond
-  )
-
-  const duration = normalizedEnd - normalizedStart
-  const estimatedPoints = Math.floor(duration / baseStepMs) + 1
-  const needsCapping = estimatedPoints > SANDBOX_MONITORING_CHART_MAX_POINTS
-  const stepMs = needsCapping
-    ? Math.max(
-        baseStepMs,
-        Math.ceil(
-          duration / (SANDBOX_MONITORING_CHART_MAX_POINTS - 1) /
-            millisecondsInSecond
-        ) * millisecondsInSecond
-      )
-    : baseStepMs
-
-  const categories: number[] = []
-  for (let timestamp = normalizedStart; timestamp <= normalizedEnd; timestamp += stepMs) {
-    categories.push(timestamp)
-  }
-
-  if (categories[categories.length - 1] !== normalizedEnd) {
-    categories.push(normalizedEnd)
-  }
-
-  return categories
 }
 
 export function buildMonitoringChartModel({
   metrics,
   startMs,
   endMs,
-  hoveredIndex,
+  hoveredTimestampMs,
 }: BuildMonitoringChartModelOptions): MonitoringChartModel {
-  const constrainedMetrics = filterSandboxMetricsByTimeRange(metrics, startMs, endMs)
-  const sortedMetrics = sortSandboxMetricsByTime(constrainedMetrics)
-  const categories = buildTimelineCategories(startMs, endMs)
-  const resourceSeries = buildResourceSeries(sortedMetrics, categories)
-  const diskSeries = buildDiskSeries(sortedMetrics, categories)
-  const latestMetric = sortedMetrics[sortedMetrics.length - 1]
+  const rangeStart = Math.min(startMs, endMs)
+  const rangeEnd = Math.max(startMs, endMs)
 
-  if (hoveredIndex === null) {
+  const normalizedMetrics = sortMetricsByTimestamp(
+    metrics
+      .map(normalizeMetric)
+      .filter((metric): metric is NormalizedSandboxMetric => {
+        if (!metric) {
+          return false
+        }
+
+        return (
+          metric.timestampMs >= rangeStart && metric.timestampMs <= rangeEnd
+        )
+      })
+  )
+
+  const resourceSeries = buildResourceSeries(normalizedMetrics)
+  const diskSeries = buildDiskSeries(normalizedMetrics)
+  const latestMetric = normalizedMetrics[normalizedMetrics.length - 1]?.metric
+
+  if (hoveredTimestampMs === null) {
     return {
-      categories,
       latestMetric,
       resourceSeries,
       diskSeries,
@@ -211,10 +215,9 @@ export function buildMonitoringChartModel({
     }
   }
 
-  const hoveredTimestamp = categories[hoveredIndex]
-  if (hoveredTimestamp === undefined) {
+  const hoveredMetric = findClosestMetric(normalizedMetrics, hoveredTimestampMs)
+  if (!hoveredMetric) {
     return {
-      categories,
       latestMetric,
       resourceSeries,
       diskSeries,
@@ -222,30 +225,19 @@ export function buildMonitoringChartModel({
       diskHoveredContext: null,
     }
   }
-
-  const cpuSeries = resourceSeries.find(
-    (series) => series.id === SANDBOX_MONITORING_CPU_SERIES_ID
-  )
-  const ramSeries = resourceSeries.find(
-    (series) => series.id === SANDBOX_MONITORING_RAM_SERIES_ID
-  )
-  const diskSeriesItem = diskSeries.find(
-    (series) => series.id === SANDBOX_MONITORING_DISK_SERIES_ID
-  )
 
   return {
-    categories,
     latestMetric,
     resourceSeries,
     diskSeries,
     resourceHoveredContext: {
-      cpuPercent: cpuSeries?.data[hoveredIndex]?.y ?? null,
-      ramPercent: ramSeries?.data[hoveredIndex]?.y ?? null,
-      timestampMs: hoveredTimestamp,
+      cpuPercent: hoveredMetric.cpuPercent,
+      ramPercent: hoveredMetric.ramPercent,
+      timestampMs: hoveredMetric.timestampMs,
     },
     diskHoveredContext: {
-      diskPercent: diskSeriesItem?.data[hoveredIndex]?.y ?? null,
-      timestampMs: hoveredTimestamp,
+      diskPercent: hoveredMetric.diskPercent,
+      timestampMs: hoveredMetric.timestampMs,
     },
   }
 }

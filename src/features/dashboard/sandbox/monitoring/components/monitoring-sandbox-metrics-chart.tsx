@@ -1,5 +1,22 @@
 'use client'
 
+import type {
+  EChartsOption,
+  MarkPointComponentOption,
+  SeriesOption,
+} from 'echarts'
+import { LineChart } from 'echarts/charts'
+import {
+  AxisPointerComponent,
+  BrushComponent,
+  GridComponent,
+  MarkPointComponent,
+} from 'echarts/components'
+import * as echarts from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import { useTheme } from 'next-themes'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import {
   SANDBOX_MONITORING_CHART_AREA_OPACITY,
   SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
@@ -24,19 +41,6 @@ import {
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { formatAxisNumber } from '@/lib/utils/formatting'
-import { EChartsOption, MarkPointComponentOption, SeriesOption } from 'echarts'
-import ReactEChartsCore from 'echarts-for-react/lib/core'
-import { LineChart } from 'echarts/charts'
-import {
-  AxisPointerComponent,
-  BrushComponent,
-  GridComponent,
-  MarkPointComponent,
-} from 'echarts/components'
-import * as echarts from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { useTheme } from 'next-themes'
-import { memo, useCallback, useMemo, useRef } from 'react'
 import type {
   SandboxMetricsChartProps,
   SandboxMetricsDataPoint,
@@ -51,10 +55,14 @@ echarts.use([
   AxisPointerComponent,
 ])
 
-interface AxisPointerEventParams {
-  seriesData?: Array<{ dataIndex?: number }>
+interface AxisPointerInfo {
   value?: unknown
-  axisValue?: unknown
+}
+
+interface UpdateAxisPointerEventParams {
+  axesInfo?: AxisPointerInfo[]
+  xAxisInfo?: AxisPointerInfo[]
+  value?: unknown
 }
 
 interface BrushArea {
@@ -77,49 +85,6 @@ function toNumericValue(value: unknown): number {
   return Number.NaN
 }
 
-function resolveStartIndex(categories: number[], value: unknown): number {
-  if (categories.length === 0) {
-    return 0
-  }
-
-  const numericValue = toNumericValue(value)
-  if (Number.isNaN(numericValue)) {
-    return 0
-  }
-
-  if (numericValue >= 0 && numericValue <= categories.length - 1) {
-    return Math.max(0, Math.min(categories.length - 1, Math.floor(numericValue)))
-  }
-
-  const foundIndex = categories.findIndex((timestamp) => timestamp >= numericValue)
-  return foundIndex === -1 ? categories.length - 1 : foundIndex
-}
-
-function resolveEndIndex(categories: number[], value: unknown): number {
-  if (categories.length === 0) {
-    return 0
-  }
-
-  const numericValue = toNumericValue(value)
-  if (Number.isNaN(numericValue)) {
-    return categories.length - 1
-  }
-
-  if (numericValue >= 0 && numericValue <= categories.length - 1) {
-    return Math.max(0, Math.min(categories.length - 1, Math.ceil(numericValue)))
-  }
-
-  for (let index = categories.length - 1; index >= 0; index -= 1) {
-    const timestamp = categories[index]
-
-    if (timestamp !== undefined && timestamp <= numericValue) {
-      return index
-    }
-  }
-
-  return 0
-}
-
 function formatXAxisLabel(value: number | string): string {
   const timestamp = Number(value)
   if (Number.isNaN(timestamp)) {
@@ -134,7 +99,6 @@ function formatXAxisLabel(value: number | string): string {
 }
 
 function findLivePoint(
-  categories: number[],
   data: SandboxMetricsDataPoint[],
   now: number = Date.now()
 ): { x: number; y: number } | null {
@@ -142,9 +106,12 @@ function findLivePoint(
 
   for (let index = data.length - 1; index >= 0; index -= 1) {
     const point = data[index]
-    const timestamp = categories[index]
+    if (!point) {
+      continue
+    }
 
-    if (!point || typeof point.y !== 'number' || timestamp === undefined) {
+    const [timestamp, value] = point
+    if (typeof value !== 'number' || !Number.isFinite(timestamp)) {
       continue
     }
 
@@ -158,7 +125,7 @@ function findLivePoint(
 
     return {
       x: timestamp,
-      y: point.y,
+      y: value,
     }
   }
 
@@ -218,7 +185,6 @@ function createLiveIndicators(
 }
 
 function SandboxMetricsChart({
-  categories,
   series,
   className,
   stacked = false,
@@ -262,32 +228,24 @@ function SandboxMetricsChart({
     cssVars[SANDBOX_MONITORING_CHART_FONT_MONO_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO
 
-  const handleAxisPointer = useCallback(
-    (params: AxisPointerEventParams) => {
+  const handleUpdateAxisPointer = useCallback(
+    (params: UpdateAxisPointerEventParams) => {
       if (!onHover) {
-        return ''
+        return
       }
 
-      const dataIndex = params.seriesData?.[0]?.dataIndex
-      if (typeof dataIndex === 'number') {
-        onHover(dataIndex)
-        return ''
+      const pointerValue =
+        params.axesInfo?.[0]?.value ??
+        params.xAxisInfo?.[0]?.value ??
+        params.value
+      const timestampMs = toNumericValue(pointerValue)
+      if (Number.isNaN(timestampMs)) {
+        return
       }
 
-      const pointerValue = params.value ?? params.axisValue
-      const normalizedValue = toNumericValue(pointerValue)
-      if (Number.isNaN(normalizedValue)) {
-        return ''
-      }
-
-      const matchedIndex = categories.findIndex((value) => value === normalizedValue)
-      if (matchedIndex >= 0) {
-        onHover(matchedIndex)
-      }
-
-      return ''
+      onHover(Math.floor(timestampMs))
     },
-    [categories, onHover]
+    [onHover]
   )
 
   const handleGlobalOut = useCallback(() => {
@@ -301,16 +259,16 @@ function SandboxMetricsChart({
         return
       }
 
-      const rawStartIndex = resolveStartIndex(categories, coordRange[0])
-      const rawEndIndex = resolveEndIndex(categories, coordRange[1])
-      const startIndex = Math.min(rawStartIndex, rawEndIndex)
-      const endIndex = Math.max(rawStartIndex, rawEndIndex)
-      const startTimestamp = categories[startIndex]
-      const endTimestamp = categories[endIndex]
-
-      if (startTimestamp !== undefined && endTimestamp !== undefined) {
-        onBrushEnd(startTimestamp, endTimestamp)
+      const startTimestamp = toNumericValue(coordRange[0])
+      const endTimestamp = toNumericValue(coordRange[1])
+      if (Number.isNaN(startTimestamp) || Number.isNaN(endTimestamp)) {
+        return
       }
+
+      onBrushEnd(
+        Math.floor(Math.min(startTimestamp, endTimestamp)),
+        Math.floor(Math.max(startTimestamp, endTimestamp))
+      )
 
       chartInstanceRef.current?.dispatchAction({
         type: 'brush',
@@ -318,7 +276,7 @@ function SandboxMetricsChart({
         areas: [],
       })
     },
-    [categories, onBrushEnd]
+    [onBrushEnd]
   )
 
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
@@ -343,7 +301,7 @@ function SandboxMetricsChart({
   const option = useMemo<EChartsOption>(() => {
     const values = series.flatMap((line) =>
       line.data
-        .map((point) => point.y)
+        .map((point) => point[1])
         .filter((value): value is number => value !== null)
     )
     const computedYAxisMax =
@@ -364,8 +322,8 @@ function SandboxMetricsChart({
         ? cssVars[line.areaToColorVar]
         : undefined
       const resolvedLineColor = lineColor || stroke
-      const livePoint = findLivePoint(categories, line.data)
-      const shouldShowArea = stacked || showArea
+      const livePoint = findLivePoint(line.data)
+      const shouldShowArea = line.showArea ?? (stacked || showArea)
       const areaFillColor =
         areaFromColor && areaToColor
           ? {
@@ -387,6 +345,7 @@ function SandboxMetricsChart({
         id: line.id,
         name: line.name,
         type: 'line',
+        z: line.zIndex,
         symbol: 'none',
         showSymbol: false,
         smooth: false,
@@ -404,7 +363,8 @@ function SandboxMetricsChart({
           width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
           color: resolvedLineColor,
         },
-        data: line.data.map((point) => point.y ?? '-'),
+        connectNulls: false,
+        data: line.data,
       }
 
       if (livePoint) {
@@ -435,9 +395,8 @@ function SandboxMetricsChart({
         right: 8,
       },
       xAxis: {
-        type: 'category',
-        data: categories,
-        boundaryGap: false,
+        type: 'time',
+        boundaryGap: [0, 0],
         axisLine: { show: true, lineStyle: { color: stroke } },
         axisTick: { show: false },
         splitLine: { show: false },
@@ -457,10 +416,9 @@ function SandboxMetricsChart({
             type: 'solid',
             width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
           },
-          snap: false,
+          snap: true,
           label: {
-            backgroundColor: 'transparent',
-            formatter: handleAxisPointer,
+            show: false,
           },
         },
       },
@@ -489,11 +447,9 @@ function SandboxMetricsChart({
       series: seriesItems,
     }
   }, [
-    categories,
     cssVars,
     fgTertiary,
     fontMono,
-    handleAxisPointer,
     series,
     showXAxisLabels,
     showArea,
@@ -514,6 +470,7 @@ function SandboxMetricsChart({
       onEvents={{
         globalout: handleGlobalOut,
         brushEnd: handleBrushEnd,
+        updateAxisPointer: handleUpdateAxisPointer,
       }}
     />
   )

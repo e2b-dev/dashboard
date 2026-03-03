@@ -1,11 +1,5 @@
 import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
 import {
-  millisecondsInDay,
-  millisecondsInHour,
-  millisecondsInMinute,
-  millisecondsInSecond,
-} from 'date-fns/constants'
-import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
   SANDBOX_MONITORING_MAX_TIMESTAMP_MS,
@@ -160,28 +154,6 @@ export function normalizeMonitoringTimeframe({
   return {
     start: safeStart,
     end: safeEnd,
-  }
-}
-
-export function calculateStepForRange(startMs: number, endMs: number): number {
-  const duration = endMs - startMs
-  return calculateStepForDuration(duration)
-}
-
-export function calculateStepForDuration(durationMs: number): number {
-  switch (true) {
-    case durationMs < millisecondsInHour:
-      return 5 * millisecondsInSecond
-    case durationMs < 6 * millisecondsInHour:
-      return 30 * millisecondsInSecond
-    case durationMs < 12 * millisecondsInHour:
-      return millisecondsInMinute
-    case durationMs < 24 * millisecondsInHour:
-      return 2 * millisecondsInMinute
-    case durationMs < 7 * millisecondsInDay:
-      return 5 * millisecondsInMinute
-    default:
-      return 15 * millisecondsInMinute
   }
 }
 

@@ -1,9 +1,9 @@
 import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 
-export type SandboxMetricsDataPoint = {
-  x: number
-  y: number | null
-}
+export type SandboxMetricsDataPoint = [
+  timestampMs: number,
+  value: number | null,
+]
 
 export interface SandboxMetricsSeries {
   id: string
@@ -12,10 +12,11 @@ export interface SandboxMetricsSeries {
   lineColorVar?: string
   areaColorVar?: string
   areaToColorVar?: string
+  showArea?: boolean
+  zIndex?: number
 }
 
 export interface SandboxMetricsChartProps {
-  categories: number[]
   series: SandboxMetricsSeries[]
   className?: string
   stacked?: boolean
@@ -23,7 +24,7 @@ export interface SandboxMetricsChartProps {
   showXAxisLabels?: boolean
   yAxisMax?: number
   yAxisFormatter?: (value: number) => string
-  onHover?: (index: number) => void
+  onHover?: (timestampMs: number) => void
   onHoverEnd?: () => void
   onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
 }
@@ -40,7 +41,6 @@ export interface MonitoringDiskHoveredContext {
 }
 
 export interface MonitoringChartModel {
-  categories: number[]
   latestMetric: SandboxMetric | undefined
   resourceSeries: SandboxMetricsSeries[]
   diskSeries: SandboxMetricsSeries[]

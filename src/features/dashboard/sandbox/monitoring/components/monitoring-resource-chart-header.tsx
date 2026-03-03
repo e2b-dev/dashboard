@@ -1,9 +1,9 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import { CpuIcon, MemoryIcon } from '@/ui/primitives/icons'
-import type { ReactNode } from 'react'
 import {
   SANDBOX_MONITORING_CPU_INDICATOR_CLASS,
   SANDBOX_MONITORING_CPU_SERIES_LABEL,
@@ -80,7 +80,7 @@ export default function ResourceChartHeader({
     : null
 
   return (
-    <div className="flex items-center justify-between gap-4 pb-2 border-b mb-3">
+    <div className="flex items-center justify-between gap-4 py-3 border-y mb-3">
       <div className="flex items-center gap-5">
         <MetricItem
           label={SANDBOX_MONITORING_CPU_SERIES_LABEL}

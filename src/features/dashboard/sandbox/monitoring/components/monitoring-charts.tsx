@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { cn } from '@/lib/utils'
 import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
-import { SANDBOX_MONITORING_PERCENT_MAX } from '../utils/constants'
 import { buildMonitoringChartModel } from '../utils/chart-model'
+import { SANDBOX_MONITORING_PERCENT_MAX } from '../utils/constants'
 import MonitoringChartSection from './monitoring-chart-section'
 import DiskChartHeader from './monitoring-disk-chart-header'
 import ResourceChartHeader from './monitoring-resource-chart-header'
@@ -21,11 +22,18 @@ export default function SandboxMetricsCharts({
     metrics,
     timeframe,
     isLiveUpdating,
+    isRefetching,
     setTimeframe,
     setLiveUpdating,
     lifecycleBounds,
   } = useSandboxMonitoringController(sandboxId)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
+    null
+  )
+  const [renderedTimeframe, setRenderedTimeframe] = useState(() => ({
+    start: timeframe.start,
+    end: timeframe.end,
+  }))
 
   const handleTimeRangeChange = useCallback(
     (
@@ -43,7 +51,7 @@ export default function SandboxMetricsCharts({
         return
       }
 
-      setHoveredIndex(null)
+      setHoveredTimestampMs(null)
       setTimeframe(startTimestamp, endTimestamp, {
         isLiveUpdating: nextLiveUpdating,
       })
@@ -55,47 +63,74 @@ export default function SandboxMetricsCharts({
     () =>
       buildMonitoringChartModel({
         metrics,
-        startMs: timeframe.start,
-        endMs: timeframe.end,
-        hoveredIndex,
+        startMs: renderedTimeframe.start,
+        endMs: renderedTimeframe.end,
+        hoveredTimestampMs,
       }),
-    [hoveredIndex, metrics, timeframe.end, timeframe.start]
+    [
+      hoveredTimestampMs,
+      metrics,
+      renderedTimeframe.end,
+      renderedTimeframe.start,
+    ]
   )
 
+  useEffect(() => {
+    if (isRefetching) {
+      return
+    }
+
+    setRenderedTimeframe((previous) => {
+      if (
+        previous.start === timeframe.start &&
+        previous.end === timeframe.end
+      ) {
+        return previous
+      }
+
+      return {
+        start: timeframe.start,
+        end: timeframe.end,
+      }
+    })
+  }, [isRefetching, timeframe.end, timeframe.start])
+
   const handleHoverEnd = useCallback(() => {
-    setHoveredIndex(null)
+    setHoveredTimestampMs(null)
   }, [])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
+      {lifecycleBounds ? (
+        <div className="flex items-center justify-start">
+          <SandboxMonitoringTimeRangeControls
+            timeframe={timeframe}
+            lifecycle={lifecycleBounds}
+            isLiveUpdating={isLiveUpdating}
+            onLiveChange={setLiveUpdating}
+            onTimeRangeChange={handleTimeRangeChange}
+          />
+        </div>
+      ) : null}
+
       <MonitoringChartSection
         className="min-h-[280px] flex-[2]"
         header={
           <ResourceChartHeader
             metric={chartModel.latestMetric}
             hovered={chartModel.resourceHoveredContext}
-            suffix={
-              lifecycleBounds ? (
-                <SandboxMonitoringTimeRangeControls
-                  timeframe={timeframe}
-                  lifecycle={lifecycleBounds}
-                  isLiveUpdating={isLiveUpdating}
-                  onLiveChange={setLiveUpdating}
-                  onTimeRangeChange={handleTimeRangeChange}
-                />
-              ) : null
-            }
           />
         }
       >
         <SandboxMetricsChart
-          categories={chartModel.categories}
           series={chartModel.resourceSeries}
-          stacked
           showXAxisLabels={false}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
-          className="h-full w-full"
-          onHover={setHoveredIndex}
+          className={cn(
+            'h-full w-full transition-opacity duration-200',
+            isRefetching ? 'opacity-60 pointer-events-none' : 'opacity-100'
+          )}
+          onHover={setHoveredTimestampMs}
           onHoverEnd={handleHoverEnd}
           onBrushEnd={handleTimeRangeChange}
         />
@@ -111,13 +146,15 @@ export default function SandboxMetricsCharts({
         }
       >
         <SandboxMetricsChart
-          categories={chartModel.categories}
           series={chartModel.diskSeries}
           showArea
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
-          className="h-full w-full"
-          onHover={setHoveredIndex}
+          className={cn(
+            'h-full w-full transition-opacity duration-200',
+            isRefetching ? 'opacity-60 pointer-events-none' : 'opacity-100'
+          )}
+          onHover={setHoveredTimestampMs}
           onHoverEnd={handleHoverEnd}
           onBrushEnd={handleTimeRangeChange}
         />
