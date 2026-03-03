@@ -107,6 +107,7 @@ function LogsContent({
   setLevel,
 }: LogsContentProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<BuildLogDTO[]>([])
 
   const { isRefetchingFromFilterChange, onFetchComplete } =
     useFilterRefetchTracking(level)
@@ -131,8 +132,19 @@ function LogsContent({
       onFetchComplete()
     }
   }, [isFetching, isRefetchingFromFilterChange, onFetchComplete])
+  useEffect(() => {
+    if (logs.length > 0) {
+      setLastNonEmptyLogs(logs)
+    }
+  }, [logs])
 
-  const hasLogs = logs.length > 0
+  const renderedLogs =
+    logs.length > 0
+      ? logs
+      : isRefetchingFromFilterChange
+        ? lastNonEmptyLogs
+        : []
+  const hasLogs = renderedLogs.length > 0
   const showLoader = (isFetching || isRefetchingFromFilterChange) && !hasLogs
   const showEmpty = !isFetching && !hasLogs && !isRefetchingFromFilterChange
   const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
@@ -166,7 +178,7 @@ function LogsContent({
           )}
           {hasLogs && (
             <VirtualizedLogsBody
-              logs={logs}
+              logs={renderedLogs}
               scrollContainerRef={scrollContainerRef}
               startedAt={buildDetails.startedAt}
               onLoadMore={handleLoadMore}

@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { cn } from '@/lib/utils'
 import { LOG_RETENTION_MS } from '@/configs/logs'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
@@ -126,6 +127,7 @@ function LogsContent({
 }: LogsContentProps) {
   const [scrollContainerElement, setScrollContainerElement] =
     useState<HTMLDivElement | null>(null)
+  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<SandboxLogDTO[]>([])
 
   const {
     logs,
@@ -143,10 +145,35 @@ function LogsContent({
     level,
     search,
   })
+  const { isRefetchingFromFilterChange, onFetchComplete } =
+    useFilterRefetchTracking(level, search)
 
-  const hasLogs = logs.length > 0
+  useEffect(() => {
+    if (!isFetching && isRefetchingFromFilterChange) {
+      onFetchComplete()
+    }
+  }, [isFetching, isRefetchingFromFilterChange, onFetchComplete])
+
+  useEffect(() => {
+    if (logs.length > 0) {
+      setLastNonEmptyLogs(logs)
+    }
+  }, [logs])
+
+  const renderedLogs =
+    logs.length > 0
+      ? logs
+      : isRefetchingFromFilterChange
+        ? lastNonEmptyLogs
+        : []
+  const hasLogs = renderedLogs.length > 0
   const showLoader = (!hasCompletedInitialLoad || isFetching) && !hasLogs
-  const showEmpty = hasCompletedInitialLoad && !isFetching && !hasLogs
+  const showEmpty =
+    hasCompletedInitialLoad &&
+    !isFetching &&
+    !hasLogs &&
+    !isRefetchingFromFilterChange
+  const showRefetchOverlay = isRefetchingFromFilterChange && hasLogs
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -155,7 +182,7 @@ function LogsContent({
   }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden relative gap-3 md:gap-6">
       <FiltersRow
         level={level}
         onLevelChange={setLevel}
@@ -182,13 +209,14 @@ function LogsContent({
           )}
           {hasLogs && scrollContainerElement && (
             <VirtualizedLogsBody
-              logs={logs}
+              logs={renderedLogs}
               scrollContainerElement={scrollContainerElement}
               onLoadMore={handleLoadMore}
               hasNextPage={hasNextPage}
               isFetchingNextPage={isFetchingNextPage}
               isInitialized={isInitialized}
               isRunning={isRunning}
+              showRefetchOverlay={showRefetchOverlay}
               level={level}
               search={search}
             />
@@ -197,6 +225,28 @@ function LogsContent({
       </div>
     </div>
   )
+}
+
+function useFilterRefetchTracking(
+  level: SandboxLogLevelFilter | null,
+  search: string
+) {
+  const [isRefetchingFromFilterChange, setIsRefetching] = useState(false)
+  const isInitialRender = useRef(true)
+
+  useEffect(() => {
+    void level
+    void search
+    if (isInitialRender.current) {
+      isInitialRender.current = false
+      return
+    }
+    setIsRefetching(true)
+  }, [level, search])
+
+  const onFetchComplete = useCallback(() => setIsRefetching(false), [])
+
+  return { isRefetchingFromFilterChange, onFetchComplete }
 }
 
 interface EmptyBodyProps {
@@ -254,6 +304,7 @@ interface VirtualizedLogsBodyProps {
   isFetchingNextPage: boolean
   isInitialized: boolean
   isRunning: boolean
+  showRefetchOverlay: boolean
   level: SandboxLogLevelFilter | null
   search: string
 }
@@ -266,6 +317,7 @@ function VirtualizedLogsBody({
   isFetchingNextPage,
   isInitialized,
   isRunning,
+  showRefetchOverlay,
   level,
   search,
 }: VirtualizedLogsBodyProps) {
@@ -326,7 +378,10 @@ function VirtualizedLogsBody({
 
   return (
     <TableBody
-      className="[&_tr:last-child]:border-b-0 [&_tr]:border-b-0"
+      className={cn(
+        showRefetchOverlay ? 'opacity-70 transition-opacity' : '',
+        '[&_tr:last-child]:border-b-0 [&_tr]:border-b-0'
+      )}
       style={{
         display: 'grid',
         height: `${virtualizer.getTotalSize()}px`,
@@ -373,6 +428,8 @@ function VirtualizedLogsBody({
           <LogRow
             key={virtualRow.key}
             log={log}
+            search={search}
+            shouldHighlight={!showRefetchOverlay}
             isZebraRow={logIndex % 2 === 1}
             virtualRow={virtualRow}
             virtualizer={virtualizer}
@@ -541,12 +598,21 @@ function useAutoScrollToBottom({
 
 interface LogRowProps {
   log: SandboxLogDTO
+  search: string
+  shouldHighlight: boolean
   isZebraRow: boolean
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
 }
 
-function LogRow({ log, isZebraRow, virtualRow, virtualizer }: LogRowProps) {
+function LogRow({
+  log,
+  search,
+  shouldHighlight,
+  isZebraRow,
+  virtualRow,
+  virtualizer,
+}: LogRowProps) {
   return (
     <LogVirtualRow
       virtualRow={virtualRow}
@@ -580,7 +646,11 @@ function LogRow({ log, isZebraRow, virtualRow, virtualizer }: LogRowProps) {
         className="py-0 px-0"
         style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
       >
-        <Message message={log.message} />
+        <Message
+          message={log.message}
+          search={search}
+          shouldHighlight={shouldHighlight}
+        />
       </TableCell>
     </LogVirtualRow>
   )
