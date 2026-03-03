@@ -44,11 +44,13 @@ export const sandboxRouter = createTRPCRouter({
       z.object({
         sandboxId: SandboxIdSchema,
         cursor: z.number().optional(),
+        level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+        search: z.string().max(256).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const { teamId, session } = ctx
-      const { sandboxId } = input
+      const { sandboxId, level, search } = input
       let { cursor } = input
 
       cursor ??= Date.now()
@@ -60,7 +62,7 @@ export const sandboxRouter = createTRPCRouter({
         session.access_token,
         teamId,
         sandboxId,
-        { cursor, limit, direction }
+        { cursor, limit, direction, level, search }
       )
 
       const logs: SandboxLogDTO[] = sandboxLogs.logs
@@ -84,11 +86,13 @@ export const sandboxRouter = createTRPCRouter({
       z.object({
         sandboxId: SandboxIdSchema,
         cursor: z.number().optional(),
+        level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+        search: z.string().max(256).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const { teamId, session } = ctx
-      const { sandboxId } = input
+      const { sandboxId, level, search } = input
       let { cursor } = input
 
       cursor ??= Date.now()
@@ -100,7 +104,7 @@ export const sandboxRouter = createTRPCRouter({
         session.access_token,
         teamId,
         sandboxId,
-        { cursor, limit, direction }
+        { cursor, limit, direction, level, search }
       )
 
       const logs: SandboxLogDTO[] = sandboxLogs.logs.map(

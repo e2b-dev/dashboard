@@ -396,6 +396,10 @@ export interface paths {
           limit?: number
           /** @description Direction of the logs that should be returned */
           direction?: components['schemas']['LogsDirection']
+          /** @description Minimum log level to return. Logs below this level are excluded */
+          level?: components['schemas']['LogLevel']
+          /** @description Case-sensitive substring match on log message content */
+          search?: string
         }
         header?: never
         path: {
@@ -2203,14 +2207,13 @@ export interface components {
       maskRequestHost?: string
     }
     /**
-     * @description Auto-resume policy for paused sandboxes. Default is off.
-     * @default off
-     * @enum {string}
+     * @description Auto-resume enabled flag for paused sandboxes. Default false.
+     * @default false
      */
-    SandboxAutoResumePolicy: 'any' | 'off'
-    /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+    SandboxAutoResumeEnabled: boolean
+    /** @description Auto-resume configuration for paused sandboxes. */
     SandboxAutoResumeConfig: {
-      policy: components['schemas']['SandboxAutoResumePolicy']
+      enabled: components['schemas']['SandboxAutoResumeEnabled']
     }
     /** @description Log entry with timestamp and line */
     SandboxLog: {

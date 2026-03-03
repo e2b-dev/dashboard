@@ -20,7 +20,7 @@ export const infra = createClient<CombinedPaths>({
       headers,
       body,
       method,
-      duplex: !!body ? 'half' : undefined,
+      duplex: body ? 'half' : undefined,
       ...options,
     } as RequestInit)
   },

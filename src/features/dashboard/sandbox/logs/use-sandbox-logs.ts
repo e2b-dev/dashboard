@@ -1,9 +1,10 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useStore } from 'zustand'
 import { useTRPCClient } from '@/trpc/client'
+import type { LogLevelFilter } from './logs-filter-params'
 import {
   createSandboxLogsStore,
   type SandboxLogsStore,
@@ -17,12 +18,16 @@ interface UseSandboxLogsParams {
   teamIdOrSlug: string
   sandboxId: string
   isRunning: boolean
+  level: LogLevelFilter | null
+  search: string
 }
 
 export function useSandboxLogs({
   teamIdOrSlug,
   sandboxId,
   isRunning,
+  level,
+  search,
 }: UseSandboxLogsParams) {
   const trpcClient = useTRPCClient()
   const storeRef = useRef<SandboxLogsStore | null>(null)
@@ -44,9 +49,11 @@ export function useSandboxLogs({
   const isLoadingBackwards = useStore(store, (s) => s.isLoadingBackwards)
   const isLoadingForwards = useStore(store, (s) => s.isLoadingForwards)
 
-  useEffect(() => {
-    store.getState().init(trpcClient, { teamIdOrSlug, sandboxId })
-  }, [store, trpcClient, teamIdOrSlug, sandboxId])
+  useLayoutEffect(() => {
+    store
+      .getState()
+      .init(trpcClient, { teamIdOrSlug, sandboxId }, level, search)
+  }, [store, trpcClient, teamIdOrSlug, sandboxId, level, search])
 
   const isDraining = useRef(false)
   const prevIsRunningRef = useRef(isRunning)
@@ -74,7 +81,7 @@ export function useSandboxLogs({
   const shouldPoll = isInitialized && (isRunning || isDraining.current)
 
   const { isFetching: isPolling } = useQuery({
-    queryKey: ['sandboxLogsForward', teamIdOrSlug, sandboxId],
+    queryKey: ['sandboxLogsForward', teamIdOrSlug, sandboxId, level, search],
     queryFn: async () => {
       const { logsCount } = await store.getState().fetchMoreForwards()
 
