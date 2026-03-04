@@ -11,9 +11,9 @@ interface SandboxMonitoringViewProps {
 export default function SandboxMonitoringView({
   sandboxId,
 }: SandboxMonitoringViewProps) {
-  const { isSandboxInfoLoading } = useSandboxContext()
+  const { isSandboxInfoLoading, sandboxInfo } = useSandboxContext()
 
-  if (isSandboxInfoLoading) {
+  if (isSandboxInfoLoading && !sandboxInfo) {
     return <LoadingLayout />
   }
 
