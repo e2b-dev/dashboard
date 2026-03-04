@@ -1,12 +1,12 @@
+import { describe, expect, it } from 'vitest'
 import {
   createTimeRangeSchema,
   normalizeTimeRangeValues,
   parsePickerDateTime,
   parseTimeRangeValuesToTimestamps,
-  validateTimeRangeValues,
   type TimeRangeValues,
+  validateTimeRangeValues,
 } from '@/ui/time-range-picker.logic'
-import { describe, expect, it } from 'vitest'
 
 const baseValues: TimeRangeValues = {
   startDate: '2026/02/18',

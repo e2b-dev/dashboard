@@ -123,11 +123,7 @@ function parseTimeInput(value: string): {
   const minutes = Number.parseInt(minutePart, 10)
   const seconds = Number.parseInt(secondPart, 10)
 
-  if (
-    Number.isNaN(hours) ||
-    Number.isNaN(minutes) ||
-    Number.isNaN(seconds)
-  ) {
+  if (Number.isNaN(hours) || Number.isNaN(minutes) || Number.isNaN(seconds)) {
     return null
   }
 
@@ -157,7 +153,11 @@ function formatDateValue(date: Date): string {
   return `${year}/${month}/${day}`
 }
 
-function formatTimeValue(hours: number, minutes: number, seconds: number): string {
+function formatTimeValue(
+  hours: number,
+  minutes: number,
+  seconds: number
+): string {
   const hh = String(hours).padStart(2, '0')
   const mm = String(minutes).padStart(2, '0')
   const ss = String(seconds).padStart(2, '0')
@@ -224,7 +224,9 @@ function normalizeTimeValue(time: string | null): string | null {
   )
 }
 
-export function normalizeTimeRangeValues(values: TimeRangeValues): TimeRangeValues {
+export function normalizeTimeRangeValues(
+  values: TimeRangeValues
+): TimeRangeValues {
   const parsedStartDate = parseDateInput(values.startDate)
   const parsedEndDate = parseDateInput(values.endDate)
 
@@ -233,7 +235,9 @@ export function normalizeTimeRangeValues(values: TimeRangeValues): TimeRangeValu
       ? formatDateValue(parsedStartDate)
       : values.startDate.trim(),
     startTime: normalizeTimeValue(values.startTime),
-    endDate: parsedEndDate ? formatDateValue(parsedEndDate) : values.endDate.trim(),
+    endDate: parsedEndDate
+      ? formatDateValue(parsedEndDate)
+      : values.endDate.trim(),
     endTime: normalizeTimeValue(values.endTime),
   }
 }

@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import CopyButton from '@/ui/copy-button'
-import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { Button } from '@/ui/primitives/button'
 import {
   Popover,
@@ -15,6 +14,7 @@ import {
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
+import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import { TIME_RANGE_PRESETS } from './constants'
 import {
