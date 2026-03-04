@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { CpuIcon, MemoryIcon, StorageIcon } from '@/ui/primitives/icons'
 import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
 import type { SandboxMetricsMarkerValueFormatterInput } from '../types/sandbox-metrics-chart'
 import { buildMonitoringChartModel } from '../utils/chart-model'
@@ -29,7 +30,7 @@ function renderPercentMarker(value: number) {
   return (
     <>
       <span className="text-fg">{formatMarkerPercent(value)}</span>
-      <span className="text-fg-tertiary">%</span>
+      <span className="text-fg-secondary">%</span>
     </>
   )
 }
@@ -41,10 +42,10 @@ function renderUsageMarker(usedMb: number | null, value: number) {
   return (
     <>
       <span className="text-fg">{normalizedUsedMb.toLocaleString()}</span>
-      <span className="text-fg-tertiary">MB</span>
-      <span className="px-1 text-fg-tertiary">·</span>
+      <span className="text-fg-secondary">MB</span>
+      <span className="text-fg-tertiary px-0.75">·</span>
       <span className="text-fg">{formatMarkerPercent(value)}</span>
-      <span className="text-fg-tertiary">%</span>
+      <span className="text-fg-secondary">%</span>
     </>
   )
 }
@@ -116,8 +117,12 @@ export default function SandboxMetricsCharts({
             ...line,
             markerValueFormatter: ({
               value,
-            }: SandboxMetricsMarkerValueFormatterInput) =>
-              renderPercentMarker(value),
+            }: SandboxMetricsMarkerValueFormatterInput) => (
+              <div className="flex items-center">
+                {renderPercentMarker(value)}
+                <CpuIcon className="size-3.5 ml-2 text-fg-tertiary" />
+              </div>
+            ),
           }
         }
 
@@ -127,8 +132,12 @@ export default function SandboxMetricsCharts({
             markerValueFormatter: ({
               markerValue,
               value,
-            }: SandboxMetricsMarkerValueFormatterInput) =>
-              renderUsageMarker(markerValue, value),
+            }: SandboxMetricsMarkerValueFormatterInput) => (
+              <div className="flex items-center">
+                {renderUsageMarker(markerValue, value)}
+                <MemoryIcon className="size-3.5 ml-2 text-fg-tertiary" />
+              </div>
+            ),
           }
         }
 
@@ -148,8 +157,12 @@ export default function SandboxMetricsCharts({
           markerValueFormatter: ({
             markerValue,
             value,
-          }: SandboxMetricsMarkerValueFormatterInput) =>
-            renderUsageMarker(markerValue, value),
+          }: SandboxMetricsMarkerValueFormatterInput) => (
+            <div className="flex items-center">
+              {renderUsageMarker(markerValue, value)}
+              <StorageIcon className="size-3.5 ml-2 text-fg-tertiary" />
+            </div>
+          ),
         }
       }),
     [chartModel.diskSeries]
@@ -180,9 +193,9 @@ export default function SandboxMetricsCharts({
   }, [])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6">
+    <div className="flex min-h-0 flex-1 flex-col">
       {lifecycleBounds ? (
-        <div className="flex items-center justify-start">
+        <div className="flex items-center justify-start pb-3 md:pb-6">
           <SandboxMonitoringTimeRangeControls
             timeframe={timeframe}
             lifecycle={lifecycleBounds}
@@ -194,7 +207,7 @@ export default function SandboxMetricsCharts({
       ) : null}
 
       <MonitoringChartSection
-        className="flex-[1.5]"
+        className="flex-1"
         header={
           <ResourceChartHeader
             metric={chartModel.latestMetric}

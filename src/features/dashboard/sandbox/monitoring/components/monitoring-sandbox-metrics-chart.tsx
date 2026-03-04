@@ -13,7 +13,7 @@ import {
   MarkPointComponent,
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
+import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import {
@@ -34,6 +34,9 @@ import {
   SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
   SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
   SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
+  SANDBOX_MONITORING_CHART_GRID_BOTTOM,
+  SANDBOX_MONITORING_CHART_GRID_BOTTOM_WITH_X_AXIS,
+  SANDBOX_MONITORING_CHART_GRID_TOP,
   SANDBOX_MONITORING_CHART_GROUP,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
@@ -58,7 +61,7 @@ echarts.use([
   GridComponent,
   BrushComponent,
   MarkPointComponent,
-  CanvasRenderer,
+  SVGRenderer,
   AxisPointerComponent,
 ])
 
@@ -586,8 +589,10 @@ function SandboxMetricsChart({
         outOfBrush: { colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA },
       },
       grid: {
-        top: 12,
-        bottom: showXAxisLabels ? 24 : 10,
+        top: SANDBOX_MONITORING_CHART_GRID_TOP,
+        bottom: showXAxisLabels
+          ? SANDBOX_MONITORING_CHART_GRID_BOTTOM_WITH_X_AXIS
+          : SANDBOX_MONITORING_CHART_GRID_BOTTOM,
         left: 36,
         right: 8,
       },
