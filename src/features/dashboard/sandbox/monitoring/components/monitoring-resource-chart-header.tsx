@@ -26,7 +26,6 @@ interface ResourceChartHeaderProps {
     ramPercent: number | null
     timestampMs: number
   } | null
-  suffix?: ReactNode
 }
 
 interface MetricItemProps {
@@ -60,7 +59,6 @@ function MetricItem({
 export default function ResourceChartHeader({
   metric,
   hovered,
-  suffix,
 }: ResourceChartHeaderProps) {
   const cpuPercent = hovered ? hovered.cpuPercent : (metric?.cpuUsedPct ?? 0)
   const cpuValue = formatMetricValue(
@@ -102,7 +100,6 @@ export default function ResourceChartHeader({
             {contextLabel}
           </span>
         ) : null}
-        {suffix}
       </div>
     </div>
   )

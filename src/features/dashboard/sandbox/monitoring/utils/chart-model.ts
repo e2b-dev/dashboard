@@ -201,6 +201,7 @@ function buildDiskSeries(
       lineColorVar: SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_DISK_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_DISK_AREA_TO_COLOR_VAR,
+      showArea: true,
       areaOpacity: 0.5,
       data: buildSeriesData(
         metrics,

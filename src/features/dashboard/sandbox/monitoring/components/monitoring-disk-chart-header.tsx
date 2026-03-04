@@ -53,7 +53,9 @@ export default function DiskChartHeader({
             {SANDBOX_MONITORING_DISK_SERIES_LABEL}
           </span>
           <span className="mx-1"> </span>
-          <span>{formatMetricValue(formatPercent(diskPercent), diskTotalGb)}</span>
+          <span>
+            {formatMetricValue(formatPercent(diskPercent), diskTotalGb)}
+          </span>
         </span>
       </div>
       {contextLabel ? (

@@ -32,9 +32,6 @@ export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
   hoveredTimestampMs?: number | null
   className?: string
-  stacked?: boolean
-  showArea?: boolean
-  showCrosshairBadges?: boolean
   showXAxisLabels?: boolean
   yAxisMax?: number
   yAxisFormatter?: (value: number) => string

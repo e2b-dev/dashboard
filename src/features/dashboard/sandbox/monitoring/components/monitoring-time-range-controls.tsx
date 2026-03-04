@@ -58,6 +58,11 @@ function toSafeIsoDateTime(
   return new Date(fallbackTimestampMs).toISOString()
 }
 
+const rangeLabelFormatter = new Intl.DateTimeFormat(
+  undefined,
+  SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS
+)
+
 interface SandboxMonitoringTimeRangeControlsProps {
   timeframe: {
     start: number
@@ -257,18 +262,15 @@ export default function SandboxMonitoringTimeRangeControls({
   )
 
   const rangeLabel = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat(
-      undefined,
-      SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS
-    )
-
     const startDate = new Date(timeframe.start)
     const endDate = new Date(timeframe.end)
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
       return '--'
     }
 
-    return `${formatter.format(startDate)} - ${formatter.format(endDate)}`
+    return `${rangeLabelFormatter.format(startDate)} - ${rangeLabelFormatter.format(
+      endDate
+    )}`
   }, [timeframe.end, timeframe.start])
 
   useEffect(() => {

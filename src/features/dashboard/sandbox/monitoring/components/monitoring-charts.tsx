@@ -229,7 +229,6 @@ export default function SandboxMetricsCharts({
         <SandboxMetricsChart
           series={diskSeriesWithMarkerFormatters}
           hoveredTimestampMs={hoveredTimestampMs}
-          showArea
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           className={cn(

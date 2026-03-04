@@ -41,7 +41,6 @@ import {
   SANDBOX_MONITORING_CHART_LIVE_OUTER_DOT_SIZE,
   SANDBOX_MONITORING_CHART_LIVE_WINDOW_MS,
   SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA,
-  SANDBOX_MONITORING_CHART_STACK_ID,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
   SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR,
 } from '@/features/dashboard/sandbox/monitoring/utils/constants'
@@ -151,7 +150,10 @@ function toNumericValue(value: unknown): number {
   return Number.NaN
 }
 
-function formatXAxisLabel(value: number | string): string {
+function formatXAxisLabel(
+  value: number | string,
+  includeSeconds: boolean = false
+): string {
   const timestamp = Number(value)
   if (Number.isNaN(timestamp)) {
     return ''
@@ -160,22 +162,15 @@ function formatXAxisLabel(value: number | string): string {
   const date = new Date(timestamp)
   const hours = date.getHours().toString().padStart(2, '0')
   const minutes = date.getMinutes().toString().padStart(2, '0')
+  const base = `${hours}:${minutes}`
 
-  return `${hours}:${minutes}`
-}
-
-function formatXAxisHoverLabel(value: number | string): string {
-  const timestamp = Number(value)
-  if (Number.isNaN(timestamp)) {
-    return ''
+  if (!includeSeconds) {
+    return base
   }
 
-  const date = new Date(timestamp)
-  const hours = date.getHours().toString().padStart(2, '0')
-  const minutes = date.getMinutes().toString().padStart(2, '0')
   const seconds = date.getSeconds().toString().padStart(2, '0')
 
-  return `${hours}:${minutes}:${seconds}`
+  return `${base}:${seconds}`
 }
 
 function findLivePoint(
@@ -370,9 +365,6 @@ function SandboxMetricsChart({
   series,
   hoveredTimestampMs = null,
   className,
-  stacked = false,
-  showArea = false,
-  showCrosshairBadges = true,
   showXAxisLabels = true,
   yAxisMax,
   yAxisFormatter = formatAxisNumber,
@@ -528,7 +520,7 @@ function SandboxMetricsChart({
         : undefined
       const resolvedLineColor = lineColor || stroke
       const livePoint = findLivePoint(line.data)
-      const shouldShowArea = line.showArea ?? (stacked || showArea)
+      const shouldShowArea = line.showArea ?? false
       const areaFillColor =
         areaFromColor && areaToColor
           ? {
@@ -558,7 +550,6 @@ function SandboxMetricsChart({
         emphasis: {
           disabled: true,
         },
-        stack: stacked ? SANDBOX_MONITORING_CHART_STACK_ID : undefined,
         areaStyle: shouldShowArea
           ? {
               opacity: areaOpacity,
@@ -612,7 +603,7 @@ function SandboxMetricsChart({
           fontFamily: fontMono,
           fontSize: SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
           hideOverlap: true,
-          formatter: formatXAxisLabel,
+          formatter: (value: number | string) => formatXAxisLabel(value),
         },
         axisPointer: {
           show: true,
@@ -659,15 +650,13 @@ function SandboxMetricsChart({
     fontMono,
     series,
     showXAxisLabels,
-    showArea,
-    stacked,
     stroke,
     yAxisFormatter,
     yAxisMax,
   ])
 
   const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
-    if (!showCrosshairBadges || hoveredTimestampMs === null) {
+    if (hoveredTimestampMs === null) {
       return []
     }
 
@@ -750,21 +739,10 @@ function SandboxMetricsChart({
     })
 
     return applyMarkerLabelOffsets(markers)
-  }, [
-    cssVars,
-    hoveredTimestampMs,
-    series,
-    showCrosshairBadges,
-    stroke,
-    yAxisFormatter,
-  ])
+  }, [cssVars, hoveredTimestampMs, series, stroke, yAxisFormatter])
 
   const xAxisHoverBadge = useMemo(() => {
-    if (
-      !showCrosshairBadges ||
-      !showXAxisLabels ||
-      hoveredTimestampMs === null
-    ) {
+    if (!showXAxisLabels || hoveredTimestampMs === null) {
       return null
     }
 
@@ -788,9 +766,9 @@ function SandboxMetricsChart({
 
     return {
       xPx,
-      label: formatXAxisHoverLabel(hoveredTimestampMs),
+      label: formatXAxisLabel(hoveredTimestampMs, true),
     }
-  }, [hoveredTimestampMs, showCrosshairBadges, showXAxisLabels])
+  }, [hoveredTimestampMs, showXAxisLabels])
 
   const showOverlay = crosshairMarkers.length > 0 || xAxisHoverBadge !== null
 
@@ -809,7 +787,7 @@ function SandboxMetricsChart({
           updateAxisPointer: handleUpdateAxisPointer,
         }}
       />
-      {showCrosshairBadges && showOverlay ? (
+      {showOverlay ? (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {crosshairMarkers.map((marker) => (
             <div

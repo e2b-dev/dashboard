@@ -11,7 +11,6 @@ import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_LIVE_POLLING_MS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
-  SANDBOX_MONITORING_METRICS_FETCH_ERROR_MESSAGE,
   SANDBOX_MONITORING_MIN_RANGE_MS,
   SANDBOX_MONITORING_QUERY_END_PARAM,
   SANDBOX_MONITORING_QUERY_LIVE_FALSE,
@@ -470,20 +469,12 @@ export function useSandboxMonitoringController(sandboxId: string) {
     },
   })
 
-  const error = metricsQuery.error
-    ? metricsQuery.error instanceof Error
-      ? metricsQuery.error.message
-      : SANDBOX_MONITORING_METRICS_FETCH_ERROR_MESSAGE
-    : null
-
   return {
     lifecycleBounds,
     timeframe: state.timeframe,
     metrics: metricsQuery.data ?? [],
     isLiveUpdating: state.isLiveUpdating,
     isRefetching: metricsQuery.isFetching,
-    isLoading: metricsQuery.isLoading || metricsQuery.isFetching,
-    error,
     setTimeframe: applyTimeframe,
     setLiveUpdating,
   }
