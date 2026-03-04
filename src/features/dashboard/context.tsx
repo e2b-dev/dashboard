@@ -1,7 +1,13 @@
 'use client'
 
 import type { User } from '@supabase/supabase-js'
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 import type { ClientTeam } from '@/types/dashboard.types'
 import { ReferralSourceDialog } from './referral-source-dialog'
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { supabase } from '@/lib/clients/supabase/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -11,7 +12,6 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { Input } from '@/ui/primitives/input'
-import { supabase } from '@/lib/clients/supabase/client'
 
 interface ReferralSourceDialogProps {
   userEmail: string

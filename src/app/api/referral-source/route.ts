@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   const webhookUrl = process.env.SLACK_USER_SIGNUP_WEBHOOK_URL
