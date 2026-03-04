@@ -17,12 +17,16 @@ import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
+  SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
+  SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FIRST_HOUR_PRESET_ID,
   SANDBOX_MONITORING_FIRST_HOUR_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_ID,
   SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_SHORTCUT,
+  SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_ID,
+  SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_6_HOURS_PRESET_ID,
   SANDBOX_MONITORING_LAST_6_HOURS_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_ID,
@@ -191,6 +195,12 @@ export default function SandboxMonitoringTimeRangeControls({
         },
       },
       makeLeading(
+        SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
+        'First 5 min',
+        SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
+        5 * millisecondsInMinute
+      ),
+      makeLeading(
         SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_ID,
         'First 15 min',
         SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_SHORTCUT,
@@ -201,6 +211,12 @@ export default function SandboxMonitoringTimeRangeControls({
         'First 1 hour',
         SANDBOX_MONITORING_FIRST_HOUR_PRESET_SHORTCUT,
         millisecondsInHour
+      ),
+      makeTrailing(
+        SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_ID,
+        'Last 5 min',
+        SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_SHORTCUT,
+        5 * millisecondsInMinute
       ),
       makeTrailing(
         SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_ID,
@@ -397,14 +413,10 @@ export default function SandboxMonitoringTimeRangeControls({
   }, [canGoForward, handleHistoryNavigation, historyState.index])
 
   return (
-    <div className={cn('flex items-center gap-4', className)}>
+    <div className={cn('flex items-center gap-3', className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button
-            size="sm"
-            variant="outline"
-            className="prose-label font-sans h-8"
-          >
+          <Button size="md" variant="outline" className="prose-label font-sans">
             {rangeLabel}
           </Button>
         </PopoverTrigger>
@@ -433,32 +445,32 @@ export default function SandboxMonitoringTimeRangeControls({
       </Popover>
 
       <Button
-        size="sm"
+        size="md"
         variant="outline"
         onClick={handleLiveToggle}
-        className="prose-label font-sans h-8"
+        className="prose-label font-sans"
       >
         <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
         {isLiveUpdating && lifecycle.isRunning ? 'Live' : 'Paused'}
       </Button>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <Button
-          size="sm"
+          size="md"
           variant="outline"
           onClick={handleGoBackward}
           disabled={!canGoBackward}
-          className="h-8 w-8 p-0"
+          className="w-9 p-0"
           title="Go to previous timeframe"
         >
           <ChevronLeft className="size-4" />
         </Button>
         <Button
-          size="sm"
+          size="md"
           variant="outline"
           onClick={handleGoForward}
           disabled={!canGoForward}
-          className="h-8 w-8 p-0"
+          className="w-9 p-0"
           title="Go to next timeframe"
         >
           <ChevronRight className="size-4" />

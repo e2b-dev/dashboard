@@ -3,6 +3,7 @@ import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import type {
   MonitoringChartModel,
   SandboxMetricsDataPoint,
+  SandboxMetricsSeries,
 } from '../types/sandbox-metrics-chart'
 import {
   SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
@@ -29,6 +30,8 @@ interface NormalizedSandboxMetric {
   cpuPercent: number
   ramPercent: number
   diskPercent: number
+  ramUsedMb: number
+  diskUsedMb: number
 }
 
 interface BuildMonitoringChartModelOptions {
@@ -52,6 +55,14 @@ function toPercent(used: number, total: number): number {
   }
 
   return clampPercent((used / total) * 100)
+}
+
+function toMegabytes(value: number): number {
+  if (!Number.isFinite(value) || value < 0) {
+    return 0
+  }
+
+  return Math.round(value / (1024 * 1024))
 }
 
 function getMetricTimestampMs(metric: SandboxMetric): number | null {
@@ -78,6 +89,8 @@ function normalizeMetric(
     cpuPercent: clampPercent(metric.cpuUsedPct),
     ramPercent: toPercent(metric.memUsed, metric.memTotal),
     diskPercent: toPercent(metric.diskUsed, metric.diskTotal),
+    ramUsedMb: toMegabytes(metric.memUsed),
+    diskUsedMb: toMegabytes(metric.diskUsed),
   }
 }
 
@@ -89,9 +102,14 @@ function sortMetricsByTimestamp(
 
 function buildSeriesData(
   metrics: NormalizedSandboxMetric[],
-  getValue: (metric: NormalizedSandboxMetric) => number
+  getValue: (metric: NormalizedSandboxMetric) => number,
+  getMarkerValue?: (metric: NormalizedSandboxMetric) => number | null
 ): SandboxMetricsDataPoint[] {
-  return metrics.map((metric) => [metric.timestampMs, getValue(metric)])
+  return metrics.map((metric) => [
+    metric.timestampMs,
+    getValue(metric),
+    getMarkerValue ? getMarkerValue(metric) : null,
+  ])
 }
 
 function findClosestMetric(
@@ -140,7 +158,9 @@ function findClosestMetric(
   return previousDistance <= nextDistance ? previousMetric : nextMetric
 }
 
-function buildResourceSeries(metrics: NormalizedSandboxMetric[]) {
+function buildResourceSeries(
+  metrics: NormalizedSandboxMetric[]
+): SandboxMetricsSeries[] {
   return [
     {
       id: SANDBOX_MONITORING_CPU_SERIES_ID,
@@ -148,7 +168,8 @@ function buildResourceSeries(metrics: NormalizedSandboxMetric[]) {
       lineColorVar: SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
-      showArea: false,
+      showArea: true,
+      areaOpacity: 0.3,
       zIndex: 2,
       data: buildSeriesData(metrics, (metric) => metric.cpuPercent),
     },
@@ -158,14 +179,21 @@ function buildResourceSeries(metrics: NormalizedSandboxMetric[]) {
       lineColorVar: SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_RAM_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
-      showArea: false,
+      showArea: true,
+      areaOpacity: 0.3,
       zIndex: 1,
-      data: buildSeriesData(metrics, (metric) => metric.ramPercent),
+      data: buildSeriesData(
+        metrics,
+        (metric) => metric.ramPercent,
+        (metric) => metric.ramUsedMb
+      ),
     },
   ]
 }
 
-function buildDiskSeries(metrics: NormalizedSandboxMetric[]) {
+function buildDiskSeries(
+  metrics: NormalizedSandboxMetric[]
+): SandboxMetricsSeries[] {
   return [
     {
       id: SANDBOX_MONITORING_DISK_SERIES_ID,
@@ -173,7 +201,12 @@ function buildDiskSeries(metrics: NormalizedSandboxMetric[]) {
       lineColorVar: SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
       areaColorVar: SANDBOX_MONITORING_DISK_AREA_COLOR_VAR,
       areaToColorVar: SANDBOX_MONITORING_DISK_AREA_TO_COLOR_VAR,
-      data: buildSeriesData(metrics, (metric) => metric.diskPercent),
+      areaOpacity: 0.5,
+      data: buildSeriesData(
+        metrics,
+        (metric) => metric.diskPercent,
+        (metric) => metric.diskUsedMb
+      ),
     },
   ]
 }

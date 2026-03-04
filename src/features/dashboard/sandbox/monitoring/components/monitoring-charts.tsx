@@ -3,8 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
+import type { SandboxMetricsMarkerValueFormatterInput } from '../types/sandbox-metrics-chart'
 import { buildMonitoringChartModel } from '../utils/chart-model'
-import { SANDBOX_MONITORING_PERCENT_MAX } from '../utils/constants'
+import {
+  SANDBOX_MONITORING_CPU_SERIES_ID,
+  SANDBOX_MONITORING_DISK_SERIES_ID,
+  SANDBOX_MONITORING_PERCENT_MAX,
+  SANDBOX_MONITORING_RAM_SERIES_ID,
+} from '../utils/constants'
 import MonitoringChartSection from './monitoring-chart-section'
 import DiskChartHeader from './monitoring-disk-chart-header'
 import ResourceChartHeader from './monitoring-resource-chart-header'
@@ -13,6 +19,34 @@ import SandboxMonitoringTimeRangeControls from './monitoring-time-range-controls
 
 interface SandboxMetricsChartsProps {
   sandboxId: string
+}
+
+function formatMarkerPercent(value: number) {
+  return Math.round(value)
+}
+
+function renderPercentMarker(value: number) {
+  return (
+    <>
+      <span className="text-fg">{formatMarkerPercent(value)}</span>
+      <span className="text-fg-tertiary">%</span>
+    </>
+  )
+}
+
+function renderUsageMarker(usedMb: number | null, value: number) {
+  const normalizedUsedMb =
+    usedMb === null || !Number.isFinite(usedMb) ? 0 : Math.round(usedMb)
+
+  return (
+    <>
+      <span className="text-fg">{normalizedUsedMb}</span>
+      <span className="text-fg-tertiary">MB</span>
+      <span className="px-1 text-fg-tertiary">·</span>
+      <span className="text-fg">{formatMarkerPercent(value)}</span>
+      <span className="text-fg-tertiary">%</span>
+    </>
+  )
 }
 
 export default function SandboxMetricsCharts({
@@ -74,6 +108,52 @@ export default function SandboxMetricsCharts({
       renderedTimeframe.start,
     ]
   )
+  const resourceSeriesWithMarkerFormatters = useMemo(
+    () =>
+      chartModel.resourceSeries.map((line) => {
+        if (line.id === SANDBOX_MONITORING_CPU_SERIES_ID) {
+          return {
+            ...line,
+            markerValueFormatter: ({
+              value,
+            }: SandboxMetricsMarkerValueFormatterInput) =>
+              renderPercentMarker(value),
+          }
+        }
+
+        if (line.id === SANDBOX_MONITORING_RAM_SERIES_ID) {
+          return {
+            ...line,
+            markerValueFormatter: ({
+              markerValue,
+              value,
+            }: SandboxMetricsMarkerValueFormatterInput) =>
+              renderUsageMarker(markerValue, value),
+          }
+        }
+
+        return line
+      }),
+    [chartModel.resourceSeries]
+  )
+  const diskSeriesWithMarkerFormatters = useMemo(
+    () =>
+      chartModel.diskSeries.map((line) => {
+        if (line.id !== SANDBOX_MONITORING_DISK_SERIES_ID) {
+          return line
+        }
+
+        return {
+          ...line,
+          markerValueFormatter: ({
+            markerValue,
+            value,
+          }: SandboxMetricsMarkerValueFormatterInput) =>
+            renderUsageMarker(markerValue, value),
+        }
+      }),
+    [chartModel.diskSeries]
+  )
 
   useEffect(() => {
     if (isRefetching) {
@@ -114,7 +194,7 @@ export default function SandboxMetricsCharts({
       ) : null}
 
       <MonitoringChartSection
-        className="min-h-[280px] flex-[1.5]"
+        className="flex-[1.5]"
         header={
           <ResourceChartHeader
             metric={chartModel.latestMetric}
@@ -123,7 +203,8 @@ export default function SandboxMetricsCharts({
         }
       >
         <SandboxMetricsChart
-          series={chartModel.resourceSeries}
+          series={resourceSeriesWithMarkerFormatters}
+          hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels={false}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           className={cn(
@@ -137,7 +218,7 @@ export default function SandboxMetricsCharts({
       </MonitoringChartSection>
 
       <MonitoringChartSection
-        className="min-h-[280px] flex-1"
+        className="flex-1"
         header={
           <DiskChartHeader
             metric={chartModel.latestMetric}
@@ -146,7 +227,8 @@ export default function SandboxMetricsCharts({
         }
       >
         <SandboxMetricsChart
-          series={chartModel.diskSeries}
+          series={diskSeriesWithMarkerFormatters}
+          hoveredTimestampMs={hoveredTimestampMs}
           showArea
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}

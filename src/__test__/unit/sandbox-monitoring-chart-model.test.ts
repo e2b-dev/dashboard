@@ -49,19 +49,19 @@ describe('buildMonitoringChartModel', () => {
     expect(result.resourceSeries).toHaveLength(2)
     expect(result.diskSeries).toHaveLength(1)
     expect(result.resourceSeries[0]?.data).toEqual([
-      [0, 10],
-      [5_000, 20],
-      [10_000, 30],
+      [0, 10, null],
+      [5_000, 20, null],
+      [10_000, 30, null],
     ])
     expect(result.resourceSeries[1]?.data).toEqual([
-      [0, 10],
-      [5_000, 20],
-      [10_000, 30],
+      [0, 10, 0],
+      [5_000, 20, 0],
+      [10_000, 30, 0],
     ])
     expect(result.diskSeries[0]?.data).toEqual([
-      [0, 10],
-      [5_000, 20],
-      [10_000, 30],
+      [0, 10, 0],
+      [5_000, 20, 0],
+      [10_000, 30, 0],
     ])
     expect(result.resourceHoveredContext).toEqual({
       cpuPercent: 20,
@@ -119,7 +119,7 @@ describe('buildMonitoringChartModel', () => {
     })
 
     expect(result.latestMetric?.timestampUnix).toBe(1)
-    expect(result.resourceSeries[0]?.data).toEqual([[1_000, 5]])
-    expect(result.diskSeries[0]?.data).toEqual([[1_000, 5]])
+    expect(result.resourceSeries[0]?.data).toEqual([[1_000, 5, null]])
+    expect(result.diskSeries[0]?.data).toEqual([[1_000, 5, 0]])
   })
 })

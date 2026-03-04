@@ -16,7 +16,14 @@ import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
-import { memo, useCallback, useMemo, useRef } from 'react'
+import {
+  memo,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react'
 import {
   SANDBOX_MONITORING_CHART_AREA_OPACITY,
   SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
@@ -39,6 +46,7 @@ import {
   SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR,
 } from '@/features/dashboard/sandbox/monitoring/utils/constants'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type {
@@ -73,6 +81,64 @@ interface BrushEndEventParams {
   areas?: BrushArea[]
 }
 
+interface CrosshairMarker {
+  key: string
+  xPx: number
+  yPx: number
+  valueContent: ReactNode
+  dotColor: string
+  placeValueOnRight: boolean
+  labelOffsetYPx: number
+}
+
+const SANDBOX_MONITORING_CHART_FG_VAR = '--fg'
+const SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX = 86
+const SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX = 24
+const SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX = 20
+
+function withOpacity(color: string, opacity: number): string {
+  const normalizedOpacity = Math.max(0, Math.min(1, opacity))
+  const hex = color.trim()
+
+  if (!hex.startsWith('#')) {
+    return color
+  }
+
+  const value = hex.slice(1)
+  const expanded =
+    value.length === 3
+      ? value
+          .split('')
+          .map((char) => `${char}${char}`)
+          .join('')
+      : value
+
+  if (expanded.length !== 6 && expanded.length !== 8) {
+    return color
+  }
+
+  const r = Number.parseInt(expanded.slice(0, 2), 16)
+  const g = Number.parseInt(expanded.slice(2, 4), 16)
+  const b = Number.parseInt(expanded.slice(4, 6), 16)
+
+  if ([r, g, b].some((value) => Number.isNaN(value))) {
+    return color
+  }
+
+  return `rgba(${r}, ${g}, ${b}, ${normalizedOpacity})`
+}
+
+function normalizeOpacity(
+  opacity: number | undefined,
+  fallback: number
+): number {
+  if (opacity === undefined || !Number.isFinite(opacity)) {
+    return fallback
+  }
+
+  return Math.max(0, Math.min(1, opacity))
+}
+
 function toNumericValue(value: unknown): number {
   if (typeof value === 'number') {
     return value
@@ -96,6 +162,20 @@ function formatXAxisLabel(value: number | string): string {
   const minutes = date.getMinutes().toString().padStart(2, '0')
 
   return `${hours}:${minutes}`
+}
+
+function formatXAxisHoverLabel(value: number | string): string {
+  const timestamp = Number(value)
+  if (Number.isNaN(timestamp)) {
+    return ''
+  }
+
+  const date = new Date(timestamp)
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2, '0')
+
+  return `${hours}:${minutes}:${seconds}`
 }
 
 function findLivePoint(
@@ -130,6 +210,108 @@ function findLivePoint(
   }
 
   return null
+}
+
+function findClosestValidPoint(
+  points: SandboxMetricsDataPoint[],
+  targetTimestampMs: number
+): { timestampMs: number; value: number; markerValue: number | null } | null {
+  let closestPoint: {
+    timestampMs: number
+    value: number
+    markerValue: number | null
+  } | null = null
+  let closestDistance = Number.POSITIVE_INFINITY
+
+  for (const point of points) {
+    if (!point) {
+      continue
+    }
+
+    const [timestampMs, value, markerValue] = point
+    if (value === null || !Number.isFinite(timestampMs)) {
+      continue
+    }
+
+    const distance = Math.abs(timestampMs - targetTimestampMs)
+    if (distance >= closestDistance) {
+      continue
+    }
+
+    closestDistance = distance
+    closestPoint = {
+      timestampMs,
+      value,
+      markerValue: markerValue ?? null,
+    }
+  }
+
+  return closestPoint
+}
+
+function findFirstValidPointTimestampMs(
+  points: SandboxMetricsDataPoint[]
+): number | null {
+  for (const point of points) {
+    if (!point) {
+      continue
+    }
+
+    const [timestampMs, value] = point
+    if (value === null || !Number.isFinite(timestampMs)) {
+      continue
+    }
+
+    return timestampMs
+  }
+
+  return null
+}
+
+function applyMarkerLabelOffsets(
+  markers: CrosshairMarker[]
+): CrosshairMarker[] {
+  if (markers.length < 2) {
+    return markers
+  }
+
+  const sortedMarkers = [...markers].sort((a, b) => a.yPx - b.yPx)
+  const offsetsByMarkerKey = new Map<string, number>()
+  let clusterStart = 0
+
+  for (let index = 1; index <= sortedMarkers.length; index += 1) {
+    const previousMarker = sortedMarkers[index - 1]
+    const currentMarker = sortedMarkers[index]
+    if (!previousMarker) {
+      continue
+    }
+
+    const shouldSplitCluster =
+      !currentMarker ||
+      Math.abs(currentMarker.yPx - previousMarker.yPx) >
+        SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX
+
+    if (!shouldSplitCluster) {
+      continue
+    }
+
+    const cluster = sortedMarkers.slice(clusterStart, index)
+    const halfIndex = (cluster.length - 1) / 2
+
+    cluster.forEach((marker, clusterIndex) => {
+      const offset =
+        (clusterIndex - halfIndex) *
+        SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX
+      offsetsByMarkerKey.set(marker.key, offset)
+    })
+
+    clusterStart = index
+  }
+
+  return markers.map((marker) => ({
+    ...marker,
+    labelOffsetYPx: offsetsByMarkerKey.get(marker.key) ?? marker.labelOffsetYPx,
+  }))
 }
 
 function createLiveIndicators(
@@ -186,9 +368,11 @@ function createLiveIndicators(
 
 function SandboxMetricsChart({
   series,
+  hoveredTimestampMs = null,
   className,
   stacked = false,
   showArea = false,
+  showCrosshairBadges = true,
   showXAxisLabels = true,
   yAxisMax,
   yAxisFormatter = formatAxisNumber,
@@ -209,6 +393,7 @@ function SandboxMetricsChart({
     return Array.from(
       new Set([
         SANDBOX_MONITORING_CHART_STROKE_VAR,
+        SANDBOX_MONITORING_CHART_FG_VAR,
         SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
         SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
         ...dynamicVarNames,
@@ -224,6 +409,8 @@ function SandboxMetricsChart({
   const fgTertiary =
     cssVars[SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY
+  const fg = cssVars[SANDBOX_MONITORING_CHART_FG_VAR] || stroke
+  const axisPointerColor = withOpacity(fg, 0.7)
   const fontMono =
     cssVars[SANDBOX_MONITORING_CHART_FONT_MONO_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO
@@ -243,14 +430,32 @@ function SandboxMetricsChart({
         return
       }
 
-      onHover(Math.floor(timestampMs))
+      const normalizedTimestampMs = Math.floor(timestampMs)
+      onHover(normalizedTimestampMs)
     },
     [onHover]
   )
 
-  const handleGlobalOut = useCallback(() => {
+  const clearAxisPointer = useCallback(() => {
+    chartInstanceRef.current?.dispatchAction({ type: 'hideTip' })
+    chartInstanceRef.current?.dispatchAction({
+      type: 'updateAxisPointer',
+      currTrigger: 'leave',
+    })
+  }, [])
+
+  const handleHoverLeave = useCallback(() => {
+    clearAxisPointer()
     onHoverEnd?.()
-  }, [onHoverEnd])
+  }, [clearAxisPointer, onHoverEnd])
+
+  useEffect(() => {
+    if (hoveredTimestampMs !== null) {
+      return
+    }
+
+    clearAxisPointer()
+  }, [clearAxisPointer, hoveredTimestampMs])
 
   const handleBrushEnd = useCallback(
     (params: BrushEndEventParams) => {
@@ -338,8 +543,9 @@ function SandboxMetricsChart({
               ],
             }
           : areaFromColor || resolvedLineColor
-      const areaOpacity =
+      const defaultAreaOpacity =
         areaFromColor || areaToColor ? 1 : SANDBOX_MONITORING_CHART_AREA_OPACITY
+      const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
 
       const seriesItem: SeriesOption = {
         id: line.id,
@@ -389,7 +595,7 @@ function SandboxMetricsChart({
         outOfBrush: { colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA },
       },
       grid: {
-        top: 10,
+        top: 12,
         bottom: showXAxisLabels ? 24 : 10,
         left: 36,
         right: 8,
@@ -412,7 +618,7 @@ function SandboxMetricsChart({
           show: true,
           type: 'line',
           lineStyle: {
-            color: stroke,
+            color: axisPointerColor,
             type: 'solid',
             width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
           },
@@ -448,6 +654,7 @@ function SandboxMetricsChart({
     }
   }, [
     cssVars,
+    axisPointerColor,
     fgTertiary,
     fontMono,
     series,
@@ -459,20 +666,193 @@ function SandboxMetricsChart({
     yAxisMax,
   ])
 
+  const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
+    if (!showCrosshairBadges || hoveredTimestampMs === null) {
+      return []
+    }
+
+    const chart = chartInstanceRef.current
+    if (!chart) {
+      return []
+    }
+
+    const firstTimestamps = series
+      .map((line) => findFirstValidPointTimestampMs(line.data))
+      .filter((value): value is number => value !== null)
+    const firstTimestampMs =
+      firstTimestamps.length > 0 ? Math.min(...firstTimestamps) : null
+    const firstPointPixel =
+      firstTimestampMs !== null
+        ? chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+            firstTimestampMs,
+            0,
+          ])
+        : null
+    const firstPointPx =
+      Array.isArray(firstPointPixel) &&
+      firstPointPixel.length > 0 &&
+      typeof firstPointPixel[0] === 'number' &&
+      Number.isFinite(firstPointPixel[0])
+        ? firstPointPixel[0]
+        : null
+
+    const markers = series.flatMap((line) => {
+      const closestPoint = findClosestValidPoint(line.data, hoveredTimestampMs)
+      if (!closestPoint) {
+        return []
+      }
+
+      const pixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+        closestPoint.timestampMs,
+        closestPoint.value,
+      ])
+      if (!Array.isArray(pixel) || pixel.length < 2) {
+        return []
+      }
+
+      const xPx = pixel[0]
+      const yPx = pixel[1]
+      if (
+        typeof xPx !== 'number' ||
+        typeof yPx !== 'number' ||
+        !Number.isFinite(xPx) ||
+        !Number.isFinite(yPx)
+      ) {
+        return []
+      }
+
+      return [
+        {
+          key: `${line.id}-${closestPoint.timestampMs}`,
+          xPx,
+          yPx,
+          valueContent: line.markerValueFormatter
+            ? line.markerValueFormatter({
+                value: closestPoint.value,
+                markerValue: closestPoint.markerValue,
+                point: [
+                  closestPoint.timestampMs,
+                  closestPoint.value,
+                  closestPoint.markerValue,
+                ],
+              })
+            : yAxisFormatter(closestPoint.value),
+          dotColor: line.lineColorVar
+            ? (cssVars[line.lineColorVar] ?? stroke)
+            : stroke,
+          placeValueOnRight:
+            firstPointPx !== null &&
+            xPx - firstPointPx <=
+              SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX,
+          labelOffsetYPx: 0,
+        },
+      ]
+    })
+
+    return applyMarkerLabelOffsets(markers)
+  }, [
+    cssVars,
+    hoveredTimestampMs,
+    series,
+    showCrosshairBadges,
+    stroke,
+    yAxisFormatter,
+  ])
+
+  const xAxisHoverBadge = useMemo(() => {
+    if (
+      !showCrosshairBadges ||
+      !showXAxisLabels ||
+      hoveredTimestampMs === null
+    ) {
+      return null
+    }
+
+    const chart = chartInstanceRef.current
+    if (!chart) {
+      return null
+    }
+
+    const pixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+      hoveredTimestampMs,
+      0,
+    ])
+    if (!Array.isArray(pixel) || pixel.length < 1) {
+      return null
+    }
+
+    const xPx = pixel[0]
+    if (typeof xPx !== 'number' || !Number.isFinite(xPx)) {
+      return null
+    }
+
+    return {
+      xPx,
+      label: formatXAxisHoverLabel(hoveredTimestampMs),
+    }
+  }, [hoveredTimestampMs, showCrosshairBadges, showXAxisLabels])
+
+  const showOverlay = crosshairMarkers.length > 0 || xAxisHoverBadge !== null
+
   return (
-    <ReactEChartsCore
-      key={resolvedTheme}
-      echarts={echarts}
-      option={option}
-      style={{ width: '100%', height: '100%' }}
-      onChartReady={handleChartReady}
-      className={className}
-      onEvents={{
-        globalout: handleGlobalOut,
-        brushEnd: handleBrushEnd,
-        updateAxisPointer: handleUpdateAxisPointer,
-      }}
-    />
+    <div className={cn('relative h-full w-full', className)}>
+      <ReactEChartsCore
+        key={resolvedTheme}
+        echarts={echarts}
+        option={option}
+        style={{ width: '100%', height: '100%' }}
+        onChartReady={handleChartReady}
+        className="h-full w-full"
+        onEvents={{
+          globalout: handleHoverLeave,
+          brushEnd: handleBrushEnd,
+          updateAxisPointer: handleUpdateAxisPointer,
+        }}
+      />
+      {showCrosshairBadges && showOverlay ? (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {crosshairMarkers.map((marker) => (
+            <div
+              key={marker.key}
+              className="absolute"
+              style={{
+                left: marker.xPx,
+                top: marker.yPx,
+              }}
+            >
+              <span
+                className="absolute size-2 -translate-x-1/2 -translate-y-1/2 border border-bg-1"
+                style={{ backgroundColor: marker.dotColor }}
+              />
+              <div
+                style={{
+                  borderColor: withOpacity(marker.dotColor, 0.7),
+                  marginTop: marker.labelOffsetYPx,
+                }}
+                className={cn(
+                  'prose-label-numeric bg-bg/60 absolute top-1/2 text-fg font-mono -translate-y-1/2 border whitespace-nowrap px-2 py-0.5 backdrop-blur-lg z-9999',
+                  marker.placeValueOnRight ? 'left-2' : 'right-2'
+                )}
+              >
+                {marker.valueContent}
+              </div>
+            </div>
+          ))}
+
+          {xAxisHoverBadge ? (
+            <div
+              className="prose-label-numeric bg-bg/60 font-mono absolute bottom-0 z-9999 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
+              style={{
+                left: xAxisHoverBadge.xPx,
+                borderColor: axisPointerColor,
+              }}
+            >
+              {xAxisHoverBadge.label}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
