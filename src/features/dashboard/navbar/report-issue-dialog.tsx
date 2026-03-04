@@ -1,16 +1,16 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
 import { Paperclip, X } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useAction } from 'next-safe-action/hooks'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { useDashboard } from '@/features/dashboard/context'
-import { contactSupportAction } from '@/server/support/support-actions'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -44,6 +44,19 @@ const supportFormSchema = z.object({
 
 type SupportFormValues = z.infer<typeof supportFormSchema>
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string | null
+      // Strip the data URL prefix (e.g. "data:image/png;base64,")
+      resolve(result?.split(',')[1] ?? '')
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 interface ContactSupportDialogProps {
   trigger: React.ReactNode
 }
@@ -56,6 +69,7 @@ export default function ContactSupportDialog({
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+  const trpc = useTRPC()
 
   const [isOpen, setIsOpen] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
@@ -81,10 +95,9 @@ export default function ContactSupportDialog({
     },
   })
 
-  const { execute: submitSupport, isExecuting } = useAction(
-    contactSupportAction,
-    {
-      onSuccess: ({ data }) => {
+  const contactSupportMutation = useMutation(
+    trpc.support.contactSupport.mutationOptions({
+      onSuccess: (data) => {
         posthog.capture('support_request_submitted', {
           thread_id: data?.threadId,
           team_id: team.id,
@@ -101,12 +114,12 @@ export default function ContactSupportDialog({
           setWasSubmitted(false)
         }, 100)
       },
-      onError: ({ error }) => {
+      onError: (error) => {
         toast.error(
-          error.serverError ?? 'Failed to send message. Please try again.'
+          error.message ?? 'Failed to send message. Please try again.'
         )
       },
-    }
+    })
   )
 
   const resetForm = useCallback(() => {
@@ -148,13 +161,23 @@ export default function ContactSupportDialog({
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  const onSubmit = (values: SupportFormValues) => {
-    submitSupport({
-      description: values.description.trim(),
+  const onSubmit = async (values: SupportFormValues) => {
+    const filePayloads = await Promise.all(
+      files.map(async (file) => ({
+        name: file.name,
+        type: file.type,
+        base64: await fileToBase64(file),
+      }))
+    )
+
+    contactSupportMutation.mutate({
       teamIdOrSlug: team.id,
-      files,
+      description: values.description.trim(),
+      files: filePayloads.length > 0 ? filePayloads : undefined,
     })
   }
+
+  const isSubmitting = contactSupportMutation.isPending
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -183,7 +206,7 @@ export default function ContactSupportDialog({
                     <Textarea
                       placeholder="Describe what you need help with..."
                       className="min-h-28"
-                      disabled={isExecuting}
+                      disabled={isSubmitting}
                       {...field}
                     />
                   </FormControl>
@@ -198,7 +221,7 @@ export default function ContactSupportDialog({
                 maxFiles={MAX_ATTACHMENTS}
                 currentFileCount={files.length}
                 isUploading={false}
-                disabled={isExecuting}
+                disabled={isSubmitting}
                 accept={ACCEPTED_FILE_TYPES}
               />
 
@@ -215,7 +238,7 @@ export default function ContactSupportDialog({
                   <button
                     type="button"
                     onClick={() => removeFile(i)}
-                    disabled={isExecuting}
+                    disabled={isSubmitting}
                     className="shrink-0 text-fg-tertiary hover:text-fg transition-colors"
                   >
                     <X className="size-3.5" />
@@ -229,14 +252,14 @@ export default function ContactSupportDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
-                disabled={isExecuting}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isExecuting || !form.formState.isValid}
-                loading={isExecuting}
+                disabled={isSubmitting || !form.formState.isValid}
+                loading={isSubmitting}
               >
                 Send
               </Button>
