@@ -40,7 +40,7 @@ function renderUsageMarker(usedMb: number | null, value: number) {
 
   return (
     <>
-      <span className="text-fg">{normalizedUsedMb}</span>
+      <span className="text-fg">{normalizedUsedMb.toLocaleString()}</span>
       <span className="text-fg-tertiary">MB</span>
       <span className="px-1 text-fg-tertiary">·</span>
       <span className="text-fg">{formatMarkerPercent(value)}</span>

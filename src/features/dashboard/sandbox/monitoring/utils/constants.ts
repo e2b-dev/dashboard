@@ -88,8 +88,8 @@ export const SANDBOX_MONITORING_BYTES_IN_GIGABYTE = 1024 * 1024 * 1024
 
 export const SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS: Intl.DateTimeFormatOptions =
   {
-    month: 'short',
-    day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   }

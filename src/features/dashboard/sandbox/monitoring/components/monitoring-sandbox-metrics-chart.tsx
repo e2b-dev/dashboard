@@ -826,11 +826,12 @@ function SandboxMetricsChart({
               />
               <div
                 style={{
-                  borderColor: withOpacity(marker.dotColor, 0.7),
+                  backgroundColor: withOpacity(marker.dotColor, 0.1),
+                  borderColor: withOpacity(marker.dotColor, 0.12),
                   marginTop: marker.labelOffsetYPx,
                 }}
                 className={cn(
-                  'prose-label-numeric bg-bg/60 absolute top-1/2 text-fg font-mono -translate-y-1/2 border whitespace-nowrap px-2 py-0.5 backdrop-blur-lg z-9999',
+                  'prose-label-numeric absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap px-2 py-0.5 backdrop-blur-lg z-9999',
                   marker.placeValueOnRight ? 'left-2' : 'right-2'
                 )}
               >

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
+import { TimeIcon } from '@/ui/primitives/icons'
 import {
   Popover,
   PopoverContent,
@@ -416,8 +417,12 @@ export default function SandboxMonitoringTimeRangeControls({
     <div className={cn('flex items-center gap-3', className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button size="md" variant="outline" className="prose-label font-sans">
-            {rangeLabel}
+          <Button
+            size="md"
+            variant="outline"
+            className="prose-label-highlight font-sans"
+          >
+            <TimeIcon className="size-4 text-fg-tertiary" /> {rangeLabel}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 max-md:w-[calc(100vw-2rem)]">
@@ -431,7 +436,7 @@ export default function SandboxMonitoringTimeRangeControls({
             />
             <Separator
               orientation="vertical"
-              className="h-auto max-md:hidden"
+              className="h-auto max-md:hidden text-fg-tertiary"
             />
             <Separator orientation="horizontal" className="w-auto md:hidden" />
             <TimeRangePresets
@@ -448,7 +453,7 @@ export default function SandboxMonitoringTimeRangeControls({
         size="md"
         variant="outline"
         onClick={handleLiveToggle}
-        className="prose-label font-sans"
+        className="prose-label-highlight"
       >
         <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
         {isLiveUpdating && lifecycle.isRunning ? 'Live' : 'Paused'}
