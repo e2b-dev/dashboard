@@ -114,7 +114,7 @@ export default function SandboxMetricsCharts({
       ) : null}
 
       <MonitoringChartSection
-        className="min-h-[280px] flex-[2]"
+        className="min-h-[280px] flex-[1.5]"
         header={
           <ResourceChartHeader
             metric={chartModel.latestMetric}
