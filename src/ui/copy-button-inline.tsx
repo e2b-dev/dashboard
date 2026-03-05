@@ -1,6 +1,6 @@
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils/ui'
-import { Check, Copy } from 'lucide-react'
+import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
 
 export default function CopyButtonInline({
   value,
@@ -22,7 +22,7 @@ export default function CopyButtonInline({
     <span
       onClick={handleClick}
       className={cn(
-        'relative inline-flex items-center min-w-0 group/copy cursor-pointer',
+        'relative inline-flex items-center min-w-0 group/copy cursor-pointer hover:opacity-80',
         className
       )}
     >
@@ -35,9 +35,9 @@ export default function CopyButtonInline({
         aria-hidden="true"
       >
         {wasCopied ? (
-          <Check className="size-3 text-icon" />
+          <CheckIcon className="size-3.5 text-icon" />
         ) : (
-          <Copy className="size-3 text-icon-secondary" />
+          <CopyIcon className="size-3.5 text-icon-secondary" />
         )}
       </span>
     </span>
