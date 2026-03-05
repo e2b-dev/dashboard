@@ -18,7 +18,7 @@ export const sandboxRouter = createTRPCRouter({
   details: protectedTeamProcedure
     .input(
       z.object({
-        sandboxId: z.string(),
+        sandboxId: SandboxIdSchema,
       })
     )
     .query(async ({ ctx, input }) => {
