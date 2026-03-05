@@ -216,6 +216,8 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   const lifecycleStartedAt = sandboxInfo?.startedAt
   const lifecycleEndAt = sandboxInfo?.endAt
+  const lifecycleStoppedAt =
+    sandboxInfo && 'stoppedAt' in sandboxInfo ? sandboxInfo.stoppedAt : null
   const lifecycleState = sandboxInfo?.state
   const lifecycleBounds = useMemo(() => {
     if (!lifecycleStartedAt || !lifecycleState) {
@@ -225,9 +227,10 @@ export function useSandboxMonitoringController(sandboxId: string) {
     return getSandboxLifecycleBounds({
       startedAt: lifecycleStartedAt,
       endAt: lifecycleEndAt ?? null,
+      stoppedAt: lifecycleStoppedAt ?? null,
       state: lifecycleState,
     })
-  }, [lifecycleEndAt, lifecycleStartedAt, lifecycleState])
+  }, [lifecycleEndAt, lifecycleStartedAt, lifecycleStoppedAt, lifecycleState])
 
   useEffect(() => {
     stateRef.current = state

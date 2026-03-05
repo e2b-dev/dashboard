@@ -131,6 +131,28 @@ describe('sandbox-monitoring-timeframe', () => {
       expect(bounds?.isRunning).toBe(true)
     })
 
+    it('should use stoppedAt when endAt is null for killed sandbox', () => {
+      const now = 1_700_000_000_000
+      const stoppedAt = now - 30_000
+      const sandboxInfo: SandboxDetailsDTO = {
+        templateID: 'template-id',
+        sandboxID: 'sandbox-id',
+        startedAt: new Date(now - 60_000).toISOString(),
+        endAt: null,
+        stoppedAt: new Date(stoppedAt).toISOString(),
+        cpuCount: 2,
+        memoryMB: 512,
+        diskSizeMB: 1_024,
+        state: 'killed',
+      }
+
+      const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
+
+      expect(bounds?.startMs).toBe(now - 60_000)
+      expect(bounds?.anchorEndMs).toBe(stoppedAt)
+      expect(bounds?.isRunning).toBe(false)
+    })
+
     it('should fall back to now for killed sandbox without end timestamp', () => {
       const now = 1_700_000_000_000
       const sandboxInfo: SandboxDetailsDTO = {
