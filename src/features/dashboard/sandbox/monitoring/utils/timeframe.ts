@@ -174,16 +174,12 @@ export function getSandboxLifecycleBounds(
     return null
   }
 
-  const endMs = parseDateTimestampMs(sandboxInfo.endAt)
-  if (endMs === null) {
-    return null
-  }
-
   const safeNow = clampToBounds(
     now,
     SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
     SANDBOX_MONITORING_MAX_TIMESTAMP_MS
   )
+  const endMs = parseDateTimestampMs(sandboxInfo.endAt) ?? safeNow
   const anchorEndMs = Math.min(safeNow, endMs)
 
   const normalizedStart = Math.floor(Math.min(startMs, anchorEndMs))

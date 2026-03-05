@@ -116,7 +116,22 @@ describe('sandbox-monitoring-timeframe', () => {
       expect(bounds?.isRunning).toBe(false)
     })
 
-    it('should return null for killed sandbox without end timestamp', () => {
+    it('should fall back to now for running sandbox without endAt', () => {
+      const now = 1_700_000_000_000
+      const sandboxInfo = {
+        startedAt: new Date(now - 60_000).toISOString(),
+        endAt: null,
+        state: 'running' as const,
+      }
+
+      const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
+
+      expect(bounds?.startMs).toBe(now - 60_000)
+      expect(bounds?.anchorEndMs).toBe(now)
+      expect(bounds?.isRunning).toBe(true)
+    })
+
+    it('should fall back to now for killed sandbox without end timestamp', () => {
       const now = 1_700_000_000_000
       const sandboxInfo: SandboxDetailsDTO = {
         templateID: 'template-id',
@@ -132,7 +147,9 @@ describe('sandbox-monitoring-timeframe', () => {
 
       const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
 
-      expect(bounds).toBeNull()
+      expect(bounds?.startMs).toBe(now - 60_000)
+      expect(bounds?.anchorEndMs).toBe(now)
+      expect(bounds?.isRunning).toBe(false)
     })
   })
 })
