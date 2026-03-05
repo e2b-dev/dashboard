@@ -1,4 +1,6 @@
+import { millisecondsInDay } from 'date-fns/constants'
 import { z } from 'zod'
+import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
 import { SandboxIdSchema } from '@/lib/schemas/api'
 import { createTRPCRouter } from '../init'
 import {
@@ -124,11 +126,28 @@ export const sandboxRouter = createTRPCRouter({
 
   resourceMetrics: protectedTeamProcedure
     .input(
-      z.object({
-        sandboxId: SandboxIdSchema,
-        startMs: z.number(),
-        endMs: z.number(),
-      })
+      z
+        .object({
+          sandboxId: SandboxIdSchema,
+          startMs: z.number().int().positive(),
+          endMs: z.number().int().positive(),
+        })
+        .refine(({ startMs, endMs }) => startMs < endMs, {
+          message: 'startMs must be before endMs',
+        })
+        .refine(
+          ({ startMs, endMs }) => {
+            const now = Date.now()
+            return (
+              startMs >= now - SANDBOX_MONITORING_METRICS_RETENTION_MS &&
+              endMs <= now + millisecondsInDay
+            )
+          },
+          {
+            message:
+              'Time range must be within metrics retention window (7 days) and 1 day from now',
+          }
+        )
     )
     .query(async ({ ctx, input }) => {
       const { teamId, session } = ctx

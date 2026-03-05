@@ -5,6 +5,7 @@ import {
   millisecondsInSecond,
 } from 'date-fns/constants'
 
+export const SANDBOX_MONITORING_METRICS_RETENTION_MS = 7 * millisecondsInDay
 export const SANDBOX_MONITORING_DEFAULT_RANGE_MS = millisecondsInHour
 export const SANDBOX_MONITORING_MIN_RANGE_MS = 30 * millisecondsInSecond
 export const SANDBOX_MONITORING_MAX_RANGE_MS = 31 * millisecondsInDay
