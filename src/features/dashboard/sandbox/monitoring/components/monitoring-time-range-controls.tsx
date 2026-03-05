@@ -319,7 +319,8 @@ export default function SandboxMonitoringTimeRangeControls({
       }
 
       const nextEntries = [...trimmedEntries, snapshot]
-      const overflow = nextEntries.length - SANDBOX_MONITORING_MAX_HISTORY_ENTRIES
+      const overflow =
+        nextEntries.length - SANDBOX_MONITORING_MAX_HISTORY_ENTRIES
       if (overflow > 0) {
         return {
           entries: nextEntries.slice(overflow),

@@ -750,7 +750,14 @@ function SandboxMetricsChart({
     })
 
     return applyMarkerLabelOffsets(markers)
-  }, [chartRevision, cssVars, hoveredTimestampMs, series, stroke, yAxisFormatter])
+  }, [
+    chartRevision,
+    cssVars,
+    hoveredTimestampMs,
+    series,
+    stroke,
+    yAxisFormatter,
+  ])
 
   const xAxisHoverBadge = useMemo(() => {
     void chartRevision
