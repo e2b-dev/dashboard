@@ -243,7 +243,7 @@ export function clampTimeframeToBounds(
   safeEnd = Math.min(safeMax, safeEnd)
 
   if (safeEnd - safeStart < minRangeMs) {
-    if (safeEnd + minRangeMs <= safeMax) {
+    if (safeStart + minRangeMs <= safeMax) {
       safeEnd = safeStart + minRangeMs
     } else {
       safeStart = safeEnd - minRangeMs
