@@ -416,70 +416,93 @@ export default function SandboxMonitoringTimeRangeControls({
   }, [canGoForward, handleHistoryNavigation, historyState.index])
 
   return (
-    <div className={cn('flex items-center gap-3', className)}>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            size="md"
-            variant="outline"
-            className="prose-label-highlight font-sans"
-          >
-            <TimeIcon className="size-4 text-fg-tertiary" /> {rangeLabel}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 max-md:w-[calc(100vw-2rem)]">
-          <div className="flex max-md:flex-col max-h-[500px] max-md:max-h-[600px]">
-            <TimeRangePicker
-              startDateTime={toSafeIsoDateTime(timeframe.start, timeframe.end)}
-              endDateTime={toSafeIsoDateTime(timeframe.end)}
-              bounds={pickerBounds}
-              onApply={handleApply}
-              className="p-3 w-56 max-md:w-full"
-            />
-            <Separator
-              orientation="vertical"
-              className="h-auto max-md:hidden text-fg-tertiary"
-            />
-            <Separator orientation="horizontal" className="w-auto md:hidden" />
-            <TimeRangePresets
-              presets={presets}
-              selectedId={selectedPresetId}
-              onSelect={handlePresetSelect}
-              className="w-56 max-md:w-full p-3"
-            />
-          </div>
-        </PopoverContent>
-      </Popover>
+    <div
+      className={cn(
+        'flex w-full flex-wrap items-center gap-3 md:justify-start max-md:justify-end',
+        className
+      )}
+    >
+      <div className="flex items-center gap-3 max-md:flex-row-reverse">
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              size="md"
+              variant="outline"
+              className="prose-label-highlight font-sans"
+            >
+              <TimeIcon className="size-4 text-fg-tertiary" /> {rangeLabel}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 max-md:w-[calc(100vw-2rem)]">
+            <div className="flex max-md:flex-col max-h-[500px] max-md:max-h-[600px]">
+              <TimeRangePicker
+                startDateTime={toSafeIsoDateTime(
+                  timeframe.start,
+                  timeframe.end
+                )}
+                endDateTime={toSafeIsoDateTime(timeframe.end)}
+                bounds={pickerBounds}
+                onApply={handleApply}
+                className="p-3 w-56 max-md:w-full"
+              />
+              <Separator
+                orientation="vertical"
+                className="h-auto max-md:hidden text-fg-tertiary"
+              />
+              <Separator
+                orientation="horizontal"
+                className="w-auto md:hidden"
+              />
+              <TimeRangePresets
+                presets={presets}
+                selectedId={selectedPresetId}
+                onSelect={handlePresetSelect}
+                className="w-56 max-md:w-full p-3"
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
 
-      <Button
-        size="md"
-        variant="outline"
-        onClick={handleLiveToggle}
-        className="prose-label-highlight"
-      >
-        <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
-        {isLiveUpdating && lifecycle.isRunning ? 'Live' : 'Paused'}
-      </Button>
+        <Button
+          size="md"
+          variant="outline"
+          onClick={handleLiveToggle}
+          className="prose-label-highlight"
+          aria-pressed={isLiveUpdating && lifecycle.isRunning}
+          title={
+            isLiveUpdating && lifecycle.isRunning
+              ? 'Pause live updates'
+              : 'Resume live updates'
+          }
+        >
+          <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
+          {isLiveUpdating && lifecycle.isRunning ? 'Live updates' : 'Paused'}
+        </Button>
+      </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 max-md:basis-full max-md:justify-end">
         <Button
           size="md"
           variant="outline"
           onClick={handleGoBackward}
           disabled={!canGoBackward}
-          className="w-9 p-0"
+          className="px-3 gap-1.5"
           title="Go to previous timeframe"
+          aria-label="Go to previous timeframe"
         >
           <ChevronLeft className="size-4" />
+          <span>Back</span>
         </Button>
         <Button
           size="md"
           variant="outline"
           onClick={handleGoForward}
           disabled={!canGoForward}
-          className="w-9 p-0"
+          className="px-3 gap-1.5"
           title="Go to next timeframe"
+          aria-label="Go to next timeframe"
         >
+          <span>Forward</span>
           <ChevronRight className="size-4" />
         </Button>
       </div>

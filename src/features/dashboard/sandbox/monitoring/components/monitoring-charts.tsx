@@ -195,7 +195,7 @@ export default function SandboxMetricsCharts({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {lifecycleBounds ? (
-        <div className="flex items-center justify-start pb-3 md:pb-6">
+        <div className="flex w-full items-center pb-3 md:pb-6">
           <SandboxMonitoringTimeRangeControls
             timeframe={timeframe}
             lifecycle={lifecycleBounds}
@@ -218,7 +218,7 @@ export default function SandboxMetricsCharts({
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
           hoveredTimestampMs={hoveredTimestampMs}
-          showXAxisLabels={false}
+          showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           className={cn(
             'h-full w-full transition-opacity duration-200',

@@ -39,6 +39,10 @@ interface SandboxMonitoringControllerState {
   isInitialized: boolean
 }
 
+interface ApplyTimeframeOptions {
+  isLiveUpdating?: boolean
+}
+
 type SandboxMonitoringControllerAction =
   | {
       type: 'initialize'
@@ -237,13 +241,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
   }, [state])
 
   const applyTimeframe = useCallback(
-    (
-      start: number,
-      end: number,
-      options?: {
-        isLiveUpdating?: boolean
-      }
-    ) => {
+    (start: number, end: number, options?: ApplyTimeframeOptions) => {
       const currentState = stateRef.current
       const now = Date.now()
       const timeframe = resolveTimeframe(start, end, now, lifecycleBounds)
@@ -276,7 +274,13 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   const setLiveUpdating = useCallback(
     (isLiveUpdating: boolean) => {
+      const currentState = stateRef.current
+
       if (!isLiveUpdating) {
+        if (!currentState.isLiveUpdating) {
+          return
+        }
+
         dispatch({
           type: 'setLiveUpdating',
           payload: { isLiveUpdating: false },
@@ -286,6 +290,10 @@ export function useSandboxMonitoringController(sandboxId: string) {
       }
 
       if (lifecycleBounds && !lifecycleBounds.isRunning) {
+        if (!currentState.isLiveUpdating) {
+          return
+        }
+
         dispatch({
           type: 'setLiveUpdating',
           payload: { isLiveUpdating: false },
