@@ -34,6 +34,7 @@ import {
   SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_HOUR_PRESET_ID,
   SANDBOX_MONITORING_LAST_HOUR_PRESET_SHORTCUT,
+  SANDBOX_MONITORING_MAX_HISTORY_ENTRIES,
   SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from '../utils/constants'
@@ -317,8 +318,17 @@ export default function SandboxMonitoringTimeRangeControls({
         }
       }
 
+      const nextEntries = [...trimmedEntries, snapshot]
+      const overflow = nextEntries.length - SANDBOX_MONITORING_MAX_HISTORY_ENTRIES
+      if (overflow > 0) {
+        return {
+          entries: nextEntries.slice(overflow),
+          index: trimmedEntries.length - overflow,
+        }
+      }
+
       return {
-        entries: [...trimmedEntries, snapshot],
+        entries: nextEntries,
         index: trimmedEntries.length,
       }
     })

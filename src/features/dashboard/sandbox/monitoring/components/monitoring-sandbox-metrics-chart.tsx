@@ -23,6 +23,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react'
 import {
   SANDBOX_MONITORING_CHART_AREA_OPACITY,
@@ -377,6 +378,7 @@ function SandboxMetricsChart({
   onBrushEnd,
 }: SandboxMetricsChartProps) {
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
+  const [chartRevision, setChartRevision] = useState(0)
   const { resolvedTheme } = useTheme()
 
   const cssVarNames = useMemo(() => {
@@ -482,6 +484,7 @@ function SandboxMetricsChart({
 
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
+    setChartRevision((v) => v + 1)
 
     chart.dispatchAction(
       {
@@ -662,12 +665,14 @@ function SandboxMetricsChart({
   ])
 
   const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
+    void chartRevision
+
     if (hoveredTimestampMs === null) {
       return []
     }
 
     const chart = chartInstanceRef.current
-    if (!chart) {
+    if (!chart || chart.isDisposed()) {
       return []
     }
 
@@ -745,15 +750,17 @@ function SandboxMetricsChart({
     })
 
     return applyMarkerLabelOffsets(markers)
-  }, [cssVars, hoveredTimestampMs, series, stroke, yAxisFormatter])
+  }, [chartRevision, cssVars, hoveredTimestampMs, series, stroke, yAxisFormatter])
 
   const xAxisHoverBadge = useMemo(() => {
+    void chartRevision
+
     if (!showXAxisLabels || hoveredTimestampMs === null) {
       return null
     }
 
     const chart = chartInstanceRef.current
-    if (!chart) {
+    if (!chart || chart.isDisposed()) {
       return null
     }
 
@@ -774,7 +781,7 @@ function SandboxMetricsChart({
       xPx,
       label: formatXAxisLabel(hoveredTimestampMs, true),
     }
-  }, [hoveredTimestampMs, showXAxisLabels])
+  }, [chartRevision, hoveredTimestampMs, showXAxisLabels])
 
   const showOverlay = crosshairMarkers.length > 0 || xAxisHoverBadge !== null
 
