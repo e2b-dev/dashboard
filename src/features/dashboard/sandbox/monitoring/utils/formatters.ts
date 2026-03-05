@@ -4,6 +4,7 @@ import {
   SANDBOX_MONITORING_CORE_LABEL_SINGULAR,
   SANDBOX_MONITORING_GIGABYTE_UNIT,
   SANDBOX_MONITORING_METRIC_VALUE_SEPARATOR,
+  SANDBOX_MONITORING_PERCENT_MAX,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
   SANDBOX_MONITORING_VALUE_UNAVAILABLE,
 } from './constants'
@@ -47,10 +48,18 @@ export function formatMetricValue(primary: string, secondary: string): string {
   return `${primary}${SANDBOX_MONITORING_METRIC_VALUE_SEPARATOR}${secondary}`
 }
 
+export function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+
+  return Math.max(0, Math.min(SANDBOX_MONITORING_PERCENT_MAX, value))
+}
+
 export function calculateRatioPercent(used: number, total: number): number {
   if (total <= 0) {
     return 0
   }
 
-  return (used / total) * 100
+  return clampPercent((used / total) * 100)
 }

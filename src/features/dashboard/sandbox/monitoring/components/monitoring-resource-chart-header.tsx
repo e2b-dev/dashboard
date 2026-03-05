@@ -12,6 +12,7 @@ import {
 } from '../utils/constants'
 import {
   calculateRatioPercent,
+  clampPercent,
   formatBytesToGb,
   formatCoreCount,
   formatHoverTimestamp,
@@ -60,7 +61,9 @@ export default function ResourceChartHeader({
   metric,
   hovered,
 }: ResourceChartHeaderProps) {
-  const cpuPercent = hovered ? hovered.cpuPercent : (metric?.cpuUsedPct ?? 0)
+  const cpuPercent = hovered
+    ? hovered.cpuPercent
+    : clampPercent(metric?.cpuUsedPct ?? 0)
   const cpuValue = formatMetricValue(
     formatPercent(cpuPercent),
     formatCoreCount(metric?.cpuCount ?? 0)

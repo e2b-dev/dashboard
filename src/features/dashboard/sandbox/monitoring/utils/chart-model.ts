@@ -16,13 +16,13 @@ import {
   SANDBOX_MONITORING_DISK_LINE_COLOR_VAR,
   SANDBOX_MONITORING_DISK_SERIES_ID,
   SANDBOX_MONITORING_DISK_SERIES_LABEL,
-  SANDBOX_MONITORING_PERCENT_MAX,
   SANDBOX_MONITORING_RAM_AREA_COLOR_VAR,
   SANDBOX_MONITORING_RAM_AREA_TO_COLOR_VAR,
   SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
   SANDBOX_MONITORING_RAM_SERIES_ID,
   SANDBOX_MONITORING_RAM_SERIES_LABEL,
 } from './constants'
+import { clampPercent } from './formatters'
 
 interface NormalizedSandboxMetric {
   metric: SandboxMetric
@@ -39,14 +39,6 @@ interface BuildMonitoringChartModelOptions {
   startMs: number
   endMs: number
   hoveredTimestampMs: number | null
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) {
-    return 0
-  }
-
-  return Math.max(0, Math.min(SANDBOX_MONITORING_PERCENT_MAX, value))
 }
 
 function toPercent(used: number, total: number): number {
