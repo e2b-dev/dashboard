@@ -61,6 +61,7 @@ export default function SandboxMetricsCharts({
     setTimeframe,
     setLiveUpdating,
     lifecycleBounds,
+    lifecycleEvents,
   } = useSandboxMonitoringController(sandboxId)
   const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
     null
@@ -98,12 +99,14 @@ export default function SandboxMetricsCharts({
     () =>
       buildMonitoringChartModel({
         metrics,
+        lifecycleEvents,
         startMs: renderedTimeframe.start,
         endMs: renderedTimeframe.end,
         hoveredTimestampMs,
       }),
     [
       hoveredTimestampMs,
+      lifecycleEvents,
       metrics,
       renderedTimeframe.end,
       renderedTimeframe.start,
@@ -217,6 +220,7 @@ export default function SandboxMetricsCharts({
       >
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
+          lifecycleEvents={lifecycleEvents}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
@@ -241,6 +245,7 @@ export default function SandboxMetricsCharts({
       >
         <SandboxMetricsChart
           series={diskSeriesWithMarkerFormatters}
+          lifecycleEvents={lifecycleEvents}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}

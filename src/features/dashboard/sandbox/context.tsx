@@ -2,16 +2,27 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { createContext, useCallback, useContext } from 'react'
+import { createContext, useCallback, useContext, useMemo } from 'react'
 import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
-import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
+import type {
+  SandboxDetailsDTO,
+  SandboxEventDTO,
+} from '@/server/api/models/sandboxes.models'
 import { useTRPC } from '@/trpc/client'
 import type { ClientSandboxMetric } from '@/types/sandboxes.types'
 
+export interface SandboxLifecycleState {
+  createdAt: string | null
+  pausedAt: string | null
+  endedAt: string | null
+  events: SandboxEventDTO[]
+}
+
 interface SandboxContextValue {
   sandboxInfo?: SandboxDetailsDTO
+  sandboxLifecycle: SandboxLifecycleState | null
   lastMetrics?: ClientSandboxMetric
   isRunning: boolean
   isSandboxNotFound: boolean
@@ -32,6 +43,28 @@ export function useSandboxContext() {
 
 interface SandboxProviderProps {
   children: ReactNode
+}
+
+function buildSandboxLifecycle(
+  sandboxInfo: SandboxDetailsDTO | undefined
+): SandboxLifecycleState | null {
+  if (!sandboxInfo) {
+    return null
+  }
+
+  const fallbackPausedAt =
+    sandboxInfo.state === 'paused' ? sandboxInfo.endAt : null
+  const fallbackEndedAt =
+    sandboxInfo.state === 'killed'
+      ? (sandboxInfo.stoppedAt ?? sandboxInfo.endAt)
+      : null
+
+  return {
+    createdAt: sandboxInfo.lifecycle?.createdAt ?? sandboxInfo.startedAt,
+    pausedAt: sandboxInfo.lifecycle?.pausedAt ?? fallbackPausedAt,
+    endedAt: sandboxInfo.lifecycle?.endedAt ?? fallbackEndedAt,
+    events: sandboxInfo.lifecycle?.events ?? [],
+  }
 }
 
 export function SandboxProvider({ children }: SandboxProviderProps) {
@@ -91,11 +124,16 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
     !sandboxInfoData && isNotFoundError(sandboxInfoError)
 
   const isSandboxInfoPending = isSandboxInfoLoading || isSandboxInfoFetching
+  const sandboxLifecycle = useMemo(
+    () => buildSandboxLifecycle(sandboxInfoData),
+    [sandboxInfoData]
+  )
 
   return (
     <SandboxContext.Provider
       value={{
         sandboxInfo: sandboxInfoData,
+        sandboxLifecycle,
         isRunning,
         isSandboxNotFound,
         lastMetrics: metricsData,

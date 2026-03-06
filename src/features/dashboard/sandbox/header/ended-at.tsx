@@ -4,7 +4,7 @@ import CopyButton from '@/ui/copy-button'
 import { useSandboxContext } from '../context'
 
 export default function EndedAt() {
-  const { sandboxInfo } = useSandboxContext()
+  const { sandboxInfo, sandboxLifecycle } = useSandboxContext()
 
   if (
     !sandboxInfo ||
@@ -14,7 +14,9 @@ export default function EndedAt() {
   }
 
   const endedAt =
-    sandboxInfo.state === 'killed' ? sandboxInfo.stoppedAt : sandboxInfo.endAt
+    sandboxInfo.state === 'killed'
+      ? sandboxLifecycle?.endedAt
+      : sandboxLifecycle?.pausedAt
 
   if (!endedAt) {
     return <p>N/A</p>
