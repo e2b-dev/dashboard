@@ -62,6 +62,15 @@ const config = {
         source: '/_mintlify/:path*',
         destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`,
       },
+      // LLMs.txt
+      {
+        source: '/llms.txt',
+        destination: `https://${DOCUMENTATION_DOMAIN}/docs/llms.txt`,
+      },
+      {
+        source: '/llms-full.txt',
+        destination: `https://${DOCUMENTATION_DOMAIN}/docs/llms-full.txt`,
+      },
     ],
   }),
   redirects: async () => [
