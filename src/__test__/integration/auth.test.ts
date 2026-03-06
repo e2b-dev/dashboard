@@ -95,12 +95,14 @@ describe('Auth Actions - Integration Tests', () => {
       ok: true,
       json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
     })
+    global.fetch = fetchMock as unknown as typeof fetch
     verifyTurnstileToken.mockResolvedValue(true)
   })
 
   afterEach(() => {
     // Restore original console.error after each test
     console.error = originalConsoleError
+    global.fetch = originalFetch
   })
 
   describe('Sign In Flow', () => {

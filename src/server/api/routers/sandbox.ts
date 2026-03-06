@@ -1,4 +1,7 @@
+import { millisecondsInDay } from 'date-fns/constants'
 import { z } from 'zod'
+import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
+import { SandboxIdSchema } from '@/lib/schemas/api'
 import { createTRPCRouter } from '../init'
 import {
   mapApiSandboxRecordToDTO,
@@ -17,7 +20,7 @@ export const sandboxRouter = createTRPCRouter({
   details: protectedTeamProcedure
     .input(
       z.object({
-        sandboxId: z.string(),
+        sandboxId: SandboxIdSchema,
       })
     )
     .query(async ({ ctx, input }) => {
@@ -41,7 +44,7 @@ export const sandboxRouter = createTRPCRouter({
   logsBackwardsReversed: protectedTeamProcedure
     .input(
       z.object({
-        sandboxId: z.string(),
+        sandboxId: SandboxIdSchema,
         cursor: z.number().optional(),
         level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
         search: z.string().max(256).optional(),
@@ -83,7 +86,7 @@ export const sandboxRouter = createTRPCRouter({
   logsForward: protectedTeamProcedure
     .input(
       z.object({
-        sandboxId: z.string(),
+        sandboxId: SandboxIdSchema,
         cursor: z.number().optional(),
         level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
         search: z.string().max(256).optional(),
@@ -119,6 +122,49 @@ export const sandboxRouter = createTRPCRouter({
       }
 
       return result
+    }),
+
+  resourceMetrics: protectedTeamProcedure
+    .input(
+      z
+        .object({
+          sandboxId: SandboxIdSchema,
+          startMs: z.number().int().positive(),
+          endMs: z.number().int().positive(),
+        })
+        .refine(({ startMs, endMs }) => startMs < endMs, {
+          message: 'startMs must be before endMs',
+        })
+        .refine(
+          ({ startMs, endMs }) => {
+            const now = Date.now()
+            return (
+              startMs >= now - SANDBOX_MONITORING_METRICS_RETENTION_MS &&
+              endMs <= now + millisecondsInDay
+            )
+          },
+          {
+            message:
+              'Time range must be within metrics retention window (7 days) and 1 day from now',
+          }
+        )
+    )
+    .query(async ({ ctx, input }) => {
+      const { teamId, session } = ctx
+      const { sandboxId } = input
+      const { startMs, endMs } = input
+
+      const metrics = await sandboxesRepo.getSandboxMetrics(
+        session.access_token,
+        teamId,
+        sandboxId,
+        {
+          startUnixMs: startMs,
+          endUnixMs: endMs,
+        }
+      )
+
+      return metrics
     }),
 
   // MUTATIONS
