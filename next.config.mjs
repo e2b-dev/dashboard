@@ -65,11 +65,11 @@ const config = {
       // LLMs.txt
       {
         source: '/llms.txt',
-        destination: `https://${DOCUMENTATION_DOMAIN}/docs/llms.txt`,
+        destination: `https://${DOCUMENTATION_DOMAIN}/llms.txt`,
       },
       {
         source: '/llms-full.txt',
-        destination: `https://${DOCUMENTATION_DOMAIN}/docs/llms-full.txt`,
+        destination: `https://${DOCUMENTATION_DOMAIN}/llms-full.txt`,
       },
     ],
   }),
