@@ -1,5 +1,8 @@
 import { millisecondsInSecond } from 'date-fns/constants'
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
+import type {
+  SandboxEventDTO,
+  SandboxMetric,
+} from '@/server/api/models/sandboxes.models'
 import type {
   MonitoringChartModel,
   SandboxMetricsDataPoint,
@@ -36,10 +39,19 @@ interface NormalizedSandboxMetric {
 
 interface BuildMonitoringChartModelOptions {
   metrics: SandboxMetric[]
+  lifecycleEvents?: SandboxEventDTO[]
   startMs: number
   endMs: number
   hoveredTimestampMs: number | null
 }
+
+interface LifecyclePauseWindow {
+  startMs: number
+  endMs: number
+}
+
+const SANDBOX_LIFECYCLE_PAUSED_EVENT = 'sandbox.lifecycle.paused'
+const SANDBOX_LIFECYCLE_RESUMED_EVENT = 'sandbox.lifecycle.resumed'
 
 function toPercent(used: number, total: number): number {
   if (!total || total <= 0) {
@@ -102,6 +114,161 @@ function buildSeriesData(
     getValue(metric),
     getMarkerValue ? getMarkerValue(metric) : null,
   ])
+}
+
+function parseEventTimestampMs(
+  value: string | null | undefined
+): number | null {
+  if (!value) {
+    return null
+  }
+
+  const timestampMs = new Date(value).getTime()
+  if (!Number.isFinite(timestampMs)) {
+    return null
+  }
+
+  return Math.floor(timestampMs)
+}
+
+function sortLifecycleEventsByTimestamp(
+  events: SandboxEventDTO[]
+): SandboxEventDTO[] {
+  return [...events].sort((a, b) => {
+    const timestampA =
+      parseEventTimestampMs(a.timestamp) ?? Number.MAX_SAFE_INTEGER
+    const timestampB =
+      parseEventTimestampMs(b.timestamp) ?? Number.MAX_SAFE_INTEGER
+
+    if (timestampA !== timestampB) {
+      return timestampA - timestampB
+    }
+
+    return a.id.localeCompare(b.id)
+  })
+}
+
+function toVisiblePauseWindow(
+  startMs: number,
+  endMs: number,
+  rangeStart: number,
+  rangeEnd: number
+): LifecyclePauseWindow | null {
+  const visibleStartMs = Math.max(startMs, rangeStart)
+  const visibleEndMs = Math.min(endMs, rangeEnd)
+
+  if (!Number.isFinite(visibleStartMs) || !Number.isFinite(visibleEndMs)) {
+    return null
+  }
+
+  if (visibleEndMs <= visibleStartMs) {
+    return null
+  }
+
+  return {
+    startMs: visibleStartMs,
+    endMs: visibleEndMs,
+  }
+}
+
+function buildPauseWindows(
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
+): LifecyclePauseWindow[] {
+  const pauseWindows: LifecyclePauseWindow[] = []
+  let activePauseStartMs: number | null = null
+
+  for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
+    const eventTimestampMs = parseEventTimestampMs(event.timestamp)
+    if (eventTimestampMs === null) {
+      continue
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
+      activePauseStartMs = eventTimestampMs
+      continue
+    }
+
+    if (
+      event.type === SANDBOX_LIFECYCLE_RESUMED_EVENT &&
+      activePauseStartMs !== null
+    ) {
+      if (eventTimestampMs > activePauseStartMs) {
+        const visibleWindow = toVisiblePauseWindow(
+          activePauseStartMs,
+          eventTimestampMs,
+          rangeStart,
+          rangeEnd
+        )
+
+        if (visibleWindow) {
+          pauseWindows.push(visibleWindow)
+        }
+      }
+
+      activePauseStartMs = null
+    }
+  }
+
+  return pauseWindows
+}
+
+function hasValidDataBeforeTimestamp(
+  data: SandboxMetricsDataPoint[],
+  timestampMs: number
+): boolean {
+  return data.some((point) => point[1] !== null && point[0] < timestampMs)
+}
+
+function hasValidDataAfterTimestamp(
+  data: SandboxMetricsDataPoint[],
+  timestampMs: number
+): boolean {
+  return data.some((point) => point[1] !== null && point[0] > timestampMs)
+}
+
+function injectGapNullPoints(
+  data: SandboxMetricsDataPoint[],
+  pauseWindows: LifecyclePauseWindow[]
+): SandboxMetricsDataPoint[] {
+  if (data.length === 0 || pauseWindows.length === 0) {
+    return data
+  }
+
+  const dataWithGaps = [...data]
+
+  for (const pauseWindow of pauseWindows) {
+    const hasDataOnBothSides =
+      hasValidDataBeforeTimestamp(dataWithGaps, pauseWindow.startMs) &&
+      hasValidDataAfterTimestamp(dataWithGaps, pauseWindow.endMs)
+
+    if (!hasDataOnBothSides) {
+      continue
+    }
+
+    // A null value in-between pause/resume forces ECharts to break the line.
+    const gapTimestampMs = Math.floor(
+      (pauseWindow.startMs + pauseWindow.endMs) / 2
+    )
+    dataWithGaps.push([gapTimestampMs, null, null])
+  }
+
+  return dataWithGaps.sort((a, b) => a[0] - b[0])
+}
+
+function injectSeriesGaps(
+  series: SandboxMetricsSeries[],
+  pauseWindows: LifecyclePauseWindow[]
+): SandboxMetricsSeries[] {
+  if (pauseWindows.length === 0) {
+    return series
+  }
+
+  return series.map((line) => ({
+    ...line,
+    data: injectGapNullPoints(line.data, pauseWindows),
+  }))
 }
 
 function findClosestMetric(
@@ -206,6 +373,7 @@ function buildDiskSeries(
 
 export function buildMonitoringChartModel({
   metrics,
+  lifecycleEvents = [],
   startMs,
   endMs,
   hoveredTimestampMs,
@@ -227,8 +395,15 @@ export function buildMonitoringChartModel({
       })
   )
 
-  const resourceSeries = buildResourceSeries(normalizedMetrics)
-  const diskSeries = buildDiskSeries(normalizedMetrics)
+  const pauseWindows = buildPauseWindows(lifecycleEvents, rangeStart, rangeEnd)
+  const resourceSeries = injectSeriesGaps(
+    buildResourceSeries(normalizedMetrics),
+    pauseWindows
+  )
+  const diskSeries = injectSeriesGaps(
+    buildDiskSeries(normalizedMetrics),
+    pauseWindows
+  )
   const latestMetric = normalizedMetrics[normalizedMetrics.length - 1]?.metric
 
   if (hoveredTimestampMs === null) {

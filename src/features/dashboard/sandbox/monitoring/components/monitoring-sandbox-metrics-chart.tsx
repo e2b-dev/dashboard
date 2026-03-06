@@ -368,6 +368,7 @@ function createLiveIndicators(
 
 function SandboxMetricsChart({
   series,
+  lifecycleEvents,
   hoveredTimestampMs = null,
   className,
   showXAxisLabels = true,
@@ -377,6 +378,9 @@ function SandboxMetricsChart({
   onHoverEnd,
   onBrushEnd,
 }: SandboxMetricsChartProps) {
+  // Lifecycle events are threaded through now for upcoming chart event markers.
+  void lifecycleEvents
+
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const [chartRevision, setChartRevision] = useState(0)
   const { resolvedTheme } = useTheme()

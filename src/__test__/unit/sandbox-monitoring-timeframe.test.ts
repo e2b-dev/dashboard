@@ -9,7 +9,6 @@ import {
   normalizeMonitoringTimeframe,
   parseMonitoringQueryState,
 } from '@/features/dashboard/sandbox/monitoring/utils/timeframe'
-import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
 
 describe('sandbox-monitoring-timeframe', () => {
   describe('normalizeMonitoringTimeframe', () => {
@@ -95,79 +94,66 @@ describe('sandbox-monitoring-timeframe', () => {
   })
 
   describe('getSandboxLifecycleBounds', () => {
-    it('should clamp lifecycle anchor end to now for paused sandbox', () => {
+    it('should use pausedAt for paused sandbox anchor end', () => {
       const now = 1_700_000_000_000
-      const sandboxInfo: SandboxDetailsDTO = {
-        templateID: 'template-id',
-        sandboxID: 'sandbox-id',
-        startedAt: new Date(now - 60_000).toISOString(),
-        endAt: new Date(now + 60_000).toISOString(),
-        envdVersion: '1.0.0',
-        cpuCount: 2,
-        memoryMB: 512,
-        diskSizeMB: 1_024,
-        state: 'paused',
+      const pausedAt = now - 30_000
+      const sandboxLifecycle = {
+        createdAt: new Date(now - 60_000).toISOString(),
+        pausedAt: new Date(pausedAt).toISOString(),
+        endedAt: null,
+        state: 'paused' as const,
       }
 
-      const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
+      const bounds = getSandboxLifecycleBounds(sandboxLifecycle, now)
 
       expect(bounds?.startMs).toBe(now - 60_000)
-      expect(bounds?.anchorEndMs).toBe(now)
+      expect(bounds?.anchorEndMs).toBe(pausedAt)
       expect(bounds?.isRunning).toBe(false)
     })
 
     it('should fall back to now for running sandbox without endAt', () => {
       const now = 1_700_000_000_000
-      const sandboxInfo = {
-        startedAt: new Date(now - 60_000).toISOString(),
-        endAt: null,
+      const sandboxLifecycle = {
+        createdAt: new Date(now - 60_000).toISOString(),
+        pausedAt: null,
+        endedAt: null,
         state: 'running' as const,
       }
 
-      const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
+      const bounds = getSandboxLifecycleBounds(sandboxLifecycle, now)
 
       expect(bounds?.startMs).toBe(now - 60_000)
       expect(bounds?.anchorEndMs).toBe(now)
       expect(bounds?.isRunning).toBe(true)
     })
 
-    it('should use stoppedAt when endAt is null for killed sandbox', () => {
+    it('should use endedAt for killed sandbox', () => {
       const now = 1_700_000_000_000
-      const stoppedAt = now - 30_000
-      const sandboxInfo: SandboxDetailsDTO = {
-        templateID: 'template-id',
-        sandboxID: 'sandbox-id',
-        startedAt: new Date(now - 60_000).toISOString(),
-        endAt: null,
-        stoppedAt: new Date(stoppedAt).toISOString(),
-        cpuCount: 2,
-        memoryMB: 512,
-        diskSizeMB: 1_024,
-        state: 'killed',
+      const endedAt = now - 30_000
+      const sandboxLifecycle = {
+        createdAt: new Date(now - 60_000).toISOString(),
+        pausedAt: null,
+        endedAt: new Date(endedAt).toISOString(),
+        state: 'killed' as const,
       }
 
-      const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
+      const bounds = getSandboxLifecycleBounds(sandboxLifecycle, now)
 
       expect(bounds?.startMs).toBe(now - 60_000)
-      expect(bounds?.anchorEndMs).toBe(stoppedAt)
+      expect(bounds?.anchorEndMs).toBe(endedAt)
       expect(bounds?.isRunning).toBe(false)
     })
 
-    it('should fall back to now for killed sandbox without end timestamp', () => {
+    it('should fall back to now for paused sandbox without pausedAt', () => {
       const now = 1_700_000_000_000
-      const sandboxInfo: SandboxDetailsDTO = {
-        templateID: 'template-id',
-        sandboxID: 'sandbox-id',
-        startedAt: new Date(now - 60_000).toISOString(),
-        endAt: null,
-        stoppedAt: null,
-        cpuCount: 2,
-        memoryMB: 512,
-        diskSizeMB: 1_024,
-        state: 'killed',
+      const sandboxLifecycle = {
+        createdAt: new Date(now - 60_000).toISOString(),
+        pausedAt: null,
+        endedAt: null,
+        state: 'paused' as const,
       }
 
-      const bounds = getSandboxLifecycleBounds(sandboxInfo, now)
+      const bounds = getSandboxLifecycleBounds(sandboxLifecycle, now)
 
       expect(bounds?.startMs).toBe(now - 60_000)
       expect(bounds?.anchorEndMs).toBe(now)

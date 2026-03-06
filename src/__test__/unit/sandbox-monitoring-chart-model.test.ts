@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { buildMonitoringChartModel } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
+import type {
+  SandboxEventDTO,
+  SandboxMetric,
+} from '@/server/api/models/sandboxes.models'
 
 const baseMetric = {
   timestamp: '1970-01-01T00:00:00.000Z',
@@ -11,6 +14,24 @@ const baseMetric = {
   SandboxMetric,
   'timestampUnix' | 'cpuUsedPct' | 'memUsed' | 'diskUsed'
 >
+
+function createLifecycleEvent(
+  overrides: Partial<SandboxEventDTO> & Pick<SandboxEventDTO, 'id' | 'type'>
+): SandboxEventDTO {
+  return {
+    id: overrides.id,
+    version: 'v1',
+    type: overrides.type,
+    eventData: null,
+    timestamp: overrides.timestamp ?? '1970-01-01T00:00:00.000Z',
+    sandboxId: overrides.sandboxId ?? 'sandbox_1',
+    sandboxExecutionId: overrides.sandboxExecutionId ?? 'execution_1',
+    sandboxTemplateId: overrides.sandboxTemplateId ?? 'template_1',
+    sandboxBuildId: overrides.sandboxBuildId ?? 'build_1',
+    sandboxTeamId:
+      overrides.sandboxTeamId ?? '00000000-0000-0000-0000-000000000001',
+  }
+}
 
 describe('buildMonitoringChartModel', () => {
   it('builds deterministic time-series data sorted by timestamp', () => {
@@ -121,5 +142,61 @@ describe('buildMonitoringChartModel', () => {
     expect(result.latestMetric?.timestampUnix).toBe(1)
     expect(result.resourceSeries[0]?.data).toEqual([[1_000, 5, null]])
     expect(result.diskSeries[0]?.data).toEqual([[1_000, 5, 0]])
+  })
+
+  it('inserts null points across paused intervals to break line rendering', () => {
+    const metrics: SandboxMetric[] = [
+      {
+        ...baseMetric,
+        timestampUnix: 10,
+        cpuUsedPct: 10,
+        memUsed: 100,
+        diskUsed: 200,
+      },
+      {
+        ...baseMetric,
+        timestampUnix: 50,
+        cpuUsedPct: 50,
+        memUsed: 500,
+        diskUsed: 1_000,
+      },
+    ]
+
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'pause',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:20.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'resume',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '1970-01-01T00:00:40.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics,
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 60_000,
+      hoveredTimestampMs: null,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([
+      [10_000, 10, null],
+      [30_000, null, null],
+      [50_000, 50, null],
+    ])
+    expect(result.resourceSeries[1]?.data).toEqual([
+      [10_000, 10, 0],
+      [30_000, null, null],
+      [50_000, 50, 0],
+    ])
+    expect(result.diskSeries[0]?.data).toEqual([
+      [10_000, 10, 0],
+      [30_000, null, null],
+      [50_000, 50, 0],
+    ])
   })
 })

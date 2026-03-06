@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
+import type {
+  SandboxEventDTO,
+  SandboxMetric,
+} from '@/server/api/models/sandboxes.models'
 
 export type SandboxMetricsDataPoint = [
   timestampMs: number,
@@ -30,6 +33,7 @@ export interface SandboxMetricsSeries {
 
 export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
+  lifecycleEvents?: SandboxEventDTO[]
   hoveredTimestampMs?: number | null
   className?: string
   showXAxisLabels?: boolean

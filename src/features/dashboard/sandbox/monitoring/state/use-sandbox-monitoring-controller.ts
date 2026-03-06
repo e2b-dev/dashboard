@@ -190,7 +190,7 @@ function createInitialState(): SandboxMonitoringControllerState {
 export function useSandboxMonitoringController(sandboxId: string) {
   const trpcClient = useTRPCClient()
   const { team } = useDashboard()
-  const { sandboxInfo } = useSandboxContext()
+  const { sandboxInfo, sandboxLifecycle } = useSandboxContext()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -218,23 +218,22 @@ export function useSandboxMonitoringController(sandboxId: string) {
     [queryEnd, queryLive, queryStart]
   )
 
-  const lifecycleStartedAt = sandboxInfo?.startedAt
-  const lifecycleEndAt = sandboxInfo?.endAt
-  const lifecycleStoppedAt =
-    sandboxInfo && 'stoppedAt' in sandboxInfo ? sandboxInfo.stoppedAt : null
+  const lifecycleCreatedAt = sandboxLifecycle?.createdAt
+  const lifecyclePausedAt = sandboxLifecycle?.pausedAt
+  const lifecycleEndedAt = sandboxLifecycle?.endedAt
   const lifecycleState = sandboxInfo?.state
   const lifecycleBounds = useMemo(() => {
-    if (!lifecycleStartedAt || !lifecycleState) {
+    if (!lifecycleCreatedAt || !lifecycleState) {
       return null
     }
 
     return getSandboxLifecycleBounds({
-      startedAt: lifecycleStartedAt,
-      endAt: lifecycleEndAt ?? null,
-      stoppedAt: lifecycleStoppedAt ?? null,
+      createdAt: lifecycleCreatedAt,
+      pausedAt: lifecyclePausedAt ?? null,
+      endedAt: lifecycleEndedAt ?? null,
       state: lifecycleState,
     })
-  }, [lifecycleEndAt, lifecycleStartedAt, lifecycleStoppedAt, lifecycleState])
+  }, [lifecycleCreatedAt, lifecycleEndedAt, lifecyclePausedAt, lifecycleState])
 
   useEffect(() => {
     stateRef.current = state
@@ -482,6 +481,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   return {
     lifecycleBounds,
+    lifecycleEvents: sandboxLifecycle?.events ?? [],
     timeframe: state.timeframe,
     metrics: metricsQuery.data ?? [],
     isLiveUpdating: state.isLiveUpdating,

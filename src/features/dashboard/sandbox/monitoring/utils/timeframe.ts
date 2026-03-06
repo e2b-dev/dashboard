@@ -164,13 +164,15 @@ export interface SandboxLifecycleBounds {
 }
 
 export function getSandboxLifecycleBounds(
-  sandboxInfo: Pick<SandboxDetailsDTO, 'startedAt' | 'endAt' | 'state'> & {
-    stoppedAt?: string | null
+  sandboxLifecycle: Pick<SandboxDetailsDTO, 'state'> & {
+    createdAt?: string | null
+    pausedAt?: string | null
+    endedAt?: string | null
   },
   now: number = Date.now()
 ): SandboxLifecycleBounds | null {
-  const startMs = parseDateTimestampMs(sandboxInfo.startedAt)
-  const isRunning = sandboxInfo.state === 'running'
+  const startMs = parseDateTimestampMs(sandboxLifecycle.createdAt)
+  const isRunning = sandboxLifecycle.state === 'running'
 
   if (startMs === null) {
     return null
@@ -181,11 +183,12 @@ export function getSandboxLifecycleBounds(
     SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
     SANDBOX_MONITORING_MAX_TIMESTAMP_MS
   )
-  const endMs =
-    parseDateTimestampMs(sandboxInfo.endAt) ??
-    parseDateTimestampMs(sandboxInfo.stoppedAt) ??
-    safeNow
-  const anchorEndMs = Math.min(safeNow, endMs)
+  const anchorTimestampMs = isRunning
+    ? safeNow
+    : sandboxLifecycle.state === 'paused'
+      ? (parseDateTimestampMs(sandboxLifecycle.pausedAt) ?? safeNow)
+      : (parseDateTimestampMs(sandboxLifecycle.endedAt) ?? safeNow)
+  const anchorEndMs = Math.min(safeNow, anchorTimestampMs)
 
   const normalizedStart = Math.floor(Math.min(startMs, anchorEndMs))
   const normalizedEnd = Math.floor(Math.max(startMs, anchorEndMs))

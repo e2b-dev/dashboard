@@ -4,6 +4,7 @@ import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sa
 import { SandboxIdSchema } from '@/lib/schemas/api'
 import { createTRPCRouter } from '../init'
 import {
+  deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToDTO,
   mapInfraSandboxDetailsToDTO,
   mapInfraSandboxLogToDTO,
@@ -38,7 +39,28 @@ export const sandboxRouter = createTRPCRouter({
           ? mapInfraSandboxDetailsToDTO(detailsResult.details)
           : mapApiSandboxRecordToDTO(detailsResult.details)
 
-      return mappedDetails
+      const lifecycleEvents = await sandboxesRepo.getSandboxLifecycleEvents(
+        session.access_token,
+        teamId,
+        sandboxId
+      )
+      const derivedLifecycle = deriveSandboxLifecycleFromEvents(lifecycleEvents)
+      const fallbackPausedAt =
+        mappedDetails.state === 'paused' ? mappedDetails.endAt : null
+      const fallbackEndedAt =
+        mappedDetails.state === 'killed'
+          ? (mappedDetails.stoppedAt ?? mappedDetails.endAt)
+          : null
+
+      return {
+        ...mappedDetails,
+        lifecycle: {
+          createdAt: derivedLifecycle.createdAt ?? mappedDetails.startedAt,
+          pausedAt: derivedLifecycle.pausedAt ?? fallbackPausedAt,
+          endedAt: derivedLifecycle.endedAt ?? fallbackEndedAt,
+          events: derivedLifecycle.events,
+        },
+      }
     }),
 
   logsBackwardsReversed: protectedTeamProcedure

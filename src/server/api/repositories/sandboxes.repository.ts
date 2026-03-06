@@ -7,6 +7,7 @@ import {
   handleDashboardApiError,
   handleInfraApiError,
 } from '../errors'
+import type { SandboxEventDTO } from '../models/sandboxes.models'
 
 // get sandbox logs
 
@@ -152,6 +153,85 @@ export async function getSandboxDetails(
   })
 }
 
+const SANDBOX_EVENTS_PAGE_SIZE = 100
+const SANDBOX_EVENTS_MAX_PAGES = 50
+const SANDBOX_LIFECYCLE_EVENT_PREFIX = 'sandbox.lifecycle.'
+
+export async function getSandboxLifecycleEvents(
+  accessToken: string,
+  teamId: string,
+  sandboxId: string
+) {
+  const lifecycleEvents: SandboxEventDTO[] = []
+
+  for (
+    let pageIndex = 0, offset = 0;
+    pageIndex < SANDBOX_EVENTS_MAX_PAGES;
+    pageIndex += 1, offset += SANDBOX_EVENTS_PAGE_SIZE
+  ) {
+    try {
+      const result = await infra.GET('/events/sandboxes/{sandboxID}', {
+        params: {
+          path: {
+            sandboxID: sandboxId,
+          },
+          query: {
+            offset,
+            limit: SANDBOX_EVENTS_PAGE_SIZE,
+            orderAsc: true,
+          },
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+        cache: 'no-store',
+      })
+
+      if (!result.response.ok || result.error) {
+        l.warn({
+          key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_error',
+          error: result.error,
+          team_id: teamId,
+          context: {
+            status: result.response.status,
+            path: '/events/sandboxes/{sandboxID}',
+            sandbox_id: sandboxId,
+            offset,
+            limit: SANDBOX_EVENTS_PAGE_SIZE,
+          },
+        })
+        break
+      }
+
+      const page = result.data ?? []
+      lifecycleEvents.push(
+        ...page.filter((event) =>
+          event.type.startsWith(SANDBOX_LIFECYCLE_EVENT_PREFIX)
+        )
+      )
+
+      if (page.length < SANDBOX_EVENTS_PAGE_SIZE) {
+        break
+      }
+    } catch (error) {
+      l.warn({
+        key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_exception',
+        error,
+        team_id: teamId,
+        context: {
+          path: '/events/sandboxes/{sandboxID}',
+          sandbox_id: sandboxId,
+          offset,
+          limit: SANDBOX_EVENTS_PAGE_SIZE,
+        },
+      })
+      break
+    }
+  }
+
+  return lifecycleEvents
+}
+
 // get sandbox metrics
 
 export interface GetSandboxMetricsOptions {
@@ -217,5 +297,6 @@ export async function getSandboxMetrics(
 export const sandboxesRepo = {
   getSandboxLogs,
   getSandboxDetails,
+  getSandboxLifecycleEvents,
   getSandboxMetrics,
 }
