@@ -1,16 +1,16 @@
-import { GaugeIcon, WebhookIcon } from '@/ui/primitives/icons'
 import {
-  Activity,
-  Box,
-  Container,
-  CreditCard,
-  Key,
-  LucideProps,
-  Settings,
-  UserRoundCog,
-  Users,
-} from 'lucide-react'
-import { ForwardRefExoticComponent, JSX, RefAttributes } from 'react'
+  AccountSettingsIcon,
+  CardIcon,
+  GaugeIcon,
+  KeyIcon,
+  PersonsIcon,
+  SandboxIcon,
+  SettingsIcon,
+  TemplateIcon,
+  UsageIcon,
+  WebhookIcon,
+} from '@/ui/primitives/icons'
+import { JSX } from 'react'
 import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
@@ -21,12 +21,8 @@ type SidebarNavArgs = {
 export type SidebarNavItem = {
   label: string
   href: (args: SidebarNavArgs) => string
-  icon:
-    | ForwardRefExoticComponent<
-        Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
-      >
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    | ((...args: any[]) => JSX.Element)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: (...args: any[]) => JSX.Element
   group?: string
   activeMatch?: string
 }
@@ -36,13 +32,13 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   {
     label: 'Sandboxes',
     href: (args) => PROTECTED_URLS.SANDBOXES(args.teamIdOrSlug!),
-    icon: Box,
+    icon: SandboxIcon,
     activeMatch: `/dashboard/*/sandboxes/**`,
   },
   {
     label: 'Templates',
     href: (args) => PROTECTED_URLS.TEMPLATES(args.teamIdOrSlug!),
-    icon: Container,
+    icon: TemplateIcon,
     activeMatch: `/dashboard/*/templates/**`,
   },
 
@@ -64,21 +60,21 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   {
     label: 'General',
     href: (args) => PROTECTED_URLS.GENERAL(args.teamIdOrSlug!),
-    icon: Settings,
+    icon: SettingsIcon,
     group: 'team',
     activeMatch: `/dashboard/*/general`,
   },
   {
     label: 'API Keys',
     href: (args) => PROTECTED_URLS.KEYS(args.teamIdOrSlug!),
-    icon: Key,
+    icon: KeyIcon,
     group: 'team',
     activeMatch: `/dashboard/*/keys`,
   },
   {
     label: 'Members',
     href: (args) => PROTECTED_URLS.MEMBERS(args.teamIdOrSlug!),
-    icon: Users,
+    icon: PersonsIcon,
     group: 'team',
     activeMatch: `/dashboard/*/members`,
   },
@@ -90,7 +86,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
           label: 'Usage',
           href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.USAGE(args.teamIdOrSlug!),
-          icon: Activity,
+          icon: UsageIcon,
           group: 'billing',
           activeMatch: `/dashboard/*/usage/**`,
         },
@@ -106,7 +102,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
           label: 'Billing',
           href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.BILLING(args.teamIdOrSlug!),
-          icon: CreditCard,
+          icon: CardIcon,
           group: 'billing',
           activeMatch: `/dashboard/*/billing/**`,
         },
@@ -118,7 +114,7 @@ export const SIDEBAR_EXTRA_LINKS: SidebarNavItem[] = [
   {
     label: 'Account Settings',
     href: () => PROTECTED_URLS.ACCOUNT_SETTINGS,
-    icon: UserRoundCog,
+    icon: AccountSettingsIcon,
   },
 ]
 

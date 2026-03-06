@@ -2,7 +2,7 @@
 
 import { Slot } from '@radix-ui/react-slot'
 import { VariantProps, cva } from 'class-variance-authority'
-import { PanelLeftIcon } from 'lucide-react'
+import { CollapseLeftIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
@@ -291,7 +291,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon className="text-fg-tertiary! size-5" />
+      <CollapseLeftIcon className="text-fg-tertiary! size-5" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
@@ -427,7 +427,7 @@ function SidebarGroupLabel({
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        'text-fg-tertiary prose-label-highlight ring-ring flex h-8 shrink-0 items-center px-2 font-mono text-xs uppercase outline-hidden focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-fg-tertiary prose-label-highlight ring-ring flex shrink-0 items-start px-2 pb-1.5 uppercase outline-hidden focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         SIDEBAR_TRANSITION_CLASSNAMES,
         'group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:h-0 duration-150',
         className
@@ -479,7 +479,7 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<'ul'>) {
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
-      className={cn('flex w-full min-w-0 flex-col gap-1', className)}
+      className={cn('flex w-full min-w-0 flex-col', className)}
       {...props}
     />
   )
@@ -497,16 +497,41 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 export const sidebarMenuButtonVariants = cva(
-  'peer/menu-button cursor-pointer whitespace-nowrap prose-body-highlight flex w-full  items-center gap-2 overflow-hidden p-2 text-left outline-hidden ring-ring transition-[width,height,padding] focus-visible:bg-bg-highlight disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight  data-[state=open]:hover:bg-bg-highlight data-[state=open]:hover:text-accent-main-highlight  group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+  [
+    // Layout
+    'peer/menu-button flex w-full items-center gap-2 overflow-hidden p-2 text-left',
+    // Typography
+    'prose-body-highlight whitespace-nowrap [&>span:last-child]:truncate',
+    // Icons
+    '[&>svg]:size-5 [&>svg]:shrink-0',
+    // Cursor & interaction
+    'cursor-pointer outline-hidden ring-ring',
+    // Transitions
+    'transition-[width,height,padding]',
+    // Hover & Focus
+    'hover:bg-bg-hover',
+    // Focus
+    'focus-visible:bg-bg-hover',
+    // Active/selected state
+    'data-[active=true]:bg-bg-highlight data-[active=true]:text-accent-main-highlight data-[active=true]:hover:bg-bg-highlight',
+    // Open state (e.g. dropdown trigger)
+    'data-[state=open]:bg-bg-hover',
+    // Disabled
+    'disabled:pointer-events-none disabled:opacity-50',
+    'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+    // Menu action padding
+    'group-has-data-[sidebar=menu-action]/menu-item:pr-8',
+    // Collapsed icon mode
+    'group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2!',
+  ].join(' '),
   {
     variants: {
       variant: {
-        default: 'hover:bg-bg-hover',
-        active: 'bg-bg-hover !text-accent-main-highlight prose-body-highlight',
+        default: '',
         inverted: 'bg-bg-inverted text-fg-inverted border',
         outline: [
           'border border-stroke bg-transparent',
-          'hover:text-accent-main-highlight ',
+          'hover:bg-bg-hover',
           'active:translate-y-[1px] active:shadow-none',
         ].join(' '),
         ghost: [
@@ -529,9 +554,8 @@ export const sidebarMenuButtonVariants = cva(
         ].join(' '),
       },
       size: {
-        default: 'h-8 ',
-        sm: 'h-7 text-xs',
-        lg: 'h-12  group-data-[collapsible=icon]:p-0!',
+        default: 'h-9',
+        switcher: 'h-12 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:border-0',
       },
     },
     defaultVariants: {
@@ -612,7 +636,7 @@ function SidebarMenuAction({
         'after:absolute after:-inset-2 md:after:hidden',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',
-        'peer-data-[size=lg]/menu-button:top-2.5',
+        'peer-data-[size=switcher]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
         showOnHover &&
           'peer-data-[active=true]/menu-button:text-accent-main-highlight  group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
@@ -636,7 +660,7 @@ function SidebarMenuBadge({
         'peer-hover/menu-button:text-accent-main-highlight  peer-data-[active=true]/menu-button:text-accent-main-highlight ',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',
-        'peer-data-[size=lg]/menu-button:top-2.5',
+        'peer-data-[size=switcher]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
         className
       )}

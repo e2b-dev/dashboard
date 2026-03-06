@@ -3,7 +3,7 @@
 import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY, INCLUDE_REPORT_ISSUE } from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
-import ExternalIcon from '@/ui/external-icon'
+import { ExternalLinkIcon } from '@/ui/primitives/icons'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarFooter,
@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { Book, Bug, Github, MessageSquarePlus } from 'lucide-react'
+import { BugIcon, DocsIcon, FeedbackIcon, GithubIcon } from '@/ui/primitives/icons'
 import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import ReportIssuePopover from '../navbar/report-issue-popover'
@@ -32,28 +32,18 @@ export default function DashboardSidebarFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Github
-                    className={cn(
-                      'size-4 group-data-[collapsible=icon]:!size-5',
-                      SIDEBAR_TRANSITION_CLASSNAMES
-                    )}
-                  />
+                  <GithubIcon />
                   GitHub
-                  <ExternalIcon className="ml-auto size-4" />
+                  <ExternalLinkIcon className="ml-auto !size-4 text-fg-tertiary" />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem key="docs">
               <SidebarMenuButton asChild tooltip="Documentation">
                 <Link href="/docs" target="_blank" rel="noopener noreferrer">
-                  <Book
-                    className={cn(
-                      'size-4 group-data-[collapsible=icon]:!size-5',
-                      SIDEBAR_TRANSITION_CLASSNAMES
-                    )}
-                  />
+                  <DocsIcon />
                   Documentation
-                  <ExternalIcon className="ml-auto size-4" />
+                  <ExternalLinkIcon className="ml-auto !size-4 text-fg-tertiary" />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -80,13 +70,12 @@ export default function DashboardSidebarFooter() {
                 trigger={
                   <SidebarMenuButton
                     tooltip="Feedback"
-                    variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
+                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
-                    <MessageSquarePlus className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    <FeedbackIcon className="hidden group-data-[collapsible=icon]:block" />
                     Feedback
                   </SidebarMenuButton>
                 }
@@ -109,13 +98,12 @@ export default function DashboardSidebarFooter() {
                 trigger={
                   <SidebarMenuButton
                     tooltip="Report Issue"
-                    variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
+                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
-                    <Bug className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    <BugIcon className="hidden group-data-[collapsible=icon]:block" />
                     Report Issue
                   </SidebarMenuButton>
                 }

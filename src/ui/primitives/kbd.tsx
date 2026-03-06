@@ -70,7 +70,7 @@ export function Kbd({
           const formattedKey = formatKey(key)
           return (
             <React.Fragment key={key}>
-              {index > 0 && '+'}
+              {index > 0 && ' '}
               {formattedKey}
             </React.Fragment>
           )

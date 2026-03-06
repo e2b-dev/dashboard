@@ -55,7 +55,7 @@ export default function TeamBlockageAlert({
               exit={{ opacity: 0, filter: 'blur(8px)' }}
               transition={{ duration: 0.4, ease: exponentialSmoothing(4) }}
             >
-              <AlertOctagonIcon className="size-4 group-data-[collapsible=icon]:!size-5 transition-[size]" />
+              <AlertOctagonIcon />
               <div className="flex flex-col gap-0 overflow-hidden">
                 <span className="prose-headline-small uppercase">
                   Team is Blocked

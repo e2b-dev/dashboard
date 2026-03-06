@@ -17,7 +17,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
-import { ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useDashboard } from '../context'
@@ -53,14 +52,13 @@ export default function DashboardSidebarCommand({
           tooltip="Go to..."
           variant={isSidebarOpen ? 'outline' : 'default'}
           className={cn(
-            'text-fg-tertiary h-10 relative transition-all',
+            'text-fg-tertiary relative transition-all pl-3 !font-normal',
             'group-data-[collapsible=icon]:border-x-0 group-data-[collapsible=icon]:border-y group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!p-0',
             className
           )}
           onClick={() => setOpen(true)}
         >
-          <ChevronRight className="text-fg-tertiary size-4 group-data-[collapsible=icon]:hidden" />
-          <span className="group-data-[collapsible=icon]:hidden">Go to</span>
+          <span className="group-data-[collapsible=icon]:hidden">&gt; Go to</span>
           <Kbd
             keys={['cmd', 'k']}
             className="pointer-events-none group-data-[collapsible=icon]:mx-auto ml-auto"

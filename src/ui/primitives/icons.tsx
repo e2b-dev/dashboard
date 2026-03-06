@@ -1035,6 +1035,31 @@ export const AlertIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const BugIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M4 8.66667V6V5.33333H12V6V8.66667M4 8.66667V10C4 12.2091 5.79086 14 8 14C10.2091 14 12 12.2091 12 10V8.66667M4 8.66667H2M12 8.66667H14M2.16667 5.33333L3.66667 5.87879M4 11.3333L2.16667 12M13.8333 5.33333L12.3333 5.87879M12 11.3333L13.8333 12M8 8.66667V13.3333M5.33333 4.66667C5.33333 3.19391 6.52724 2 8 2C9.47273 2 10.6667 3.19391 10.6667 4.66667" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square"/>
+  </svg>
+)
+
+export const FeedbackIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M2.00098 2.66665L14.001 2.66663V12.0238L10.0099 12.0238L7.99814 13.6905L6.00985 12.0238H2.00098V2.66665Z" stroke="currentColor" stroke-width="1.33333"/>
+    <path d="M4.41699 7.33333C4.41699 7.65547 4.67816 7.91667 5.00033 7.91667C5.32249 7.91667 5.58366 7.65547 5.58366 7.33333C5.58366 7.0112 5.32249 6.75 5.00033 6.75C4.67816 6.75 4.41699 7.0112 4.41699 7.33333ZM7.41699 7.33333C7.41699 7.65547 7.67819 7.91667 8.00033 7.91667C8.32246 7.91667 8.58366 7.65547 8.58366 7.33333C8.58366 7.0112 8.32246 6.75 8.00033 6.75C7.67819 6.75 7.41699 7.0112 7.41699 7.33333ZM10.417 7.33333C10.417 7.65547 10.6782 7.91667 11.0003 7.91667C11.3225 7.91667 11.5837 7.65547 11.5837 7.33333C11.5837 7.0112 11.3225 6.75 11.0003 6.75C10.6782 6.75 10.417 7.0112 10.417 7.33333Z" fill="currentColor" stroke="currentColor" stroke-width="0.5" stroke-linecap="square"/>
+  </svg>
+)
+
 export const CodeChevronIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}

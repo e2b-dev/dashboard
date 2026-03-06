@@ -20,13 +20,7 @@ import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'
 
-interface DashboardSidebarMenuProps {
-  className?: string
-}
-
-export default function DashboardSidebarMenu({
-  className,
-}: DashboardSidebarMenuProps) {
+export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
 
@@ -41,16 +35,11 @@ export default function DashboardSidebarMenu({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               variant="outline"
-              size="lg"
-              className={cn(
-                'h-14 flex',
-                'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:!px-0',
-                className
-              )}
+              size="switcher"
             >
               <Avatar
                 className={cn(
-                  'shrink-0 transition-all duration-100 ease-in-out',
+                  'size-8 shrink-0 transition-all duration-100 ease-in-out',
                   'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
                   {
                     'drop-shadow-sm filter': team.profile_picture_url,
@@ -66,7 +55,7 @@ export default function DashboardSidebarMenu({
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left  leading-tight">
-                <span className="text-fg-tertiary font-mono truncate prose-label">
+                <span className="text-fg-tertiary truncate prose-label">
                   TEAM
                 </span>
                 <span className="text-fg truncate prose-body-highlight normal-case">
