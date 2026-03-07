@@ -22,6 +22,12 @@ interface SandboxMetricsChartsProps {
   sandboxId: string
 }
 
+interface ZoomResetSnapshot {
+  start: number
+  end: number
+  isLiveUpdating: boolean
+}
+
 function formatMarkerPercent(value: number) {
   return Math.round(value)
 }
@@ -66,12 +72,14 @@ export default function SandboxMetricsCharts({
   const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
     null
   )
+  const [zoomResetSnapshot, setZoomResetSnapshot] =
+    useState<ZoomResetSnapshot | null>(null)
   const [renderedTimeframe, setRenderedTimeframe] = useState(() => ({
     start: timeframe.start,
     end: timeframe.end,
   }))
 
-  const handleTimeRangeChange = useCallback(
+  const handleControlTimeRangeChange = useCallback(
     (
       startTimestamp: number,
       endTimestamp: number,
@@ -87,6 +95,7 @@ export default function SandboxMetricsCharts({
         return
       }
 
+      setZoomResetSnapshot(null)
       setHoveredTimestampMs(null)
       setTimeframe(startTimestamp, endTimestamp, {
         isLiveUpdating: nextLiveUpdating,
@@ -94,6 +103,44 @@ export default function SandboxMetricsCharts({
     },
     [isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
   )
+  const handleBrushTimeRangeChange = useCallback(
+    (startTimestamp: number, endTimestamp: number) => {
+      if (
+        startTimestamp === timeframe.start &&
+        endTimestamp === timeframe.end
+      ) {
+        return
+      }
+
+      setZoomResetSnapshot((previous) => {
+        if (previous) {
+          return previous
+        }
+
+        return {
+          start: timeframe.start,
+          end: timeframe.end,
+          isLiveUpdating,
+        }
+      })
+      setHoveredTimestampMs(null)
+      setTimeframe(startTimestamp, endTimestamp, {
+        isLiveUpdating: false,
+      })
+    },
+    [isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
+  )
+  const handleResetZoom = useCallback(() => {
+    if (!zoomResetSnapshot) {
+      return
+    }
+
+    setHoveredTimestampMs(null)
+    setTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end, {
+      isLiveUpdating: zoomResetSnapshot.isLiveUpdating,
+    })
+    setZoomResetSnapshot(null)
+  }, [setTimeframe, zoomResetSnapshot])
 
   const chartModel = useMemo(
     () =>
@@ -204,7 +251,9 @@ export default function SandboxMetricsCharts({
             lifecycle={lifecycleBounds}
             isLiveUpdating={isLiveUpdating}
             onLiveChange={setLiveUpdating}
-            onTimeRangeChange={handleTimeRangeChange}
+            onTimeRangeChange={handleControlTimeRangeChange}
+            canResetZoom={zoomResetSnapshot !== null}
+            onResetZoom={handleResetZoom}
           />
         </div>
       ) : null}
@@ -230,7 +279,7 @@ export default function SandboxMetricsCharts({
           )}
           onHover={setHoveredTimestampMs}
           onHoverEnd={handleHoverEnd}
-          onBrushEnd={handleTimeRangeChange}
+          onBrushEnd={handleBrushTimeRangeChange}
         />
       </MonitoringChartSection>
 
@@ -255,7 +304,7 @@ export default function SandboxMetricsCharts({
           )}
           onHover={setHoveredTimestampMs}
           onHoverEnd={handleHoverEnd}
-          onBrushEnd={handleTimeRangeChange}
+          onBrushEnd={handleBrushTimeRangeChange}
         />
       </MonitoringChartSection>
     </div>

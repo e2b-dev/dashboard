@@ -3,7 +3,8 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useMemo } from 'react'
-import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { useAlignedRefetchInterval } from '@/lib/hooks/use-aligned-refetch-interval'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
 import type {
@@ -11,7 +12,6 @@ import type {
   SandboxEventDTO,
 } from '@/server/api/models/sandboxes.models'
 import { useTRPC } from '@/trpc/client'
-import type { ClientSandboxMetric } from '@/types/sandboxes.types'
 
 export interface SandboxLifecycleState {
   createdAt: string | null
@@ -23,7 +23,6 @@ export interface SandboxLifecycleState {
 interface SandboxContextValue {
   sandboxInfo?: SandboxDetailsDTO
   sandboxLifecycle: SandboxLifecycleState | null
-  lastMetrics?: ClientSandboxMetric
   isRunning: boolean
   isSandboxNotFound: boolean
 
@@ -72,6 +71,9 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
     useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
 
   const trpc = useTRPC()
+  const getAlignedRefetchInterval = useAlignedRefetchInterval({
+    intervalMs: SANDBOXES_METRICS_POLLING_MS,
+  })
 
   const {
     data: sandboxInfoData,
@@ -84,6 +86,14 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
       { teamIdOrSlug, sandboxId },
       {
         retry: false,
+        refetchInterval: (query) => {
+          const sandboxInfo = query.state.data as SandboxDetailsDTO | undefined
+          const shouldPoll =
+            sandboxInfo?.state === 'running' || sandboxInfo?.state === 'paused'
+
+          return getAlignedRefetchInterval(shouldPoll)
+        },
+        refetchIntervalInBackground: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
         refetchOnMount: false,
@@ -96,29 +106,8 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
     await refetch()
   }, [refetch])
 
-  const sandboxInfoId = sandboxInfoData?.sandboxID
-  const isRunning = sandboxInfoData?.state === 'running'
-
-  const { data: sandboxesMetricsData } = useQuery(
-    trpc.sandboxes.getSandboxesMetrics.queryOptions(
-      { teamIdOrSlug, sandboxIds: [sandboxInfoId ?? sandboxId] },
-      {
-        enabled: Boolean(sandboxInfoId) && isRunning,
-        retry: 3,
-        retryDelay: 1_000,
-        refetchInterval: isRunning
-          ? SANDBOXES_DETAILS_METRICS_POLLING_MS
-          : false,
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
-      }
-    )
-  )
-
-  const metricsData = sandboxInfoId
-    ? sandboxesMetricsData?.metrics[sandboxInfoId]
-    : undefined
+  const sandboxState = sandboxInfoData?.state
+  const isRunning = sandboxState === 'running'
 
   const isSandboxNotFound =
     !sandboxInfoData && isNotFoundError(sandboxInfoError)
@@ -136,7 +125,6 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
         sandboxLifecycle,
         isRunning,
         isSandboxNotFound,
-        lastMetrics: metricsData,
         isSandboxInfoLoading: isSandboxInfoPending,
         refetchSandboxInfo,
       }}

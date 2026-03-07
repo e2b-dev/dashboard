@@ -1,8 +1,8 @@
 'use client'
 
 import { millisecondsInHour, millisecondsInMinute } from 'date-fns/constants'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { LiveDot } from '@/ui/live'
@@ -34,7 +34,6 @@ import {
   SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_HOUR_PRESET_ID,
   SANDBOX_MONITORING_LAST_HOUR_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_MAX_HISTORY_ENTRIES,
   SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from '../utils/constants'
@@ -77,33 +76,9 @@ interface SandboxMonitoringTimeRangeControlsProps {
     end: number,
     options?: { isLiveUpdating?: boolean }
   ) => void
+  canResetZoom: boolean
+  onResetZoom: () => void
   className?: string
-}
-
-interface TimeRangeHistoryEntry {
-  start: number
-  end: number
-  isLiveUpdating: boolean
-}
-
-interface TimeRangeHistoryState {
-  entries: TimeRangeHistoryEntry[]
-  index: number
-}
-
-function isSameHistoryEntry(
-  a: TimeRangeHistoryEntry | undefined,
-  b: TimeRangeHistoryEntry
-): boolean {
-  if (!a) {
-    return false
-  }
-
-  return (
-    a.start === b.start &&
-    a.end === b.end &&
-    a.isLiveUpdating === b.isLiveUpdating
-  )
 }
 
 export default function SandboxMonitoringTimeRangeControls({
@@ -112,23 +87,12 @@ export default function SandboxMonitoringTimeRangeControls({
   isLiveUpdating,
   onLiveChange,
   onTimeRangeChange,
+  canResetZoom,
+  onResetZoom,
   className,
 }: SandboxMonitoringTimeRangeControlsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [pickerMaxDateMs, setPickerMaxDateMs] = useState(() => Date.now())
-  const [historyState, setHistoryState] = useState<TimeRangeHistoryState>(
-    () => ({
-      entries: [
-        {
-          start: timeframe.start,
-          end: timeframe.end,
-          isLiveUpdating,
-        },
-      ],
-      index: 0,
-    })
-  )
-  const isHistoryNavigationRef = useRef(false)
 
   const clampToLifecycle = useCallback(
     (start: number, end: number) => {
@@ -280,61 +244,6 @@ export default function SandboxMonitoringTimeRangeControls({
     }
   }, [isOpen, lifecycle.isRunning])
 
-  useEffect(() => {
-    const snapshot: TimeRangeHistoryEntry = {
-      start: timeframe.start,
-      end: timeframe.end,
-      isLiveUpdating,
-    }
-
-    setHistoryState((previous) => {
-      const currentEntry = previous.entries[previous.index]
-
-      if (isSameHistoryEntry(currentEntry, snapshot)) {
-        isHistoryNavigationRef.current = false
-        return previous
-      }
-
-      if (isHistoryNavigationRef.current) {
-        isHistoryNavigationRef.current = false
-        const nextEntries = [...previous.entries]
-        nextEntries[previous.index] = snapshot
-        return {
-          entries: nextEntries,
-          index: previous.index,
-        }
-      }
-
-      if (currentEntry?.isLiveUpdating && snapshot.isLiveUpdating) {
-        return previous
-      }
-
-      const trimmedEntries = previous.entries.slice(0, previous.index + 1)
-      const lastEntry = trimmedEntries[trimmedEntries.length - 1]
-      if (isSameHistoryEntry(lastEntry, snapshot)) {
-        return {
-          entries: trimmedEntries,
-          index: trimmedEntries.length - 1,
-        }
-      }
-
-      const nextEntries = [...trimmedEntries, snapshot]
-      const overflow =
-        nextEntries.length - SANDBOX_MONITORING_MAX_HISTORY_ENTRIES
-      if (overflow > 0) {
-        return {
-          entries: nextEntries.slice(overflow),
-          index: trimmedEntries.length - overflow,
-        }
-      }
-
-      return {
-        entries: nextEntries,
-        index: trimmedEntries.length,
-      }
-    })
-  }, [isLiveUpdating, timeframe.end, timeframe.start])
-
   const pickerMaxDate = useMemo(
     () =>
       lifecycle.isRunning
@@ -387,44 +296,6 @@ export default function SandboxMonitoringTimeRangeControls({
 
     onLiveChange(!isLiveUpdating)
   }, [isLiveUpdating, lifecycle.isRunning, onLiveChange])
-
-  const canGoBackward = historyState.index > 0
-  const canGoForward = historyState.index < historyState.entries.length - 1
-
-  const handleHistoryNavigation = useCallback(
-    (targetIndex: number) => {
-      const target = historyState.entries[targetIndex]
-      if (!target) {
-        return
-      }
-
-      isHistoryNavigationRef.current = true
-      setHistoryState((previous) => ({
-        entries: previous.entries,
-        index: targetIndex,
-      }))
-      onTimeRangeChange(target.start, target.end, {
-        isLiveUpdating: target.isLiveUpdating,
-      })
-    },
-    [historyState.entries, onTimeRangeChange]
-  )
-
-  const handleGoBackward = useCallback(() => {
-    if (!canGoBackward) {
-      return
-    }
-
-    handleHistoryNavigation(historyState.index - 1)
-  }, [canGoBackward, handleHistoryNavigation, historyState.index])
-
-  const handleGoForward = useCallback(() => {
-    if (!canGoForward) {
-      return
-    }
-
-    handleHistoryNavigation(historyState.index + 1)
-  }, [canGoForward, handleHistoryNavigation, historyState.index])
 
   return (
     <div
@@ -491,32 +362,19 @@ export default function SandboxMonitoringTimeRangeControls({
         </Button>
       </div>
 
-      <div className="flex items-center gap-1 max-md:basis-full max-md:justify-end">
-        <Button
-          size="md"
-          variant="outline"
-          onClick={handleGoBackward}
-          disabled={!canGoBackward}
-          className="px-3 gap-1.5"
-          title="Go to previous timeframe"
-          aria-label="Go to previous timeframe"
-        >
-          <ChevronLeft className="size-4" />
-          <span>Back</span>
-        </Button>
-        <Button
-          size="md"
-          variant="outline"
-          onClick={handleGoForward}
-          disabled={!canGoForward}
-          className="px-3 gap-1.5"
-          title="Go to next timeframe"
-          aria-label="Go to next timeframe"
-        >
-          <span>Forward</span>
-          <ChevronRight className="size-4" />
-        </Button>
-      </div>
+      {canResetZoom ? (
+        <div className="flex items-center gap-1 max-md:basis-full max-md:justify-end">
+          <Button
+            size="md"
+            variant="outline"
+            onClick={onResetZoom}
+            title="Reset zoom"
+            aria-label="Reset zoom"
+          >
+            <RotateCcw className="size-4" />
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }

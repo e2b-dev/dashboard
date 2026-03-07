@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSandboxContext } from '@/features/dashboard/sandbox/context'
+import { getMsUntilNextAlignedInterval } from '@/lib/hooks/use-aligned-refetch-interval'
 import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import { useTRPCClient } from '@/trpc/client'
 import {
@@ -201,7 +202,6 @@ export function useSandboxMonitoringController(sandboxId: string) {
     createInitialState
   )
   const stateRef = useRef(state)
-  const durationRef = useRef(state.timeframe.duration)
 
   const queryStart = searchParams.get(SANDBOX_MONITORING_QUERY_START_PARAM)
   const queryEnd = searchParams.get(SANDBOX_MONITORING_QUERY_END_PARAM)
@@ -306,16 +306,12 @@ export function useSandboxMonitoringController(sandboxId: string) {
         ? now
         : (lifecycleBounds?.anchorEndMs ?? now)
 
-      applyTimeframe(anchorEndMs - durationRef.current, anchorEndMs, {
+      applyTimeframe(currentState.timeframe.start, anchorEndMs, {
         isLiveUpdating: true,
       })
     },
     [applyTimeframe, lifecycleBounds]
   )
-
-  useEffect(() => {
-    durationRef.current = state.timeframe.duration
-  }, [state.timeframe.duration])
 
   useEffect(() => {
     const now = Date.now()
@@ -326,9 +322,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     const start = hasExplicitRange
       ? queryState.start
       : currentState.isInitialized && currentState.sandboxId === sandboxId
-        ? requestedLiveUpdating
-          ? now - durationRef.current
-          : currentState.timeframe.start
+        ? currentState.timeframe.start
         : now - SANDBOX_MONITORING_DEFAULT_RANGE_MS
     const end = hasExplicitRange
       ? queryState.end
@@ -374,22 +368,35 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
     const tick = () => {
       const now = Date.now()
+      const currentState = stateRef.current
       const anchorEndMs = lifecycleBounds?.isRunning
         ? now
         : (lifecycleBounds?.anchorEndMs ?? now)
 
-      applyTimeframe(anchorEndMs - durationRef.current, anchorEndMs, {
+      applyTimeframe(currentState.timeframe.start, anchorEndMs, {
         isLiveUpdating: true,
       })
     }
 
-    const intervalId = window.setInterval(
-      tick,
-      SANDBOX_MONITORING_LIVE_POLLING_MS
-    )
+    let timeoutId: number | null = null
+
+    const scheduleNextTick = () => {
+      const delayMs = getMsUntilNextAlignedInterval(
+        SANDBOX_MONITORING_LIVE_POLLING_MS
+      )
+
+      timeoutId = window.setTimeout(() => {
+        tick()
+        scheduleNextTick()
+      }, delayMs)
+    }
+
+    scheduleNextTick()
 
     return () => {
-      window.clearInterval(intervalId)
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
     }
   }, [
     applyTimeframe,

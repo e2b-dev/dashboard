@@ -268,6 +268,38 @@ function findFirstValidPointTimestampMs(
   return null
 }
 
+function splitLineDataIntoRenderableSegments(
+  data: SandboxMetricsDataPoint[]
+): SandboxMetricsDataPoint[][] {
+  const segments: SandboxMetricsDataPoint[][] = []
+  let currentSegment: SandboxMetricsDataPoint[] = []
+
+  for (const point of data) {
+    if (!point) {
+      continue
+    }
+
+    const [timestampMs, value] = point
+    const isRenderablePoint = value !== null && Number.isFinite(timestampMs)
+
+    if (!isRenderablePoint) {
+      if (currentSegment.length > 0) {
+        segments.push(currentSegment)
+        currentSegment = []
+      }
+      continue
+    }
+
+    currentSegment.push(point)
+  }
+
+  if (currentSegment.length > 0) {
+    segments.push(currentSegment)
+  }
+
+  return segments
+}
+
 function applyMarkerLabelOffsets(
   markers: CrosshairMarker[]
 ): CrosshairMarker[] {
@@ -519,7 +551,7 @@ function SandboxMetricsChart({
         SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR
       )
 
-    const seriesItems: SeriesOption[] = series.map((line) => {
+    const seriesItems: SeriesOption[] = series.flatMap((line) => {
       const lineColor = line.lineColorVar
         ? cssVars[line.lineColorVar]
         : undefined
@@ -530,7 +562,6 @@ function SandboxMetricsChart({
         ? cssVars[line.areaToColorVar]
         : undefined
       const resolvedLineColor = lineColor || stroke
-      const livePoint = findLivePoint(line.data)
       const shouldShowArea = line.showArea ?? false
       const areaFillColor =
         areaFromColor && areaToColor
@@ -549,40 +580,45 @@ function SandboxMetricsChart({
       const defaultAreaOpacity =
         areaFromColor || areaToColor ? 1 : SANDBOX_MONITORING_CHART_AREA_OPACITY
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
+      const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
 
-      const seriesItem: SeriesOption = {
-        id: line.id,
-        name: line.name,
-        type: 'line',
-        z: line.zIndex,
-        symbol: 'none',
-        showSymbol: false,
-        smooth: false,
-        emphasis: {
-          disabled: true,
-        },
-        areaStyle: shouldShowArea
-          ? {
-              opacity: areaOpacity,
-              color: areaFillColor,
-            }
-          : undefined,
-        lineStyle: {
-          width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
-          color: resolvedLineColor,
-        },
-        connectNulls: false,
-        data: line.data,
-      }
+      return renderableSegments.map((segment, segmentIndex) => {
+        const livePoint = findLivePoint(segment)
 
-      if (livePoint) {
-        seriesItem.markPoint = createLiveIndicators(
-          livePoint,
-          resolvedLineColor
-        ) as MarkPointComponentOption
-      }
+        const seriesItem: SeriesOption = {
+          id: `${line.id}__segment_${segmentIndex}`,
+          name: line.name,
+          type: 'line',
+          z: line.zIndex,
+          symbol: 'none',
+          showSymbol: false,
+          smooth: false,
+          emphasis: {
+            disabled: true,
+          },
+          areaStyle: shouldShowArea
+            ? {
+                opacity: areaOpacity,
+                color: areaFillColor,
+              }
+            : undefined,
+          lineStyle: {
+            width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
+            color: resolvedLineColor,
+          },
+          connectNulls: false,
+          data: segment,
+        }
 
-      return seriesItem
+        if (livePoint) {
+          seriesItem.markPoint = createLiveIndicators(
+            livePoint,
+            resolvedLineColor
+          ) as MarkPointComponentOption
+        }
+
+        return seriesItem
+      })
     })
 
     return {
@@ -820,6 +856,7 @@ function SandboxMetricsChart({
               style={{
                 left: marker.xPx,
                 top: marker.yPx,
+                zIndex: 30,
               }}
             >
               <span
@@ -833,7 +870,7 @@ function SandboxMetricsChart({
                   marginTop: marker.labelOffsetYPx,
                 }}
                 className={cn(
-                  'prose-label-numeric absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap px-2 py-0.5 backdrop-blur-lg z-9999',
+                  'prose-label-numeric absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap px-2 py-0.5 backdrop-blur-lg',
                   marker.placeValueOnRight ? 'left-2' : 'right-2'
                 )}
               >
@@ -844,10 +881,11 @@ function SandboxMetricsChart({
 
           {xAxisHoverBadge ? (
             <div
-              className="prose-label-numeric bg-bg/60 font-mono absolute bottom-0 z-9999 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
+              className="prose-label-numeric bg-bg/60 font-mono absolute bottom-0 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
               style={{
                 left: xAxisHoverBadge.xPx,
                 borderColor: axisPointerColor,
+                zIndex: 20,
               }}
             >
               {xAxisHoverBadge.label}
