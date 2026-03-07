@@ -20,12 +20,7 @@ function readCssVarsSync<T extends readonly string[]>(
 
 // hook that resolves css custom properties to their computed values
 export function useCssVars<T extends readonly string[]>(varNames: T) {
-  const initialValues = React.useMemo(
-    () => readCssVarsSync(varNames),
-    [varNames]
-  )
-
-  const [values, setValues] = React.useState(initialValues)
+  const [values, setValues] = React.useState(() => readCssVarsSync(varNames))
 
   // listen for theme changes and update css variables
   React.useEffect(() => {
@@ -33,16 +28,18 @@ export function useCssVars<T extends readonly string[]>(varNames: T) {
 
     const read = () => {
       const newValues = readCssVarsSync(varNames)
+      setValues((previousValues) => {
+        const hasChanged = varNames.some(
+          (name) =>
+            newValues[name as T[number]] !== previousValues[name as T[number]]
+        )
 
-      // only update if values actually changed
-      const hasChanged = varNames.some(
-        (name) => newValues[name as T[number]] !== values[name as T[number]]
-      )
-
-      if (hasChanged) {
-        setValues(newValues)
-      }
+        return hasChanged ? newValues : previousValues
+      })
     }
+
+    // Immediately read once on mount and whenever requested var names change.
+    read()
 
     const observer = new MutationObserver(() => {
       raf = window.requestAnimationFrame(read)
@@ -58,7 +55,7 @@ export function useCssVars<T extends readonly string[]>(varNames: T) {
       observer.disconnect()
       window.cancelAnimationFrame(raf)
     }
-  }, [varNames, values])
+  }, [varNames])
 
   return values
 }

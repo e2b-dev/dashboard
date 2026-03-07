@@ -6,6 +6,7 @@ import type {
 import type {
   MonitoringChartModel,
   SandboxMetricsDataPoint,
+  SandboxMetricsLifecycleEventMarker,
   SandboxMetricsSeries,
 } from '../types/sandbox-metrics-chart'
 import {
@@ -52,6 +53,42 @@ interface LifecyclePauseWindow {
 
 const SANDBOX_LIFECYCLE_PAUSED_EVENT = 'sandbox.lifecycle.paused'
 const SANDBOX_LIFECYCLE_RESUMED_EVENT = 'sandbox.lifecycle.resumed'
+const SANDBOX_LIFECYCLE_CREATED_EVENT = 'sandbox.lifecycle.created'
+const SANDBOX_LIFECYCLE_UPDATED_EVENT = 'sandbox.lifecycle.updated'
+const SANDBOX_LIFECYCLE_CHECKPOINTED_EVENT = 'sandbox.lifecycle.checkpointed'
+const SANDBOX_LIFECYCLE_KILLED_EVENT = 'sandbox.lifecycle.killed'
+
+const SANDBOX_MONITORING_EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
+
+const SANDBOX_LIFECYCLE_EVENT_STYLES: Record<
+  string,
+  { label: string; colorVar: string }
+> = {
+  [SANDBOX_LIFECYCLE_CREATED_EVENT]: {
+    label: 'Created',
+    colorVar: '--accent-positive-highlight',
+  },
+  [SANDBOX_LIFECYCLE_UPDATED_EVENT]: {
+    label: 'Updated',
+    colorVar: '--accent-info-highlight',
+  },
+  [SANDBOX_LIFECYCLE_PAUSED_EVENT]: {
+    label: 'Paused',
+    colorVar: '--accent-warning-highlight',
+  },
+  [SANDBOX_LIFECYCLE_RESUMED_EVENT]: {
+    label: 'Resumed',
+    colorVar: '--accent-main-highlight',
+  },
+  [SANDBOX_LIFECYCLE_CHECKPOINTED_EVENT]: {
+    label: 'Checkpointed',
+    colorVar: '--graph-5',
+  },
+  [SANDBOX_LIFECYCLE_KILLED_EVENT]: {
+    label: 'Killed',
+    colorVar: '--accent-error-highlight',
+  },
+}
 
 function toPercent(used: number, total: number): number {
   if (!total || total <= 0) {
@@ -148,6 +185,26 @@ function sortLifecycleEventsByTimestamp(
   })
 }
 
+function formatLifecycleEventTypeLabel(type: string): string {
+  const suffix = type.split('.').pop() ?? type
+  const normalized = suffix.replace(/[-_]+/g, ' ').trim()
+
+  if (!normalized) {
+    return 'Event'
+  }
+
+  return normalized
+    .split(' ')
+    .map((word) => {
+      if (!word) {
+        return word
+      }
+
+      return `${word[0]?.toUpperCase() ?? ''}${word.slice(1)}`
+    })
+    .join(' ')
+}
+
 function toVisiblePauseWindow(
   startMs: number,
   endMs: number,
@@ -212,6 +269,38 @@ function buildPauseWindows(
   }
 
   return pauseWindows
+}
+
+function buildLifecycleEventMarkers(
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
+): SandboxMetricsLifecycleEventMarker[] {
+  const markers: SandboxMetricsLifecycleEventMarker[] = []
+
+  for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
+    const timestampMs = parseEventTimestampMs(event.timestamp)
+    if (timestampMs === null) {
+      continue
+    }
+
+    if (timestampMs < rangeStart || timestampMs > rangeEnd) {
+      continue
+    }
+
+    const eventStyle = SANDBOX_LIFECYCLE_EVENT_STYLES[event.type]
+
+    markers.push({
+      id: event.id,
+      type: event.type,
+      label: eventStyle?.label ?? formatLifecycleEventTypeLabel(event.type),
+      timestampMs,
+      colorVar:
+        eventStyle?.colorVar ?? SANDBOX_MONITORING_EVENT_DEFAULT_COLOR_VAR,
+    })
+  }
+
+  return markers
 }
 
 function hasValidDataBeforeTimestamp(
@@ -396,6 +485,11 @@ export function buildMonitoringChartModel({
   )
 
   const pauseWindows = buildPauseWindows(lifecycleEvents, rangeStart, rangeEnd)
+  const resourceLifecycleEventMarkers = buildLifecycleEventMarkers(
+    lifecycleEvents,
+    rangeStart,
+    rangeEnd
+  )
   const resourceSeries = injectSeriesGaps(
     buildResourceSeries(normalizedMetrics),
     pauseWindows
@@ -411,6 +505,7 @@ export function buildMonitoringChartModel({
       latestMetric,
       resourceSeries,
       diskSeries,
+      resourceLifecycleEventMarkers,
       resourceHoveredContext: null,
       diskHoveredContext: null,
     }
@@ -422,6 +517,7 @@ export function buildMonitoringChartModel({
       latestMetric,
       resourceSeries,
       diskSeries,
+      resourceLifecycleEventMarkers,
       resourceHoveredContext: null,
       diskHoveredContext: null,
     }
@@ -431,6 +527,7 @@ export function buildMonitoringChartModel({
     latestMetric,
     resourceSeries,
     diskSeries,
+    resourceLifecycleEventMarkers,
     resourceHoveredContext: {
       cpuPercent: hoveredMetric.cpuPercent,
       ramPercent: hoveredMetric.ramPercent,

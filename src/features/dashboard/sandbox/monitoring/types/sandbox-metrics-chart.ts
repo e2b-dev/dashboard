@@ -1,8 +1,5 @@
 import type { ReactNode } from 'react'
-import type {
-  SandboxEventDTO,
-  SandboxMetric,
-} from '@/server/api/models/sandboxes.models'
+import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 
 export type SandboxMetricsDataPoint = [
   timestampMs: number,
@@ -31,9 +28,17 @@ export interface SandboxMetricsSeries {
   zIndex?: number
 }
 
+export interface SandboxMetricsLifecycleEventMarker {
+  id: string
+  type: string
+  label: string
+  timestampMs: number
+  colorVar: string
+}
+
 export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
-  lifecycleEvents?: SandboxEventDTO[]
+  lifecycleEventMarkers?: SandboxMetricsLifecycleEventMarker[]
   hoveredTimestampMs?: number | null
   className?: string
   showXAxisLabels?: boolean
@@ -59,6 +64,7 @@ export interface MonitoringChartModel {
   latestMetric: SandboxMetric | undefined
   resourceSeries: SandboxMetricsSeries[]
   diskSeries: SandboxMetricsSeries[]
+  resourceLifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
   resourceHoveredContext: MonitoringResourceHoveredContext | null
   diskHoveredContext: MonitoringDiskHoveredContext | null
 }

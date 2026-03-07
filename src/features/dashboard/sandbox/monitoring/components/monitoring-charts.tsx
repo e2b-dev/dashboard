@@ -269,7 +269,7 @@ export default function SandboxMetricsCharts({
       >
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
-          lifecycleEvents={lifecycleEvents}
+          lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
@@ -294,7 +294,6 @@ export default function SandboxMetricsCharts({
       >
         <SandboxMetricsChart
           series={diskSeriesWithMarkerFormatters}
-          lifecycleEvents={lifecycleEvents}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}

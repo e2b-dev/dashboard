@@ -199,4 +199,73 @@ describe('buildMonitoringChartModel', () => {
       [50_000, 50, 0],
     ])
   })
+
+  it('builds visible lifecycle event markers with mapped labels and colors', () => {
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'outside',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:20.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '1970-01-01T00:00:01.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'paused',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:02.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'resumed',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '1970-01-01T00:00:03.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'unknown',
+        type: 'sandbox.lifecycle.custom_event',
+        timestamp: '1970-01-01T00:00:04.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics: [],
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 5_000,
+      hoveredTimestampMs: null,
+    })
+
+    expect(result.resourceLifecycleEventMarkers).toEqual([
+      {
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        label: 'Created',
+        timestampMs: 1_000,
+        colorVar: '--accent-positive-highlight',
+      },
+      {
+        id: 'paused',
+        type: 'sandbox.lifecycle.paused',
+        label: 'Paused',
+        timestampMs: 2_000,
+        colorVar: '--accent-warning-highlight',
+      },
+      {
+        id: 'resumed',
+        type: 'sandbox.lifecycle.resumed',
+        label: 'Resumed',
+        timestampMs: 3_000,
+        colorVar: '--accent-main-highlight',
+      },
+      {
+        id: 'unknown',
+        type: 'sandbox.lifecycle.custom_event',
+        label: 'Custom Event',
+        timestampMs: 4_000,
+        colorVar: '--fg-tertiary',
+      },
+    ])
+  })
 })

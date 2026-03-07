@@ -17,6 +17,7 @@ import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import {
+  Fragment,
   memo,
   type ReactNode,
   useCallback,
@@ -30,6 +31,7 @@ import {
   SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
   SANDBOX_MONITORING_CHART_BRUSH_MODE,
   SANDBOX_MONITORING_CHART_BRUSH_TYPE,
+  SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO,
   SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY,
   SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO,
   SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
@@ -39,6 +41,7 @@ import {
   SANDBOX_MONITORING_CHART_GRID_BOTTOM_WITH_X_AXIS,
   SANDBOX_MONITORING_CHART_GRID_RIGHT,
   SANDBOX_MONITORING_CHART_GRID_TOP,
+  SANDBOX_MONITORING_CHART_GRID_TOP_WITH_EVENT_LABELS,
   SANDBOX_MONITORING_CHART_GROUP,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
@@ -95,10 +98,42 @@ interface CrosshairMarker {
   labelOffsetYPx: number
 }
 
+interface LifecycleEventOverlay {
+  key: string
+  xPx: number
+  topPx: number
+  heightPx: number
+  label: string
+  labelXPx: number
+  labelTopPx: number
+  color: string
+}
+
+interface LifecycleEventOverlayLayout {
+  key: string
+  xPx: number
+  anchorTopPx: number
+  bottomPx: number
+  label: string
+  labelXPx: number
+  baseLabelTopPx: number
+  labelTopPx: number
+  estimatedLabelWidthPx: number
+  color: string
+}
+
 const SANDBOX_MONITORING_CHART_FG_VAR = '--fg'
 const SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX = 86
 const SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX = 24
 const SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX = 20
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX = 56
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX = 22
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_GAP_PX = 6
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX = 2
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_HORIZONTAL_PADDING_PX = 16
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_CHAR_WIDTH_PX = 8
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX = 6
+const SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX = 30
 
 function withOpacity(color: string, opacity: number): string {
   const normalizedOpacity = Math.max(0, Math.min(1, opacity))
@@ -346,6 +381,72 @@ function applyMarkerLabelOffsets(
   }))
 }
 
+function estimateLifecycleEventLabelWidthPx(label: string): number {
+  return Math.max(
+    SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX,
+    label.length * SANDBOX_MONITORING_CHART_EVENT_LABEL_CHAR_WIDTH_PX +
+      SANDBOX_MONITORING_CHART_EVENT_LABEL_HORIZONTAL_PADDING_PX
+  )
+}
+
+function doLifecycleEventLabelsOverlap(
+  left: LifecycleEventOverlayLayout,
+  right: LifecycleEventOverlayLayout
+): boolean {
+  const minDistance =
+    (left.estimatedLabelWidthPx + right.estimatedLabelWidthPx) / 2 +
+    SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX
+
+  return right.labelXPx - left.labelXPx < minDistance
+}
+
+function applyLifecycleEventLabelOffsets(
+  overlays: LifecycleEventOverlayLayout[]
+): LifecycleEventOverlayLayout[] {
+  if (overlays.length < 2) {
+    return overlays
+  }
+
+  const sortedOverlays = [...overlays].sort((a, b) => a.labelXPx - b.labelXPx)
+  const labelTopByOverlayKey = new Map<string, number>()
+  let clusterStart = 0
+
+  for (let index = 1; index <= sortedOverlays.length; index += 1) {
+    const previousOverlay = sortedOverlays[index - 1]
+    const currentOverlay = sortedOverlays[index]
+    if (!previousOverlay) {
+      continue
+    }
+
+    const shouldSplitCluster =
+      !currentOverlay ||
+      !doLifecycleEventLabelsOverlap(previousOverlay, currentOverlay)
+
+    if (!shouldSplitCluster) {
+      continue
+    }
+
+    const cluster = sortedOverlays.slice(clusterStart, index)
+    cluster.forEach((overlay, clusterIndex) => {
+      const verticalOffsetPx =
+        -clusterIndex * SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX
+      const nextLabelTopPx = Math.max(
+        SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX,
+        overlay.baseLabelTopPx + verticalOffsetPx
+      )
+
+      labelTopByOverlayKey.set(overlay.key, nextLabelTopPx)
+    })
+
+    clusterStart = index
+  }
+
+  return overlays.map((overlay) => ({
+    ...overlay,
+    labelTopPx: labelTopByOverlayKey.get(overlay.key) ?? overlay.labelTopPx,
+  }))
+}
+
 function createLiveIndicators(
   point: { x: number; y: number },
   lineColor: string
@@ -400,7 +501,7 @@ function createLiveIndicators(
 
 function SandboxMetricsChart({
   series,
-  lifecycleEvents,
+  lifecycleEventMarkers = [],
   hoveredTimestampMs = null,
   className,
   showXAxisLabels = true,
@@ -410,19 +511,33 @@ function SandboxMetricsChart({
   onHoverEnd,
   onBrushEnd,
 }: SandboxMetricsChartProps) {
-  // Lifecycle events are threaded through now for upcoming chart event markers.
-  void lifecycleEvents
-
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const [chartRevision, setChartRevision] = useState(0)
   const { resolvedTheme } = useTheme()
 
+  const computedYAxisMax = useMemo(() => {
+    const values = series.flatMap((line) =>
+      line.data
+        .map((point) => point[1])
+        .filter((value): value is number => value !== null)
+    )
+
+    return (
+      yAxisMax ??
+      calculateAxisMax(
+        values.length > 0 ? values : [0],
+        SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR
+      )
+    )
+  }, [series, yAxisMax])
+
   const cssVarNames = useMemo(() => {
-    const dynamicVarNames = series.flatMap((line) =>
+    const seriesVarNames = series.flatMap((line) =>
       [line.lineColorVar, line.areaColorVar, line.areaToColorVar].filter(
         (name): name is string => Boolean(name)
       )
     )
+    const eventVarNames = lifecycleEventMarkers.map((event) => event.colorVar)
 
     return Array.from(
       new Set([
@@ -430,10 +545,11 @@ function SandboxMetricsChart({
         SANDBOX_MONITORING_CHART_FG_VAR,
         SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
         SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
-        ...dynamicVarNames,
+        ...seriesVarNames,
+        ...eventVarNames,
       ])
     )
-  }, [series])
+  }, [lifecycleEventMarkers, series])
 
   const cssVars = useCssVars(cssVarNames)
 
@@ -538,19 +654,73 @@ function SandboxMetricsChart({
     echarts.connect(SANDBOX_MONITORING_CHART_GROUP)
   }, [])
 
-  const option = useMemo<EChartsOption>(() => {
-    const values = series.flatMap((line) =>
-      line.data
-        .map((point) => point[1])
-        .filter((value): value is number => value !== null)
-    )
-    const computedYAxisMax =
-      yAxisMax ??
-      calculateAxisMax(
-        values.length > 0 ? values : [0],
-        SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR
-      )
+  const seriesLayoutKey = useMemo(
+    () =>
+      series
+        .map((line) => {
+          const firstTimestampMs = line.data[0]?.[0] ?? 'none'
+          const lastTimestampMs = line.data[line.data.length - 1]?.[0] ?? 'none'
 
+          return `${line.id}:${line.data.length}:${firstTimestampMs}:${lastTimestampMs}`
+        })
+        .join('|'),
+    [series]
+  )
+  const lifecycleMarkersLayoutKey = useMemo(
+    () =>
+      lifecycleEventMarkers
+        .map((event) => `${event.id}:${event.timestampMs}`)
+        .join('|'),
+    [lifecycleEventMarkers]
+  )
+  const layoutRevisionKey = useMemo(
+    () =>
+      `${seriesLayoutKey}|${lifecycleMarkersLayoutKey}|${computedYAxisMax}|${resolvedTheme ?? ''}`,
+    [
+      computedYAxisMax,
+      lifecycleMarkersLayoutKey,
+      resolvedTheme,
+      seriesLayoutKey,
+    ]
+  )
+
+  useEffect(() => {
+    const handleResize = () => {
+      setChartRevision((value) => value + 1)
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  useEffect(() => {
+    void layoutRevisionKey
+
+    if (!chartInstanceRef.current) {
+      return
+    }
+
+    let rafPrimary = 0
+    let rafSecondary = 0
+
+    // Wait until ECharts has applied the latest option/layout before
+    // converting event timestamps into pixel positions.
+    rafPrimary = window.requestAnimationFrame(() => {
+      rafSecondary = window.requestAnimationFrame(() => {
+        setChartRevision((value) => value + 1)
+      })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(rafPrimary)
+      window.cancelAnimationFrame(rafSecondary)
+    }
+  }, [layoutRevisionKey])
+
+  const option = useMemo<EChartsOption>(() => {
     const seriesItems: SeriesOption[] = series.flatMap((line) => {
       const lineColor = line.lineColorVar
         ? cssVars[line.lineColorVar]
@@ -633,7 +803,10 @@ function SandboxMetricsChart({
         outOfBrush: { colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA },
       },
       grid: {
-        top: SANDBOX_MONITORING_CHART_GRID_TOP,
+        top:
+          lifecycleEventMarkers.length > 0
+            ? SANDBOX_MONITORING_CHART_GRID_TOP_WITH_EVENT_LABELS
+            : SANDBOX_MONITORING_CHART_GRID_TOP,
         bottom: showXAxisLabels
           ? SANDBOX_MONITORING_CHART_GRID_BOTTOM_WITH_X_AXIS
           : SANDBOX_MONITORING_CHART_GRID_BOTTOM,
@@ -695,13 +868,14 @@ function SandboxMetricsChart({
   }, [
     cssVars,
     axisPointerColor,
+    computedYAxisMax,
     fgTertiary,
     fontMono,
+    lifecycleEventMarkers.length,
     series,
     showXAxisLabels,
     stroke,
     yAxisFormatter,
-    yAxisMax,
   ])
 
   const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
@@ -830,7 +1004,124 @@ function SandboxMetricsChart({
     }
   }, [chartRevision, hoveredTimestampMs, showXAxisLabels])
 
-  const showOverlay = crosshairMarkers.length > 0 || xAxisHoverBadge !== null
+  const lifecycleEventOverlays = useMemo<LifecycleEventOverlay[]>(() => {
+    void chartRevision
+
+    if (lifecycleEventMarkers.length === 0) {
+      return []
+    }
+
+    const chart = chartInstanceRef.current
+    if (!chart || chart.isDisposed()) {
+      return []
+    }
+
+    const chartWidth = chart.getWidth()
+    const minLabelXPx = SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX
+    const maxLabelXPx = Math.max(
+      minLabelXPx,
+      chartWidth - SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX
+    )
+    const normalizedEventLineHeightRatio = Math.max(
+      0,
+      Math.min(1, SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO)
+    )
+    const eventLineTopValue = computedYAxisMax * normalizedEventLineHeightRatio
+
+    const baseOverlays = lifecycleEventMarkers.flatMap((event) => {
+      const topPixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+        event.timestampMs,
+        eventLineTopValue,
+      ])
+      const bottomPixel = chart.convertToPixel(
+        { xAxisIndex: 0, yAxisIndex: 0 },
+        [event.timestampMs, 0]
+      )
+      if (
+        !Array.isArray(topPixel) ||
+        !Array.isArray(bottomPixel) ||
+        topPixel.length < 2 ||
+        bottomPixel.length < 2
+      ) {
+        return []
+      }
+
+      const xPx = topPixel[0]
+      const topValuePx = topPixel[1]
+      const bottomValuePx = bottomPixel[1]
+      if (
+        typeof xPx !== 'number' ||
+        typeof topValuePx !== 'number' ||
+        typeof bottomValuePx !== 'number' ||
+        !Number.isFinite(xPx) ||
+        !Number.isFinite(topValuePx) ||
+        !Number.isFinite(bottomValuePx)
+      ) {
+        return []
+      }
+
+      const anchorTopPx = Math.min(topValuePx, bottomValuePx)
+      const baseLabelTopPx = Math.max(
+        SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX,
+        anchorTopPx -
+          (SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX +
+            SANDBOX_MONITORING_CHART_EVENT_LABEL_GAP_PX)
+      )
+      const color = cssVars[event.colorVar] ?? fg
+      const labelXPx = Math.min(Math.max(xPx, minLabelXPx), maxLabelXPx)
+
+      if (!Number.isFinite(anchorTopPx)) {
+        return []
+      }
+
+      return [
+        {
+          key: event.id,
+          xPx,
+          anchorTopPx,
+          bottomPx: bottomValuePx,
+          label: event.label,
+          labelXPx,
+          baseLabelTopPx,
+          labelTopPx: baseLabelTopPx,
+          estimatedLabelWidthPx: estimateLifecycleEventLabelWidthPx(
+            event.label
+          ),
+          color,
+        } satisfies LifecycleEventOverlayLayout,
+      ]
+    })
+
+    return applyLifecycleEventLabelOffsets(baseOverlays).flatMap((overlay) => {
+      const lineTopPx = Math.min(
+        overlay.anchorTopPx,
+        overlay.labelTopPx + SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX
+      )
+      const heightPx = Math.max(Math.abs(overlay.bottomPx - lineTopPx), 0)
+
+      if (!Number.isFinite(lineTopPx) || heightPx <= 0) {
+        return []
+      }
+
+      return [
+        {
+          key: overlay.key,
+          xPx: overlay.xPx,
+          topPx: lineTopPx,
+          heightPx,
+          label: overlay.label,
+          labelXPx: overlay.labelXPx,
+          labelTopPx: overlay.labelTopPx,
+          color: overlay.color,
+        } satisfies LifecycleEventOverlay,
+      ]
+    })
+  }, [chartRevision, computedYAxisMax, cssVars, fg, lifecycleEventMarkers])
+
+  const showOverlay =
+    lifecycleEventOverlays.length > 0 ||
+    crosshairMarkers.length > 0 ||
+    xAxisHoverBadge !== null
 
   return (
     <div className={cn('relative h-full w-full', className)}>
@@ -849,6 +1140,35 @@ function SandboxMetricsChart({
       />
       {showOverlay ? (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {lifecycleEventOverlays.map((eventOverlay) => (
+            <Fragment key={eventOverlay.key}>
+              <span
+                className="absolute -translate-x-1/2 border-l border-dashed"
+                style={{
+                  left: eventOverlay.xPx,
+                  top: eventOverlay.topPx,
+                  height: eventOverlay.heightPx,
+                  borderColor: withOpacity(eventOverlay.color, 0.75),
+                  borderLeftWidth: SANDBOX_MONITORING_CHART_LINE_WIDTH,
+                  zIndex: 12,
+                }}
+              />
+              <div
+                style={{
+                  left: eventOverlay.labelXPx,
+                  top: eventOverlay.labelTopPx,
+                  backgroundColor: withOpacity(eventOverlay.color, 0.1),
+                  borderColor: withOpacity(eventOverlay.color, 0.12),
+                  color: eventOverlay.color,
+                  zIndex: 18,
+                }}
+                className="prose-label absolute border uppercase -translate-x-1/2 whitespace-nowrap px-1 py-0.25! backdrop-blur-lg"
+              >
+                {eventOverlay.label}
+              </div>
+            </Fragment>
+          ))}
+
           {crosshairMarkers.map((marker) => (
             <div
               key={marker.key}
