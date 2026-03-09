@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
 import { TRPCError } from '@trpc/server'
 import { l } from '@/lib/clients/logger/logger'
