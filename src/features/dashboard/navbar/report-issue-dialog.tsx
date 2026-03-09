@@ -34,6 +34,7 @@ import FileDropZone from './file-drop-zone'
 
 const MAX_ATTACHMENTS = 5
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
+const E2B_API_KEY_REGEX = /e2b_[a-f0-9]{40}/i
 
 const ACCEPTED_FILE_TYPES =
   'image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain'
@@ -162,6 +163,15 @@ export default function ContactSupportDialog({
   }, [])
 
   const onSubmit = async (values: SupportFormValues) => {
+    const description = values.description.trim()
+
+    if (E2B_API_KEY_REGEX.test(description)) {
+      toast.error(
+        'Your message contains an API key. Please remove it before sending.'
+      )
+      return
+    }
+
     const filePayloads = await Promise.all(
       files.map(async (file) => ({
         name: file.name,
@@ -172,7 +182,7 @@ export default function ContactSupportDialog({
 
     contactSupportMutation.mutate({
       teamIdOrSlug: team.id,
-      description: values.description.trim(),
+      description,
       files: filePayloads.length > 0 ? filePayloads : undefined,
     })
   }

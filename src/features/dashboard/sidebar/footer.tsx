@@ -76,6 +76,7 @@ export default function DashboardSidebarFooter() {
               key="survey"
               className={cn(
                 'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
+                INCLUDE_REPORT_ISSUE && 'border-r',
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >

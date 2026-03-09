@@ -1,7 +1,10 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { createTRPCRouter } from '../init'
 import { protectedTeamProcedure } from '../procedures'
 import { supportRepo } from '../repositories/support.repository'
+
+const E2B_API_KEY_REGEX = /e2b_[a-f0-9]{40}/i
 
 const fileSchema = z.object({
   name: z.string(),
@@ -23,6 +26,14 @@ export const supportRouter = createTRPCRouter({
 
       if (!email) {
         throw new Error('Email not found')
+      }
+
+      if (E2B_API_KEY_REGEX.test(input.description)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Your message contains an API key. Please remove it before sending.',
+        })
       }
 
       const team = await supportRepo.getTeamSupportData(teamId)
