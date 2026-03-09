@@ -63,7 +63,7 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
-      isLiveUpdating: false,
+
       hoveredTimestampMs: 6_000,
     })
 
@@ -101,7 +101,7 @@ describe('buildMonitoringChartModel', () => {
       metrics: [],
       startMs: 0,
       endMs: 10_000,
-      isLiveUpdating: false,
+
       hoveredTimestampMs: 1_000,
     })
 
@@ -138,7 +138,7 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
-      isLiveUpdating: false,
+
       hoveredTimestampMs: null,
     })
 
@@ -183,7 +183,7 @@ describe('buildMonitoringChartModel', () => {
       lifecycleEvents,
       startMs: 0,
       endMs: 60_000,
-      isLiveUpdating: false,
+
       hoveredTimestampMs: null,
     })
 
@@ -278,7 +278,7 @@ describe('buildMonitoringChartModel', () => {
       lifecycleEvents,
       startMs: 0,
       endMs: 5_000,
-      isLiveUpdating: false,
+
       hoveredTimestampMs: null,
     })
 

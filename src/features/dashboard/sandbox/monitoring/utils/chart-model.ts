@@ -5,7 +5,6 @@ import type {
 } from '@/server/api/models/sandboxes.models'
 import type {
   MonitoringChartModel,
-  MonitoringChartXAxisBounds,
   SandboxMetricsDataPoint,
   SandboxMetricsLifecycleEventMarker,
   SandboxMetricsSeries,
@@ -26,7 +25,6 @@ import {
   SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
   SANDBOX_MONITORING_RAM_SERIES_ID,
   SANDBOX_MONITORING_RAM_SERIES_LABEL,
-  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
 } from './constants'
 import { clampPercent } from './formatters'
 
@@ -46,7 +44,6 @@ interface BuildMonitoringChartModelOptions {
   startMs: number
   endMs: number
   hoveredTimestampMs: number | null
-  isLiveUpdating: boolean
 }
 
 interface LifecyclePauseWindow {
@@ -633,75 +630,12 @@ function buildDiskSeries(
   ]
 }
 
-function buildXAxisBounds(
-  lifecycleEvents: SandboxEventDTO[],
-  normalizedMetrics: NormalizedSandboxMetric[],
-  rangeStart: number,
-  rangeEnd: number,
-  isLiveUpdating: boolean
-): MonitoringChartXAxisBounds {
-  const bounds: MonitoringChartXAxisBounds = {}
-  const sortedEvents = sortLifecycleEventsByTimestamp(lifecycleEvents)
-
-  const firstMetricMs = normalizedMetrics[0]?.timestampMs ?? null
-  const lastMetricMs =
-    normalizedMetrics[normalizedMetrics.length - 1]?.timestampMs ?? null
-
-  let createdMs: number | null = null
-  let killedMs: number | null = null
-  let openPauseMs: number | null = null
-
-  for (const event of sortedEvents) {
-    const eventTimestampMs = parseEventTimestampMs(event.timestamp)
-    if (eventTimestampMs === null) {
-      continue
-    }
-
-    if (event.type === SANDBOX_LIFECYCLE_CREATED_EVENT && createdMs === null) {
-      createdMs = eventTimestampMs
-    }
-
-    if (event.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
-      killedMs = eventTimestampMs
-    }
-
-    if (event.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
-      openPauseMs = eventTimestampMs
-    }
-
-    if (event.type === SANDBOX_LIFECYCLE_RESUMED_EVENT) {
-      openPauseMs = null
-    }
-  }
-
-  // Apply padding at start if the first data point or created event is visible
-  const startAnchorMs = createdMs ?? firstMetricMs
-  if (startAnchorMs !== null && startAnchorMs >= rangeStart) {
-    bounds.min = startAnchorMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-  }
-
-  // Apply padding at end based on killed event, open pause, or last data point
-  if (isLiveUpdating) {
-    if (lastMetricMs !== null && lastMetricMs <= rangeEnd) {
-      bounds.max = lastMetricMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-    }
-  } else {
-    const endAnchorMs = killedMs ?? openPauseMs ?? lastMetricMs
-    if (endAnchorMs !== null && endAnchorMs <= rangeEnd) {
-      bounds.max = endAnchorMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-    }
-  }
-
-  return bounds
-}
-
 export function buildMonitoringChartModel({
   metrics,
   lifecycleEvents = [],
   startMs,
   endMs,
   hoveredTimestampMs,
-  isLiveUpdating,
 }: BuildMonitoringChartModelOptions): MonitoringChartModel {
   const rangeStart = Math.min(startMs, endMs)
   const rangeEnd = Math.max(startMs, endMs)
@@ -730,13 +664,6 @@ export function buildMonitoringChartModel({
     rangeStart,
     rangeEnd
   )
-  const xAxisBounds = buildXAxisBounds(
-    lifecycleEvents,
-    normalizedMetrics,
-    rangeStart,
-    rangeEnd,
-    isLiveUpdating
-  )
   const resourceSeriesWithConnectors = attachPauseWindowConnectors(
     buildResourceSeries(normalizedMetrics),
     pauseWindows
@@ -758,7 +685,6 @@ export function buildMonitoringChartModel({
       resourceSeries,
       diskSeries,
       resourceLifecycleEventMarkers,
-      xAxisBounds,
       resourceHoveredContext: null,
       diskHoveredContext: null,
     }
@@ -771,7 +697,6 @@ export function buildMonitoringChartModel({
       resourceSeries,
       diskSeries,
       resourceLifecycleEventMarkers,
-      xAxisBounds,
       resourceHoveredContext: null,
       diskHoveredContext: null,
     }
@@ -782,7 +707,6 @@ export function buildMonitoringChartModel({
     resourceSeries,
     diskSeries,
     resourceLifecycleEventMarkers,
-    xAxisBounds,
     resourceHoveredContext: {
       cpuPercent: hoveredMetric.cpuPercent,
       ramPercent: hoveredMetric.ramPercent,

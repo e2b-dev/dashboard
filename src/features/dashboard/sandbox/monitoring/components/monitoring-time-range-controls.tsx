@@ -126,7 +126,7 @@ export default function SandboxMonitoringTimeRangeControls({
 
         return clampToLifecycle(
           anchorEndMs - Math.min(rangeMs, lifecycleDuration),
-          anchorEndMs
+          anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
         )
       },
     })
@@ -148,7 +148,7 @@ export default function SandboxMonitoringTimeRangeControls({
         const lifecycleDuration = anchorEndMs - lifecycle.startMs
 
         return clampToLifecycle(
-          lifecycle.startMs,
+          lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
           lifecycle.startMs + Math.min(rangeMs, lifecycleDuration)
         )
       },

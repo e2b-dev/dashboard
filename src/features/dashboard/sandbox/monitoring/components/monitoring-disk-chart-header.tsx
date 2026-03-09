@@ -39,7 +39,7 @@ export default function DiskChartHeader({
     : null
 
   return (
-    <div className="text-fg-tertiary flex items-center justify-between gap-4 border-y py-3">
+    <div className="text-fg-tertiary flex items-center justify-between gap-4 border-y py-4 pt-4 px-4 md:px-7">
       <div className="flex items-center gap-1.5">
         <span
           className={cn(

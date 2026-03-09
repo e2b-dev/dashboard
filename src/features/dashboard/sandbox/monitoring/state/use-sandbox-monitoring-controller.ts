@@ -18,6 +18,7 @@ import {
   SANDBOX_MONITORING_QUERY_LIVE_PARAM,
   SANDBOX_MONITORING_QUERY_LIVE_TRUE,
   SANDBOX_MONITORING_QUERY_START_PARAM,
+  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
 } from '../utils/constants'
 import {
   clampTimeframeToBounds,
@@ -98,7 +99,7 @@ function resolveTimeframe(
   const normalized = normalizeMonitoringTimeframe({
     start,
     end,
-    now,
+    now: now + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
     minRangeMs: SANDBOX_MONITORING_MIN_RANGE_MS,
     maxRangeMs: SANDBOX_MONITORING_MAX_RANGE_MS,
   })
@@ -113,8 +114,8 @@ function resolveTimeframe(
   const clamped = clampTimeframeToBounds(
     normalized.start,
     normalized.end,
-    lifecycleBounds.startMs,
-    maxBoundMs
+    lifecycleBounds.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+    maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
   )
 
   return toTimeframe(clamped.start, clamped.end)
@@ -319,9 +320,11 @@ export function useSandboxMonitoringController(sandboxId: string) {
         ? now
         : (lifecycleBounds?.anchorEndMs ?? now)
 
-      applyTimeframe(currentState.timeframe.start, anchorEndMs, {
-        isLiveUpdating: true,
-      })
+      applyTimeframe(
+        currentState.timeframe.start,
+        anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+        { isLiveUpdating: true }
+      )
     },
     [applyTimeframe, isLifecycleSettled, lifecycleBounds]
   )
@@ -351,11 +354,27 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
     const timeframe = resolveTimeframe(start, end, now, lifecycleBounds)
 
+    let finalStart = timeframe.start
+    let finalEnd = timeframe.end
+
+    if (lifecycleBounds) {
+      const maxBoundMs = lifecycleBounds.isRunning
+        ? now
+        : lifecycleBounds.anchorEndMs
+      if (finalStart <= lifecycleBounds.startMs) {
+        finalStart =
+          lifecycleBounds.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+      }
+      if (finalEnd >= maxBoundMs) {
+        finalEnd = maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+      }
+    }
+
     dispatch({
       type: 'initialize',
       payload: {
         sandboxId,
-        timeframe,
+        timeframe: toTimeframe(finalStart, finalEnd),
         isLiveUpdating: isLifecycleSettled ? false : requestedLiveUpdating,
       },
     })
@@ -384,9 +403,11 @@ export function useSandboxMonitoringController(sandboxId: string) {
         ? now
         : (lifecycleBounds?.anchorEndMs ?? now)
 
-      applyTimeframe(currentState.timeframe.start, anchorEndMs, {
-        isLiveUpdating: true,
-      })
+      applyTimeframe(
+        currentState.timeframe.start,
+        anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+        { isLiveUpdating: true }
+      )
     }
 
     let timeoutId: number | null = null

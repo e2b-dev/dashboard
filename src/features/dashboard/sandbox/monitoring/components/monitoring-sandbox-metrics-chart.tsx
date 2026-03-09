@@ -32,22 +32,29 @@ import {
   SANDBOX_MONITORING_CHART_BRUSH_MODE,
   SANDBOX_MONITORING_CHART_BRUSH_TYPE,
   SANDBOX_MONITORING_CHART_CONNECTOR_LINE_OPACITY,
+  SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY,
+  SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE,
+  SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX,
+  SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX,
+  SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
   SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
-  SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO,
   SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY,
   SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO,
   SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
   SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
+  SANDBOX_MONITORING_CHART_FG_VAR,
   SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
-  SANDBOX_MONITORING_CHART_GRID_BOTTOM,
-  SANDBOX_MONITORING_CHART_GRID_RIGHT,
-  SANDBOX_MONITORING_CHART_GRID_TOP,
   SANDBOX_MONITORING_CHART_GROUP,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
   SANDBOX_MONITORING_CHART_LIVE_MIDDLE_DOT_SIZE,
   SANDBOX_MONITORING_CHART_LIVE_OUTER_DOT_SIZE,
   SANDBOX_MONITORING_CHART_LIVE_WINDOW_MS,
+  SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY,
+  SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY,
+  SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX,
+  SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX,
+  SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX,
   SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
   SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR,
@@ -109,6 +116,7 @@ interface LifecycleEventOverlay {
   labelXPx: number
   labelTopPx: number
   color: string
+  alignRight: boolean
 }
 
 interface LifecycleEventOverlayLayout {
@@ -124,21 +132,8 @@ interface LifecycleEventOverlayLayout {
   labelTopPx: number
   estimatedLabelWidthPx: number
   color: string
+  alignRight: boolean
 }
-
-const SANDBOX_MONITORING_CHART_FG_VAR = '--fg'
-const SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX = 86
-const SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX = 24
-const SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX = 20
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX = 22
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_GAP_PX = 6
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX = 2
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX = 6
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX = 30
-const SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE = 12
-const SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY = 0.12
-const SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY = 0.1
-const SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY = 0.12
 
 const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof Plus> = {
   'sandbox.lifecycle.created': Plus,
@@ -462,7 +457,7 @@ function applyLifecycleEventLabelOffsets(
       const verticalOffsetPx =
         -clusterIndex * SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX
       const nextLabelTopPx = Math.max(
-        SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX,
+        SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
         overlay.baseLabelTopPx + verticalOffsetPx
       )
 
@@ -537,6 +532,7 @@ function SandboxMetricsChart({
   hoveredTimestampMs = null,
   className,
   showXAxisLabels = true,
+  grid,
   xAxisMin,
   xAxisMax,
   yAxisMax,
@@ -811,10 +807,10 @@ function SandboxMetricsChart({
         outOfBrush: { colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA },
       },
       grid: {
-        top: SANDBOX_MONITORING_CHART_GRID_TOP,
-        bottom: SANDBOX_MONITORING_CHART_GRID_BOTTOM,
-        left: 36,
-        right: SANDBOX_MONITORING_CHART_GRID_RIGHT,
+        top: grid.top,
+        bottom: grid.bottom,
+        left: grid.left,
+        right: grid.right,
       },
       xAxis: {
         type: 'time',
@@ -876,6 +872,7 @@ function SandboxMetricsChart({
     computedYAxisMax,
     fgTertiary,
     fontMono,
+    grid,
     series,
     showXAxisLabels,
     stroke,
@@ -894,10 +891,7 @@ function SandboxMetricsChart({
     // keeps stale series whose IDs are absent from the new option. We follow
     // up with replaceMerge for the series array only — this removes stale
     // connector/segment series without resetting brush or axis pointer state.
-    chart.setOption(
-      { series: option.series },
-      { replaceMerge: ['series'] }
-    )
+    chart.setOption({ series: option.series }, { replaceMerge: ['series'] })
   }, [option])
 
   const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
@@ -1038,6 +1032,9 @@ function SandboxMetricsChart({
       return []
     }
 
+    const chartWidth = chart.getWidth()
+    const midpointPx = chartWidth / 2
+
     const baseOverlays = lifecycleEventMarkers.flatMap((event) => {
       const topPixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
         event.timestampMs,
@@ -1071,20 +1068,7 @@ function SandboxMetricsChart({
       }
 
       const anchorTopPx = Math.min(topValuePx, bottomValuePx)
-      const anchorBottomPx = Math.max(topValuePx, bottomValuePx)
-      const labelAnchorPx =
-        anchorBottomPx -
-        (anchorBottomPx - anchorTopPx) *
-          Math.max(
-            0,
-            Math.min(1, SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO)
-          )
-      const baseLabelTopPx = Math.max(
-        SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX,
-        labelAnchorPx -
-          (SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX +
-            SANDBOX_MONITORING_CHART_EVENT_LABEL_GAP_PX)
-      )
+      const baseLabelTopPx = SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX
       const color = cssVars[event.colorVar] ?? fg
       const labelXPx = xPx
 
@@ -1106,6 +1090,7 @@ function SandboxMetricsChart({
           labelTopPx: baseLabelTopPx,
           estimatedLabelWidthPx: estimateLifecycleEventLabelWidthPx(),
           color,
+          alignRight: xPx > midpointPx,
         } satisfies LifecycleEventOverlayLayout,
       ]
     })
@@ -1130,6 +1115,7 @@ function SandboxMetricsChart({
           labelXPx: overlay.labelXPx,
           labelTopPx: overlay.labelTopPx,
           color: overlay.color,
+          alignRight: overlay.alignRight,
         } satisfies LifecycleEventOverlay,
       ]
     })
@@ -1181,12 +1167,12 @@ function SandboxMetricsChart({
                     style={{
                       left: eventOverlay.labelXPx,
                       top: eventOverlay.labelTopPx,
-                      borderColor: withOpacity(eventOverlay.color, SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY),
                       color: eventOverlay.color,
                       zIndex: 18,
                     }}
-                    className="group/event pointer-events-auto absolute -translate-x-1/2"
+                    className="group/event pointer-events-auto absolute"
                     onMouseEnter={(e) => {
+                      e.currentTarget.style.zIndex = '30'
                       const line = e.currentTarget.parentElement?.querySelector(
                         `[data-event-line="${eventOverlay.key}"]`
                       ) as HTMLElement | null
@@ -1195,6 +1181,7 @@ function SandboxMetricsChart({
                       }
                     }}
                     onMouseLeave={(e) => {
+                      e.currentTarget.style.zIndex = '18'
                       const line = e.currentTarget.parentElement?.querySelector(
                         `[data-event-line="${eventOverlay.key}"]`
                       ) as HTMLElement | null
@@ -1205,7 +1192,7 @@ function SandboxMetricsChart({
                       }
                     }}
                   >
-                    <div className="grid grid-cols-[auto_0fr] items-center transition-[grid-template-columns] duration-200 ease-out group-hover/event:grid-cols-[auto_1fr]">
+                    <div className="relative -translate-x-1/2">
                       <div className="flex items-center justify-center p-1">
                         {IconComponent ? (
                           <IconComponent
@@ -1214,8 +1201,21 @@ function SandboxMetricsChart({
                           />
                         ) : null}
                       </div>
-                      <div className="overflow-hidden">
-                        <div className="flex items-center gap-1.5 whitespace-nowrap pr-1.5 leading-none">
+                      <div
+                        className={cn(
+                          'absolute top-0 flex h-full items-center overflow-hidden transition-[max-width] duration-200 ease-out',
+                          'max-w-0 group-hover/event:max-w-60',
+                          eventOverlay.alignRight
+                            ? 'right-full justify-end'
+                            : 'left-full'
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'flex items-center gap-1.5 whitespace-nowrap leading-none',
+                            eventOverlay.alignRight ? 'pr-1.5' : 'pl-1.5'
+                          )}
+                        >
                           <span className="prose-label uppercase">
                             {eventOverlay.label}
                           </span>
@@ -1247,8 +1247,14 @@ function SandboxMetricsChart({
               />
               <div
                 style={{
-                  backgroundColor: withOpacity(marker.dotColor, SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY),
-                  borderColor: withOpacity(marker.dotColor, SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY),
+                  backgroundColor: withOpacity(
+                    marker.dotColor,
+                    SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY
+                  ),
+                  borderColor: withOpacity(
+                    marker.dotColor,
+                    SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY
+                  ),
                   marginTop: marker.labelOffsetYPx,
                 }}
                 className={cn(
@@ -1263,7 +1269,7 @@ function SandboxMetricsChart({
 
           {xAxisHoverBadge ? (
             <div
-              className="prose-label-numeric bg-bg/60 font-mono absolute bottom-0 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
+              className="prose-label-numeric bg-bg/60 font-mono absolute bottom-4 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
               style={{
                 left: xAxisHoverBadge.xPx,
                 borderColor: axisPointerColor,

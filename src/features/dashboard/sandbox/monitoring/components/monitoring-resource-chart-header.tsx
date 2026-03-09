@@ -81,7 +81,7 @@ export default function ResourceChartHeader({
     : null
 
   return (
-    <div className="flex items-center justify-between gap-4 border-b pb-3">
+    <div className="flex items-center justify-between border-b gap-4 pb-4 px-4 md:px-7">
       <div className="flex items-center gap-5">
         <MetricItem
           label={SANDBOX_MONITORING_CPU_SERIES_LABEL}

@@ -42,6 +42,13 @@ export interface SandboxMetricsLifecycleEventMarker {
   colorVar: string
 }
 
+export interface SandboxMetricsChartGridConfig {
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+}
+
 export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
   lifecycleEventMarkers?: SandboxMetricsLifecycleEventMarker[]
@@ -49,6 +56,7 @@ export interface SandboxMetricsChartProps {
   hoveredTimestampMs?: number | null
   className?: string
   showXAxisLabels?: boolean
+  grid: SandboxMetricsChartGridConfig
   xAxisMin?: number
   xAxisMax?: number
   yAxisMax?: number
@@ -69,17 +77,11 @@ export interface MonitoringDiskHoveredContext {
   timestampMs: number
 }
 
-export interface MonitoringChartXAxisBounds {
-  min?: number
-  max?: number
-}
-
 export interface MonitoringChartModel {
   latestMetric: SandboxMetric | undefined
   resourceSeries: SandboxMetricsSeries[]
   diskSeries: SandboxMetricsSeries[]
   resourceLifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
-  xAxisBounds: MonitoringChartXAxisBounds
   resourceHoveredContext: MonitoringResourceHoveredContext | null
   diskHoveredContext: MonitoringDiskHoveredContext | null
 }

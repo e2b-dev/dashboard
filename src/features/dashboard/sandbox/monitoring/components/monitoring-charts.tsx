@@ -18,6 +18,10 @@ import ResourceChartHeader from './monitoring-resource-chart-header'
 import SandboxMetricsChart from './monitoring-sandbox-metrics-chart'
 import SandboxMonitoringTimeRangeControls from './monitoring-time-range-controls'
 
+function formatPercentAxisLabel(value: number): string {
+  return `${Math.round(value)}%`
+}
+
 interface SandboxMetricsChartsProps {
   sandboxId: string
 }
@@ -150,11 +154,9 @@ export default function SandboxMetricsCharts({
         startMs: renderedTimeframe.start,
         endMs: renderedTimeframe.end,
         hoveredTimestampMs,
-        isLiveUpdating,
       }),
     [
       hoveredTimestampMs,
-      isLiveUpdating,
       lifecycleEvents,
       metrics,
       renderedTimeframe.end,
@@ -245,9 +247,9 @@ export default function SandboxMetricsCharts({
   }, [])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col pt-3 md:pt-6">
       {lifecycleBounds ? (
-        <div className="flex w-full items-center pb-3 md:pb-6">
+        <div className="flex w-full items-center px-3 md:px-6 pb-3 md:pb-6">
           <SandboxMonitoringTimeRangeControls
             timeframe={timeframe}
             lifecycle={lifecycleBounds}
@@ -274,9 +276,11 @@ export default function SandboxMetricsCharts({
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
-          xAxisMin={chartModel.xAxisBounds.min}
-          xAxisMax={chartModel.xAxisBounds.max}
+          grid={{ top: 42, bottom: 42, left: 64, right: 42 }}
+          xAxisMin={renderedTimeframe.start}
+          xAxisMax={renderedTimeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
+          yAxisFormatter={formatPercentAxisLabel}
           className={cn(
             'h-full w-full transition-opacity duration-200',
             isRefetching ? 'opacity-60 pointer-events-none' : 'opacity-100'
@@ -288,7 +292,7 @@ export default function SandboxMetricsCharts({
       </MonitoringChartSection>
 
       <MonitoringChartSection
-        className="flex-1"
+        className="flex-[0.8]"
         header={
           <DiskChartHeader
             metric={chartModel.latestMetric}
@@ -302,9 +306,11 @@ export default function SandboxMetricsCharts({
           showEventLabels={false}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
-          xAxisMin={chartModel.xAxisBounds.min}
-          xAxisMax={chartModel.xAxisBounds.max}
+          grid={{ top: 36, bottom: 40, left: 64, right: 42 }}
+          xAxisMin={renderedTimeframe.start}
+          xAxisMax={renderedTimeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
+          yAxisFormatter={formatPercentAxisLabel}
           className={cn(
             'h-full w-full transition-opacity duration-200',
             isRefetching ? 'opacity-60 pointer-events-none' : 'opacity-100'
