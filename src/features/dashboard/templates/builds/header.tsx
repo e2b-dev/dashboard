@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildStatus } from '@/server/api/models/builds.models'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,

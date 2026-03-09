@@ -6,7 +6,7 @@ import { useStore } from 'zustand'
 import type { BuildStatus } from '@/server/api/models/builds.models'
 import { useTRPCClient } from '@/trpc/client'
 import { type BuildLogsStore, createBuildLogsStore } from './build-logs-store'
-import { type LogLevelFilter } from './logs-filter-params'
+import type { LogLevelFilter } from './logs-filter-params'
 
 const REFETCH_INTERVAL_MS = 1_500
 const DRAIN_AFTER_BUILD_STOP_WINDOW_MS = 10_000
