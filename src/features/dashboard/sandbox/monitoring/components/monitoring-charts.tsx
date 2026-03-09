@@ -150,9 +150,11 @@ export default function SandboxMetricsCharts({
         startMs: renderedTimeframe.start,
         endMs: renderedTimeframe.end,
         hoveredTimestampMs,
+        isLiveUpdating,
       }),
     [
       hoveredTimestampMs,
+      isLiveUpdating,
       lifecycleEvents,
       metrics,
       renderedTimeframe.end,
@@ -272,6 +274,8 @@ export default function SandboxMetricsCharts({
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
+          xAxisMin={chartModel.xAxisBounds.min}
+          xAxisMax={chartModel.xAxisBounds.max}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           className={cn(
             'h-full w-full transition-opacity duration-200',
@@ -294,8 +298,12 @@ export default function SandboxMetricsCharts({
       >
         <SandboxMetricsChart
           series={diskSeriesWithMarkerFormatters}
+          lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
+          showEventLabels={false}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
+          xAxisMin={chartModel.xAxisBounds.min}
+          xAxisMax={chartModel.xAxisBounds.max}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           className={cn(
             'h-full w-full transition-opacity duration-200',

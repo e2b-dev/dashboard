@@ -63,6 +63,7 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
+      isLiveUpdating: false,
       hoveredTimestampMs: 6_000,
     })
 
@@ -100,6 +101,7 @@ describe('buildMonitoringChartModel', () => {
       metrics: [],
       startMs: 0,
       endMs: 10_000,
+      isLiveUpdating: false,
       hoveredTimestampMs: 1_000,
     })
 
@@ -136,6 +138,7 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
+      isLiveUpdating: false,
       hoveredTimestampMs: null,
     })
 
@@ -180,6 +183,7 @@ describe('buildMonitoringChartModel', () => {
       lifecycleEvents,
       startMs: 0,
       endMs: 60_000,
+      isLiveUpdating: false,
       hoveredTimestampMs: null,
     })
 
@@ -188,19 +192,49 @@ describe('buildMonitoringChartModel', () => {
       [30_000, null, null],
       [50_000, 50, null],
     ])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [10_000, 10],
+        to: [20_000, 10],
+      },
+      {
+        from: [40_000, 50],
+        to: [50_000, 50],
+      },
+    ])
     expect(result.resourceSeries[1]?.data).toEqual([
       [10_000, 10, 0],
       [30_000, null, null],
       [50_000, 50, 0],
+    ])
+    expect(result.resourceSeries[1]?.connectors).toEqual([
+      {
+        from: [10_000, 10],
+        to: [20_000, 10],
+      },
+      {
+        from: [40_000, 50],
+        to: [50_000, 50],
+      },
     ])
     expect(result.diskSeries[0]?.data).toEqual([
       [10_000, 10, 0],
       [30_000, null, null],
       [50_000, 50, 0],
     ])
+    expect(result.diskSeries[0]?.connectors).toEqual([
+      {
+        from: [10_000, 10],
+        to: [20_000, 10],
+      },
+      {
+        from: [40_000, 50],
+        to: [50_000, 50],
+      },
+    ])
   })
 
-  it('builds visible lifecycle event markers with mapped labels and colors', () => {
+  it('builds visible lifecycle event markers for created, paused, resumed, and killed only', () => {
     const lifecycleEvents: SandboxEventDTO[] = [
       createLifecycleEvent({
         id: 'outside',
@@ -227,6 +261,16 @@ describe('buildMonitoringChartModel', () => {
         type: 'sandbox.lifecycle.custom_event',
         timestamp: '1970-01-01T00:00:04.000Z',
       }),
+      createLifecycleEvent({
+        id: 'updated',
+        type: 'sandbox.lifecycle.updated',
+        timestamp: '1970-01-01T00:00:04.500Z',
+      }),
+      createLifecycleEvent({
+        id: 'killed',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:04.800Z',
+      }),
     ]
 
     const result = buildMonitoringChartModel({
@@ -234,6 +278,7 @@ describe('buildMonitoringChartModel', () => {
       lifecycleEvents,
       startMs: 0,
       endMs: 5_000,
+      isLiveUpdating: false,
       hoveredTimestampMs: null,
     })
 
@@ -250,21 +295,21 @@ describe('buildMonitoringChartModel', () => {
         type: 'sandbox.lifecycle.paused',
         label: 'Paused',
         timestampMs: 2_000,
-        colorVar: '--accent-warning-highlight',
+        colorVar: '--accent-info-highlight',
       },
       {
         id: 'resumed',
         type: 'sandbox.lifecycle.resumed',
         label: 'Resumed',
         timestampMs: 3_000,
-        colorVar: '--accent-main-highlight',
+        colorVar: '--accent-info-highlight',
       },
       {
-        id: 'unknown',
-        type: 'sandbox.lifecycle.custom_event',
-        label: 'Custom Event',
-        timestampMs: 4_000,
-        colorVar: '--fg-tertiary',
+        id: 'killed',
+        type: 'sandbox.lifecycle.killed',
+        label: 'Killed',
+        timestampMs: 4_800,
+        colorVar: '--accent-error-highlight',
       },
     ])
   })

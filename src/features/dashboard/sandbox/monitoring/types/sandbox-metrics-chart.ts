@@ -7,6 +7,11 @@ export type SandboxMetricsDataPoint = [
   markerValue?: number | null,
 ]
 
+export interface SandboxMetricsSeriesConnector {
+  from: [timestampMs: number, value: number]
+  to: [timestampMs: number, value: number]
+}
+
 export interface SandboxMetricsMarkerValueFormatterInput {
   value: number
   markerValue: number | null
@@ -17,6 +22,7 @@ export interface SandboxMetricsSeries {
   id: string
   name: string
   data: SandboxMetricsDataPoint[]
+  connectors?: SandboxMetricsSeriesConnector[]
   markerValueFormatter?: (
     input: SandboxMetricsMarkerValueFormatterInput
   ) => ReactNode
@@ -39,9 +45,12 @@ export interface SandboxMetricsLifecycleEventMarker {
 export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
   lifecycleEventMarkers?: SandboxMetricsLifecycleEventMarker[]
+  showEventLabels?: boolean
   hoveredTimestampMs?: number | null
   className?: string
   showXAxisLabels?: boolean
+  xAxisMin?: number
+  xAxisMax?: number
   yAxisMax?: number
   yAxisFormatter?: (value: number) => string
   onHover?: (timestampMs: number) => void
@@ -60,11 +69,17 @@ export interface MonitoringDiskHoveredContext {
   timestampMs: number
 }
 
+export interface MonitoringChartXAxisBounds {
+  min?: number
+  max?: number
+}
+
 export interface MonitoringChartModel {
   latestMetric: SandboxMetric | undefined
   resourceSeries: SandboxMetricsSeries[]
   diskSeries: SandboxMetricsSeries[]
   resourceLifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
+  xAxisBounds: MonitoringChartXAxisBounds
   resourceHoveredContext: MonitoringResourceHoveredContext | null
   diskHoveredContext: MonitoringDiskHoveredContext | null
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { millisecondsInHour, millisecondsInMinute } from 'date-fns/constants'
+import { millisecondsInMinute } from 'date-fns/constants'
 import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -18,22 +18,19 @@ import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
+  SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_ID,
+  SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_ID,
-  SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_FIRST_HOUR_PRESET_ID,
-  SANDBOX_MONITORING_FIRST_HOUR_PRESET_SHORTCUT,
   SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_ID,
   SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_SHORTCUT,
+  SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_ID,
+  SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_6_HOURS_PRESET_ID,
-  SANDBOX_MONITORING_LAST_6_HOURS_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_ID,
-  SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_HOUR_PRESET_ID,
-  SANDBOX_MONITORING_LAST_HOUR_PRESET_SHORTCUT,
+  SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_ID,
+  SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_SHORTCUT,
+  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
   SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from '../utils/constants'
@@ -100,7 +97,12 @@ export default function SandboxMonitoringTimeRangeControls({
         ? Date.now()
         : lifecycle.anchorEndMs
 
-      return clampTimeframeToBounds(start, end, lifecycle.startMs, maxBoundMs)
+      return clampTimeframeToBounds(
+        start,
+        end,
+        lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+        maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+      )
     },
     [lifecycle.anchorEndMs, lifecycle.isRunning, lifecycle.startMs]
   )
@@ -162,26 +164,29 @@ export default function SandboxMonitoringTimeRangeControls({
           const anchorEndMs = lifecycle.isRunning
             ? Date.now()
             : lifecycle.anchorEndMs
-          return clampToLifecycle(lifecycle.startMs, anchorEndMs)
+          return clampToLifecycle(
+            lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+            anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+          )
         },
       },
+      makeLeading(
+        SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_ID,
+        'First 1 min',
+        SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_SHORTCUT,
+        millisecondsInMinute
+      ),
       makeLeading(
         SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
         'First 5 min',
         SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
         5 * millisecondsInMinute
       ),
-      makeLeading(
-        SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_ID,
-        'First 15 min',
-        SANDBOX_MONITORING_FIRST_15_MINUTES_PRESET_SHORTCUT,
-        15 * millisecondsInMinute
-      ),
-      makeLeading(
-        SANDBOX_MONITORING_FIRST_HOUR_PRESET_ID,
-        'First 1 hour',
-        SANDBOX_MONITORING_FIRST_HOUR_PRESET_SHORTCUT,
-        millisecondsInHour
+      makeTrailing(
+        SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_ID,
+        'Last 1 min',
+        SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_SHORTCUT,
+        millisecondsInMinute
       ),
       makeTrailing(
         SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_ID,
@@ -190,22 +195,10 @@ export default function SandboxMonitoringTimeRangeControls({
         5 * millisecondsInMinute
       ),
       makeTrailing(
-        SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_ID,
-        'Last 15 min',
-        SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
-        15 * millisecondsInMinute
-      ),
-      makeTrailing(
-        SANDBOX_MONITORING_LAST_HOUR_PRESET_ID,
-        'Last 1 hour',
-        SANDBOX_MONITORING_LAST_HOUR_PRESET_SHORTCUT,
-        millisecondsInHour
-      ),
-      makeTrailing(
-        SANDBOX_MONITORING_LAST_6_HOURS_PRESET_ID,
-        'Last 6 hours',
-        SANDBOX_MONITORING_LAST_6_HOURS_PRESET_SHORTCUT,
-        6 * millisecondsInHour
+        SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_ID,
+        'Last 30 min',
+        SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_SHORTCUT,
+        30 * millisecondsInMinute
       ),
     ]
   }, [
@@ -247,14 +240,18 @@ export default function SandboxMonitoringTimeRangeControls({
   const pickerMaxDate = useMemo(
     () =>
       lifecycle.isRunning
-        ? new Date(pickerMaxDateMs)
-        : new Date(lifecycle.anchorEndMs),
+        ? new Date(pickerMaxDateMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS)
+        : new Date(
+            lifecycle.anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+          ),
     [lifecycle.anchorEndMs, lifecycle.isRunning, pickerMaxDateMs]
   )
 
   const pickerBounds = useMemo(
     () => ({
-      min: new Date(lifecycle.startMs),
+      min: new Date(
+        lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+      ),
       max: pickerMaxDate,
     }),
     [lifecycle.startMs, pickerMaxDate]

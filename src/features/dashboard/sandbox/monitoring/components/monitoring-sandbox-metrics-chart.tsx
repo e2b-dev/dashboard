@@ -15,9 +15,9 @@ import {
 import * as echarts from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
+import { Pause, Play, Plus, Square } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import {
-  Fragment,
   memo,
   type ReactNode,
   useCallback,
@@ -31,6 +31,8 @@ import {
   SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
   SANDBOX_MONITORING_CHART_BRUSH_MODE,
   SANDBOX_MONITORING_CHART_BRUSH_TYPE,
+  SANDBOX_MONITORING_CHART_CONNECTOR_LINE_OPACITY,
+  SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
   SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO,
   SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY,
   SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO,
@@ -38,10 +40,8 @@ import {
   SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
   SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
   SANDBOX_MONITORING_CHART_GRID_BOTTOM,
-  SANDBOX_MONITORING_CHART_GRID_BOTTOM_WITH_X_AXIS,
   SANDBOX_MONITORING_CHART_GRID_RIGHT,
   SANDBOX_MONITORING_CHART_GRID_TOP,
-  SANDBOX_MONITORING_CHART_GRID_TOP_WITH_EVENT_LABELS,
   SANDBOX_MONITORING_CHART_GROUP,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
@@ -100,10 +100,12 @@ interface CrosshairMarker {
 
 interface LifecycleEventOverlay {
   key: string
+  type: string
   xPx: number
   topPx: number
   heightPx: number
   label: string
+  timestampMs: number
   labelXPx: number
   labelTopPx: number
   color: string
@@ -111,10 +113,12 @@ interface LifecycleEventOverlay {
 
 interface LifecycleEventOverlayLayout {
   key: string
+  type: string
   xPx: number
   anchorTopPx: number
   bottomPx: number
   label: string
+  timestampMs: number
   labelXPx: number
   baseLabelTopPx: number
   labelTopPx: number
@@ -126,14 +130,31 @@ const SANDBOX_MONITORING_CHART_FG_VAR = '--fg'
 const SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX = 86
 const SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX = 24
 const SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX = 20
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX = 56
 const SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX = 22
 const SANDBOX_MONITORING_CHART_EVENT_LABEL_GAP_PX = 6
 const SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX = 2
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_HORIZONTAL_PADDING_PX = 16
-const SANDBOX_MONITORING_CHART_EVENT_LABEL_CHAR_WIDTH_PX = 8
 const SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX = 6
 const SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX = 30
+const SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE = 12
+const SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY = 0.12
+const SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY = 0.1
+const SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY = 0.12
+
+const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof Plus> = {
+  'sandbox.lifecycle.created': Plus,
+  'sandbox.lifecycle.paused': Pause,
+  'sandbox.lifecycle.resumed': Play,
+  'sandbox.lifecycle.killed': Square,
+}
+
+function formatEventTimestamp(timestampMs: number): string {
+  const date = new Date(timestampMs)
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2, '0')
+
+  return `${hours}:${minutes}:${seconds}`
+}
 
 function withOpacity(color: string, opacity: number): string {
   const normalizedOpacity = Math.max(0, Math.min(1, opacity))
@@ -335,6 +356,19 @@ function splitLineDataIntoRenderableSegments(
   return segments
 }
 
+function segmentContainsPoint(
+  segment: SandboxMetricsDataPoint[],
+  point: { x: number; y: number }
+): boolean {
+  return segment.some(([timestampMs, value]) => {
+    if (!Number.isFinite(timestampMs) || value === null) {
+      return false
+    }
+
+    return timestampMs === point.x && value === point.y
+  })
+}
+
 function applyMarkerLabelOffsets(
   markers: CrosshairMarker[]
 ): CrosshairMarker[] {
@@ -381,12 +415,9 @@ function applyMarkerLabelOffsets(
   }))
 }
 
-function estimateLifecycleEventLabelWidthPx(label: string): number {
-  return Math.max(
-    SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX,
-    label.length * SANDBOX_MONITORING_CHART_EVENT_LABEL_CHAR_WIDTH_PX +
-      SANDBOX_MONITORING_CHART_EVENT_LABEL_HORIZONTAL_PADDING_PX
-  )
+function estimateLifecycleEventLabelWidthPx(): number {
+  // Collapsed state is icon-only: icon size + padding (p-1 = 4px each side) + border (1px each side)
+  return SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE + 8 + 2
 }
 
 function doLifecycleEventLabelsOverlap(
@@ -502,9 +533,12 @@ function createLiveIndicators(
 function SandboxMetricsChart({
   series,
   lifecycleEventMarkers = [],
+  showEventLabels = true,
   hoveredTimestampMs = null,
   className,
   showXAxisLabels = true,
+  xAxisMin,
+  xAxisMax,
   yAxisMax,
   yAxisFormatter = formatAxisNumber,
   onHover,
@@ -560,7 +594,7 @@ function SandboxMetricsChart({
     cssVars[SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY
   const fg = cssVars[SANDBOX_MONITORING_CHART_FG_VAR] || stroke
-  const axisPointerColor = withOpacity(fg, 0.7)
+  const axisPointerColor = stroke
   const fontMono =
     cssVars[SANDBOX_MONITORING_CHART_FONT_MONO_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO
@@ -636,7 +670,10 @@ function SandboxMetricsChart({
 
   const handleChartReady = useCallback((chart: echarts.ECharts) => {
     chartInstanceRef.current = chart
-    setChartRevision((v) => v + 1)
+
+    chart.on('finished', () => {
+      setChartRevision((v) => v + 1)
+    })
 
     chart.dispatchAction(
       {
@@ -653,72 +690,6 @@ function SandboxMetricsChart({
     chart.group = SANDBOX_MONITORING_CHART_GROUP
     echarts.connect(SANDBOX_MONITORING_CHART_GROUP)
   }, [])
-
-  const seriesLayoutKey = useMemo(
-    () =>
-      series
-        .map((line) => {
-          const firstTimestampMs = line.data[0]?.[0] ?? 'none'
-          const lastTimestampMs = line.data[line.data.length - 1]?.[0] ?? 'none'
-
-          return `${line.id}:${line.data.length}:${firstTimestampMs}:${lastTimestampMs}`
-        })
-        .join('|'),
-    [series]
-  )
-  const lifecycleMarkersLayoutKey = useMemo(
-    () =>
-      lifecycleEventMarkers
-        .map((event) => `${event.id}:${event.timestampMs}`)
-        .join('|'),
-    [lifecycleEventMarkers]
-  )
-  const layoutRevisionKey = useMemo(
-    () =>
-      `${seriesLayoutKey}|${lifecycleMarkersLayoutKey}|${computedYAxisMax}|${resolvedTheme ?? ''}`,
-    [
-      computedYAxisMax,
-      lifecycleMarkersLayoutKey,
-      resolvedTheme,
-      seriesLayoutKey,
-    ]
-  )
-
-  useEffect(() => {
-    const handleResize = () => {
-      setChartRevision((value) => value + 1)
-    }
-
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
-
-  useEffect(() => {
-    void layoutRevisionKey
-
-    if (!chartInstanceRef.current) {
-      return
-    }
-
-    let rafPrimary = 0
-    let rafSecondary = 0
-
-    // Wait until ECharts has applied the latest option/layout before
-    // converting event timestamps into pixel positions.
-    rafPrimary = window.requestAnimationFrame(() => {
-      rafSecondary = window.requestAnimationFrame(() => {
-        setChartRevision((value) => value + 1)
-      })
-    })
-
-    return () => {
-      window.cancelAnimationFrame(rafPrimary)
-      window.cancelAnimationFrame(rafSecondary)
-    }
-  }, [layoutRevisionKey])
 
   const option = useMemo<EChartsOption>(() => {
     const seriesItems: SeriesOption[] = series.flatMap((line) => {
@@ -751,44 +722,81 @@ function SandboxMetricsChart({
         areaFromColor || areaToColor ? 1 : SANDBOX_MONITORING_CHART_AREA_OPACITY
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
+      const connectorSegments = line.connectors ?? []
+      const livePoint = findLivePoint(line.data)
 
-      return renderableSegments.map((segment, segmentIndex) => {
-        const livePoint = findLivePoint(segment)
+      const regularSeriesItems = renderableSegments.map(
+        (segment, segmentIndex) => {
+          const seriesItem: SeriesOption = {
+            id: `${line.id}__segment_${segmentIndex}`,
+            name: line.name,
+            type: 'line',
+            z: line.zIndex,
+            symbol: 'none',
+            showSymbol: false,
+            smooth: false,
+            emphasis: {
+              disabled: true,
+            },
+            areaStyle: shouldShowArea
+              ? {
+                  opacity: areaOpacity,
+                  color: areaFillColor,
+                }
+              : undefined,
+            lineStyle: {
+              width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
+              color: resolvedLineColor,
+            },
+            connectNulls: false,
+            data: segment,
+          }
 
-        const seriesItem: SeriesOption = {
-          id: `${line.id}__segment_${segmentIndex}`,
-          name: line.name,
-          type: 'line',
-          z: line.zIndex,
-          symbol: 'none',
-          showSymbol: false,
-          smooth: false,
-          emphasis: {
-            disabled: true,
-          },
-          areaStyle: shouldShowArea
-            ? {
-                opacity: areaOpacity,
-                color: areaFillColor,
-              }
-            : undefined,
-          lineStyle: {
-            width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
-            color: resolvedLineColor,
-          },
-          connectNulls: false,
-          data: segment,
+          if (livePoint && segmentContainsPoint(segment, livePoint)) {
+            seriesItem.markPoint = createLiveIndicators(
+              livePoint,
+              resolvedLineColor
+            ) as MarkPointComponentOption
+          }
+
+          return seriesItem
         }
+      )
 
-        if (livePoint) {
-          seriesItem.markPoint = createLiveIndicators(
-            livePoint,
-            resolvedLineColor
-          ) as MarkPointComponentOption
-        }
+      const connectorSeriesItems = connectorSegments.map(
+        (connector, connectorIndex) =>
+          ({
+            id: `${line.id}__connector_${connectorIndex}`,
+            name: line.name,
+            type: 'line',
+            z: (line.zIndex ?? 0) + 1,
+            symbol: 'none',
+            showSymbol: false,
+            smooth: false,
+            emphasis: {
+              disabled: true,
+            },
+            areaStyle: shouldShowArea
+              ? {
+                  opacity: areaOpacity,
+                  color: areaFillColor,
+                }
+              : undefined,
+            lineStyle: {
+              width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
+              color: resolvedLineColor,
+              opacity: SANDBOX_MONITORING_CHART_CONNECTOR_LINE_OPACITY,
+              type: 'dashed',
+            },
+            connectNulls: false,
+            data: [
+              [connector.from[0], connector.from[1]],
+              [connector.to[0], connector.to[1]],
+            ],
+          }) satisfies SeriesOption
+      )
 
-        return seriesItem
-      })
+      return [...regularSeriesItems, ...connectorSeriesItems]
     })
 
     return {
@@ -803,18 +811,15 @@ function SandboxMetricsChart({
         outOfBrush: { colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA },
       },
       grid: {
-        top:
-          lifecycleEventMarkers.length > 0
-            ? SANDBOX_MONITORING_CHART_GRID_TOP_WITH_EVENT_LABELS
-            : SANDBOX_MONITORING_CHART_GRID_TOP,
-        bottom: showXAxisLabels
-          ? SANDBOX_MONITORING_CHART_GRID_BOTTOM_WITH_X_AXIS
-          : SANDBOX_MONITORING_CHART_GRID_BOTTOM,
+        top: SANDBOX_MONITORING_CHART_GRID_TOP,
+        bottom: SANDBOX_MONITORING_CHART_GRID_BOTTOM,
         left: 36,
         right: SANDBOX_MONITORING_CHART_GRID_RIGHT,
       },
       xAxis: {
         type: 'time',
+        min: xAxisMin,
+        max: xAxisMax,
         boundaryGap: [0, 0],
         axisLine: { show: true, lineStyle: { color: stroke } },
         axisTick: { show: false },
@@ -835,7 +840,7 @@ function SandboxMetricsChart({
             type: 'solid',
             width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
           },
-          snap: true,
+          snap: false,
           label: {
             show: false,
           },
@@ -871,12 +876,29 @@ function SandboxMetricsChart({
     computedYAxisMax,
     fgTertiary,
     fontMono,
-    lifecycleEventMarkers.length,
     series,
     showXAxisLabels,
     stroke,
+    xAxisMax,
+    xAxisMin,
     yAxisFormatter,
   ])
+
+  useEffect(() => {
+    const chart = chartInstanceRef.current
+    if (!chart || chart.isDisposed()) {
+      return
+    }
+
+    // echarts-for-react uses merge mode (notMerge: false) by default, which
+    // keeps stale series whose IDs are absent from the new option. We follow
+    // up with replaceMerge for the series array only — this removes stale
+    // connector/segment series without resetting brush or axis pointer state.
+    chart.setOption(
+      { series: option.series },
+      { replaceMerge: ['series'] }
+    )
+  }, [option])
 
   const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
     void chartRevision
@@ -1016,22 +1038,10 @@ function SandboxMetricsChart({
       return []
     }
 
-    const chartWidth = chart.getWidth()
-    const minLabelXPx = SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX
-    const maxLabelXPx = Math.max(
-      minLabelXPx,
-      chartWidth - SANDBOX_MONITORING_CHART_EVENT_LABEL_EDGE_PADDING_PX
-    )
-    const normalizedEventLineHeightRatio = Math.max(
-      0,
-      Math.min(1, SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO)
-    )
-    const eventLineTopValue = computedYAxisMax * normalizedEventLineHeightRatio
-
     const baseOverlays = lifecycleEventMarkers.flatMap((event) => {
       const topPixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
         event.timestampMs,
-        eventLineTopValue,
+        computedYAxisMax,
       ])
       const bottomPixel = chart.convertToPixel(
         { xAxisIndex: 0, yAxisIndex: 0 },
@@ -1061,14 +1071,22 @@ function SandboxMetricsChart({
       }
 
       const anchorTopPx = Math.min(topValuePx, bottomValuePx)
+      const anchorBottomPx = Math.max(topValuePx, bottomValuePx)
+      const labelAnchorPx =
+        anchorBottomPx -
+        (anchorBottomPx - anchorTopPx) *
+          Math.max(
+            0,
+            Math.min(1, SANDBOX_MONITORING_CHART_EVENT_LINE_HEIGHT_RATIO)
+          )
       const baseLabelTopPx = Math.max(
         SANDBOX_MONITORING_CHART_EVENT_LABEL_MIN_TOP_PX,
-        anchorTopPx -
+        labelAnchorPx -
           (SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX +
             SANDBOX_MONITORING_CHART_EVENT_LABEL_GAP_PX)
       )
       const color = cssVars[event.colorVar] ?? fg
-      const labelXPx = Math.min(Math.max(xPx, minLabelXPx), maxLabelXPx)
+      const labelXPx = xPx
 
       if (!Number.isFinite(anchorTopPx)) {
         return []
@@ -1077,26 +1095,23 @@ function SandboxMetricsChart({
       return [
         {
           key: event.id,
+          type: event.type,
           xPx,
           anchorTopPx,
           bottomPx: bottomValuePx,
           label: event.label,
+          timestampMs: event.timestampMs,
           labelXPx,
           baseLabelTopPx,
           labelTopPx: baseLabelTopPx,
-          estimatedLabelWidthPx: estimateLifecycleEventLabelWidthPx(
-            event.label
-          ),
+          estimatedLabelWidthPx: estimateLifecycleEventLabelWidthPx(),
           color,
         } satisfies LifecycleEventOverlayLayout,
       ]
     })
 
     return applyLifecycleEventLabelOffsets(baseOverlays).flatMap((overlay) => {
-      const lineTopPx = Math.min(
-        overlay.anchorTopPx,
-        overlay.labelTopPx + SANDBOX_MONITORING_CHART_EVENT_LABEL_HEIGHT_PX
-      )
+      const lineTopPx = overlay.anchorTopPx
       const heightPx = Math.max(Math.abs(overlay.bottomPx - lineTopPx), 0)
 
       if (!Number.isFinite(lineTopPx) || heightPx <= 0) {
@@ -1106,10 +1121,12 @@ function SandboxMetricsChart({
       return [
         {
           key: overlay.key,
+          type: overlay.type,
           xPx: overlay.xPx,
           topPx: lineTopPx,
           heightPx,
           label: overlay.label,
+          timestampMs: overlay.timestampMs,
           labelXPx: overlay.labelXPx,
           labelTopPx: overlay.labelTopPx,
           color: overlay.color,
@@ -1139,35 +1156,80 @@ function SandboxMetricsChart({
         }}
       />
       {showOverlay ? (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {lifecycleEventOverlays.map((eventOverlay) => (
-            <Fragment key={eventOverlay.key}>
-              <span
-                className="absolute -translate-x-1/2 border-l border-dashed"
-                style={{
-                  left: eventOverlay.xPx,
-                  top: eventOverlay.topPx,
-                  height: eventOverlay.heightPx,
-                  borderColor: withOpacity(eventOverlay.color, 0.75),
-                  borderLeftWidth: SANDBOX_MONITORING_CHART_LINE_WIDTH,
-                  zIndex: 12,
-                }}
-              />
-              <div
-                style={{
-                  left: eventOverlay.labelXPx,
-                  top: eventOverlay.labelTopPx,
-                  backgroundColor: withOpacity(eventOverlay.color, 0.1),
-                  borderColor: withOpacity(eventOverlay.color, 0.12),
-                  color: eventOverlay.color,
-                  zIndex: 18,
-                }}
-                className="prose-label absolute border uppercase -translate-x-1/2 whitespace-nowrap px-1 py-0.25! backdrop-blur-lg"
-              >
-                {eventOverlay.label}
+        <div className="pointer-events-none absolute inset-0">
+          {lifecycleEventOverlays.map((eventOverlay) => {
+            const IconComponent =
+              SANDBOX_LIFECYCLE_EVENT_ICON_MAP[eventOverlay.type]
+
+            return (
+              <div key={eventOverlay.key}>
+                <span
+                  className="absolute -translate-x-1/2 transition-opacity"
+                  data-event-line={eventOverlay.key}
+                  style={{
+                    left: eventOverlay.xPx,
+                    top: eventOverlay.topPx,
+                    height: eventOverlay.heightPx,
+                    width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
+                    backgroundImage: `repeating-linear-gradient(to bottom, ${eventOverlay.color} 0px, ${eventOverlay.color} 4px, transparent 4px, transparent 6px)`,
+                    opacity: SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
+                    zIndex: 12,
+                  }}
+                />
+                {showEventLabels ? (
+                  <div
+                    style={{
+                      left: eventOverlay.labelXPx,
+                      top: eventOverlay.labelTopPx,
+                      borderColor: withOpacity(eventOverlay.color, SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY),
+                      color: eventOverlay.color,
+                      zIndex: 18,
+                    }}
+                    className="group/event pointer-events-auto absolute -translate-x-1/2"
+                    onMouseEnter={(e) => {
+                      const line = e.currentTarget.parentElement?.querySelector(
+                        `[data-event-line="${eventOverlay.key}"]`
+                      ) as HTMLElement | null
+                      if (line) {
+                        line.style.opacity = '1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const line = e.currentTarget.parentElement?.querySelector(
+                        `[data-event-line="${eventOverlay.key}"]`
+                      ) as HTMLElement | null
+                      if (line) {
+                        line.style.opacity = String(
+                          SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY
+                        )
+                      }
+                    }}
+                  >
+                    <div className="grid grid-cols-[auto_0fr] items-center transition-[grid-template-columns] duration-200 ease-out group-hover/event:grid-cols-[auto_1fr]">
+                      <div className="flex items-center justify-center p-1">
+                        {IconComponent ? (
+                          <IconComponent
+                            size={SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE}
+                            strokeWidth={2}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap pr-1.5 leading-none">
+                          <span className="prose-label uppercase">
+                            {eventOverlay.label}
+                          </span>
+                          <span className="prose-label-numeric font-mono text-current/60">
+                            {formatEventTimestamp(eventOverlay.timestampMs)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </Fragment>
-          ))}
+            )
+          })}
 
           {crosshairMarkers.map((marker) => (
             <div
@@ -1185,12 +1247,12 @@ function SandboxMetricsChart({
               />
               <div
                 style={{
-                  backgroundColor: withOpacity(marker.dotColor, 0.1),
-                  borderColor: withOpacity(marker.dotColor, 0.12),
+                  backgroundColor: withOpacity(marker.dotColor, SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY),
+                  borderColor: withOpacity(marker.dotColor, SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY),
                   marginTop: marker.labelOffsetYPx,
                 }}
                 className={cn(
-                  'prose-label-numeric absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap px-2 py-0.5 backdrop-blur-lg',
+                  'pointer-events-auto prose-label-numeric absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap px-2 py-0.5 backdrop-blur-lg',
                   marker.placeValueOnRight ? 'left-2' : 'right-2'
                 )}
               >

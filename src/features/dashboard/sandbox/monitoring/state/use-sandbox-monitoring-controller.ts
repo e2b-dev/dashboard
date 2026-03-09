@@ -222,6 +222,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
   const lifecyclePausedAt = sandboxLifecycle?.pausedAt
   const lifecycleEndedAt = sandboxLifecycle?.endedAt
   const lifecycleState = sandboxInfo?.state
+  const lifecycleEvents = sandboxLifecycle?.events
   const lifecycleBounds = useMemo(() => {
     if (!lifecycleCreatedAt || !lifecycleState) {
       return null
@@ -235,6 +236,20 @@ export function useSandboxMonitoringController(sandboxId: string) {
     })
   }, [lifecycleCreatedAt, lifecycleEndedAt, lifecyclePausedAt, lifecycleState])
 
+  // When killed, keep polling until the killed lifecycle event arrives from
+  // the backend so the chart can render the final data and event marker.
+  const hasKilledEvent = useMemo(
+    () =>
+      lifecycleEvents?.some(
+        (e) => e.type === 'sandbox.lifecycle.killed'
+      ) ?? false,
+    [lifecycleEvents]
+  )
+  const isLifecycleSettled =
+    lifecycleBounds !== null &&
+    !lifecycleBounds.isRunning &&
+    (lifecycleState !== 'killed' || hasKilledEvent)
+
   useEffect(() => {
     stateRef.current = state
   }, [state])
@@ -246,11 +261,9 @@ export function useSandboxMonitoringController(sandboxId: string) {
       const timeframe = resolveTimeframe(start, end, now, lifecycleBounds)
       const requestedLiveUpdating =
         options?.isLiveUpdating ?? currentState.isLiveUpdating
-      const nextLiveUpdating = lifecycleBounds?.isRunning
-        ? requestedLiveUpdating
-        : lifecycleBounds
-          ? false
-          : requestedLiveUpdating
+      const nextLiveUpdating = isLifecycleSettled
+        ? false
+        : requestedLiveUpdating
 
       if (
         currentState.timeframe.start === timeframe.start &&
@@ -268,7 +281,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
         },
       })
     },
-    [lifecycleBounds]
+    [isLifecycleSettled, lifecycleBounds]
   )
 
   const setLiveUpdating = useCallback(
@@ -288,7 +301,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
         return
       }
 
-      if (lifecycleBounds && !lifecycleBounds.isRunning) {
+      if (isLifecycleSettled) {
         if (!currentState.isLiveUpdating) {
           return
         }
@@ -310,7 +323,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
         isLiveUpdating: true,
       })
     },
-    [applyTimeframe, lifecycleBounds]
+    [applyTimeframe, isLifecycleSettled, lifecycleBounds]
   )
 
   useEffect(() => {
@@ -343,13 +356,11 @@ export function useSandboxMonitoringController(sandboxId: string) {
       payload: {
         sandboxId,
         timeframe,
-        isLiveUpdating:
-          lifecycleBounds && !lifecycleBounds.isRunning
-            ? false
-            : requestedLiveUpdating,
+        isLiveUpdating: isLifecycleSettled ? false : requestedLiveUpdating,
       },
     })
   }, [
+    isLifecycleSettled,
     lifecycleBounds,
     queryState.end,
     queryState.live,
@@ -362,7 +373,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
       return
     }
 
-    if (lifecycleBounds && !lifecycleBounds.isRunning) {
+    if (isLifecycleSettled) {
       return
     }
 
@@ -400,6 +411,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     }
   }, [
     applyTimeframe,
+    isLifecycleSettled,
     lifecycleBounds,
     state.isInitialized,
     state.isLiveUpdating,

@@ -1,16 +1,23 @@
 /**
- * Triggers every sandbox lifecycle webhook event using a single sandbox.
+ * Triggers sandbox lifecycle events with realistic resource stress.
  * Useful for development/testing of event-driven dashboard features.
  *
- * Events triggered (in order):
- *   1. sandbox.lifecycle.created      — Sandbox.create()
- *   2. sandbox.lifecycle.updated      — sandbox.setTimeout()
- *   3. sandbox.lifecycle.paused       — sandbox.betaPause()
- *   4. sandbox.lifecycle.resumed      — Sandbox.connect() on paused sandbox
- *   5. sandbox.lifecycle.checkpointed — sandbox.createSnapshot()
- *   6. sandbox.lifecycle.killed       — sandbox.kill()
+ * Timeline (~5 minutes):
+ *   1. Create sandbox, install stress-ng
+ *   2. Run CPU + RAM + disk stress for ~60s
+ *   3. Pause sandbox
+ *   4. Wait ~30s (paused gap)
+ *   5. Resume sandbox
+ *   6. Run heavier stress for ~90s
+ *   7. Cool down ~30s (idle)
+ *   8. Kill sandbox
  *
- * Requires e2b@>=2.13.0 for createSnapshot support.
+ * Events triggered:
+ *   - sandbox.lifecycle.created
+ *   - sandbox.lifecycle.updated
+ *   - sandbox.lifecycle.paused
+ *   - sandbox.lifecycle.resumed
+ *   - sandbox.lifecycle.killed
  */
 
 import { Sandbox } from 'e2b'
@@ -30,25 +37,23 @@ const TEMPLATE = TEST_E2B_TEMPLATE || 'base'
 
 // --- Tunable timing constants ---
 
-const SANDBOX_INITIAL_TIMEOUT_MS = 5 * 60 * 1_000
-const UPDATED_TIMEOUT_MS = 3 * 60 * 1_000
-
-const CREATE_SETTLE_MS = 30_000
-const PAUSE_SETTLE_MS = 10_000
-const RESUME_SETTLE_MS = 10_000
-const SNAPSHOT_SETTLE_MS = 10_000
+const SANDBOX_TIMEOUT_MS = 10 * 60 * 1_000
+const INSTALL_SETTLE_MS = 5_000
+const STRESS_PHASE_1_DURATION_S = 60
+const PAUSE_DURATION_MS = 30_000
+const STRESS_PHASE_2_DURATION_S = 90
+const COOLDOWN_MS = 30_000
 const EVENTS_SETTLE_MS = 5_000
 
-const TEST_TIMEOUT_MS = 3 * 60 * 1_000
+const TEST_TIMEOUT_MS = 7 * 60 * 1_000
 
-// --- All lifecycle event types from the webhook docs ---
+// --- Expected lifecycle event types ---
 
-const ALL_LIFECYCLE_EVENTS = [
+const EXPECTED_LIFECYCLE_EVENTS = [
   'sandbox.lifecycle.created',
   'sandbox.lifecycle.updated',
   'sandbox.lifecycle.paused',
   'sandbox.lifecycle.resumed',
-  'sandbox.lifecycle.checkpointed',
   'sandbox.lifecycle.killed',
 ] as const
 
@@ -86,61 +91,116 @@ async function fetchSandboxEvents(
   return resp.json()
 }
 
-describe('E2B Sandbox lifecycle events', () => {
+async function installStressNg(sandbox: Sandbox) {
+  l.info('step:install_stress_ng')
+  const result = await sandbox.commands.run(
+    'sudo apt-get update -qq && sudo apt-get install -y -qq stress-ng > /dev/null 2>&1',
+    { timeoutMs: 60_000 }
+  )
+  if (result.exitCode !== 0) {
+    throw new Error(`stress-ng install failed: ${result.stderr}`)
+  }
+  l.info('step:stress_ng_installed')
+}
+
+async function runStress(
+  sandbox: Sandbox,
+  label: string,
+  options: {
+    cpuWorkers: number
+    vmWorkers: number
+    vmBytes: string
+    hddWorkers: number
+    hddBytes: string
+    durationS: number
+  }
+) {
+  const cmd = [
+    'stress-ng',
+    `--cpu ${options.cpuWorkers}`,
+    `--vm ${options.vmWorkers}`,
+    `--vm-bytes ${options.vmBytes}`,
+    `--hdd ${options.hddWorkers}`,
+    `--hdd-bytes ${options.hddBytes}`,
+    `--timeout ${options.durationS}s`,
+    '--metrics-brief',
+  ].join(' ')
+
+  l.info(`step:stress_start:${label}`, { cmd, durationS: options.durationS })
+  const result = await sandbox.commands.run(cmd, {
+    timeoutMs: (options.durationS + 30) * 1_000,
+  })
+  l.info(`step:stress_done:${label}`, {
+    exitCode: result.exitCode,
+    stderr: result.stderr.slice(-500),
+  })
+}
+
+describe('E2B Sandbox lifecycle events with resource stress', () => {
   it(
-    'triggers all webhook event types with a single sandbox',
+    'creates realistic resource usage with a pause gap',
     { timeout: TEST_TIMEOUT_MS },
     async () => {
-      const testId = `events-test-${Date.now()}`
+      const testId = `stress-test-${Date.now()}`
 
-      // 1. sandbox.lifecycle.created
+      // 1. Create sandbox
       l.info('step:create', { template: TEMPLATE, testId })
       const sandbox = await Sandbox.create(TEMPLATE, {
         ...sdkOpts,
-        timeoutMs: SANDBOX_INITIAL_TIMEOUT_MS,
+        timeoutMs: SANDBOX_TIMEOUT_MS,
         metadata: { testId },
       })
       const sandboxId = sandbox.sandboxId
       l.info('step:created', { sandboxId })
 
-      await sleep(CREATE_SETTLE_MS)
-
       try {
-        // 2. sandbox.lifecycle.updated
-        l.info('step:set_timeout', { timeoutMs: UPDATED_TIMEOUT_MS })
-        await sandbox.setTimeout(UPDATED_TIMEOUT_MS)
-        l.info('step:timeout_updated')
+        // 2. Install stress-ng
+        await installStressNg(sandbox)
+        await sleep(INSTALL_SETTLE_MS)
 
-        // 3. sandbox.lifecycle.paused
-        l.info('step:pause')
-        await sandbox.pause({
-          ...sdkOpts,
+        // 3. Update timeout
+        l.info('step:set_timeout')
+        await sandbox.setTimeout(SANDBOX_TIMEOUT_MS)
+
+        // 4. Phase 1: moderate stress (simulates normal workload)
+        await runStress(sandbox, 'phase1', {
+          cpuWorkers: 1,
+          vmWorkers: 1,
+          vmBytes: '64M',
+          hddWorkers: 1,
+          hddBytes: '128M',
+          durationS: STRESS_PHASE_1_DURATION_S,
         })
-        l.info('step:paused', { settleMs: PAUSE_SETTLE_MS })
-        await sleep(PAUSE_SETTLE_MS)
 
-        // 4. sandbox.lifecycle.resumed
+        // 5. Pause sandbox
+        l.info('step:pause')
+        await sandbox.pause({ ...sdkOpts })
+        l.info('step:paused', { durationMs: PAUSE_DURATION_MS })
+        await sleep(PAUSE_DURATION_MS)
+
+        // 6. Resume sandbox
         l.info('step:resume')
         const resumed = await Sandbox.connect(sandboxId, {
           ...sdkOpts,
-          timeoutMs: SANDBOX_INITIAL_TIMEOUT_MS,
+          timeoutMs: SANDBOX_TIMEOUT_MS,
         })
-        l.info('step:resumed', { settleMs: RESUME_SETTLE_MS })
-        await sleep(RESUME_SETTLE_MS)
+        l.info('step:resumed')
 
-        // 5. sandbox.lifecycle.checkpointed
-        l.info('step:snapshot')
-        const snapshot = await resumed.createSnapshot()
-        l.info('step:snapshot_created', {
-          snapshotId: snapshot.snapshotId,
-          settleMs: SNAPSHOT_SETTLE_MS,
+        // 7. Phase 2: heavier stress (simulates burst after resume)
+        await runStress(resumed, 'phase2', {
+          cpuWorkers: 2,
+          vmWorkers: 2,
+          vmBytes: '128M',
+          hddWorkers: 2,
+          hddBytes: '256M',
+          durationS: STRESS_PHASE_2_DURATION_S,
         })
-        await sleep(SNAPSHOT_SETTLE_MS)
 
-        await Sandbox.deleteSnapshot(snapshot.snapshotId, sdkOpts)
-        l.info('step:snapshot_deleted')
+        // 8. Cooldown (idle period before kill)
+        l.info('step:cooldown', { durationMs: COOLDOWN_MS })
+        await sleep(COOLDOWN_MS)
 
-        // 6. sandbox.lifecycle.killed
+        // 9. Kill sandbox
         l.info('step:kill')
         await resumed.kill()
         l.info('step:killed')
@@ -152,10 +212,10 @@ describe('E2B Sandbox lifecycle events', () => {
         throw err
       }
 
-      // wait for events to settle in the backend
+      // Wait for events to settle
       await sleep(EVENTS_SETTLE_MS)
 
-      // verify all event types were triggered
+      // Verify lifecycle events
       l.info('step:verify_events', { sandboxId })
       const events = await fetchSandboxEvents(sandboxId)
       const triggeredTypes = new Set(events.map((e) => e.type))
@@ -169,7 +229,7 @@ describe('E2B Sandbox lifecycle events', () => {
         })),
       })
 
-      for (const expectedType of ALL_LIFECYCLE_EVENTS) {
+      for (const expectedType of EXPECTED_LIFECYCLE_EVENTS) {
         expect(
           triggeredTypes.has(expectedType),
           `Missing event: "${expectedType}"`

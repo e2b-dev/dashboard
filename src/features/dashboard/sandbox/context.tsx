@@ -88,8 +88,17 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
         retry: false,
         refetchInterval: (query) => {
           const sandboxInfo = query.state.data as SandboxDetailsDTO | undefined
+          const state = sandboxInfo?.state
+
+          // Keep polling when killed but the killed lifecycle event hasn't
+          // been received yet, so the monitoring chart can capture final data.
+          const isAwaitingKilledEvent =
+            state === 'killed' &&
+            !sandboxInfo?.lifecycle?.events?.some(
+              (e) => e.type === 'sandbox.lifecycle.killed'
+            )
           const shouldPoll =
-            sandboxInfo?.state === 'running' || sandboxInfo?.state === 'paused'
+            state === 'running' || state === 'paused' || isAwaitingKilledEvent
 
           return getAlignedRefetchInterval(shouldPoll)
         },

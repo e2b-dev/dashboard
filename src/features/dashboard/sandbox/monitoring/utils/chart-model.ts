@@ -5,6 +5,7 @@ import type {
 } from '@/server/api/models/sandboxes.models'
 import type {
   MonitoringChartModel,
+  MonitoringChartXAxisBounds,
   SandboxMetricsDataPoint,
   SandboxMetricsLifecycleEventMarker,
   SandboxMetricsSeries,
@@ -25,6 +26,7 @@ import {
   SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
   SANDBOX_MONITORING_RAM_SERIES_ID,
   SANDBOX_MONITORING_RAM_SERIES_LABEL,
+  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
 } from './constants'
 import { clampPercent } from './formatters'
 
@@ -44,6 +46,7 @@ interface BuildMonitoringChartModelOptions {
   startMs: number
   endMs: number
   hoveredTimestampMs: number | null
+  isLiveUpdating: boolean
 }
 
 interface LifecyclePauseWindow {
@@ -60,6 +63,13 @@ const SANDBOX_LIFECYCLE_KILLED_EVENT = 'sandbox.lifecycle.killed'
 
 const SANDBOX_MONITORING_EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
 
+const SANDBOX_LIFECYCLE_VISIBLE_EVENT_TYPES = new Set([
+  SANDBOX_LIFECYCLE_CREATED_EVENT,
+  SANDBOX_LIFECYCLE_PAUSED_EVENT,
+  SANDBOX_LIFECYCLE_RESUMED_EVENT,
+  SANDBOX_LIFECYCLE_KILLED_EVENT,
+])
+
 const SANDBOX_LIFECYCLE_EVENT_STYLES: Record<
   string,
   { label: string; colorVar: string }
@@ -68,21 +78,13 @@ const SANDBOX_LIFECYCLE_EVENT_STYLES: Record<
     label: 'Created',
     colorVar: '--accent-positive-highlight',
   },
-  [SANDBOX_LIFECYCLE_UPDATED_EVENT]: {
-    label: 'Updated',
-    colorVar: '--accent-info-highlight',
-  },
   [SANDBOX_LIFECYCLE_PAUSED_EVENT]: {
     label: 'Paused',
-    colorVar: '--accent-warning-highlight',
+    colorVar: '--accent-info-highlight',
   },
   [SANDBOX_LIFECYCLE_RESUMED_EVENT]: {
     label: 'Resumed',
-    colorVar: '--accent-main-highlight',
-  },
-  [SANDBOX_LIFECYCLE_CHECKPOINTED_EVENT]: {
-    label: 'Checkpointed',
-    colorVar: '--graph-5',
+    colorVar: '--accent-info-highlight',
   },
   [SANDBOX_LIFECYCLE_KILLED_EVENT]: {
     label: 'Killed',
@@ -228,17 +230,26 @@ function toVisiblePauseWindow(
   }
 }
 
-function buildPauseWindows(
+function buildInactiveWindows(
   lifecycleEvents: SandboxEventDTO[],
   rangeStart: number,
   rangeEnd: number
 ): LifecyclePauseWindow[] {
-  const pauseWindows: LifecyclePauseWindow[] = []
+  const windows: LifecyclePauseWindow[] = []
+  const sortedEvents = sortLifecycleEventsByTimestamp(lifecycleEvents)
+
+  let createdMs: number | null = null
+  let killedMs: number | null = null
   let activePauseStartMs: number | null = null
 
-  for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
+  for (const event of sortedEvents) {
     const eventTimestampMs = parseEventTimestampMs(event.timestamp)
     if (eventTimestampMs === null) {
+      continue
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_CREATED_EVENT && createdMs === null) {
+      createdMs = eventTimestampMs
       continue
     }
 
@@ -260,15 +271,74 @@ function buildPauseWindows(
         )
 
         if (visibleWindow) {
-          pauseWindows.push(visibleWindow)
+          windows.push(visibleWindow)
         }
       }
 
       activePauseStartMs = null
+      continue
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
+      killedMs = eventTimestampMs
     }
   }
 
-  return pauseWindows
+  // Before created: no data should exist
+  if (createdMs !== null && createdMs >= rangeStart) {
+    if (createdMs > rangeStart) {
+      const visibleWindow = toVisiblePauseWindow(
+        rangeStart,
+        createdMs,
+        rangeStart,
+        rangeEnd
+      )
+      if (visibleWindow) {
+        windows.unshift(visibleWindow)
+      }
+    } else {
+      // createdMs === rangeStart: zero-width window as a connector reference
+      // point so buildPauseWindowConnectors bridges to the first data point
+      windows.unshift({ startMs: createdMs, endMs: createdMs })
+    }
+  }
+
+  // Open pause (sandbox currently paused, no resume yet)
+  if (activePauseStartMs !== null) {
+    const pauseEndMs = killedMs ?? rangeEnd
+    if (pauseEndMs > activePauseStartMs) {
+      const visibleWindow = toVisiblePauseWindow(
+        activePauseStartMs,
+        pauseEndMs,
+        rangeStart,
+        rangeEnd
+      )
+      if (visibleWindow) {
+        windows.push(visibleWindow)
+      }
+    }
+  }
+
+  // After killed: no data should exist
+  if (killedMs !== null && killedMs <= rangeEnd) {
+    if (killedMs < rangeEnd) {
+      const visibleWindow = toVisiblePauseWindow(
+        killedMs,
+        rangeEnd,
+        rangeStart,
+        rangeEnd
+      )
+      if (visibleWindow) {
+        windows.push(visibleWindow)
+      }
+    } else {
+      // killedMs === rangeEnd: zero-width window as a connector reference
+      // point so buildPauseWindowConnectors bridges from the last data point
+      windows.push({ startMs: killedMs, endMs: killedMs })
+    }
+  }
+
+  return windows
 }
 
 function buildLifecycleEventMarkers(
@@ -285,6 +355,10 @@ function buildLifecycleEventMarkers(
     }
 
     if (timestampMs < rangeStart || timestampMs > rangeEnd) {
+      continue
+    }
+
+    if (!SANDBOX_LIFECYCLE_VISIBLE_EVENT_TYPES.has(event.type)) {
       continue
     }
 
@@ -317,30 +391,115 @@ function hasValidDataAfterTimestamp(
   return data.some((point) => point[1] !== null && point[0] > timestampMs)
 }
 
-function injectGapNullPoints(
+function findLastValidPointBeforeTimestamp(
   data: SandboxMetricsDataPoint[],
-  pauseWindows: LifecyclePauseWindow[]
-): SandboxMetricsDataPoint[] {
-  if (data.length === 0 || pauseWindows.length === 0) {
-    return data
-  }
-
-  const dataWithGaps = [...data]
-
-  for (const pauseWindow of pauseWindows) {
-    const hasDataOnBothSides =
-      hasValidDataBeforeTimestamp(dataWithGaps, pauseWindow.startMs) &&
-      hasValidDataAfterTimestamp(dataWithGaps, pauseWindow.endMs)
-
-    if (!hasDataOnBothSides) {
+  timestampMs: number
+): SandboxMetricsDataPoint | null {
+  for (let index = data.length - 1; index >= 0; index -= 1) {
+    const point = data[index]
+    if (!point) {
       continue
     }
 
-    // A null value in-between pause/resume forces ECharts to break the line.
-    const gapTimestampMs = Math.floor(
-      (pauseWindow.startMs + pauseWindow.endMs) / 2
+    const [pointTimestampMs, pointValue] = point
+    if (pointValue === null || !Number.isFinite(pointTimestampMs)) {
+      continue
+    }
+
+    if (pointTimestampMs < timestampMs) {
+      return point
+    }
+  }
+
+  return null
+}
+
+function findFirstValidPointAfterTimestamp(
+  data: SandboxMetricsDataPoint[],
+  timestampMs: number
+): SandboxMetricsDataPoint | null {
+  for (const point of data) {
+    if (!point) {
+      continue
+    }
+
+    const [pointTimestampMs, pointValue] = point
+    if (pointValue === null || !Number.isFinite(pointTimestampMs)) {
+      continue
+    }
+
+    if (pointTimestampMs > timestampMs) {
+      return point
+    }
+  }
+
+  return null
+}
+
+function buildPauseWindowConnectors(
+  data: SandboxMetricsDataPoint[],
+  pauseWindows: LifecyclePauseWindow[]
+) {
+  const connectors: NonNullable<SandboxMetricsSeries['connectors']> = []
+
+  for (const pauseWindow of pauseWindows) {
+    const previousPoint = findLastValidPointBeforeTimestamp(
+      data,
+      pauseWindow.startMs
     )
-    dataWithGaps.push([gapTimestampMs, null, null])
+    if (previousPoint && previousPoint[1] !== null) {
+      connectors.push({
+        from: [previousPoint[0], previousPoint[1]],
+        to: [pauseWindow.startMs, previousPoint[1]],
+      })
+    }
+
+    const nextPoint = findFirstValidPointAfterTimestamp(data, pauseWindow.endMs)
+    if (nextPoint && nextPoint[1] !== null) {
+      connectors.push({
+        from: [pauseWindow.endMs, nextPoint[1]],
+        to: [nextPoint[0], nextPoint[1]],
+      })
+    }
+  }
+
+  return connectors
+}
+
+function injectGapNullPoints(
+  data: SandboxMetricsDataPoint[],
+  inactiveWindows: LifecyclePauseWindow[]
+): SandboxMetricsDataPoint[] {
+  if (data.length === 0 || inactiveWindows.length === 0) {
+    return data
+  }
+
+  // Null out any data points that fall inside an inactive window.
+  const dataWithGaps: SandboxMetricsDataPoint[] = data.map((point) => {
+    const [timestampMs, value] = point
+    if (value === null) {
+      return point
+    }
+
+    const isInactive = inactiveWindows.some(
+      (window) => timestampMs >= window.startMs && timestampMs <= window.endMs
+    )
+
+    return isInactive ? [timestampMs, null, null] : point
+  })
+
+  // Insert mid-gap null points for windows that have data on both sides,
+  // ensuring ECharts breaks the line even when no actual data point falls
+  // inside the window.
+  for (const window of inactiveWindows) {
+    const hasDataOnBothSides =
+      hasValidDataBeforeTimestamp(dataWithGaps, window.startMs) &&
+      hasValidDataAfterTimestamp(dataWithGaps, window.endMs)
+
+    if (hasDataOnBothSides) {
+      const gapTimestampMs = Math.floor((window.startMs + window.endMs) / 2)
+      dataWithGaps.push([gapTimestampMs, null, null])
+    }
   }
 
   return dataWithGaps.sort((a, b) => a[0] - b[0])
@@ -357,6 +516,20 @@ function injectSeriesGaps(
   return series.map((line) => ({
     ...line,
     data: injectGapNullPoints(line.data, pauseWindows),
+  }))
+}
+
+function attachPauseWindowConnectors(
+  series: SandboxMetricsSeries[],
+  pauseWindows: LifecyclePauseWindow[]
+): SandboxMetricsSeries[] {
+  if (pauseWindows.length === 0) {
+    return series
+  }
+
+  return series.map((line) => ({
+    ...line,
+    connectors: buildPauseWindowConnectors(line.data, pauseWindows),
   }))
 }
 
@@ -460,12 +633,75 @@ function buildDiskSeries(
   ]
 }
 
+function buildXAxisBounds(
+  lifecycleEvents: SandboxEventDTO[],
+  normalizedMetrics: NormalizedSandboxMetric[],
+  rangeStart: number,
+  rangeEnd: number,
+  isLiveUpdating: boolean
+): MonitoringChartXAxisBounds {
+  const bounds: MonitoringChartXAxisBounds = {}
+  const sortedEvents = sortLifecycleEventsByTimestamp(lifecycleEvents)
+
+  const firstMetricMs = normalizedMetrics[0]?.timestampMs ?? null
+  const lastMetricMs =
+    normalizedMetrics[normalizedMetrics.length - 1]?.timestampMs ?? null
+
+  let createdMs: number | null = null
+  let killedMs: number | null = null
+  let openPauseMs: number | null = null
+
+  for (const event of sortedEvents) {
+    const eventTimestampMs = parseEventTimestampMs(event.timestamp)
+    if (eventTimestampMs === null) {
+      continue
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_CREATED_EVENT && createdMs === null) {
+      createdMs = eventTimestampMs
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
+      killedMs = eventTimestampMs
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
+      openPauseMs = eventTimestampMs
+    }
+
+    if (event.type === SANDBOX_LIFECYCLE_RESUMED_EVENT) {
+      openPauseMs = null
+    }
+  }
+
+  // Apply padding at start if the first data point or created event is visible
+  const startAnchorMs = createdMs ?? firstMetricMs
+  if (startAnchorMs !== null && startAnchorMs >= rangeStart) {
+    bounds.min = startAnchorMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+  }
+
+  // Apply padding at end based on killed event, open pause, or last data point
+  if (isLiveUpdating) {
+    if (lastMetricMs !== null && lastMetricMs <= rangeEnd) {
+      bounds.max = lastMetricMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+    }
+  } else {
+    const endAnchorMs = killedMs ?? openPauseMs ?? lastMetricMs
+    if (endAnchorMs !== null && endAnchorMs <= rangeEnd) {
+      bounds.max = endAnchorMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+    }
+  }
+
+  return bounds
+}
+
 export function buildMonitoringChartModel({
   metrics,
   lifecycleEvents = [],
   startMs,
   endMs,
   hoveredTimestampMs,
+  isLiveUpdating,
 }: BuildMonitoringChartModelOptions): MonitoringChartModel {
   const rangeStart = Math.min(startMs, endMs)
   const rangeEnd = Math.max(startMs, endMs)
@@ -484,20 +720,36 @@ export function buildMonitoringChartModel({
       })
   )
 
-  const pauseWindows = buildPauseWindows(lifecycleEvents, rangeStart, rangeEnd)
+  const pauseWindows = buildInactiveWindows(
+    lifecycleEvents,
+    rangeStart,
+    rangeEnd
+  )
   const resourceLifecycleEventMarkers = buildLifecycleEventMarkers(
     lifecycleEvents,
     rangeStart,
     rangeEnd
   )
-  const resourceSeries = injectSeriesGaps(
+  const xAxisBounds = buildXAxisBounds(
+    lifecycleEvents,
+    normalizedMetrics,
+    rangeStart,
+    rangeEnd,
+    isLiveUpdating
+  )
+  const resourceSeriesWithConnectors = attachPauseWindowConnectors(
     buildResourceSeries(normalizedMetrics),
     pauseWindows
   )
-  const diskSeries = injectSeriesGaps(
+  const diskSeriesWithConnectors = attachPauseWindowConnectors(
     buildDiskSeries(normalizedMetrics),
     pauseWindows
   )
+  const resourceSeries = injectSeriesGaps(
+    resourceSeriesWithConnectors,
+    pauseWindows
+  )
+  const diskSeries = injectSeriesGaps(diskSeriesWithConnectors, pauseWindows)
   const latestMetric = normalizedMetrics[normalizedMetrics.length - 1]?.metric
 
   if (hoveredTimestampMs === null) {
@@ -506,6 +758,7 @@ export function buildMonitoringChartModel({
       resourceSeries,
       diskSeries,
       resourceLifecycleEventMarkers,
+      xAxisBounds,
       resourceHoveredContext: null,
       diskHoveredContext: null,
     }
@@ -518,6 +771,7 @@ export function buildMonitoringChartModel({
       resourceSeries,
       diskSeries,
       resourceLifecycleEventMarkers,
+      xAxisBounds,
       resourceHoveredContext: null,
       diskHoveredContext: null,
     }
@@ -528,6 +782,7 @@ export function buildMonitoringChartModel({
     resourceSeries,
     diskSeries,
     resourceLifecycleEventMarkers,
+    xAxisBounds,
     resourceHoveredContext: {
       cpuPercent: hoveredMetric.cpuPercent,
       ramPercent: hoveredMetric.ramPercent,
