@@ -36,7 +36,7 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
-      <div className="flex items-center w-full relative min-h-6 gap-2">
+      <div className="flex items-center w-full relative min-h-6 gap-1 md:gap-2">
         <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1 shrink-0" />
 
         <h1 className="truncate min-w-0 flex-1">

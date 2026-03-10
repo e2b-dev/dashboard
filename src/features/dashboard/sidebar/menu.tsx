@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
+import { AccountSettingsIcon, AddIcon, LogoutIcon, UnpackIcon } from '@/ui/primitives/icons'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useDashboard } from '../context'
@@ -62,7 +62,7 @@ export default function DashboardSidebarMenu() {
                   {team.transformed_default_name || team.name}
                 </span>
               </div>
-              <ChevronsUpDown className="text-fg-tertiary ml-auto size-4" />
+              <UnpackIcon className="text-fg-tertiary ml-auto !size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -77,7 +77,7 @@ export default function DashboardSidebarMenu() {
               className="text-accent-main-highlight mt-1 font-sans prose-label-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
-              <Plus className="ml-0.5 size-5" /> Create New Team
+              <AddIcon className="ml-0.5 size-5" /> Create New Team
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -88,7 +88,7 @@ export default function DashboardSidebarMenu() {
                 asChild
               >
                 <Link href={PROTECTED_URLS.ACCOUNT_SETTINGS}>
-                  <UserRoundCog className="size-4" /> Account Settings
+                  <AccountSettingsIcon className="size-4" /> Account Settings
                 </Link>
               </DropdownMenuItem>
 
@@ -97,7 +97,7 @@ export default function DashboardSidebarMenu() {
                 className="font-sans prose-label-highlight"
                 onSelect={handleLogout}
               >
-                <LogOut className="size-4" /> Log Out
+                <LogoutIcon className="size-4" /> Log Out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

@@ -2,7 +2,7 @@
 
 import { Slot } from '@radix-ui/react-slot'
 import { VariantProps, cva } from 'class-variance-authority'
-import { CollapseLeftIcon } from '@/ui/primitives/icons'
+import { CollapseLeftIcon, MenuIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
@@ -276,7 +276,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { isMobile, toggleSidebar } = useSidebar()
 
   return (
     <Button
@@ -291,7 +291,11 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <CollapseLeftIcon className="text-fg-tertiary! size-5" />
+      {isMobile ? (
+        <MenuIcon className="text-fg-tertiary! size-5" />
+      ) : (
+        <CollapseLeftIcon className="text-fg-tertiary! size-5" />
+      )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

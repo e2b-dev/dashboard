@@ -7,7 +7,7 @@ import ClientOnly from '@/ui/client-only'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { useSidebar } from '@/ui/primitives/sidebar'
 import ShortcutTooltip from '@/ui/shortcut-tooltip'
-import { ArrowLeftToLine, ArrowRightFromLine } from 'lucide-react'
+import { CollapseLeftIcon, ExpandRightIcon } from '@/ui/primitives/icons'
 import { AnimatePresence, motion } from 'motion/react'
 
 export default function DashboardSidebarToggle() {
@@ -51,9 +51,9 @@ export default function DashboardSidebarToggle() {
       <ShortcutTooltip keys={['ctrl', 's']}>
         <IconButton onClick={toggleSidebar}>
           {isOpen ? (
-            <ArrowLeftToLine />
+            <CollapseLeftIcon />
           ) : (
-            <ArrowRightFromLine />
+            <ExpandRightIcon />
           )}
         </IconButton>
       </ShortcutTooltip>

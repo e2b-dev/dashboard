@@ -3,7 +3,7 @@
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn, exponentialSmoothing } from '@/lib/utils'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { AlertOctagonIcon } from 'lucide-react'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
@@ -44,7 +44,7 @@ export default function TeamBlockageAlert({
                 'bg-accent-error-bg text-accent-error-highlight border-accent-error-bg',
             }}
             onClick={handleClick}
-            className={cn('h-12 bg-accent-error-bg', {
+            className={cn('h-9 bg-accent-error-bg', {
               'cursor-default': !handleClick,
             })}
             asChild
@@ -55,9 +55,9 @@ export default function TeamBlockageAlert({
               exit={{ opacity: 0, filter: 'blur(8px)' }}
               transition={{ duration: 0.4, ease: exponentialSmoothing(4) }}
             >
-              <AlertOctagonIcon />
+              <WarningIcon />
               <div className="flex flex-col gap-0 overflow-hidden">
-                <span className="prose-headline-small uppercase">
+                <span className="prose-body-highlight uppercase">
                   Team is Blocked
                 </span>
                 {team.blocked_reason && (
