@@ -108,7 +108,7 @@ export default function DashboardSidebarFooter() {
               <ContactSupportDialog
                 trigger={
                   <SidebarMenuButton
-                    tooltip="Contact Support"
+                    tooltip="Support"
                     variant="ghost"
                     className={cn(
                       'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
@@ -116,8 +116,8 @@ export default function DashboardSidebarFooter() {
                     )}
                   >
                     <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
-                    Contact Support
-                  </SidebarMenuButton>
+                    Support
+               </SidebarMenuButton>
                 }
               />
             </SidebarMenuItem>
