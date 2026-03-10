@@ -270,6 +270,7 @@ export default function SandboxMetricsCharts({
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
+          isLiveUpdating={isLiveUpdating}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           grid={{ top: 42, bottom: 42, left: 64, right: 42 }}
@@ -300,6 +301,7 @@ export default function SandboxMetricsCharts({
           series={diskSeriesWithMarkerFormatters}
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           showEventLabels={false}
+          isLiveUpdating={isLiveUpdating}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           grid={{ top: 36, bottom: 40, left: 64, right: 42 }}

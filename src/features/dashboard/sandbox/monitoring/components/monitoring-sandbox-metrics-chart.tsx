@@ -32,7 +32,6 @@ import {
   SANDBOX_MONITORING_CHART_BRUSH_MODE,
   SANDBOX_MONITORING_CHART_BRUSH_TYPE,
   SANDBOX_MONITORING_CHART_CONNECTOR_LINE_OPACITY,
-  SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY,
   SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE,
   SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX,
   SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX,
@@ -529,6 +528,7 @@ function SandboxMetricsChart({
   series,
   lifecycleEventMarkers = [],
   showEventLabels = true,
+  isLiveUpdating = false,
   hoveredTimestampMs = null,
   className,
   showXAxisLabels = true,
@@ -719,7 +719,7 @@ function SandboxMetricsChart({
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
-      const livePoint = findLivePoint(line.data)
+      const livePoint = isLiveUpdating ? findLivePoint(line.data) : null
 
       const regularSeriesItems = renderableSegments.map(
         (segment, segmentIndex) => {
