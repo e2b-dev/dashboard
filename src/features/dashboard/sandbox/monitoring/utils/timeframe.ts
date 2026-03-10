@@ -79,7 +79,9 @@ function parseLiveParam(value: string | null): boolean | null {
   return null
 }
 
-function parseDateTimestampMs(value: string | null | undefined): number | null {
+export function parseDateTimestampMs(
+  value: string | null | undefined
+): number | null {
   if (!value) {
     return null
   }
@@ -89,7 +91,7 @@ function parseDateTimestampMs(value: string | null | undefined): number | null {
     return null
   }
 
-  return parsed
+  return Math.floor(parsed)
 }
 
 export function parseMonitoringQueryState({

@@ -25,8 +25,13 @@ import {
   SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
   SANDBOX_MONITORING_RAM_SERIES_ID,
   SANDBOX_MONITORING_RAM_SERIES_LABEL,
+  SANDBOX_LIFECYCLE_EVENT_CREATED,
+  SANDBOX_LIFECYCLE_EVENT_PAUSED,
+  SANDBOX_LIFECYCLE_EVENT_RESUMED,
+  SANDBOX_LIFECYCLE_EVENT_KILLED,
 } from './constants'
-import { clampPercent } from './formatters'
+import { calculateRatioPercent, clampPercent } from './formatters'
+import { parseDateTimestampMs } from './timeframe'
 
 interface NormalizedSandboxMetric {
   metric: SandboxMetric
@@ -51,50 +56,32 @@ interface LifecyclePauseWindow {
   endMs: number
 }
 
-const SANDBOX_LIFECYCLE_PAUSED_EVENT = 'sandbox.lifecycle.paused'
-const SANDBOX_LIFECYCLE_RESUMED_EVENT = 'sandbox.lifecycle.resumed'
-const SANDBOX_LIFECYCLE_CREATED_EVENT = 'sandbox.lifecycle.created'
-const SANDBOX_LIFECYCLE_UPDATED_EVENT = 'sandbox.lifecycle.updated'
-const SANDBOX_LIFECYCLE_CHECKPOINTED_EVENT = 'sandbox.lifecycle.checkpointed'
-const SANDBOX_LIFECYCLE_KILLED_EVENT = 'sandbox.lifecycle.killed'
+const EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
 
-const SANDBOX_MONITORING_EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
-
-const SANDBOX_LIFECYCLE_VISIBLE_EVENT_TYPES = new Set([
-  SANDBOX_LIFECYCLE_CREATED_EVENT,
-  SANDBOX_LIFECYCLE_PAUSED_EVENT,
-  SANDBOX_LIFECYCLE_RESUMED_EVENT,
-  SANDBOX_LIFECYCLE_KILLED_EVENT,
+const VISIBLE_EVENT_TYPES = new Set([
+  SANDBOX_LIFECYCLE_EVENT_CREATED,
+  SANDBOX_LIFECYCLE_EVENT_PAUSED,
+  SANDBOX_LIFECYCLE_EVENT_RESUMED,
+  SANDBOX_LIFECYCLE_EVENT_KILLED,
 ])
 
-const SANDBOX_LIFECYCLE_EVENT_STYLES: Record<
-  string,
-  { label: string; colorVar: string }
-> = {
-  [SANDBOX_LIFECYCLE_CREATED_EVENT]: {
+const EVENT_STYLES: Record<string, { label: string; colorVar: string }> = {
+  [SANDBOX_LIFECYCLE_EVENT_CREATED]: {
     label: 'Created',
     colorVar: '--accent-positive-highlight',
   },
-  [SANDBOX_LIFECYCLE_PAUSED_EVENT]: {
+  [SANDBOX_LIFECYCLE_EVENT_PAUSED]: {
     label: 'Paused',
     colorVar: '--accent-info-highlight',
   },
-  [SANDBOX_LIFECYCLE_RESUMED_EVENT]: {
+  [SANDBOX_LIFECYCLE_EVENT_RESUMED]: {
     label: 'Resumed',
     colorVar: '--accent-info-highlight',
   },
-  [SANDBOX_LIFECYCLE_KILLED_EVENT]: {
+  [SANDBOX_LIFECYCLE_EVENT_KILLED]: {
     label: 'Killed',
     colorVar: '--accent-error-highlight',
   },
-}
-
-function toPercent(used: number, total: number): number {
-  if (!total || total <= 0) {
-    return 0
-  }
-
-  return clampPercent((used / total) * 100)
 }
 
 function toMegabytes(value: number): number {
@@ -127,8 +114,8 @@ function normalizeMetric(
     metric,
     timestampMs,
     cpuPercent: clampPercent(metric.cpuUsedPct),
-    ramPercent: toPercent(metric.memUsed, metric.memTotal),
-    diskPercent: toPercent(metric.diskUsed, metric.diskTotal),
+    ramPercent: calculateRatioPercent(metric.memUsed, metric.memTotal),
+    diskPercent: calculateRatioPercent(metric.diskUsed, metric.diskTotal),
     ramUsedMb: toMegabytes(metric.memUsed),
     diskUsedMb: toMegabytes(metric.diskUsed),
   }
@@ -152,29 +139,14 @@ function buildSeriesData(
   ])
 }
 
-function parseEventTimestampMs(
-  value: string | null | undefined
-): number | null {
-  if (!value) {
-    return null
-  }
-
-  const timestampMs = new Date(value).getTime()
-  if (!Number.isFinite(timestampMs)) {
-    return null
-  }
-
-  return Math.floor(timestampMs)
-}
-
 function sortLifecycleEventsByTimestamp(
   events: SandboxEventDTO[]
 ): SandboxEventDTO[] {
   return [...events].sort((a, b) => {
     const timestampA =
-      parseEventTimestampMs(a.timestamp) ?? Number.MAX_SAFE_INTEGER
+      parseDateTimestampMs(a.timestamp) ?? Number.MAX_SAFE_INTEGER
     const timestampB =
-      parseEventTimestampMs(b.timestamp) ?? Number.MAX_SAFE_INTEGER
+      parseDateTimestampMs(b.timestamp) ?? Number.MAX_SAFE_INTEGER
 
     if (timestampA !== timestampB) {
       return timestampA - timestampB
@@ -240,23 +212,23 @@ function buildInactiveWindows(
   let activePauseStartMs: number | null = null
 
   for (const event of sortedEvents) {
-    const eventTimestampMs = parseEventTimestampMs(event.timestamp)
+    const eventTimestampMs = parseDateTimestampMs(event.timestamp)
     if (eventTimestampMs === null) {
       continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_CREATED_EVENT && createdMs === null) {
+    if (event.type === SANDBOX_LIFECYCLE_EVENT_CREATED && createdMs === null) {
       createdMs = eventTimestampMs
       continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
+    if (event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED) {
       activePauseStartMs = eventTimestampMs
       continue
     }
 
     if (
-      event.type === SANDBOX_LIFECYCLE_RESUMED_EVENT &&
+      event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED &&
       activePauseStartMs !== null
     ) {
       if (eventTimestampMs > activePauseStartMs) {
@@ -276,7 +248,7 @@ function buildInactiveWindows(
       continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
+    if (event.type === SANDBOX_LIFECYCLE_EVENT_KILLED) {
       killedMs = eventTimestampMs
     }
   }
@@ -346,7 +318,7 @@ function buildLifecycleEventMarkers(
   const markers: SandboxMetricsLifecycleEventMarker[] = []
 
   for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
-    const timestampMs = parseEventTimestampMs(event.timestamp)
+    const timestampMs = parseDateTimestampMs(event.timestamp)
     if (timestampMs === null) {
       continue
     }
@@ -355,11 +327,11 @@ function buildLifecycleEventMarkers(
       continue
     }
 
-    if (!SANDBOX_LIFECYCLE_VISIBLE_EVENT_TYPES.has(event.type)) {
+    if (!VISIBLE_EVENT_TYPES.has(event.type)) {
       continue
     }
 
-    const eventStyle = SANDBOX_LIFECYCLE_EVENT_STYLES[event.type]
+    const eventStyle = EVENT_STYLES[event.type]
 
     markers.push({
       id: event.id,
@@ -367,7 +339,7 @@ function buildLifecycleEventMarkers(
       label: eventStyle?.label ?? formatLifecycleEventTypeLabel(event.type),
       timestampMs,
       colorVar:
-        eventStyle?.colorVar ?? SANDBOX_MONITORING_EVENT_DEFAULT_COLOR_VAR,
+        eventStyle?.colorVar ?? EVENT_DEFAULT_COLOR_VAR,
     })
   }
 
@@ -502,21 +474,7 @@ function injectGapNullPoints(
   return dataWithGaps.sort((a, b) => a[0] - b[0])
 }
 
-function injectSeriesGaps(
-  series: SandboxMetricsSeries[],
-  pauseWindows: LifecyclePauseWindow[]
-): SandboxMetricsSeries[] {
-  if (pauseWindows.length === 0) {
-    return series
-  }
-
-  return series.map((line) => ({
-    ...line,
-    data: injectGapNullPoints(line.data, pauseWindows),
-  }))
-}
-
-function attachPauseWindowConnectors(
+function applyPauseWindows(
   series: SandboxMetricsSeries[],
   pauseWindows: LifecyclePauseWindow[]
 ): SandboxMetricsSeries[] {
@@ -527,6 +485,7 @@ function attachPauseWindowConnectors(
   return series.map((line) => ({
     ...line,
     connectors: buildPauseWindowConnectors(line.data, pauseWindows),
+    data: injectGapNullPoints(line.data, pauseWindows),
   }))
 }
 
@@ -664,57 +623,38 @@ export function buildMonitoringChartModel({
     rangeStart,
     rangeEnd
   )
-  const resourceSeriesWithConnectors = attachPauseWindowConnectors(
+  const resourceSeries = applyPauseWindows(
     buildResourceSeries(normalizedMetrics),
     pauseWindows
   )
-  const diskSeriesWithConnectors = attachPauseWindowConnectors(
+  const diskSeries = applyPauseWindows(
     buildDiskSeries(normalizedMetrics),
     pauseWindows
   )
-  const resourceSeries = injectSeriesGaps(
-    resourceSeriesWithConnectors,
-    pauseWindows
-  )
-  const diskSeries = injectSeriesGaps(diskSeriesWithConnectors, pauseWindows)
   const latestMetric = normalizedMetrics[normalizedMetrics.length - 1]?.metric
 
-  if (hoveredTimestampMs === null) {
-    return {
-      latestMetric,
-      resourceSeries,
-      diskSeries,
-      resourceLifecycleEventMarkers,
-      resourceHoveredContext: null,
-      diskHoveredContext: null,
-    }
-  }
-
-  const hoveredMetric = findClosestMetric(normalizedMetrics, hoveredTimestampMs)
-  if (!hoveredMetric) {
-    return {
-      latestMetric,
-      resourceSeries,
-      diskSeries,
-      resourceLifecycleEventMarkers,
-      resourceHoveredContext: null,
-      diskHoveredContext: null,
-    }
-  }
+  const hoveredMetric =
+    hoveredTimestampMs !== null
+      ? findClosestMetric(normalizedMetrics, hoveredTimestampMs)
+      : null
 
   return {
     latestMetric,
     resourceSeries,
     diskSeries,
     resourceLifecycleEventMarkers,
-    resourceHoveredContext: {
-      cpuPercent: hoveredMetric.cpuPercent,
-      ramPercent: hoveredMetric.ramPercent,
-      timestampMs: hoveredMetric.timestampMs,
-    },
-    diskHoveredContext: {
-      diskPercent: hoveredMetric.diskPercent,
-      timestampMs: hoveredMetric.timestampMs,
-    },
+    resourceHoveredContext: hoveredMetric
+      ? {
+          cpuPercent: hoveredMetric.cpuPercent,
+          ramPercent: hoveredMetric.ramPercent,
+          timestampMs: hoveredMetric.timestampMs,
+        }
+      : null,
+    diskHoveredContext: hoveredMetric
+      ? {
+          diskPercent: hoveredMetric.diskPercent,
+          timestampMs: hoveredMetric.timestampMs,
+        }
+      : null,
   }
 }

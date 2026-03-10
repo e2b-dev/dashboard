@@ -15,7 +15,6 @@ export interface SandboxMetricsSeriesConnector {
 export interface SandboxMetricsMarkerValueFormatterInput {
   value: number
   markerValue: number | null
-  point: SandboxMetricsDataPoint
 }
 
 export interface SandboxMetricsSeries {

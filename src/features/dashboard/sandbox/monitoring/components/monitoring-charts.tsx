@@ -32,14 +32,10 @@ interface ZoomResetSnapshot {
   isLiveUpdating: boolean
 }
 
-function formatMarkerPercent(value: number) {
-  return Math.round(value)
-}
-
 function renderPercentMarker(value: number) {
   return (
     <>
-      <span className="text-fg">{formatMarkerPercent(value)}</span>
+      <span className="text-fg">{Math.round(value)}</span>
       <span className="text-fg-secondary">%</span>
     </>
   )
@@ -54,7 +50,7 @@ function renderUsageMarker(usedMb: number | null, value: number) {
       <span className="text-fg">{normalizedUsedMb.toLocaleString()}</span>
       <span className="text-fg-secondary">MB</span>
       <span className="text-fg-tertiary px-0.75">·</span>
-      <span className="text-fg">{formatMarkerPercent(value)}</span>
+      <span className="text-fg">{Math.round(value)}</span>
       <span className="text-fg-secondary">%</span>
     </>
   )

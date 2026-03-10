@@ -95,6 +95,11 @@ export const SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY = 0.1
 export const SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY = 0.12
 export const SANDBOX_MONITORING_BYTES_IN_GIGABYTE = 1024 * 1024 * 1024
 
+export const SANDBOX_LIFECYCLE_EVENT_CREATED = 'sandbox.lifecycle.created'
+export const SANDBOX_LIFECYCLE_EVENT_PAUSED = 'sandbox.lifecycle.paused'
+export const SANDBOX_LIFECYCLE_EVENT_RESUMED = 'sandbox.lifecycle.resumed'
+export const SANDBOX_LIFECYCLE_EVENT_KILLED = 'sandbox.lifecycle.killed'
+
 export const SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS: Intl.DateTimeFormatOptions =
   {
     hour: '2-digit',

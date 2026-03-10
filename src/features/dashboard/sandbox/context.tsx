@@ -12,6 +12,7 @@ import type {
   SandboxEventDTO,
 } from '@/server/api/models/sandboxes.models'
 import { useTRPC } from '@/trpc/client'
+import { SANDBOX_LIFECYCLE_EVENT_KILLED } from './monitoring/utils/constants'
 
 export interface SandboxLifecycleState {
   createdAt: string | null
@@ -95,7 +96,7 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
           const isAwaitingKilledEvent =
             state === 'killed' &&
             !sandboxInfo?.lifecycle?.events?.some(
-              (e) => e.type === 'sandbox.lifecycle.killed'
+              (e) => e.type === SANDBOX_LIFECYCLE_EVENT_KILLED
             )
           const shouldPoll =
             state === 'running' || state === 'paused' || isAwaitingKilledEvent

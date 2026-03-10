@@ -960,11 +960,6 @@ function SandboxMetricsChart({
             ? line.markerValueFormatter({
                 value: closestPoint.value,
                 markerValue: closestPoint.markerValue,
-                point: [
-                  closestPoint.timestampMs,
-                  closestPoint.value,
-                  closestPoint.markerValue,
-                ],
               })
             : yAxisFormatter(closestPoint.value),
           dotColor: line.lineColorVar
