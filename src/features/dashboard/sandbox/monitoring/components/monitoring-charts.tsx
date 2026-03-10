@@ -32,6 +32,93 @@ interface ZoomResetSnapshot {
   isLiveUpdating: boolean
 }
 
+function useChartZoom(options: {
+  timeframe: { start: number; end: number }
+  isLiveUpdating: boolean
+  setTimeframe: (
+    start: number,
+    end: number,
+    opts?: { isLiveUpdating?: boolean }
+  ) => void
+  clearHover: () => void
+}) {
+  const { timeframe, isLiveUpdating, setTimeframe, clearHover } = options
+  const [zoomResetSnapshot, setZoomResetSnapshot] =
+    useState<ZoomResetSnapshot | null>(null)
+
+  const handleControlTimeRangeChange = useCallback(
+    (
+      startTimestamp: number,
+      endTimestamp: number,
+      rangeOptions?: { isLiveUpdating?: boolean }
+    ) => {
+      const nextLiveUpdating = rangeOptions?.isLiveUpdating ?? false
+
+      if (
+        startTimestamp === timeframe.start &&
+        endTimestamp === timeframe.end &&
+        nextLiveUpdating === isLiveUpdating
+      ) {
+        return
+      }
+
+      setZoomResetSnapshot(null)
+      clearHover()
+      setTimeframe(startTimestamp, endTimestamp, {
+        isLiveUpdating: nextLiveUpdating,
+      })
+    },
+    [clearHover, isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
+  )
+
+  const handleBrushTimeRangeChange = useCallback(
+    (startTimestamp: number, endTimestamp: number) => {
+      if (
+        startTimestamp === timeframe.start &&
+        endTimestamp === timeframe.end
+      ) {
+        return
+      }
+
+      setZoomResetSnapshot((previous) => {
+        if (previous) {
+          return previous
+        }
+
+        return {
+          start: timeframe.start,
+          end: timeframe.end,
+          isLiveUpdating,
+        }
+      })
+      clearHover()
+      setTimeframe(startTimestamp, endTimestamp, {
+        isLiveUpdating: false,
+      })
+    },
+    [clearHover, isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
+  )
+
+  const handleResetZoom = useCallback(() => {
+    if (!zoomResetSnapshot) {
+      return
+    }
+
+    clearHover()
+    setTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end, {
+      isLiveUpdating: zoomResetSnapshot.isLiveUpdating,
+    })
+    setZoomResetSnapshot(null)
+  }, [clearHover, setTimeframe, zoomResetSnapshot])
+
+  return {
+    canResetZoom: zoomResetSnapshot !== null,
+    handleControlTimeRangeChange,
+    handleBrushTimeRangeChange,
+    handleResetZoom,
+  }
+}
+
 function renderPercentMarker(value: number) {
   return (
     <>
@@ -72,75 +159,26 @@ export default function SandboxMetricsCharts({
   const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
     null
   )
-  const [zoomResetSnapshot, setZoomResetSnapshot] =
-    useState<ZoomResetSnapshot | null>(null)
   const [renderedTimeframe, setRenderedTimeframe] = useState(() => ({
     start: timeframe.start,
     end: timeframe.end,
   }))
 
-  const handleControlTimeRangeChange = useCallback(
-    (
-      startTimestamp: number,
-      endTimestamp: number,
-      options?: { isLiveUpdating?: boolean }
-    ) => {
-      const nextLiveUpdating = options?.isLiveUpdating ?? false
-
-      if (
-        startTimestamp === timeframe.start &&
-        endTimestamp === timeframe.end &&
-        nextLiveUpdating === isLiveUpdating
-      ) {
-        return
-      }
-
-      setZoomResetSnapshot(null)
-      setHoveredTimestampMs(null)
-      setTimeframe(startTimestamp, endTimestamp, {
-        isLiveUpdating: nextLiveUpdating,
-      })
-    },
-    [isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
-  )
-  const handleBrushTimeRangeChange = useCallback(
-    (startTimestamp: number, endTimestamp: number) => {
-      if (
-        startTimestamp === timeframe.start &&
-        endTimestamp === timeframe.end
-      ) {
-        return
-      }
-
-      setZoomResetSnapshot((previous) => {
-        if (previous) {
-          return previous
-        }
-
-        return {
-          start: timeframe.start,
-          end: timeframe.end,
-          isLiveUpdating,
-        }
-      })
-      setHoveredTimestampMs(null)
-      setTimeframe(startTimestamp, endTimestamp, {
-        isLiveUpdating: false,
-      })
-    },
-    [isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
-  )
-  const handleResetZoom = useCallback(() => {
-    if (!zoomResetSnapshot) {
-      return
-    }
-
+  const clearHover = useCallback(() => {
     setHoveredTimestampMs(null)
-    setTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end, {
-      isLiveUpdating: zoomResetSnapshot.isLiveUpdating,
-    })
-    setZoomResetSnapshot(null)
-  }, [setTimeframe, zoomResetSnapshot])
+  }, [])
+
+  const {
+    canResetZoom,
+    handleControlTimeRangeChange,
+    handleBrushTimeRangeChange,
+    handleResetZoom,
+  } = useChartZoom({
+    timeframe,
+    isLiveUpdating,
+    setTimeframe,
+    clearHover,
+  })
 
   const chartModel = useMemo(
     () =>
@@ -252,7 +290,7 @@ export default function SandboxMetricsCharts({
             isLiveUpdating={isLiveUpdating}
             onLiveChange={setLiveUpdating}
             onTimeRangeChange={handleControlTimeRangeChange}
-            canResetZoom={zoomResetSnapshot !== null}
+            canResetZoom={canResetZoom}
             onResetZoom={handleResetZoom}
           />
         </div>
