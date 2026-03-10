@@ -10,6 +10,10 @@ import type {
   SandboxMetricsSeries,
 } from '../types/sandbox-metrics-chart'
 import {
+  SANDBOX_LIFECYCLE_EVENT_CREATED,
+  SANDBOX_LIFECYCLE_EVENT_KILLED,
+  SANDBOX_LIFECYCLE_EVENT_PAUSED,
+  SANDBOX_LIFECYCLE_EVENT_RESUMED,
   SANDBOX_MONITORING_CPU_AREA_COLOR_VAR,
   SANDBOX_MONITORING_CPU_AREA_TO_COLOR_VAR,
   SANDBOX_MONITORING_CPU_LINE_COLOR_VAR,
@@ -25,10 +29,6 @@ import {
   SANDBOX_MONITORING_RAM_LINE_COLOR_VAR,
   SANDBOX_MONITORING_RAM_SERIES_ID,
   SANDBOX_MONITORING_RAM_SERIES_LABEL,
-  SANDBOX_LIFECYCLE_EVENT_CREATED,
-  SANDBOX_LIFECYCLE_EVENT_PAUSED,
-  SANDBOX_LIFECYCLE_EVENT_RESUMED,
-  SANDBOX_LIFECYCLE_EVENT_KILLED,
 } from './constants'
 import { calculateRatioPercent, clampPercent } from './formatters'
 import { parseDateTimestampMs } from './timeframe'
@@ -338,8 +338,7 @@ function buildLifecycleEventMarkers(
       type: event.type,
       label: eventStyle?.label ?? formatLifecycleEventTypeLabel(event.type),
       timestampMs,
-      colorVar:
-        eventStyle?.colorVar ?? EVENT_DEFAULT_COLOR_VAR,
+      colorVar: eventStyle?.colorVar ?? EVENT_DEFAULT_COLOR_VAR,
     })
   }
 

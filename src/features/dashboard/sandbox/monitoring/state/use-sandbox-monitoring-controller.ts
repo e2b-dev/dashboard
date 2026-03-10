@@ -9,14 +9,14 @@ import { getMsUntilNextAlignedInterval } from '@/lib/hooks/use-aligned-refetch-i
 import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import { useTRPCClient } from '@/trpc/client'
 import {
+  SANDBOX_LIFECYCLE_EVENT_KILLED,
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
+  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
   SANDBOX_MONITORING_LIVE_POLLING_MS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
   SANDBOX_MONITORING_MIN_RANGE_MS,
   SANDBOX_MONITORING_QUERY_LIVE_FALSE,
   SANDBOX_MONITORING_QUERY_LIVE_TRUE,
-  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-  SANDBOX_LIFECYCLE_EVENT_KILLED,
 } from '../utils/constants'
 import {
   clampTimeframeToBounds,
@@ -136,9 +136,8 @@ export function useSandboxMonitoringController(sandboxId: string) {
   // the backend so the chart can render the final data and event marker.
   const hasKilledEvent = useMemo(
     () =>
-      lifecycleEvents?.some(
-        (e) => e.type === SANDBOX_LIFECYCLE_EVENT_KILLED
-      ) ?? false,
+      lifecycleEvents?.some((e) => e.type === SANDBOX_LIFECYCLE_EVENT_KILLED) ??
+      false,
     [lifecycleEvents]
   )
   const isLifecycleSettled =
@@ -154,8 +153,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
   // When params are null (first visit or live mode), compute from defaults.
   const timeframe = useMemo(() => {
     const now = Date.now()
-    const start =
-      urlParams.start ?? now - SANDBOX_MONITORING_DEFAULT_RANGE_MS
+    const start = urlParams.start ?? now - SANDBOX_MONITORING_DEFAULT_RANGE_MS
     const end = urlParams.end ?? now
 
     const resolved = resolveTimeframe(start, end, now, lifecycleBounds)
@@ -193,11 +191,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
   }, [])
 
   const applyTimeframe = useCallback(
-    (
-      start: number,
-      end: number,
-      options?: { isLiveUpdating?: boolean }
-    ) => {
+    (start: number, end: number, options?: { isLiveUpdating?: boolean }) => {
       const now = Date.now()
       const resolved = resolveTimeframe(start, end, now, lifecycleBounds)
       const nextLive = isLifecycleSettled
@@ -267,12 +261,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
         window.clearTimeout(timeoutId)
       }
     }
-  }, [
-    applyTimeframe,
-    isLifecycleSettled,
-    isLiveUpdating,
-    lifecycleBounds,
-  ])
+  }, [applyTimeframe, isLifecycleSettled, isLiveUpdating, lifecycleBounds])
 
   const queryKey = useMemo(
     () =>
