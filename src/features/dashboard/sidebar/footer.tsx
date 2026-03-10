@@ -117,7 +117,7 @@ export default function DashboardSidebarFooter() {
                   >
                     <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
                     Support
-               </SidebarMenuButton>
+                  </SidebarMenuButton>
                 }
               />
             </SidebarMenuItem>
