@@ -18,6 +18,7 @@ function formatTierName(tier: string): string {
   const tierMap: Record<string, string> = {
     base_v1: 'Hobby',
     pro_v1: 'Pro',
+    pro_v1_startups_program: 'Pro-Startup',
   }
   return tierMap[tier] ?? tier
 }
