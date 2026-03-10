@@ -411,7 +411,7 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<'div'>) {
       data-sidebar="group"
       className={cn(
         'relative flex w-full min-w-0 flex-col px-3 pt-3 transition-all duration-100',
-        'group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:first:border-t-0 group-data-[collapsible=icon]:border-t group-data-[collapsible=icon]:border-stroke',
+        'group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pb-3 group-data-[collapsible=icon]:first:border-t-0 group-data-[collapsible=icon]:border-t group-data-[collapsible=icon]:border-stroke',
         className
       )}
       {...props}
@@ -433,7 +433,7 @@ function SidebarGroupLabel({
       className={cn(
         'text-fg-tertiary prose-label-highlight ring-ring flex shrink-0 items-start px-2 pb-1.5 uppercase outline-hidden focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         SIDEBAR_TRANSITION_CLASSNAMES,
-        'group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:h-0 duration-150',
+        'group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 duration-150',
         className
       )}
       {...props}

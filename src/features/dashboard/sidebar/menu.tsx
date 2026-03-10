@@ -30,7 +30,7 @@ export default function DashboardSidebarMenu() {
 
   return (
     <>
-      <SidebarMenuItem className="px-3 pb-2 group-data-[collapsible=icon]:p-2">
+      <SidebarMenuItem className="h-14 px-3 pb-2 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
@@ -40,7 +40,7 @@ export default function DashboardSidebarMenu() {
               <Avatar
                 className={cn(
                   'size-8 shrink-0 transition-all duration-100 ease-in-out',
-                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
+                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
                   {
                     'drop-shadow-sm filter': team.profile_picture_url,
                   }

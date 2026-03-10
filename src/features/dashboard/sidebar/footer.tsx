@@ -71,7 +71,7 @@ export default function DashboardSidebarFooter() {
                   <SidebarMenuButton
                     tooltip="Feedback"
                     className={cn(
-                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
+                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-[35px]! group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
@@ -99,7 +99,7 @@ export default function DashboardSidebarFooter() {
                   <SidebarMenuButton
                     tooltip="Report Issue"
                     className={cn(
-                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
+                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-[35px]! group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
