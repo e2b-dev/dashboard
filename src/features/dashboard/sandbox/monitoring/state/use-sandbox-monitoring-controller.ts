@@ -37,7 +37,7 @@ interface SandboxMonitoringTimeframe {
 const monitoringUrlParams = {
   start: parseAsInteger,
   end: parseAsInteger,
-  preset: parseAsString.withDefault(SANDBOX_MONITORING_DEFAULT_PRESET_ID),
+  preset: parseAsString,
 }
 
 function resolveTimeframe(
@@ -134,7 +134,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     !lifecycleBounds.isRunning &&
     (lifecycleState !== 'killed' || hasKilledEvent)
 
-  const activePresetId = urlParams.preset || null
+  const activePresetId = urlParams.preset ?? null
 
   const isLiveUpdating =
     !isLifecycleSettled &&
