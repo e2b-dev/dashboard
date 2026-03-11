@@ -26,6 +26,8 @@ export default function RanFor() {
 
   const calcRanFor = useCallback(() => {
     if (!startDate) return '-'
+    if (state === 'killed' && !endedDate) return 'N/A'
+
     const end =
       state === 'running'
         ? new Date()
