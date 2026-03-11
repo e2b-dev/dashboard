@@ -286,21 +286,23 @@ function SandboxMetricsChart({
       setChartRevision((v) => v + 1)
     })
 
-    chart.dispatchAction(
-      {
-        type: 'takeGlobalCursor',
-        key: 'brush',
-        brushOption: {
-          brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
-          brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+    if (!isMobile) {
+      chart.dispatchAction(
+        {
+          type: 'takeGlobalCursor',
+          key: 'brush',
+          brushOption: {
+            brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
+            brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+          },
         },
-      },
-      { flush: true }
-    )
+        { flush: true }
+      )
+    }
 
     chart.group = SANDBOX_MONITORING_CHART_GROUP
     echarts.connect(SANDBOX_MONITORING_CHART_GROUP)
-  }, [])
+  }, [isMobile])
 
   const option = useMemo<EChartsOption>(() => {
     const seriesItems: SeriesOption[] = series.flatMap((line) => {
@@ -436,14 +438,18 @@ function SandboxMetricsChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
-      brush: {
-        brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
-        brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
-        xAxisIndex: 0,
-        brushLink: 'all',
-        brushStyle: { borderWidth: SANDBOX_MONITORING_CHART_LINE_WIDTH },
-        outOfBrush: { colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA },
-      },
+      brush: isMobile
+        ? undefined
+        : {
+            brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
+            brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+            xAxisIndex: 0,
+            brushLink: 'all',
+            brushStyle: { borderWidth: SANDBOX_MONITORING_CHART_LINE_WIDTH },
+            outOfBrush: {
+              colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA,
+            },
+          },
       grid: {
         top: grid.top,
         bottom: grid.bottom,
@@ -511,6 +517,7 @@ function SandboxMetricsChart({
     fgTertiary,
     fontMono,
     grid,
+    isMobile,
     isLiveUpdating,
     series,
     showXAxisLabels,
