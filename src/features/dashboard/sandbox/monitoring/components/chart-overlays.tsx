@@ -1,10 +1,6 @@
+import { PowerIcon, SquareIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  AddIcon,
-  BlockIcon,
-  PausedIcon,
-  RunningIcon,
-} from '@/ui/primitives/icons'
+import { type AddIcon, PausedIcon, RunningIcon } from '@/ui/primitives/icons'
 import { withOpacity } from '../utils/chart-colors'
 import type {
   CrosshairMarker,
@@ -22,11 +18,14 @@ import {
 } from '../utils/constants'
 import { formatHoverTimestamp } from '../utils/formatters'
 
-const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof AddIcon> = {
-  [SANDBOX_LIFECYCLE_EVENT_CREATED]: AddIcon,
+const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<
+  string,
+  typeof AddIcon | typeof PowerIcon
+> = {
+  [SANDBOX_LIFECYCLE_EVENT_CREATED]: PowerIcon,
   [SANDBOX_LIFECYCLE_EVENT_PAUSED]: PausedIcon,
   [SANDBOX_LIFECYCLE_EVENT_RESUMED]: RunningIcon,
-  [SANDBOX_LIFECYCLE_EVENT_KILLED]: BlockIcon,
+  [SANDBOX_LIFECYCLE_EVENT_KILLED]: SquareIcon,
 }
 
 function LifecycleEventOverlayGroup({
