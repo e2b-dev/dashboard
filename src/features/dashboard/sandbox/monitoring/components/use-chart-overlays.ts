@@ -283,7 +283,6 @@ export function useChartOverlays({
     cssVars,
     fg,
     lifecycleEventMarkers,
-    chartInstanceRef.current,
     isMobile,
   ])
 
