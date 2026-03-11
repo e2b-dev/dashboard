@@ -2046,7 +2046,7 @@ export interface paths {
             [name: string]: unknown
           }
           content: {
-            'application/json': components['schemas']['Volume']
+            'application/json': components['schemas']['VolumeAndToken']
           }
         }
         400: components['responses']['400']
@@ -2085,7 +2085,7 @@ export interface paths {
             [name: string]: unknown
           }
           content: {
-            'application/json': components['schemas']['Volume']
+            'application/json': components['schemas']['VolumeAndToken']
           }
         }
         401: components['responses']['401']
@@ -2353,7 +2353,7 @@ export interface components {
       diskSizeMB: components['schemas']['DiskSizeMB']
       metadata?: components['schemas']['SandboxMetadata']
       state: components['schemas']['SandboxState']
-      volumeMounts: components['schemas']['SandboxVolumeMount'][]
+      volumeMounts?: components['schemas']['SandboxVolumeMount'][]
     }
     ListedSandbox: {
       /** @description Identifier of the template from which is the sandbox created */
@@ -2383,7 +2383,7 @@ export interface components {
       metadata?: components['schemas']['SandboxMetadata']
       state: components['schemas']['SandboxState']
       envdVersion: components['schemas']['EnvdVersion']
-      volumeMounts: components['schemas']['SandboxVolumeMount'][]
+      volumeMounts?: components['schemas']['SandboxVolumeMount'][]
     }
     SandboxesWithMetrics: {
       sandboxes: {
@@ -2486,6 +2486,9 @@ export interface components {
       cancelledCount: number
       /** @description Number of builds that failed to cancel */
       failedCount: number
+    }
+    VolumeToken: {
+      token: string
     }
     Template: {
       /** @description Identifier of the template */
@@ -3125,6 +3128,14 @@ export interface components {
       volumeID: string
       /** @description Name of the volume */
       name: string
+    }
+    VolumeAndToken: {
+      /** @description ID of the volume */
+      volumeID: string
+      /** @description Name of the volume */
+      name: string
+      /** @description Auth token to use for interacting with volume content */
+      token: string
     }
     NewVolume: {
       /** @description Name of the volume */
