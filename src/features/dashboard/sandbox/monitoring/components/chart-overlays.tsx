@@ -89,14 +89,14 @@ function LifecycleEventOverlayGroup({
                 }}
               >
                 <div className="relative -translate-x-1/2">
-                  <div className="flex items-center justify-center p-1">
+                  <div className="bg-bg flex items-center justify-center p-1">
                     {IconComponent ? (
                       <IconComponent className="size-3" />
                     ) : null}
                   </div>
                   <div
                     className={cn(
-                      'absolute top-0 flex h-full items-center overflow-hidden transition-[max-width] duration-200 ease-out',
+                      'bg-bg absolute top-0 flex h-full items-center overflow-hidden rounded transition-[max-width] duration-200 ease-out',
                       'max-w-0 group-hover/event:max-w-60',
                       eventOverlay.alignRight
                         ? 'right-full justify-end'
