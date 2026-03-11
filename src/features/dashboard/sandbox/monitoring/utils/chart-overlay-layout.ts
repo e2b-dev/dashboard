@@ -94,10 +94,9 @@ export function applyMarkerLabelOffsets(
   }))
 }
 
-export function estimateLifecycleEventLabelWidthPx(): number {
-  // Collapsed state is icon-only: icon size + padding (p-1 = 4px each side) + border (1px each side)
-  return SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE + 8 + 2
-}
+// Collapsed state is icon-only: icon size + padding (p-1 = 4px each side) + border (1px each side)
+export const LIFECYCLE_EVENT_LABEL_WIDTH_PX =
+  SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE + 8 + 2
 
 function doLifecycleEventLabelsOverlap(
   left: LifecycleEventOverlayLayout,

@@ -16,14 +16,12 @@ import * as echarts from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCssVars } from '@/lib/hooks/use-css-vars'
+import { cn } from '@/lib/utils'
+import { calculateAxisMax } from '@/lib/utils/chart'
+import { formatAxisNumber } from '@/lib/utils/formatting'
+import type { SandboxMetricsChartProps } from '../types/sandbox-metrics-chart'
 import { normalizeOpacity } from '../utils/chart-colors'
 import {
   findLivePoint,
@@ -53,14 +51,6 @@ import {
   SANDBOX_MONITORING_CHART_STROKE_VAR,
   SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR,
 } from '../utils/constants'
-import { useCssVars } from '@/lib/hooks/use-css-vars'
-import { cn } from '@/lib/utils'
-import { calculateAxisMax } from '@/lib/utils/chart'
-import { formatAxisNumber } from '@/lib/utils/formatting'
-import type {
-  SandboxMetricsChartProps,
-  SandboxMetricsDataPoint,
-} from '../types/sandbox-metrics-chart'
 import { ChartOverlayLayer } from './chart-overlays'
 import { useChartOverlays } from './use-chart-overlays'
 
@@ -208,7 +198,6 @@ function SandboxMetricsChart({
   const fgTertiary =
     cssVars[SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY
-  const fg = cssVars[SANDBOX_MONITORING_CHART_FG_VAR] || stroke
   const axisPointerColor = stroke
   const fontMono =
     cssVars[SANDBOX_MONITORING_CHART_FONT_MONO_VAR] ||
@@ -492,6 +481,7 @@ function SandboxMetricsChart({
     fgTertiary,
     fontMono,
     grid,
+    isLiveUpdating,
     series,
     showXAxisLabels,
     stroke,
@@ -500,18 +490,30 @@ function SandboxMetricsChart({
     yAxisFormatter,
   ])
 
+  // echarts-for-react uses merge mode (notMerge: false) by default, which
+  // keeps stale series whose IDs are absent from the new option. We follow
+  // up with replaceMerge for the series array only — this removes stale
+  // connector/segment series without resetting brush or axis pointer state.
+  // We do NOT bump chartRevision here — convertToPixel only returns correct
+  // values after ECharts' internal render completes and fires the `finished`
+  // event (registered in handleChartReady).
   useEffect(() => {
     const chart = chartInstanceRef.current
     if (!chart || chart.isDisposed()) {
       return
     }
 
-    // echarts-for-react uses merge mode (notMerge: false) by default, which
-    // keeps stale series whose IDs are absent from the new option. We follow
-    // up with replaceMerge for the series array only — this removes stale
-    // connector/segment series without resetting brush or axis pointer state.
     chart.setOption({ series: option.series }, { replaceMerge: ['series'] })
   }, [option])
+
+  const onEvents = useMemo(
+    () => ({
+      globalout: handleHoverLeave,
+      brushEnd: handleBrushEnd,
+      updateAxisPointer: handleUpdateAxisPointer,
+    }),
+    [handleHoverLeave, handleBrushEnd, handleUpdateAxisPointer]
+  )
 
   const { crosshairMarkers, xAxisHoverBadge, lifecycleEventOverlays } =
     useChartOverlays({
@@ -521,11 +523,8 @@ function SandboxMetricsChart({
       lifecycleEventMarkers,
       hoveredTimestampMs,
       showXAxisLabels,
-      showEventLabels,
       computedYAxisMax,
       cssVars,
-      stroke,
-      fg,
       yAxisFormatter,
     })
 
@@ -538,11 +537,7 @@ function SandboxMetricsChart({
         style={{ width: '100%', height: '100%' }}
         onChartReady={handleChartReady}
         className="h-full w-full"
-        onEvents={{
-          globalout: handleHoverLeave,
-          brushEnd: handleBrushEnd,
-          updateAxisPointer: handleUpdateAxisPointer,
-        }}
+        onEvents={onEvents}
       />
       <ChartOverlayLayer
         lifecycleEventOverlays={lifecycleEventOverlays}

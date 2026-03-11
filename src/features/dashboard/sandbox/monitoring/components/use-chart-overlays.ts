@@ -17,12 +17,40 @@ import type {
 import {
   applyLifecycleEventLabelOffsets,
   applyMarkerLabelOffsets,
-  estimateLifecycleEventLabelWidthPx,
+  LIFECYCLE_EVENT_LABEL_WIDTH_PX,
 } from '../utils/chart-overlay-layout'
 import {
   SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
+  SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
+  SANDBOX_MONITORING_CHART_FG_VAR,
   SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX,
+  SANDBOX_MONITORING_CHART_STROKE_VAR,
 } from '../utils/constants'
+
+const ECHARTS_COORD_INDEX = { xAxisIndex: 0, yAxisIndex: 0 }
+
+function safeConvertToPixel(
+  chart: echarts.ECharts,
+  coords: [number, number]
+): [number, number] | null {
+  const pixel = chart.convertToPixel(ECHARTS_COORD_INDEX, coords)
+  if (!Array.isArray(pixel) || pixel.length < 2) {
+    return null
+  }
+
+  const x = pixel[0]
+  const y = pixel[1]
+  if (
+    typeof x !== 'number' ||
+    typeof y !== 'number' ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y)
+  ) {
+    return null
+  }
+
+  return [x, y]
+}
 
 interface UseChartOverlaysOptions {
   chartInstanceRef: RefObject<echarts.ECharts | null>
@@ -31,11 +59,8 @@ interface UseChartOverlaysOptions {
   lifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
   hoveredTimestampMs: number | null
   showXAxisLabels: boolean
-  showEventLabels: boolean
   computedYAxisMax: number
   cssVars: Record<string, string>
-  stroke: string
-  fg: string
   yAxisFormatter: (value: number) => string
 }
 
@@ -54,10 +79,37 @@ export function useChartOverlays({
   showXAxisLabels,
   computedYAxisMax,
   cssVars,
-  stroke,
-  fg,
   yAxisFormatter,
 }: UseChartOverlaysOptions): UseChartOverlaysResult {
+  'use no memo'
+
+  const stroke =
+    cssVars[SANDBOX_MONITORING_CHART_STROKE_VAR] ||
+    SANDBOX_MONITORING_CHART_FALLBACK_STROKE
+  const fg = cssVars[SANDBOX_MONITORING_CHART_FG_VAR] || stroke
+
+  const firstPointPx = useMemo(() => {
+    void chartRevision
+
+    const chart = chartInstanceRef.current
+    if (!chart || chart.isDisposed()) {
+      return null
+    }
+
+    const firstTimestamps = series
+      .map((line) => findFirstValidPointTimestampMs(line.data))
+      .filter((value): value is number => value !== null)
+    const firstTimestampMs =
+      firstTimestamps.length > 0 ? Math.min(...firstTimestamps) : null
+
+    if (firstTimestampMs === null) {
+      return null
+    }
+
+    const pixel = safeConvertToPixel(chart, [firstTimestampMs, 0])
+    return pixel ? pixel[0] : null
+  }, [chartRevision, series])
+
   const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
     void chartRevision
 
@@ -70,50 +122,21 @@ export function useChartOverlays({
       return []
     }
 
-    const firstTimestamps = series
-      .map((line) => findFirstValidPointTimestampMs(line.data))
-      .filter((value): value is number => value !== null)
-    const firstTimestampMs =
-      firstTimestamps.length > 0 ? Math.min(...firstTimestamps) : null
-    const firstPointPixel =
-      firstTimestampMs !== null
-        ? chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
-            firstTimestampMs,
-            0,
-          ])
-        : null
-    const firstPointPx =
-      Array.isArray(firstPointPixel) &&
-      firstPointPixel.length > 0 &&
-      typeof firstPointPixel[0] === 'number' &&
-      Number.isFinite(firstPointPixel[0])
-        ? firstPointPixel[0]
-        : null
-
     const markers = series.flatMap((line) => {
       const closestPoint = findClosestValidPoint(line.data, hoveredTimestampMs)
       if (!closestPoint) {
         return []
       }
 
-      const pixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+      const pixel = safeConvertToPixel(chart, [
         closestPoint.timestampMs,
         closestPoint.value,
       ])
-      if (!Array.isArray(pixel) || pixel.length < 2) {
+      if (!pixel) {
         return []
       }
 
-      const xPx = pixel[0]
-      const yPx = pixel[1]
-      if (
-        typeof xPx !== 'number' ||
-        typeof yPx !== 'number' ||
-        !Number.isFinite(xPx) ||
-        !Number.isFinite(yPx)
-      ) {
-        return []
-      }
+      const [xPx, yPx] = pixel
 
       return [
         {
@@ -142,6 +165,7 @@ export function useChartOverlays({
   }, [
     chartRevision,
     cssVars,
+    firstPointPx,
     hoveredTimestampMs,
     series,
     stroke,
@@ -160,21 +184,13 @@ export function useChartOverlays({
       return null
     }
 
-    const pixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
-      hoveredTimestampMs,
-      0,
-    ])
-    if (!Array.isArray(pixel) || pixel.length < 1) {
-      return null
-    }
-
-    const xPx = pixel[0]
-    if (typeof xPx !== 'number' || !Number.isFinite(xPx)) {
+    const pixel = safeConvertToPixel(chart, [hoveredTimestampMs, 0])
+    if (!pixel) {
       return null
     }
 
     return {
-      xPx,
+      xPx: pixel[0],
       label: formatXAxisLabel(hoveredTimestampMs, true),
     }
   }, [chartRevision, hoveredTimestampMs, showXAxisLabels])
@@ -195,41 +211,19 @@ export function useChartOverlays({
     const midpointPx = chartWidth / 2
 
     const baseOverlays = lifecycleEventMarkers.flatMap((event) => {
-      const topPixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+      const topPixel = safeConvertToPixel(chart, [
         event.timestampMs,
         computedYAxisMax,
       ])
-      const bottomPixel = chart.convertToPixel(
-        { xAxisIndex: 0, yAxisIndex: 0 },
-        [event.timestampMs, 0]
-      )
-      if (
-        !Array.isArray(topPixel) ||
-        !Array.isArray(bottomPixel) ||
-        topPixel.length < 2 ||
-        bottomPixel.length < 2
-      ) {
+      const bottomPixel = safeConvertToPixel(chart, [event.timestampMs, 0])
+      if (!topPixel || !bottomPixel) {
         return []
       }
 
       const xPx = topPixel[0]
-      const topValuePx = topPixel[1]
-      const bottomValuePx = bottomPixel[1]
-      if (
-        typeof xPx !== 'number' ||
-        typeof topValuePx !== 'number' ||
-        typeof bottomValuePx !== 'number' ||
-        !Number.isFinite(xPx) ||
-        !Number.isFinite(topValuePx) ||
-        !Number.isFinite(bottomValuePx)
-      ) {
-        return []
-      }
-
-      const anchorTopPx = Math.min(topValuePx, bottomValuePx)
+      const anchorTopPx = Math.min(topPixel[1], bottomPixel[1])
       const baseLabelTopPx = SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX
       const color = cssVars[event.colorVar] ?? fg
-      const labelXPx = xPx
 
       if (!Number.isFinite(anchorTopPx)) {
         return []
@@ -241,13 +235,13 @@ export function useChartOverlays({
           type: event.type,
           xPx,
           anchorTopPx,
-          bottomPx: bottomValuePx,
+          bottomPx: bottomPixel[1],
           label: event.label,
           timestampMs: event.timestampMs,
-          labelXPx,
+          labelXPx: xPx,
           baseLabelTopPx,
           labelTopPx: baseLabelTopPx,
-          estimatedLabelWidthPx: estimateLifecycleEventLabelWidthPx(),
+          estimatedLabelWidthPx: LIFECYCLE_EVENT_LABEL_WIDTH_PX,
           color,
           alignRight: xPx > midpointPx,
         } satisfies LifecycleEventOverlayLayout,

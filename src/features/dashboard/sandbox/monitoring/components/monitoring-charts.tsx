@@ -40,9 +40,10 @@ function useChartZoom(options: {
     end: number,
     opts?: { isLiveUpdating?: boolean }
   ) => void
-  clearHover: () => void
+  setHoveredTimestampMs: (value: number | null) => void
 }) {
-  const { timeframe, isLiveUpdating, setTimeframe, clearHover } = options
+  const { timeframe, isLiveUpdating, setTimeframe, setHoveredTimestampMs } =
+    options
   const [zoomResetSnapshot, setZoomResetSnapshot] =
     useState<ZoomResetSnapshot | null>(null)
 
@@ -63,12 +64,18 @@ function useChartZoom(options: {
       }
 
       setZoomResetSnapshot(null)
-      clearHover()
+      setHoveredTimestampMs(null)
       setTimeframe(startTimestamp, endTimestamp, {
         isLiveUpdating: nextLiveUpdating,
       })
     },
-    [clearHover, isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
+    [
+      isLiveUpdating,
+      setHoveredTimestampMs,
+      setTimeframe,
+      timeframe.end,
+      timeframe.start,
+    ]
   )
 
   const handleBrushTimeRangeChange = useCallback(
@@ -91,12 +98,18 @@ function useChartZoom(options: {
           isLiveUpdating,
         }
       })
-      clearHover()
+      setHoveredTimestampMs(null)
       setTimeframe(startTimestamp, endTimestamp, {
         isLiveUpdating: false,
       })
     },
-    [clearHover, isLiveUpdating, setTimeframe, timeframe.end, timeframe.start]
+    [
+      isLiveUpdating,
+      setHoveredTimestampMs,
+      setTimeframe,
+      timeframe.end,
+      timeframe.start,
+    ]
   )
 
   const handleResetZoom = useCallback(() => {
@@ -104,12 +117,12 @@ function useChartZoom(options: {
       return
     }
 
-    clearHover()
+    setHoveredTimestampMs(null)
     setTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end, {
       isLiveUpdating: zoomResetSnapshot.isLiveUpdating,
     })
     setZoomResetSnapshot(null)
-  }, [clearHover, setTimeframe, zoomResetSnapshot])
+  }, [setHoveredTimestampMs, setTimeframe, zoomResetSnapshot])
 
   return {
     canResetZoom: zoomResetSnapshot !== null,
@@ -143,6 +156,9 @@ function renderUsageMarker(usedMb: number | null, value: number) {
   )
 }
 
+const RESOURCE_CHART_GRID = { top: 42, bottom: 42, left: 64, right: 42 }
+const DISK_CHART_GRID = { top: 36, bottom: 40, left: 64, right: 42 }
+
 export default function SandboxMetricsCharts({
   sandboxId,
 }: SandboxMetricsChartsProps) {
@@ -164,10 +180,6 @@ export default function SandboxMetricsCharts({
     end: timeframe.end,
   }))
 
-  const clearHover = useCallback(() => {
-    setHoveredTimestampMs(null)
-  }, [])
-
   const {
     canResetZoom,
     handleControlTimeRangeChange,
@@ -177,7 +189,7 @@ export default function SandboxMetricsCharts({
     timeframe,
     isLiveUpdating,
     setTimeframe,
-    clearHover,
+    setHoveredTimestampMs,
   })
 
   const chartModel = useMemo(
@@ -311,7 +323,7 @@ export default function SandboxMetricsCharts({
           isLiveUpdating={isLiveUpdating}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
-          grid={{ top: 42, bottom: 42, left: 64, right: 42 }}
+          grid={RESOURCE_CHART_GRID}
           xAxisMin={renderedTimeframe.start}
           xAxisMax={renderedTimeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
@@ -342,7 +354,7 @@ export default function SandboxMetricsCharts({
           isLiveUpdating={isLiveUpdating}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
-          grid={{ top: 36, bottom: 40, left: 64, right: 42 }}
+          grid={DISK_CHART_GRID}
           xAxisMin={renderedTimeframe.start}
           xAxisMax={renderedTimeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}

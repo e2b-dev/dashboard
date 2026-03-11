@@ -1,24 +1,28 @@
 import { Pause, Play, Plus, Square } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { withOpacity } from '../utils/chart-colors'
-import { formatEventTimestamp } from '../utils/chart-data-utils'
 import type {
   CrosshairMarker,
   LifecycleEventOverlay,
 } from '../utils/chart-overlay-layout'
 import {
+  SANDBOX_LIFECYCLE_EVENT_CREATED,
+  SANDBOX_LIFECYCLE_EVENT_KILLED,
+  SANDBOX_LIFECYCLE_EVENT_PAUSED,
+  SANDBOX_LIFECYCLE_EVENT_RESUMED,
   SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE,
   SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY,
   SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY,
 } from '../utils/constants'
-import { cn } from '@/lib/utils'
+import { formatHoverTimestamp } from '../utils/formatters'
 
 const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof Plus> = {
-  'sandbox.lifecycle.created': Plus,
-  'sandbox.lifecycle.paused': Pause,
-  'sandbox.lifecycle.resumed': Play,
-  'sandbox.lifecycle.killed': Square,
+  [SANDBOX_LIFECYCLE_EVENT_CREATED]: Plus,
+  [SANDBOX_LIFECYCLE_EVENT_PAUSED]: Pause,
+  [SANDBOX_LIFECYCLE_EVENT_RESUMED]: Play,
+  [SANDBOX_LIFECYCLE_EVENT_KILLED]: Square,
 }
 
 function LifecycleEventOverlayGroup({
@@ -28,6 +32,8 @@ function LifecycleEventOverlayGroup({
   overlays: LifecycleEventOverlay[]
   showEventLabels: boolean
 }) {
+  'use no memo'
+
   return (
     <>
       {overlays.map((eventOverlay) => {
@@ -107,7 +113,7 @@ function LifecycleEventOverlayGroup({
                         {eventOverlay.label}
                       </span>
                       <span className="prose-label-numeric font-mono text-current/60">
-                        {formatEventTimestamp(eventOverlay.timestampMs)}
+                        {formatHoverTimestamp(eventOverlay.timestampMs)}
                       </span>
                     </div>
                   </div>
@@ -122,6 +128,8 @@ function LifecycleEventOverlayGroup({
 }
 
 function CrosshairMarkerGroup({ markers }: { markers: CrosshairMarker[] }) {
+  'use no memo'
+
   return (
     <>
       {markers.map((marker) => (
@@ -170,6 +178,8 @@ function XAxisHoverBadge({
   badge: { xPx: number; label: string }
   axisPointerColor: string
 }) {
+  'use no memo'
+
   return (
     <div
       className="prose-label-numeric bg-bg/60 font-mono absolute bottom-4 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
@@ -197,6 +207,8 @@ export function ChartOverlayLayer({
   showEventLabels: boolean
   axisPointerColor: string
 }) {
+  'use no memo'
+
   const showOverlay =
     lifecycleEventOverlays.length > 0 ||
     crosshairMarkers.length > 0 ||

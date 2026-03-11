@@ -1,5 +1,7 @@
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
-import type { SandboxEventDTO } from '@/server/api/models/sandboxes.models'
+import type {
+  SandboxEventDTO,
+  SandboxMetric,
+} from '@/server/api/models/sandboxes.models'
 import type { MonitoringChartModel } from '../types/sandbox-metrics-chart'
 import {
   applyPauseWindows,
@@ -7,10 +9,10 @@ import {
   buildLifecycleEventMarkers,
 } from './chart-lifecycle'
 import {
-  type NormalizedSandboxMetric,
   buildDiskSeries,
   buildResourceSeries,
   findClosestMetric,
+  type NormalizedSandboxMetric,
   normalizeMetric,
   sortMetricsByTimestamp,
 } from './chart-metrics'
