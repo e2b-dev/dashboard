@@ -12,89 +12,20 @@ import {
   SANDBOX_LIFECYCLE_EVENT_KILLED,
   SANDBOX_MONITORING_DEFAULT_PRESET_ID,
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
-  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
   SANDBOX_MONITORING_LIVE_POLLING_MS,
-  SANDBOX_MONITORING_MAX_RANGE_MS,
-  SANDBOX_MONITORING_MIN_RANGE_MS,
   SANDBOX_MONITORING_OVERFETCH_MIN_MS,
   SANDBOX_MONITORING_OVERFETCH_RATIO,
 } from '../utils/constants'
+import { findPresetById, getMonitoringPresets } from '../utils/presets'
 import {
-  findPresetById,
-  getMonitoringPresets,
-  isLiveEligiblePreset,
-} from '../utils/presets'
-import {
-  clampTimeframeToBounds,
   getSandboxLifecycleBounds,
-  normalizeMonitoringTimeframe,
   type SandboxLifecycleBounds,
 } from '../utils/timeframe'
-
-interface SandboxMonitoringTimeframe {
-  start: number
-  end: number
-}
 
 const monitoringUrlParams = {
   start: parseAsInteger,
   end: parseAsInteger,
   preset: parseAsString,
-}
-
-function resolveTimeframe(
-  start: number,
-  end: number,
-  now: number,
-  lifecycleBounds: SandboxLifecycleBounds | null
-): SandboxMonitoringTimeframe {
-  const normalized = normalizeMonitoringTimeframe({
-    start,
-    end,
-    now: now + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-    minRangeMs: SANDBOX_MONITORING_MIN_RANGE_MS,
-    maxRangeMs: SANDBOX_MONITORING_MAX_RANGE_MS,
-  })
-
-  if (!lifecycleBounds) {
-    return { start: normalized.start, end: normalized.end }
-  }
-
-  const maxBoundMs = lifecycleBounds.isRunning
-    ? now
-    : lifecycleBounds.anchorEndMs
-  const clamped = clampTimeframeToBounds(
-    normalized.start,
-    normalized.end,
-    lifecycleBounds.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-    maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-  )
-
-  return { start: clamped.start, end: clamped.end }
-}
-
-function applyLifecyclePadding(
-  timeframe: SandboxMonitoringTimeframe,
-  lifecycleBounds: SandboxLifecycleBounds | null,
-  now: number
-): SandboxMonitoringTimeframe {
-  if (!lifecycleBounds) {
-    return timeframe
-  }
-
-  let { start, end } = timeframe
-  const maxBoundMs = lifecycleBounds.isRunning
-    ? now
-    : lifecycleBounds.anchorEndMs
-
-  if (start <= lifecycleBounds.startMs) {
-    start = lifecycleBounds.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-  }
-  if (end >= maxBoundMs) {
-    end = maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-  }
-
-  return { start, end }
 }
 
 export function useSandboxMonitoringController(sandboxId: string) {
@@ -138,12 +69,6 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   const activePresetId = urlParams.preset ?? null
 
-  const isLiveUpdating =
-    !isLifecycleSettled &&
-    activePresetId !== null &&
-    isLiveEligiblePreset(activePresetId) &&
-    (lifecycleBounds?.isRunning ?? false)
-
   // Derive the effective timeframe from URL params or active preset.
   const timeframe = useMemo(() => {
     const now = Date.now()
@@ -152,17 +77,20 @@ export function useSandboxMonitoringController(sandboxId: string) {
       const presets = getMonitoringPresets(lifecycleBounds)
       const preset = findPresetById(presets, activePresetId)
       if (preset) {
-        const { start, end } = preset.getValue()
-        return applyLifecyclePadding({ start, end }, lifecycleBounds, now)
+        return preset.getValue()
       }
     }
 
     const start = urlParams.start ?? now - SANDBOX_MONITORING_DEFAULT_RANGE_MS
     const end = urlParams.end ?? now
 
-    const resolved = resolveTimeframe(start, end, now, lifecycleBounds)
-    return applyLifecyclePadding(resolved, lifecycleBounds, now)
+    return { start, end }
   }, [urlParams.start, urlParams.end, activePresetId, lifecycleBounds])
+
+  const isPolling =
+    !isLifecycleSettled &&
+    (lifecycleBounds?.isRunning ?? false) &&
+    timeframe.end + SANDBOX_MONITORING_OVERFETCH_MIN_MS >= Date.now()
 
   const fetchTimeframe = useMemo(() => {
     const duration = timeframe.end - timeframe.start
@@ -221,21 +149,18 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   const setCustomTimeframe = useCallback(
     (start: number, end: number) => {
-      const now = Date.now()
-      const resolved = resolveTimeframe(start, end, now, lifecycleBounds)
-
       setUrlParams({
         preset: null,
-        start: resolved.start,
-        end: resolved.end,
+        start,
+        end,
       })
     },
-    [lifecycleBounds, setUrlParams]
+    [setUrlParams]
   )
 
   // Live polling tick
   useEffect(() => {
-    if (!isLiveUpdating || isLifecycleSettled || !activePresetId) {
+    if (!isPolling || isLifecycleSettled || !activePresetId) {
       return
     }
 
@@ -277,7 +202,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
   }, [
     activePresetId,
     isLifecycleSettled,
-    isLiveUpdating,
+    isPolling,
     lifecycleBounds,
     setUrlParams,
   ])
@@ -298,9 +223,10 @@ export function useSandboxMonitoringController(sandboxId: string) {
     queryKey,
     enabled: Boolean(team?.id),
     placeholderData: keepPreviousData,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: !isLifecycleSettled,
     refetchOnReconnect: false,
     staleTime: SANDBOX_MONITORING_LIVE_POLLING_MS,
+    refetchInterval: isPolling ? SANDBOX_MONITORING_LIVE_POLLING_MS : false,
     queryFn: async () => {
       if (!team?.id) {
         return []
@@ -321,7 +247,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     timeframe,
     fetchTimeframe,
     metrics: metricsQuery.data ?? [],
-    isLiveUpdating,
+    isPolling,
     isRefetching: metricsQuery.isFetching,
     activePresetId,
     setPreset,

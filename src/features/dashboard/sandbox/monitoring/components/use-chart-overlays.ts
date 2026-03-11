@@ -59,6 +59,8 @@ interface UseChartOverlaysOptions {
   series: SandboxMetricsSeries[]
   lifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
   hoveredTimestampMs: number | null
+  xAxisMin?: number
+  xAxisMax?: number
   showXAxisLabels: boolean
   isMobile: boolean
   computedYAxisMax: number
@@ -78,6 +80,8 @@ export function useChartOverlays({
   series,
   lifecycleEventMarkers,
   hoveredTimestampMs,
+  xAxisMin,
+  xAxisMax,
   showXAxisLabels,
   isMobile,
   computedYAxisMax,
@@ -131,6 +135,13 @@ export function useChartOverlays({
         return []
       }
 
+      if (
+        (xAxisMin !== undefined && closestPoint.timestampMs < xAxisMin) ||
+        (xAxisMax !== undefined && closestPoint.timestampMs > xAxisMax)
+      ) {
+        return []
+      }
+
       const pixel = safeConvertToPixel(chart, [
         closestPoint.timestampMs,
         closestPoint.value,
@@ -172,6 +183,8 @@ export function useChartOverlays({
     hoveredTimestampMs,
     series,
     stroke,
+    xAxisMax,
+    xAxisMin,
     yAxisFormatter,
   ])
 

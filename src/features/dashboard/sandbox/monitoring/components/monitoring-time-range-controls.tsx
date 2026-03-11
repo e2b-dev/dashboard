@@ -16,14 +16,12 @@ import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
+  SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS,
   SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from '../utils/constants'
 import { findPresetById, getMonitoringPresets } from '../utils/presets'
-import {
-  clampTimeframeToBounds,
-  type SandboxLifecycleBounds,
-} from '../utils/timeframe'
+import type { SandboxLifecycleBounds } from '../utils/timeframe'
 
 function isValidDate(date: Date): boolean {
   return Number.isFinite(date.getTime())
@@ -52,7 +50,7 @@ interface SandboxMonitoringTimeRangeControlsProps {
     end: number
   }
   lifecycle: SandboxLifecycleBounds
-  isLiveUpdating: boolean
+  isPolling: boolean
   activePresetId: string | null
   onPresetSelect: (id: string) => void
   onCustomTimeRange: (start: number, end: number) => void
@@ -64,7 +62,7 @@ interface SandboxMonitoringTimeRangeControlsProps {
 export default function SandboxMonitoringTimeRangeControls({
   timeframe,
   lifecycle,
-  isLiveUpdating,
+  isPolling,
   activePresetId,
   onPresetSelect,
   onCustomTimeRange,
@@ -75,21 +73,6 @@ export default function SandboxMonitoringTimeRangeControls({
   const [isOpen, setIsOpen] = useState(false)
   const [pickerMaxDateMs, setPickerMaxDateMs] = useState(() => Date.now())
 
-  const clampToLifecycle = useCallback(
-    (start: number, end: number) => {
-      const maxBoundMs = lifecycle.isRunning
-        ? Date.now()
-        : lifecycle.anchorEndMs
-
-      return clampTimeframeToBounds(
-        start,
-        end,
-        lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-        maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-      )
-    },
-    [lifecycle.anchorEndMs, lifecycle.isRunning, lifecycle.startMs]
-  )
 
   const presets = useMemo<TimeRangePreset[]>(
     () => getMonitoringPresets(lifecycle),
@@ -125,9 +108,15 @@ export default function SandboxMonitoringTimeRangeControls({
   const pickerMaxDate = useMemo(
     () =>
       lifecycle.isRunning
-        ? new Date(pickerMaxDateMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS)
+        ? new Date(
+            pickerMaxDateMs +
+              SANDBOX_MONITORING_LIFECYCLE_PADDING_MS +
+              SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS
+          )
         : new Date(
-            lifecycle.anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+            lifecycle.anchorEndMs +
+              SANDBOX_MONITORING_LIFECYCLE_PADDING_MS +
+              SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS
           ),
     [lifecycle.anchorEndMs, lifecycle.isRunning, pickerMaxDateMs]
   )
@@ -157,12 +146,10 @@ export default function SandboxMonitoringTimeRangeControls({
         return
       }
 
-      const next = clampToLifecycle(timestamps.start, timestamps.end)
-
-      onCustomTimeRange(next.start, next.end)
+      onCustomTimeRange(timestamps.start, timestamps.end)
       setIsOpen(false)
     },
-    [clampToLifecycle, onCustomTimeRange]
+    [onCustomTimeRange]
   )
 
   const buttonLabel = activePresetLabel ?? rangeLabel
@@ -182,7 +169,7 @@ export default function SandboxMonitoringTimeRangeControls({
               variant="outline"
               className="prose-label-highlight font-sans"
             >
-              {isLiveUpdating ? (
+              {isPolling ? (
                 <LiveDot paused={false} />
               ) : (
                 <TimeIcon className="size-4 text-fg-tertiary" />

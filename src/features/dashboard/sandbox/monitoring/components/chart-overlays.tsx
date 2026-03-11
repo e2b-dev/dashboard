@@ -165,7 +165,7 @@ function CrosshairMarkerGroup({
               marginTop: marker.labelOffsetYPx,
             }}
             className={cn(
-              'pointer-events-auto absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap backdrop-blur-lg',
+              'absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap backdrop-blur-lg',
               isMobile
                 ? 'text-[10px] leading-tight px-1 py-px'
                 : 'prose-label-numeric px-2 py-0.5',

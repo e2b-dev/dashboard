@@ -146,7 +146,7 @@ export default function SandboxMetricsCharts({
     metrics,
     timeframe,
     fetchTimeframe,
-    isLiveUpdating,
+    isPolling,
     isRefetching,
     activePresetId,
     setPreset,
@@ -327,7 +327,7 @@ export default function SandboxMetricsCharts({
           <SandboxMonitoringTimeRangeControls
             timeframe={timeframe}
             lifecycle={lifecycleBounds}
-            isLiveUpdating={isLiveUpdating}
+            isPolling={isPolling}
             activePresetId={activePresetId}
             onPresetSelect={handlePresetSelect}
             onCustomTimeRange={handleCustomTimeRange}
@@ -344,7 +344,7 @@ export default function SandboxMetricsCharts({
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
-          isLiveUpdating={isLiveUpdating}
+          isPolling={isPolling}
           isMobile={isMobile}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
@@ -355,7 +355,7 @@ export default function SandboxMetricsCharts({
           yAxisFormatter={formatPercentAxisLabel}
           className={cn(
             'h-full w-full transition-opacity duration-200',
-            isRefetching && !isLiveUpdating
+            isRefetching && !isPolling
               ? 'opacity-60 pointer-events-none'
               : 'opacity-100'
           )}
@@ -375,7 +375,7 @@ export default function SandboxMetricsCharts({
           series={diskSeriesWithMarkerFormatters}
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           showEventLabels={false}
-          isLiveUpdating={isLiveUpdating}
+          isPolling={isPolling}
           isMobile={isMobile}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
@@ -386,7 +386,7 @@ export default function SandboxMetricsCharts({
           yAxisFormatter={formatPercentAxisLabel}
           className={cn(
             'h-full w-full transition-opacity duration-200',
-            isRefetching && !isLiveUpdating
+            isRefetching && !isPolling
               ? 'opacity-60 pointer-events-none'
               : 'opacity-100'
           )}

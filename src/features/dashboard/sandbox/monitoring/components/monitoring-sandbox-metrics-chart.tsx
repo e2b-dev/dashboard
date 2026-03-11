@@ -137,7 +137,7 @@ function SandboxMetricsChart({
   series,
   lifecycleEventMarkers = [],
   showEventLabels = true,
-  isLiveUpdating = false,
+  isPolling = false,
   isMobile = false,
   hoveredTimestampMs = null,
   className,
@@ -351,7 +351,7 @@ function SandboxMetricsChart({
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
-      const livePoint = isLiveUpdating ? findLivePoint(line.data) : null
+      const livePoint = isPolling ? findLivePoint(line.data) : null
 
       const regularSeriesItems = renderableSegments.map(
         (segment, segmentIndex) => {
@@ -518,7 +518,7 @@ function SandboxMetricsChart({
     fontMono,
     grid,
     isMobile,
-    isLiveUpdating,
+    isPolling,
     series,
     showXAxisLabels,
     stroke,
@@ -559,6 +559,8 @@ function SandboxMetricsChart({
       series,
       lifecycleEventMarkers,
       hoveredTimestampMs,
+      xAxisMin,
+      xAxisMax,
       showXAxisLabels,
       isMobile,
       computedYAxisMax,

@@ -51,7 +51,7 @@ export interface SandboxMetricsChartProps {
   series: SandboxMetricsSeries[]
   lifecycleEventMarkers?: SandboxMetricsLifecycleEventMarker[]
   showEventLabels?: boolean
-  isLiveUpdating?: boolean
+  isPolling?: boolean
   isMobile?: boolean
   hoveredTimestampMs?: number | null
   className?: string

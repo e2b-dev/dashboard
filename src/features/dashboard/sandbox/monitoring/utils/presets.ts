@@ -16,12 +16,31 @@ import {
   SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-  SANDBOX_MONITORING_LIVE_ELIGIBLE_PRESET_IDS,
 } from './constants'
 import {
   clampTimeframeToBounds,
   type SandboxLifecycleBounds,
 } from './timeframe'
+
+const SANDBOX_MONITORING_LEADING_PRESET_DURATIONS: ReadonlyArray<{
+  id: string
+  label: string
+  shortcut: string
+  rangeMs: number
+}> = [
+  {
+    id: SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_ID,
+    label: 'First 1 min',
+    shortcut: SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_SHORTCUT,
+    rangeMs: millisecondsInMinute,
+  },
+  {
+    id: SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
+    label: 'First 5 min',
+    shortcut: SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
+    rangeMs: 5 * millisecondsInMinute,
+  },
+]
 
 export function getMonitoringPresets(
   lifecycle: SandboxLifecycleBounds
@@ -69,15 +88,10 @@ export function getMonitoringPresets(
     label,
     shortcut,
     getValue: () => {
-      const anchorEndMs = lifecycle.isRunning
-        ? Date.now()
-        : lifecycle.anchorEndMs
-      const lifecycleDuration = anchorEndMs - lifecycle.startMs
-
-      return clampToLifecycle(
-        lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-        lifecycle.startMs + Math.min(rangeMs, lifecycleDuration)
-      )
+      return {
+        start: lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+        end: lifecycle.startMs + rangeMs,
+      }
     },
   })
 
@@ -96,17 +110,8 @@ export function getMonitoringPresets(
         )
       },
     },
-    makeLeading(
-      SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_ID,
-      'First 1 min',
-      SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_SHORTCUT,
-      millisecondsInMinute
-    ),
-    makeLeading(
-      SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
-      'First 5 min',
-      SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
-      5 * millisecondsInMinute
+    ...SANDBOX_MONITORING_LEADING_PRESET_DURATIONS.map((p) =>
+      makeLeading(p.id, p.label, p.shortcut, p.rangeMs)
     ),
     makeTrailing(
       SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_ID,
@@ -142,10 +147,3 @@ export function findPresetById(
   return presets.find((p) => p.id === id)
 }
 
-export function isLiveEligiblePreset(presetId: string | null): boolean {
-  if (presetId === null) {
-    return false
-  }
-
-  return SANDBOX_MONITORING_LIVE_ELIGIBLE_PRESET_IDS.has(presetId)
-}
