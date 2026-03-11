@@ -187,7 +187,12 @@ export default function SandboxMetricsCharts({
         startMs: renderedFetchTimeframe.start,
         endMs: renderedFetchTimeframe.end,
       }),
-    [lifecycleEvents, metrics, renderedFetchTimeframe.end, renderedFetchTimeframe.start]
+    [
+      lifecycleEvents,
+      metrics,
+      renderedFetchTimeframe.end,
+      renderedFetchTimeframe.start,
+    ]
   )
   const resourceSeriesWithMarkerFormatters = useMemo(
     () =>
@@ -280,7 +285,13 @@ export default function SandboxMetricsCharts({
         end: fetchTimeframe.end,
       }
     })
-  }, [isRefetching, timeframe.end, timeframe.start, fetchTimeframe.end, fetchTimeframe.start])
+  }, [
+    isRefetching,
+    timeframe.end,
+    timeframe.start,
+    fetchTimeframe.end,
+    fetchTimeframe.start,
+  ])
 
   const handleHoverEnd = useCallback(() => {
     setHoveredTimestampMs(null)
