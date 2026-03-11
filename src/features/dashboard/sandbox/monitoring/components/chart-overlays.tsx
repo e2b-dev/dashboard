@@ -1,5 +1,11 @@
-import { Pause, Play, Plus, Square } from 'lucide-react'
+import type { ComponentType, SVGProps } from 'react'
 import { cn } from '@/lib/utils'
+import {
+  AddIcon,
+  BlockIcon,
+  PausedIcon,
+  RunningIcon,
+} from '@/ui/primitives/icons'
 import { withOpacity } from '../utils/chart-colors'
 import type {
   CrosshairMarker,
@@ -10,7 +16,6 @@ import {
   SANDBOX_LIFECYCLE_EVENT_KILLED,
   SANDBOX_LIFECYCLE_EVENT_PAUSED,
   SANDBOX_LIFECYCLE_EVENT_RESUMED,
-  SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE,
   SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY,
@@ -18,11 +23,14 @@ import {
 } from '../utils/constants'
 import { formatHoverTimestamp } from '../utils/formatters'
 
-const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof Plus> = {
-  [SANDBOX_LIFECYCLE_EVENT_CREATED]: Plus,
-  [SANDBOX_LIFECYCLE_EVENT_PAUSED]: Pause,
-  [SANDBOX_LIFECYCLE_EVENT_RESUMED]: Play,
-  [SANDBOX_LIFECYCLE_EVENT_KILLED]: Square,
+const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<
+  string,
+  ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
+> = {
+  [SANDBOX_LIFECYCLE_EVENT_CREATED]: AddIcon,
+  [SANDBOX_LIFECYCLE_EVENT_PAUSED]: PausedIcon,
+  [SANDBOX_LIFECYCLE_EVENT_RESUMED]: RunningIcon,
+  [SANDBOX_LIFECYCLE_EVENT_KILLED]: BlockIcon,
 }
 
 function LifecycleEventOverlayGroup({
@@ -88,10 +96,7 @@ function LifecycleEventOverlayGroup({
                 <div className="relative -translate-x-1/2">
                   <div className="flex items-center justify-center p-1">
                     {IconComponent ? (
-                      <IconComponent
-                        size={SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE}
-                        strokeWidth={2}
-                      />
+                      <IconComponent className="size-3" />
                     ) : null}
                   </div>
                   <div
