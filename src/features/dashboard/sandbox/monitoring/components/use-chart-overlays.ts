@@ -277,7 +277,15 @@ export function useChartOverlays({
         } satisfies LifecycleEventOverlay,
       ]
     })
-  }, [chartRevision, computedYAxisMax, cssVars, fg, lifecycleEventMarkers])
+  }, [
+    chartRevision,
+    computedYAxisMax,
+    cssVars,
+    fg,
+    lifecycleEventMarkers,
+    chartInstanceRef.current,
+    isMobile,
+  ])
 
   return {
     crosshairMarkers,
