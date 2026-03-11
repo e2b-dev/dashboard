@@ -17,9 +17,9 @@ import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
-import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { SandboxMetricsChartProps } from '../types/sandbox-metrics-chart'
@@ -311,10 +311,11 @@ function SandboxMetricsChart({
 
   const liveWindowMs = useMemo(() => {
     const duration =
-      xAxisMax !== undefined && xAxisMin !== undefined
-        ? xAxisMax - xAxisMin
-        : 0
-    return SANDBOX_MONITORING_CHART_LIVE_WINDOW_STEPS * calculateStepForDuration(duration)
+      xAxisMax !== undefined && xAxisMin !== undefined ? xAxisMax - xAxisMin : 0
+    return (
+      SANDBOX_MONITORING_CHART_LIVE_WINDOW_STEPS *
+      calculateStepForDuration(duration)
+    )
   }, [xAxisMax, xAxisMin])
 
   const option = useMemo<EChartsOption>(() => {
@@ -364,7 +365,9 @@ function SandboxMetricsChart({
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
-      const livePoint = isPolling ? findLivePoint(line.data, liveWindowMs) : null
+      const livePoint = isPolling
+        ? findLivePoint(line.data, liveWindowMs)
+        : null
 
       const regularSeriesItems = renderableSegments.map(
         (segment, segmentIndex) => {

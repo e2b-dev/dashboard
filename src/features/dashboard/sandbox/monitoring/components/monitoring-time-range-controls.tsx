@@ -1,7 +1,7 @@
 'use client'
 
 import { RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
@@ -74,6 +74,20 @@ export default function SandboxMonitoringTimeRangeControls({
 }: SandboxMonitoringTimeRangeControlsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [pickerMaxDateMs, setPickerMaxDateMs] = useState(() => Date.now())
+  const [pickerTimeframe, setPickerTimeframe] = useState(timeframe)
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setPickerTimeframe(timeframe)
+        if (lifecycle.isRunning) {
+          setPickerMaxDateMs(Date.now())
+        }
+      }
+      setIsOpen(open)
+    },
+    [lifecycle.isRunning, timeframe]
+  )
 
   const presets = useMemo<TimeRangePreset[]>(
     () => getMonitoringPresets(lifecycle),
@@ -99,12 +113,6 @@ export default function SandboxMonitoringTimeRangeControls({
       endDate
     )}`
   }, [timeframe.end, timeframe.start])
-
-  useEffect(() => {
-    if (isOpen && lifecycle.isRunning) {
-      setPickerMaxDateMs(Date.now())
-    }
-  }, [isOpen, lifecycle.isRunning])
 
   const lifecyclePadding = useMemo(() => {
     const anchorEndMs = lifecycle.isRunning
@@ -178,7 +186,7 @@ export default function SandboxMonitoringTimeRangeControls({
       )}
     >
       <div className="flex items-center gap-3">
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <Popover open={isOpen} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
             <Button
               size="md"
@@ -197,10 +205,10 @@ export default function SandboxMonitoringTimeRangeControls({
             <div className="flex max-md:flex-col max-h-[500px] max-md:max-h-[600px]">
               <TimeRangePicker
                 startDateTime={toSafeIsoDateTime(
-                  timeframe.start,
-                  timeframe.end
+                  pickerTimeframe.start,
+                  pickerTimeframe.end
                 )}
-                endDateTime={toSafeIsoDateTime(timeframe.end)}
+                endDateTime={toSafeIsoDateTime(pickerTimeframe.end)}
                 bounds={pickerBounds}
                 onApply={handleApply}
                 className="p-3 w-56 max-md:w-full"
