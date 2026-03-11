@@ -19,6 +19,7 @@ import { useTheme } from 'next-themes'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
+import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { SandboxMetricsChartProps } from '../types/sandbox-metrics-chart'
@@ -47,6 +48,7 @@ import {
   SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
   SANDBOX_MONITORING_CHART_LIVE_MIDDLE_DOT_SIZE,
   SANDBOX_MONITORING_CHART_LIVE_OUTER_DOT_SIZE,
+  SANDBOX_MONITORING_CHART_LIVE_WINDOW_STEPS,
   SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
   SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR,
@@ -307,6 +309,14 @@ function SandboxMetricsChart({
     [isMobile]
   )
 
+  const liveWindowMs = useMemo(() => {
+    const duration =
+      xAxisMax !== undefined && xAxisMin !== undefined
+        ? xAxisMax - xAxisMin
+        : 0
+    return SANDBOX_MONITORING_CHART_LIVE_WINDOW_STEPS * calculateStepForDuration(duration)
+  }, [xAxisMax, xAxisMin])
+
   const option = useMemo<EChartsOption>(() => {
     const seriesItems: SeriesOption[] = series.flatMap((line) => {
       const lineColor = line.lineColorVar
@@ -354,7 +364,7 @@ function SandboxMetricsChart({
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
-      const livePoint = isPolling ? findLivePoint(line.data) : null
+      const livePoint = isPolling ? findLivePoint(line.data, liveWindowMs) : null
 
       const regularSeriesItems = renderableSegments.map(
         (segment, segmentIndex) => {
@@ -522,6 +532,7 @@ function SandboxMetricsChart({
     grid,
     isMobile,
     isPolling,
+    liveWindowMs,
     series,
     showXAxisLabels,
     stroke,

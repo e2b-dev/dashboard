@@ -1,5 +1,4 @@
 import type { SandboxMetricsDataPoint } from '../types/sandbox-metrics-chart'
-import { SANDBOX_MONITORING_CHART_LIVE_WINDOW_MS } from './constants'
 
 export function toNumericValue(value: unknown): number {
   if (typeof value === 'number') {
@@ -38,9 +37,10 @@ export function formatXAxisLabel(
 
 export function findLivePoint(
   data: SandboxMetricsDataPoint[],
+  liveWindowMs: number,
   now: number = Date.now()
 ): { x: number; y: number } | null {
-  const liveBoundary = now - SANDBOX_MONITORING_CHART_LIVE_WINDOW_MS
+  const liveBoundary = now - liveWindowMs
 
   for (let index = data.length - 1; index >= 0; index -= 1) {
     const point = data[index]
