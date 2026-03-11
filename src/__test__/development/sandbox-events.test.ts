@@ -34,8 +34,7 @@ import { describe, expect, it } from 'vitest'
 
 const l = console
 
-const { TEST_E2B_DOMAIN, TEST_E2B_API_KEY, TEST_E2B_TEMPLATE } =
-  import.meta.env
+const { TEST_E2B_DOMAIN, TEST_E2B_API_KEY, TEST_E2B_TEMPLATE } = import.meta.env
 
 if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
   throw new Error(

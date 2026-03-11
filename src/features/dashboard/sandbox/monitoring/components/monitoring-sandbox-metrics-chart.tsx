@@ -309,22 +309,37 @@ function SandboxMetricsChart({
         : undefined
       const resolvedLineColor = lineColor || stroke
       const shouldShowArea = line.showArea ?? false
-      const areaFillColor =
-        areaFromColor && areaToColor
-          ? {
-              type: 'linear' as const,
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: areaFromColor },
-                { offset: 1, color: areaToColor },
-              ],
-            }
-          : areaFromColor || resolvedLineColor
-      const defaultAreaOpacity =
-        areaFromColor || areaToColor ? 1 : SANDBOX_MONITORING_CHART_AREA_OPACITY
+      const hasGradientColors = Boolean(areaFromColor && areaToColor)
+
+      // Build a linear gradient whose visible range always maps to
+      // [computedYAxisMax … 0] regardless of the series bounding box.
+      // ECharts scopes local gradients to each series' bounding box, so a
+      // connector at y=45 gets a different gradient than a segment peaking
+      // at y=80. Extending `y` above the bounding box (negative value)
+      // aligns all gradients to the full Y axis range.
+      const makeAreaFillColor = (maxDataY: number) => {
+        if (!hasGradientColors) {
+          return areaFromColor || resolvedLineColor
+        }
+
+        const gradientY = maxDataY > 0 ? 1 - computedYAxisMax / maxDataY : 0
+
+        return {
+          type: 'linear' as const,
+          x: 0,
+          y: gradientY,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: areaFromColor! },
+            { offset: 1, color: areaToColor! },
+          ],
+        }
+      }
+
+      const defaultAreaOpacity = hasGradientColors
+        ? 1
+        : SANDBOX_MONITORING_CHART_AREA_OPACITY
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
@@ -332,6 +347,11 @@ function SandboxMetricsChart({
 
       const regularSeriesItems = renderableSegments.map(
         (segment, segmentIndex) => {
+          const segmentMaxY = segment.reduce((max, point) => {
+            const value = point[1]
+            return typeof value === 'number' && value > max ? value : max
+          }, 0)
+
           const seriesItem: SeriesOption = {
             id: `${line.id}__segment_${segmentIndex}`,
             name: line.name,
@@ -346,7 +366,7 @@ function SandboxMetricsChart({
             areaStyle: shouldShowArea
               ? {
                   opacity: areaOpacity,
-                  color: areaFillColor,
+                  color: makeAreaFillColor(segmentMaxY),
                 }
               : undefined,
             lineStyle: {
@@ -369,8 +389,10 @@ function SandboxMetricsChart({
       )
 
       const connectorSeriesItems = connectorSegments.map(
-        (connector, connectorIndex) =>
-          ({
+        (connector, connectorIndex) => {
+          const connectorMaxY = Math.max(connector.from[1], connector.to[1])
+
+          return {
             id: `${line.id}__connector_${connectorIndex}`,
             name: line.name,
             type: 'line',
@@ -384,7 +406,7 @@ function SandboxMetricsChart({
             areaStyle: shouldShowArea
               ? {
                   opacity: areaOpacity,
-                  color: areaFillColor,
+                  color: makeAreaFillColor(connectorMaxY),
                 }
               : undefined,
             lineStyle: {
@@ -398,7 +420,8 @@ function SandboxMetricsChart({
               [connector.from[0], connector.from[1]],
               [connector.to[0], connector.to[1]],
             ],
-          }) satisfies SeriesOption
+          } satisfies SeriesOption
+        }
       )
 
       return [...regularSeriesItems, ...connectorSeriesItems]
