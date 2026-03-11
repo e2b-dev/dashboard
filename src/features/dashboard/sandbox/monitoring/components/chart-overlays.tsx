@@ -1,4 +1,3 @@
-import type { ComponentType, SVGProps } from 'react'
 import { cn } from '@/lib/utils'
 import {
   AddIcon,
@@ -23,10 +22,7 @@ import {
 } from '../utils/constants'
 import { formatHoverTimestamp } from '../utils/formatters'
 
-const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<
-  string,
-  ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
-> = {
+const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof AddIcon> = {
   [SANDBOX_LIFECYCLE_EVENT_CREATED]: AddIcon,
   [SANDBOX_LIFECYCLE_EVENT_PAUSED]: PausedIcon,
   [SANDBOX_LIFECYCLE_EVENT_RESUMED]: RunningIcon,
