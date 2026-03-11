@@ -27,9 +27,7 @@ export function getMonitoringPresets(
   lifecycle: SandboxLifecycleBounds
 ): TimeRangePreset[] {
   const clampToLifecycle = (start: number, end: number) => {
-    const maxBoundMs = lifecycle.isRunning
-      ? Date.now()
-      : lifecycle.anchorEndMs
+    const maxBoundMs = lifecycle.isRunning ? Date.now() : lifecycle.anchorEndMs
 
     return clampTimeframeToBounds(
       start,

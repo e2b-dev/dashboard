@@ -30,7 +30,6 @@ const fetchMock = vi.fn().mockResolvedValue({
   ok: true,
   json: () => Promise.resolve({ version: 'v2.60.7', name: 'GoTrue' }),
 })
-global.fetch = fetchMock as unknown as typeof fetch
 
 // Mock Supabase client
 const mockSupabaseClient = {
