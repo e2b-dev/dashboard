@@ -40,7 +40,7 @@ function MetricItem({
   )
 }
 
-export default function ResourceChartFooter() {
+export default function ResourceChartHeader() {
   const { sandboxInfo } = useSandboxContext()
 
   const cpuValue = sandboxInfo ? formatCPUCores(sandboxInfo.cpuCount) : '--'

@@ -9,7 +9,7 @@ import {
   SANDBOX_MONITORING_DISK_SERIES_LABEL,
 } from '../utils/constants'
 
-export default function DiskChartFooter() {
+export default function DiskChartHeader() {
   const { sandboxInfo } = useSandboxContext()
 
   const diskValue = sandboxInfo

@@ -15,8 +15,8 @@ import {
   SANDBOX_MONITORING_RAM_SERIES_ID,
 } from '../utils/constants'
 import MonitoringChartSection from './monitoring-chart-section'
-import DiskChartFooter from './monitoring-disk-chart-footer'
-import ResourceChartFooter from './monitoring-resource-chart-footer'
+import DiskChartHeader from './monitoring-disk-chart-header'
+import ResourceChartHeader from './monitoring-resource-chart-header'
 import SandboxMetricsChart from './monitoring-sandbox-metrics-chart'
 import SandboxMonitoringTimeRangeControls from './monitoring-time-range-controls'
 
@@ -308,8 +308,8 @@ export default function SandboxMetricsCharts({
       ) : null}
 
       <MonitoringChartSection
-        className="flex-1"
-        footer={<ResourceChartFooter />}
+        className="flex-1 md:mt-3"
+        header={<ResourceChartHeader />}
       >
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
@@ -339,7 +339,7 @@ export default function SandboxMetricsCharts({
 
       <MonitoringChartSection
         className="flex-[0.8]"
-        footer={<DiskChartFooter />}
+        header={<DiskChartHeader />}
       >
         <SandboxMetricsChart
           series={diskSeriesWithMarkerFormatters}
