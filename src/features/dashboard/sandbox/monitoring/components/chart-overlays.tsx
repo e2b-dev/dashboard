@@ -11,11 +11,13 @@ import {
   SANDBOX_LIFECYCLE_EVENT_KILLED,
   SANDBOX_LIFECYCLE_EVENT_PAUSED,
   SANDBOX_LIFECYCLE_EVENT_RESUMED,
-  SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
-  SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY,
-  SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY,
 } from '../utils/constants'
+
+const EVENT_LINE_BASE_OPACITY = 0.35
+const MARKER_BG_OPACITY = 0.1
+const MARKER_BORDER_OPACITY = 0.12
+
 import { formatHoverTimestamp } from '../utils/formatters'
 
 const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<
@@ -54,7 +56,7 @@ function LifecycleEventOverlayGroup({
                 height: eventOverlay.heightPx,
                 width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
                 backgroundImage: `repeating-linear-gradient(to bottom, ${eventOverlay.color} 0px, ${eventOverlay.color} 4px, transparent 4px, transparent 6px)`,
-                opacity: SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY,
+                opacity: EVENT_LINE_BASE_OPACITY,
                 zIndex: 12,
               }}
             />
@@ -82,9 +84,7 @@ function LifecycleEventOverlayGroup({
                     `[data-event-line="${eventOverlay.key}"]`
                   ) as HTMLElement | null
                   if (line) {
-                    line.style.opacity = String(
-                      SANDBOX_MONITORING_CHART_EVENT_LINE_BASE_OPACITY
-                    )
+                    line.style.opacity = String(EVENT_LINE_BASE_OPACITY)
                   }
                 }}
               >
@@ -154,14 +154,8 @@ function CrosshairMarkerGroup({
           />
           <div
             style={{
-              backgroundColor: withOpacity(
-                marker.dotColor,
-                SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY
-              ),
-              borderColor: withOpacity(
-                marker.dotColor,
-                SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY
-              ),
+              backgroundColor: withOpacity(marker.dotColor, MARKER_BG_OPACITY),
+              borderColor: withOpacity(marker.dotColor, MARKER_BORDER_OPACITY),
               marginTop: marker.labelOffsetYPx,
             }}
             className={cn(

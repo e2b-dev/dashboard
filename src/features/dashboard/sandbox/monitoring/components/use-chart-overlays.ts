@@ -20,13 +20,14 @@ import {
   LIFECYCLE_EVENT_LABEL_WIDTH_PX,
 } from '../utils/chart-overlay-layout'
 import {
-  SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_MOBILE_PX,
   SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
   SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
   SANDBOX_MONITORING_CHART_FG_VAR,
-  SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
 } from '../utils/constants'
+
+const MARKER_RIGHT_THRESHOLD_PX = 86
+const EVENT_LABEL_TOP_MOBILE_PX = 4
 
 const ECHARTS_COORD_INDEX = { xAxisIndex: 0, yAxisIndex: 0 }
 
@@ -168,8 +169,7 @@ export function useChartOverlays({
             : stroke,
           placeValueOnRight:
             firstPointPx !== null &&
-            xPx - firstPointPx <=
-              SANDBOX_MONITORING_CHART_MARKER_RIGHT_THRESHOLD_PX,
+            xPx - firstPointPx <= MARKER_RIGHT_THRESHOLD_PX,
           labelOffsetYPx: 0,
         },
       ]
@@ -239,7 +239,7 @@ export function useChartOverlays({
       const xPx = topPixel[0]
       const anchorTopPx = Math.min(topPixel[1], bottomPixel[1])
       const baseLabelTopPx = isMobile
-        ? SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_MOBILE_PX
+        ? EVENT_LABEL_TOP_MOBILE_PX
         : SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX
       const color = cssVars[event.colorVar] ?? fg
 

@@ -32,26 +32,10 @@ import {
   toNumericValue,
 } from '../utils/chart-data-utils'
 import {
-  SANDBOX_MONITORING_CHART_AREA_OPACITY,
-  SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
-  SANDBOX_MONITORING_CHART_BRUSH_MODE,
-  SANDBOX_MONITORING_CHART_BRUSH_TYPE,
-  SANDBOX_MONITORING_CHART_CONNECTOR_LINE_OPACITY,
-  SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY,
-  SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO,
   SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
-  SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
   SANDBOX_MONITORING_CHART_FG_VAR,
-  SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
-  SANDBOX_MONITORING_CHART_GROUP,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
-  SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
-  SANDBOX_MONITORING_CHART_LIVE_MIDDLE_DOT_SIZE,
-  SANDBOX_MONITORING_CHART_LIVE_OUTER_DOT_SIZE,
-  SANDBOX_MONITORING_CHART_LIVE_WINDOW_STEPS,
-  SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
-  SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR,
 } from '../utils/constants'
 import { ChartOverlayLayer } from './chart-overlays'
 import { useChartOverlays } from './use-chart-overlays'
@@ -64,6 +48,21 @@ echarts.use([
   SVGRenderer,
   AxisPointerComponent,
 ])
+
+const CHART_GROUP = 'sandbox-monitoring'
+const CHART_FG_TERTIARY_VAR = '--fg-tertiary'
+const CHART_FONT_MONO_VAR = '--font-mono'
+const CHART_FALLBACK_FG_TERTIARY = '#666'
+const CHART_FALLBACK_FONT_MONO = 'monospace'
+const CHART_AREA_OPACITY = 0.18
+const CHART_CONNECTOR_LINE_OPACITY = 0.8
+const CHART_OUT_OF_BRUSH_ALPHA = 0.25
+const CHART_AXIS_LABEL_FONT_SIZE = 12
+const CHART_Y_AXIS_SCALE_FACTOR = 1.5
+const CHART_LIVE_WINDOW_STEPS = 2
+const CHART_LIVE_OUTER_DOT_SIZE = 16
+const CHART_LIVE_MIDDLE_DOT_SIZE = 10
+const CHART_LIVE_INNER_DOT_SIZE = 6
 
 interface AxisPointerInfo {
   value?: unknown
@@ -94,7 +93,7 @@ function createLiveIndicators(
       {
         coord: [point.x, point.y],
         symbol: 'circle',
-        symbolSize: SANDBOX_MONITORING_CHART_LIVE_OUTER_DOT_SIZE,
+        symbolSize: CHART_LIVE_OUTER_DOT_SIZE,
         itemStyle: {
           color: 'transparent',
           borderColor: lineColor,
@@ -109,7 +108,7 @@ function createLiveIndicators(
       {
         coord: [point.x, point.y],
         symbol: 'circle',
-        symbolSize: SANDBOX_MONITORING_CHART_LIVE_MIDDLE_DOT_SIZE,
+        symbolSize: CHART_LIVE_MIDDLE_DOT_SIZE,
         itemStyle: {
           color: lineColor,
           opacity: 0.3,
@@ -121,7 +120,7 @@ function createLiveIndicators(
       {
         coord: [point.x, point.y],
         symbol: 'circle',
-        symbolSize: SANDBOX_MONITORING_CHART_LIVE_INNER_DOT_SIZE,
+        symbolSize: CHART_LIVE_INNER_DOT_SIZE,
         itemStyle: {
           color: lineColor,
           borderWidth: 0,
@@ -168,7 +167,7 @@ function SandboxMetricsChart({
       yAxisMax ??
       calculateAxisMax(
         values.length > 0 ? values : [0],
-        SANDBOX_MONITORING_CHART_Y_AXIS_SCALE_FACTOR
+        CHART_Y_AXIS_SCALE_FACTOR
       )
     )
   }, [series, yAxisMax])
@@ -185,8 +184,8 @@ function SandboxMetricsChart({
       new Set([
         SANDBOX_MONITORING_CHART_STROKE_VAR,
         SANDBOX_MONITORING_CHART_FG_VAR,
-        SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR,
-        SANDBOX_MONITORING_CHART_FONT_MONO_VAR,
+        CHART_FG_TERTIARY_VAR,
+        CHART_FONT_MONO_VAR,
         ...seriesVarNames,
         ...eventVarNames,
       ])
@@ -199,12 +198,9 @@ function SandboxMetricsChart({
     cssVars[SANDBOX_MONITORING_CHART_STROKE_VAR] ||
     SANDBOX_MONITORING_CHART_FALLBACK_STROKE
   const fgTertiary =
-    cssVars[SANDBOX_MONITORING_CHART_FG_TERTIARY_VAR] ||
-    SANDBOX_MONITORING_CHART_FALLBACK_FG_TERTIARY
+    cssVars[CHART_FG_TERTIARY_VAR] || CHART_FALLBACK_FG_TERTIARY
   const axisPointerColor = stroke
-  const fontMono =
-    cssVars[SANDBOX_MONITORING_CHART_FONT_MONO_VAR] ||
-    SANDBOX_MONITORING_CHART_FALLBACK_FONT_MONO
+  const fontMono = cssVars[CHART_FONT_MONO_VAR] || CHART_FALLBACK_FONT_MONO
 
   const handleUpdateAxisPointer = useCallback(
     (params: UpdateAxisPointerEventParams) => {
@@ -295,16 +291,16 @@ function SandboxMetricsChart({
             type: 'takeGlobalCursor',
             key: 'brush',
             brushOption: {
-              brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
-              brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+              brushType: 'lineX',
+              brushMode: 'single',
             },
           },
           { flush: true }
         )
       }
 
-      chart.group = SANDBOX_MONITORING_CHART_GROUP
-      echarts.connect(SANDBOX_MONITORING_CHART_GROUP)
+      chart.group = CHART_GROUP
+      echarts.connect(CHART_GROUP)
     },
     [isMobile]
   )
@@ -312,10 +308,7 @@ function SandboxMetricsChart({
   const liveWindowMs = useMemo(() => {
     const duration =
       xAxisMax !== undefined && xAxisMin !== undefined ? xAxisMax - xAxisMin : 0
-    return (
-      SANDBOX_MONITORING_CHART_LIVE_WINDOW_STEPS *
-      calculateStepForDuration(duration)
-    )
+    return CHART_LIVE_WINDOW_STEPS * calculateStepForDuration(duration)
   }, [xAxisMax, xAxisMin])
 
   const option = useMemo<EChartsOption>(() => {
@@ -359,9 +352,7 @@ function SandboxMetricsChart({
         }
       }
 
-      const defaultAreaOpacity = hasGradientColors
-        ? 1
-        : SANDBOX_MONITORING_CHART_AREA_OPACITY
+      const defaultAreaOpacity = hasGradientColors ? 1 : CHART_AREA_OPACITY
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
@@ -436,7 +427,7 @@ function SandboxMetricsChart({
             lineStyle: {
               width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
               color: resolvedLineColor,
-              opacity: SANDBOX_MONITORING_CHART_CONNECTOR_LINE_OPACITY,
+              opacity: CHART_CONNECTOR_LINE_OPACITY,
               type: 'dashed',
             },
             connectNulls: false,
@@ -457,13 +448,13 @@ function SandboxMetricsChart({
       brush: isMobile
         ? undefined
         : {
-            brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
-            brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+            brushType: 'lineX',
+            brushMode: 'single',
             xAxisIndex: 0,
             brushLink: 'all',
             brushStyle: { borderWidth: SANDBOX_MONITORING_CHART_LINE_WIDTH },
             outOfBrush: {
-              colorAlpha: SANDBOX_MONITORING_CHART_OUT_OF_BRUSH_ALPHA,
+              colorAlpha: CHART_OUT_OF_BRUSH_ALPHA,
             },
           },
       grid: {
@@ -484,7 +475,7 @@ function SandboxMetricsChart({
           show: showXAxisLabels,
           color: fgTertiary,
           fontFamily: fontMono,
-          fontSize: SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
+          fontSize: CHART_AXIS_LABEL_FONT_SIZE,
           hideOverlap: true,
           formatter: (value: number | string) => formatXAxisLabel(value),
         },
@@ -518,7 +509,7 @@ function SandboxMetricsChart({
           show: true,
           color: fgTertiary,
           fontFamily: fontMono,
-          fontSize: SANDBOX_MONITORING_CHART_AXIS_LABEL_FONT_SIZE,
+          fontSize: CHART_AXIS_LABEL_FONT_SIZE,
           interval: 0,
           formatter: yAxisFormatter,
         },

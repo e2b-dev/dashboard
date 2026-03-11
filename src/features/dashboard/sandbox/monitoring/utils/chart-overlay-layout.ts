@@ -1,12 +1,11 @@
 import type { ReactNode } from 'react'
-import {
-  SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE,
-  SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX,
-  SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX,
-  SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
-  SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX,
-  SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX,
-} from './constants'
+import { SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX } from './constants'
+
+const MARKER_OVERLAP_THRESHOLD_PX = 24
+const MARKER_LABEL_VERTICAL_GAP_PX = 20
+const EVENT_ICON_SIZE = 12
+const EVENT_LABEL_OVERLAP_GAP_PX = 6
+const EVENT_LABEL_STAGGER_STEP_PX = 30
 
 export interface CrosshairMarker {
   key: string
@@ -69,7 +68,7 @@ export function applyMarkerLabelOffsets(
     const shouldSplitCluster =
       !currentMarker ||
       Math.abs(currentMarker.yPx - previousMarker.yPx) >
-        SANDBOX_MONITORING_CHART_MARKER_OVERLAP_THRESHOLD_PX
+        MARKER_OVERLAP_THRESHOLD_PX
 
     if (!shouldSplitCluster) {
       continue
@@ -79,9 +78,7 @@ export function applyMarkerLabelOffsets(
     const halfIndex = (cluster.length - 1) / 2
 
     cluster.forEach((marker, clusterIndex) => {
-      const offset =
-        (clusterIndex - halfIndex) *
-        SANDBOX_MONITORING_CHART_MARKER_LABEL_VERTICAL_GAP_PX
+      const offset = (clusterIndex - halfIndex) * MARKER_LABEL_VERTICAL_GAP_PX
       offsetsByMarkerKey.set(marker.key, offset)
     })
 
@@ -95,8 +92,7 @@ export function applyMarkerLabelOffsets(
 }
 
 // Collapsed state is icon-only: icon size + padding (p-1 = 4px each side) + border (1px each side)
-export const LIFECYCLE_EVENT_LABEL_WIDTH_PX =
-  SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE + 8 + 2
+export const LIFECYCLE_EVENT_LABEL_WIDTH_PX = EVENT_ICON_SIZE + 8 + 2
 
 function doLifecycleEventLabelsOverlap(
   left: LifecycleEventOverlayLayout,
@@ -104,7 +100,7 @@ function doLifecycleEventLabelsOverlap(
 ): boolean {
   const minDistance =
     (left.estimatedLabelWidthPx + right.estimatedLabelWidthPx) / 2 +
-    SANDBOX_MONITORING_CHART_EVENT_LABEL_OVERLAP_GAP_PX
+    EVENT_LABEL_OVERLAP_GAP_PX
 
   return right.labelXPx - left.labelXPx < minDistance
 }
@@ -137,8 +133,7 @@ export function applyLifecycleEventLabelOffsets(
 
     const cluster = sortedOverlays.slice(clusterStart, index)
     cluster.forEach((overlay, clusterIndex) => {
-      const verticalOffsetPx =
-        -clusterIndex * SANDBOX_MONITORING_CHART_EVENT_LABEL_STAGGER_STEP_PX
+      const verticalOffsetPx = -clusterIndex * EVENT_LABEL_STAGGER_STEP_PX
       const nextLabelTopPx = Math.max(
         SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
         overlay.baseLabelTopPx + verticalOffsetPx

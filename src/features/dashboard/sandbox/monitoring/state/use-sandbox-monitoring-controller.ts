@@ -16,6 +16,7 @@ import {
   SANDBOX_MONITORING_OVERFETCH_MIN_MS,
   SANDBOX_MONITORING_OVERFETCH_RATIO,
 } from '../utils/constants'
+
 import { findPresetById, getMonitoringPresets } from '../utils/presets'
 import { getSandboxLifecycleBounds } from '../utils/timeframe'
 
@@ -102,11 +103,6 @@ export function useSandboxMonitoringController(sandboxId: string) {
       end: timeframe.end + buffer,
     }
   }, [timeframe.start, timeframe.end])
-
-  const timeframeRef = useRef(timeframe)
-  useEffect(() => {
-    timeframeRef.current = timeframe
-  }, [timeframe])
 
   // Initialize: write default timeframe to URL if no params present.
   const isInitializedRef = useRef(false)
