@@ -17,10 +17,7 @@ import {
   SANDBOX_MONITORING_OVERFETCH_RATIO,
 } from '../utils/constants'
 import { findPresetById, getMonitoringPresets } from '../utils/presets'
-import {
-  getSandboxLifecycleBounds,
-  type SandboxLifecycleBounds,
-} from '../utils/timeframe'
+import { getSandboxLifecycleBounds } from '../utils/timeframe'
 
 const monitoringUrlParams = {
   start: parseAsInteger,
@@ -94,9 +91,11 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   const fetchTimeframe = useMemo(() => {
     const duration = timeframe.end - timeframe.start
-    const buffer = Math.max(
-      duration * SANDBOX_MONITORING_OVERFETCH_RATIO,
-      SANDBOX_MONITORING_OVERFETCH_MIN_MS
+    const buffer = Math.ceil(
+      Math.max(
+        duration * SANDBOX_MONITORING_OVERFETCH_RATIO,
+        SANDBOX_MONITORING_OVERFETCH_MIN_MS
+      )
     )
     return {
       start: timeframe.start - buffer,
