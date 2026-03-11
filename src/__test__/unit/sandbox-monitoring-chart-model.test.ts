@@ -63,11 +63,8 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
-
-      hoveredTimestampMs: 6_000,
     })
 
-    expect(result.latestMetric?.timestampUnix).toBe(10)
     expect(result.resourceSeries).toHaveLength(2)
     expect(result.diskSeries).toHaveLength(1)
     expect(result.resourceSeries[0]?.data).toEqual([
@@ -85,28 +82,17 @@ describe('buildMonitoringChartModel', () => {
       [5_000, 20, 0],
       [10_000, 30, 0],
     ])
-    expect(result.resourceHoveredContext).toEqual({
-      cpuPercent: 20,
-      ramPercent: 20,
-      timestampMs: 5_000,
-    })
-    expect(result.diskHoveredContext).toEqual({
-      diskPercent: 20,
-      timestampMs: 5_000,
-    })
   })
 
-  it('returns null hovered contexts when no data is available', () => {
+  it('returns empty series when no data is available', () => {
     const result = buildMonitoringChartModel({
       metrics: [],
       startMs: 0,
       endMs: 10_000,
-
-      hoveredTimestampMs: 1_000,
     })
 
-    expect(result.resourceHoveredContext).toBeNull()
-    expect(result.diskHoveredContext).toBeNull()
+    expect(result.resourceSeries[0]?.data).toEqual([])
+    expect(result.diskSeries[0]?.data).toEqual([])
   })
 
   it('filters out metrics outside range and invalid timestamps', () => {
@@ -138,11 +124,8 @@ describe('buildMonitoringChartModel', () => {
       metrics,
       startMs: 0,
       endMs: 10_000,
-
-      hoveredTimestampMs: null,
     })
 
-    expect(result.latestMetric?.timestampUnix).toBe(1)
     expect(result.resourceSeries[0]?.data).toEqual([[1_000, 5, null]])
     expect(result.diskSeries[0]?.data).toEqual([[1_000, 5, 0]])
   })
@@ -183,8 +166,6 @@ describe('buildMonitoringChartModel', () => {
       lifecycleEvents,
       startMs: 0,
       endMs: 60_000,
-
-      hoveredTimestampMs: null,
     })
 
     expect(result.resourceSeries[0]?.data).toEqual([
@@ -278,8 +259,6 @@ describe('buildMonitoringChartModel', () => {
       lifecycleEvents,
       startMs: 0,
       endMs: 5_000,
-
-      hoveredTimestampMs: null,
     })
 
     expect(result.resourceLifecycleEventMarkers).toEqual([

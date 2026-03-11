@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { SandboxMetricsChartProps } from '../types/sandbox-metrics-chart'
-import { normalizeOpacity } from '../utils/chart-colors'
+import { normalizeOpacity, withOpacity } from '../utils/chart-colors'
 import {
   findLivePoint,
   formatXAxisLabel,
@@ -138,6 +138,7 @@ function SandboxMetricsChart({
   lifecycleEventMarkers = [],
   showEventLabels = true,
   isLiveUpdating = false,
+  isMobile = false,
   hoveredTimestampMs = null,
   className,
   showXAxisLabels = true,
@@ -459,7 +460,7 @@ function SandboxMetricsChart({
         axisTick: { show: false },
         splitLine: {
           show: true,
-          lineStyle: { color: stroke, type: 'dashed' },
+          lineStyle: { color: withOpacity(stroke, 0.7), type: 'dashed' },
           interval: 0,
         },
         axisLabel: {
@@ -523,6 +524,7 @@ function SandboxMetricsChart({
       lifecycleEventMarkers,
       hoveredTimestampMs,
       showXAxisLabels,
+      isMobile,
       computedYAxisMax,
       cssVars,
       yAxisFormatter,
@@ -544,6 +546,7 @@ function SandboxMetricsChart({
         crosshairMarkers={crosshairMarkers}
         xAxisHoverBadge={xAxisHoverBadge}
         showEventLabels={showEventLabels}
+        isMobile={isMobile}
         axisPointerColor={axisPointerColor}
       />
     </div>

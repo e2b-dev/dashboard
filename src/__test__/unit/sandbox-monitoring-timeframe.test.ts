@@ -68,27 +68,23 @@ describe('sandbox-monitoring-timeframe', () => {
       const result = parseMonitoringQueryState({
         start: '1000',
         end: '2000',
-        live: '1',
       })
 
       expect(result).toEqual({
         start: 1000,
         end: 2000,
-        live: true,
       })
     })
 
-    it('should reject non-canonical live values and invalid timestamps', () => {
+    it('should reject invalid timestamps', () => {
       const result = parseMonitoringQueryState({
         start: '123abc',
         end: String(Number.MAX_SAFE_INTEGER),
-        live: 'true',
       })
 
       expect(result).toEqual({
         start: null,
         end: null,
-        live: null,
       })
     })
   })

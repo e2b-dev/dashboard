@@ -11,7 +11,6 @@ import {
 import {
   buildDiskSeries,
   buildResourceSeries,
-  findClosestMetric,
   type NormalizedSandboxMetric,
   normalizeMetric,
   sortMetricsByTimestamp,
@@ -22,7 +21,6 @@ interface BuildMonitoringChartModelOptions {
   lifecycleEvents?: SandboxEventDTO[]
   startMs: number
   endMs: number
-  hoveredTimestampMs: number | null
 }
 
 export function buildMonitoringChartModel({
@@ -30,7 +28,6 @@ export function buildMonitoringChartModel({
   lifecycleEvents = [],
   startMs,
   endMs,
-  hoveredTimestampMs,
 }: BuildMonitoringChartModelOptions): MonitoringChartModel {
   const rangeStart = Math.min(startMs, endMs)
   const rangeEnd = Math.max(startMs, endMs)
@@ -67,30 +64,9 @@ export function buildMonitoringChartModel({
     buildDiskSeries(normalizedMetrics),
     pauseWindows
   )
-  const latestMetric = normalizedMetrics[normalizedMetrics.length - 1]?.metric
-
-  const hoveredMetric =
-    hoveredTimestampMs !== null
-      ? findClosestMetric(normalizedMetrics, hoveredTimestampMs)
-      : null
-
   return {
-    latestMetric,
     resourceSeries,
     diskSeries,
     resourceLifecycleEventMarkers,
-    resourceHoveredContext: hoveredMetric
-      ? {
-          cpuPercent: hoveredMetric.cpuPercent,
-          ramPercent: hoveredMetric.ramPercent,
-          timestampMs: hoveredMetric.timestampMs,
-        }
-      : null,
-    diskHoveredContext: hoveredMetric
-      ? {
-          diskPercent: hoveredMetric.diskPercent,
-          timestampMs: hoveredMetric.timestampMs,
-        }
-      : null,
   }
 }

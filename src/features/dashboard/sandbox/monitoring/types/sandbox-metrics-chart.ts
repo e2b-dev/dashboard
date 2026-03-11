@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 
 export type SandboxMetricsDataPoint = [
   timestampMs: number,
@@ -53,6 +52,7 @@ export interface SandboxMetricsChartProps {
   lifecycleEventMarkers?: SandboxMetricsLifecycleEventMarker[]
   showEventLabels?: boolean
   isLiveUpdating?: boolean
+  isMobile?: boolean
   hoveredTimestampMs?: number | null
   className?: string
   showXAxisLabels?: boolean
@@ -66,22 +66,8 @@ export interface SandboxMetricsChartProps {
   onBrushEnd?: (startTimestamp: number, endTimestamp: number) => void
 }
 
-export interface MonitoringResourceHoveredContext {
-  cpuPercent: number | null
-  ramPercent: number | null
-  timestampMs: number
-}
-
-export interface MonitoringDiskHoveredContext {
-  diskPercent: number | null
-  timestampMs: number
-}
-
 export interface MonitoringChartModel {
-  latestMetric: SandboxMetric | undefined
   resourceSeries: SandboxMetricsSeries[]
   diskSeries: SandboxMetricsSeries[]
   resourceLifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
-  resourceHoveredContext: MonitoringResourceHoveredContext | null
-  diskHoveredContext: MonitoringDiskHoveredContext | null
 }

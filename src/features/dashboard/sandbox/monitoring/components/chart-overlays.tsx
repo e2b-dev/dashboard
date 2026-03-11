@@ -127,7 +127,13 @@ function LifecycleEventOverlayGroup({
   )
 }
 
-function CrosshairMarkerGroup({ markers }: { markers: CrosshairMarker[] }) {
+function CrosshairMarkerGroup({
+  markers,
+  isMobile,
+}: {
+  markers: CrosshairMarker[]
+  isMobile: boolean
+}) {
   'use no memo'
 
   return (
@@ -159,7 +165,10 @@ function CrosshairMarkerGroup({ markers }: { markers: CrosshairMarker[] }) {
               marginTop: marker.labelOffsetYPx,
             }}
             className={cn(
-              'pointer-events-auto prose-label-numeric absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap px-2 py-0.5 backdrop-blur-lg',
+              'pointer-events-auto absolute top-1/2 border text-fg font-mono -translate-y-1/2 whitespace-nowrap backdrop-blur-lg',
+              isMobile
+                ? 'text-[10px] leading-tight px-1 py-px'
+                : 'prose-label-numeric px-2 py-0.5',
               marker.placeValueOnRight ? 'left-2' : 'right-2'
             )}
           >
@@ -182,7 +191,7 @@ function XAxisHoverBadge({
 
   return (
     <div
-      className="prose-label-numeric bg-bg/60 font-mono absolute bottom-4 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
+      className="bg-bg font-mono prose-label-numeric absolute bottom-2.75 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
       style={{
         left: badge.xPx,
         borderColor: axisPointerColor,
@@ -199,12 +208,14 @@ export function ChartOverlayLayer({
   crosshairMarkers,
   xAxisHoverBadge,
   showEventLabels,
+  isMobile,
   axisPointerColor,
 }: {
   lifecycleEventOverlays: LifecycleEventOverlay[]
   crosshairMarkers: CrosshairMarker[]
   xAxisHoverBadge: { xPx: number; label: string } | null
   showEventLabels: boolean
+  isMobile: boolean
   axisPointerColor: string
 }) {
   'use no memo'
@@ -224,7 +235,7 @@ export function ChartOverlayLayer({
         overlays={lifecycleEventOverlays}
         showEventLabels={showEventLabels}
       />
-      <CrosshairMarkerGroup markers={crosshairMarkers} />
+      <CrosshairMarkerGroup markers={crosshairMarkers} isMobile={isMobile} />
       {xAxisHoverBadge ? (
         <XAxisHoverBadge
           badge={xAxisHoverBadge}

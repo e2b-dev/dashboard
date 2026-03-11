@@ -1,10 +1,8 @@
 'use client'
 
-import { millisecondsInMinute } from 'date-fns/constants'
 import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { findMatchingPreset } from '@/lib/utils/time-range'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
 import { TimeIcon } from '@/ui/primitives/icons'
@@ -18,22 +16,10 @@ import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
-  SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_ID,
-  SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
-  SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_ID,
-  SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_ID,
-  SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_ID,
-  SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_ID,
-  SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-  SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from '../utils/constants'
+import { findPresetById, getMonitoringPresets } from '../utils/presets'
 import {
   clampTimeframeToBounds,
   type SandboxLifecycleBounds,
@@ -67,12 +53,9 @@ interface SandboxMonitoringTimeRangeControlsProps {
   }
   lifecycle: SandboxLifecycleBounds
   isLiveUpdating: boolean
-  onLiveChange: (isLiveUpdating: boolean) => void
-  onTimeRangeChange: (
-    start: number,
-    end: number,
-    options?: { isLiveUpdating?: boolean }
-  ) => void
+  activePresetId: string | null
+  onPresetSelect: (id: string) => void
+  onCustomTimeRange: (start: number, end: number) => void
   canResetZoom: boolean
   onResetZoom: () => void
   className?: string
@@ -82,8 +65,9 @@ export default function SandboxMonitoringTimeRangeControls({
   timeframe,
   lifecycle,
   isLiveUpdating,
-  onLiveChange,
-  onTimeRangeChange,
+  activePresetId,
+  onPresetSelect,
+  onCustomTimeRange,
   canResetZoom,
   onResetZoom,
   className,
@@ -107,117 +91,18 @@ export default function SandboxMonitoringTimeRangeControls({
     [lifecycle.anchorEndMs, lifecycle.isRunning, lifecycle.startMs]
   )
 
-  const presets = useMemo<TimeRangePreset[]>(() => {
-    const makeTrailing = (
-      id: string,
-      label: string,
-      shortcut: string,
-      rangeMs: number
-    ): TimeRangePreset => ({
-      id,
-      label,
-      shortcut,
-      isLiveUpdating: lifecycle.isRunning,
-      getValue: () => {
-        const anchorEndMs = lifecycle.isRunning
-          ? Date.now()
-          : lifecycle.anchorEndMs
-        const lifecycleDuration = anchorEndMs - lifecycle.startMs
-
-        return clampToLifecycle(
-          anchorEndMs - Math.min(rangeMs, lifecycleDuration),
-          anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-        )
-      },
-    })
-
-    const makeLeading = (
-      id: string,
-      label: string,
-      shortcut: string,
-      rangeMs: number
-    ): TimeRangePreset => ({
-      id,
-      label,
-      shortcut,
-      isLiveUpdating: false,
-      getValue: () => {
-        const anchorEndMs = lifecycle.isRunning
-          ? Date.now()
-          : lifecycle.anchorEndMs
-        const lifecycleDuration = anchorEndMs - lifecycle.startMs
-
-        return clampToLifecycle(
-          lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-          lifecycle.startMs + Math.min(rangeMs, lifecycleDuration)
-        )
-      },
-    })
-
-    return [
-      {
-        id: SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_ID,
-        label: lifecycle.isRunning ? 'From start to now' : 'Full lifecycle',
-        shortcut: SANDBOX_MONITORING_FULL_LIFECYCLE_PRESET_SHORTCUT,
-        isLiveUpdating: lifecycle.isRunning,
-        getValue: () => {
-          const anchorEndMs = lifecycle.isRunning
-            ? Date.now()
-            : lifecycle.anchorEndMs
-          return clampToLifecycle(
-            lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-            anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-          )
-        },
-      },
-      makeLeading(
-        SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_ID,
-        'First 1 min',
-        SANDBOX_MONITORING_FIRST_1_MINUTE_PRESET_SHORTCUT,
-        millisecondsInMinute
-      ),
-      makeLeading(
-        SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_ID,
-        'First 5 min',
-        SANDBOX_MONITORING_FIRST_5_MINUTES_PRESET_SHORTCUT,
-        5 * millisecondsInMinute
-      ),
-      makeTrailing(
-        SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_ID,
-        'Last 1 min',
-        SANDBOX_MONITORING_LAST_1_MINUTE_PRESET_SHORTCUT,
-        millisecondsInMinute
-      ),
-      makeTrailing(
-        SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_ID,
-        'Last 5 min',
-        SANDBOX_MONITORING_LAST_5_MINUTES_PRESET_SHORTCUT,
-        5 * millisecondsInMinute
-      ),
-      makeTrailing(
-        SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_ID,
-        'Last 30 min',
-        SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_SHORTCUT,
-        30 * millisecondsInMinute
-      ),
-    ]
-  }, [
-    clampToLifecycle,
-    lifecycle.anchorEndMs,
-    lifecycle.isRunning,
-    lifecycle.startMs,
-  ])
-
-  const selectedPresetId = useMemo(
-    () =>
-      findMatchingPreset(
-        presets,
-        timeframe.start,
-        timeframe.end,
-        SANDBOX_MONITORING_PRESET_MATCH_TOLERANCE_MS
-      ),
-    [presets, timeframe.end, timeframe.start]
+  const presets = useMemo<TimeRangePreset[]>(
+    () => getMonitoringPresets(lifecycle),
+    [lifecycle]
   )
+
+  const activePresetLabel = useMemo(() => {
+    if (activePresetId === null) {
+      return null
+    }
+    const preset = findPresetById(presets, activePresetId)
+    return preset?.label ?? null
+  }, [activePresetId, presets])
 
   const rangeLabel = useMemo(() => {
     const startDate = new Date(timeframe.start)
@@ -259,13 +144,10 @@ export default function SandboxMonitoringTimeRangeControls({
 
   const handlePresetSelect = useCallback(
     (preset: TimeRangePreset) => {
-      const { start, end } = preset.getValue()
-      onTimeRangeChange(start, end, {
-        isLiveUpdating: preset.isLiveUpdating,
-      })
+      onPresetSelect(preset.id)
       setIsOpen(false)
     },
-    [onTimeRangeChange]
+    [onPresetSelect]
   )
 
   const handleApply = useCallback(
@@ -277,31 +159,22 @@ export default function SandboxMonitoringTimeRangeControls({
 
       const next = clampToLifecycle(timestamps.start, timestamps.end)
 
-      onTimeRangeChange(next.start, next.end, {
-        isLiveUpdating: false,
-      })
+      onCustomTimeRange(next.start, next.end)
       setIsOpen(false)
     },
-    [clampToLifecycle, onTimeRangeChange]
+    [clampToLifecycle, onCustomTimeRange]
   )
 
-  const handleLiveToggle = useCallback(() => {
-    if (!lifecycle.isRunning) {
-      onLiveChange(false)
-      return
-    }
-
-    onLiveChange(!isLiveUpdating)
-  }, [isLiveUpdating, lifecycle.isRunning, onLiveChange])
+  const buttonLabel = activePresetLabel ?? rangeLabel
 
   return (
     <div
       className={cn(
-        'flex w-full flex-wrap items-center gap-3 md:justify-start max-md:justify-end',
+        'flex w-full flex-wrap items-center gap-3 justify-start',
         className
       )}
     >
-      <div className="flex items-center gap-3 max-md:flex-row-reverse">
+      <div className="flex items-center gap-3">
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -309,7 +182,12 @@ export default function SandboxMonitoringTimeRangeControls({
               variant="outline"
               className="prose-label-highlight font-sans"
             >
-              <TimeIcon className="size-4 text-fg-tertiary" /> {rangeLabel}
+              {isLiveUpdating ? (
+                <LiveDot paused={false} />
+              ) : (
+                <TimeIcon className="size-4 text-fg-tertiary" />
+              )}{' '}
+              {buttonLabel}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 max-md:w-[calc(100vw-2rem)]">
@@ -334,33 +212,17 @@ export default function SandboxMonitoringTimeRangeControls({
               />
               <TimeRangePresets
                 presets={presets}
-                selectedId={selectedPresetId}
+                selectedId={activePresetId ?? undefined}
                 onSelect={handlePresetSelect}
                 className="w-56 max-md:w-full p-3"
               />
             </div>
           </PopoverContent>
         </Popover>
-
-        <Button
-          size="md"
-          variant="outline"
-          onClick={handleLiveToggle}
-          className="prose-label-highlight"
-          aria-pressed={isLiveUpdating && lifecycle.isRunning}
-          title={
-            isLiveUpdating && lifecycle.isRunning
-              ? 'Pause live updates'
-              : 'Resume live updates'
-          }
-        >
-          <LiveDot paused={!isLiveUpdating || !lifecycle.isRunning} />
-          {isLiveUpdating && lifecycle.isRunning ? 'Live updates' : 'Paused'}
-        </Button>
       </div>
 
       {canResetZoom ? (
-        <div className="flex items-center gap-1 max-md:basis-full max-md:justify-end">
+        <div className="flex items-center gap-1">
           <Button
             size="md"
             variant="outline"

@@ -56,18 +56,18 @@ export default function SandboxLayout({
         headerAccessory={tabsHeaderAccessory}
       >
         <DashboardTab
-          id="logs"
-          label="Logs"
-          className="flex min-h-0 flex-1 flex-col"
-          icon={<ListIcon className="size-4" />}
-        >
-          {children}
-        </DashboardTab>
-        <DashboardTab
           id="monitoring"
           label="Monitoring"
           className="flex min-h-0 flex-1 flex-col"
           icon={<TrendIcon className="size-4" />}
+        >
+          {children}
+        </DashboardTab>
+        <DashboardTab
+          id="logs"
+          label="Logs"
+          className="flex min-h-0 flex-1 flex-col"
+          icon={<ListIcon className="size-4" />}
         >
           {children}
         </DashboardTab>

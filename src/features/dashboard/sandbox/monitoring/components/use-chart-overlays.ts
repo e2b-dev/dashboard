@@ -20,6 +20,7 @@ import {
   LIFECYCLE_EVENT_LABEL_WIDTH_PX,
 } from '../utils/chart-overlay-layout'
 import {
+  SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_MOBILE_PX,
   SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX,
   SANDBOX_MONITORING_CHART_FALLBACK_STROKE,
   SANDBOX_MONITORING_CHART_FG_VAR,
@@ -59,6 +60,7 @@ interface UseChartOverlaysOptions {
   lifecycleEventMarkers: SandboxMetricsLifecycleEventMarker[]
   hoveredTimestampMs: number | null
   showXAxisLabels: boolean
+  isMobile: boolean
   computedYAxisMax: number
   cssVars: Record<string, string>
   yAxisFormatter: (value: number) => string
@@ -77,6 +79,7 @@ export function useChartOverlays({
   lifecycleEventMarkers,
   hoveredTimestampMs,
   showXAxisLabels,
+  isMobile,
   computedYAxisMax,
   cssVars,
   yAxisFormatter,
@@ -222,7 +225,9 @@ export function useChartOverlays({
 
       const xPx = topPixel[0]
       const anchorTopPx = Math.min(topPixel[1], bottomPixel[1])
-      const baseLabelTopPx = SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX
+      const baseLabelTopPx = isMobile
+        ? SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_MOBILE_PX
+        : SANDBOX_MONITORING_CHART_EVENT_LABEL_TOP_PX
       const color = cssVars[event.colorVar] ?? fg
 
       if (!Number.isFinite(anchorTopPx)) {

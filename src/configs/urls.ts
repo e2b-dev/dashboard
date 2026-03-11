@@ -29,13 +29,13 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamIdOrSlug}/sandboxes?tab=list`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/logs`,
-  SANDBOX_FILESYSTEM: (teamIdOrSlug: string, sandboxId: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/filesystem`,
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/monitoring`,
   SANDBOX_MONITORING: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/monitoring`,
   SANDBOX_LOGS: (teamIdOrSlug: string, sandboxId: string) =>
     `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/logs`,
+  SANDBOX_FILESYSTEM: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/filesystem`,
 
   WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
 

@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { CpuIcon, MemoryIcon, StorageIcon } from '@/ui/primitives/icons'
+import { Separator } from '@/ui/primitives/separator'
 import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
 import type { SandboxMetricsMarkerValueFormatterInput } from '../types/sandbox-metrics-chart'
 import { buildMonitoringChartModel } from '../utils/chart-model'
@@ -13,8 +15,8 @@ import {
   SANDBOX_MONITORING_RAM_SERIES_ID,
 } from '../utils/constants'
 import MonitoringChartSection from './monitoring-chart-section'
-import DiskChartHeader from './monitoring-disk-chart-header'
-import ResourceChartHeader from './monitoring-resource-chart-header'
+import DiskChartFooter from './monitoring-disk-chart-footer'
+import ResourceChartFooter from './monitoring-resource-chart-footer'
 import SandboxMetricsChart from './monitoring-sandbox-metrics-chart'
 import SandboxMonitoringTimeRangeControls from './monitoring-time-range-controls'
 
@@ -29,54 +31,29 @@ interface SandboxMetricsChartsProps {
 interface ZoomResetSnapshot {
   start: number
   end: number
-  isLiveUpdating: boolean
+  presetId: string | null
 }
 
 function useChartZoom(options: {
   timeframe: { start: number; end: number }
-  isLiveUpdating: boolean
-  setTimeframe: (
-    start: number,
-    end: number,
-    opts?: { isLiveUpdating?: boolean }
-  ) => void
+  activePresetId: string | null
+  setPreset: (presetId: string) => void
+  setCustomTimeframe: (start: number, end: number) => void
   setHoveredTimestampMs: (value: number | null) => void
 }) {
-  const { timeframe, isLiveUpdating, setTimeframe, setHoveredTimestampMs } =
-    options
+  const {
+    timeframe,
+    activePresetId,
+    setPreset,
+    setCustomTimeframe,
+    setHoveredTimestampMs,
+  } = options
   const [zoomResetSnapshot, setZoomResetSnapshot] =
     useState<ZoomResetSnapshot | null>(null)
 
-  const handleControlTimeRangeChange = useCallback(
-    (
-      startTimestamp: number,
-      endTimestamp: number,
-      rangeOptions?: { isLiveUpdating?: boolean }
-    ) => {
-      const nextLiveUpdating = rangeOptions?.isLiveUpdating ?? false
-
-      if (
-        startTimestamp === timeframe.start &&
-        endTimestamp === timeframe.end &&
-        nextLiveUpdating === isLiveUpdating
-      ) {
-        return
-      }
-
-      setZoomResetSnapshot(null)
-      setHoveredTimestampMs(null)
-      setTimeframe(startTimestamp, endTimestamp, {
-        isLiveUpdating: nextLiveUpdating,
-      })
-    },
-    [
-      isLiveUpdating,
-      setHoveredTimestampMs,
-      setTimeframe,
-      timeframe.end,
-      timeframe.start,
-    ]
-  )
+  const clearZoomSnapshot = useCallback(() => {
+    setZoomResetSnapshot(null)
+  }, [])
 
   const handleBrushTimeRangeChange = useCallback(
     (startTimestamp: number, endTimestamp: number) => {
@@ -95,18 +72,16 @@ function useChartZoom(options: {
         return {
           start: timeframe.start,
           end: timeframe.end,
-          isLiveUpdating,
+          presetId: activePresetId,
         }
       })
       setHoveredTimestampMs(null)
-      setTimeframe(startTimestamp, endTimestamp, {
-        isLiveUpdating: false,
-      })
+      setCustomTimeframe(startTimestamp, endTimestamp)
     },
     [
-      isLiveUpdating,
+      activePresetId,
+      setCustomTimeframe,
       setHoveredTimestampMs,
-      setTimeframe,
       timeframe.end,
       timeframe.start,
     ]
@@ -118,15 +93,17 @@ function useChartZoom(options: {
     }
 
     setHoveredTimestampMs(null)
-    setTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end, {
-      isLiveUpdating: zoomResetSnapshot.isLiveUpdating,
-    })
+    if (zoomResetSnapshot.presetId !== null) {
+      setPreset(zoomResetSnapshot.presetId)
+    } else {
+      setCustomTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end)
+    }
     setZoomResetSnapshot(null)
-  }, [setHoveredTimestampMs, setTimeframe, zoomResetSnapshot])
+  }, [setCustomTimeframe, setHoveredTimestampMs, setPreset, zoomResetSnapshot])
 
   return {
     canResetZoom: zoomResetSnapshot !== null,
-    handleControlTimeRangeChange,
+    clearZoomSnapshot,
     handleBrushTimeRangeChange,
     handleResetZoom,
   }
@@ -156,19 +133,23 @@ function renderUsageMarker(usedMb: number | null, value: number) {
   )
 }
 
-const RESOURCE_CHART_GRID = { top: 42, bottom: 42, left: 64, right: 42 }
-const DISK_CHART_GRID = { top: 36, bottom: 40, left: 64, right: 42 }
+const RESOURCE_CHART_GRID_MD = { top: 36, bottom: 36, left: 64, right: 64 }
+const RESOURCE_CHART_GRID_SM = { top: 24, bottom: 36, left: 48, right: 42 }
+const DISK_CHART_GRID_MD = { top: 36, bottom: 36, left: 64, right: 64 }
+const DISK_CHART_GRID_SM = { top: 24, bottom: 36, left: 48, right: 42 }
 
 export default function SandboxMetricsCharts({
   sandboxId,
 }: SandboxMetricsChartsProps) {
+  const isMobile = useIsMobile()
   const {
     metrics,
     timeframe,
     isLiveUpdating,
     isRefetching,
-    setTimeframe,
-    setLiveUpdating,
+    activePresetId,
+    setPreset,
+    setCustomTimeframe,
     lifecycleBounds,
     lifecycleEvents,
   } = useSandboxMonitoringController(sandboxId)
@@ -182,13 +163,14 @@ export default function SandboxMetricsCharts({
 
   const {
     canResetZoom,
-    handleControlTimeRangeChange,
+    clearZoomSnapshot,
     handleBrushTimeRangeChange,
     handleResetZoom,
   } = useChartZoom({
     timeframe,
-    isLiveUpdating,
-    setTimeframe,
+    activePresetId,
+    setPreset,
+    setCustomTimeframe,
     setHoveredTimestampMs,
   })
 
@@ -199,15 +181,8 @@ export default function SandboxMetricsCharts({
         lifecycleEvents,
         startMs: renderedTimeframe.start,
         endMs: renderedTimeframe.end,
-        hoveredTimestampMs,
       }),
-    [
-      hoveredTimestampMs,
-      lifecycleEvents,
-      metrics,
-      renderedTimeframe.end,
-      renderedTimeframe.start,
-    ]
+    [lifecycleEvents, metrics, renderedTimeframe.end, renderedTimeframe.start]
   )
   const resourceSeriesWithMarkerFormatters = useMemo(
     () =>
@@ -292,16 +267,40 @@ export default function SandboxMetricsCharts({
     setHoveredTimestampMs(null)
   }, [])
 
+  const handlePresetSelect = useCallback(
+    (id: string) => {
+      clearZoomSnapshot()
+      setHoveredTimestampMs(null)
+      setPreset(id)
+    },
+    [clearZoomSnapshot, setPreset]
+  )
+
+  const handleCustomTimeRange = useCallback(
+    (start: number, end: number) => {
+      clearZoomSnapshot()
+      setHoveredTimestampMs(null)
+      setCustomTimeframe(start, end)
+    },
+    [clearZoomSnapshot, setCustomTimeframe]
+  )
+
+  const resourceChartGrid = isMobile
+    ? RESOURCE_CHART_GRID_SM
+    : RESOURCE_CHART_GRID_MD
+  const diskChartGrid = isMobile ? DISK_CHART_GRID_SM : DISK_CHART_GRID_MD
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col pt-3 md:pt-6">
+    <div className="flex min-h-0 flex-1 flex-col">
       {lifecycleBounds ? (
-        <div className="flex w-full items-center px-3 md:px-6 pb-3 md:pb-6">
+        <div className="flex w-full items-center p-3 md:p-6 pb-0!">
           <SandboxMonitoringTimeRangeControls
             timeframe={timeframe}
             lifecycle={lifecycleBounds}
             isLiveUpdating={isLiveUpdating}
-            onLiveChange={setLiveUpdating}
-            onTimeRangeChange={handleControlTimeRangeChange}
+            activePresetId={activePresetId}
+            onPresetSelect={handlePresetSelect}
+            onCustomTimeRange={handleCustomTimeRange}
             canResetZoom={canResetZoom}
             onResetZoom={handleResetZoom}
           />
@@ -310,27 +309,25 @@ export default function SandboxMetricsCharts({
 
       <MonitoringChartSection
         className="flex-1"
-        header={
-          <ResourceChartHeader
-            metric={chartModel.latestMetric}
-            hovered={chartModel.resourceHoveredContext}
-          />
-        }
+        footer={<ResourceChartFooter />}
       >
         <SandboxMetricsChart
           series={resourceSeriesWithMarkerFormatters}
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           isLiveUpdating={isLiveUpdating}
+          isMobile={isMobile}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
-          grid={RESOURCE_CHART_GRID}
+          grid={resourceChartGrid}
           xAxisMin={renderedTimeframe.start}
           xAxisMax={renderedTimeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           yAxisFormatter={formatPercentAxisLabel}
           className={cn(
             'h-full w-full transition-opacity duration-200',
-            isRefetching ? 'opacity-60 pointer-events-none' : 'opacity-100'
+            isRefetching && !isLiveUpdating
+              ? 'opacity-60 pointer-events-none'
+              : 'opacity-100'
           )}
           onHover={setHoveredTimestampMs}
           onHoverEnd={handleHoverEnd}
@@ -338,30 +335,30 @@ export default function SandboxMetricsCharts({
         />
       </MonitoringChartSection>
 
+      <Separator />
+
       <MonitoringChartSection
         className="flex-[0.8]"
-        header={
-          <DiskChartHeader
-            metric={chartModel.latestMetric}
-            hovered={chartModel.diskHoveredContext}
-          />
-        }
+        footer={<DiskChartFooter />}
       >
         <SandboxMetricsChart
           series={diskSeriesWithMarkerFormatters}
           lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
           showEventLabels={false}
           isLiveUpdating={isLiveUpdating}
+          isMobile={isMobile}
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
-          grid={DISK_CHART_GRID}
+          grid={diskChartGrid}
           xAxisMin={renderedTimeframe.start}
           xAxisMax={renderedTimeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           yAxisFormatter={formatPercentAxisLabel}
           className={cn(
             'h-full w-full transition-opacity duration-200',
-            isRefetching ? 'opacity-60 pointer-events-none' : 'opacity-100'
+            isRefetching && !isLiveUpdating
+              ? 'opacity-60 pointer-events-none'
+              : 'opacity-100'
           )}
           onHover={setHoveredTimestampMs}
           onHoverEnd={handleHoverEnd}

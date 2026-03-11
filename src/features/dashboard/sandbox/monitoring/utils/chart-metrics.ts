@@ -88,52 +88,6 @@ function buildSeriesData(
   ])
 }
 
-export function findClosestMetric(
-  metrics: NormalizedSandboxMetric[],
-  timestampMs: number
-): NormalizedSandboxMetric | null {
-  if (metrics.length === 0 || !Number.isFinite(timestampMs)) {
-    return null
-  }
-
-  let low = 0
-  let high = metrics.length - 1
-
-  while (low <= high) {
-    const middle = Math.floor((low + high) / 2)
-    const middleTimestamp = metrics[middle]?.timestampMs
-    if (middleTimestamp === undefined) {
-      break
-    }
-
-    if (middleTimestamp === timestampMs) {
-      return metrics[middle] ?? null
-    }
-
-    if (middleTimestamp < timestampMs) {
-      low = middle + 1
-    } else {
-      high = middle - 1
-    }
-  }
-
-  const nextMetric = metrics[low]
-  const previousMetric = metrics[low - 1]
-
-  if (!nextMetric) {
-    return previousMetric ?? null
-  }
-
-  if (!previousMetric) {
-    return nextMetric
-  }
-
-  const nextDistance = Math.abs(nextMetric.timestampMs - timestampMs)
-  const previousDistance = Math.abs(previousMetric.timestampMs - timestampMs)
-
-  return previousDistance <= nextDistance ? previousMetric : nextMetric
-}
-
 export function buildResourceSeries(
   metrics: NormalizedSandboxMetric[]
 ): SandboxMetricsSeries[] {

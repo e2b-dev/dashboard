@@ -5,8 +5,6 @@ import {
   SANDBOX_MONITORING_MAX_TIMESTAMP_MS,
   SANDBOX_MONITORING_MIN_RANGE_MS,
   SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
-  SANDBOX_MONITORING_QUERY_LIVE_FALSE,
-  SANDBOX_MONITORING_QUERY_LIVE_TRUE,
 } from './constants'
 
 export interface NormalizedMonitoringTimeframe {
@@ -17,7 +15,6 @@ export interface NormalizedMonitoringTimeframe {
 export interface MonitoringQueryState {
   start: number | null
   end: number | null
-  live: boolean | null
 }
 
 interface NormalizeMonitoringTimeframeInput {
@@ -31,7 +28,6 @@ interface NormalizeMonitoringTimeframeInput {
 interface ParseMonitoringQueryStateInput {
   start: string | null
   end: string | null
-  live: string | null
 }
 
 function clampToBounds(value: number, min: number, max: number): number {
@@ -67,18 +63,6 @@ function parseTimestampParam(value: string | null): number | null {
   return parsed
 }
 
-function parseLiveParam(value: string | null): boolean | null {
-  if (value === SANDBOX_MONITORING_QUERY_LIVE_TRUE) {
-    return true
-  }
-
-  if (value === SANDBOX_MONITORING_QUERY_LIVE_FALSE) {
-    return false
-  }
-
-  return null
-}
-
 export function parseDateTimestampMs(
   value: string | null | undefined
 ): number | null {
@@ -97,12 +81,10 @@ export function parseDateTimestampMs(
 export function parseMonitoringQueryState({
   start,
   end,
-  live,
 }: ParseMonitoringQueryStateInput): MonitoringQueryState {
   return {
     start: parseTimestampParam(start),
     end: parseTimestampParam(end),
-    live: parseLiveParam(live),
   }
 }
 

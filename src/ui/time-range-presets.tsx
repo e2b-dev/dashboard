@@ -16,7 +16,6 @@ export interface TimeRangePreset {
   label: string
   shortcut?: string
   description?: string
-  isLiveUpdating?: boolean
   getValue: () => { start: number; end: number }
 }
 
