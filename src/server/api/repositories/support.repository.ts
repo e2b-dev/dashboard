@@ -14,14 +14,6 @@ interface FileInput {
   base64: string
 }
 
-function formatTierName(tier: string): string {
-  const tierMap: Record<string, string> = {
-    base_v1: 'Hobby',
-    pro_v1: 'Pro',
-  }
-  return tierMap[tier] ?? tier
-}
-
 function formatThreadText(input: {
   description: string
   teamId: string
@@ -41,7 +33,7 @@ function formatThreadText(input: {
     '########',
     `Customer: ${customerEmail}`,
     `Account Owner: ${accountOwnerEmail}`,
-    `Tier: ${formatTierName(customerTier)}`,
+    `Tier: ${customerTier}`,
     `TeamID: ${teamId}`,
     `Orbit: https://orbit.e2b.dev/teams/${teamId}/users`,
     '########',
