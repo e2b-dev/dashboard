@@ -15,10 +15,10 @@ import {
   SANDBOX_MONITORING_LAST_15_MINUTES_PRESET_SHORTCUT,
   SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_ID,
   SANDBOX_MONITORING_LAST_30_MINUTES_PRESET_SHORTCUT,
-  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
 } from './constants'
 import {
   clampTimeframeToBounds,
+  computeLifecyclePadding,
   type SandboxLifecycleBounds,
 } from './timeframe'
 
@@ -45,14 +45,14 @@ const SANDBOX_MONITORING_LEADING_PRESET_DURATIONS: ReadonlyArray<{
 export function getMonitoringPresets(
   lifecycle: SandboxLifecycleBounds
 ): TimeRangePreset[] {
-  const clampToLifecycle = (start: number, end: number) => {
+  const clampToLifecycle = (start: number, end: number, paddingMs: number) => {
     const maxBoundMs = lifecycle.isRunning ? Date.now() : lifecycle.anchorEndMs
 
     return clampTimeframeToBounds(
       start,
       end,
-      lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-      maxBoundMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+      lifecycle.startMs - paddingMs,
+      maxBoundMs + paddingMs
     )
   }
 
@@ -70,10 +70,13 @@ export function getMonitoringPresets(
         ? Date.now()
         : lifecycle.anchorEndMs
       const lifecycleDuration = anchorEndMs - lifecycle.startMs
+      const effectiveRange = Math.min(rangeMs, lifecycleDuration)
+      const padding = computeLifecyclePadding(effectiveRange)
 
       return clampToLifecycle(
-        anchorEndMs - Math.min(rangeMs, lifecycleDuration),
-        anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+        anchorEndMs - effectiveRange,
+        anchorEndMs + padding,
+        padding
       )
     },
   })
@@ -88,8 +91,9 @@ export function getMonitoringPresets(
     label,
     shortcut,
     getValue: () => {
+      const padding = computeLifecyclePadding(rangeMs)
       return {
-        start: lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
+        start: lifecycle.startMs - padding,
         end: lifecycle.startMs + rangeMs,
       }
     },
@@ -104,9 +108,12 @@ export function getMonitoringPresets(
         const anchorEndMs = lifecycle.isRunning
           ? Date.now()
           : lifecycle.anchorEndMs
+        const duration = anchorEndMs - lifecycle.startMs
+        const padding = computeLifecyclePadding(duration)
         return clampToLifecycle(
-          lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
-          anchorEndMs + SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
+          lifecycle.startMs - padding,
+          anchorEndMs + padding,
+          padding
         )
       },
     },
@@ -146,4 +153,3 @@ export function findPresetById(
 ): TimeRangePreset | undefined {
   return presets.find((p) => p.id === id)
 }
-

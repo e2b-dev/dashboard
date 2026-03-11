@@ -1,6 +1,8 @@
+import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
 import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
+  SANDBOX_MONITORING_LIFECYCLE_PADDING_STEPS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
   SANDBOX_MONITORING_MAX_TIMESTAMP_MS,
   SANDBOX_MONITORING_MIN_RANGE_MS,
@@ -246,4 +248,13 @@ export function clampTimeframeToBounds(
   safeEnd = Math.min(safeMax, safeEnd)
 
   return { start: safeStart, end: safeEnd }
+}
+
+/**
+ * Computes lifecycle padding based on the aggregation step for the given duration.
+ * Returns `SANDBOX_MONITORING_LIFECYCLE_PADDING_STEPS` × the step size.
+ */
+export function computeLifecyclePadding(durationMs: number): number {
+  const step = calculateStepForDuration(Math.abs(durationMs))
+  return SANDBOX_MONITORING_LIFECYCLE_PADDING_STEPS * step
 }

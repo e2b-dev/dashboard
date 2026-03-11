@@ -279,30 +279,33 @@ function SandboxMetricsChart({
     [onBrushEnd]
   )
 
-  const handleChartReady = useCallback((chart: echarts.ECharts) => {
-    chartInstanceRef.current = chart
+  const handleChartReady = useCallback(
+    (chart: echarts.ECharts) => {
+      chartInstanceRef.current = chart
 
-    chart.on('finished', () => {
-      setChartRevision((v) => v + 1)
-    })
+      chart.on('finished', () => {
+        setChartRevision((v) => v + 1)
+      })
 
-    if (!isMobile) {
-      chart.dispatchAction(
-        {
-          type: 'takeGlobalCursor',
-          key: 'brush',
-          brushOption: {
-            brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
-            brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+      if (!isMobile) {
+        chart.dispatchAction(
+          {
+            type: 'takeGlobalCursor',
+            key: 'brush',
+            brushOption: {
+              brushType: SANDBOX_MONITORING_CHART_BRUSH_TYPE,
+              brushMode: SANDBOX_MONITORING_CHART_BRUSH_MODE,
+            },
           },
-        },
-        { flush: true }
-      )
-    }
+          { flush: true }
+        )
+      }
 
-    chart.group = SANDBOX_MONITORING_CHART_GROUP
-    echarts.connect(SANDBOX_MONITORING_CHART_GROUP)
-  }, [isMobile])
+      chart.group = SANDBOX_MONITORING_CHART_GROUP
+      echarts.connect(SANDBOX_MONITORING_CHART_GROUP)
+    },
+    [isMobile]
+  )
 
   const option = useMemo<EChartsOption>(() => {
     const seriesItems: SeriesOption[] = series.flatMap((line) => {

@@ -17,11 +17,13 @@ import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
   SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS,
-  SANDBOX_MONITORING_LIFECYCLE_PADDING_MS,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from '../utils/constants'
 import { findPresetById, getMonitoringPresets } from '../utils/presets'
-import type { SandboxLifecycleBounds } from '../utils/timeframe'
+import {
+  computeLifecyclePadding,
+  type SandboxLifecycleBounds,
+} from '../utils/timeframe'
 
 function isValidDate(date: Date): boolean {
   return Number.isFinite(date.getTime())
@@ -73,7 +75,6 @@ export default function SandboxMonitoringTimeRangeControls({
   const [isOpen, setIsOpen] = useState(false)
   const [pickerMaxDateMs, setPickerMaxDateMs] = useState(() => Date.now())
 
-
   const presets = useMemo<TimeRangePreset[]>(
     () => getMonitoringPresets(lifecycle),
     [lifecycle]
@@ -105,30 +106,45 @@ export default function SandboxMonitoringTimeRangeControls({
     }
   }, [isOpen, lifecycle.isRunning])
 
+  const lifecyclePadding = useMemo(() => {
+    const anchorEndMs = lifecycle.isRunning
+      ? pickerMaxDateMs
+      : lifecycle.anchorEndMs
+    return computeLifecyclePadding(anchorEndMs - lifecycle.startMs)
+  }, [
+    lifecycle.anchorEndMs,
+    lifecycle.isRunning,
+    lifecycle.startMs,
+    pickerMaxDateMs,
+  ])
+
   const pickerMaxDate = useMemo(
     () =>
       lifecycle.isRunning
         ? new Date(
             pickerMaxDateMs +
-              SANDBOX_MONITORING_LIFECYCLE_PADDING_MS +
+              lifecyclePadding +
               SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS
           )
         : new Date(
             lifecycle.anchorEndMs +
-              SANDBOX_MONITORING_LIFECYCLE_PADDING_MS +
+              lifecyclePadding +
               SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS
           ),
-    [lifecycle.anchorEndMs, lifecycle.isRunning, pickerMaxDateMs]
+    [
+      lifecycle.anchorEndMs,
+      lifecycle.isRunning,
+      lifecyclePadding,
+      pickerMaxDateMs,
+    ]
   )
 
   const pickerBounds = useMemo(
     () => ({
-      min: new Date(
-        lifecycle.startMs - SANDBOX_MONITORING_LIFECYCLE_PADDING_MS
-      ),
+      min: new Date(lifecycle.startMs - lifecyclePadding),
       max: pickerMaxDate,
     }),
-    [lifecycle.startMs, pickerMaxDate]
+    [lifecycle.startMs, lifecyclePadding, pickerMaxDate]
   )
 
   const handlePresetSelect = useCallback(
