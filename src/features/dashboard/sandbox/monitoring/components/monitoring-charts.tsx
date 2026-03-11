@@ -145,6 +145,7 @@ export default function SandboxMetricsCharts({
   const {
     metrics,
     timeframe,
+    fetchTimeframe,
     isLiveUpdating,
     isRefetching,
     activePresetId,
@@ -159,6 +160,10 @@ export default function SandboxMetricsCharts({
   const [renderedTimeframe, setRenderedTimeframe] = useState(() => ({
     start: timeframe.start,
     end: timeframe.end,
+  }))
+  const [renderedFetchTimeframe, setRenderedFetchTimeframe] = useState(() => ({
+    start: fetchTimeframe.start,
+    end: fetchTimeframe.end,
   }))
 
   const {
@@ -179,10 +184,10 @@ export default function SandboxMetricsCharts({
       buildMonitoringChartModel({
         metrics,
         lifecycleEvents,
-        startMs: renderedTimeframe.start,
-        endMs: renderedTimeframe.end,
+        startMs: renderedFetchTimeframe.start,
+        endMs: renderedFetchTimeframe.end,
       }),
-    [lifecycleEvents, metrics, renderedTimeframe.end, renderedTimeframe.start]
+    [lifecycleEvents, metrics, renderedFetchTimeframe.end, renderedFetchTimeframe.start]
   )
   const resourceSeriesWithMarkerFormatters = useMemo(
     () =>
@@ -261,7 +266,21 @@ export default function SandboxMetricsCharts({
         end: timeframe.end,
       }
     })
-  }, [isRefetching, timeframe.end, timeframe.start])
+
+    setRenderedFetchTimeframe((previous) => {
+      if (
+        previous.start === fetchTimeframe.start &&
+        previous.end === fetchTimeframe.end
+      ) {
+        return previous
+      }
+
+      return {
+        start: fetchTimeframe.start,
+        end: fetchTimeframe.end,
+      }
+    })
+  }, [isRefetching, timeframe.end, timeframe.start, fetchTimeframe.end, fetchTimeframe.start])
 
   const handleHoverEnd = useCallback(() => {
     setHoveredTimestampMs(null)

@@ -219,10 +219,16 @@ function SandboxMetricsChart({
         return
       }
 
-      const normalizedTimestampMs = Math.floor(timestampMs)
+      let normalizedTimestampMs = Math.floor(timestampMs)
+      if (xAxisMin !== undefined) {
+        normalizedTimestampMs = Math.max(xAxisMin, normalizedTimestampMs)
+      }
+      if (xAxisMax !== undefined) {
+        normalizedTimestampMs = Math.min(xAxisMax, normalizedTimestampMs)
+      }
       onHover(normalizedTimestampMs)
     },
-    [onHover]
+    [onHover, xAxisMin, xAxisMax]
   )
 
   const clearAxisPointer = useCallback(() => {

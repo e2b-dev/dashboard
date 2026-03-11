@@ -1,13 +1,12 @@
 import {
   millisecondsInDay,
   millisecondsInHour,
-  millisecondsInMinute,
   millisecondsInSecond,
 } from 'date-fns/constants'
 
 export const SANDBOX_MONITORING_METRICS_RETENTION_MS = 7 * millisecondsInDay
 export const SANDBOX_MONITORING_DEFAULT_RANGE_MS = millisecondsInHour
-export const SANDBOX_MONITORING_MIN_RANGE_MS = 30 * millisecondsInSecond
+export const SANDBOX_MONITORING_MIN_RANGE_MS = 10 * millisecondsInSecond
 export const SANDBOX_MONITORING_MAX_RANGE_MS = 31 * millisecondsInDay
 export const SANDBOX_MONITORING_LIFECYCLE_PADDING_MS = 5 * millisecondsInSecond
 export const SANDBOX_MONITORING_LIVE_POLLING_MS = 5_000
@@ -98,6 +97,9 @@ export const SANDBOX_MONITORING_CHART_EVENT_ICON_SIZE = 12
 export const SANDBOX_MONITORING_CHART_EVENT_BORDER_OPACITY = 0.12
 export const SANDBOX_MONITORING_CHART_MARKER_BG_OPACITY = 0.1
 export const SANDBOX_MONITORING_CHART_MARKER_BORDER_OPACITY = 0.12
+export const SANDBOX_MONITORING_OVERFETCH_RATIO = 0.02
+export const SANDBOX_MONITORING_OVERFETCH_MIN_MS = 30 * millisecondsInSecond
+
 export const SANDBOX_MONITORING_BYTES_IN_GIGABYTE = 1024 * 1024 * 1024
 
 export const SANDBOX_LIFECYCLE_EVENT_CREATED = 'sandbox.lifecycle.created'

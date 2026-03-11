@@ -16,6 +16,8 @@ import {
   SANDBOX_MONITORING_LIVE_POLLING_MS,
   SANDBOX_MONITORING_MAX_RANGE_MS,
   SANDBOX_MONITORING_MIN_RANGE_MS,
+  SANDBOX_MONITORING_OVERFETCH_MIN_MS,
+  SANDBOX_MONITORING_OVERFETCH_RATIO,
 } from '../utils/constants'
 import {
   findPresetById,
@@ -162,6 +164,18 @@ export function useSandboxMonitoringController(sandboxId: string) {
     return applyLifecyclePadding(resolved, lifecycleBounds, now)
   }, [urlParams.start, urlParams.end, activePresetId, lifecycleBounds])
 
+  const fetchTimeframe = useMemo(() => {
+    const duration = timeframe.end - timeframe.start
+    const buffer = Math.max(
+      duration * SANDBOX_MONITORING_OVERFETCH_RATIO,
+      SANDBOX_MONITORING_OVERFETCH_MIN_MS
+    )
+    return {
+      start: timeframe.start - buffer,
+      end: timeframe.end + buffer,
+    }
+  }, [timeframe.start, timeframe.end])
+
   const timeframeRef = useRef(timeframe)
   useEffect(() => {
     timeframeRef.current = timeframe
@@ -274,10 +288,10 @@ export function useSandboxMonitoringController(sandboxId: string) {
         'sandboxMonitoringMetrics',
         team?.id ?? '',
         sandboxId,
-        timeframe.start,
-        timeframe.end,
+        fetchTimeframe.start,
+        fetchTimeframe.end,
       ] as const,
-    [sandboxId, timeframe.end, timeframe.start, team?.id]
+    [sandboxId, fetchTimeframe.end, fetchTimeframe.start, team?.id]
   )
 
   const metricsQuery = useQuery<SandboxMetric[]>({
@@ -295,8 +309,8 @@ export function useSandboxMonitoringController(sandboxId: string) {
       return trpcClient.sandbox.resourceMetrics.query({
         teamIdOrSlug: team.id,
         sandboxId,
-        startMs: timeframe.start,
-        endMs: timeframe.end,
+        startMs: fetchTimeframe.start,
+        endMs: fetchTimeframe.end,
       })
     },
   })
@@ -305,6 +319,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     lifecycleBounds,
     lifecycleEvents: sandboxLifecycle?.events ?? [],
     timeframe,
+    fetchTimeframe,
     metrics: metricsQuery.data ?? [],
     isLiveUpdating,
     isRefetching: metricsQuery.isFetching,
