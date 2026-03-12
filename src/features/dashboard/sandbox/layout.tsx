@@ -5,7 +5,7 @@ import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
-import { ListIcon, StorageIcon } from '@/ui/primitives/icons'
+import { ListIcon, StorageIcon, TrendIcon } from '@/ui/primitives/icons'
 import { useSandboxContext } from './context'
 import SandboxInspectIncompatible from './inspect/incompatible'
 
@@ -55,6 +55,14 @@ export default function SandboxLayout({
         className="max-md:sticky max-md:top-0 max-md:z-20 max-md:h-[calc(100svh-var(--protected-navbar-height))] max-md:max-h-[calc(100svh-var(--protected-navbar-height))] max-md:min-h-[calc(100svh-var(--protected-navbar-height))]"
         headerAccessory={tabsHeaderAccessory}
       >
+        <DashboardTab
+          id="monitoring"
+          label="Monitoring"
+          className="flex min-h-0 flex-1 flex-col"
+          icon={<TrendIcon className="size-4" />}
+        >
+          {children}
+        </DashboardTab>
         <DashboardTab
           id="logs"
           label="Logs"

@@ -7,6 +7,7 @@ import {
   handleDashboardApiError,
   handleInfraApiError,
 } from '../errors'
+import type { SandboxEventDTO } from '../models/sandboxes.models'
 
 // get sandbox logs
 
@@ -152,7 +153,150 @@ export async function getSandboxDetails(
   })
 }
 
+const SANDBOX_EVENTS_PAGE_SIZE = 100
+const SANDBOX_EVENTS_MAX_PAGES = 50
+const SANDBOX_LIFECYCLE_EVENT_PREFIX = 'sandbox.lifecycle.'
+
+export async function getSandboxLifecycleEvents(
+  accessToken: string,
+  teamId: string,
+  sandboxId: string
+) {
+  const lifecycleEvents: SandboxEventDTO[] = []
+
+  for (
+    let pageIndex = 0, offset = 0;
+    pageIndex < SANDBOX_EVENTS_MAX_PAGES;
+    pageIndex += 1, offset += SANDBOX_EVENTS_PAGE_SIZE
+  ) {
+    try {
+      const result = await infra.GET('/events/sandboxes/{sandboxID}', {
+        params: {
+          path: {
+            sandboxID: sandboxId,
+          },
+          query: {
+            offset,
+            limit: SANDBOX_EVENTS_PAGE_SIZE,
+            orderAsc: true,
+          },
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        },
+        cache: 'no-store',
+      })
+
+      if (!result.response.ok || result.error) {
+        l.warn({
+          key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_error',
+          error: result.error,
+          team_id: teamId,
+          context: {
+            status: result.response.status,
+            path: '/events/sandboxes/{sandboxID}',
+            sandbox_id: sandboxId,
+            offset,
+            limit: SANDBOX_EVENTS_PAGE_SIZE,
+          },
+        })
+        break
+      }
+
+      const page = result.data ?? []
+      lifecycleEvents.push(
+        ...page.filter((event) =>
+          event.type.startsWith(SANDBOX_LIFECYCLE_EVENT_PREFIX)
+        )
+      )
+
+      if (page.length < SANDBOX_EVENTS_PAGE_SIZE) {
+        break
+      }
+    } catch (error) {
+      l.warn({
+        key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_exception',
+        error,
+        team_id: teamId,
+        context: {
+          path: '/events/sandboxes/{sandboxID}',
+          sandbox_id: sandboxId,
+          offset,
+          limit: SANDBOX_EVENTS_PAGE_SIZE,
+        },
+      })
+      break
+    }
+  }
+
+  return lifecycleEvents
+}
+
+// get sandbox metrics
+
+export interface GetSandboxMetricsOptions {
+  startUnixMs: number
+  endUnixMs: number
+}
+
+export async function getSandboxMetrics(
+  accessToken: string,
+  teamId: string,
+  sandboxId: string,
+  options: GetSandboxMetricsOptions
+) {
+  // convert milliseconds to seconds for the API
+  const startUnixSeconds = Math.floor(options.startUnixMs / 1000)
+  const endUnixSeconds = Math.floor(options.endUnixMs / 1000)
+
+  const result = await infra.GET('/sandboxes/{sandboxID}/metrics', {
+    params: {
+      path: {
+        sandboxID: sandboxId,
+      },
+      query: {
+        start: startUnixSeconds,
+        end: endUnixSeconds,
+      },
+    },
+    headers: {
+      ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+    },
+  })
+
+  if (!result.response.ok || result.error) {
+    const status = result.response.status
+
+    l.error(
+      {
+        key: 'repositories:sandboxes:get_sandbox_metrics:infra_error',
+        error: result.error,
+        team_id: teamId,
+        context: {
+          status,
+          path: '/sandboxes/{sandboxID}/metrics',
+          sandbox_id: sandboxId,
+        },
+      },
+      `failed to fetch /sandboxes/{sandboxID}/metrics: ${result.error?.message || 'Unknown error'}`
+    )
+
+    if (status === 404) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: "Sandbox not found or you don't have access to it",
+      })
+    }
+
+    throw apiError(status)
+  }
+
+  return result.data
+}
+
 export const sandboxesRepo = {
   getSandboxLogs,
   getSandboxDetails,
+  getSandboxLifecycleEvents,
+  getSandboxMetrics,
 }

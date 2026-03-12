@@ -7,7 +7,7 @@ import EndedAt from './ended-at'
 import Metadata from './metadata'
 import RanFor from './ran-for'
 import RemainingTime from './remaining-time'
-import { ResourceUsageClient } from './resource-usage-client'
+import { CpuSpecItem, DiskSpecItem, MemorySpecItem } from './spec-items'
 import StartedAt from './started-at'
 import Status from './status'
 import TemplateId from './template-id'
@@ -32,9 +32,9 @@ export default function SandboxDetailsHeader() {
   const metadataContent = <Metadata />
   const createdAtContent = <StartedAt />
   const runningDurationContent = <RanFor />
-  const cpuUsageContent = <ResourceUsageClient type="cpu" mode="usage" />
-  const memoryUsageContent = <ResourceUsageClient type="mem" mode="usage" />
-  const diskUsageContent = <ResourceUsageClient type="disk" mode="usage" />
+  const cpuSpecContent = <CpuSpecItem />
+  const memorySpecContent = <MemorySpecItem />
+  const diskSpecContent = <DiskSpecItem />
 
   const renderContent = (content: React.ReactNode, skeletonWidth: string) =>
     isInitialLoading ? <Skeleton className={`h-5 ${skeletonWidth}`} /> : content
@@ -60,14 +60,14 @@ export default function SandboxDetailsHeader() {
         <DetailsItem label={runningLabel}>
           {renderContent(runningDurationContent, 'w-22')}
         </DetailsItem>
-        <DetailsItem label="CPU Usage">
-          {renderContent(cpuUsageContent, 'w-20')}
+        <DetailsItem label="CPU">
+          {renderContent(cpuSpecContent, 'w-20')}
         </DetailsItem>
-        <DetailsItem label="Memory Usage">
-          {renderContent(memoryUsageContent, 'w-20')}
+        <DetailsItem label="Memory">
+          {renderContent(memorySpecContent, 'w-20')}
         </DetailsItem>
-        <DetailsItem label="Disk Usage">
-          {renderContent(diskUsageContent, 'w-20')}
+        <DetailsItem label="Disk">
+          {renderContent(diskSpecContent, 'w-20')}
         </DetailsItem>
       </DetailsRow>
     </header>

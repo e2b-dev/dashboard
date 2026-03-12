@@ -62,7 +62,7 @@ function checkIfSandboxStillHasLogs(startedAtIso: string) {
 export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
   'use no memo'
 
-  const { sandboxInfo, isRunning } = useSandboxContext()
+  const { sandboxInfo, sandboxLifecycle, isRunning } = useSandboxContext()
   const { level, setLevel, search, setSearch } = useLogFilters()
 
   if (!sandboxInfo) {
@@ -88,7 +88,9 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
     )
   }
 
-  const hasRetainedLogs = checkIfSandboxStillHasLogs(sandboxInfo.startedAt)
+  const hasRetainedLogs = checkIfSandboxStillHasLogs(
+    sandboxLifecycle?.createdAt ?? sandboxInfo.startedAt
+  )
 
   return (
     <LogsContent

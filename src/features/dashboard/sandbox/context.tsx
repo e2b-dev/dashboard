@@ -2,17 +2,28 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { createContext, useCallback, useContext } from 'react'
-import { SANDBOXES_DETAILS_METRICS_POLLING_MS } from '@/configs/intervals'
+import { createContext, useCallback, useContext, useMemo } from 'react'
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import { useAlignedRefetchInterval } from '@/lib/hooks/use-aligned-refetch-interval'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
-import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
+import type {
+  SandboxDetailsDTO,
+  SandboxEventDTO,
+} from '@/server/api/models/sandboxes.models'
 import { useTRPC } from '@/trpc/client'
-import type { ClientSandboxMetric } from '@/types/sandboxes.types'
+import { SANDBOX_LIFECYCLE_EVENT_KILLED } from './monitoring/utils/constants'
+
+export interface SandboxLifecycleState {
+  createdAt: string | null
+  pausedAt: string | null
+  endedAt: string | null
+  events: SandboxEventDTO[]
+}
 
 interface SandboxContextValue {
   sandboxInfo?: SandboxDetailsDTO
-  lastMetrics?: ClientSandboxMetric
+  sandboxLifecycle: SandboxLifecycleState | null
   isRunning: boolean
   isSandboxNotFound: boolean
 
@@ -34,11 +45,36 @@ interface SandboxProviderProps {
   children: ReactNode
 }
 
+function buildSandboxLifecycle(
+  sandboxInfo: SandboxDetailsDTO | undefined
+): SandboxLifecycleState | null {
+  if (!sandboxInfo) {
+    return null
+  }
+
+  const fallbackPausedAt =
+    sandboxInfo.state === 'paused' ? sandboxInfo.endAt : null
+  const fallbackEndedAt =
+    sandboxInfo.state === 'killed'
+      ? (sandboxInfo.stoppedAt ?? sandboxInfo.endAt)
+      : null
+
+  return {
+    createdAt: sandboxInfo.lifecycle?.createdAt ?? sandboxInfo.startedAt,
+    pausedAt: sandboxInfo.lifecycle?.pausedAt ?? fallbackPausedAt,
+    endedAt: sandboxInfo.lifecycle?.endedAt ?? fallbackEndedAt,
+    events: sandboxInfo.lifecycle?.events ?? [],
+  }
+}
+
 export function SandboxProvider({ children }: SandboxProviderProps) {
   const { teamIdOrSlug, sandboxId } =
     useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
 
   const trpc = useTRPC()
+  const getAlignedRefetchInterval = useAlignedRefetchInterval({
+    intervalMs: SANDBOXES_METRICS_POLLING_MS,
+  })
 
   const {
     data: sandboxInfoData,
@@ -51,6 +87,23 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
       { teamIdOrSlug, sandboxId },
       {
         retry: false,
+        refetchInterval: (query) => {
+          const sandboxInfo = query.state.data as SandboxDetailsDTO | undefined
+          const state = sandboxInfo?.state
+
+          // Keep polling when killed but the killed lifecycle event hasn't
+          // been received yet, so the monitoring chart can capture final data.
+          const isAwaitingKilledEvent =
+            state === 'killed' &&
+            !sandboxInfo?.lifecycle?.events?.some(
+              (e) => e.type === SANDBOX_LIFECYCLE_EVENT_KILLED
+            )
+          const shouldPoll =
+            state === 'running' || state === 'paused' || isAwaitingKilledEvent
+
+          return getAlignedRefetchInterval(shouldPoll)
+        },
+        refetchIntervalInBackground: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
         refetchOnMount: false,
@@ -63,42 +116,25 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
     await refetch()
   }, [refetch])
 
-  const sandboxInfoId = sandboxInfoData?.sandboxID
-  const isRunning = sandboxInfoData?.state === 'running'
-
-  const { data: sandboxesMetricsData } = useQuery(
-    trpc.sandboxes.getSandboxesMetrics.queryOptions(
-      { teamIdOrSlug, sandboxIds: [sandboxInfoId ?? sandboxId] },
-      {
-        enabled: Boolean(sandboxInfoId) && isRunning,
-        retry: 3,
-        retryDelay: 1_000,
-        refetchInterval: isRunning
-          ? SANDBOXES_DETAILS_METRICS_POLLING_MS
-          : false,
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
-      }
-    )
-  )
-
-  const metricsData = sandboxInfoId
-    ? sandboxesMetricsData?.metrics[sandboxInfoId]
-    : undefined
+  const sandboxState = sandboxInfoData?.state
+  const isRunning = sandboxState === 'running'
 
   const isSandboxNotFound =
     !sandboxInfoData && isNotFoundError(sandboxInfoError)
 
   const isSandboxInfoPending = isSandboxInfoLoading || isSandboxInfoFetching
+  const sandboxLifecycle = useMemo(
+    () => buildSandboxLifecycle(sandboxInfoData),
+    [sandboxInfoData]
+  )
 
   return (
     <SandboxContext.Provider
       value={{
         sandboxInfo: sandboxInfoData,
+        sandboxLifecycle,
         isRunning,
         isSandboxNotFound,
-        lastMetrics: metricsData,
         isSandboxInfoLoading: isSandboxInfoPending,
         refetchSandboxInfo,
       }}
