@@ -1,7 +1,7 @@
-import { createHashStorage } from '@/lib/utils/store'
-import { OnChangeFn, SortingState } from '@tanstack/react-table'
+import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { createHashStorage } from '@/lib/utils/store'
 import { trackTemplateTableInteraction } from '../table-config'
 
 interface TemplateTableState {
@@ -33,7 +33,7 @@ type Store = TemplateTableState & TemplateTableActions
 
 const initialState: TemplateTableState = {
   // Table state
-  sorting: [{ id: 'createdAt', desc: true }],
+  sorting: [{ id: 'updatedAt', desc: true }],
   globalFilter: '',
   // Filter state
   cpuCount: undefined,

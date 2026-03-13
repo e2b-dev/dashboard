@@ -1,5 +1,7 @@
 'use client'
 
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
@@ -12,15 +14,18 @@ import {
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
-import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
+import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import { TIME_RANGE_PRESETS } from './constants'
 import {
   determineSamplingMode,
   normalizeToEndOfSamplingPeriod,
   normalizeToStartOfSamplingPeriod,
 } from './sampling-utils'
+
+const USAGE_TIME_RANGE_BOUNDS = {
+  min: new Date('2023-01-01'),
+}
 
 interface UsageTimeRangeControlsProps {
   timeframe: {
@@ -106,15 +111,12 @@ export function UsageTimeRangeControls({
 
   const handleTimeRangeApply = useCallback(
     (values: TimeRangeValues) => {
-      const startTime = values.startTime || '00:00:00'
-      const endTime = values.endTime || '23:59:59'
+      const timestamps = parseTimeRangeValuesToTimestamps(values)
+      if (!timestamps) {
+        return
+      }
 
-      const startTimestamp = new Date(
-        `${values.startDate} ${startTime}`
-      ).getTime()
-      const endTimestamp = new Date(`${values.endDate} ${endTime}`).getTime()
-
-      onTimeRangeChange(startTimestamp, endTimestamp)
+      onTimeRangeChange(timestamps.start, timestamps.end)
       setIsTimePickerOpen(false)
     },
     [onTimeRangeChange]
@@ -166,7 +168,7 @@ export function UsageTimeRangeControls({
             <TimeRangePicker
               startDateTime={new Date(timeframe.start).toISOString()}
               endDateTime={new Date(timeframe.end).toISOString()}
-              minDate={new Date('2023-01-01')}
+              bounds={USAGE_TIME_RANGE_BOUNDS}
               onApply={handleTimeRangeApply}
               className="p-3 w-56 max-md:w-full"
             />

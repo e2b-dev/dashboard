@@ -1,5 +1,8 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useState } from 'react'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -26,10 +29,7 @@ import {
 import { CheckIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { useState } from 'react'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 interface WebhookEditSecretDialogProps {
   children: React.ReactNode
@@ -58,7 +58,7 @@ export default function WebhookEditSecretDialog({
       formProps: {
         mode: 'onChange',
         defaultValues: {
-          teamId: webhook.teamId,
+          teamIdOrSlug: webhook.teamId,
           webhookId: webhook.id,
           signatureSecret: '',
         },
@@ -135,7 +135,7 @@ export default function WebhookEditSecretDialog({
         <Form {...form}>
           <form onSubmit={handleSubmitWithAction} className="min-w-0">
             {/* Hidden fields */}
-            <input type="hidden" {...form.register('teamId')} />
+            <input type="hidden" {...form.register('teamIdOrSlug')} />
             <input type="hidden" {...form.register('webhookId')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0">

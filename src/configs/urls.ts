@@ -29,9 +29,13 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamIdOrSlug}/sandboxes?tab=list`,
 
   SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
-  SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/monitoring`,
+  SANDBOX_MONITORING: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/monitoring`,
+  SANDBOX_LOGS: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/logs`,
+  SANDBOX_FILESYSTEM: (teamIdOrSlug: string, sandboxId: string) =>
+    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/filesystem`,
 
   WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
 
@@ -50,6 +54,11 @@ export const PROTECTED_URLS = {
   BILLING_PLAN_SELECT: (teamIdOrSlug: string) =>
     `/dashboard/${teamIdOrSlug}/billing/plan/select`,
   LIMITS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/limits`,
+}
+
+export const RESOLVER_URLS = {
+  INSPECT_SANDBOX: (sandboxId: string) =>
+    `/dashboard/inspect/sandbox/${sandboxId}`,
 }
 
 export const HELP_URLS = {

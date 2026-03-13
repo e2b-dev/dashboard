@@ -1,11 +1,20 @@
 'use client'
 
+import { useSuspenseQuery } from '@tanstack/react-query'
+import {
+  type ColumnFiltersState,
+  type ColumnSizingState,
+  flexRender,
+  type TableOptions,
+  useReactTable,
+} from '@tanstack/react-table'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
-import { Template } from '@/types/api.types'
+import type { Template } from '@/types/api.types'
 import ClientOnly from '@/ui/client-only'
 import {
   DataTable,
@@ -16,23 +25,10 @@ import {
 import ErrorBoundary from '@/ui/error'
 import HelpTooltip from '@/ui/help-tooltip'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import {
-  ColumnFiltersState,
-  ColumnSizingState,
-  flexRender,
-  TableOptions,
-  useReactTable,
-} from '@tanstack/react-table'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocalStorage } from 'usehooks-ts'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
-
-const ROW_HEIGHT_PX = 32
-const VIRTUAL_OVERSCAN = 8
 
 export default function TemplatesTable() {
   'use no memo'
@@ -115,7 +111,6 @@ export default function TemplatesTable() {
     }
 
     setColumnFilters(newFilters)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cpuCount, memoryMB, isPublic])
 
   const columns = useColumns([])
@@ -141,6 +136,7 @@ export default function TemplatesTable() {
   const resetScroll = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
+      scrollRef.current.scrollLeft = 0
     }
   }
 
@@ -148,14 +144,6 @@ export default function TemplatesTable() {
   useEffect(() => {
     resetScroll()
   }, [sorting, globalFilter])
-
-  const centerRows = table.getCenterRows()
-  const { virtualRows, totalHeight, paddingTop } = useVirtualRows<Template>({
-    rows: centerRows,
-    scrollRef: scrollRef as unknown as React.RefObject<HTMLElement | null>,
-    estimateSizePx: ROW_HEIGHT_PX,
-    overscan: VIRTUAL_OVERSCAN,
-  })
 
   if (templatesError) {
     return (
@@ -204,9 +192,8 @@ export default function TemplatesTable() {
                     {header.id === 'public' ? (
                       <HelpTooltip>
                         Public templates can be used by all users to start
-                        Sandboxes, but can only be edited by your team.
-                        
-                        Internal templates can only be used and edited by your team.
+                        Sandboxes, but can only be edited by your team. Internal
+                        templates can only be used and edited by your team.
                       </HelpTooltip>
                     ) : null}
                     <span>
@@ -225,9 +212,7 @@ export default function TemplatesTable() {
           <TableBody
             templates={templates}
             table={table}
-            virtualizedTotalHeight={totalHeight}
-            virtualPaddingTop={paddingTop}
-            virtualRows={virtualRows}
+            scrollRef={scrollRef}
           />
         </DataTable>
       </div>

@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  INFRA_API_URL: z.url(),
   KV_REST_API_TOKEN: z.string().min(1),
   KV_REST_API_URL: z.url(),
 
@@ -52,6 +51,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
   NEXT_PUBLIC_INCLUDE_ARGUS: z.string().optional(),
   NEXT_PUBLIC_INCLUDE_REPORT_ISSUE: z.string().optional(),
+  NEXT_PUBLIC_INCLUDE_STATUS_INDICATOR: z.string().optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
@@ -59,6 +59,9 @@ export const clientSchema = z.object({
 
   NEXT_PUBLIC_CAPTCHA_ENABLED: z.string().optional(),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+
+  NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
+  NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 })
 
 export const testEnvSchema = z.object({

@@ -1,6 +1,10 @@
-import { UserTeamsResponse } from '@/app/api/teams/user/types'
+import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useCallback } from 'react'
+import useSWR from 'swr'
+import type { UserTeamsResponse } from '@/app/api/teams/user/types'
 import { useTeamCookieManager } from '@/lib/hooks/use-team'
-import { ClientTeam } from '@/types/dashboard.types'
+import type { ClientTeam } from '@/types/dashboard.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenuItem,
@@ -9,10 +13,6 @@ import {
   DropdownMenuRadioItem,
 } from '@/ui/primitives/dropdown-menu'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
-import { useCallback } from 'react'
-import useSWR from 'swr'
 import { useDashboard } from '../context'
 
 const PRESERVED_SEARCH_PARAMS = ['tab'] as const

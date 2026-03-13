@@ -1,4 +1,4 @@
-import { Column } from '@tanstack/react-table'
+import type { Column } from '@tanstack/react-table'
 import { DataTableRow } from './data-table'
 import { Skeleton } from './primitives/skeleton'
 

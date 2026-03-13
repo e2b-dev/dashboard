@@ -1,4 +1,4 @@
-import { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 
 /**
  * Cookie keys used throughout the application.
@@ -11,7 +11,6 @@ export const COOKIE_KEYS = {
   SIDEBAR_STATE: 'e2b-sidebar-state',
 
   SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
-  SANDBOX_INSPECT_POLLING_INTERVAL: 'e2b-sandbox-inspect-polling-interval',
 } as const
 
 const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {
@@ -37,9 +36,5 @@ export const COOKIE_OPTIONS = {
   },
   [COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH]: {
     ...BASE_COOKIE_OPTIONS,
-  },
-  [COOKIE_KEYS.SANDBOX_INSPECT_POLLING_INTERVAL]: {
-    ...BASE_COOKIE_OPTIONS,
-    maxAge: 60 * 60 * 24 * 7,
   },
 } as const

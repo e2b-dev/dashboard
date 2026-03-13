@@ -1,8 +1,8 @@
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { proxy } from '@/proxy'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { proxy } from '@/proxy'
 
 // mock supabase auth
 vi.mock('@supabase/ssr', () => ({

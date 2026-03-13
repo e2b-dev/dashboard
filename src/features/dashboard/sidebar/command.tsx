@@ -1,5 +1,8 @@
 'use client'
 
+import { ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
@@ -17,9 +20,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
-import { ChevronRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 import { useDashboard } from '../context'
 
 interface DashboardSidebarCommandProps {

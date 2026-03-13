@@ -1,12 +1,12 @@
+import Sandbox from 'e2b'
+import { type NextRequest, NextResponse } from 'next/server'
+import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { getDefaultTeam } from '@/server/auth/get-default-team'
 import { getSessionInsecure } from '@/server/auth/get-session'
-import Sandbox from 'e2b'
-import { NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -44,12 +44,12 @@ export const GET = async (req: NextRequest) => {
       },
     })
 
-    const inspectUrl = PROTECTED_URLS.SANDBOX_INSPECT(
+    const filesystemUrl = PROTECTED_URLS.SANDBOX_FILESYSTEM(
       defaultTeam.slug,
       sbx.sandboxId
     )
 
-    return NextResponse.redirect(new URL(inspectUrl, req.url))
+    return NextResponse.redirect(new URL(filesystemUrl, req.url))
   } catch (error) {
     l.warn(
       {

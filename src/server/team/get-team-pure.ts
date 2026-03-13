@@ -2,7 +2,7 @@ import 'server-cli-only'
 
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { returnServerError } from '@/lib/utils/action'
-import { ClientTeam } from '@/types/dashboard.types'
+import type { ClientTeam } from '@/types/dashboard.types'
 
 export const getTeamPure = async (userId: string, teamId: string) => {
   const { data: userTeamsRelationData, error: userTeamsRelationError } =

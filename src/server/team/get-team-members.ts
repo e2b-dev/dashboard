@@ -1,11 +1,11 @@
 import 'server-only'
 
+import type { User } from '@supabase/supabase-js'
+import { z } from 'zod'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { User } from '@supabase/supabase-js'
-import { z } from 'zod'
-import { TeamMemberInfo } from './types'
+import type { TeamMemberInfo } from './types'
 
 const GetTeamMembersSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,

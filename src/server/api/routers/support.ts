@@ -1,106 +1,51 @@
-import { l } from '@/lib/clients/logger/logger'
-import { PlainClient } from '@team-plain/typescript-sdk'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { createTRPCRouter } from '../init'
-import { protectedProcedure } from '../procedures'
+import { protectedTeamProcedure } from '../procedures'
+import { supportRepo } from '../repositories/support.repository'
 
-const ReportIssueSchema = z.object({
-  sandboxId: z.string().min(1).optional(),
-  description: z.string().min(1),
+const E2B_API_KEY_REGEX = /e2b_[a-f0-9]{40}/i
+
+const fileSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  base64: z.string(),
 })
 
 export const supportRouter = createTRPCRouter({
-  reportIssue: protectedProcedure
-    .input(ReportIssueSchema)
-    .mutation(async ({ input, ctx }) => {
-      const { sandboxId, description } = input
-      const email = ctx.user.email
-
-      if (!process.env.PLAIN_API_KEY) {
-        l.error(
-          { key: 'trpc:support:report_issue:plain_not_configured' },
-          'PLAIN_API_KEY not configured'
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Support API not configured',
-        })
-      }
+  contactSupport: protectedTeamProcedure
+    .input(
+      z.object({
+        description: z.string().min(1),
+        files: z.array(fileSchema).max(5).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { teamId, user } = ctx
+      const email = user.email
 
       if (!email) {
+        throw new Error('Email not found')
+      }
+
+      if (E2B_API_KEY_REGEX.test(input.description)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Email not found',
+          message:
+            'Your message contains an API key. Please remove it before sending.',
         })
       }
 
-      const client = new PlainClient({
-        apiKey: process.env.PLAIN_API_KEY,
+      const team = await supportRepo.getTeamSupportData(teamId)
+
+      return supportRepo.createSupportThread({
+        description: input.description,
+        files: input.files,
+        teamId,
+        teamName: team.name,
+        customerEmail: email,
+        accountOwnerEmail: team.email,
+        customerTier: team.tier,
       })
-
-      const customerResult = await client.upsertCustomer({
-        identifier: {
-          emailAddress: email,
-        },
-        onCreate: {
-          email: {
-            email,
-            isVerified: true,
-          },
-          fullName: email,
-        },
-        onUpdate: {},
-      })
-
-      if (customerResult.error) {
-        l.error(
-          {
-            key: 'trpc:support:report_issue:upsert_customer_error',
-            error: customerResult.error,
-            user_id: ctx.user.id,
-          },
-          `failed to upsert customer in Plain: ${customerResult.error.message}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create support ticket',
-        })
-      }
-
-      const result = await client.createThread({
-        title: sandboxId
-          ? `Dashboard Issue Report: ${sandboxId}`
-          : 'Dashboard Issue Report',
-        customerIdentifier: {
-          customerId: customerResult.data.customer.id,
-        },
-        components: [
-          {
-            componentText: {
-              text: sandboxId
-                ? `**Sandbox ID:** ${sandboxId}\n\n**Description:**\n${description}`
-                : `**Description:**\n${description}`,
-            },
-          },
-        ],
-      })
-
-      if (result.error) {
-        l.error(
-          {
-            key: 'trpc:support:report_issue:create_thread_error',
-            error: result.error,
-            user_id: ctx.user.id,
-          },
-          `failed to create Plain thread: ${result.error.message}`
-        )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create support ticket',
-        })
-      }
-
-      return { success: true, threadId: result.data.id }
     }),
 })

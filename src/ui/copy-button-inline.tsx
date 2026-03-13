@@ -1,6 +1,6 @@
+import { useRef, useState } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils/ui'
-import { useRef, useState } from 'react'
 
 export default function CopyButtonInline({
   value,

@@ -1,11 +1,11 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
 import { RefreshCw, Square } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
 import { useSandboxContext } from '../context'
 
 export default function RemainingTime() {
@@ -32,7 +32,7 @@ export default function RemainingTime() {
     }, 1000)
 
     return () => clearInterval(id)
-  }, [endAt, getRemainingSeconds])
+  }, [getRemainingSeconds])
 
   const hours = Math.floor(remaining / 3600)
   const minutes = Math.floor((remaining % 3600) / 60)

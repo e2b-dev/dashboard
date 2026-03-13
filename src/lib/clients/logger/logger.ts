@@ -6,8 +6,8 @@
  * In Edge we fall back to the minimal JSON logger implemented in `logger.edge.ts`.
  */
 
-import pino, { Logger } from 'pino'
-import { ErrorObject } from 'serialize-error'
+import pino, { type Logger } from 'pino'
+import type { ErrorObject } from 'serialize-error'
 
 /**
  * Represents platform-specific metadata that can be included in logs.

@@ -1,6 +1,6 @@
+import type React from 'react'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/utils/formatting'
-import React from 'react'
 
 export interface ResourceUsageProps {
   type: 'cpu' | 'mem' | 'disk'

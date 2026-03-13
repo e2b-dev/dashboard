@@ -1,9 +1,9 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
+import { useAction } from 'next-safe-action/hooks'
 import { signInWithOAuthAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
-import { useAction } from 'next-safe-action/hooks'
-import { useSearchParams } from 'next/navigation'
 
 export function OAuthProviders() {
   const searchParams = useSearchParams()
@@ -15,7 +15,9 @@ export function OAuthProviders() {
     <div className="mt-4 flex flex-col gap-2">
       <Button
         variant="muted"
-        onClick={() => execute({ provider: 'google', returnTo: returnTo || undefined })}
+        onClick={() =>
+          execute({ provider: 'google', returnTo: returnTo || undefined })
+        }
         className="flex items-center gap-2"
         disabled={isTransitioning}
       >
@@ -42,7 +44,9 @@ export function OAuthProviders() {
 
       <Button
         variant="muted"
-        onClick={() => execute({ provider: 'github', returnTo: returnTo || undefined })}
+        onClick={() =>
+          execute({ provider: 'github', returnTo: returnTo || undefined })
+        }
         className="flex items-center gap-2"
         disabled={isTransitioning}
       >

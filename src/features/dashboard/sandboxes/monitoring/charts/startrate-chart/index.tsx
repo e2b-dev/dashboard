@@ -1,7 +1,7 @@
 'use client'
 
-import { ReactiveLiveBadge } from '@/ui/live'
 import { useCallback, useRef } from 'react'
+import { ReactiveLiveBadge } from '@/ui/live'
 import { useTeamMetricsCharts } from '../../charts-context'
 import { AnimatedMetricDisplay } from '../animated-metric-display'
 import TeamMetricsChart from '../team-metrics-chart'

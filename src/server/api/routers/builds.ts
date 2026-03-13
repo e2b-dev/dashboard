@@ -1,13 +1,12 @@
-import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { z } from 'zod'
+import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
+import { buildsRepo } from '@/server/api/repositories/builds.repository'
 import { createTRPCRouter } from '../init'
 import {
-  BuildDetailsDTO,
-  BuildLogDTO,
-  BuildLogsDTO,
-  BuildStatusDTOSchema,
-  checkIfBuildStillHasLogs,
-  mapBuildStatusDTOToDatabaseBuildStatus,
+  type BuildDetailsDTO,
+  type BuildLogDTO,
+  type BuildLogsDTO,
+  BuildStatusSchema,
 } from '../models/builds.models'
 import { protectedTeamProcedure } from '../procedures'
 
@@ -18,7 +17,7 @@ export const buildsRouter = createTRPCRouter({
     .input(
       z.object({
         buildIdOrTemplate: z.string().optional(),
-        statuses: z.array(BuildStatusDTOSchema),
+        statuses: z.array(BuildStatusSchema),
         limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(),
       })
@@ -27,14 +26,11 @@ export const buildsRouter = createTRPCRouter({
       const { teamId } = ctx
       const { buildIdOrTemplate, statuses, limit, cursor } = input
 
-      const dbStatuses = statuses.flatMap(
-        mapBuildStatusDTOToDatabaseBuildStatus
-      )
-
       return await buildsRepo.listBuilds(
+        ctx.session.access_token,
         teamId,
         buildIdOrTemplate,
-        dbStatuses,
+        statuses,
         { limit, cursor }
       )
     }),
@@ -49,7 +45,11 @@ export const buildsRouter = createTRPCRouter({
       const { teamId } = ctx
       const { buildIds } = input
 
-      return await buildsRepo.getRunningStatuses(teamId, buildIds)
+      return await buildsRepo.getRunningStatuses(
+        ctx.session.access_token,
+        teamId,
+        buildIds
+      )
     }),
 
   buildDetails: protectedTeamProcedure
@@ -63,10 +63,15 @@ export const buildsRouter = createTRPCRouter({
       const { teamId } = ctx
       const { buildId, templateId } = input
 
-      const buildInfo = await buildsRepo.getBuildInfo(buildId, teamId)
+      const buildInfo = await buildsRepo.getBuildInfo(
+        ctx.session.access_token,
+        buildId,
+        teamId
+      )
 
       const result: BuildDetailsDTO = {
-        template: buildInfo.alias ?? templateId,
+        templateNames: buildInfo.names,
+        template: buildInfo.names?.[0] ?? templateId,
         startedAt: buildInfo.createdAt,
         finishedAt: buildInfo.finishedAt,
         status: buildInfo.status,
@@ -77,7 +82,7 @@ export const buildsRouter = createTRPCRouter({
       return result
     }),
 
-  buildLogsBackwards: protectedTeamProcedure
+  buildLogsBackwardsReversed: protectedTeamProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -104,13 +109,13 @@ export const buildsRouter = createTRPCRouter({
         { cursor, limit, direction, level }
       )
 
-      const logsToReturn = buildLogs.logs
-
-      const logs: BuildLogDTO[] = logsToReturn.map((log) => ({
-        timestampUnix: new Date(log.timestamp).getTime(),
-        level: log.level,
-        message: log.message,
-      }))
+      const logs: BuildLogDTO[] = buildLogs.logs
+        .map((log) => ({
+          timestampUnix: new Date(log.timestamp).getTime(),
+          level: log.level,
+          message: log.message,
+        }))
+        .reverse()
 
       const hasMore = logs.length === limit
       const cursorLog = logs[0]
@@ -158,7 +163,7 @@ export const buildsRouter = createTRPCRouter({
       }))
 
       const newestLog = logs[logs.length - 1]
-      const nextCursor = newestLog?.timestampUnix ?? null
+      const nextCursor = newestLog?.timestampUnix ?? cursor
 
       const result: BuildLogsDTO = {
         logs,
@@ -168,3 +173,7 @@ export const buildsRouter = createTRPCRouter({
       return result
     }),
 })
+
+function checkIfBuildStillHasLogs(createdAt: number): boolean {
+  return new Date().getTime() - createdAt < LOG_RETENTION_MS
+}

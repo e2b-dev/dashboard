@@ -1,5 +1,5 @@
-import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import type { MetadataRoute } from 'next'
+import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 
 export default function robots(): MetadataRoute.Robots {
   if (!ALLOW_SEO_INDEXING) {

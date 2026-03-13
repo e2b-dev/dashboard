@@ -1,6 +1,6 @@
-import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
-import { ClientTeamMetrics } from '@/types/sandboxes.types'
 import { z } from 'zod'
+import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
+import type { ClientTeamMetrics } from '@/types/sandboxes.types'
 
 export const TeamMetricsRequestSchema = z
   .object({

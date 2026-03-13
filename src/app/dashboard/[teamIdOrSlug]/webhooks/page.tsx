@@ -1,3 +1,5 @@
+import { Plus } from 'lucide-react'
+import { notFound } from 'next/navigation'
 import { INCLUDE_ARGUS } from '@/configs/flags'
 import WebhookAddEditDialog from '@/features/dashboard/settings/webhooks/add-edit-dialog'
 import WebhooksTable from '@/features/dashboard/settings/webhooks/table'
@@ -9,8 +11,6 @@ import {
   CardDescription,
   CardHeader,
 } from '@/ui/primitives/card'
-import { Plus } from 'lucide-react'
-import { notFound } from 'next/navigation'
 
 interface WebhooksPageClientProps {
   params: Promise<{

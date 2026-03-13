@@ -1,4 +1,4 @@
-import { ClientTeamMetric } from '@/types/sandboxes.types'
+import type { ClientTeamMetric } from '@/types/sandboxes.types'
 
 export type ChartType = 'concurrent' | 'start-rate'
 

@@ -1,7 +1,6 @@
-import { DomainConfig } from '@/types/rewrites.types'
+import type { DomainConfig } from '@/types/rewrites.types'
 
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
-// NOTE: DOCUMENTATION_DOMAIN has to be defined in next.config.mjs, such that we are able to use it there
 import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Currently we have two locations for rewrites to happen.
