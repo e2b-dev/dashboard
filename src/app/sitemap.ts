@@ -10,11 +10,8 @@
 import { XMLParser } from 'fast-xml-parser'
 import type { MetadataRoute } from 'next'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
-import {
-  LANDING_PAGE_DOMAIN,
-  ROUTE_REWRITE_CONFIG,
-  SDK_REFERENCE_DOMAIN,
-} from '@/configs/rewrites'
+import { LANDING_PAGE_DOMAIN, ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
+import { SITEMAP_EXCLUDE_CONFIG } from '@/configs/sitemap'
 import type { DomainConfig } from '@/types/rewrites.types'
 import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
@@ -53,12 +50,6 @@ const sites: Site[] = [
   {
     sitemapUrl: `https://${LANDING_PAGE_DOMAIN}/sitemap.xml`,
     priority: 1.0,
-    changeFrequency: 'weekly',
-    baseUrl: 'https://e2b.dev',
-  },
-  {
-    sitemapUrl: `https://${SDK_REFERENCE_DOMAIN}/sitemap.xml`,
-    priority: 0.7,
     changeFrequency: 'weekly',
     baseUrl: 'https://e2b.dev',
   },
@@ -119,6 +110,10 @@ async function getXmlData(url: string): Promise<Sitemap> {
   }
 }
 
+function matchesPathPrefix(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`)
+}
+
 /**
  * Finds the corresponding rewrite configuration for a given site based on its sitemap URL domain.
  *
@@ -138,6 +133,22 @@ function findRewriteConfig(site: Site): DomainConfig | undefined {
   }
 }
 
+function findExcludedPathPrefixes(site: Site): string[] {
+  try {
+    const siteDomain = new URL(site.sitemapUrl).hostname
+    return (
+      SITEMAP_EXCLUDE_CONFIG.find((config) => config.domain === siteDomain)
+        ?.excludedPathPrefixes ?? []
+    )
+  } catch (error) {
+    console.error(
+      `Error parsing sitemapUrl ${site.sitemapUrl} to find sitemap exclusions:`,
+      error
+    )
+    return []
+  }
+}
+
 /**
  * Processes a site's sitemap and converts it to Next.js sitemap format
  * Applies path preprocessing based on ROUTE_REWRITE_CONFIG.
@@ -148,6 +159,7 @@ function findRewriteConfig(site: Site): DomainConfig | undefined {
 async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
   const data = await getXmlData(site.sitemapUrl)
   const rewriteConfig = findRewriteConfig(site) // Find the rewrite config for this site
+  const excludedPathPrefixes = findExcludedPathPrefixes(site)
 
   if (!data || !site.baseUrl) {
     // Ensure baseUrl is defined, as it's crucial for constructing final URLs
@@ -169,6 +181,14 @@ async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
       const originalUrl = new URL(line.loc)
       const rewrittenPathname = originalUrl.pathname
       let finalPathname = rewrittenPathname // Default to the path from the sitemap
+
+      if (
+        excludedPathPrefixes.some((prefix) =>
+          matchesPathPrefix(rewrittenPathname, prefix)
+        )
+      ) {
+        return null
+      }
 
       // Find the corresponding original path if a preprocessor was involved
       if (rewriteConfig) {

@@ -20,15 +20,17 @@ function getRewriteForPath(
 
     const matchingRule = domainConfig.rules.find((rule) => {
       if (isIndex && rule.path === '/') {
-        return rule
+        return true
       }
 
       if (
         rule.path !== '/' &&
-        (path === rule.path || path.startsWith(rule.path + '/'))
+        (path === rule.path || path.startsWith(`${rule.path}/`))
       ) {
-        return rule
+        return true
       }
+
+      return false
     })
 
     if (matchingRule) {
