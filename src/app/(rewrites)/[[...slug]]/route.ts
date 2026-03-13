@@ -43,7 +43,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const { config, rule } = getRewriteForPath(url.pathname, 'route')
 
   if (config) {
-    if (rule && rule.pathPreprocessor) {
+    if (rule?.pathPreprocessor) {
       url.pathname = rule.pathPreprocessor(url.pathname)
     }
     updateUrlHostname(config.domain)
@@ -131,7 +131,7 @@ export async function generateStaticParams() {
           if (isIndex && rule.path === '/') {
             return true
           }
-          if (pathname === rule.path || pathname.startsWith(rule.path + '/')) {
+          if (pathname === rule.path || pathname.startsWith(`${rule.path}/`)) {
             return true
           }
           return false
