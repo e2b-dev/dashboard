@@ -1,8 +1,15 @@
 'use client'
 
 import type { User } from '@supabase/supabase-js'
-import { createContext, type ReactNode, useContext, useState } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 import type { ClientTeam } from '@/types/dashboard.types'
+import { ReferralSourceDialog } from './referral-source-dialog'
 
 interface DashboardContextValue {
   team: ClientTeam
@@ -29,6 +36,14 @@ export function DashboardContextProvider({
 }: DashboardContextProviderProps) {
   const [team, setTeam] = useState(initialTeam)
   const [user, setUser] = useState(initialUser)
+  const [showReferralDialog, setShowReferralDialog] = useState(false)
+
+  useEffect(() => {
+    const referralAsked = user?.user_metadata?.referral_asked
+    if (user && !referralAsked) {
+      setShowReferralDialog(true)
+    }
+  }, [user])
 
   const value = {
     team,
@@ -41,6 +56,11 @@ export function DashboardContextProvider({
   return (
     <DashboardContext.Provider value={value}>
       {children}
+      <ReferralSourceDialog
+        userEmail={user.email ?? ''}
+        open={showReferralDialog}
+        onOpenChange={setShowReferralDialog}
+      />
     </DashboardContext.Provider>
   )
 }
