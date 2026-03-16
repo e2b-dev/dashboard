@@ -6,7 +6,7 @@ export const cardVariants = cva('', {
   variants: {
     variant: {
       default: 'bg-bg text-fg',
-      layer: 'bg-bg-hover/60 backdrop-blur-lg border border-stroke',
+      layer: 'bg-bg-1 border border-stroke',
       slate: '',
     },
   },
