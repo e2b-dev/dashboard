@@ -67,24 +67,24 @@ export default function DashboardSidebarMenu() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             collisionPadding={10}
-            className="w-[280px] px-3"
+            className="w-[280px] px-4 pt-3 pb-2"
             align="start"
             sideOffset={4}
           >
             <DashboardSidebarMenuTeams />
 
             <DropdownMenuItem
-              className="text-accent-main-highlight mt-1 font-sans prose-label-highlight"
+              className="text-accent-main-highlight mt-1 h-9 px-0 py-0 font-sans prose-label-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
               <AddIcon className="ml-0.5 size-5" /> Create New Team
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="-mx-4" />
 
-            <DropdownMenuGroup className="gap-1 pt-0 pb-2">
+            <DropdownMenuGroup className="gap-0 pt-0 pb-0">
               <DropdownMenuItem
-                className="font-sans prose-label-highlight"
+                className="h-9 px-0 py-0 font-sans prose-label-highlight"
                 asChild
               >
                 <Link href={PROTECTED_URLS.ACCOUNT_SETTINGS}>
@@ -94,7 +94,7 @@ export default function DashboardSidebarMenu() {
 
               <DropdownMenuItem
                 variant="error"
-                className="font-sans prose-label-highlight"
+                className="h-9 px-0 py-0 font-sans prose-label-highlight"
                 onSelect={handleLogout}
               >
                 <LogoutIcon className="size-4" /> Log Out
