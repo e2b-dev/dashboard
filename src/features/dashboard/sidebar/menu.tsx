@@ -74,7 +74,7 @@ export default function DashboardSidebarMenu() {
             <DashboardSidebarMenuTeams />
 
             <DropdownMenuItem
-              className="text-accent-main-highlight mt-1 h-9 px-0 py-0 font-sans prose-label-highlight"
+              className="text-accent-main-highlight mt-1 h-9 px-0 py-0 font-sans prose-body-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
               <AddIcon className="ml-0.5 size-5" /> Create New Team
@@ -84,7 +84,7 @@ export default function DashboardSidebarMenu() {
 
             <DropdownMenuGroup className="gap-0 pt-0 pb-0">
               <DropdownMenuItem
-                className="h-9 px-0 py-0 font-sans prose-label-highlight"
+                className="h-9 px-0 py-0 font-sans prose-body-highlight"
                 asChild
               >
                 <Link href={PROTECTED_URLS.ACCOUNT_SETTINGS}>
@@ -94,7 +94,7 @@ export default function DashboardSidebarMenu() {
 
               <DropdownMenuItem
                 variant="error"
-                className="h-9 px-0 py-0 font-sans prose-label-highlight"
+                className="h-9 px-0 py-0 font-sans prose-body-highlight"
                 onSelect={handleLogout}
               >
                 <LogoutIcon className="size-4" /> Log Out

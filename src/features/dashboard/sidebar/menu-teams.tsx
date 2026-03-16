@@ -109,7 +109,7 @@ export default function DashboardSidebarMenuTeams() {
                   {team.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <span className="flex-1 truncate font-sans prose-label-highlight">
+              <span className="flex-1 truncate font-sans prose-body-highlight">
                 {team.transformed_default_name || team.name}
               </span>
             </DropdownMenuRadioItem>
