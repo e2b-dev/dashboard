@@ -14,7 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
+import { WarningIcon } from '@/ui/primitives/icons'
+import { ChevronLeftIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { useEffect } from 'react'
@@ -55,7 +56,7 @@ export default function SandboxInspectIncompatible({
         <Card className="bg-bg flex h-full min-h-160 w-full max-w-150 flex-col justify-between border p-7">
           <CardHeader className="px-0 pt-0 pb-7">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-accent-warning-highlight h-5 w-5" />
+              <WarningIcon className="text-accent-warning-highlight h-5 w-5" />
               <CardTitle>Incompatible template</CardTitle>
             </div>
             <CardDescription className="text-fg-secondary">
@@ -118,7 +119,7 @@ export default function SandboxInspectIncompatible({
               asChild
             >
               <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug)}>
-                <ChevronLeft className="size-5" />
+                <ChevronLeftIcon className="size-5" />
                 Back to sandboxes
               </Link>
             </Button>
@@ -129,7 +130,7 @@ export default function SandboxInspectIncompatible({
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
                 Documentation{' '}
-                <ArrowUpRight className="text-fill-highlight size-5 stroke-[1px]!" />
+                <ExternalLinkIcon className="text-fill-highlight size-5 stroke-[1px]!" />
               </Link>
             </Button>
           </CardFooter>

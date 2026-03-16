@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
+import { RefreshIcon } from '@/ui/primitives/icons'
+import { ArrowLeft, ArrowUp, Home } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { serializeError } from 'serialize-error'
@@ -119,7 +120,7 @@ export default function SandboxInspectNotFound() {
                   className="w-full"
                   disabled={isResetPending}
                 >
-                  <RefreshCw
+                  <RefreshIcon
                     className={cn(
                       'transition-transform',
                       {

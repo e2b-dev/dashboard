@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRightIcon } from '@/ui/primitives/icons'
 import { ReactNode, memo, useCallback, useEffect, useRef } from 'react'
 
 import { cn } from '@/lib/utils'
@@ -253,7 +253,7 @@ export const TimePicker = memo(function TimePicker({
                   <RadioGroupItem value="custom" />
                   <span className="prose-body">Custom</span>
                 </div>
-                <ChevronRight className="size-4 text-fg-tertiary" />
+                <ChevronRightIcon className="size-4 text-fg-tertiary" />
               </DropdownMenuItem>
             </RadioGroup>
           </div>

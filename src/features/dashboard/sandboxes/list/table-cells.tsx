@@ -27,7 +27,8 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader'
 import { CellContext } from '@tanstack/react-table'
-import { ArrowUpRight, MoreVertical, Trash2 } from 'lucide-react'
+import { IndicatorDotsIcon } from '@/ui/primitives/icons'
+import { TrashIcon } from '@/ui/primitives/icons'
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
@@ -89,7 +90,7 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
           {isKilling ? (
             <Loader />
           ) : (
-            <MoreVertical />
+            <IndicatorDotsIcon />
           )}
         </IconButton>
       </DropdownMenuTrigger>
@@ -98,7 +99,7 @@ export function ActionsCell({ row }: CellContext<SandboxWithMetrics, unknown>) {
           <DropdownMenuLabel>Danger Zone</DropdownMenuLabel>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger variant="error">
-              <Trash2 className="!size-3" />
+              <TrashIcon className="!size-3" />
               Kill
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>

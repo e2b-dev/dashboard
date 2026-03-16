@@ -3,7 +3,8 @@
 import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { RefreshCw, Square } from 'lucide-react'
+import { RefreshIcon } from '@/ui/primitives/icons'
+import { Square } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSandboxContext } from '../context'
@@ -64,7 +65,7 @@ export default function RemainingTime() {
           onClick={refetchSandboxInfo}
           disabled={isSandboxInfoLoading}
         >
-          <RefreshCw
+          <RefreshIcon
             className={cn(isSandboxInfoLoading && 'animate-spin duration-300 ease-in-out')}
           />
         </IconButton>

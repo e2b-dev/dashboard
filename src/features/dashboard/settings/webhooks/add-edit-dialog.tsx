@@ -21,7 +21,7 @@ import { CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { PlusIcon } from 'lucide-react'
+import { AddIcon } from '@/ui/primitives/icons'
 import { useState } from 'react'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
@@ -261,7 +261,7 @@ export default function WebhookAddEditDialog({
                             className="w-full"
                             disabled={!isStep2Valid}
                           >
-                            <PlusIcon />
+                            <AddIcon />
                             Add
                           </Button>
                         </>

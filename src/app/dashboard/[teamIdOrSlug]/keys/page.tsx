@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { Plus } from 'lucide-react'
+import { AddIcon } from '@/ui/primitives/icons'
 
 interface KeysPageClientProps {
   params: Promise<{
@@ -38,7 +38,7 @@ export default async function KeysPage({ params }: KeysPageClientProps) {
 
             <CreateApiKeyDialog>
               <Button className="w-full sm:w-auto sm:self-start">
-                <Plus className="size-4" /> CREATE KEY
+                <AddIcon className="size-4" /> CREATE KEY
               </Button>
             </CreateApiKeyDialog>
           </div>

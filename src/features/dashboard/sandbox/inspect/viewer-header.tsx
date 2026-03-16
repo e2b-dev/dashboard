@@ -1,6 +1,8 @@
 import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
+import { RefreshIcon } from '@/ui/primitives/icons'
+import { CloseIcon } from '@/ui/primitives/icons'
+import { Download, FileIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { FileContentState } from './filesystem/store'
 
@@ -46,12 +48,12 @@ export default function SandboxInspectViewerHeader({
             bounce: 0,
           }}
         >
-          <RefreshCcw />
+          <RefreshIcon />
         </motion.div>
       </IconButton>
 
       <IconButton onClick={onClose}>
-        <X />
+        <CloseIcon />
       </IconButton>
     </div>
   )

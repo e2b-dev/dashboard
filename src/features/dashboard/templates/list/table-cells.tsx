@@ -29,7 +29,9 @@ import {
 import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
-import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
+import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
+import { IndicatorDotsIcon } from '@/ui/primitives/icons'
+import { Lock, LockOpen } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -231,7 +233,7 @@ export function ActionsCell({
             {isUpdating ? (
               <Loader className="size-4" />
             ) : (
-              <MoreVertical />
+              <IndicatorDotsIcon />
             )}
           </IconButton>
         </DropdownMenuTrigger>
@@ -349,9 +351,9 @@ export function TemplateNameCell({
           aria-hidden="true"
         >
           {wasCopied ? (
-            <Check className="size-3 text-icon" />
+            <CheckIcon className="size-3 text-icon" />
           ) : (
-            <Copy className="size-3 text-icon-secondary" />
+            <CopyIcon className="size-3 text-icon-secondary" />
           )}
         </div>
       )}

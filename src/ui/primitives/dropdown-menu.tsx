@@ -5,7 +5,7 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 import { VariantProps } from 'class-variance-authority'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRightIcon } from './icons'
 import { Checkbox } from './checkbox'
 import { CheckIcon } from './icons'
 import {
@@ -52,7 +52,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto size-4 text-fg-tertiary" />
+    <ChevronRightIcon className="ml-auto size-4 text-fg-tertiary" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =

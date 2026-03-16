@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { TableCell, TableRow } from '@/ui/primitives/table'
-import { MoreHorizontal } from 'lucide-react'
+import { IndicatorDotsIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
@@ -135,7 +135,7 @@ export default function ApiKeyTableRow({
                     ease: exponentialSmoothing(5),
                   }}
                 >
-                  <MoreHorizontal />
+                  <IndicatorDotsIcon />
                 </motion.button>
               </IconButton>
             </DropdownMenuTrigger>

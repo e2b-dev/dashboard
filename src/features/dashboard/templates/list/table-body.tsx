@@ -3,7 +3,8 @@ import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
 import { flexRender, Row, Table } from '@tanstack/react-table'
-import { ExternalLink, X } from 'lucide-react'
+import { CloseIcon } from '@/ui/primitives/icons'
+import { ExternalLinkIcon } from '@/ui/primitives/icons'
 import { useMemo } from 'react'
 import { useTemplateTableStore } from './stores/table-store'
 
@@ -46,7 +47,7 @@ export function TemplatesTableBody({
           description="No templates match your current filters"
           message={
             <Button onClick={resetFilters}>
-              Reset Filters <X />
+              Reset Filters <CloseIcon />
             </Button>
           }
           className="h-[70%] max-md:w-screen"
@@ -62,7 +63,7 @@ export function TemplatesTableBody({
           <Button asChild>
             <a href="/docs/sandbox-template" target="_blank" rel="noopener">
               Create a Template
-              <ExternalLink />
+              <ExternalLinkIcon />
             </a>
           </Button>
         }

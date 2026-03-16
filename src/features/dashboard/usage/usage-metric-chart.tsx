@@ -11,7 +11,7 @@ import {
 } from '@/ui/primitives/card'
 import { Dialog, DialogContent } from '@/ui/primitives/dialog'
 import { DialogTitle } from '@radix-ui/react-dialog'
-import { Maximize2 } from 'lucide-react'
+import { UnpackIcon } from '@/ui/primitives/icons'
 import { useState } from 'react'
 import ComputeUsageChart from './compute-usage-chart'
 import { useUsageCharts } from './usage-charts-context'
@@ -104,7 +104,7 @@ function UsageMetricChartContent({
               )}
               aria-label="Expand chart to fullscreen"
             >
-              <Maximize2 />
+              <UnpackIcon />
             </IconButton>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
-import { Circle, ListFilter } from 'lucide-react'
+import { FilterIcon } from '@/ui/primitives/icons'
+import { Circle } from 'lucide-react'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -56,7 +57,7 @@ export function SandboxesHeader({
             {showFilteredRowCount && (
               <Badge size="lg" variant="info" className="uppercase">
                 {table.getFilteredRowModel().rows.length} filtered
-                <ListFilter className="size-3 stroke-[3px]!" />
+                <FilterIcon className="size-3 stroke-[3px]!" />
               </Badge>
             )}
           </div>

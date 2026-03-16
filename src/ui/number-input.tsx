@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon } from './primitives/icons'
 import * as React from 'react'
 import { IconButton } from './primitives/icon-button'
 import { Input } from './primitives/input'
@@ -107,7 +107,7 @@ export function NumberInput({
           onClick={increment}
           disabled={disabled || value >= max}
         >
-          <ChevronUp />
+          <ChevronUpIcon />
           <span className="sr-only">Increase</span>
         </IconButton>
         <IconButton
@@ -120,7 +120,7 @@ export function NumberInput({
           onClick={decrement}
           disabled={disabled || value <= min}
         >
-          <ChevronDown />
+          <ChevronDownIcon />
           <span className="sr-only">Decrease</span>
         </IconButton>
       </div>

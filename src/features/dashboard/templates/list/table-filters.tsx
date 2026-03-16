@@ -18,7 +18,7 @@ import {
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { ListFilter } from 'lucide-react'
+import { FilterIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
 import { useDebounceValue } from 'usehooks-ts'
 import { useTemplateTableStore } from './stores/table-store'
@@ -158,7 +158,7 @@ const TemplatesTableFilters = React.forwardRef<
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
+            <FilterIcon className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

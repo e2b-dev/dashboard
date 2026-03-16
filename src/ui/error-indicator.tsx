@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { RefreshCcw } from 'lucide-react'
+import { RefreshIcon } from './primitives/icons'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { Button } from './primitives/button'
@@ -54,7 +54,7 @@ export function ErrorIndicator({
           onClick={() => startTransition(() => router.refresh())}
           className="w-full max-w-md gap-1"
         >
-          <RefreshCcw
+          <RefreshIcon
             className={`duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
           />
           Refresh

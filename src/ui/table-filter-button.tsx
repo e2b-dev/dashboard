@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { CloseIcon } from './primitives/icons'
 import React from 'react'
 import { Button } from './primitives/button'
 
@@ -27,7 +27,7 @@ export const TableFilterButton = React.forwardRef<
           <span className="truncate text-fg">{value}</span>
         </>
       )}
-      <X />
+      <CloseIcon />
     </Button>
   )
 })

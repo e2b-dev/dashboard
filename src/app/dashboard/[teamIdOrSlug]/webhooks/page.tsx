@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
 } from '@/ui/primitives/card'
-import { Plus } from 'lucide-react'
+import { AddIcon } from '@/ui/primitives/icons'
 import { notFound } from 'next/navigation'
 
 interface WebhooksPageClientProps {
@@ -43,7 +43,7 @@ export default async function WebhooksPage({
 
             <WebhookAddEditDialog mode="add">
               <Button className="w-full sm:w-auto sm:self-start">
-                <Plus className="size-4" /> Add Webhook
+                <AddIcon className="size-4" /> Add Webhook
               </Button>
             </WebhookAddEditDialog>
           </div>

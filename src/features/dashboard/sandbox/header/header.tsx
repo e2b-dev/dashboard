@@ -1,7 +1,7 @@
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxInfo } from '@/types/api.types'
-import { ChevronLeftIcon } from 'lucide-react'
+import { ChevronLeftIcon } from '@/ui/primitives/icons'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { DetailsItem, DetailsRow } from '../../layouts/details-row'

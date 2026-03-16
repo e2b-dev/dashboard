@@ -6,7 +6,7 @@ import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { AlertTriangle } from 'lucide-react'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { Suspense } from 'react'
 import {
   ConcurrentSandboxesClient,
@@ -39,7 +39,7 @@ function BaseErrorTooltip({ children }: { children: React.ReactNode }) {
     <ErrorTooltip
       trigger={
         <span className="inline-flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
+          <WarningIcon className="h-4 w-4 text-accent-error-highlight" />
           <span className="prose-body-highlight text-accent-error-highlight">
             Failed
           </span>

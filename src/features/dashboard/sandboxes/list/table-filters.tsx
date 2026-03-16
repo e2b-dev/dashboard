@@ -19,7 +19,7 @@ import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { ListFilter, Plus } from 'lucide-react'
+import { AddIcon, FilterIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
 import { memo, useCallback } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
@@ -122,7 +122,7 @@ const TemplateFilter = memo(function TemplateFilter() {
           onClick={handleSubmit}
           disabled={!localValue.trim()}
         >
-          <Plus className="size-3.5 min-w-3.5" />
+          <AddIcon className="size-3.5 min-w-3.5" />
         </Button>
       </div>
     </div>
@@ -267,7 +267,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filters{' '}
+            <FilterIcon className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

@@ -8,7 +8,7 @@ import {
   cardVariants,
 } from '@/ui/primitives/card'
 import { AnimatePresence, motion } from 'motion/react'
-import { AlertTriangle } from 'lucide-react'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { useMemo } from 'react'
 import { useSandboxContext } from '../context'
 import { useLastUpdated, useWatcherError } from './hooks/use-watcher'
@@ -44,7 +44,7 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
         >
           <CardHeader className="p-4!">
             <CardTitle className="inline-flex items-center gap-2">
-              <AlertTriangle className="size-5 text-accent-warning-highlight" />
+              <WarningIcon className="size-5 text-accent-warning-highlight" />
               <span className="prose-headline-small uppercase">
                 {showWatcherError
                   ? 'Live filesystem updates disabled'

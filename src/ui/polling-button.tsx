@@ -8,7 +8,7 @@ import {
   SelectTrigger,
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
-import { RefreshCw } from 'lucide-react'
+import { RefreshIcon } from './primitives/icons'
 
 export interface PollingInterval {
   value: number
@@ -58,7 +58,7 @@ export function PollingButton({
         disabled={concatenatedIsRefreshing}
         className="mr-2"
       >
-        <RefreshCw
+        <RefreshIcon
           className={cn(concatenatedIsRefreshing && 'animate-spin')}
         />
       </IconButton>

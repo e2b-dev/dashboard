@@ -13,7 +13,7 @@ import {
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
 import { TimeRangePresets, type TimeRangePreset } from '@/ui/time-range-presets'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon } from '@/ui/primitives/icons'
 import { useCallback, useMemo, useState } from 'react'
 import { TIME_RANGE_PRESETS } from './constants'
 import {
@@ -137,7 +137,7 @@ export function UsageTimeRangeControls({
         className="border-r-0 px-2"
         title="Move back by one-quarter of the range"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeftIcon className="h-4 w-4" />
       </Button>
       <CopyButton
         value={rangeCopyValue}
@@ -187,7 +187,7 @@ export function UsageTimeRangeControls({
         className="px-2"
         title="Move forward by one-quarter of the range"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRightIcon className="h-4 w-4" />
       </Button>
     </div>
   )

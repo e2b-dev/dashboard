@@ -1,5 +1,5 @@
 'use client'
-import { Check, Copy } from 'lucide-react'
+import { CheckIcon, CopyIcon } from './primitives/icons'
 import {
   type ButtonHTMLAttributes,
   type HTMLAttributes,
@@ -172,8 +172,8 @@ function CopyButton({
       onClick={onCopy}
       {...props}
     >
-      <Check className={cn('transition-transform', !isCopied && 'scale-0')} />
-      <Copy
+      <CheckIcon className={cn('transition-transform', !isCopied && 'scale-0')} />
+      <CopyIcon
         className={cn('absolute transition-transform', isCopied && 'scale-0')}
       />
     </button>
