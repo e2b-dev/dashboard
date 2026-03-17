@@ -2,7 +2,8 @@
 
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { AlertIcon, InfoIcon } from '@/ui/primitives/icons'
+import { CheckCircle2 } from 'lucide-react'
 import { motion } from 'motion/react'
 
 // TODO: this type is used in more places than just authentication
@@ -37,7 +38,7 @@ export function AuthFormMessage({
       )}
       {'error' in message && (
         <Alert variant="error">
-          <AlertCircle className="h-4 w-4" />
+          <AlertIcon className="h-4 w-4" />
           <AlertDescription>
             {decodeURIComponent(message.error!)}
           </AlertDescription>
@@ -45,7 +46,7 @@ export function AuthFormMessage({
       )}
       {'message' in message && (
         <Alert variant="info">
-          <Info className="h-4 w-4" />
+          <InfoIcon className="h-4 w-4" />
           <AlertDescription>
             {decodeURIComponent(message.message!)}
           </AlertDescription>

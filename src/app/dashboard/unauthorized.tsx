@@ -10,7 +10,8 @@ import {
   CardFooter,
   CardHeader,
 } from '@/ui/primitives/card'
-import { ArrowLeft, HomeIcon, ShieldX, UsersIcon } from 'lucide-react'
+import { PersonsIcon } from '@/ui/primitives/icons'
+import { ArrowLeft, HomeIcon, ShieldX } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Unauthorized() {
@@ -41,7 +42,7 @@ export default function Unauthorized() {
             </Button>
             <Button variant="secondary" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD}>
-                <UsersIcon />
+                <PersonsIcon />
                 My Teams
               </Link>
             </Button>

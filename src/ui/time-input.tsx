@@ -1,6 +1,7 @@
 'use client'
 
-import { CalendarIcon, Clock as ClockIcon } from 'lucide-react'
+import { TimeIcon } from './primitives/icons'
+import { CalendarIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useState } from 'react'
 
 import { cn } from '@/lib/utils'
@@ -202,7 +203,7 @@ export const TimeInput = memo(function TimeInput({
                 <IconButton
                   tabIndex={-1}
                 >
-                  <ClockIcon />
+                  <TimeIcon />
                 </IconButton>
               </PopoverTrigger>
             </div>

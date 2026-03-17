@@ -3,8 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { RefreshIcon } from '@/ui/primitives/icons'
-import { Square } from 'lucide-react'
+import { DotIcon, RefreshIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSandboxContext } from '../context'
@@ -46,7 +45,7 @@ export default function RemainingTime() {
   if (!isRunning) {
     return (
       <Badge>
-        <Square className="size-2 fill-current" /> Stopped
+        <DotIcon className="size-3 fill-current" /> Stopped
       </Badge>
     )
   }

@@ -2,7 +2,8 @@
 
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { AlertCircle, FolderClosed, FolderOpen } from 'lucide-react'
+import { AlertIcon } from '@/ui/primitives/icons'
+import { FolderClosed, FolderOpen } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import SandboxInspectEmptyNode from './empty'
 import { FilesystemNode } from './filesystem/types'
@@ -63,7 +64,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         />
         {hasError && (
           <span className="text-accent-error-highlight flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
-            <AlertCircle className="size-3" />
+            <AlertIcon className="size-3" />
             {error}
           </span>
         )}

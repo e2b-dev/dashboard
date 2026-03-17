@@ -29,9 +29,7 @@ import {
 import { Loader } from '@/ui/primitives/loader_d'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CellContext } from '@tanstack/react-table'
-import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
-import { IndicatorDotsIcon } from '@/ui/primitives/icons'
-import { Lock, LockOpen } from 'lucide-react'
+import { CheckIcon, CopyIcon, IndicatorDotsIcon, PrivateIcon, UnlockIcon } from '@/ui/primitives/icons'
 import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -246,12 +244,12 @@ export function ActionsCell({
             >
               {template.public ? (
                 <>
-                  <Lock className="!size-3" />
+                  <PrivateIcon className="!size-3" />
                   Set Internal
                 </>
               ) : (
                 <>
-                  <LockOpen className="!size-3" />
+                  <UnlockIcon className="!size-3" />
                   Set Public
                 </>
               )}
@@ -441,7 +439,7 @@ export function VisibilityCell({
       size="sm"
       className={cn('uppercase bg-fill', !isPublic && 'pl-[3]')}
     >
-      {!isPublic && <Lock className="size-3 text-fg-tertiary" />}
+      {!isPublic && <PrivateIcon className="size-3 text-fg-tertiary" />}
       {isPublic ? 'Public' : 'Internal'}
     </Badge>
   )

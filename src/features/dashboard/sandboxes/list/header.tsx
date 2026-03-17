@@ -1,7 +1,7 @@
 import { PollingButton } from '@/ui/polling-button'
 import { Badge } from '@/ui/primitives/badge'
 import { FilterIcon } from '@/ui/primitives/icons'
-import { Circle } from 'lucide-react'
+import { DotIcon } from '@/ui/primitives/icons'
 import {
   sandboxesPollingIntervals,
   useSandboxTableStore,
@@ -52,7 +52,7 @@ export function SandboxesHeader({
           <div className="flex items-center gap-3">
             <Badge size="lg" variant="positive" className="uppercase">
               {table.getCoreRowModel().rows.length} running
-              <Circle className="size-2 fill-current" />
+              <DotIcon className="size-3 fill-current" />
             </Badge>
             {showFilteredRowCount && (
               <Badge size="lg" variant="info" className="uppercase">

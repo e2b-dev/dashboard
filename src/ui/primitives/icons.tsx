@@ -1188,6 +1188,20 @@ export const PrivateIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const UnlockIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M3.3335 6.66663H12.6668V14H3.3335V6.66663Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square" />
+    <path d="M5.3335 6.33333V4.66667C5.3335 3.19391 6.5274 2 8.00016 2C9.4729 2 10.6668 3.19391 10.6668 4.66667" stroke="currentColor" stroke-width="1.33333" stroke-linejoin="round" />
+    <path d="M8 9.33337V11.3334" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square" stroke-linejoin="round" />
+  </svg>
+)
+
 export const EnterpriseIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}
@@ -1378,6 +1392,32 @@ export const ArrowDownIcon = ({ className, ...props }: IconProps) => (
       strokeLinecap="square"
       strokeWidth="1.33333"
     />
+  </svg>
+)
+
+export const ArrowRightIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M9.3335 4L13.3335 8L9.3335 12" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square"/>
+    <path d="M12.6665 8H2.6665" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square"/>
+  </svg>
+)
+
+export const ArrowLeftIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M6.6665 4L2.6665 8L6.6665 12" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square"/>
+    <path d="M3.3335 8H13.3335" stroke="currentColor" stroke-width="1.33333" stroke-linecap="square"/>
   </svg>
 )
 
