@@ -4,7 +4,6 @@ import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
-import checkUserTeamAuthCached from '@/server/auth/check-user-team-auth-cached'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
 import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
@@ -217,7 +216,10 @@ export const withTeamIdResolution = createMiddleware<{
     )
   }
 
-  const teamId = await getTeamIdFromSegment(clientInput.teamIdOrSlug as string)
+  const teamId = await getTeamIdFromSegment(
+    clientInput.teamIdOrSlug as string,
+    ctx.session.access_token
+  )
 
   if (!teamId) {
     l.warn(
@@ -228,22 +230,6 @@ export const withTeamIdResolution = createMiddleware<{
         },
       },
       `with_team_id_resolution:invalid_team_id_or_slug - invalid team id or slug provided through withTeamIdResolution middleware: ${clientInput.teamIdOrSlug}`
-    )
-
-    throw unauthorized()
-  }
-
-  const isAuthorized = await checkUserTeamAuthCached(ctx.user.id, teamId)
-
-  if (!isAuthorized) {
-    l.warn(
-      {
-        key: 'with_team_id_resolution:user_not_authorized',
-        context: {
-          teamIdOrSlug: clientInput.teamIdOrSlug,
-        },
-      },
-      `with_team_id_resolution:user_not_authorized - user not authorized to access team: ${clientInput.teamIdOrSlug}`
     )
 
     throw unauthorized()

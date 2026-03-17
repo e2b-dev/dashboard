@@ -1,15 +1,15 @@
 'use server'
 
 import { fileTypeFromBuffer } from 'file-type'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { returnValidationErrors } from 'next-safe-action'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { CACHE_TAGS } from '@/configs/cache'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { api } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
@@ -21,21 +21,19 @@ import type { CreateTeamsResponse } from '@/types/billing.types'
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
   .metadata({ actionName: 'updateTeamName' })
-
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { name, teamIdOrSlug } = parsedInput
-    const { teamId } = ctx
+    const { teamId, session } = ctx
 
-    const { data, error } = await supabaseAdmin
-      .from('teams')
-      .update({ name })
-      .eq('id', teamId)
-      .select()
-      .single()
+    const { data, error } = await api.PATCH('/teams/{teamId}', {
+      params: { path: { teamId } },
+      headers: SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      body: { name },
+    })
 
     if (error) {
-      return returnServerError(`Failed to update team name: ${error.message}`)
+      return returnServerError('Failed to update team name')
     }
 
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
@@ -54,53 +52,20 @@ export const addTeamMemberAction = authActionClient
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { email, teamIdOrSlug } = parsedInput
-    const { teamId, user } = ctx
+    const { teamId, session } = ctx
 
-    const { data: existingUsers, error: userError } = await supabaseAdmin
-      .from('auth_users')
-      .select('*')
-      .eq('email', email)
-
-    if (userError) {
-      return returnServerError(`Error finding user: ${userError.message}`)
-    }
-
-    const existingUser = existingUsers?.[0]
-
-    if (!existingUser || !existingUser.id) {
-      return returnServerError(
-        'User with this email address does not exist. Please ask them to sign up first and try again.'
-      )
-    }
-
-    const { data: existingTeamMember } = await supabaseAdmin
-      .from('users_teams')
-      .select('*')
-      .eq('team_id', teamId)
-      .eq('user_id', existingUser.id)
-      .single()
-
-    if (existingTeamMember) {
-      return returnServerError('User is already a member of this team')
-    }
-
-    const { error: insertError } = await supabaseAdmin
-      .from('users_teams')
-      .insert({
-        team_id: teamId,
-        user_id: existingUser.id,
-        added_by: user.id,
-      })
-
-    if (insertError) {
-      return returnServerError(
-        `Failed to add team member: ${insertError.message}`
-      )
-    }
-
-    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(existingUser.id, teamId), {
-      expire: 0,
+    const { error } = await api.POST('/teams/{teamId}/members', {
+      params: { path: { teamId } },
+      headers: SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      body: { email },
     })
+
+    if (error) {
+      const message =
+        (error as { message?: string }).message ?? 'Failed to add team member'
+      return returnServerError(message)
+    }
+
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 
@@ -115,52 +80,20 @@ export const removeTeamMemberAction = authActionClient
   .use(withTeamIdResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { userId, teamIdOrSlug } = parsedInput
-    const { teamId, user } = ctx
+    const { teamId, session } = ctx
 
-    const { data: teamMemberData, error: teamMemberError } = await supabaseAdmin
-      .from('users_teams')
-      .select('*')
-      .eq('team_id', teamId)
-      .eq('user_id', userId)
-
-    if (teamMemberError || !teamMemberData || teamMemberData.length === 0) {
-      return returnServerError('User is not a member of this team')
-    }
-
-    const teamMember = teamMemberData[0]!
-
-    if (teamMember.user_id !== user.id && teamMember.is_default) {
-      return returnServerError('Cannot remove a default team member')
-    }
-
-    const { count, error: countError } = await supabaseAdmin
-      .from('users_teams')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-
-    if (countError) {
-      return returnServerError(
-        `Error checking team members: ${countError.message}`
-      )
-    }
-
-    if (count === 1) {
-      return returnServerError('Cannot remove the last team member')
-    }
-
-    const { error: removeError } = await supabaseAdmin
-      .from('users_teams')
-      .delete()
-      .eq('team_id', teamId)
-      .eq('user_id', userId)
-
-    if (removeError) {
-      throw removeError
-    }
-
-    revalidateTag(CACHE_TAGS.USER_TEAM_AUTHORIZATION(userId, teamId), {
-      expire: 0,
+    const { error } = await api.DELETE('/teams/{teamId}/members/{userId}', {
+      params: { path: { teamId, userId } },
+      headers: SUPABASE_AUTH_HEADERS(session.access_token, teamId),
     })
+
+    if (error) {
+      const message =
+        (error as { message?: string }).message ??
+        'Failed to remove team member'
+      return returnServerError(message)
+    }
+
     revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
   })
 
@@ -219,7 +152,7 @@ export const uploadTeamProfilePictureAction = authActionClient
       })
     }
 
-    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
+    const MAX_FILE_SIZE = 5 * 1024 * 1024
 
     if (image.size > MAX_FILE_SIZE) {
       return returnValidationErrors(UploadTeamProfilePictureSchema, {
@@ -230,7 +163,6 @@ export const uploadTeamProfilePictureAction = authActionClient
     const arrayBuffer = await image.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Verify actual file type using magic bytes (file signature)
     const fileType = await fileTypeFromBuffer(buffer)
 
     if (!fileType) {
@@ -251,15 +183,13 @@ export const uploadTeamProfilePictureAction = authActionClient
       })
     }
 
-    // Use the actual detected extension from file-type
     const extension = fileType.ext
     const fileName = `${Date.now()}.${extension}`
-    const filePath = `teams/${teamId}/${fileName}`
+    const storagePath = `teams/${teamId}/${fileName}`
 
-    // Upload file to Supabase Storage
-    const publicUrl = await uploadFile(buffer, filePath, fileType.mime)
+    const publicUrl = await uploadFile(buffer, storagePath, fileType.mime)
 
-    // Update team record with new profile picture URL
+    // profile_picture_url stays on supabase admin — tightly coupled to supabase storage
     const { data, error } = await supabaseAdmin
       .from('teams')
       .update({ profile_picture_url: publicUrl })
@@ -271,20 +201,14 @@ export const uploadTeamProfilePictureAction = authActionClient
       throw new Error(error.message)
     }
 
-    // Clean up old profile pictures asynchronously in the background
     after(async () => {
       try {
-        // Get the current file name from the path
         const currentFileName = fileName
-
-        // List all files in the team's folder from Supabase Storage
         const folderPath = `teams/${teamId}`
         const files = await getFiles(folderPath)
 
-        // Delete all old profile pictures except the one we just uploaded
         for (const file of files) {
           const filePath = file.name
-          // Skip the file we just uploaded
           if (filePath === `${folderPath}/${currentFileName}`) {
             continue
           }

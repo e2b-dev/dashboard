@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import type { Database } from '@/types/database.types'
 
 export type TeamMemberInfo = {
   id: string
@@ -9,9 +8,14 @@ export type TeamMemberInfo = {
   avatar_url: string
 }
 
+export type TeamMemberRelation = {
+  added_by: string | null
+  is_default: boolean
+}
+
 export type TeamMember = {
   info: TeamMemberInfo
-  relation: Database['public']['Tables']['users_teams']['Row']
+  relation: TeamMemberRelation
 }
 
 /**

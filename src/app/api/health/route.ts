@@ -1,20 +1,17 @@
 import { NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
+import { api } from '@/lib/clients/api'
 import { kv } from '@/lib/clients/kv'
 import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-
-// NOTE - using cdn caching for rate limiting on db calls
 
 export const maxDuration = 10
 
 export async function GET() {
   const checks = {
     kv: false,
-    supabase: false,
+    dashboardApi: false,
   }
 
-  // check kv
   try {
     await kv.ping()
     checks.kv = true
@@ -28,26 +25,30 @@ export async function GET() {
     )
   }
 
-  // check supabase
-  const { data: _, error } = await supabaseAdmin
-    .from('teams')
-    .select('id')
-    .limit(1)
-    .single()
-
-  if (!error) {
-    checks.supabase = true
-  } else {
+  try {
+    const { error } = await api.GET('/health', {})
+    if (!error) {
+      checks.dashboardApi = true
+    } else {
+      l.error(
+        {
+          key: 'health_check:dashboard_api_error',
+          error,
+        },
+        'Dashboard API health check failed'
+      )
+    }
+  } catch (error) {
     l.error(
       {
-        key: 'health_check:supabase_error',
+        key: 'health_check:dashboard_api_error',
         error: serializeError(error),
       },
-      'Supabase health check failed'
+      'Dashboard API health check failed'
     )
   }
 
-  const allHealthy = checks.kv && checks.supabase
+  const allHealthy = checks.kv && checks.dashboardApi
 
   return NextResponse.json(
     {
@@ -57,7 +58,6 @@ export async function GET() {
     {
       status: allHealthy ? 200 : 503,
       headers: {
-        // vercel infra respects this to cache on cdn
         'Cache-Control': 'public, max-age=30, must-revalidate',
       },
     }

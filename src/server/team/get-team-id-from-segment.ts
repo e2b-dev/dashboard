@@ -1,26 +1,21 @@
 import 'server-only'
 
-import { cacheLife } from 'next/dist/server/use-cache/cache-life'
-import { cacheTag } from 'next/dist/server/use-cache/cache-tag'
-import { serializeError } from 'serialize-error'
 import z from 'zod'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
+import { api } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 
-export const getTeamIdFromSegment = async (segment: string) => {
-  'use cache'
-  cacheLife('default')
-  cacheTag(CACHE_TAGS.TEAM_ID_FROM_SEGMENT(segment))
-
+export const getTeamIdFromSegment = async (
+  segment: string,
+  accessToken: string
+) => {
   if (!TeamIdOrSlugSchema.safeParse(segment).success) {
     l.warn(
       {
         key: 'get_team_id_from_segment:invalid_segment',
-        context: {
-          segment,
-        },
+        context: { segment },
       },
       'get_team_id_from_segment - invalid segment'
     )
@@ -29,37 +24,26 @@ export const getTeamIdFromSegment = async (segment: string) => {
   }
 
   if (z.uuid().safeParse(segment).success) {
-    // make sure this uuid is a valid teamId and is not it's slug
-    const { data } = await supabaseAdmin
-      .from('teams')
-      .select('id')
-      .not('slug', 'eq', segment)
-      .eq('id', segment)
-
-    if (data?.length) {
-      return data[0]!.id
-    }
+    return segment
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('teams')
-    .select('id')
-    .eq('slug', segment)
+  const { data, error } = await api.GET('/teams/resolve', {
+    params: { query: { slug: segment } },
+    headers: SUPABASE_AUTH_HEADERS(accessToken),
+    next: { tags: [CACHE_TAGS.TEAM_ID_FROM_SEGMENT(segment)] },
+  })
 
-  if (error || !data.length) {
+  if (error || !data) {
     l.warn(
       {
-        key: 'get_team_id_from_segment:failed_to_get_team_id',
-        error: serializeError(error),
-        context: {
-          segment,
-        },
+        key: 'get_team_id_from_segment:resolve_failed',
+        context: { segment },
       },
-      'get_team_id_from_segment - failed to get team id'
+      'get_team_id_from_segment - failed to resolve'
     )
 
     return null
   }
 
-  return data[0]!.id
+  return data.id
 }

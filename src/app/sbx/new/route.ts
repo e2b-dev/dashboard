@@ -3,9 +3,9 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { api } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
-import { getDefaultTeam } from '@/server/auth/get-default-team'
 import { getSessionInsecure } from '@/server/auth/get-session'
 
 export const GET = async (req: NextRequest) => {
@@ -35,7 +35,15 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const defaultTeam = await getDefaultTeam(data.user.id)
+    const { data: teamsData, error: teamsError } = await api.GET('/teams', {
+      headers: SUPABASE_AUTH_HEADERS(session.access_token),
+    })
+
+    const defaultTeam = teamsData?.teams.find((t) => t.isDefault)
+
+    if (teamsError || !defaultTeam) {
+      return NextResponse.redirect(new URL(req.url).origin)
+    }
 
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,

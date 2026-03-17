@@ -3,6 +3,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
+import { getSessionInsecure } from '@/server/auth/get-session'
 import { resolveUserTeam } from '@/server/team/resolve-user-team'
 
 export async function GET(request: NextRequest) {
@@ -13,11 +14,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))
   }
 
-  // Resolve team for the user
-  const team = await resolveUserTeam(data.user.id)
+  const session = await getSessionInsecure(supabase)
+
+  if (!session) {
+    return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))
+  }
+
+  const team = await resolveUserTeam(session.access_token)
 
   if (!team) {
-    // UNEXPECTED STATE - sign out and redirect to sign-in
     await supabase.auth.signOut()
 
     const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
@@ -29,16 +34,13 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Set team cookies for persistence
   await setTeamCookies(team.id, team.slug)
 
-  // Build redirect URL with team
   const redirectPath = PROTECTED_URLS.RESOLVED_ACCOUNT_SETTINGS(
     team.slug || team.id
   )
   const redirectUrl = new URL(redirectPath, request.url)
 
-  // Preserve query parameters (e.g., reauth=1)
   request.nextUrl.searchParams.forEach((value, key) => {
     redirectUrl.searchParams.set(key, value)
   })

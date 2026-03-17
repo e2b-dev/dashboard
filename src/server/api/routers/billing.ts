@@ -6,7 +6,7 @@ import {
   ADDON_500_SANDBOXES_ID,
   ADDON_PURCHASE_ACTION_ERRORS,
 } from '@/features/dashboard/billing/constants'
-import getTeamLimitsMemo from '@/server/team/get-team-limits-memo'
+import { api } from '@/lib/clients/api'
 import type {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -216,7 +216,33 @@ export const billingRouter = createTRPCRouter({
   }),
 
   getTeamLimits: protectedTeamProcedure.query(async ({ ctx }) => {
-    return await getTeamLimitsMemo(ctx.teamId, ctx.user.id)
+    const { data, error } = await api.GET('/teams', {
+      headers: SUPABASE_AUTH_HEADERS(ctx.session.access_token),
+    })
+
+    if (error || !data?.teams) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to fetch team limits',
+      })
+    }
+
+    const team = data.teams.find((t) => t.id === ctx.teamId)
+
+    if (!team) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Team not found',
+      })
+    }
+
+    return {
+      concurrentInstances: team.limits.concurrentSandboxes,
+      diskMb: team.limits.diskMb,
+      maxLengthHours: team.limits.maxLengthHours,
+      maxRamMb: team.limits.maxRamMb,
+      maxVcpu: team.limits.maxVcpu,
+    }
   }),
 
   setLimit: protectedTeamProcedure

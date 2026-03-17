@@ -1,11 +1,12 @@
 import 'server-only'
 
 import { z } from 'zod'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { api } from '@/lib/clients/api'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
-import getTeamLimitsMemo from './get-team-limits-memo'
 
 export interface TeamLimits {
   concurrentInstances: number
@@ -32,17 +33,31 @@ export const getTeamLimits = authActionClient
   .metadata({ serverFunctionName: 'getTeamLimits' })
   .use(withTeamIdResolution)
   .action(async ({ ctx }) => {
-    const { user, teamId } = ctx
+    const { teamId, session } = ctx
 
     if (USE_MOCK_DATA) {
       return MOCK_TIER_LIMITS
     }
 
-    const tierLimits = await getTeamLimitsMemo(teamId, user.id)
+    const { data, error } = await api.GET('/teams', {
+      headers: SUPABASE_AUTH_HEADERS(session.access_token),
+    })
 
-    if (!tierLimits) {
+    if (error || !data?.teams) {
       return returnServerError('Failed to fetch team limits')
     }
 
-    return tierLimits
+    const team = data.teams.find((t) => t.id === teamId)
+
+    if (!team) {
+      return returnServerError('Team not found')
+    }
+
+    return {
+      concurrentInstances: team.limits.concurrentSandboxes,
+      diskMb: team.limits.diskMb,
+      maxLengthHours: team.limits.maxLengthHours,
+      maxRamMb: team.limits.maxRamMb,
+      maxVcpu: team.limits.maxVcpu,
+    } satisfies TeamLimits
   })

@@ -4,9 +4,8 @@ import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { infra } from '@/lib/clients/api'
+import { api, infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import { createClient } from '@/lib/clients/supabase/server'
 import { SandboxIdSchema } from '@/lib/schemas/api'
 import { setTeamCookies } from '@/lib/utils/cookies'
@@ -159,17 +158,16 @@ export async function GET(
     }
 
     const accessToken = sessionResponse.session.access_token
-    const { data: userTeamRows, error: teamQueryError } = await supabaseAdmin
-      .from('users_teams')
-      .select('teams!inner(id, slug)')
-      .eq('user_id', userId)
+    const { data: teamsData, error: teamsError } = await api.GET('/teams', {
+      headers: SUPABASE_AUTH_HEADERS(accessToken),
+    })
 
-    if (teamQueryError || !userTeamRows || userTeamRows.length === 0) {
+    if (teamsError || !teamsData?.teams || teamsData.teams.length === 0) {
       l.warn({
         key: 'inspect_sandbox:teams_fetch_error',
         user_id: userId,
         sandbox_id: sandboxId,
-        error: teamQueryError,
+        error: teamsError,
       })
 
       return redirectToDashboardWithWarning(
@@ -182,9 +180,9 @@ export async function GET(
       )
     }
 
-    const userTeams: UserTeam[] = userTeamRows.map((row) => ({
-      id: row.teams.id,
-      slug: row.teams.slug,
+    const userTeams: UserTeam[] = teamsData.teams.map((team) => ({
+      id: team.id,
+      slug: team.slug,
     }))
 
     const cookieStore = await cookies()

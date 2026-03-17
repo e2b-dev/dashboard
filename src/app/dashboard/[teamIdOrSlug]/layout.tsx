@@ -1,17 +1,15 @@
 import { cookies } from 'next/headers'
-import { redirect, unauthorized } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import type { Metadata } from 'next/types'
-import { serializeError } from 'serialize-error'
+import { DashboardTeamGate } from '@/app/dashboard/[teamIdOrSlug]/team-gate'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
-import { DashboardContextProvider } from '@/features/dashboard/context'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import { l } from '@/lib/clients/logger/logger'
 import { getSessionInsecure } from '@/server/auth/get-session'
 import getUserByToken from '@/server/auth/get-user-by-token'
-import { getTeam } from '@/server/team/get-team'
+import { HydrateClient, prefetch, prefetchAsync, trpc } from '@/trpc/server'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
 export const metadata: Metadata = {
@@ -46,40 +44,26 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  const teamRes = await getTeam({ teamIdOrSlug })
-  const team = teamRes?.data
-
-  if (!team) {
-    l.warn(
-      {
-        key: 'dashboard_layout:team_not_resolved',
-        user_id: data.user.id,
-        error: serializeError(teamRes?.serverError),
-        context: {
-          teamIdOrSlug,
-        },
-      },
-      `dashboard_layout:team_not_resolved - team not resolved for user (${data.user.id}) when accessing team (${teamIdOrSlug}) in dashboard layout`
-    )
-    throw unauthorized()
-  }
+  prefetch(trpc.teams.getCurrentTeam.queryOptions({ teamIdOrSlug }))
 
   return (
-    <DashboardContextProvider initialTeam={team} initialUser={data.user}>
-      <SidebarProvider
-        defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
-      >
-        <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
-          <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
-            <Sidebar />
-            <SidebarInset>
-              <DashboardLayoutView params={params}>
-                {children}
-              </DashboardLayoutView>
-            </SidebarInset>
+    <HydrateClient>
+      <DashboardTeamGate teamIdOrSlug={teamIdOrSlug} user={data.user}>
+        <SidebarProvider
+          defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
+        >
+          <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+            <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
+              <Sidebar />
+              <SidebarInset>
+                <DashboardLayoutView params={params}>
+                  {children}
+                </DashboardLayoutView>
+              </SidebarInset>
+            </div>
           </div>
-        </div>
-      </SidebarProvider>
-    </DashboardContextProvider>
+        </SidebarProvider>
+      </DashboardTeamGate>
+    </HydrateClient>
   )
 }

@@ -2,8 +2,9 @@ import 'server-only'
 
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
 import { TRPCError } from '@trpc/server'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { api } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
 const MAX_FILES = 5
@@ -142,21 +143,22 @@ async function uploadAttachmentToPlain(
   return attachment.id
 }
 
-export async function getTeamSupportData(teamId: string) {
-  const { data: team, error: teamError } = await supabaseAdmin
-    .from('teams')
-    .select('name, email, tier')
-    .eq('id', teamId)
-    .single()
+export async function getTeamSupportData(
+  teamId: string,
+  accessToken: string
+) {
+  const { data, error } = await api.GET('/teams', {
+    headers: SUPABASE_AUTH_HEADERS(accessToken),
+  })
 
-  if (teamError || !team) {
+  if (error) {
     l.error(
       {
         key: 'repositories:support:fetch_team_error',
-        error: teamError,
+        error,
         team_id: teamId,
       },
-      `failed to fetch team data: ${teamError?.message}`
+      `failed to fetch team data: ${error.message}`
     )
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
@@ -164,7 +166,23 @@ export async function getTeamSupportData(teamId: string) {
     })
   }
 
-  return team
+  const team = data?.teams?.find((t) => t.id === teamId)
+
+  if (!team) {
+    l.error(
+      {
+        key: 'repositories:support:fetch_team_not_found',
+        team_id: teamId,
+      },
+      `team not found in user teams`
+    )
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to load team information',
+    })
+  }
+
+  return { name: team.name, email: team.email, tier: team.tier }
 }
 
 export async function createSupportThread(input: {

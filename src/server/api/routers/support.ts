@@ -21,7 +21,7 @@ export const supportRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { teamId, user } = ctx
+      const { teamId, session, user } = ctx
       const email = user.email
 
       if (!email) {
@@ -36,7 +36,10 @@ export const supportRouter = createTRPCRouter({
         })
       }
 
-      const team = await supportRepo.getTeamSupportData(teamId)
+      const team = await supportRepo.getTeamSupportData(
+        teamId,
+        session.access_token
+      )
 
       return supportRepo.createSupportThread({
         description: input.description,

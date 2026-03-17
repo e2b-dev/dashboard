@@ -3,6 +3,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
+import { getSessionInsecure } from '@/server/auth/get-session'
 import { resolveUserTeam } from '@/server/team/resolve-user-team'
 
 export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
@@ -19,7 +20,6 @@ export const TAB_URL_MAP: Record<string, (teamId: string) => string> = {
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
 
-  // back compatibility
   budget: (teamId) => PROTECTED_URLS.LIMITS(teamId),
 }
 
@@ -35,10 +35,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
-  const team = await resolveUserTeam(data.user.id)
+  const session = await getSessionInsecure(supabase)
+
+  if (!session) {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
+  }
+
+  const team = await resolveUserTeam(session.access_token)
 
   if (!team) {
-    // UNEXPECTED STATE - sign out and redirect to sign-in
     await supabase.auth.signOut()
 
     const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
@@ -50,10 +55,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Set team cookies for persistence
   await setTeamCookies(team.id, team.slug)
 
-  // Determine redirect path based on tab parameter
   const urlGenerator = tab ? TAB_URL_MAP[tab] : null
   const redirectPath = urlGenerator
     ? urlGenerator(team.slug || team.id)
@@ -61,7 +64,6 @@ export async function GET(request: NextRequest) {
 
   const redirectUrl = new URL(redirectPath, request.url)
 
-  // Forward ?support=true query param to auto-open the Contact Support dialog on the target page
   if (searchParams.get('support') === 'true') {
     redirectUrl.searchParams.set('support', 'true')
   }

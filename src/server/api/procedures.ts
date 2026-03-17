@@ -2,7 +2,6 @@ import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import z from 'zod'
 import { getTracer } from '@/lib/clients/tracer'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import checkUserTeamAuthCached from '../auth/check-user-team-auth-cached'
 import { getTeamIdFromSegment } from '../team/get-team-id-from-segment'
 import { forbiddenTeamAccessError } from './errors'
 import { t } from './init'
@@ -76,7 +75,10 @@ export const protectedTeamProcedure = t.procedure
       const teamId = await context.with(
         trace.setSpan(context.active(), span),
         async () => {
-          return await getTeamIdFromSegment(input.teamIdOrSlug)
+          return await getTeamIdFromSegment(
+            input.teamIdOrSlug,
+            ctx.session.access_token
+          )
         }
       )
 
@@ -84,23 +86,6 @@ export const protectedTeamProcedure = t.procedure
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: `teamId not found for teamIdOrSlug (${input.teamIdOrSlug})`,
-        })
-
-        // the actual error should be 400, but we want to prevent leaking information to bad actors
-        throw forbiddenTeamAccessError()
-      }
-
-      const isAuthorized = await context.with(
-        trace.setSpan(context.active(), span),
-        async () => {
-          return await checkUserTeamAuthCached(ctx.user.id, teamId)
-        }
-      )
-
-      if (!isAuthorized) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: `user (${ctx.user.id}) not authorized to access team (${teamId})`,
         })
 
         throw forbiddenTeamAccessError()

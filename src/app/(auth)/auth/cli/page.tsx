@@ -2,12 +2,13 @@ import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { serializeError } from 'serialize-error'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { api } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
-import { getDefaultTeamRelation } from '@/server/auth/get-default-team'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 
 // Types
@@ -21,7 +22,6 @@ type CLISearchParams = Promise<{
 
 async function handleCLIAuth(
   next: string,
-  userId: string,
   userEmail: string,
   supabaseAccessToken: string
 ) {
@@ -29,20 +29,25 @@ async function handleCLIAuth(
     throw new Error('Invalid redirect URL')
   }
 
-  try {
-    const defaultTeam = await getDefaultTeamRelation(userId)
-    const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
+  const { data: teamsData, error: teamsError } = await api.GET('/teams', {
+    headers: SUPABASE_AUTH_HEADERS(supabaseAccessToken),
+  })
 
-    const searchParams = new URLSearchParams({
-      email: userEmail,
-      accessToken: e2bAccessToken.token,
-      defaultTeamId: defaultTeam.team_id,
-    })
+  const defaultTeam = teamsData?.teams.find((t) => t.isDefault)
 
-    return redirect(`${next}?${searchParams.toString()}`)
-  } catch (err) {
-    throw err
+  if (teamsError || !defaultTeam) {
+    throw new Error('Failed to resolve default team')
   }
+
+  const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
+
+  const searchParams = new URLSearchParams({
+    email: userEmail,
+    accessToken: e2bAccessToken.token,
+    defaultTeamId: defaultTeam.id,
+  })
+
+  return redirect(`${next}?${searchParams.toString()}`)
 }
 
 // UI Components
@@ -133,7 +138,6 @@ export default async function CLIAuthPage({
 
       return await handleCLIAuth(
         next,
-        user.id,
         user.email!,
         session.access_token
       )
