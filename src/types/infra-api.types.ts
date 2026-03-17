@@ -21,8 +21,8 @@ export interface paths {
       }
       requestBody?: never
       responses: {
-        /** @description Request was successful */
-        200: {
+        /** @description The service is healthy */
+        204: {
           headers: {
             [name: string]: unknown
           }
