@@ -734,6 +734,55 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/sandboxes/{sandboxID}/network': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting both fields clears all egress rules. */
+    put: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': {
+            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
+            allowOut?: string[]
+            /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
+            denyOut?: string[]
+          }
+        }
+      }
+      responses: {
+        /** @description Successfully updated the sandbox network configuration */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/sandboxes/{sandboxID}/refreshes': {
     parameters: {
       query?: never
@@ -2199,9 +2248,9 @@ export interface components {
        * @default true
        */
       allowPublicTraffic: boolean
-      /** @description List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses. */
+      /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
       allowOut?: string[]
-      /** @description List of denied CIDR blocks or IP addresses for egress traffic */
+      /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
       denyOut?: string[]
       /** @description Specify host mask which will be used for all sandbox requests */
       maskRequestHost?: string
