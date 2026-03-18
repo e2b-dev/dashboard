@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
-import { signInWithOAuthAction } from '@/server/auth/auth-actions'
+import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
 
 export function OAuthProviders() {

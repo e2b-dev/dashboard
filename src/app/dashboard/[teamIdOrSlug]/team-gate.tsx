@@ -1,7 +1,10 @@
 'use client'
 
 import type { User } from '@supabase/supabase-js'
-import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  QueryErrorResetBoundary,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { DashboardContextProvider } from '@/features/dashboard/context'
@@ -14,11 +17,7 @@ interface DashboardTeamGateProps {
   children: React.ReactNode
 }
 
-function TeamContent({
-  teamIdOrSlug,
-  user,
-  children,
-}: DashboardTeamGateProps) {
+function TeamContent({ teamIdOrSlug, user, children }: DashboardTeamGateProps) {
   const trpc = useTRPC()
 
   const { data: team } = useSuspenseQuery(

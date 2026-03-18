@@ -40,12 +40,12 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(() => mockCookieStore),
 }))
 
-vi.mock('@/server/auth/check-user-team-auth-cached', () => ({
+vi.mock('@/core/server/functions/auth/check-user-team-auth-cached', () => ({
   checkUserTeamAuth: mockCheckUserTeamAuth,
 }))
 
 // import after mocks are set up
-import { resolveUserTeam } from '@/server/team/resolve-user-team'
+import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 
 describe('resolveUserTeam - Authorization Integration Tests', () => {
   beforeEach(() => {

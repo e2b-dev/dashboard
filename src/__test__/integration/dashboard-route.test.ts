@@ -63,7 +63,7 @@ vi.mock('@/lib/utils/auth', () => ({
   }),
 }))
 
-vi.mock('@/server/team/resolve-user-team', () => ({
+vi.mock('@/core/server/functions/team/resolve-user-team', () => ({
   resolveUserTeam: mockResolveUserTeam,
 }))
 

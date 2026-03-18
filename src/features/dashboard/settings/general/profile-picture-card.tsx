@@ -5,6 +5,7 @@ import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRef, useState } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { uploadTeamProfilePictureAction } from '@/core/server/actions/team-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -12,7 +13,6 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn, exponentialSmoothing } from '@/lib/utils'
-import { uploadTeamProfilePictureAction } from '@/server/team/team-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { cardVariants } from '@/ui/primitives/card'

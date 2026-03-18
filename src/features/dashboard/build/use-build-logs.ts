@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from 'zustand'
-import type { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildStatus } from '@/core/domains/builds/models'
 import { useTRPCClient } from '@/trpc/client'
 import { type BuildLogsStore, createBuildLogsStore } from './build-logs-store'
 import type { LogLevelFilter } from './logs-filter-params'

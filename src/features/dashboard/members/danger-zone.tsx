@@ -1,4 +1,4 @@
-import { getTeam } from '@/server/team/get-team'
+import { getTeam } from '@/core/server/functions/team/get-team'
 import { AlertDialog } from '@/ui/alert-dialog'
 import ErrorBoundary from '@/ui/error'
 import { Button } from '@/ui/primitives/button'

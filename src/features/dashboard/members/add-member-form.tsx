@@ -4,13 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { addTeamMemberAction } from '@/core/server/actions/team-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { addTeamMemberAction } from '@/server/team/team-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,

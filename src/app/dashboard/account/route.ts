@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
-import { getSessionInsecure } from '@/server/auth/get-session'
 import { resolveUserTeam } from '@/server/team/resolve-user-team'
 
 export async function GET(request: NextRequest) {

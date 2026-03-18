@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   deriveSandboxLifecycleFromEvents,
-  type SandboxEventDTO,
-} from '@/server/api/models/sandboxes.models'
+  type SandboxEventModel,
+} from '@/core/domains/sandboxes/models'
 
 function createLifecycleEvent(
-  overrides: Partial<SandboxEventDTO> & Pick<SandboxEventDTO, 'id' | 'type'>
-): SandboxEventDTO {
+  overrides: Partial<SandboxEventModel> & Pick<SandboxEventModel, 'id' | 'type'>
+): SandboxEventModel {
   return {
     id: overrides.id,
     version: 'v1',
@@ -24,7 +24,7 @@ function createLifecycleEvent(
 
 describe('deriveSandboxLifecycleFromEvents', () => {
   it('derives createdAt, pausedAt and endedAt from a full lifecycle', () => {
-    const events: SandboxEventDTO[] = [
+    const events: SandboxEventModel[] = [
       createLifecycleEvent({
         id: '5',
         type: 'sandbox.lifecycle.killed',
@@ -68,7 +68,7 @@ describe('deriveSandboxLifecycleFromEvents', () => {
   })
 
   it('keeps pausedAt when the sandbox is paused and not resumed yet', () => {
-    const events: SandboxEventDTO[] = [
+    const events: SandboxEventModel[] = [
       createLifecycleEvent({
         id: '1',
         type: 'sandbox.lifecycle.created',
@@ -89,7 +89,7 @@ describe('deriveSandboxLifecycleFromEvents', () => {
   })
 
   it('uses first created event and latest killed event', () => {
-    const events: SandboxEventDTO[] = [
+    const events: SandboxEventModel[] = [
       createLifecycleEvent({
         id: '1',
         type: 'sandbox.lifecycle.created',
@@ -119,7 +119,7 @@ describe('deriveSandboxLifecycleFromEvents', () => {
   })
 
   it('ignores non-lifecycle events', () => {
-    const events: SandboxEventDTO[] = [
+    const events: SandboxEventModel[] = [
       createLifecycleEvent({
         id: '1',
         type: 'sandbox.lifecycle.created',

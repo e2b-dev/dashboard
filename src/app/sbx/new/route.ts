@@ -3,10 +3,10 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { api } from '@/lib/clients/api'
+import { createRouteServices } from '@/core/server/context/from-route'
+import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
-import { getSessionInsecure } from '@/server/auth/get-session'
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -35,13 +35,14 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const { data: teamsData, error: teamsError } = await api.GET('/teams', {
-      headers: SUPABASE_AUTH_HEADERS(session.access_token),
-    })
+    const services = createRouteServices({ accessToken: session.access_token })
+    const teamsResult = await services.teams.listUserTeams()
+    const defaultTeam = teamsResult.ok
+      ? (teamsResult.data.find((team) => team.is_default) ??
+        teamsResult.data[0])
+      : null
 
-    const defaultTeam = teamsData?.teams.find((t) => t.isDefault)
-
-    if (teamsError || !defaultTeam) {
+    if (!defaultTeam) {
       return NextResponse.redirect(new URL(req.url).origin)
     }
 

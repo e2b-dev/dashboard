@@ -3,7 +3,7 @@
 import { useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
-import type { BuildStatus } from '@/server/api/models/builds.models'
+import type { BuildStatus } from '@/core/domains/builds/models'
 import { INITIAL_BUILD_STATUSES } from './constants'
 import { templateBuildsFilterParams } from './filter-params'
 

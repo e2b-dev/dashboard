@@ -4,13 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
+import { upsertWebhookAction } from '@/core/server/actions/webhooks-actions'
+import { UpsertWebhookSchema } from '@/core/server/functions/webhooks/schema'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { UpsertWebhookSchema } from '@/server/webhooks/schema'
-import { upsertWebhookAction } from '@/server/webhooks/webhooks-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -153,7 +153,7 @@ export default function WebhookAddEditDialog({
     if (currentEvents.includes(event)) {
       form.setValue(
         'events',
-        currentEvents.filter((e) => e !== event)
+        currentEvents.filter((eventName: string) => eventName !== event)
       )
     } else {
       form.setValue('events', [...currentEvents, event])

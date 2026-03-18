@@ -1,7 +1,7 @@
 import { createLoader, parseAsStringEnum } from 'nuqs/server'
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import type { BuildLogModel } from '@/core/domains/builds/models'
 
-export type LogLevelFilter = BuildLogDTO['level']
+export type LogLevelFilter = BuildLogModel['level']
 
 export const LOG_LEVELS: LogLevelFilter[] = ['debug', 'info', 'warn', 'error']
 

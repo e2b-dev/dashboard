@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react'
 import { LOG_RETENTION_MS } from '@/configs/logs'
+import type { SandboxLogModel } from '@/core/domains/sandboxes/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
@@ -26,7 +27,6 @@ import {
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
 import { cn } from '@/lib/utils'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
@@ -129,7 +129,9 @@ function LogsContent({
 }: LogsContentProps) {
   const [scrollContainerElement, setScrollContainerElement] =
     useState<HTMLDivElement | null>(null)
-  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<SandboxLogDTO[]>([])
+  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<SandboxLogModel[]>(
+    []
+  )
 
   const {
     logs,
@@ -309,7 +311,7 @@ function FiltersRow({
 }
 
 interface VirtualizedLogsBodyProps {
-  logs: SandboxLogDTO[]
+  logs: SandboxLogModel[]
   scrollContainerElement: HTMLDivElement
   onLoadMore: () => void
   hasNextPage: boolean
@@ -609,7 +611,7 @@ function useAutoScrollToBottom({
 }
 
 interface LogRowProps {
-  log: SandboxLogDTO
+  log: SandboxLogModel
   search: string
   shouldHighlight: boolean
   isZebraRow: boolean

@@ -3,13 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useState } from 'react'
+import { updateWebhookSecretAction } from '@/core/server/actions/webhooks-actions'
+import { UpdateWebhookSecretSchema } from '@/core/server/functions/webhooks/schema'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { UpdateWebhookSecretSchema } from '@/server/webhooks/schema'
-import { updateWebhookSecretAction } from '@/server/webhooks/webhooks-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,

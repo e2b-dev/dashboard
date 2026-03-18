@@ -1,6 +1,6 @@
+import { getUsage } from '@/core/server/functions/usage/get-usage'
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
 import { UsageMetricChart } from '@/features/dashboard/usage/usage-metric-chart'
-import { getUsage } from '@/server/usage/get-usage'
 import ErrorBoundary from '@/ui/error'
 import Frame from '@/ui/frame'
 

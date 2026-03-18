@@ -4,7 +4,8 @@ import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { api, infra } from '@/lib/clients/api'
+import { createRouteServices } from '@/core/server/context/from-route'
+import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { SandboxIdSchema } from '@/lib/schemas/api'
@@ -158,16 +159,15 @@ export async function GET(
     }
 
     const accessToken = sessionResponse.session.access_token
-    const { data: teamsData, error: teamsError } = await api.GET('/teams', {
-      headers: SUPABASE_AUTH_HEADERS(accessToken),
-    })
+    const services = createRouteServices({ accessToken })
+    const teamsResult = await services.teams.listUserTeams()
 
-    if (teamsError || !teamsData?.teams || teamsData.teams.length === 0) {
+    if (!teamsResult.ok || teamsResult.data.length === 0) {
       l.warn({
         key: 'inspect_sandbox:teams_fetch_error',
         user_id: userId,
         sandbox_id: sandboxId,
-        error: teamsError,
+        error: !teamsResult.ok ? teamsResult.error : undefined,
       })
 
       return redirectToDashboardWithWarning(
@@ -180,7 +180,7 @@ export async function GET(
       )
     }
 
-    const userTeams: UserTeam[] = teamsData.teams.map((team) => ({
+    const userTeams: UserTeam[] = teamsResult.data.map((team) => ({
       id: team.id,
       slug: team.slug,
     }))

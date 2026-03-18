@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import type { BuildLogModel } from '@/core/domains/builds/models'
 import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,
@@ -23,7 +23,7 @@ interface BuildLogsParams {
 type TRPCClient = ReturnType<typeof useTRPCClient>
 
 interface BuildLogsState {
-  logs: BuildLogDTO[]
+  logs: BuildLogModel[]
   hasMoreBackwards: boolean
   isLoadingBackwards: boolean
   isLoadingForwards: boolean

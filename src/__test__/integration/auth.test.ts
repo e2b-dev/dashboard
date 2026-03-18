@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { encodedRedirect } from '@/lib/utils/auth'
 import {
   forgotPasswordAction,
   signInAction,
   signInWithOAuthAction,
   signOutAction,
   signUpAction,
-} from '@/server/auth/auth-actions'
+} from '@/core/server/actions/auth-actions'
+import { encodedRedirect } from '@/lib/utils/auth'
 
 // Create hoisted mock functions that can be used throughout the file
 const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({
@@ -77,7 +77,7 @@ vi.mock('@/lib/utils/auth', () => ({
 }))
 
 // Use the hoisted mock functions in the module mock
-vi.mock('@/server/auth/validate-email', () => ({
+vi.mock('@/core/server/functions/auth/validate-email', () => ({
   validateEmail,
   shouldWarnAboutAlternateEmail,
 }))
@@ -266,10 +266,9 @@ describe('Auth Actions - Integration Tests', () => {
       // Missing password and confirmPassword
 
       // Execute: Call the sign-up action
-      // @ts-expect-error - we want to test the validation errors
       const result = await signUpAction({
         email: 'newuser@example.com',
-      })
+      } as never)
 
       // Verify: Check that the result contains validation errors
       expect(result).toBeDefined()

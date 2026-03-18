@@ -3,8 +3,8 @@
 import type { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
 import type { NonUndefined } from 'react-hook-form'
+import type { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
-import type { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { useRecentMetrics } from './hooks/use-recent-metrics'
 

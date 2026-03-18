@@ -1,5 +1,5 @@
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
-import { getTeamApiKeys } from '@/server/keys/get-api-keys'
+import { getTeamApiKeys } from '@/core/server/functions/keys/get-api-keys'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { TableCell, TableRow } from '@/ui/primitives/table'

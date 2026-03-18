@@ -6,6 +6,10 @@ import {
   type Virtualizer,
 } from '@tanstack/react-virtual'
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import type {
+  BuildDetailsModel,
+  BuildLogModel,
+} from '@/core/domains/builds/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
@@ -19,10 +23,6 @@ import {
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
 import { cn } from '@/lib/utils'
-import type {
-  BuildDetailsDTO,
-  BuildLogDTO,
-} from '@/server/api/models/builds.models'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import { LOG_RETENTION_MS } from '../templates/builds/constants'
@@ -39,7 +39,7 @@ const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 
 interface LogsProps {
-  buildDetails: BuildDetailsDTO | undefined
+  buildDetails: BuildDetailsModel | undefined
   teamIdOrSlug: string
   templateId: string
   buildId: string
@@ -90,7 +90,7 @@ export default function Logs({
 }
 
 interface LogsContentProps {
-  buildDetails: BuildDetailsDTO
+  buildDetails: BuildDetailsModel
   teamIdOrSlug: string
   templateId: string
   buildId: string
@@ -107,7 +107,7 @@ function LogsContent({
   setLevel,
 }: LogsContentProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<BuildLogDTO[]>([])
+  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<BuildLogModel[]>([])
 
   const { isRefetchingFromFilterChange, onFetchComplete } =
     useFilterRefetchTracking(level)
@@ -232,7 +232,7 @@ function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
 }
 
 interface VirtualizedLogsBodyProps {
-  logs: BuildLogDTO[]
+  logs: BuildLogModel[]
   scrollContainerRef: RefObject<HTMLDivElement | null>
   startedAt: number
   onLoadMore: () => void
@@ -497,7 +497,7 @@ function useAutoScrollToBottom({
 }
 
 interface LogRowProps {
-  log: BuildLogDTO
+  log: BuildLogModel
   isZebraRow: boolean
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>

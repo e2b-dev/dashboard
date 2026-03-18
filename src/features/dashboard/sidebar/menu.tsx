@@ -4,8 +4,8 @@ import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { signOutAction } from '@/core/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
-import { signOutAction } from '@/server/auth/auth-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,

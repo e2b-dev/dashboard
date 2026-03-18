@@ -1,11 +1,11 @@
 import 'server-cli-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { transformMetricsToClientMetrics } from '@/core/server/functions/sandboxes/utils'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import { getSessionInsecure } from '@/server/auth/get-session'
-import { transformMetricsToClientMetrics } from '@/server/sandboxes/utils'
 import { MetricsRequestSchema, type MetricsResponse } from './types'
 
 export async function POST(

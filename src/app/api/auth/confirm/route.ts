@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation'
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { AUTH_URLS } from '@/configs/urls'
+import { OtpTypeSchema } from '@/core/domains/auth/models'
 import { l } from '@/lib/clients/logger/logger'
 import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
-import { OtpTypeSchema } from '@/server/api/models/auth.models'
 
 const confirmSchema = z.object({
   token_hash: z.string().min(1),

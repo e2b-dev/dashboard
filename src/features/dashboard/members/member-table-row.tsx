@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { removeTeamMemberAction } from '@/core/server/actions/team-actions'
+import type { TeamMember } from '@/core/server/functions/team/types'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { removeTeamMemberAction } from '@/server/team/team-actions'
-import type { TeamMember } from '@/server/team/types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Button } from '@/ui/primitives/button'

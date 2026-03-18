@@ -20,6 +20,33 @@
       }
     ],
     "paths": {
+      "@/domains/*": ["./src/core/domains/*"],
+      "@/shared/*": ["./src/core/shared/*"],
+      "@/server/api/errors": ["./src/core/server/adapters/trpc-errors.ts"],
+      "@/server/api/models/builds.models": [
+        "./src/core/domains/builds/models.ts"
+      ],
+      "@/server/api/models/sandboxes.models": [
+        "./src/core/domains/sandboxes/models.ts"
+      ],
+      "@/server/api/models/auth.models": ["./src/core/domains/auth/models.ts"],
+      "@/server/api/schemas/sandboxes": [
+        "./src/core/domains/sandboxes/schemas.ts"
+      ],
+      "@/server/api/init": ["./src/core/server/trpc/init.ts"],
+      "@/server/api/procedures": ["./src/core/server/trpc/procedures.ts"],
+      "@/server/api/routers": ["./src/core/server/api/routers/index.ts"],
+      "@/server/api/routers/*": ["./src/core/server/api/routers/*"],
+      "@/server/api/middlewares/*": ["./src/core/server/api/middlewares/*"],
+      "@/server/*": [
+        "./src/core/server/actions/*",
+        "./src/core/server/context/*",
+        "./src/core/server/adapters/*",
+        "./src/core/server/trpc/*",
+        "./src/core/server/http/*",
+        "./src/core/server/functions/*",
+        "./src/core/server/api/*"
+      ],
       "@/*": ["./src/*"]
     },
     "isolatedModules": true

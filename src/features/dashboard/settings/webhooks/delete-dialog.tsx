@@ -2,12 +2,12 @@
 
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
+import { deleteWebhookAction } from '@/core/server/actions/webhooks-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { deleteWebhookAction } from '@/server/webhooks/webhooks-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'

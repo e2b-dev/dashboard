@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import type { SandboxLogModel } from '@/core/domains/sandboxes/models'
 import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,
@@ -20,7 +20,7 @@ interface SandboxLogsParams {
 type TRPCClient = ReturnType<typeof useTRPCClient>
 
 interface SandboxLogsState {
-  logs: SandboxLogDTO[]
+  logs: SandboxLogModel[]
   hasMoreBackwards: boolean
   isLoadingBackwards: boolean
   isLoadingForwards: boolean

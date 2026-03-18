@@ -2,9 +2,8 @@ import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { serializeError } from 'serialize-error'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { api } from '@/lib/clients/api'
+import { createTeamsRepository } from '@/domains/teams/repository.server'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -29,13 +28,18 @@ async function handleCLIAuth(
     throw new Error('Invalid redirect URL')
   }
 
-  const { data: teamsData, error: teamsError } = await api.GET('/teams', {
-    headers: SUPABASE_AUTH_HEADERS(supabaseAccessToken),
-  })
+  const teamsResult = await createTeamsRepository({
+    accessToken: supabaseAccessToken,
+  }).listUserTeams()
 
-  const defaultTeam = teamsData?.teams.find((t) => t.isDefault)
+  if (!teamsResult.ok) {
+    throw new Error('Failed to resolve default team')
+  }
 
-  if (teamsError || !defaultTeam) {
+  const defaultTeam =
+    teamsResult.data.find((team) => team.is_default) ?? teamsResult.data[0]
+
+  if (!defaultTeam) {
     throw new Error('Failed to resolve default team')
   }
 
@@ -136,11 +140,11 @@ export default async function CLIAuthPage({
         throw new Error('No provider access token found')
       }
 
-      return await handleCLIAuth(
-        next,
-        user.email!,
-        session.access_token
-      )
+      if (!user.email) {
+        throw new Error('No user email found')
+      }
+
+      return await handleCLIAuth(next, user.email, session.access_token)
     } catch (err) {
       if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
         throw err

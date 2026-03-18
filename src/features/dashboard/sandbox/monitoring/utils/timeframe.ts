@@ -1,5 +1,5 @@
+import type { SandboxDetailsModel } from '@/core/domains/sandboxes/models'
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
-import type { SandboxDetailsDTO } from '@/server/api/models/sandboxes.models'
 import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_LIFECYCLE_PADDING_STEPS,
@@ -150,7 +150,7 @@ export interface SandboxLifecycleBounds {
 }
 
 export function getSandboxLifecycleBounds(
-  sandboxLifecycle: Pick<SandboxDetailsDTO, 'state'> & {
+  sandboxLifecycle: Pick<SandboxDetailsModel, 'state'> & {
     createdAt?: string | null
     pausedAt?: string | null
     endedAt?: string | null

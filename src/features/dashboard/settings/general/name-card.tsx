@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { AnimatePresence, motion } from 'motion/react'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { updateTeamNameAction } from '@/core/server/actions/team-actions'
+import { UpdateTeamNameSchema } from '@/core/server/functions/team/types'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -11,8 +13,6 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
-import { updateTeamNameAction } from '@/server/team/team-actions'
-import { UpdateTeamNameSchema } from '@/server/team/types'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,

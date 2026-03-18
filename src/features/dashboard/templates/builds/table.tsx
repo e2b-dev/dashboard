@@ -9,12 +9,12 @@ import {
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type {
+  ListedBuildModel,
+  RunningBuildStatusModel,
+} from '@/core/domains/builds/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
-import type {
-  ListedBuildDTO,
-  RunningBuildStatusDTO,
-} from '@/server/api/models/builds.models'
 import { useTRPC } from '@/trpc/client'
 import { ArrowDownIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -334,9 +334,9 @@ function useFilterChangeTracking(
 }
 
 function mergeBuildsWithLiveStatuses(
-  builds: ListedBuildDTO[],
-  runningStatusesData: RunningBuildStatusDTO[] | undefined
-): ListedBuildDTO[] {
+  builds: ListedBuildModel[],
+  runningStatusesData: RunningBuildStatusModel[] | undefined
+): ListedBuildModel[] {
   if (!runningStatusesData || runningStatusesData.length === 0) return builds
 
   const statusMap = new Map(runningStatusesData.map((s) => [s.id, s]))

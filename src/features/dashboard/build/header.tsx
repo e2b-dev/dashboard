@@ -1,7 +1,7 @@
 'use client'
 
+import type { BuildDetailsModel } from '@/core/domains/builds/models'
 import { cn } from '@/lib/utils/ui'
-import type { BuildDetailsDTO } from '@/server/api/models/builds.models'
 import CopyButton from '@/ui/copy-button'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
@@ -11,7 +11,7 @@ import { DetailsItem, DetailsRow } from '../layouts/details-row'
 import { RanFor, StartedAt, Template } from './header-cells'
 
 interface BuildHeaderProps {
-  buildDetails: BuildDetailsDTO | undefined
+  buildDetails: BuildDetailsModel | undefined
   buildId: string
   templateId: string
 }
@@ -74,8 +74,8 @@ export default function BuildHeader({
 }
 
 interface StatusBannerProps {
-  status: BuildDetailsDTO['status'] | undefined
-  statusMessage?: BuildDetailsDTO['statusMessage']
+  status: BuildDetailsModel['status'] | undefined
+  statusMessage?: BuildDetailsModel['statusMessage']
 }
 
 function StatusBanner({ status, statusMessage }: StatusBannerProps) {

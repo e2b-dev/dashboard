@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildMonitoringChartModel } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
 import type {
-  SandboxEventDTO,
+  SandboxEventModel,
   SandboxMetric,
-} from '@/server/api/models/sandboxes.models'
+} from '@/core/domains/sandboxes/models'
+import { buildMonitoringChartModel } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
 
 const baseMetric = {
   timestamp: '1970-01-01T00:00:00.000Z',
@@ -16,8 +16,8 @@ const baseMetric = {
 >
 
 function createLifecycleEvent(
-  overrides: Partial<SandboxEventDTO> & Pick<SandboxEventDTO, 'id' | 'type'>
-): SandboxEventDTO {
+  overrides: Partial<SandboxEventModel> & Pick<SandboxEventModel, 'id' | 'type'>
+): SandboxEventModel {
   return {
     id: overrides.id,
     version: 'v1',
@@ -148,7 +148,7 @@ describe('buildMonitoringChartModel', () => {
       },
     ]
 
-    const lifecycleEvents: SandboxEventDTO[] = [
+    const lifecycleEvents: SandboxEventModel[] = [
       createLifecycleEvent({
         id: 'pause',
         type: 'sandbox.lifecycle.paused',
@@ -216,7 +216,7 @@ describe('buildMonitoringChartModel', () => {
   })
 
   it('builds visible lifecycle event markers for created, paused, resumed, and killed only', () => {
-    const lifecycleEvents: SandboxEventDTO[] = [
+    const lifecycleEvents: SandboxEventModel[] = [
       createLifecycleEvent({
         id: 'outside',
         type: 'sandbox.lifecycle.killed',

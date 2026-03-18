@@ -1,4 +1,4 @@
-import { getWebhooks } from '@/server/webhooks/get-webhooks'
+import { getWebhooks } from '@/core/server/functions/webhooks/get-webhooks'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import WebhooksEmpty from './empty'
 import WebhookTableRow from './table-row'

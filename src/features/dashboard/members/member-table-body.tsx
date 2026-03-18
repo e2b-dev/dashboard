@@ -1,4 +1,4 @@
-import { getTeamMembers } from '@/server/team/get-team-members'
+import { getTeamMembers } from '@/core/server/functions/team/get-team-members'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { TableCell, TableRow } from '@/ui/primitives/table'

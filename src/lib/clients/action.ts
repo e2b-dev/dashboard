@@ -4,9 +4,13 @@ import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
-import { getSessionInsecure } from '@/server/auth/get-session'
-import getUserByToken from '@/server/auth/get-user-by-token'
-import { getTeamIdFromSegment } from '@/server/team/get-team-id-from-segment'
+import {
+  createRequestContext,
+  type RequestContextServices,
+} from '@/core/server/context/request-context'
+import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
+import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
 import { UnauthenticatedError, UnknownError } from '@/types/errors'
 import { ActionError, flattenClientInputValue } from '../utils/action'
 import { l } from './logger/logger'
@@ -118,7 +122,7 @@ export const actionClient = createSafeActionClient({
         ...baseLogPayload,
         error: sE,
       },
-      `${type} ${name} failed in ${baseLogPayload.server_function_duration_ms}ms: ${typeof sE === 'string' ? sE : ((sE.name || sE.code) && `${sE.name || sE.code}: ` + sE.message) || 'Unknown error'}`
+      `${type} ${name} failed in ${baseLogPayload.server_function_duration_ms}ms: ${typeof sE === 'string' ? sE : ((sE.name || sE.code) && `${sE.name || sE.code}: ${sE.message}`) || 'Unknown error'}`
     )
   } else {
     s.setStatus({ code: SpanStatusCode.OK })
@@ -164,7 +168,16 @@ export const authActionClient = actionClient.use(async ({ next }) => {
     throw UnauthenticatedError()
   }
 
-  return next({ ctx: { user, session, supabase } })
+  return next({
+    ctx: {
+      user,
+      session,
+      supabase,
+      services: createRequestContext({
+        accessToken: session.access_token,
+      }).services,
+    },
+  })
 })
 
 /**
@@ -193,6 +206,7 @@ export const withTeamIdResolution = createMiddleware<{
     user: User
     session: Session
     supabase: Awaited<ReturnType<typeof createClient>>
+    services: RequestContextServices
   }
 }>().define(async ({ next, clientInput, ctx }) => {
   if (
@@ -236,6 +250,12 @@ export const withTeamIdResolution = createMiddleware<{
   }
 
   return next({
-    ctx: { teamId },
+    ctx: {
+      teamId,
+      services: createRequestContext({
+        accessToken: ctx.session.access_token,
+        teamId,
+      }).services,
+    },
   })
 })
