@@ -20,11 +20,22 @@ export function withAuthedRequestRepository<
       throw unauthorizedUserError()
     }
 
+    if (!ctx.user) {
+      throw unauthorizedUserError()
+    }
+
     const repository = createRepository({
       accessToken: ctx.session.access_token,
     })
 
-    return next({ ctx: { ...ctx, ...extendContext(repository) } })
+    return next({
+      ctx: {
+        ...ctx,
+        session: ctx.session,
+        user: ctx.user,
+        ...extendContext(repository),
+      },
+    })
   })
 }
 
@@ -40,6 +51,10 @@ export function withTeamAuthedRequestRepository<
       throw unauthorizedUserError()
     }
 
+    if (!ctx.user) {
+      throw unauthorizedUserError()
+    }
+
     if (!ctx.teamId) {
       throw forbiddenTeamAccessError()
     }
@@ -49,6 +64,14 @@ export function withTeamAuthedRequestRepository<
       teamId: ctx.teamId,
     })
 
-    return next({ ctx: { ...ctx, ...extendContext(repository) } })
+    return next({
+      ctx: {
+        ...ctx,
+        session: ctx.session,
+        user: ctx.user,
+        teamId: ctx.teamId,
+        ...extendContext(repository),
+      },
+    })
   })
 }
