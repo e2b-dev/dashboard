@@ -1,13 +1,13 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import type { components as DashboardComponents } from '@/core/shared/contracts/dashboard-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import { api } from '@/lib/clients/api'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import type { components as DashboardComponents } from '@/types/dashboard-api.types'
-import type { ClientTeam, TeamLimits, TeamMember } from './models'
+import type { TeamLimits, TeamMember } from './models'
 
 type ApiUserTeam = {
   id: string
@@ -38,7 +38,7 @@ export interface TeamsRepository {
   removeTeamMember(userId: string): Promise<RepoResult<void>>
   updateTeamProfilePictureUrl(
     profilePictureUrl: string
-  ): Promise<RepoResult<ClientTeam>>
+  ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
 }
 
 export function createTeamsRepository(
@@ -194,21 +194,29 @@ export function createTeamsRepository(
     },
     async updateTeamProfilePictureUrl(
       profilePictureUrl
-    ): Promise<RepoResult<ClientTeam>> {
-      const { data, error } = await deps.adminClient
-        .from('teams')
-        .update({ profile_picture_url: profilePictureUrl })
-        .eq('id', scope.teamId)
-        .select()
-        .single()
+    ): Promise<
+      RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
+    > {
+      const { data, error, response } = await deps.apiClient.PATCH(
+        '/teams/{teamId}',
+        {
+          params: { path: { teamId: scope.teamId } },
+          headers: deps.authHeaders(scope.accessToken, scope.teamId),
+          body: { profilePictureUrl },
+        }
+      )
 
-      if (error || !data) {
+      if (!response.ok || error || !data) {
         return err(
-          repoErrorFromHttp(500, error?.message ?? 'Failed to update team')
+          repoErrorFromHttp(
+            response.status,
+            error?.message ?? 'Failed to update team profile picture',
+            error
+          )
         )
       }
 
-      return ok(data as ClientTeam)
+      return ok(data)
     },
   }
 }

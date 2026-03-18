@@ -127,23 +127,33 @@ export function createSupportRepository(
 ): SupportRepository {
   return {
     async getTeamSupportData() {
-      const teamResult = await createUserTeamsRepository({
+      const teamsResult = await createUserTeamsRepository({
         accessToken: scope.accessToken,
-      }).getCurrentUserTeam(scope.teamId)
+      }).listUserTeams()
 
-      if (!teamResult.ok) {
+      if (!teamsResult.ok) {
         l.error(
           {
             key: 'repositories:support:fetch_team_error',
-            error: teamResult.error,
+            error: teamsResult.error,
             team_id: scope.teamId,
           },
           'failed to fetch team data'
         )
-        return err(teamResult.error)
+        return err(teamsResult.error)
       }
 
-      const team = teamResult.data
+      const team = teamsResult.data.find(
+        (candidate) => candidate.id === scope.teamId
+      )
+
+      if (!team) {
+        return err(
+          repoErrorFromHttp(403, 'Team not found or access denied', {
+            teamIdOrSlug: scope.teamId,
+          })
+        )
+      }
 
       return ok({ name: team.name, email: team.email, tier: team.tier })
     },

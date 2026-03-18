@@ -1,9 +1,7 @@
-import z from 'zod'
 import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
-import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 
 const teamsRepositoryProcedure = protectedProcedure.use(
   withAuthedRequestRepository(createUserTeamsRepository, (teamsRepository) => ({
@@ -12,17 +10,13 @@ const teamsRepositoryProcedure = protectedProcedure.use(
 )
 
 export const teamsRouter = {
-  getCurrentTeam: teamsRepositoryProcedure
-    .input(z.object({ teamIdOrSlug: TeamIdOrSlugSchema }))
-    .query(async ({ ctx, input }) => {
-      const teamResult = await ctx.teamsRepository.getCurrentUserTeam(
-        input.teamIdOrSlug
-      )
+  list: teamsRepositoryProcedure.query(async ({ ctx }) => {
+    const teamsResult = await ctx.teamsRepository.listUserTeams()
 
-      if (!teamResult.ok) {
-        throwTRPCErrorFromRepoError(teamResult.error)
-      }
+    if (!teamsResult.ok) {
+      throwTRPCErrorFromRepoError(teamsResult.error)
+    }
 
-      return teamResult.data
-    }),
+    return teamsResult.data
+  }),
 }

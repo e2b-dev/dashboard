@@ -654,6 +654,7 @@ export interface components {
             slug: string;
             tier: string;
             email: string;
+            profilePictureUrl: string | null;
             isDefault: boolean;
             limits: components["schemas"]["UserTeamLimits"];
         };
@@ -674,12 +675,14 @@ export interface components {
             members: components["schemas"]["TeamMember"][];
         };
         UpdateTeamRequest: {
-            name: string;
+            name?: string;
+            profilePictureUrl?: string | null;
         };
         UpdateTeamResponse: {
             /** Format: uuid */
             id: string;
             name: string;
+            profilePictureUrl?: string | null;
         };
         AddTeamMemberRequest: {
             /** Format: email */

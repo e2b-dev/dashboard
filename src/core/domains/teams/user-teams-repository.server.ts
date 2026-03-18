@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { secondsInDay } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
@@ -13,6 +14,7 @@ type ApiUserTeam = {
   slug: string
   tier: string
   email: string
+  profilePictureUrl: string | null
   isDefault: boolean
   limits: {
     concurrentSandboxes: number
@@ -36,7 +38,7 @@ function mapApiTeamToClientTeam(apiTeam: ApiUserTeam): ClientTeam {
     blocked_reason: null,
     cluster_id: null,
     created_at: '',
-    profile_picture_url: null,
+    profile_picture_url: apiTeam.profilePictureUrl,
   }
 }
 
@@ -49,7 +51,6 @@ export type UserTeamsRequestScope = RequestScope
 
 export interface UserTeamsRepository {
   listUserTeams(): Promise<RepoResult<ClientTeam[]>>
-  getCurrentUserTeam(teamIdOrSlug: string): Promise<RepoResult<ClientTeam>>
   resolveTeamBySlug(
     slug: string,
     next?: { tags?: string[] }
@@ -91,30 +92,6 @@ export function createUserTeamsRepository(
 
       return ok(teamsResult.data.map(mapApiTeamToClientTeam))
     },
-    async getCurrentUserTeam(
-      teamIdOrSlug: string
-    ): Promise<RepoResult<ClientTeam>> {
-      const teamsResult = await listApiUserTeams()
-
-      if (!teamsResult.ok) {
-        return teamsResult
-      }
-
-      const team = teamsResult.data.find(
-        (candidate) =>
-          candidate.id === teamIdOrSlug || candidate.slug === teamIdOrSlug
-      )
-
-      if (!team) {
-        return err(
-          repoErrorFromHttp(403, 'Team not found or access denied', {
-            teamIdOrSlug,
-          })
-        )
-      }
-
-      return ok(mapApiTeamToClientTeam(team))
-    },
     async resolveTeamBySlug(
       slug: string,
       next?: { tags?: string[] }
@@ -124,7 +101,10 @@ export function createUserTeamsRepository(
         {
           params: { query: { slug } },
           headers: deps.authHeaders(scope.accessToken),
-          next,
+          next: {
+            revalidate: secondsInDay,
+            ...next,
+          },
         }
       )
 

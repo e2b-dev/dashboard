@@ -20,12 +20,23 @@ interface DashboardTeamGateProps {
 function TeamContent({ teamIdOrSlug, user, children }: DashboardTeamGateProps) {
   const trpc = useTRPC()
 
-  const { data: team } = useSuspenseQuery(
-    trpc.teams.getCurrentTeam.queryOptions({ teamIdOrSlug })
+  const { data: teams } = useSuspenseQuery(trpc.teams.list.queryOptions())
+
+  const team = teams.find(
+    (candidate) =>
+      candidate.id === teamIdOrSlug || candidate.slug === teamIdOrSlug
   )
 
+  if (!team) {
+    throw new Error('Team not found or access denied')
+  }
+
   return (
-    <DashboardContextProvider initialTeam={team} initialUser={user}>
+    <DashboardContextProvider
+      initialTeam={team}
+      initialTeams={teams}
+      initialUser={user}
+    >
       {children}
     </DashboardContextProvider>
   )

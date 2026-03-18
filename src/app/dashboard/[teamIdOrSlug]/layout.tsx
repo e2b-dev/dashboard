@@ -9,7 +9,7 @@ import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import { HydrateClient, prefetch, prefetchAsync, trpc } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
 export const metadata: Metadata = {
@@ -44,7 +44,7 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  prefetch(trpc.teams.getCurrentTeam.queryOptions({ teamIdOrSlug }))
+  prefetch(trpc.teams.list.queryOptions())
 
   return (
     <HydrateClient>
