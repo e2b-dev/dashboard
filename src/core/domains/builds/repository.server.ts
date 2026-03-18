@@ -1,15 +1,15 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import { err, ok, type RepoResult } from '@/core/shared/result'
 import type {
   BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/domains/builds/models'
-import {
-  handleDashboardApiError,
-  handleInfraApiError,
-} from '@/core/server/adapters/trpc-errors'
+import { l } from '@/core/shared/clients/logger/logger'
 import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
 import { api, infra } from '@/lib/clients/api'
 import type { components as InfraComponents } from '@/types/infra-api.types'
@@ -20,28 +20,27 @@ type BuildsRepositoryDeps = {
   authHeaders: typeof SUPABASE_AUTH_HEADERS
 }
 
-export interface BuildsScope {
-  accessToken: string
-  teamId: string
-}
+export type BuildsScope = TeamRequestScope
 
 export interface BuildsRepository {
   listBuilds(
     buildIdOrTemplate?: string,
     statuses?: BuildStatus[],
     options?: ListBuildsOptions
-  ): Promise<ListBuildsResult>
-  getRunningStatuses(buildIds: string[]): Promise<RunningBuildStatusModel[]>
-  getBuildInfo(buildId: string): Promise<BuildInfoResult>
+  ): Promise<RepoResult<ListBuildsResult>>
+  getRunningStatuses(
+    buildIds: string[]
+  ): Promise<RepoResult<RunningBuildStatusModel[]>>
+  getBuildInfo(buildId: string): Promise<RepoResult<BuildInfoResult>>
   getInfraBuildStatus(
     templateId: string,
     buildId: string
-  ): Promise<InfraComponents['schemas']['TemplateBuildInfo']>
+  ): Promise<RepoResult<InfraComponents['schemas']['TemplateBuildInfo']>>
   getInfraBuildLogs(
     templateId: string,
     buildId: string,
     options?: GetInfraBuildLogsOptions
-  ): Promise<InfraComponents['schemas']['TemplateBuildLogsResponse']>
+  ): Promise<RepoResult<InfraComponents['schemas']['TemplateBuildLogsResponse']>>
 }
 
 const LIST_BUILDS_DEFAULT_LIMIT = 50
@@ -93,7 +92,7 @@ export function createBuildsRepository(
       buildIdOrTemplate,
       statuses = INITIAL_BUILD_STATUSES,
       options = {}
-    ): Promise<ListBuildsResult> {
+    ): Promise<RepoResult<ListBuildsResult>> {
       const limit = normalizeListBuildsLimit(options.limit)
       const result = await deps.apiClient.GET('/builds', {
         params: {
@@ -110,24 +109,33 @@ export function createBuildsRepository(
       })
 
       if (!result.response.ok || result.error) {
-        handleDashboardApiError({
-          status: result.response.status,
+        l.error({
+          key: 'repositories:builds:list_builds:dashboard_api_error',
           error: result.error,
-          teamId: scope.teamId,
-          path: '/builds',
-          logKey: 'repositories:builds:list_builds:dashboard_api_error',
+          team_id: scope.teamId,
+          context: {
+            status: result.response.status,
+            path: '/builds',
+          },
         })
+        return err(
+          repoErrorFromHttp(
+            result.response.status,
+            result.error?.message ?? 'Failed to fetch builds',
+            result.error
+          )
+        )
       }
 
       const builds = result.data?.data ?? []
       if (builds.length === 0) {
-        return {
+        return ok({
           data: [],
           nextCursor: null,
-        }
+        })
       }
 
-      return {
+      return ok({
         data: builds.map(
           (build): ListedBuildModel => ({
             id: build.id,
@@ -142,11 +150,11 @@ export function createBuildsRepository(
           })
         ),
         nextCursor: result.data?.nextCursor ?? null,
-      }
+      })
     },
     async getRunningStatuses(buildIds) {
       if (buildIds.length === 0) {
-        return []
+        return ok([])
       }
 
       const result = await deps.apiClient.GET('/builds/statuses', {
@@ -161,22 +169,32 @@ export function createBuildsRepository(
       })
 
       if (!result.response.ok || result.error) {
-        handleDashboardApiError({
-          status: result.response.status,
+        l.error({
+          key: 'repositories:builds:get_running_statuses:dashboard_api_error',
           error: result.error,
-          teamId: scope.teamId,
-          path: '/builds/statuses',
-          logKey:
-            'repositories:builds:get_running_statuses:dashboard_api_error',
+          team_id: scope.teamId,
+          context: {
+            status: result.response.status,
+            path: '/builds/statuses',
+          },
         })
+        return err(
+          repoErrorFromHttp(
+            result.response.status,
+            result.error?.message ?? 'Failed to fetch build statuses',
+            result.error
+          )
+        )
       }
 
-      return (result.data?.buildStatuses ?? []).map((row) => ({
-        id: row.id,
-        status: row.status,
-        finishedAt: row.finishedAt ? new Date(row.finishedAt).getTime() : null,
-        statusMessage: row.statusMessage,
-      }))
+      return ok(
+        (result.data?.buildStatuses ?? []).map((row) => ({
+          id: row.id,
+          status: row.status,
+          finishedAt: row.finishedAt ? new Date(row.finishedAt).getTime() : null,
+          statusMessage: row.statusMessage,
+        }))
+      )
     },
     async getBuildInfo(buildId) {
       const result = await deps.apiClient.GET('/builds/{build_id}', {
@@ -191,21 +209,28 @@ export function createBuildsRepository(
       })
 
       if (!result.response.ok || result.error) {
-        handleDashboardApiError({
-          status: result.response.status,
+        l.error({
+          key: 'repositories:builds:get_build_info:dashboard_api_error',
           error: result.error,
-          teamId: scope.teamId,
-          path: '/builds/{build_id}',
-          logKey: 'repositories:builds:get_build_info:dashboard_api_error',
+          team_id: scope.teamId,
           context: {
+            status: result.response.status,
+            path: '/builds/{build_id}',
             build_id: buildId,
           },
         })
+        return err(
+          repoErrorFromHttp(
+            result.response.status,
+            result.error?.message ?? 'Failed to fetch build info',
+            result.error
+          )
+        )
       }
 
       const data = result.data
 
-      return {
+      return ok({
         names: data.names ?? null,
         createdAt: new Date(data.createdAt).getTime(),
         finishedAt: data.finishedAt
@@ -213,7 +238,7 @@ export function createBuildsRepository(
           : null,
         status: data.status,
         statusMessage: data.statusMessage,
-      }
+      })
     },
     async getInfraBuildStatus(templateId, buildId) {
       const result = await deps.infraClient.GET(
@@ -235,16 +260,25 @@ export function createBuildsRepository(
       )
 
       if (!result.response.ok || result.error) {
-        handleInfraApiError({
-          status: result.response.status,
+        l.error({
+          key: 'repositories:builds:get_build_status:infra_error',
           error: result.error,
-          teamId: scope.teamId,
-          path: '/templates/{templateID}/builds/{buildID}/status',
-          logKey: 'repositories:builds:get_build_status:infra_error',
+          team_id: scope.teamId,
+          context: {
+            status: result.response.status,
+            path: '/templates/{templateID}/builds/{buildID}/status',
+          },
         })
+        return err(
+          repoErrorFromHttp(
+            result.response.status,
+            result.error?.message ?? 'Failed to fetch build status',
+            result.error
+          )
+        )
       }
 
-      return result.data
+      return ok(result.data)
     },
     async getInfraBuildLogs(templateId, buildId, options = {}) {
       const result = await deps.infraClient.GET(
@@ -269,16 +303,25 @@ export function createBuildsRepository(
       )
 
       if (!result.response.ok || result.error) {
-        handleInfraApiError({
-          status: result.response.status,
+        l.error({
+          key: 'repositories:builds:get_build_logs:infra_error',
           error: result.error,
-          teamId: scope.teamId,
-          path: '/templates/{templateID}/builds/{buildID}/logs',
-          logKey: 'repositories:builds:get_build_logs:infra_error',
+          team_id: scope.teamId,
+          context: {
+            status: result.response.status,
+            path: '/templates/{templateID}/builds/{buildID}/logs',
+          },
         })
+        return err(
+          repoErrorFromHttp(
+            result.response.status,
+            result.error?.message ?? 'Failed to fetch build logs',
+            result.error
+          )
+        )
       }
 
-      return result.data
+      return ok(result.data)
     },
   }
 }

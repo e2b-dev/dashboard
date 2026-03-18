@@ -2,6 +2,7 @@ import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import { infra } from '@/lib/clients/api'
 import type { CreatedTeamAPIKey, TeamAPIKey } from '@/types/api.types'
@@ -11,10 +12,7 @@ type KeysRepositoryDeps = {
   authHeaders: typeof SUPABASE_AUTH_HEADERS
 }
 
-export interface KeysScope {
-  accessToken: string
-  teamId: string
-}
+export type KeysScope = TeamRequestScope
 
 export interface KeysRepository {
   listTeamApiKeys(): Promise<RepoResult<TeamAPIKey[]>>

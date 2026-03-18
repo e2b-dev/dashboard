@@ -6,7 +6,6 @@ import {
   endTelemetryMiddleware,
   startTelemetryMiddleware,
 } from '@/core/server/api/middlewares/telemetry'
-import { createRequestContext } from '@/core/server/context/request-context'
 import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
 import { getTracer } from '@/lib/clients/tracer'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
@@ -99,10 +98,6 @@ export const protectedTeamProcedure = t.procedure
         ctx: {
           ...ctx,
           teamId,
-          services: createRequestContext({
-            accessToken: ctx.session.access_token,
-            teamId,
-          }).services,
         },
       })
     } finally {

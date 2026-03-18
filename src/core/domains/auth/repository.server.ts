@@ -1,8 +1,9 @@
 import 'server-only'
 
-import { TRPCError } from '@trpc/server'
 import { serializeError } from 'serialize-error'
 import type { OtpType } from '@/core/domains/auth/models'
+import { repoErrorFromHttp } from '@/core/shared/errors'
+import { err, ok, type RepoResult } from '@/core/shared/result'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 
@@ -15,7 +16,10 @@ type AuthRepositoryDeps = {
 }
 
 export interface AuthRepository {
-  verifyOtp(tokenHash: string, type: OtpType): Promise<VerifyOtpResult>
+  verifyOtp(
+    tokenHash: string,
+    type: OtpType
+  ): Promise<RepoResult<VerifyOtpResult>>
 }
 
 export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
@@ -44,28 +48,27 @@ export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
         )
 
         if (error.status === 403 && error.code === 'otp_expired') {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Email link has expired. Please request a new one.',
-          })
+          return err(
+            repoErrorFromHttp(
+              400,
+              'Email link has expired. Please request a new one.',
+              error
+            )
+          )
         }
 
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid or expired verification link.',
-        })
+        return err(
+          repoErrorFromHttp(400, 'Invalid or expired verification link.', error)
+        )
       }
 
       if (!data.user) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Verification failed. Please try again.',
-        })
+        return err(repoErrorFromHttp(500, 'Verification failed. Please try again.'))
       }
 
-      return {
+      return ok({
         userId: data.user.id,
-      }
+      })
     },
   }
 }

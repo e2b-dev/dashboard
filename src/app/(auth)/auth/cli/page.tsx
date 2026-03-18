@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { serializeError } from 'serialize-error'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createTeamsRepository } from '@/domains/teams/repository.server'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -28,7 +28,7 @@ async function handleCLIAuth(
     throw new Error('Invalid redirect URL')
   }
 
-  const teamsResult = await createTeamsRepository({
+  const teamsResult = await createUserTeamsRepository({
     accessToken: supabaseAccessToken,
   }).listUserTeams()
 

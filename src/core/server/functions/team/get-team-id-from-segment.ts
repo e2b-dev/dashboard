@@ -2,7 +2,7 @@ import 'server-only'
 
 import z from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { createTeamsRepository } from '@/core/domains/teams/repository.server'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 
@@ -26,7 +26,7 @@ export const getTeamIdFromSegment = async (
     return segment
   }
 
-  const resolvedTeam = await createTeamsRepository({
+  const resolvedTeam = await createUserTeamsRepository({
     accessToken,
   }).resolveTeamBySlug(segment, {
     tags: [CACHE_TAGS.TEAM_ID_FROM_SEGMENT(segment)],

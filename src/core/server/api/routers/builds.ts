@@ -5,14 +5,23 @@ import {
   type BuildLogsModel,
   BuildStatusSchema,
 } from '@/core/domains/builds/models'
+import { createBuildsRepository } from '@/core/domains/builds/repository.server'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
 
+const buildsRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(createBuildsRepository, (buildsRepository) => ({
+    buildsRepository,
+  }))
+)
+
 export const buildsRouter = createTRPCRouter({
   // QUERIES
 
-  list: protectedTeamProcedure
+  list: buildsRepositoryProcedure
     .input(
       z.object({
         buildIdOrTemplate: z.string().optional(),
@@ -24,13 +33,22 @@ export const buildsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { buildIdOrTemplate, statuses, limit, cursor } = input
 
-      return await ctx.services.builds.listBuilds(buildIdOrTemplate, statuses, {
-        limit,
-        cursor,
-      })
+      const result = await ctx.buildsRepository.listBuilds(
+        buildIdOrTemplate,
+        statuses,
+        {
+          limit,
+          cursor,
+        }
+      )
+      if (!result.ok) {
+        throwTRPCErrorFromRepoError(result.error)
+      }
+
+      return result.data
     }),
 
-  runningStatuses: protectedTeamProcedure
+  runningStatuses: buildsRepositoryProcedure
     .input(
       z.object({
         buildIds: z.array(z.string()).max(100),
@@ -39,10 +57,15 @@ export const buildsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { buildIds } = input
 
-      return await ctx.services.builds.getRunningStatuses(buildIds)
+      const result = await ctx.buildsRepository.getRunningStatuses(buildIds)
+      if (!result.ok) {
+        throwTRPCErrorFromRepoError(result.error)
+      }
+
+      return result.data
     }),
 
-  buildDetails: protectedTeamProcedure
+  buildDetails: buildsRepositoryProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -52,7 +75,11 @@ export const buildsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { buildId, templateId } = input
 
-      const buildInfo = await ctx.services.builds.getBuildInfo(buildId)
+      const buildInfoResult = await ctx.buildsRepository.getBuildInfo(buildId)
+      if (!buildInfoResult.ok) {
+        throwTRPCErrorFromRepoError(buildInfoResult.error)
+      }
+      const buildInfo = buildInfoResult.data
 
       const result: BuildDetailsModel = {
         templateNames: buildInfo.names,
@@ -67,7 +94,7 @@ export const buildsRouter = createTRPCRouter({
       return result
     }),
 
-  buildLogsBackwardsReversed: protectedTeamProcedure
+  buildLogsBackwardsReversed: buildsRepositoryProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -85,11 +112,15 @@ export const buildsRouter = createTRPCRouter({
       const direction = 'backward'
       const limit = 100
 
-      const buildLogs = await ctx.services.builds.getInfraBuildLogs(
+      const buildLogsResult = await ctx.buildsRepository.getInfraBuildLogs(
         templateId,
         buildId,
         { cursor, limit, direction, level }
       )
+      if (!buildLogsResult.ok) {
+        throwTRPCErrorFromRepoError(buildLogsResult.error)
+      }
+      const buildLogs = buildLogsResult.data
 
       const logs: BuildLogModel[] = buildLogs.logs
         .map((log) => ({
@@ -111,7 +142,7 @@ export const buildsRouter = createTRPCRouter({
       return result
     }),
 
-  buildLogsForward: protectedTeamProcedure
+  buildLogsForward: buildsRepositoryProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -129,11 +160,15 @@ export const buildsRouter = createTRPCRouter({
       const direction = 'forward'
       const limit = 100
 
-      const buildLogs = await ctx.services.builds.getInfraBuildLogs(
+      const buildLogsResult = await ctx.buildsRepository.getInfraBuildLogs(
         templateId,
         buildId,
         { cursor, limit, direction, level }
       )
+      if (!buildLogsResult.ok) {
+        throwTRPCErrorFromRepoError(buildLogsResult.error)
+      }
+      const buildLogs = buildLogsResult.data
 
       const logs: BuildLogModel[] = buildLogs.logs.map(
         (log: {

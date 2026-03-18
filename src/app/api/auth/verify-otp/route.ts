@@ -109,7 +109,11 @@ export async function POST(request: NextRequest) {
       `verifying OTP token: ${token_hash.slice(0, 10)}`
     )
 
-    await authRepository.verifyOtp(token_hash, type)
+    const verifyResult = await authRepository.verifyOtp(token_hash, type)
+    if (!verifyResult.ok) {
+      const errorRedirectUrl = buildErrorRedirectUrl(origin, verifyResult.error.message)
+      return NextResponse.json({ redirectUrl: errorRedirectUrl })
+    }
 
     const redirectUrl = buildRedirectUrl(type, next, origin)
 

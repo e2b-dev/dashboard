@@ -4,7 +4,7 @@ import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createRouteServices } from '@/core/server/context/from-route'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -159,8 +159,9 @@ export async function GET(
     }
 
     const accessToken = sessionResponse.session.access_token
-    const services = createRouteServices({ accessToken })
-    const teamsResult = await services.teams.listUserTeams()
+    const teamsResult = await createUserTeamsRepository({
+      accessToken,
+    }).listUserTeams()
 
     if (!teamsResult.ok || teamsResult.data.length === 0) {
       l.warn({

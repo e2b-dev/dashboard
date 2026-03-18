@@ -1,9 +1,11 @@
-import 'server-only'
-
 import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
+import { createKeysRepository } from '@/core/domains/keys/repository.server'
+import {
+  authActionClient,
+  withTeamIdResolution,
+} from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError } from '@/lib/utils/action'
@@ -23,7 +25,10 @@ export const getTeamApiKeys = authActionClient
 
     const { session, teamId } = ctx
 
-    const result = await ctx.services.keys.listTeamApiKeys()
+    const result = await createKeysRepository({
+      accessToken: session.access_token,
+      teamId,
+    }).listTeamApiKeys()
 
     if (!result.ok) {
       const status = result.error.status

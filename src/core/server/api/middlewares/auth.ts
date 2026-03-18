@@ -5,7 +5,6 @@ import {
   serializeCookieHeader,
 } from '@supabase/ssr'
 import { unauthorizedUserError } from '@/core/server/adapters/trpc-errors'
-import { createRequestContext } from '@/core/server/context/request-context'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
@@ -80,9 +79,6 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
         ...ctx,
         session,
         user,
-        services: createRequestContext({
-          accessToken: session.access_token,
-        }).services,
       },
     })
   } finally {

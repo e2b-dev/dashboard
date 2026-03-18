@@ -4,18 +4,30 @@ import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { serializeError } from 'serialize-error'
 import { z } from 'zod'
-import {
-  createRequestContext,
-  type RequestContextServices,
-} from '@/core/server/context/request-context'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
+import type {
+  RequestScope,
+  TeamRequestScope,
+} from '@/core/shared/repository-scope'
 import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
 import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
 import { l } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { getTracer } from '@/core/shared/clients/tracer'
 import { ActionError, flattenClientInputValue } from './utils'
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+
+export interface AuthActionContext {
+  user: User
+  session: Session
+  supabase: SupabaseServerClient
+}
+
+export interface TeamActionContext extends AuthActionContext {
+  teamId: string
+}
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
@@ -164,20 +176,12 @@ export const authActionClient = actionClient.use(async ({ next }) => {
       user,
       session,
       supabase,
-      services: createRequestContext({
-        accessToken: session.access_token,
-      }).services,
     },
   })
 })
 
 export const withTeamIdResolution = createMiddleware<{
-  ctx: {
-    user: User
-    session: Session
-    supabase: Awaited<ReturnType<typeof createClient>>
-    services: RequestContextServices
-  }
+  ctx: AuthActionContext
 }>().define(async ({ next, clientInput, ctx }) => {
   if (
     !clientInput ||
@@ -222,10 +226,51 @@ export const withTeamIdResolution = createMiddleware<{
   return next({
     ctx: {
       teamId,
-      services: createRequestContext({
-        accessToken: ctx.session.access_token,
-        teamId,
-      }).services,
     },
   })
 })
+
+export function withAuthedRequestRepository<
+  TRepository,
+  TContextExtension extends object,
+>(
+  createRepository: (scope: RequestScope) => TRepository,
+  extendContext: (repository: TRepository) => TContextExtension
+) {
+  return createMiddleware<{
+    ctx: AuthActionContext
+  }>().define(async ({ next, ctx }) => {
+    const repository = createRepository({
+      accessToken: ctx.session.access_token,
+    })
+
+    return next({
+      ctx: {
+        ...extendContext(repository),
+      },
+    })
+  })
+}
+
+export function withTeamAuthedRequestRepository<
+  TRepository,
+  TContextExtension extends object,
+>(
+  createRepository: (scope: TeamRequestScope) => TRepository,
+  extendContext: (repository: TRepository) => TContextExtension
+) {
+  return createMiddleware<{
+    ctx: TeamActionContext
+  }>().define(async ({ next, ctx }) => {
+    const repository = createRepository({
+      accessToken: ctx.session.access_token,
+      teamId: ctx.teamId,
+    })
+
+    return next({
+      ctx: {
+        ...extendContext(repository),
+      },
+    })
+  })
+}

@@ -2,19 +2,15 @@ import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import { api } from '@/lib/clients/api'
 import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import type { components as DashboardComponents } from '@/types/dashboard-api.types'
-import type { ClientTeam, ResolvedTeam, TeamLimits, TeamMember } from './models'
+import type { ClientTeam, TeamLimits, TeamMember } from './models'
 
 type ApiUserTeam = {
   id: string
-  name: string
-  slug: string
-  tier: string
-  email: string
-  isDefault: boolean
   limits: {
     concurrentSandboxes: number
     diskMb: number
@@ -24,42 +20,16 @@ type ApiUserTeam = {
   }
 }
 
-function mapApiTeamToClientTeam(apiTeam: ApiUserTeam): ClientTeam {
-  return {
-    id: apiTeam.id,
-    name: apiTeam.name,
-    slug: apiTeam.slug,
-    tier: apiTeam.tier,
-    email: apiTeam.email,
-    is_default: apiTeam.isDefault,
-    is_banned: false,
-    is_blocked: false,
-    blocked_reason: null,
-    cluster_id: null,
-    created_at: '',
-    profile_picture_url: null,
-  }
-}
-
 type TeamsRepositoryDeps = {
   apiClient: typeof api
   authHeaders: typeof SUPABASE_AUTH_HEADERS
   adminClient: typeof supabaseAdmin
 }
 
-export interface TeamsRequestScope {
-  accessToken: string
-  teamId?: string
-}
+export type TeamsRequestScope = TeamRequestScope
 
 export interface TeamsRepository {
-  listUserTeams(): Promise<RepoResult<ClientTeam[]>>
-  getCurrentUserTeam(teamIdOrSlug: string): Promise<RepoResult<ClientTeam>>
-  resolveTeamBySlug(
-    slug: string,
-    next?: { tags?: string[] }
-  ): Promise<RepoResult<ResolvedTeam>>
-  getTeamLimitsByIdOrSlug(teamIdOrSlug: string): Promise<RepoResult<TeamLimits>>
+  getTeamLimits(): Promise<RepoResult<TeamLimits>>
   listTeamMembers(): Promise<RepoResult<TeamMember[]>>
   updateTeamName(
     name: string
@@ -79,108 +49,24 @@ export function createTeamsRepository(
     adminClient: supabaseAdmin,
   }
 ): TeamsRepository {
-  const requireTeamId = (teamId?: string): string => {
-    if (!teamId) {
-      throw new Error('teamId is required in request scope')
-    }
-    return teamId
-  }
-
-  const listApiUserTeams = async (
-    accessToken: string
-  ): Promise<RepoResult<ApiUserTeam[]>> => {
-    const { data, error, response } = await deps.apiClient.GET('/teams', {
-      headers: deps.authHeaders(accessToken),
-    })
-
-    if (!response.ok || error || !data?.teams) {
-      return err(
-        repoErrorFromHttp(
-          response.status,
-          error?.message ?? 'Failed to fetch user teams',
-          error
-        )
-      )
-    }
-
-    return ok(data.teams as ApiUserTeam[])
-  }
-
   return {
-    async listUserTeams(): Promise<RepoResult<ClientTeam[]>> {
-      const teamsResult = await listApiUserTeams(scope.accessToken)
+    async getTeamLimits(): Promise<RepoResult<TeamLimits>> {
+      const { data, error, response } = await deps.apiClient.GET('/teams', {
+        headers: deps.authHeaders(scope.accessToken, scope.teamId),
+      })
 
-      if (!teamsResult.ok) {
-        return teamsResult
-      }
-
-      return ok(teamsResult.data.map(mapApiTeamToClientTeam))
-    },
-    async getCurrentUserTeam(
-      teamIdOrSlug: string
-    ): Promise<RepoResult<ClientTeam>> {
-      const teamsResult = await listApiUserTeams(scope.accessToken)
-
-      if (!teamsResult.ok) {
-        return teamsResult
-      }
-
-      const team = teamsResult.data.find(
-        (candidate) =>
-          candidate.id === teamIdOrSlug || candidate.slug === teamIdOrSlug
-      )
-
-      if (!team) {
-        return err(
-          repoErrorFromHttp(403, 'Team not found or access denied', {
-            teamIdOrSlug,
-          })
-        )
-      }
-
-      return ok(mapApiTeamToClientTeam(team))
-    },
-    async resolveTeamBySlug(
-      slug: string,
-      next?: { tags?: string[] }
-    ): Promise<RepoResult<ResolvedTeam>> {
-      const { data, error, response } = await deps.apiClient.GET(
-        '/teams/resolve',
-        {
-          params: { query: { slug } },
-          headers: deps.authHeaders(scope.accessToken),
-          next,
-        }
-      )
-
-      if (!response.ok || error || !data) {
+      if (!response.ok || error || !data?.teams) {
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to resolve team',
+            error?.message ?? 'Failed to fetch team limits',
             error
           )
         )
       }
 
-      return ok({
-        id: data.id,
-        slug: data.slug,
-      })
-    },
-    async getTeamLimitsByIdOrSlug(
-      teamIdOrSlug: string
-    ): Promise<RepoResult<TeamLimits>> {
-      const teamsResult = await listApiUserTeams(scope.accessToken)
-
-      if (!teamsResult.ok) {
-        return teamsResult
-      }
-
-      const team = teamsResult.data.find(
-        (candidate) =>
-          candidate.id === teamIdOrSlug || candidate.slug === teamIdOrSlug
-      )
+      const teams = data.teams as ApiUserTeam[]
+      const team = teams.find((candidate) => candidate.id === scope.teamId)
 
       if (!team) {
         return err(repoErrorFromHttp(404, 'Team not found'))
@@ -195,12 +81,11 @@ export function createTeamsRepository(
       })
     },
     async listTeamMembers(): Promise<RepoResult<TeamMember[]>> {
-      const teamId = requireTeamId(scope.teamId)
       const { data, error, response } = await deps.apiClient.GET(
         '/teams/{teamId}/members',
         {
-          params: { path: { teamId } },
-          headers: deps.authHeaders(scope.accessToken, teamId),
+          params: { path: { teamId: scope.teamId } },
+          headers: deps.authHeaders(scope.accessToken, scope.teamId),
         }
       )
 
@@ -243,12 +128,11 @@ export function createTeamsRepository(
     ): Promise<
       RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
     > {
-      const teamId = requireTeamId(scope.teamId)
       const { data, error, response } = await deps.apiClient.PATCH(
         '/teams/{teamId}',
         {
-          params: { path: { teamId } },
-          headers: deps.authHeaders(scope.accessToken, teamId),
+          params: { path: { teamId: scope.teamId } },
+          headers: deps.authHeaders(scope.accessToken, scope.teamId),
           body: { name },
         }
       )
@@ -266,12 +150,11 @@ export function createTeamsRepository(
       return ok(data)
     },
     async addTeamMember(email): Promise<RepoResult<void>> {
-      const teamId = requireTeamId(scope.teamId)
       const { error, response } = await deps.apiClient.POST(
         '/teams/{teamId}/members',
         {
-          params: { path: { teamId } },
-          headers: deps.authHeaders(scope.accessToken, teamId),
+          params: { path: { teamId: scope.teamId } },
+          headers: deps.authHeaders(scope.accessToken, scope.teamId),
           body: { email },
         }
       )
@@ -289,12 +172,11 @@ export function createTeamsRepository(
       return ok(undefined)
     },
     async removeTeamMember(userId): Promise<RepoResult<void>> {
-      const teamId = requireTeamId(scope.teamId)
       const { error, response } = await deps.apiClient.DELETE(
         '/teams/{teamId}/members/{userId}',
         {
-          params: { path: { teamId, userId } },
-          headers: deps.authHeaders(scope.accessToken, teamId),
+          params: { path: { teamId: scope.teamId, userId } },
+          headers: deps.authHeaders(scope.accessToken, scope.teamId),
         }
       )
 
@@ -313,11 +195,10 @@ export function createTeamsRepository(
     async updateTeamProfilePictureUrl(
       profilePictureUrl
     ): Promise<RepoResult<ClientTeam>> {
-      const teamId = requireTeamId(scope.teamId)
       const { data, error } = await deps.adminClient
         .from('teams')
         .update({ profile_picture_url: profilePictureUrl })
-        .eq('id', teamId)
+        .eq('id', scope.teamId)
         .select()
         .single()
 

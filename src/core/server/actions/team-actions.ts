@@ -8,25 +8,36 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
 import {
   CreateTeamSchema,
   UpdateTeamNameSchema,
 } from '@/core/domains/teams/schemas'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
+import {
+  authActionClient,
+  withTeamIdResolution,
+  withTeamAuthedRequestRepository,
+} from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
 import type { CreateTeamsResponse } from '@/core/domains/billing/models'
 
+const withTeamsRepository = withTeamAuthedRequestRepository(
+  createTeamsRepository,
+  (teamsRepository) => ({ teamsRepository })
+)
+
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
   .metadata({ actionName: 'updateTeamName' })
   .use(withTeamIdResolution)
+  .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { name, teamIdOrSlug } = parsedInput
-    const result = await ctx.services.teams.updateTeamName(name)
+    const result = await ctx.teamsRepository.updateTeamName(name)
 
     if (!result.ok) {
       return toActionErrorFromRepoError(result.error)
@@ -46,9 +57,10 @@ export const addTeamMemberAction = authActionClient
   .schema(AddTeamMemberSchema)
   .metadata({ actionName: 'addTeamMember' })
   .use(withTeamIdResolution)
+  .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { email, teamIdOrSlug } = parsedInput
-    const result = await ctx.services.teams.addTeamMember(email)
+    const result = await ctx.teamsRepository.addTeamMember(email)
 
     if (!result.ok) {
       return toActionErrorFromRepoError(result.error)
@@ -66,9 +78,10 @@ export const removeTeamMemberAction = authActionClient
   .schema(RemoveTeamMemberSchema)
   .metadata({ actionName: 'removeTeamMember' })
   .use(withTeamIdResolution)
+  .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { userId, teamIdOrSlug } = parsedInput
-    const result = await ctx.services.teams.removeTeamMember(userId)
+    const result = await ctx.teamsRepository.removeTeamMember(userId)
 
     if (!result.ok) {
       return toActionErrorFromRepoError(result.error)
@@ -120,9 +133,10 @@ export const uploadTeamProfilePictureAction = authActionClient
   .schema(UploadTeamProfilePictureSchema)
   .metadata({ actionName: 'uploadTeamProfilePicture' })
   .use(withTeamIdResolution)
+  .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { image, teamIdOrSlug } = parsedInput
-    const { teamId, services } = ctx
+    const { teamId, teamsRepository } = ctx
 
     const allowedTypes = ['image/jpeg', 'image/png']
 
@@ -169,7 +183,7 @@ export const uploadTeamProfilePictureAction = authActionClient
 
     const publicUrl = await uploadFile(buffer, storagePath, fileType.mime)
 
-    const result = await services.teams.updateTeamProfilePictureUrl(publicUrl)
+    const result = await teamsRepository.updateTeamProfilePictureUrl(publicUrl)
     if (!result.ok) {
       throw new Error(result.error.message)
     }

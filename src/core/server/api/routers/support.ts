@@ -1,5 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { createSupportRepository } from '@/core/domains/support/repository.server'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
@@ -11,8 +14,14 @@ const fileSchema = z.object({
   base64: z.string(),
 })
 
+const supportRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(createSupportRepository, (supportRepository) => ({
+    supportRepository,
+  }))
+)
+
 export const supportRouter = createTRPCRouter({
-  contactSupport: protectedTeamProcedure
+  contactSupport: supportRepositoryProcedure
     .input(
       z.object({
         description: z.string().min(1),
@@ -35,16 +44,24 @@ export const supportRouter = createTRPCRouter({
         })
       }
 
-      const team = await ctx.services.support.getTeamSupportData()
+      const teamResult = await ctx.supportRepository.getTeamSupportData()
+      if (!teamResult.ok) {
+        throwTRPCErrorFromRepoError(teamResult.error)
+      }
 
-      return ctx.services.support.createSupportThread({
+      const createResult = await ctx.supportRepository.createSupportThread({
         description: input.description,
         files: input.files,
         teamId,
-        teamName: team.name,
+        teamName: teamResult.data.name,
         customerEmail: email,
-        accountOwnerEmail: team.email,
-        customerTier: team.tier,
+        accountOwnerEmail: teamResult.data.email,
+        customerTier: teamResult.data.tier,
       })
+      if (!createResult.ok) {
+        throwTRPCErrorFromRepoError(createResult.error)
+      }
+
+      return createResult.data
     }),
 })

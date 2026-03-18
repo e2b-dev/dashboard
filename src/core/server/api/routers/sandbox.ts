@@ -1,5 +1,7 @@
 import { millisecondsInDay } from 'date-fns/constants'
 import { z } from 'zod'
+import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import {
   deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToModel,
@@ -9,15 +11,25 @@ import {
   type SandboxLogModel,
   type SandboxLogsModel,
 } from '@/core/domains/sandboxes/models'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
 import { SandboxIdSchema } from '@/lib/schemas/api'
 
+const sandboxRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(
+    createSandboxesRepository,
+    (sandboxesRepository) => ({
+    sandboxesRepository,
+    })
+  )
+)
+
 export const sandboxRouter = createTRPCRouter({
   // QUERIES
 
-  details: protectedTeamProcedure
+  details: sandboxRepositoryProcedure
     .input(
       z.object({
         sandboxId: SandboxIdSchema,
@@ -27,16 +39,24 @@ export const sandboxRouter = createTRPCRouter({
       const { sandboxId } = input
 
       const detailsResult =
-        await ctx.services.sandboxes.getSandboxDetails(sandboxId)
+        await ctx.sandboxesRepository.getSandboxDetails(sandboxId)
+      if (!detailsResult.ok) {
+        throwTRPCErrorFromRepoError(detailsResult.error)
+      }
 
       const mappedDetails: SandboxDetailsModel =
-        detailsResult.source === 'infra'
-          ? mapInfraSandboxDetailsToModel(detailsResult.details)
-          : mapApiSandboxRecordToModel(detailsResult.details)
+        detailsResult.data.source === 'infra'
+          ? mapInfraSandboxDetailsToModel(detailsResult.data.details)
+          : mapApiSandboxRecordToModel(detailsResult.data.details)
 
-      const lifecycleEvents =
-        await ctx.services.sandboxes.getSandboxLifecycleEvents(sandboxId)
-      const derivedLifecycle = deriveSandboxLifecycleFromEvents(lifecycleEvents)
+      const lifecycleEventsResult =
+        await ctx.sandboxesRepository.getSandboxLifecycleEvents(sandboxId)
+      if (!lifecycleEventsResult.ok) {
+        throwTRPCErrorFromRepoError(lifecycleEventsResult.error)
+      }
+      const derivedLifecycle = deriveSandboxLifecycleFromEvents(
+        lifecycleEventsResult.data
+      )
       const fallbackPausedAt =
         mappedDetails.state === 'paused' ? mappedDetails.endAt : null
       const fallbackEndedAt =
@@ -55,7 +75,7 @@ export const sandboxRouter = createTRPCRouter({
       }
     }),
 
-  logsBackwardsReversed: protectedTeamProcedure
+  logsBackwardsReversed: sandboxRepositoryProcedure
     .input(
       z.object({
         sandboxId: SandboxIdSchema,
@@ -73,10 +93,14 @@ export const sandboxRouter = createTRPCRouter({
       const direction = 'backward'
       const limit = 100
 
-      const sandboxLogs = await ctx.services.sandboxes.getSandboxLogs(
+      const sandboxLogsResult = await ctx.sandboxesRepository.getSandboxLogs(
         sandboxId,
         { cursor, limit, direction, level, search }
       )
+      if (!sandboxLogsResult.ok) {
+        throwTRPCErrorFromRepoError(sandboxLogsResult.error)
+      }
+      const sandboxLogs = sandboxLogsResult.data
 
       const logs: SandboxLogModel[] = sandboxLogs.logs
         .map(mapInfraSandboxLogToModel)
@@ -94,7 +118,7 @@ export const sandboxRouter = createTRPCRouter({
       return result
     }),
 
-  logsForward: protectedTeamProcedure
+  logsForward: sandboxRepositoryProcedure
     .input(
       z.object({
         sandboxId: SandboxIdSchema,
@@ -112,10 +136,14 @@ export const sandboxRouter = createTRPCRouter({
       const direction = 'forward'
       const limit = 100
 
-      const sandboxLogs = await ctx.services.sandboxes.getSandboxLogs(
+      const sandboxLogsResult = await ctx.sandboxesRepository.getSandboxLogs(
         sandboxId,
         { cursor, limit, direction, level, search }
       )
+      if (!sandboxLogsResult.ok) {
+        throwTRPCErrorFromRepoError(sandboxLogsResult.error)
+      }
+      const sandboxLogs = sandboxLogsResult.data
 
       const logs: SandboxLogModel[] = sandboxLogs.logs.map(
         mapInfraSandboxLogToModel
@@ -132,7 +160,7 @@ export const sandboxRouter = createTRPCRouter({
       return result
     }),
 
-  resourceMetrics: protectedTeamProcedure
+  resourceMetrics: sandboxRepositoryProcedure
     .input(
       z
         .object({
@@ -161,13 +189,17 @@ export const sandboxRouter = createTRPCRouter({
       const { sandboxId } = input
       const { startMs, endMs } = input
 
-      const metrics = await ctx.services.sandboxes.getSandboxMetrics(
+      const metricsResult = await ctx.sandboxesRepository.getSandboxMetrics(
         sandboxId,
         {
           startUnixMs: startMs,
           endUnixMs: endMs,
         }
       )
+      if (!metricsResult.ok) {
+        throwTRPCErrorFromRepoError(metricsResult.error)
+      }
+      const metrics = metricsResult.data
 
       return metrics
     }),

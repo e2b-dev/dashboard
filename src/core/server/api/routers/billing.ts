@@ -1,6 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { headers } from 'next/headers'
 import { z } from 'zod'
+import { createBillingRepository } from '@/core/domains/billing/repository.server'
+import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
@@ -13,53 +16,63 @@ function limitTypeToKey(type: 'limit' | 'alert') {
   return type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte'
 }
 
+const billingRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(createBillingRepository, (billingRepository) => ({
+    billingRepository,
+  }))
+)
+
+const billingAndTeamsRepositoryProcedure = billingRepositoryProcedure.use(
+  withTeamAuthedRequestRepository(createTeamsRepository, (teamsRepository) => ({
+    teamsRepository,
+  }))
+)
+
 export const billingRouter = createTRPCRouter({
-  createCheckout: protectedTeamProcedure
+  createCheckout: billingRepositoryProcedure
     .input(z.object({ tierId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.services.billing.createCheckout(input.tierId)
+      const result = await ctx.billingRepository.createCheckout(input.tierId)
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
       return result.data
     }),
 
-  createCustomerPortalSession: protectedTeamProcedure.mutation(
+  createCustomerPortalSession: billingRepositoryProcedure.mutation(
     async ({ ctx }) => {
       const origin = (await headers()).get('origin')
       const result =
-        await ctx.services.billing.createCustomerPortalSession(origin)
+        await ctx.billingRepository.createCustomerPortalSession(origin)
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
       return { url: result.data.url }
     }
   ),
 
-  getItems: protectedTeamProcedure.query(async ({ ctx }) => {
-    const result = await ctx.services.billing.getItems()
+  getItems: billingRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.billingRepository.getItems()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
 
-  getUsage: protectedTeamProcedure.query(async ({ ctx }) => {
-    const result = await ctx.services.billing.getUsage()
+  getUsage: billingRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.billingRepository.getUsage()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
 
-  getInvoices: protectedTeamProcedure.query(async ({ ctx }) => {
-    const result = await ctx.services.billing.getInvoices()
+  getInvoices: billingRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.billingRepository.getInvoices()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
 
-  getLimits: protectedTeamProcedure.query(async ({ ctx }) => {
-    const result = await ctx.services.billing.getLimits()
+  getLimits: billingRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.billingRepository.getLimits()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
 
-  getTeamLimits: protectedTeamProcedure.query(async ({ ctx }) => {
-    const limitsResult = await ctx.services.teams.getTeamLimitsByIdOrSlug(
-      ctx.teamId
-    )
+  getTeamLimits: billingAndTeamsRepositoryProcedure.query(async ({ ctx }) => {
+    const limitsResult = await ctx.teamsRepository.getTeamLimits()
     if (!limitsResult.ok) {
       throwTRPCErrorFromRepoError(limitsResult.error)
     }
@@ -67,7 +80,7 @@ export const billingRouter = createTRPCRouter({
     return limitsResult.data
   }),
 
-  setLimit: protectedTeamProcedure
+  setLimit: billingRepositoryProcedure
     .input(
       z.object({
         type: z.enum(['limit', 'alert']),
@@ -76,35 +89,35 @@ export const billingRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { type, value } = input
-      const result = await ctx.services.billing.setLimit(
+      const result = await ctx.billingRepository.setLimit(
         limitTypeToKey(type),
         value
       )
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     }),
 
-  clearLimit: protectedTeamProcedure
+  clearLimit: billingRepositoryProcedure
     .input(z.object({ type: z.enum(['limit', 'alert']) }))
     .mutation(async ({ ctx, input }) => {
       const { type } = input
-      const result = await ctx.services.billing.clearLimit(limitTypeToKey(type))
+      const result = await ctx.billingRepository.clearLimit(limitTypeToKey(type))
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     }),
 
-  createOrder: protectedTeamProcedure
+  createOrder: billingRepositoryProcedure
     .input(z.object({ itemId: z.literal(ADDON_500_SANDBOXES_ID) }))
     .mutation(async ({ ctx, input }) => {
       const { itemId } = input
-      const result = await ctx.services.billing.createOrder(itemId)
+      const result = await ctx.billingRepository.createOrder(itemId)
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
       return result.data
     }),
 
-  confirmOrder: protectedTeamProcedure
+  confirmOrder: billingRepositoryProcedure
     .input(z.object({ orderId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const { orderId } = input
-      const result = await ctx.services.billing.confirmOrder(orderId)
+      const result = await ctx.billingRepository.confirmOrder(orderId)
       if (!result.ok) {
         if (
           result.error.message.includes(
@@ -122,8 +135,8 @@ export const billingRouter = createTRPCRouter({
       return result.data
     }),
 
-  getCustomerSession: protectedTeamProcedure.mutation(async ({ ctx }) => {
-    const result = await ctx.services.billing.getCustomerSession()
+  getCustomerSession: billingRepositoryProcedure.mutation(async ({ ctx }) => {
+    const result = await ctx.billingRepository.getCustomerSession()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),

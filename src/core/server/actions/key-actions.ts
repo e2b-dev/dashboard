@@ -3,10 +3,22 @@
 import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
+import { createKeysRepository } from '@/core/domains/keys/repository.server'
+import {
+  authActionClient,
+  withTeamIdResolution,
+  withTeamAuthedRequestRepository,
+} from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
+
+const withKeysRepository = withTeamAuthedRequestRepository(
+  createKeysRepository,
+  (keysRepository) => ({
+    keysRepository,
+  })
+)
 
 // Create API Key
 
@@ -23,10 +35,11 @@ export const createApiKeyAction = authActionClient
   .schema(CreateApiKeySchema)
   .metadata({ actionName: 'createApiKey' })
   .use(withTeamIdResolution)
+  .use(withKeysRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { name } = parsedInput
 
-    const result = await ctx.services.keys.createApiKey(name)
+    const result = await ctx.keysRepository.createApiKey(name)
 
     if (!result.ok) {
       l.error({
@@ -62,9 +75,10 @@ export const deleteApiKeyAction = authActionClient
   .schema(DeleteApiKeySchema)
   .metadata({ actionName: 'deleteApiKey' })
   .use(withTeamIdResolution)
+  .use(withKeysRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { apiKeyId } = parsedInput
-    const result = await ctx.services.keys.deleteApiKey(apiKeyId)
+    const result = await ctx.keysRepository.deleteApiKey(apiKeyId)
 
     if (!result.ok) {
       l.error({

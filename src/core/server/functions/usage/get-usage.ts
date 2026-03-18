@@ -3,7 +3,11 @@ import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
+import { createBillingRepository } from '@/core/domains/billing/repository.server'
+import {
+  authActionClient,
+  withTeamIdResolution,
+} from '@/core/server/actions/client'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'
 
@@ -23,7 +27,11 @@ export const getUsage = authActionClient
     cacheLife('hours')
     cacheTag(CACHE_TAGS.TEAM_USAGE(teamId))
 
-    const result = await ctx.services.billing.getUsage()
+    const result = await createBillingRepository({
+      accessToken: ctx.session.access_token,
+      teamId,
+    }).getUsage()
+
     if (!result.ok) {
       return returnServerError(result.error.message)
     }

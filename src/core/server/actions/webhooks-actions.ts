@@ -3,14 +3,24 @@
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
+import { createWebhooksRepository } from '@/core/domains/webhooks/repository.server'
+import {
+  authActionClient,
+  withTeamIdResolution,
+  withTeamAuthedRequestRepository,
+} from '@/core/server/actions/client'
 import {
   DeleteWebhookSchema,
   UpdateWebhookSecretSchema,
   UpsertWebhookSchema,
 } from '@/core/server/functions/webhooks/schema'
-import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
+
+const withWebhooksRepository = withTeamAuthedRequestRepository(
+  createWebhooksRepository,
+  (webhooksRepository) => ({ webhooksRepository })
+)
 
 // Upsert Webhook (Create or Update)
 
@@ -21,12 +31,13 @@ export const upsertWebhookAction = authActionClient
   .schema(UpsertWebhookSchema)
   .metadata({ actionName: 'upsertWebhook' })
   .use(withTeamIdResolution)
+  .use(withWebhooksRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { mode, webhookId, name, url, events, signatureSecret, enabled } =
       parsedInput
     const { session, teamId } = ctx
 
-    const response = await ctx.services.webhooks.upsertWebhook({
+    const response = await ctx.webhooksRepository.upsertWebhook({
       mode: mode === 'add' ? 'create' : 'edit',
       webhookId: webhookId ?? undefined,
       name,
@@ -78,11 +89,12 @@ export const deleteWebhookAction = authActionClient
   .schema(DeleteWebhookSchema)
   .metadata({ actionName: 'deleteWebhook' })
   .use(withTeamIdResolution)
+  .use(withWebhooksRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { webhookId } = parsedInput
     const { session, teamId } = ctx
 
-    const response = await ctx.services.webhooks.deleteWebhook(webhookId)
+    const response = await ctx.webhooksRepository.deleteWebhook(webhookId)
 
     if (!response.ok) {
       const status = response.error.status
@@ -119,11 +131,12 @@ export const updateWebhookSecretAction = authActionClient
   .schema(UpdateWebhookSecretSchema)
   .metadata({ actionName: 'updateWebhookSecret' })
   .use(withTeamIdResolution)
+  .use(withWebhooksRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { webhookId, signatureSecret } = parsedInput
     const { session, teamId } = ctx
 
-    const response = await ctx.services.webhooks.updateWebhookSecret(
+    const response = await ctx.webhooksRepository.updateWebhookSecret(
       webhookId,
       signatureSecret
     )

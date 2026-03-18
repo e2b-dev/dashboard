@@ -1,4 +1,4 @@
-import { createRouteServices } from '@/core/server/context/from-route'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { createClient } from '@/lib/clients/supabase/server'
 import type { UserTeamsResponse } from './types'
@@ -12,8 +12,9 @@ export async function GET() {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const services = createRouteServices({ accessToken: session.access_token })
-    const teamsResult = await services.teams.listUserTeams()
+    const teamsResult = await createUserTeamsRepository({
+      accessToken: session.access_token,
+    }).listUserTeams()
 
     if (!teamsResult.ok) {
       return Response.json({ error: 'Failed to fetch teams' }, { status: 500 })

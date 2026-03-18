@@ -1,5 +1,13 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import {
+  createDefaultTemplatesRepository,
+  createTemplatesRepository,
+} from '@/core/domains/templates/repository.server'
+import {
+  withAuthedRequestRepository,
+  withTeamAuthedRequestRepository,
+} from '@/core/server/api/middlewares/repository'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import {
@@ -7,24 +15,42 @@ import {
   protectedTeamProcedure,
 } from '@/core/server/trpc/procedures'
 
+const templatesRepositoryProcedure = protectedProcedure.use(
+  withAuthedRequestRepository(
+    createDefaultTemplatesRepository,
+    (templatesRepository) => ({
+      templatesRepository,
+    })
+  )
+)
+
+const teamTemplatesRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(
+    createTemplatesRepository,
+    (templatesRepository) => ({
+    templatesRepository,
+    })
+  )
+)
+
 export const templatesRouter = createTRPCRouter({
   // QUERIES
 
-  getTemplates: protectedTeamProcedure.query(async ({ ctx }) => {
-    const result = await ctx.services.templates.getTeamTemplates()
+  getTemplates: teamTemplatesRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.templatesRepository.getTeamTemplates()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
 
-  getDefaultTemplatesCached: protectedProcedure.query(async ({ ctx }) => {
-    const result = await ctx.services.templates.getDefaultTemplatesCached()
+  getDefaultTemplatesCached: templatesRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.templatesRepository.getDefaultTemplatesCached()
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
 
   // MUTATIONS
 
-  deleteTemplate: protectedTeamProcedure
+  deleteTemplate: teamTemplatesRepositoryProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -33,7 +59,7 @@ export const templatesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { templateId } = input
 
-      const result = await ctx.services.templates.deleteTemplate(templateId)
+      const result = await ctx.templatesRepository.deleteTemplate(templateId)
 
       if (!result.ok) {
         if (
@@ -54,7 +80,7 @@ export const templatesRouter = createTRPCRouter({
       return result.data
     }),
 
-  updateTemplate: protectedTeamProcedure
+  updateTemplate: teamTemplatesRepositoryProcedure
     .input(
       z.object({
         templateId: z.string(),
@@ -64,7 +90,7 @@ export const templatesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { templateId, public: isPublic } = input
 
-      const result = await ctx.services.templates.updateTemplateVisibility(
+      const result = await ctx.templatesRepository.updateTemplateVisibility(
         templateId,
         isPublic
       )

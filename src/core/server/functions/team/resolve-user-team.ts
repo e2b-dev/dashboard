@@ -3,7 +3,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import type { ResolvedTeam } from '@/core/domains/teams/models'
-import { createTeamsRepository } from '@/core/domains/teams/repository.server'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
 import { l } from '@/lib/clients/logger/logger'
 
 export async function resolveUserTeam(
@@ -18,7 +18,7 @@ export async function resolveUserTeam(
     return { id: cookieTeamId, slug: cookieTeamSlug }
   }
 
-  const teamsResult = await createTeamsRepository({
+  const teamsResult = await createUserTeamsRepository({
     accessToken,
   }).listUserTeams()
 

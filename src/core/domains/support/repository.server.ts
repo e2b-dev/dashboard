@@ -1,8 +1,10 @@
 import 'server-only'
 
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
-import { TRPCError } from '@trpc/server'
-import { createTeamsRepository } from '@/core/domains/teams/repository.server'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
+import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import { err, ok, type RepoResult } from '@/core/shared/result'
 import { l } from '@/lib/clients/logger/logger'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -18,17 +20,16 @@ type SupportRepositoryDeps = {
   createPlainClient: () => PlainClient
 }
 
-export interface SupportScope {
-  accessToken: string
-  teamId?: string
-}
+export type SupportScope = TeamRequestScope
 
 export interface SupportRepository {
-  getTeamSupportData(): Promise<{
-    name: string
-    email: string
-    tier: string
-  }>
+  getTeamSupportData(): Promise<
+    RepoResult<{
+      name: string
+      email: string
+      tier: string
+    }>
+  >
   createSupportThread(input: {
     description: string
     files?: FileInput[]
@@ -37,7 +38,7 @@ export interface SupportRepository {
     customerEmail: string
     accountOwnerEmail: string
     customerTier: string
-  }): Promise<{ threadId: string }>
+  }): Promise<RepoResult<{ threadId: string }>>
 }
 
 function formatThreadText(input: {
@@ -124,19 +125,11 @@ export function createSupportRepository(
       }),
   }
 ): SupportRepository {
-  const requireTeamId = (teamId?: string): string => {
-    if (!teamId) {
-      throw new Error('teamId is required in request scope')
-    }
-    return teamId
-  }
-
   return {
     async getTeamSupportData() {
-      const teamResult = await createTeamsRepository({
+      const teamResult = await createUserTeamsRepository({
         accessToken: scope.accessToken,
-        teamId: requireTeamId(scope.teamId),
-      }).getCurrentUserTeam(requireTeamId(scope.teamId))
+      }).getCurrentUserTeam(scope.teamId)
 
       if (!teamResult.ok) {
         l.error(
@@ -147,22 +140,16 @@ export function createSupportRepository(
           },
           'failed to fetch team data'
         )
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to load team information',
-        })
+        return err(teamResult.error)
       }
 
       const team = teamResult.data
 
-      return { name: team.name, email: team.email, tier: team.tier }
+      return ok({ name: team.name, email: team.email, tier: team.tier })
     },
     async createSupportThread(input) {
       if (!process.env.PLAIN_API_KEY) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Support API not configured',
-        })
+        return err(repoErrorFromHttp(500, 'Support API not configured'))
       }
 
       const {
@@ -191,10 +178,13 @@ export function createSupportRepository(
       })
 
       if (customerResult.error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create support ticket',
-        })
+        return err(
+          repoErrorFromHttp(
+            500,
+            'Failed to create support ticket',
+            customerResult.error
+          )
+        )
       }
 
       const customerId = customerResult.data.customer.id
@@ -237,13 +227,16 @@ export function createSupportRepository(
       })
 
       if (result.error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create support ticket',
-        })
+        return err(
+          repoErrorFromHttp(
+            500,
+            'Failed to create support ticket',
+            result.error
+          )
+        )
       }
 
-      return { threadId: result.data.id }
+      return ok({ threadId: result.data.id })
     },
   }
 }

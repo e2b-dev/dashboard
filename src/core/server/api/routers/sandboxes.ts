@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { USE_MOCK_DATA } from '@/configs/flags'
+import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
 import {
   calculateTeamMetricsStep,
   MOCK_SANDBOXES_DATA,
@@ -14,12 +15,23 @@ import {
   fillTeamMetricsWithZeros,
   transformMetricsToClientMetrics,
 } from '@/core/server/functions/sandboxes/utils'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
+const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(
+    createSandboxesRepository,
+    (sandboxesRepository) => ({
+    sandboxesRepository,
+    })
+  )
+)
+
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
-  getSandboxes: protectedTeamProcedure.query(async ({ ctx }) => {
+  getSandboxes: sandboxesRepositoryProcedure.query(async ({ ctx }) => {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 200))
 
@@ -30,14 +42,17 @@ export const sandboxesRouter = createTRPCRouter({
       }
     }
 
-    const sandboxes = await ctx.services.sandboxes.listSandboxes()
+    const sandboxesResult = await ctx.sandboxesRepository.listSandboxes()
+    if (!sandboxesResult.ok) {
+      throwTRPCErrorFromRepoError(sandboxesResult.error)
+    }
 
     return {
-      sandboxes,
+      sandboxes: sandboxesResult.data,
     }
   }),
 
-  getSandboxesMetrics: protectedTeamProcedure
+  getSandboxesMetrics: sandboxesRepositoryProcedure
     .input(
       z.object({
         sandboxIds: z.array(z.string()),
@@ -52,8 +67,12 @@ export const sandboxesRouter = createTRPCRouter({
         }
       }
 
-      const metricsData =
-        await ctx.services.sandboxes.getSandboxesMetrics(sandboxIds)
+      const metricsDataResult =
+        await ctx.sandboxesRepository.getSandboxesMetrics(sandboxIds)
+      if (!metricsDataResult.ok) {
+        throwTRPCErrorFromRepoError(metricsDataResult.error)
+      }
+      const metricsData = metricsDataResult.data
       const metrics = transformMetricsToClientMetrics(metricsData)
 
       return {
@@ -61,7 +80,7 @@ export const sandboxesRouter = createTRPCRouter({
       }
     }),
 
-  getTeamMetrics: protectedTeamProcedure
+  getTeamMetrics: sandboxesRepositoryProcedure
     .input(GetTeamMetricsSchema)
     .query(async ({ ctx, input }) => {
       const { startDate: startDateMs, endDate: endDateMs } = input
@@ -91,10 +110,14 @@ export const sandboxesRouter = createTRPCRouter({
       // the overfetch is accounted for when post-processing the data using fillTeamMetricsWithZeros
       const overfetchS = Math.ceil(stepMs / 1000)
 
-      const metricData = await ctx.services.sandboxes.getTeamMetricsRange(
+      const metricDataResult = await ctx.sandboxesRepository.getTeamMetricsRange(
         startS,
         endS + overfetchS
       )
+      if (!metricDataResult.ok) {
+        throwTRPCErrorFromRepoError(metricDataResult.error)
+      }
+      const metricData = metricDataResult.data
 
       // transform timestamps from seconds to milliseconds
       const metrics = metricData.map(
@@ -123,7 +146,7 @@ export const sandboxesRouter = createTRPCRouter({
       }
     }),
 
-  getTeamMetricsMax: protectedTeamProcedure
+  getTeamMetricsMax: sandboxesRepositoryProcedure
     .input(GetTeamMetricsMaxSchema)
     .query(async ({ ctx, input }) => {
       const { startDate: startDateMs, endDate: endDateMs, metric } = input
@@ -136,11 +159,15 @@ export const sandboxesRouter = createTRPCRouter({
       const startS = Math.floor(startDateMs / 1000)
       const endS = Math.floor(endDateMs / 1000)
 
-      const maxMetric = await ctx.services.sandboxes.getTeamMetricsMax(
+      const maxMetricResult = await ctx.sandboxesRepository.getTeamMetricsMax(
         startS,
         endS,
         metric
       )
+      if (!maxMetricResult.ok) {
+        throwTRPCErrorFromRepoError(maxMetricResult.error)
+      }
+      const maxMetric = maxMetricResult.data
 
       // since javascript timestamps are in milliseconds, we want to convert the timestamp back to milliseconds
       const timestampMs = maxMetric.timestampUnix * 1000

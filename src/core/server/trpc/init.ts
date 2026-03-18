@@ -2,7 +2,6 @@ import type { Session, User } from '@supabase/supabase-js'
 import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
 import { flattenError, ZodError } from 'zod'
-import type { RequestContextServices } from '@/core/server/context/request-context'
 
 /**
  * TRPC Context Factory
@@ -15,7 +14,6 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     session: undefined as Session | undefined,
     user: undefined as User | undefined,
     teamId: undefined as string | undefined,
-    services: undefined as RequestContextServices | undefined,
   }
 }
 

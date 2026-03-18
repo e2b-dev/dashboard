@@ -8,6 +8,10 @@ import {
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
 import { repoErrorFromHttp } from '@/core/shared/errors'
+import type {
+  RequestScope,
+  TeamRequestScope,
+} from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import { api, infra } from '@/lib/clients/api'
 import type { DefaultTemplate, Template } from '@/types/api.types'
@@ -18,16 +22,8 @@ type TemplatesRepositoryDeps = {
   authHeaders: typeof SUPABASE_AUTH_HEADERS
 }
 
-export interface TemplatesScope {
-  accessToken: string
-  teamId?: string
-}
-
-export interface TemplatesRepository {
+export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
-  getDefaultTemplatesCached(): Promise<
-    RepoResult<{ templates: DefaultTemplate[] }>
-  >
   deleteTemplate(templateId: string): Promise<RepoResult<{ success: true }>>
   updateTemplateVisibility(
     templateId: string,
@@ -35,21 +31,20 @@ export interface TemplatesRepository {
   ): Promise<RepoResult<{ success: true; public: boolean }>>
 }
 
+export interface DefaultTemplatesRepository {
+  getDefaultTemplatesCached(): Promise<
+    RepoResult<{ templates: DefaultTemplate[] }>
+  >
+}
+
 export function createTemplatesRepository(
-  scope: TemplatesScope,
+  scope: TeamRequestScope,
   deps: TemplatesRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
     authHeaders: SUPABASE_AUTH_HEADERS,
   }
-): TemplatesRepository {
-  const requireTeamId = (teamId?: string): string => {
-    if (!teamId) {
-      throw new Error('teamId is required in request scope')
-    }
-    return teamId
-  }
-
+): TeamTemplatesRepository {
   return {
     async getTeamTemplates() {
       if (USE_MOCK_DATA) {
@@ -57,15 +52,14 @@ export function createTemplatesRepository(
           templates: MOCK_TEMPLATES_DATA,
         })
       }
-
       const res = await deps.infraClient.GET('/templates', {
         params: {
           query: {
-            teamID: requireTeamId(scope.teamId),
+            teamID: scope.teamId,
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, requireTeamId(scope.teamId)),
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
         },
       })
 
@@ -83,6 +77,68 @@ export function createTemplatesRepository(
         templates: res.data,
       })
     },
+    async deleteTemplate(templateId) {
+      const res = await deps.infraClient.DELETE('/templates/{templateID}', {
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to delete template',
+            res.error
+          )
+        )
+      }
+
+      return ok({ success: true as const })
+    },
+    async updateTemplateVisibility(templateId, isPublic) {
+      const res = await deps.infraClient.PATCH('/templates/{templateID}', {
+        body: {
+          public: isPublic,
+        },
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to update template',
+            res.error
+          )
+        )
+      }
+
+      return ok({ success: true as const, public: isPublic })
+    },
+  }
+}
+
+export function createDefaultTemplatesRepository(
+  scope: RequestScope,
+  deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'authHeaders'> = {
+    apiClient: api,
+    authHeaders: SUPABASE_AUTH_HEADERS,
+  }
+): DefaultTemplatesRepository {
+  return {
     async getDefaultTemplatesCached() {
       if (USE_MOCK_DATA) {
         return ok({
@@ -137,57 +193,6 @@ export function createTemplatesRepository(
       }))
 
       return ok({ templates })
-    },
-    async deleteTemplate(templateId) {
-      const res = await deps.infraClient.DELETE('/templates/{templateID}', {
-        params: {
-          path: {
-            templateID: templateId,
-          },
-        },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, requireTeamId(scope.teamId)),
-        },
-      })
-
-      if (!res.response.ok || res.error) {
-        return err(
-          repoErrorFromHttp(
-            res.response.status,
-            res.error?.message ?? 'Failed to delete template',
-            res.error
-          )
-        )
-      }
-
-      return ok({ success: true as const })
-    },
-    async updateTemplateVisibility(templateId, isPublic) {
-      const res = await deps.infraClient.PATCH('/templates/{templateID}', {
-        body: {
-          public: isPublic,
-        },
-        params: {
-          path: {
-            templateID: templateId,
-          },
-        },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, requireTeamId(scope.teamId)),
-        },
-      })
-
-      if (!res.response.ok || res.error) {
-        return err(
-          repoErrorFromHttp(
-            res.response.status,
-            res.error?.message ?? 'Failed to update template',
-            res.error
-          )
-        )
-      }
-
-      return ok({ success: true as const, public: isPublic })
     },
   }
 }

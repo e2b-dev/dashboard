@@ -2,8 +2,13 @@ import 'server-only'
 
 import { z } from 'zod'
 import { USE_MOCK_DATA } from '@/configs/flags'
+import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
+import {
+  authActionClient,
+  withTeamIdResolution,
+  withTeamAuthedRequestRepository,
+} from '@/core/server/actions/client'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 
 export interface TeamLimits {
@@ -26,18 +31,22 @@ const GetTeamLimitsSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
+const withTeamsRepository = withTeamAuthedRequestRepository(
+  createTeamsRepository,
+  (teamsRepository) => ({ teamsRepository })
+)
+
 export const getTeamLimits = authActionClient
   .schema(GetTeamLimitsSchema)
   .metadata({ serverFunctionName: 'getTeamLimits' })
   .use(withTeamIdResolution)
+  .use(withTeamsRepository)
   .action(async ({ ctx }) => {
     if (USE_MOCK_DATA) {
       return MOCK_TIER_LIMITS
     }
 
-    const limitsResult = await ctx.services.teams.getTeamLimitsByIdOrSlug(
-      ctx.teamId
-    )
+    const limitsResult = await ctx.teamsRepository.getTeamLimits()
 
     if (!limitsResult.ok) {
       return toActionErrorFromRepoError(limitsResult.error)

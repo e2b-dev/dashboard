@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createRouteServices } from '@/core/server/context/from-route'
+import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
@@ -35,8 +35,9 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const services = createRouteServices({ accessToken: session.access_token })
-    const teamsResult = await services.teams.listUserTeams()
+    const teamsResult = await createUserTeamsRepository({
+      accessToken: session.access_token,
+    }).listUserTeams()
     const defaultTeam = teamsResult.ok
       ? (teamsResult.data.find((team) => team.is_default) ??
         teamsResult.data[0])
