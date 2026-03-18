@@ -1,4 +1,4 @@
-import type { TeamMetric } from './api.types'
+import type { TeamMetric } from './models'
 
 export type ClientSandboxMetric = {
   cpuCount: number
@@ -16,7 +16,7 @@ export type ClientTeamMetric = Pick<
   TeamMetric,
   'concurrentSandboxes' | 'sandboxStartRate'
 > & {
-  timestamp: number // unix timestamp in milliseconds
+  timestamp: number
 }
 
 export type ClientTeamMetrics = Array<ClientTeamMetric>

@@ -1,7 +1,7 @@
 import createClient from 'openapi-fetch'
-import type { paths as ArgusPaths } from '@/types/argus-api.types'
-import type { paths as DashboardPaths } from '@/types/dashboard-api.types'
-import type { paths as InfraPaths } from '@/types/infra-api.types'
+import type { paths as ArgusPaths } from '@/core/shared/contracts/argus-api.types'
+import type { paths as DashboardPaths } from '@/core/shared/contracts/dashboard-api.types'
+import type { paths as InfraPaths } from '@/core/shared/contracts/infra-api.types'
 
 type CombinedPaths = InfraPaths & ArgusPaths
 

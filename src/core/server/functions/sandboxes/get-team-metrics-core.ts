@@ -11,7 +11,7 @@ import { fillTeamMetricsWithZeros } from '@/core/server/functions/sandboxes/util
 import { infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
-import type { ClientTeamMetrics } from '@/types/sandboxes.types'
+import type { ClientTeamMetrics } from '@/core/domains/sandboxes/models.client'
 
 interface GetTeamMetricsCoreParams {
   accessToken: string

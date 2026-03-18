@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { returnServerError } from '@/lib/utils/action'

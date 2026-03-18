@@ -12,7 +12,7 @@ import type {
   PaymentMethodsCustomerSession,
   TeamItems,
   UsageResponse,
-} from '@/types/billing.types'
+} from '@/core/domains/billing/models'
 
 type BillingRepositoryDeps = {
   billingApiUrl: string

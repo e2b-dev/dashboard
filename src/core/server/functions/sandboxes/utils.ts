@@ -1,9 +1,9 @@
 import { TEAM_METRICS_BACKEND_COLLECTION_INTERVAL_MS } from '@/configs/intervals'
-import type { SandboxesMetricsRecord } from '@/types/api.types'
+import type { SandboxesMetricsRecord } from '@/core/domains/sandboxes/models'
 import type {
   ClientSandboxesMetrics,
   ClientTeamMetrics,
-} from '@/types/sandboxes.types'
+} from '@/core/domains/sandboxes/models.client'
 
 export function transformMetricsToClientMetrics(
   metrics: SandboxesMetricsRecord

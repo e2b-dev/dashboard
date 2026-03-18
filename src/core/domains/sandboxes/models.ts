@@ -3,6 +3,12 @@ import type { components as DashboardComponents } from '@/types/dashboard-api.ty
 import type { components as InfraComponents } from '@/types/infra-api.types'
 
 export type SandboxLogLevel = InfraComponents['schemas']['LogLevel']
+export type Sandbox = InfraComponents['schemas']['ListedSandbox']
+export type Sandboxes = InfraComponents['schemas']['ListedSandbox'][]
+export type SandboxesMetricsRecord =
+  InfraComponents['schemas']['SandboxesWithMetrics']['sandboxes']
+export type TeamMetric = InfraComponents['schemas']['TeamMetric']
+export type SandboxInfo = InfraComponents['schemas']['SandboxDetail']
 
 interface SandboxDetailsBaseModel {
   templateID: string

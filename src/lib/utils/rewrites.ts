@@ -6,7 +6,7 @@ import {
   ROUTE_REWRITE_CONFIG,
 } from '@/configs/rewrites'
 import type { RewriteConfig } from '@/types/rewrites.types'
-import { l } from '../clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 
 function getRewriteForPath(
   path: string,

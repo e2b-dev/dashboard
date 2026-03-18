@@ -1,4 +1,9 @@
-export type { ClientTeam } from '@/types/dashboard.types'
+import type { Database } from '@/core/shared/contracts/database.types'
+
+export type ClientTeam = Database['public']['Tables']['teams']['Row'] & {
+  is_default?: boolean
+  transformed_default_name?: string
+}
 
 export type TeamLimits = {
   concurrentInstances: number

@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { getAuthRedirect } from './core/server/http/proxy'
-import { l } from './lib/clients/logger/logger'
+import { l } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
 

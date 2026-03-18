@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
-import { authActionClient } from '@/lib/clients/action'
+import { authActionClient } from '@/core/server/actions/client'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 
 const UpdateUserSchema = z

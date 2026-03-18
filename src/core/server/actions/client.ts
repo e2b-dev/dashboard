@@ -11,11 +11,11 @@ import {
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
-import { UnauthenticatedError, UnknownError } from '@/types/errors'
-import { ActionError, flattenClientInputValue } from '../utils/action'
-import { l } from './logger/logger'
-import { createClient } from './supabase/server'
-import { getTracer } from './tracer'
+import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
+import { l } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
+import { getTracer } from '@/core/shared/clients/tracer'
+import { ActionError, flattenClientInputValue } from './utils'
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
@@ -24,7 +24,6 @@ export const actionClient = createSafeActionClient({
     s?.setStatus({ code: SpanStatusCode.ERROR })
     s?.recordException(e)
 
-    // part of our strategy how to leak errors to a user
     if (e instanceof ActionError) {
       return e.message
     }
@@ -82,7 +81,6 @@ export const actionClient = createSafeActionClient({
     server_function_name: name,
     server_function_input: clientInput,
     server_function_duration_ms: duration.toFixed(3),
-
     team_id: flattenClientInputValue(clientInput, 'teamId'),
     template_id: flattenClientInputValue(clientInput, 'templateId'),
     sandbox_id: flattenClientInputValue(clientInput, 'sandboxId'),
@@ -143,19 +141,12 @@ export const actionClient = createSafeActionClient({
 
 export const authActionClient = actionClient.use(async ({ next }) => {
   const supabase = await createClient()
-
-  // retrieve session from storage medium (cookies)
-  // if no stored session found, not authenticated
-
-  // it's fine to use the "insecure" cookie session here, since we only use it for quick denial and do a proper auth check (auth.getUser) afterwards.
   const session = await getSessionInsecure(supabase)
 
-  // early return if user is no session already
   if (!session) {
     throw UnauthenticatedError()
   }
 
-  // now retrieve user from supabase to use further
   const {
     data: { user },
   } = await getUserByToken(session.access_token)
@@ -180,27 +171,6 @@ export const authActionClient = actionClient.use(async ({ next }) => {
   })
 })
 
-/**
- * Middleware that automatically resolves team ID from teamIdOrSlug.
- *
- * This middleware:
- * 1. Requires that the client input contains a 'teamIdOrSlug' property
- * 2. Resolves the teamIdOrSlug to an actual team ID using getTeamIdFromSegmentMemo
- * 3. Throws unauthorized() if the team ID cannot be resolved (team doesn't exist or user lacks access)
- * 4. Adds the resolved teamId to the context for use in the action handler
- * 5. Throws an error if no teamIdOrSlug is provided
- *
- * @example
- * ```ts
- * const myAction = authActionClient
- *   .use(withTeamIdResolution)
- *   .schema(z.object({ teamIdOrSlug: z.string(), ... }))
- *   .action(async ({ parsedInput, ctx }) => {
- *     // ctx.teamId is now available and guaranteed to be valid
- *     const { teamId } = ctx
- *   })
- * ```
- */
 export const withTeamIdResolution = createMiddleware<{
   ctx: {
     user: User

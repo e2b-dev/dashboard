@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import useSWR from 'swr'
 import type { UserTeamsResponse } from '@/app/api/teams/user/types'
 import { useTeamCookieManager } from '@/lib/hooks/use-team'
-import type { ClientTeam } from '@/types/dashboard.types'
+import type { ClientTeam } from '@/core/domains/teams/models'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenuItem,

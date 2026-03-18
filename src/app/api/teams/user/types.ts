@@ -1,3 +1,3 @@
-import type { ClientTeam } from '@/types/dashboard.types'
+import type { ClientTeam } from '@/core/domains/teams/models'
 
 export type UserTeamsResponse = { teams: ClientTeam[] }

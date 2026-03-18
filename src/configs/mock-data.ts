@@ -10,7 +10,7 @@ import type {
 import type {
   ClientSandboxesMetrics,
   ClientTeamMetrics,
-} from '@/types/sandboxes.types'
+} from '@/core/domains/sandboxes/models.client'
 
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   {

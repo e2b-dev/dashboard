@@ -3,7 +3,7 @@ import 'server-only'
 import { z } from 'zod'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 
 export interface TeamLimits {

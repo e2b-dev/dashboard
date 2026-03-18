@@ -13,12 +13,12 @@ import {
   UpdateTeamNameSchema,
 } from '@/core/domains/teams/schemas'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
 import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
-import type { CreateTeamsResponse } from '@/types/billing.types'
+import type { CreateTeamsResponse } from '@/core/domains/billing/models'
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)

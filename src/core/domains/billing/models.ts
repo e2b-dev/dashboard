@@ -1,6 +1,4 @@
-import type { ADDON_500_SANDBOXES_ID } from '@/features/dashboard/billing/constants'
-
-interface Invoice {
+export interface Invoice {
   cost: number
   paid: boolean
   url: string
@@ -8,16 +6,16 @@ interface Invoice {
   credits_used: number
 }
 
-interface BillingLimit {
+export interface BillingLimit {
   limit_amount_gte: number | null
   alert_amount_gte: number | null
 }
 
-interface CustomerPortalResponse {
+export interface CustomerPortalResponse {
   url: string
 }
 
-interface UsageResponse {
+export interface UsageResponse {
   credits: number
   day_usages: {
     date: string
@@ -37,31 +35,31 @@ interface UsageResponse {
   }[]
 }
 
-interface CreateTeamsResponse {
+export interface CreateTeamsResponse {
   id: string
   slug: string
 }
 
-interface AddOnOrderItem {
-  name: typeof ADDON_500_SANDBOXES_ID
+export interface AddOnOrderItem {
+  name: string
   quantity: number
 }
 
-interface AddOnOrderCreateResponse {
+export interface AddOnOrderCreateResponse {
   id: string
   amount_due: number
   items: AddOnOrderItem[]
 }
 
-interface AddOnOrderConfirmResponse {
+export interface AddOnOrderConfirmResponse {
   client_secret: string
 }
 
-interface PaymentMethodsCustomerSession {
+export interface PaymentMethodsCustomerSession {
   client_secret: string
 }
 
-interface TierLimits {
+export interface TierLimits {
   sandbox_concurrency: number
   max_cpu: number
   max_ram_mib: number
@@ -69,49 +67,31 @@ interface TierLimits {
   disk_size_mib: number
 }
 
-interface TierInfo {
+export interface TierInfo {
   id: string
   name: string
   price_cents: number
   limits?: TierLimits
 }
 
-interface AddonInfo {
-  id: typeof ADDON_500_SANDBOXES_ID
+export interface AddonInfo {
+  id: string
   name: string
   price_cents: number
   quantity?: number
 }
 
-interface TeamAddons {
+export interface TeamAddons {
   current: AddonInfo[]
   available: AddonInfo[]
 }
 
-interface TeamTiers {
+export interface TeamTiers {
   current: string
   available: TierInfo[]
 }
 
-interface TeamItems {
+export interface TeamItems {
   tiers: TeamTiers
   addons: TeamAddons
-}
-
-export type {
-  AddonInfo,
-  AddOnOrderConfirmResponse,
-  AddOnOrderCreateResponse,
-  AddOnOrderItem,
-  BillingLimit,
-  CreateTeamsResponse,
-  CustomerPortalResponse,
-  Invoice,
-  PaymentMethodsCustomerSession,
-  TeamAddons,
-  TeamItems,
-  TeamTiers,
-  TierInfo,
-  TierLimits,
-  UsageResponse,
 }

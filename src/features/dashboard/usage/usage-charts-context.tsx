@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react'
 import { fillTimeSeriesWithEmptyPoints } from '@/lib/utils/time-series'
-import type { UsageResponse } from '@/types/billing.types'
+import type { UsageResponse } from '@/core/domains/billing/models'
 import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {
   calculateTotals,

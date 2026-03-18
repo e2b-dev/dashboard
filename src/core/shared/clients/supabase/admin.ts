@@ -1,7 +1,7 @@
 import 'server-cli-only'
 
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@/core/shared/contracts/database.types'
 
 export const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

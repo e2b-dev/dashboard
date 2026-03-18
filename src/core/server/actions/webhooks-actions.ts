@@ -8,7 +8,7 @@ import {
   UpdateWebhookSecretSchema,
   UpsertWebhookSchema,
 } from '@/core/server/functions/webhooks/schema'
-import { authActionClient, withTeamIdResolution } from '@/lib/clients/action'
+import { authActionClient, withTeamIdResolution } from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { handleDefaultInfraError } from '@/lib/utils/action'
 

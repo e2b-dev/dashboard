@@ -1,5 +1,5 @@
 import { startOfISOWeek } from 'date-fns'
-import type { UsageResponse } from '@/types/billing.types'
+import type { UsageResponse } from '@/core/domains/billing/models'
 import {
   HOURLY_SAMPLING_THRESHOLD_DAYS,
   WEEKLY_SAMPLING_THRESHOLD_DAYS,

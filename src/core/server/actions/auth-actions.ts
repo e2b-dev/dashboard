@@ -17,7 +17,7 @@ import {
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
-import { actionClient } from '@/lib/clients/action'
+import { actionClient } from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { createClient } from '@/lib/clients/supabase/server'
 import { relativeUrlSchema } from '@/lib/schemas/url'

@@ -2,7 +2,7 @@
 
 import type { User } from '@supabase/supabase-js'
 import { createContext, type ReactNode, useContext, useState } from 'react'
-import type { ClientTeam } from '@/types/dashboard.types'
+import type { ClientTeam } from '@/core/domains/teams/models'
 
 interface DashboardContextValue {
   team: ClientTeam
