@@ -4,11 +4,11 @@ import {
   createDefaultTemplatesRepository,
   createTemplatesRepository,
 } from '@/core/domains/templates/repository.server'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import {
   withAuthedRequestRepository,
   withTeamAuthedRequestRepository,
 } from '@/core/server/api/middlewares/repository'
-import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import {
   protectedProcedure,
@@ -28,7 +28,7 @@ const teamTemplatesRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
     createTemplatesRepository,
     (templatesRepository) => ({
-    templatesRepository,
+      templatesRepository,
     })
   )
 )
@@ -42,11 +42,13 @@ export const templatesRouter = createTRPCRouter({
     return result.data
   }),
 
-  getDefaultTemplatesCached: templatesRepositoryProcedure.query(async ({ ctx }) => {
-    const result = await ctx.templatesRepository.getDefaultTemplatesCached()
-    if (!result.ok) throwTRPCErrorFromRepoError(result.error)
-    return result.data
-  }),
+  getDefaultTemplatesCached: templatesRepositoryProcedure.query(
+    async ({ ctx }) => {
+      const result = await ctx.templatesRepository.getDefaultTemplatesCached()
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }
+  ),
 
   // MUTATIONS
 

@@ -6,16 +6,19 @@ import {
   BuildStatusSchema,
 } from '@/core/domains/builds/models'
 import { createBuildsRepository } from '@/core/domains/builds/repository.server'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
 
 const buildsRepositoryProcedure = protectedTeamProcedure.use(
-  withTeamAuthedRequestRepository(createBuildsRepository, (buildsRepository) => ({
-    buildsRepository,
-  }))
+  withTeamAuthedRequestRepository(
+    createBuildsRepository,
+    (buildsRepository) => ({
+      buildsRepository,
+    })
+  )
 )
 
 export const buildsRouter = createTRPCRouter({

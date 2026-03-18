@@ -6,8 +6,8 @@ import { CACHE_TAGS } from '@/configs/cache'
 import { createKeysRepository } from '@/core/domains/keys/repository.server'
 import {
   authActionClient,
-  withTeamIdResolution,
   withTeamAuthedRequestRepository,
+  withTeamIdResolution,
 } from '@/core/server/actions/client'
 import { l } from '@/lib/clients/logger/logger'
 import { TeamIdOrSlugSchema } from '@/lib/schemas/team'

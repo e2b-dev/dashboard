@@ -6,8 +6,8 @@ import { COOKIE_KEYS } from '@/configs/cookies'
 import { createWebhooksRepository } from '@/core/domains/webhooks/repository.server'
 import {
   authActionClient,
-  withTeamIdResolution,
   withTeamAuthedRequestRepository,
+  withTeamIdResolution,
 } from '@/core/server/actions/client'
 import {
   DeleteWebhookSchema,

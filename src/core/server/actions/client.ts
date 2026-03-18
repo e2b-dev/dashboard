@@ -6,15 +6,15 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
+import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
+import { l } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
+import { getTracer } from '@/core/shared/clients/tracer'
+import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
 import type {
   RequestScope,
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
-import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
-import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
-import { l } from '@/core/shared/clients/logger/logger'
-import { createClient } from '@/core/shared/clients/supabase/server'
-import { getTracer } from '@/core/shared/clients/tracer'
 import { ActionError, flattenClientInputValue } from './utils'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>

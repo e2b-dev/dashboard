@@ -2,11 +2,11 @@
 
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import type { TierInfo } from '@/core/domains/billing/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
-import type { TierInfo } from '@/core/domains/billing/models'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {

@@ -1,9 +1,6 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { repoErrorFromHttp } from '@/core/shared/errors'
-import type { TeamRequestScope } from '@/core/shared/repository-scope'
-import { err, ok, type RepoResult } from '@/core/shared/result'
 import type {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -14,6 +11,9 @@ import type {
   TeamItems,
   UsageResponse,
 } from '@/core/domains/billing/models'
+import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type BillingRepositoryDeps = {
   billingApiUrl: string

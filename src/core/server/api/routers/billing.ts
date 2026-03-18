@@ -3,8 +3,8 @@ import { headers } from 'next/headers'
 import { z } from 'zod'
 import { createBillingRepository } from '@/core/domains/billing/repository.server'
 import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import {
@@ -17,9 +17,12 @@ function limitTypeToKey(type: 'limit' | 'alert') {
 }
 
 const billingRepositoryProcedure = protectedTeamProcedure.use(
-  withTeamAuthedRequestRepository(createBillingRepository, (billingRepository) => ({
-    billingRepository,
-  }))
+  withTeamAuthedRequestRepository(
+    createBillingRepository,
+    (billingRepository) => ({
+      billingRepository,
+    })
+  )
 )
 
 const billingAndTeamsRepositoryProcedure = billingRepositoryProcedure.use(
@@ -100,7 +103,9 @@ export const billingRouter = createTRPCRouter({
     .input(z.object({ type: z.enum(['limit', 'alert']) }))
     .mutation(async ({ ctx, input }) => {
       const { type } = input
-      const result = await ctx.billingRepository.clearLimit(limitTypeToKey(type))
+      const result = await ctx.billingRepository.clearLimit(
+        limitTypeToKey(type)
+      )
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     }),
 

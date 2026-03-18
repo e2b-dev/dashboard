@@ -1,22 +1,22 @@
 import { z } from 'zod'
 import { USE_MOCK_DATA } from '@/configs/flags'
-import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
 import {
   calculateTeamMetricsStep,
   MOCK_SANDBOXES_DATA,
   MOCK_TEAM_METRICS_DATA,
   MOCK_TEAM_METRICS_MAX_DATA,
 } from '@/configs/mock-data'
+import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
 import {
   GetTeamMetricsMaxSchema,
   GetTeamMetricsSchema,
 } from '@/core/domains/sandboxes/schemas'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import {
   fillTeamMetricsWithZeros,
   transformMetricsToClientMetrics,
 } from '@/core/server/functions/sandboxes/utils'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
-import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
@@ -24,7 +24,7 @@ const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
     createSandboxesRepository,
     (sandboxesRepository) => ({
-    sandboxesRepository,
+      sandboxesRepository,
     })
   )
 )
@@ -110,10 +110,11 @@ export const sandboxesRouter = createTRPCRouter({
       // the overfetch is accounted for when post-processing the data using fillTeamMetricsWithZeros
       const overfetchS = Math.ceil(stepMs / 1000)
 
-      const metricDataResult = await ctx.sandboxesRepository.getTeamMetricsRange(
-        startS,
-        endS + overfetchS
-      )
+      const metricDataResult =
+        await ctx.sandboxesRepository.getTeamMetricsRange(
+          startS,
+          endS + overfetchS
+        )
       if (!metricDataResult.ok) {
         throwTRPCErrorFromRepoError(metricDataResult.error)
       }

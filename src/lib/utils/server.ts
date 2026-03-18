@@ -5,9 +5,9 @@ import { cache } from 'react'
 import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
+import { returnServerError } from '@/core/server/actions/utils'
 import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
-import { returnServerError } from '@/core/server/actions/utils'
 
 /*
  *  This function generates an e2b user access token for a given user.

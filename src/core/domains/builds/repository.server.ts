@@ -1,15 +1,15 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { repoErrorFromHttp } from '@/core/shared/errors'
-import type { TeamRequestScope } from '@/core/shared/repository-scope'
-import { err, ok, type RepoResult } from '@/core/shared/result'
 import type {
   BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/domains/builds/models'
 import { l } from '@/core/shared/clients/logger/logger'
+import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import { err, ok, type RepoResult } from '@/core/shared/result'
 import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
 import { api, infra } from '@/lib/clients/api'
 import type { components as InfraComponents } from '@/types/infra-api.types'
@@ -40,7 +40,9 @@ export interface BuildsRepository {
     templateId: string,
     buildId: string,
     options?: GetInfraBuildLogsOptions
-  ): Promise<RepoResult<InfraComponents['schemas']['TemplateBuildLogsResponse']>>
+  ): Promise<
+    RepoResult<InfraComponents['schemas']['TemplateBuildLogsResponse']>
+  >
 }
 
 const LIST_BUILDS_DEFAULT_LIMIT = 50
@@ -191,7 +193,9 @@ export function createBuildsRepository(
         (result.data?.buildStatuses ?? []).map((row) => ({
           id: row.id,
           status: row.status,
-          finishedAt: row.finishedAt ? new Date(row.finishedAt).getTime() : null,
+          finishedAt: row.finishedAt
+            ? new Date(row.finishedAt).getTime()
+            : null,
           statusMessage: row.statusMessage,
         }))
       )

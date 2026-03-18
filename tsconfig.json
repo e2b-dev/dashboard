@@ -26,12 +26,18 @@
       "@/lib/clients/*": ["./src/core/shared/clients/*"],
       "@/lib/utils/action": ["./src/core/server/actions/utils.ts"],
       "@/lib/schemas/*": ["./src/core/shared/schemas/*"],
-      "@/types/argus-api.types": ["./src/core/shared/contracts/argus-api.types.ts"],
+      "@/types/argus-api.types": [
+        "./src/core/shared/contracts/argus-api.types.ts"
+      ],
       "@/types/dashboard-api.types": [
         "./src/core/shared/contracts/dashboard-api.types.ts"
       ],
-      "@/types/infra-api.types": ["./src/core/shared/contracts/infra-api.types.ts"],
-      "@/types/database.types": ["./src/core/shared/contracts/database.types.ts"],
+      "@/types/infra-api.types": [
+        "./src/core/shared/contracts/infra-api.types.ts"
+      ],
+      "@/types/database.types": [
+        "./src/core/shared/contracts/database.types.ts"
+      ],
       "@/types/errors": ["./src/core/shared/errors.ts"],
       "@/server/api/errors": ["./src/core/server/adapters/trpc-errors.ts"],
       "@/server/api/models/builds.models": [

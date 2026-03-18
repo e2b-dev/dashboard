@@ -63,7 +63,9 @@ export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
       }
 
       if (!data.user) {
-        return err(repoErrorFromHttp(500, 'Verification failed. Please try again.'))
+        return err(
+          repoErrorFromHttp(500, 'Verification failed. Please try again.')
+        )
       }
 
       return ok({

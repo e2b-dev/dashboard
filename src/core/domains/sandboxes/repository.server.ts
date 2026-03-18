@@ -1,10 +1,10 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import type { SandboxEventModel } from '@/core/domains/sandboxes/models'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type { SandboxEventModel } from '@/core/domains/sandboxes/models'
 import { api, infra } from '@/lib/clients/api'
 import { l } from '@/lib/clients/logger/logger'
 import type {
@@ -75,7 +75,8 @@ export interface SandboxesRepository {
   ): Promise<RepoResult<InfraComponents['schemas']['MaxTeamMetric']>>
 }
 
-const SANDBOX_NOT_FOUND_MESSAGE = "Sandbox not found or you don't have access to it"
+const SANDBOX_NOT_FOUND_MESSAGE =
+  "Sandbox not found or you don't have access to it"
 const SANDBOX_EVENTS_PAGE_SIZE = 100
 const SANDBOX_EVENTS_MAX_PAGES = 50
 const SANDBOX_LIFECYCLE_EVENT_PREFIX = 'sandbox.lifecycle.'

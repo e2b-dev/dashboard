@@ -1,7 +1,5 @@
 import { millisecondsInDay } from 'date-fns/constants'
 import { z } from 'zod'
-import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import {
   deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToModel,
@@ -11,7 +9,9 @@ import {
   type SandboxLogModel,
   type SandboxLogsModel,
 } from '@/core/domains/sandboxes/models'
+import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
@@ -21,7 +21,7 @@ const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
     createSandboxesRepository,
     (sandboxesRepository) => ({
-    sandboxesRepository,
+      sandboxesRepository,
     })
   )
 )
