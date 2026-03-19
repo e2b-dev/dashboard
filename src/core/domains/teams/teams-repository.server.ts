@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { User } from '@supabase/supabase-js'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { components as DashboardComponents } from '@/core/shared/contracts/dashboard-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -39,6 +40,21 @@ export interface TeamsRepository {
   updateTeamProfilePictureUrl(
     profilePictureUrl: string
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
+}
+
+function extractSignInProviders(user: User | null | undefined): string[] {
+  const appProviders = Array.isArray(user?.app_metadata?.providers)
+    ? user.app_metadata.providers.filter(
+        (provider): provider is string => typeof provider === 'string'
+      )
+    : []
+  const identityProviders =
+    user?.identities
+      ?.map((identity) => identity.provider)
+      .filter((provider): provider is string => typeof provider === 'string') ??
+    []
+
+  return [...new Set([...appProviders, ...identityProviders])]
 }
 
 export function createTeamsRepository(
@@ -112,6 +128,7 @@ export function createTeamsRepository(
               email: member.email,
               name: user?.user_metadata?.name,
               avatar_url: user?.user_metadata?.avatar_url,
+              providers: extractSignInProviders(user),
             },
             relation: {
               added_by: member.addedBy ?? null,

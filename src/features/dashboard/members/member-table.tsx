@@ -21,12 +21,13 @@ interface MemberTableProps {
 
 const MemberTable: FC<MemberTableProps> = ({ params, className }) => {
   return (
-    <Table className={cn('min-w-[800px]', className)}>
+    <Table className={cn('min-w-[960px]', className)}>
       <TableHeader>
         <TableRow>
           <th className="w-[50px]"></th>
           <TableHead className="w-[200px]">Name</TableHead>
           <TableHead className="w-[250px]">E-Mail</TableHead>
+          <TableHead className="w-[200px]">Providers</TableHead>
           <TableHead className="w-[200px]">Added By</TableHead>
           <th className="w-[50px]"></th>
         </TableRow>
@@ -35,7 +36,7 @@ const MemberTable: FC<MemberTableProps> = ({ params, className }) => {
         <Suspense
           fallback={
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-left">
+              <TableCell colSpan={6} className="h-24 text-left">
                 <Alert className="w-full text-left" variant="info">
                   <AlertTitle className="flex items-center gap-2">
                     <Loader />

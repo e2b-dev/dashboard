@@ -18,6 +18,7 @@ export type TeamMemberInfo = {
   email: string
   name?: string
   avatar_url?: string
+  providers?: string[]
 }
 
 export type TeamMemberRelation = {

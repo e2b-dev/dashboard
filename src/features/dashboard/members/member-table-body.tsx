@@ -27,7 +27,7 @@ export default async function MemberTableBody({
     if (members.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={5}>
+          <TableCell colSpan={6}>
             <Alert className="text-left" variant="info">
               <AlertTitle>No Members</AlertTitle>
               <AlertDescription>No team members found.</AlertDescription>
@@ -55,7 +55,7 @@ export default async function MemberTableBody({
   } catch (error) {
     return (
       <TableRow>
-        <TableCell colSpan={5}>
+        <TableCell colSpan={6}>
           <ErrorIndicator
             description={'Could not load team members'}
             message={error instanceof Error ? error.message : 'Unknown error'}
