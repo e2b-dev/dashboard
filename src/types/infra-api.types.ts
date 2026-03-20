@@ -2903,10 +2903,12 @@ export interface components {
      */
     LogsSource: 'temporary' | 'persistent'
     /**
-     * @description Status of the node
+     * @description Status of the node.
+     *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
+     *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
      * @enum {string}
      */
-    NodeStatus: 'ready' | 'draining' | 'connecting' | 'unhealthy'
+    NodeStatus: 'ready' | 'draining' | 'connecting' | 'unhealthy' | 'standby'
     NodeStatusChange: {
       /**
        * Format: uuid
