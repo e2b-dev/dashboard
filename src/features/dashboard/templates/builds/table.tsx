@@ -57,8 +57,7 @@ const BuildsTable = () => {
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const { statuses, buildIdOrTemplate } = useFilters()
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
@@ -76,7 +75,7 @@ const BuildsTable = () => {
     error: buildsError,
   } = useInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
-      { teamIdOrSlug, statuses, buildIdOrTemplate },
+      { teamSlug, statuses, buildIdOrTemplate },
       {
         getNextPageParam: (page) => page.nextCursor ?? undefined,
         placeholderData: keepPreviousData,
@@ -110,7 +109,7 @@ const BuildsTable = () => {
 
   const { data: runningStatusesData } = useQuery(
     trpc.builds.runningStatuses.queryOptions(
-      { teamIdOrSlug, buildIds: runningBuildIds },
+      { teamSlug, buildIds: runningBuildIds },
       {
         enabled: runningBuildIds.length > 0,
         refetchInterval: (query) => {
@@ -133,7 +132,7 @@ const BuildsTable = () => {
 
   // Handlers
   const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
-    teamIdOrSlug,
+    teamSlug,
     statuses,
     buildIdOrTemplate,
   }).queryKey
@@ -238,7 +237,7 @@ const BuildsTable = () => {
                       onClick={() => {
                         router.push(
                           PROTECTED_URLS.TEMPLATE_BUILD(
-                            teamIdOrSlug,
+                            teamSlug,
                             build.templateId,
                             build.id
                           )

@@ -6,7 +6,7 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
-import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
+import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { getTracer } from '@/core/shared/clients/tracer'
@@ -180,44 +180,43 @@ export const authActionClient = actionClient.use(async ({ next }) => {
   })
 })
 
-export const withTeamIdResolution = createMiddleware<{
+export const withTeamSlugResolution = createMiddleware<{
   ctx: AuthActionContext
 }>().define(async ({ next, clientInput, ctx }) => {
   if (
     !clientInput ||
     typeof clientInput !== 'object' ||
-    !('teamIdOrSlug' in clientInput)
+    !('teamSlug' in clientInput)
   ) {
     l.error(
       {
-        key: 'with_team_id_resolution:missing_team_id_or_slug',
+        key: 'with_team_slug_resolution:missing_team_slug',
         context: {
-          teamIdOrSlug: (clientInput as { teamIdOrSlug?: string })
-            ?.teamIdOrSlug,
+          teamSlug: (clientInput as { teamSlug?: string })?.teamSlug,
         },
       },
-      'Missing teamIdOrSlug when using withTeamIdResolution middleware'
+      'Missing teamSlug when using withTeamSlugResolution middleware'
     )
 
     throw new Error(
-      'teamIdOrSlug is required when using withTeamIdResolution middleware'
+      'teamSlug is required when using withTeamSlugResolution middleware'
     )
   }
 
-  const teamId = await getTeamIdFromSegment(
-    clientInput.teamIdOrSlug as string,
+  const teamId = await getTeamIdFromSlug(
+    clientInput.teamSlug as string,
     ctx.session.access_token
   )
 
   if (!teamId) {
     l.warn(
       {
-        key: 'with_team_id_resolution:invalid_team_id_or_slug',
+        key: 'with_team_slug_resolution:invalid_team_slug',
         context: {
-          teamIdOrSlug: clientInput.teamIdOrSlug,
+          teamSlug: clientInput.teamSlug,
         },
       },
-      `with_team_id_resolution:invalid_team_id_or_slug - invalid team id or slug provided through withTeamIdResolution middleware: ${clientInput.teamIdOrSlug}`
+      `with_team_slug_resolution:invalid_team_slug - invalid team slug provided through withTeamSlugResolution middleware: ${clientInput.teamSlug}`
     )
 
     throw unauthorized()

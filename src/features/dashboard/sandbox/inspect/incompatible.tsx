@@ -21,24 +21,24 @@ import {
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
-  teamIdOrSlug: string
+  teamSlug: string
 }
 
 export default function SandboxInspectIncompatible({
   templateNameOrId,
-  teamIdOrSlug,
+  teamSlug,
 }: SandboxInspectIncompatibleProps) {
   const codeClassNames = 'mx-0.5 h-5.5 rounded-none align-middle'
   const { trackInteraction } = useSandboxInspectAnalytics()
 
   useEffect(() => {
-    if (!templateNameOrId || !teamIdOrSlug) return
+    if (!templateNameOrId || !teamSlug) return
 
     trackInteraction('viewed_incompatible', {
-      team_id: teamIdOrSlug,
+      team_id: teamSlug,
       template_name_or_id: templateNameOrId,
     })
-  }, [trackInteraction, teamIdOrSlug])
+  }, [trackInteraction, teamSlug])
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
@@ -125,7 +125,7 @@ export default function SandboxInspectIncompatible({
               className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
-              <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug)}>
+              <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamSlug)}>
                 <ChevronLeft className="size-5" />
                 Back to sandboxes
               </Link>

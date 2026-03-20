@@ -26,8 +26,7 @@ type LookupState = 'idle' | 'not-found' | 'error'
 export function OpenSandboxDialog() {
   'use no memo'
 
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
 
   const router = useRouter()
   const trpc = useTRPC()
@@ -72,13 +71,13 @@ export function OpenSandboxDialog() {
     try {
       await queryClient.fetchQuery(
         trpc.sandbox.details.queryOptions(
-          { teamIdOrSlug, sandboxId },
+          { teamSlug, sandboxId },
           {
             retry: false,
           }
         )
       )
-      router.push(PROTECTED_URLS.SANDBOX(teamIdOrSlug, sandboxId))
+      router.push(PROTECTED_URLS.SANDBOX(teamSlug, sandboxId))
       setOpen(false)
       resetState()
     } catch (error) {

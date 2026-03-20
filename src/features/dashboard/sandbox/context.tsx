@@ -68,8 +68,8 @@ function buildSandboxLifecycle(
 }
 
 export function SandboxProvider({ children }: SandboxProviderProps) {
-  const { teamIdOrSlug, sandboxId } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
+  const { teamSlug, sandboxId } =
+    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
 
   const trpc = useTRPC()
   const getAlignedRefetchInterval = useAlignedRefetchInterval({
@@ -84,7 +84,7 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
     refetch,
   } = useQuery(
     trpc.sandbox.details.queryOptions(
-      { teamIdOrSlug, sandboxId },
+      { teamSlug, sandboxId },
       {
         retry: false,
         refetchInterval: (query) => {

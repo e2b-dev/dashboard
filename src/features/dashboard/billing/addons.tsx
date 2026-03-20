@@ -164,8 +164,7 @@ function AddonsLoading() {
 }
 
 function AddonsUpgradePlaceholder() {
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing/plan'>()
 
   return (
     <div className="flex flex-col">
@@ -175,7 +174,7 @@ function AddonsUpgradePlaceholder() {
           Upgrade to Pro to purchase add-ons for higher concurrency limits.
         </p>
         <Button variant="default" className="w-full sm:w-auto" asChild>
-          <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
+          <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
             <UpgradeIcon className="size-4" />
             Upgrade to Pro
           </Link>
@@ -188,8 +187,7 @@ function AddonsUpgradePlaceholder() {
 export default function Addons() {
   const { team } = useDashboard()
   const { toast } = useToast()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing/plan'>()
   const trpc = useTRPC()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
@@ -216,7 +214,7 @@ export default function Addons() {
     if (!team) return
 
     createOrderMutation.mutate({
-      teamIdOrSlug,
+      teamSlug,
       itemId: ADDON_500_SANDBOXES_ID,
     })
   }

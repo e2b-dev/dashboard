@@ -88,7 +88,7 @@ function PlanDetails({
   isLoading,
 }: PlanDetailsProps) {
   const isBaseTier = !selectedTier || selectedTier.id.includes('base')
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing'>()
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()
@@ -110,7 +110,7 @@ function PlanDetails({
     )
 
   const handleManagePayment = () => {
-    openCustomerPortal({ teamIdOrSlug })
+    openCustomerPortal({ teamSlug })
   }
 
   return (
@@ -121,7 +121,7 @@ function PlanDetails({
         <div className="flex items-center gap-2 flex-wrap">
           {isOnPlanPage ? (
             <Button variant="outline" asChild>
-              <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
+              <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
                 Change Plan
               </Link>
             </Button>
@@ -131,14 +131,14 @@ function PlanDetails({
             <>
               {isBaseTier ? (
                 <Button variant="default" asChild>
-                  <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
+                  <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
                     <UpgradeIcon className="size-4" />
                     Upgrade for higher concurrency
                   </Link>
                 </Button>
               ) : (
                 <Button variant="outline" asChild>
-                  <Link href={PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug)}>
+                  <Link href={PROTECTED_URLS.BILLING_PLAN(teamSlug)}>
                     Manage plan & add-ons
                   </Link>
                 </Button>

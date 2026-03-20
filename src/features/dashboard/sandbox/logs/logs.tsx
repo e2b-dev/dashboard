@@ -45,7 +45,7 @@ const SCROLL_LOAD_THRESHOLD_PX = 200
 const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
 
 interface LogsProps {
-  teamIdOrSlug: string
+  teamSlug: string
   sandboxId: string
 }
 
@@ -59,7 +59,7 @@ function checkIfSandboxStillHasLogs(startedAtIso: string) {
   return Date.now() - startedAtUnix < LOG_RETENTION_MS
 }
 
-export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
+export default function SandboxLogs({ teamSlug, sandboxId }: LogsProps) {
   'use no memo'
 
   const { sandboxInfo, sandboxLifecycle, isRunning } = useSandboxContext()
@@ -94,7 +94,7 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
 
   return (
     <LogsContent
-      teamIdOrSlug={teamIdOrSlug}
+      teamSlug={teamSlug}
       sandboxId={sandboxId}
       isRunning={isRunning}
       hasRetainedLogs={hasRetainedLogs}
@@ -107,7 +107,7 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
 }
 
 interface LogsContentProps {
-  teamIdOrSlug: string
+  teamSlug: string
   sandboxId: string
   isRunning: boolean
   hasRetainedLogs: boolean
@@ -118,7 +118,7 @@ interface LogsContentProps {
 }
 
 function LogsContent({
-  teamIdOrSlug,
+  teamSlug,
   sandboxId,
   isRunning,
   hasRetainedLogs,
@@ -143,7 +143,7 @@ function LogsContent({
     isFetching,
     fetchNextPage,
   } = useSandboxLogs({
-    teamIdOrSlug,
+    teamSlug,
     sandboxId,
     isRunning,
     level,

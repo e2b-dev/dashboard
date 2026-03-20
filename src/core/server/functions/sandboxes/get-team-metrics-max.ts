@@ -6,17 +6,17 @@ import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_TEAM_METRICS_MAX_DATA } from '@/configs/mock-data'
 import {
   authActionClient,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 
 export const GetTeamMetricsMaxSchema = z
   .object({
-    teamIdOrSlug: TeamIdOrSlugSchema,
+    teamSlug: TeamSlugSchema,
     startDate: z
       .number()
       .int()
@@ -54,7 +54,7 @@ export const GetTeamMetricsMaxSchema = z
 export const getTeamMetricsMax = authActionClient
   .metadata({ serverFunctionName: 'getTeamMetricsMax' })
   .schema(GetTeamMetricsMaxSchema)
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { session, teamId } = ctx
     const { startDate: startDateMs, endDate: endDateMs, metric } = parsedInput

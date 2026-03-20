@@ -78,12 +78,8 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
         return
       }
 
-      const formData = new FormData()
-      formData.append('teamId', team.id)
-      formData.append('image', file)
-
       uploadProfilePicture({
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         image: file,
       })
     }

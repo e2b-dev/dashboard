@@ -7,7 +7,7 @@ import ChartFallback from './fallback'
 import StartRateChartClient from './startrate-chart'
 
 interface TeamMetricsChartsProps {
-  params: Promise<{ teamIdOrSlug: string }>
+  params: Promise<{ teamSlug: string }>
   searchParams: Promise<{ start?: string; end?: string }>
 }
 
@@ -36,7 +36,7 @@ async function TeamMetricsChartsResolver({
   params,
   searchParams,
 }: TeamMetricsChartsProps) {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
   const { start: startParam, end: endParam } = await searchParams
 
   // parse start/end from URL params with defaults
@@ -47,7 +47,7 @@ async function TeamMetricsChartsResolver({
   const end = endParam ? parseInt(endParam, 10) : now
 
   const teamMetricsResult = await getTeamMetrics({
-    teamIdOrSlug,
+    teamSlug,
     startDate: start,
     endDate: end,
   })

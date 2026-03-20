@@ -206,29 +206,29 @@ export function useSandboxMonitoringController(sandboxId: string) {
     () =>
       [
         'sandboxMonitoringMetrics',
-        team?.id ?? '',
+        team?.slug ?? '',
         sandboxId,
         fetchTimeframe.start,
         fetchTimeframe.end,
       ] as const,
-    [sandboxId, fetchTimeframe.end, fetchTimeframe.start, team?.id]
+    [sandboxId, fetchTimeframe.end, fetchTimeframe.start, team?.slug]
   )
 
   const metricsQuery = useQuery<SandboxMetric[]>({
     queryKey,
-    enabled: Boolean(team?.id),
+    enabled: Boolean(team?.slug),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: !isLifecycleSettled,
     refetchOnReconnect: false,
     staleTime: SANDBOX_MONITORING_LIVE_POLLING_MS,
     refetchInterval: isPolling ? SANDBOX_MONITORING_LIVE_POLLING_MS : false,
     queryFn: async () => {
-      if (!team?.id) {
+      if (!team?.slug) {
         return []
       }
 
       return trpcClient.sandbox.resourceMetrics.query({
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         sandboxId,
         startMs: fetchTimeframe.start,
         endMs: fetchTimeframe.end,

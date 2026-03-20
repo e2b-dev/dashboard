@@ -5,10 +5,10 @@ import { createTeamsRepository } from '@/core/modules/teams/teams-repository.ser
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const withTeamsRepository = withTeamAuthedRequestRepository(
   createTeamsRepository,
@@ -16,13 +16,13 @@ const withTeamsRepository = withTeamAuthedRequestRepository(
 )
 
 const GetTeamMembersSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
 })
 
 export const getTeamMembers = authActionClient
   .schema(GetTeamMembersSchema)
   .metadata({ serverFunctionName: 'getTeamMembers' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withTeamsRepository)
   .action(async ({ ctx }) => {
     const result = await ctx.teamsRepository.listTeamMembers()

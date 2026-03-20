@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import useSWR from 'swr'
-import type { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
+import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
 import { SWR_KEYS } from '@/configs/keys'
 import { useDashboard } from '@/features/dashboard/context'
@@ -64,17 +64,17 @@ export function useRecentMetrics({
   const swrKey: readonly [string | null, string | null, ...unknown[]] = team
     ? shouldSyncWithTimeframe
       ? [
-          ...SWR_KEYS.TEAM_METRICS_RECENT(team.id),
+          ...SWR_KEYS.TEAM_METRICS_RECENT(team.slug),
           timeframeParams.start,
           timeframeParams.end,
         ]
-      : SWR_KEYS.TEAM_METRICS_RECENT(team.id)
+      : SWR_KEYS.TEAM_METRICS_RECENT(team.slug)
     : [null, null]
 
   return useSWR<TeamMetricsResponse | undefined>(
     swrKey,
-    async ([url, teamId]: typeof swrKey) => {
-      if (!url || !teamId) return
+    async ([url, teamSlug]: typeof swrKey) => {
+      if (!url || !teamSlug) return
 
       const fetchEnd = Date.now()
       const fetchStart = fetchEnd - 60_000

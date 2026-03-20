@@ -13,7 +13,7 @@ const DRAIN_AFTER_BUILD_STOP_WINDOW_MS = 10_000
 const MIN_EMPTY_DRAIN_POLLS = 2
 
 interface UseBuildLogsParams {
-  teamIdOrSlug: string
+  teamSlug: string
   templateId: string
   buildId: string
   level: LogLevelFilter | null
@@ -21,7 +21,7 @@ interface UseBuildLogsParams {
 }
 
 export function useBuildLogs({
-  teamIdOrSlug,
+  teamSlug,
   templateId,
   buildId,
   level,
@@ -43,10 +43,8 @@ export function useBuildLogs({
   const isLoadingForwards = useStore(store, (s) => s.isLoadingForwards)
 
   useEffect(() => {
-    store
-      .getState()
-      .init(trpcClient, { teamIdOrSlug, templateId, buildId }, level)
-  }, [store, trpcClient, teamIdOrSlug, templateId, buildId, level])
+    store.getState().init(trpcClient, { teamSlug, templateId, buildId }, level)
+  }, [store, trpcClient, teamSlug, templateId, buildId, level])
 
   const isBuilding = buildStatus === 'building'
   const isDraining = useRef(false)
@@ -76,7 +74,7 @@ export function useBuildLogs({
   const shouldPoll = isInitialized && (isBuilding || isDraining.current)
 
   const { isFetching: isPolling } = useQuery({
-    queryKey: ['buildLogsForward', teamIdOrSlug, templateId, buildId, level],
+    queryKey: ['buildLogsForward', teamSlug, templateId, buildId, level],
     queryFn: async () => {
       const { logsCount } = await store.getState().fetchMoreForwards()
 

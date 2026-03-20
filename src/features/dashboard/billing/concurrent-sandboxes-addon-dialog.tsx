@@ -60,8 +60,7 @@ function DialogContent_Inner({
 }: Omit<ConcurrentSandboxAddOnPurchaseDialogProps, 'open'>) {
   const { team } = useDashboard()
   const { toast } = useToast()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing/plan'>()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [showPaymentForm, setShowPaymentForm] = useState(false)
@@ -90,11 +89,11 @@ function DialogContent_Inner({
     if (!team) return
     setClientSecret(clientSecret)
     setShowPaymentForm(true)
-    customerSessionMutation.mutate({ teamIdOrSlug })
+    customerSessionMutation.mutate({ teamSlug })
   }
 
   const itemsQueryKey = trpc.billing.getItems.queryOptions({
-    teamIdOrSlug,
+    teamSlug,
   }).queryKey
   const teamListQueryKey = trpc.teams.list.queryOptions(
     undefined,
@@ -137,7 +136,7 @@ function DialogContent_Inner({
   const handlePurchase = () => {
     if (!team) return
 
-    confirmOrderMutation.mutate({ teamIdOrSlug, orderId })
+    confirmOrderMutation.mutate({ teamSlug, orderId })
   }
 
   const limitIncreaseText = currentConcurrentSandboxesLimit ? (

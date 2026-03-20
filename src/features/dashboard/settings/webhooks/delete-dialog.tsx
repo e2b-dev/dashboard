@@ -3,6 +3,7 @@
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { deleteWebhookAction } from '@/core/server/actions/webhooks-actions'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -24,6 +25,7 @@ export default function WebhookDeleteDialog({
   children: trigger,
   webhook,
 }: WebhookDeleteDialogProps) {
+  const { team } = useDashboard()
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
   const [confirmationUrl, setConfirmationUrl] = useState('')
@@ -81,7 +83,7 @@ export default function WebhookDeleteDialog({
       }}
       onConfirm={() => {
         executeDeleteWebhook({
-          teamIdOrSlug: webhook.teamId,
+          teamSlug: team.slug,
           webhookId: webhook.id,
         })
       }}

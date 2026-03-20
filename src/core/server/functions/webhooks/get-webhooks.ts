@@ -5,14 +5,14 @@ import { createWebhooksRepository } from '@/core/modules/webhooks/repository.ser
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import { l } from '@/core/shared/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const GetWebhooksSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
 })
 
 const withWebhooksRepository = withTeamAuthedRequestRepository(
@@ -23,7 +23,7 @@ const withWebhooksRepository = withTeamAuthedRequestRepository(
 export const getWebhooks = authActionClient
   .schema(GetWebhooksSchema)
   .metadata({ serverFunctionName: 'getWebhook' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withWebhooksRepository)
   .action(async ({ ctx }) => {
     const { session, teamId } = ctx

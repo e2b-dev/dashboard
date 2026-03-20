@@ -7,11 +7,11 @@ import { createKeysRepository } from '@/core/modules/keys/repository.server'
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import { l } from '@/core/shared/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const withKeysRepository = withTeamAuthedRequestRepository(
   createKeysRepository,
@@ -23,7 +23,7 @@ const withKeysRepository = withTeamAuthedRequestRepository(
 // Create API Key
 
 const CreateApiKeySchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   name: z
     .string({ error: 'Name is required' })
     .min(1, 'Name cannot be empty')
@@ -34,7 +34,7 @@ const CreateApiKeySchema = z.object({
 export const createApiKeyAction = authActionClient
   .schema(CreateApiKeySchema)
   .metadata({ actionName: 'createApiKey' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withKeysRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { name } = parsedInput
@@ -56,8 +56,8 @@ export const createApiKeyAction = authActionClient
       return returnServerError('Failed to create API Key')
     }
 
-    updateTag(CACHE_TAGS.TEAM_API_KEYS(parsedInput.teamIdOrSlug))
-    revalidatePath(`/dashboard/${parsedInput.teamIdOrSlug}/keys`, 'page')
+    updateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
+    revalidatePath(`/dashboard/${parsedInput.teamSlug}/keys`, 'page')
 
     return {
       createdApiKey: result.data,
@@ -67,14 +67,14 @@ export const createApiKeyAction = authActionClient
 // Delete API Key
 
 const DeleteApiKeySchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   apiKeyId: z.uuid(),
 })
 
 export const deleteApiKeyAction = authActionClient
   .schema(DeleteApiKeySchema)
   .metadata({ actionName: 'deleteApiKey' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withKeysRepository)
   .action(async ({ parsedInput, ctx }) => {
     const { apiKeyId } = parsedInput
@@ -95,6 +95,6 @@ export const deleteApiKeyAction = authActionClient
       return returnServerError('Failed to delete API Key')
     }
 
-    updateTag(CACHE_TAGS.TEAM_API_KEYS(parsedInput.teamIdOrSlug))
-    revalidatePath(`/dashboard/${parsedInput.teamIdOrSlug}/keys`, 'page')
+    updateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
+    revalidatePath(`/dashboard/${parsedInput.teamSlug}/keys`, 'page')
   })

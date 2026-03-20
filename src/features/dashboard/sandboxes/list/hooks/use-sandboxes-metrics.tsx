@@ -56,10 +56,10 @@ export function useSandboxesMetrics({
 
   const metricsQueryInput = useMemo(
     () => ({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       sandboxIds: activeSandboxIds,
     }),
-    [activeSandboxIds, team.id, team.slug]
+    [activeSandboxIds, team.slug]
   )
 
   const { data } = useQuery(

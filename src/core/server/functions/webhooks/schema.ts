@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const WebhookUrlSchema = z.httpUrl('Must be a valid URL').trim()
 const WebhookSecretSchema = z
@@ -9,7 +9,7 @@ const WebhookSecretSchema = z
 
 export const UpsertWebhookSchema = z
   .object({
-    teamIdOrSlug: TeamIdOrSlugSchema,
+    teamSlug: TeamSlugSchema,
     mode: z.enum(['add', 'edit']),
     webhookId: z.uuid().optional(),
     name: z.string().min(1, 'Name is required').trim(),
@@ -33,12 +33,12 @@ export const UpsertWebhookSchema = z
   )
 
 export const DeleteWebhookSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   webhookId: z.uuid(),
 })
 
 export const UpdateWebhookSecretSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   webhookId: z.uuid(),
   signatureSecret: WebhookSecretSchema,
 })

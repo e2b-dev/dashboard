@@ -1,13 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
-import { COOKIE_KEYS } from '@/configs/cookies'
 import { createWebhooksRepository } from '@/core/modules/webhooks/repository.server'
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import {
@@ -30,11 +28,19 @@ const withWebhooksRepository = withTeamAuthedRequestRepository(
 export const upsertWebhookAction = authActionClient
   .schema(UpsertWebhookSchema)
   .metadata({ actionName: 'upsertWebhook' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withWebhooksRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { mode, webhookId, name, url, events, signatureSecret, enabled } =
-      parsedInput
+    const {
+      mode,
+      teamSlug,
+      webhookId,
+      name,
+      url,
+      events,
+      signatureSecret,
+      enabled,
+    } = parsedInput
     const { session, teamId } = ctx
 
     const response = await ctx.webhooksRepository.upsertWebhook({
@@ -74,10 +80,6 @@ export const upsertWebhookAction = authActionClient
       return handleDefaultInfraError(status)
     }
 
-    const teamSlug = (await cookies()).get(
-      COOKIE_KEYS.SELECTED_TEAM_SLUG
-    )?.value
-
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
@@ -88,10 +90,10 @@ export const upsertWebhookAction = authActionClient
 export const deleteWebhookAction = authActionClient
   .schema(DeleteWebhookSchema)
   .metadata({ actionName: 'deleteWebhook' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withWebhooksRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { webhookId } = parsedInput
+    const { teamSlug, webhookId } = parsedInput
     const { session, teamId } = ctx
 
     const response = await ctx.webhooksRepository.deleteWebhook(webhookId)
@@ -116,10 +118,6 @@ export const deleteWebhookAction = authActionClient
       return handleDefaultInfraError(status)
     }
 
-    const teamSlug = (await cookies()).get(
-      COOKIE_KEYS.SELECTED_TEAM_SLUG
-    )?.value
-
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
@@ -130,10 +128,10 @@ export const deleteWebhookAction = authActionClient
 export const updateWebhookSecretAction = authActionClient
   .schema(UpdateWebhookSecretSchema)
   .metadata({ actionName: 'updateWebhookSecret' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withWebhooksRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { webhookId, signatureSecret } = parsedInput
+    const { teamSlug, webhookId, signatureSecret } = parsedInput
     const { session, teamId } = ctx
 
     const response = await ctx.webhooksRepository.updateWebhookSecret(
@@ -161,10 +159,6 @@ export const updateWebhookSecretAction = authActionClient
 
       return handleDefaultInfraError(status)
     }
-
-    const teamSlug = (await cookies()).get(
-      COOKIE_KEYS.SELECTED_TEAM_SLUG
-    )?.value
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 

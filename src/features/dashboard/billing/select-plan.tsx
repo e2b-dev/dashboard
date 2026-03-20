@@ -241,8 +241,8 @@ function PlanCard({
 export default function SelectPlan() {
   const { toast } = useToast()
   const { tierData, isLoading } = useBillingItems()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan/select'>()
+  const { teamSlug } =
+    useRouteParams<'/dashboard/[teamSlug]/billing/plan/select'>()
   const router = useRouter()
   const trpc = useTRPC()
 
@@ -274,11 +274,11 @@ export default function SelectPlan() {
     )
 
   const handleUpgrade = (tierId: string) => {
-    createCheckout({ teamIdOrSlug, tierId })
+    createCheckout({ teamSlug, tierId })
   }
 
   const handleDowngrade = () => {
-    openCustomerPortal({ teamIdOrSlug })
+    openCustomerPortal({ teamSlug })
   }
 
   const baseTier = tierData?.base

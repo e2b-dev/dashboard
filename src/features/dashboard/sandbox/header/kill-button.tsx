@@ -40,7 +40,7 @@ export default function KillButton({ className }: KillButtonProps) {
     if (!canKill || !sandboxInfo?.sandboxID) return
 
     execute({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       sandboxId: sandboxInfo.sandboxID,
     })
   }

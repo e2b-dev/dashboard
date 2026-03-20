@@ -6,9 +6,9 @@ import {
   endTelemetryMiddleware,
   startTelemetryMiddleware,
 } from '@/core/server/api/middlewares/telemetry'
-import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
+import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { getTracer } from '@/core/shared/clients/tracer'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 import { t } from './init'
 
 /**
@@ -55,7 +55,7 @@ export const protectedProcedure = t.procedure
 /**
  * Protected Team Procedure
  *
- * Used to create protected routes that require authentication and a team authorization, via teamIdOrSlug.
+ * Used to create protected routes that require authentication and a team authorization, via teamSlug.
  *
  */
 export const protectedTeamProcedure = t.procedure
@@ -63,7 +63,7 @@ export const protectedTeamProcedure = t.procedure
   .use(authMiddleware)
   .input(
     z.object({
-      teamIdOrSlug: TeamIdOrSlugSchema,
+      teamSlug: TeamSlugSchema,
     })
   )
   .use(async ({ ctx, next, input }) => {
@@ -75,8 +75,8 @@ export const protectedTeamProcedure = t.procedure
       const teamId = await context.with(
         trace.setSpan(context.active(), span),
         async () => {
-          return await getTeamIdFromSegment(
-            input.teamIdOrSlug,
+          return await getTeamIdFromSlug(
+            input.teamSlug,
             ctx.session.access_token
           )
         }
@@ -85,7 +85,7 @@ export const protectedTeamProcedure = t.procedure
       if (!teamId) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
-          message: `teamId not found for teamIdOrSlug (${input.teamIdOrSlug})`,
+          message: `teamId not found for teamSlug (${input.teamSlug})`,
         })
 
         throw forbiddenTeamAccessError()

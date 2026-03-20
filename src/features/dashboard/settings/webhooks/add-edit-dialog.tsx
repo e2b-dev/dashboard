@@ -62,9 +62,9 @@ export default function WebhookAddEditDialog({
   } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
     formProps: {
       mode: 'onChange',
-      disabled: !team.id,
+      disabled: !team.slug,
       defaultValues: {
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -74,7 +74,7 @@ export default function WebhookAddEditDialog({
         ...(isEditMode ? {} : { signatureSecret: '' }),
       },
       values: {
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -198,7 +198,7 @@ export default function WebhookAddEditDialog({
           <form onSubmit={handleSubmitWithAction} className="min-w-0">
             {/* Hidden fields */}
             <input type="hidden" {...form.register('mode')} />
-            <input type="hidden" {...form.register('teamIdOrSlug')} />
+            <input type="hidden" {...form.register('teamSlug')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0 overflow-hidden min-h-[350px]">
               <WebhookAddEditDialogSteps

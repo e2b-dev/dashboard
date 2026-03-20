@@ -4,26 +4,25 @@ import { CACHE_TAGS } from '@/configs/cache'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
 import {
   authActionClient,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import { l } from '@/core/shared/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const GetApiKeysSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
 })
 
 export const getTeamApiKeys = authActionClient
   .schema(GetApiKeysSchema)
   .metadata({ serverFunctionName: 'getTeamApiKeys' })
-  .use(withTeamIdResolution)
-  .action(async ({ ctx, parsedInput }) => {
+  .use(withTeamSlugResolution)
+  .action(async ({ ctx }) => {
     'use cache'
     cacheLife('default')
-    cacheTag(CACHE_TAGS.TEAM_API_KEYS(parsedInput.teamIdOrSlug))
-
     const { session, teamId } = ctx
+    cacheTag(CACHE_TAGS.TEAM_API_KEYS(teamId))
 
     const result = await createKeysRepository({
       accessToken: session.access_token,

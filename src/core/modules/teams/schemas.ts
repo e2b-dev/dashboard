@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
-export { TeamIdOrSlugSchema }
+export { TeamSlugSchema }
 
 export const TeamNameSchema = z
   .string()
@@ -14,7 +14,7 @@ export const TeamNameSchema = z
   })
 
 export const UpdateTeamNameSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   name: TeamNameSchema,
 })
 

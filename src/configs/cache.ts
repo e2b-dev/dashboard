@@ -1,7 +1,7 @@
 export const CACHE_TAGS = {
   USER_TEAMS: (userId: string) => `user-teams-${userId}`,
 
-  TEAM_ID_FROM_SEGMENT: (segment: string) => `team-id-from-segment-${segment}`,
+  TEAM_ID_FROM_SLUG: (segment: string) => `team-id-from-slug-${segment}`,
   TEAM_TEMPLATES: (teamId: string) => `team-templates-${teamId}`,
   TEAM_SANDBOXES_LIST: (teamId: string) => `team-sandboxes-list-${teamId}`,
   TEAM_USAGE: (teamId: string) => `team-usage-${teamId}`,

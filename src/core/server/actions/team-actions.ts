@@ -17,7 +17,7 @@ import { createTeamsRepository } from '@/core/modules/teams/teams-repository.ser
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import {
   handleDefaultInfraError,
@@ -26,7 +26,7 @@ import {
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { l } from '@/core/shared/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/core/shared/clients/storage'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const withTeamsRepository = withTeamAuthedRequestRepository(
   createTeamsRepository,
@@ -36,61 +36,61 @@ const withTeamsRepository = withTeamAuthedRequestRepository(
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
   .metadata({ actionName: 'updateTeamName' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { name, teamIdOrSlug } = parsedInput
+    const { name, teamSlug } = parsedInput
     const result = await ctx.teamsRepository.updateTeamName(name)
 
     if (!result.ok) {
       return toActionErrorFromRepoError(result.error)
     }
 
-    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/general`, 'page')
 
     return result.data
   })
 
 const AddTeamMemberSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   email: z.email(),
 })
 
 export const addTeamMemberAction = authActionClient
   .schema(AddTeamMemberSchema)
   .metadata({ actionName: 'addTeamMember' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { email, teamIdOrSlug } = parsedInput
+    const { email, teamSlug } = parsedInput
     const result = await ctx.teamsRepository.addTeamMember(email)
 
     if (!result.ok) {
       return toActionErrorFromRepoError(result.error)
     }
 
-    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/general`, 'page')
   })
 
 const RemoveTeamMemberSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   userId: z.uuid(),
 })
 
 export const removeTeamMemberAction = authActionClient
   .schema(RemoveTeamMemberSchema)
   .metadata({ actionName: 'removeTeamMember' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { userId, teamIdOrSlug } = parsedInput
+    const { userId, teamSlug } = parsedInput
     const result = await ctx.teamsRepository.removeTeamMember(userId)
 
     if (!result.ok) {
       return toActionErrorFromRepoError(result.error)
     }
 
-    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/general`, 'page')
   })
 
 export const createTeamAction = authActionClient
@@ -127,7 +127,7 @@ export const createTeamAction = authActionClient
 
 const UploadTeamProfilePictureSchema = zfd.formData(
   z.object({
-    teamIdOrSlug: zfd.text(),
+    teamSlug: zfd.text(),
     image: zfd.file(),
   })
 )
@@ -135,10 +135,10 @@ const UploadTeamProfilePictureSchema = zfd.formData(
 export const uploadTeamProfilePictureAction = authActionClient
   .schema(UploadTeamProfilePictureSchema)
   .metadata({ actionName: 'uploadTeamProfilePicture' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .use(withTeamsRepository)
   .action(async ({ parsedInput, ctx }) => {
-    const { image, teamIdOrSlug } = parsedInput
+    const { image, teamSlug } = parsedInput
     const { teamId, teamsRepository } = ctx
 
     const allowedTypes = ['image/jpeg', 'image/png']
@@ -217,7 +217,7 @@ export const uploadTeamProfilePictureAction = authActionClient
       }
     })
 
-    revalidatePath(`/dashboard/${teamIdOrSlug}/general`, 'page')
+    revalidatePath(`/dashboard/${teamSlug}/general`, 'page')
 
     return result.data
   })

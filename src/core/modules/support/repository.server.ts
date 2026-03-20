@@ -150,7 +150,7 @@ export function createSupportRepository(
       if (!team) {
         return err(
           repoErrorFromHttp(403, 'Team not found or access denied', {
-            teamIdOrSlug: scope.teamId,
+            teamId: scope.teamId,
           })
         )
       }

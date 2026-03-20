@@ -3,16 +3,16 @@ import 'server-only'
 import { z } from 'zod'
 import {
   authActionClient,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 import { getTeamMetricsCore } from './get-team-metrics-core'
 
 export const GetTeamMetricsSchema = z
   .object({
-    teamIdOrSlug: TeamIdOrSlugSchema,
+    teamSlug: TeamSlugSchema,
     startDate: z
       .number()
       .int()
@@ -49,7 +49,7 @@ export const GetTeamMetricsSchema = z
 export const getTeamMetrics = authActionClient
   .schema(GetTeamMetricsSchema)
   .metadata({ serverFunctionName: 'getTeamMetrics' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { session, teamId } = ctx
 

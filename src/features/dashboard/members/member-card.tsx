@@ -10,7 +10,7 @@ import MemberTable from './member-table'
 
 interface MemberCardProps {
   params: Promise<{
-    teamIdOrSlug: string
+    teamSlug: string
   }>
   className?: string
 }

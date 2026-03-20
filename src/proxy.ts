@@ -114,7 +114,7 @@ export async function proxy(request: NextRequest) {
         error: serializeError(error),
         context: {
           pathname: request.nextUrl.pathname,
-          teamIdOrSlug: request.nextUrl.pathname.split('/')[2],
+          teamSlug: request.nextUrl.pathname.split('/')[2],
         },
       },
       'middleware - unexpected error'

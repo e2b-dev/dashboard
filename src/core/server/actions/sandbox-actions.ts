@@ -6,22 +6,22 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
 import {
   authActionClient,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const KillSandboxSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
   sandboxId: z.string().min(1, 'Sandbox ID is required'),
 })
 
 export const killSandboxAction = authActionClient
   .schema(KillSandboxSchema)
   .metadata({ actionName: 'killSandbox' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .action(async ({ parsedInput, ctx }) => {
     const { sandboxId } = parsedInput
     const { session, teamId } = ctx
@@ -63,15 +63,13 @@ export const killSandboxAction = authActionClient
   })
 
 const RevalidateSandboxesSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
 })
 
 export const revalidateSandboxes = authActionClient
   .metadata({ serverFunctionName: 'revalidateSandboxes' })
   .inputSchema(RevalidateSandboxesSchema)
-  .use(withTeamIdResolution)
-  .action(async ({ parsedInput }) => {
-    const { teamIdOrSlug } = parsedInput
-
-    updateTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(teamIdOrSlug))
+  .use(withTeamSlugResolution)
+  .action(async ({ ctx }) => {
+    updateTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(ctx.teamId))
   })

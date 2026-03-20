@@ -46,7 +46,7 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   return res.data
 }
 
-export const getTeamMetadataFromCookies = async (teamIdOrSlug: string) => {
+export const getTeamMetadataFromCookies = async (teamSlug: string) => {
   const cookiesStore = await cookies()
 
   const cookieTeamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
@@ -56,18 +56,16 @@ export const getTeamMetadataFromCookies = async (teamIdOrSlug: string) => {
     return null
   }
 
-  const isSensical =
-    cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
   const isUUID = z.uuid().safeParse(cookieTeamId).success
 
-  if (isUUID && isSensical) {
-    return {
-      id: cookieTeamId,
-      slug: cookieTeamSlug,
-    }
+  if (!isUUID || cookieTeamSlug !== teamSlug) {
+    return null
   }
 
-  return null
+  return {
+    id: cookieTeamId,
+    slug: cookieTeamSlug,
+  }
 }
 
 /**

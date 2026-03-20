@@ -62,7 +62,7 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     }
 
     execute({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       email: data.email,
     })
   }

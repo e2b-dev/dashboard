@@ -34,12 +34,11 @@ export default function TemplatesTable() {
   'use no memo'
 
   const trpc = useTRPC()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { data: templatesData, error: templatesError } = useSuspenseQuery(
     trpc.templates.getTemplates.queryOptions(
-      { teamIdOrSlug },
+      { teamSlug },
       {
         refetchOnMount: false,
         refetchOnWindowFocus: false,

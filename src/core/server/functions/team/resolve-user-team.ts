@@ -36,10 +36,24 @@ export async function resolveUserTeam(
     return null
   }
 
-  const defaultTeam = teamsResult.data.find((t) => t.isDefault)
-  const team = defaultTeam ?? teamsResult.data[0]
+  const defaultTeam = teamsResult.data.find(
+    (team) => team.isDefault && team.slug
+  )
+  const team =
+    defaultTeam ?? teamsResult.data.find((candidate) => candidate.slug)
 
   if (!team) {
+    return null
+  }
+
+  if (!team.slug) {
+    l.warn(
+      {
+        key: 'resolve_user_team:missing_team_slug',
+        team_id: team.id,
+      },
+      'Failed to resolve a slug-backed team'
+    )
     return null
   }
 

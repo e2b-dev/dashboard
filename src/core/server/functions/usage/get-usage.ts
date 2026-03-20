@@ -6,19 +6,19 @@ import { CACHE_TAGS } from '@/configs/cache'
 import { createBillingRepository } from '@/core/modules/billing/repository.server'
 import {
   authActionClient,
-  withTeamIdResolution,
+  withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
-import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
+import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const GetUsageAuthActionSchema = z.object({
-  teamIdOrSlug: TeamIdOrSlugSchema,
+  teamSlug: TeamSlugSchema,
 })
 
 export const getUsage = authActionClient
   .schema(GetUsageAuthActionSchema)
   .metadata({ serverFunctionName: 'getUsage' })
-  .use(withTeamIdResolution)
+  .use(withTeamSlugResolution)
   .action(async ({ ctx }) => {
     'use cache'
 

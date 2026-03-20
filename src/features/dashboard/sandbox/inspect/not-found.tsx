@@ -17,7 +17,7 @@ export default function SandboxInspectNotFound() {
   const { isRunning } = useSandboxContext()
   const { trackInteraction } = useSandboxInspectAnalytics()
 
-  const { teamIdOrSlug } = useParams()
+  const { teamSlug } = useParams()
 
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
   const [isPending, startTransition] = useTransition()
@@ -105,9 +105,7 @@ export default function SandboxInspectNotFound() {
   ) : (
     <Button
       variant="outline"
-      onClick={() =>
-        router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
-      }
+      onClick={() => router.push(PROTECTED_URLS.SANDBOXES(teamSlug as string))}
       className="w-full gap-2"
     >
       <ArrowLeft className="text-fg-tertiary h-4 w-4" />

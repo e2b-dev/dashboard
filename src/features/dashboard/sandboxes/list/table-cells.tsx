@@ -131,7 +131,7 @@ export function TemplateCell({
         }
 
         useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES(team.slug ?? team.id))
+        router.push(PROTECTED_URLS.TEMPLATES(team.slug))
       }}
     >
       <span className="min-w-0 truncate">{templateIdentifier}</span>

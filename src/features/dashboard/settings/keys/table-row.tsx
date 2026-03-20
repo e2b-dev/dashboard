@@ -63,7 +63,7 @@ export default function ApiKeyTableRow({
 
   const deleteKey = () => {
     executeDeleteKey({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       apiKeyId: apiKey.id,
     })
   }

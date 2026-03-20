@@ -50,8 +50,7 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -75,13 +74,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
           (old) => {
             if (!old?.templates) return old
@@ -108,7 +107,7 @@ export function ActionsCell({
       onSettled: () => {
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -133,13 +132,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
 
           (old) => {
@@ -166,7 +165,7 @@ export function ActionsCell({
 
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -178,7 +177,7 @@ export function ActionsCell({
 
   const togglePublish = () => {
     updateTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
       public: !template.public,
     })
@@ -186,7 +185,7 @@ export function ActionsCell({
 
   const deleteTemplate = () => {
     deleteTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
     })
   }

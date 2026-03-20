@@ -11,7 +11,7 @@ import { TableLoader } from '@/ui/table-loader'
 import TableBodyContent from './table-body'
 
 interface ApiKeysTableProps {
-  params: Promise<{ teamIdOrSlug: string }>
+  params: Promise<{ teamSlug: string }>
   className?: string
 }
 

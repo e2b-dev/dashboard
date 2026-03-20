@@ -36,9 +36,7 @@ export async function GET(request: NextRequest) {
 
   await setTeamCookies(team.id, team.slug)
 
-  const redirectPath = PROTECTED_URLS.RESOLVED_ACCOUNT_SETTINGS(
-    team.slug || team.id
-  )
+  const redirectPath = PROTECTED_URLS.RESOLVED_ACCOUNT_SETTINGS(team.slug)
   const redirectUrl = new URL(redirectPath, request.url)
 
   request.nextUrl.searchParams.forEach((value, key) => {

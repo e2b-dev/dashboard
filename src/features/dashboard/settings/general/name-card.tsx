@@ -56,7 +56,7 @@ export function NameCard({ className }: NameCardProps) {
     {
       formProps: {
         defaultValues: {
-          teamIdOrSlug: team.id,
+          teamSlug: team.slug,
           name: team.name,
         },
       },

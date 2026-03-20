@@ -1,3 +1,3 @@
 import { z } from 'zod'
 
-export const TeamIdOrSlugSchema = z.union([z.uuid(), z.string()])
+export const TeamSlugSchema = z.string().trim().min(1)

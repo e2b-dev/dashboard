@@ -1,6 +1,6 @@
 import { addHours, subHours } from 'date-fns'
 import { nanoid } from 'nanoid'
-import type { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics/types'
+import type { MetricsResponse } from '@/app/api/teams/[teamSlug]/sandboxes/metrics/types'
 import type {
   ClientSandboxesMetrics,
   ClientTeamMetrics,

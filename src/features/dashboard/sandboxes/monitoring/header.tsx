@@ -14,7 +14,7 @@ import {
 import { MAX_DAYS_AGO } from './time-picker/constants'
 
 interface MonitoringContentParams {
-  teamIdOrSlug: string
+  teamSlug: string
 }
 
 function BaseCard({ children }: { children: React.ReactNode }) {
@@ -99,14 +99,14 @@ export const ConcurrentSandboxes = async ({
 }: {
   params: Promise<MonitoringContentParams>
 }) => {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   // use request-consistent timestamp for cache deduplication
   const now = getNowMemo()
   const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
-    teamIdOrSlug,
+    teamSlug,
     startDate: start,
     endDate: now,
   })
@@ -128,14 +128,14 @@ export const SandboxesStartRate = async ({
 }: {
   params: Promise<MonitoringContentParams>
 }) => {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   // use same request-consistent timestamp as ConcurrentSandboxes
   const now = getNowMemo()
   const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
-    teamIdOrSlug,
+    teamSlug,
     startDate: start,
     endDate: now,
   })
@@ -157,13 +157,13 @@ export const MaxConcurrentSandboxes = async ({
 }: {
   params: Promise<MonitoringContentParams>
 }) => {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   const end = Date.now()
   const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
   const teamMetricsResult = await getTeamMetricsMax({
-    teamIdOrSlug,
+    teamSlug,
     startDate: start,
     endDate: end,
     metric: 'concurrent_sandboxes',

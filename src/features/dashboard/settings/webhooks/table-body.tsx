@@ -5,15 +5,15 @@ import WebhookTableRow from './table-row'
 
 interface TableBodyContentProps {
   params: Promise<{
-    teamIdOrSlug: string
+    teamSlug: string
   }>
 }
 
 export default async function TableBodyContent({
   params,
 }: TableBodyContentProps) {
-  const { teamIdOrSlug } = await params
-  const webhooksResult = await getWebhooks({ teamIdOrSlug })
+  const { teamSlug } = await params
+  const webhooksResult = await getWebhooks({ teamSlug })
 
   // undefined data indicates execution error so we disable the controls
   const hasError = webhooksResult?.data === undefined

@@ -6,17 +6,17 @@ import MemberTableRow from './member-table-row'
 
 interface TableBodyContentProps {
   params: Promise<{
-    teamIdOrSlug: string
+    teamSlug: string
   }>
 }
 
 export default async function MemberTableBody({
   params,
 }: TableBodyContentProps) {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   try {
-    const result = await getTeamMembers({ teamIdOrSlug })
+    const result = await getTeamMembers({ teamSlug })
 
     if (!result?.data || result.serverError || result.validationErrors) {
       throw new Error(result?.serverError || 'Unknown error')
