@@ -1,7 +1,7 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRef, useState } from 'react'
@@ -63,7 +63,6 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-
       const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
 
       if (file.size > MAX_FILE_SIZE) {
