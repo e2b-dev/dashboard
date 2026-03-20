@@ -1,6 +1,6 @@
 'use client'
 
-import type { BuildDetailsModel } from '@/core/domains/builds/models'
+import type { BuildDetailsModel } from '@/core/modules/builds/models'
 import { cn } from '@/lib/utils/ui'
 import CopyButton from '@/ui/copy-button'
 import CopyButtonInline from '@/ui/copy-button-inline'

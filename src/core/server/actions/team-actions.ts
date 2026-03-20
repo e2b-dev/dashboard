@@ -8,22 +8,25 @@ import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import type { CreateTeamsResponse } from '@/core/domains/billing/models'
+import type { CreateTeamsResponse } from '@/core/modules/billing/models'
 import {
   CreateTeamSchema,
   UpdateTeamNameSchema,
-} from '@/core/domains/teams/schemas'
-import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
+} from '@/core/modules/teams/schemas'
+import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
+import {
+  handleDefaultInfraError,
+  returnServerError,
+} from '@/core/server/actions/utils'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { l } from '@/lib/clients/logger/logger'
-import { deleteFile, getFiles, uploadFile } from '@/lib/clients/storage'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { handleDefaultInfraError, returnServerError } from '@/lib/utils/action'
+import { l } from '@/core/shared/clients/logger/logger'
+import { deleteFile, getFiles, uploadFile } from '@/core/shared/clients/storage'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 const withTeamsRepository = withTeamAuthedRequestRepository(
   createTeamsRepository,

@@ -5,9 +5,9 @@ import {
   authActionClient,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
+import { returnServerError } from '@/core/server/actions/utils'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { returnServerError } from '@/lib/utils/action'
 import { getTeamMetricsCore } from './get-team-metrics-core'
 
 export const GetTeamMetricsSchema = z

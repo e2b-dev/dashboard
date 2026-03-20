@@ -3,7 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import type { SandboxMetric } from '@/core/domains/sandboxes/models'
+import type { SandboxMetric } from '@/core/modules/sandboxes/models'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSandboxContext } from '@/features/dashboard/sandbox/context'
 import { getMsUntilNextAlignedInterval } from '@/lib/hooks/use-aligned-refetch-interval'

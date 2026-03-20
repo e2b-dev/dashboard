@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import { useTRPC } from '@/trpc/client'
 import Unauthorized from '../unauthorized'
@@ -20,7 +21,9 @@ interface DashboardTeamGateProps {
 function TeamContent({ teamIdOrSlug, user, children }: DashboardTeamGateProps) {
   const trpc = useTRPC()
 
-  const { data: teams } = useSuspenseQuery(trpc.teams.list.queryOptions())
+  const { data: teams } = useSuspenseQuery(
+    trpc.teams.list.queryOptions(undefined, DASHBOARD_TEAMS_LIST_QUERY_OPTIONS)
+  )
 
   const team = teams.find(
     (candidate) =>

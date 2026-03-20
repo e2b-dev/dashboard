@@ -3,10 +3,10 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
+import { l } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
 
 export const GET = async (req: NextRequest) => {
   try {

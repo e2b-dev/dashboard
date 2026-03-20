@@ -7,7 +7,7 @@ import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import type {
   SandboxDetailsModel,
   SandboxEventModel,
-} from '@/core/domains/sandboxes/models'
+} from '@/core/modules/sandboxes/models'
 import { useAlignedRefetchInterval } from '@/lib/hooks/use-aligned-refetch-interval'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'

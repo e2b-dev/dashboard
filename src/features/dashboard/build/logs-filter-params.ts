@@ -1,5 +1,5 @@
 import { createLoader, parseAsStringEnum } from 'nuqs/server'
-import type { BuildLogModel } from '@/core/domains/builds/models'
+import type { BuildLogModel } from '@/core/modules/builds/models'
 
 export type LogLevelFilter = BuildLogModel['level']
 

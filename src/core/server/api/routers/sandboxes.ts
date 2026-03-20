@@ -6,11 +6,11 @@ import {
   MOCK_TEAM_METRICS_DATA,
   MOCK_TEAM_METRICS_MAX_DATA,
 } from '@/configs/mock-data'
-import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
+import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import {
   GetTeamMetricsMaxSchema,
   GetTeamMetricsSchema,
-} from '@/core/domains/sandboxes/schemas'
+} from '@/core/modules/sandboxes/schemas'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import {

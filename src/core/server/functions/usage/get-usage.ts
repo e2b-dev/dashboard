@@ -3,13 +3,13 @@ import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { createBillingRepository } from '@/core/domains/billing/repository.server'
+import { createBillingRepository } from '@/core/modules/billing/repository.server'
 import {
   authActionClient,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { returnServerError } from '@/lib/utils/action'
+import { returnServerError } from '@/core/server/actions/utils'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 const GetUsageAuthActionSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,

@@ -9,7 +9,7 @@ import {
   ConfirmEmailInputSchema,
   type OtpType,
   OtpTypeSchema,
-} from '@/core/domains/auth/models'
+} from '@/core/modules/auth/models'
 import { AuthFormMessage } from '@/features/auth/form-message'
 import { Button } from '@/ui/primitives/button'
 

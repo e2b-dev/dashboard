@@ -4,9 +4,9 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import {
   ConfirmEmailInputSchema,
   type OtpType,
-} from '@/core/domains/auth/models'
-import { authRepository } from '@/domains/auth/repository.server'
-import { l } from '@/lib/clients/logger/logger'
+} from '@/core/modules/auth/models'
+import { authRepository } from '@/core/modules/auth/repository.server'
+import { l } from '@/core/shared/clients/logger/logger'
 import { isExternalOrigin } from '@/lib/utils/auth'
 
 /**

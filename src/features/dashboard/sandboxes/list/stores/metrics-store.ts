@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { ClientSandboxesMetrics } from '@/core/domains/sandboxes/models.client'
+import type { ClientSandboxesMetrics } from '@/core/modules/sandboxes/models.client'
 
 // maximum number of sandbox metrics to keep in memory
 // this is to prevent the store from growing too large and causing performance issues

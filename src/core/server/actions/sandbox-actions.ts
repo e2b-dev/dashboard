@@ -8,10 +8,10 @@ import {
   authActionClient,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
-import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { returnServerError } from '@/lib/utils/action'
+import { returnServerError } from '@/core/server/actions/utils'
+import { infra } from '@/core/shared/clients/api'
+import { l } from '@/core/shared/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 const KillSandboxSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,

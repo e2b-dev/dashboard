@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BuildLogModel } from '@/core/domains/builds/models'
+import type { BuildLogModel } from '@/core/modules/builds/models'
 import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,

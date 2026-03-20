@@ -3,7 +3,7 @@ import 'server-cli-only'
 import { serializeError } from 'serialize-error'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { getTeamMetricsCore } from '@/core/server/functions/sandboxes/get-team-metrics-core'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 import { TeamMetricsRequestSchema, type TeamMetricsResponse } from './types'
 
 export async function POST(

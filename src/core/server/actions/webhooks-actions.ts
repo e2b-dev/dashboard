@@ -3,19 +3,19 @@
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
-import { createWebhooksRepository } from '@/core/domains/webhooks/repository.server'
+import { createWebhooksRepository } from '@/core/modules/webhooks/repository.server'
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
+import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import {
   DeleteWebhookSchema,
   UpdateWebhookSecretSchema,
   UpsertWebhookSchema,
 } from '@/core/server/functions/webhooks/schema'
-import { l } from '@/lib/clients/logger/logger'
-import { handleDefaultInfraError } from '@/lib/utils/action'
+import { l } from '@/core/shared/clients/logger/logger'
 
 const withWebhooksRepository = withTeamAuthedRequestRepository(
   createWebhooksRepository,

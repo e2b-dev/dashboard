@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { SandboxLogModel } from '@/core/domains/sandboxes/models'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,

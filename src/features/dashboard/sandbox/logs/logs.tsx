@@ -13,7 +13,7 @@ import {
   useState,
 } from 'react'
 import { LOG_RETENTION_MS } from '@/configs/logs'
-import type { SandboxLogModel } from '@/core/domains/sandboxes/models'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,

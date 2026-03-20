@@ -1,6 +1,6 @@
 'use client'
 
-import type { BillingLimit } from '@/core/domains/billing/models'
+import type { BillingLimit } from '@/core/modules/billing/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
 import { useDashboard } from '../context'

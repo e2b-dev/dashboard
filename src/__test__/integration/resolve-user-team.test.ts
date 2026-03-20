@@ -32,7 +32,7 @@ const { mockSupabaseAdmin, mockCookieStore, mockCheckUserTeamAuth } =
     mockCheckUserTeamAuth: vi.fn(),
   }))
 
-vi.mock('@/lib/clients/supabase/admin', () => ({
+vi.mock('@/core/shared/clients/supabase/admin', () => ({
   supabaseAdmin: mockSupabaseAdmin,
 }))
 

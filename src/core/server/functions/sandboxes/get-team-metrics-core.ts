@@ -7,11 +7,11 @@ import {
   calculateTeamMetricsStep,
   MOCK_TEAM_METRICS_DATA,
 } from '@/configs/mock-data'
-import type { ClientTeamMetrics } from '@/core/domains/sandboxes/models.client'
+import type { ClientTeamMetrics } from '@/core/modules/sandboxes/models.client'
+import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import { fillTeamMetricsWithZeros } from '@/core/server/functions/sandboxes/utils'
-import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
-import { handleDefaultInfraError } from '@/lib/utils/action'
+import { infra } from '@/core/shared/clients/api'
+import { l } from '@/core/shared/clients/logger/logger'
 
 interface GetTeamMetricsCoreParams {
   accessToken: string

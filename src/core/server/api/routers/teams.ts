@@ -1,4 +1,4 @@
-import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { protectedProcedure } from '@/core/server/trpc/procedures'

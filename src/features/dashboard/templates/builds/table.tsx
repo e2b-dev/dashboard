@@ -12,7 +12,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   ListedBuildModel,
   RunningBuildStatusModel,
-} from '@/core/domains/builds/models'
+} from '@/core/modules/builds/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'

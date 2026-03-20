@@ -3,15 +3,15 @@
 import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { createKeysRepository } from '@/core/domains/keys/repository.server'
+import { createKeysRepository } from '@/core/modules/keys/repository.server'
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
-import { l } from '@/lib/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
-import { returnServerError } from '@/lib/utils/action'
+import { returnServerError } from '@/core/server/actions/utils'
+import { l } from '@/core/shared/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 const withKeysRepository = withTeamAuthedRequestRepository(
   createKeysRepository,

@@ -3,9 +3,9 @@ export type {
   TeamMember,
   TeamMemberInfo,
   TeamMemberRelation,
-} from '@/core/domains/teams/models'
+} from '@/core/modules/teams/models'
 export {
   CreateTeamSchema,
   TeamNameSchema,
   UpdateTeamNameSchema,
-} from '@/core/domains/teams/schemas'
+} from '@/core/modules/teams/schemas'

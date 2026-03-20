@@ -1,11 +1,11 @@
 import 'server-only'
 
 import { serializeError } from 'serialize-error'
-import type { OtpType } from '@/core/domains/auth/models'
+import type { OtpType } from '@/core/modules/auth/models'
+import { l } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
 
 interface VerifyOtpResult {
   userId: string

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/clients/supabase/server'
+import { createClient } from '@/core/shared/clients/supabase/server'
 import 'server-cli-only'
 
 /**

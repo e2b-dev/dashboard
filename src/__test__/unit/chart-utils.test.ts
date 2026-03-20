@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ClientTeamMetric } from '@/core/domains/sandboxes/models.client'
+import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
 import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 

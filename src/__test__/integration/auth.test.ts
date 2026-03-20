@@ -44,11 +44,11 @@ const mockSupabaseClient = {
 }
 
 // Mock dependencies
-vi.mock('@/lib/clients/supabase/server', () => ({
+vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
 }))
 
-vi.mock('@/lib/clients/supabase/admin', () => ({
+vi.mock('@/core/shared/clients/supabase/admin', () => ({
   supabaseAdmin: {
     auth: vi.fn(),
   },

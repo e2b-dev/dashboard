@@ -16,30 +16,30 @@ const mockSupabaseClient = {
   },
 }
 
-vi.mock('@/lib/clients/supabase/server', () => ({
+vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
 }))
 
-vi.mock('@/lib/clients/supabase/admin', () => ({
+vi.mock('@/core/shared/clients/supabase/admin', () => ({
   supabaseAdmin: {
     from: vi.fn(),
   },
 }))
 
-vi.mock('@/lib/clients/kv', () => ({
+vi.mock('@/core/shared/clients/kv', () => ({
   kv: {
     get: vi.fn(),
     set: vi.fn(),
   },
 }))
 
-vi.mock('@/lib/clients/api', () => ({
+vi.mock('@/core/shared/clients/api', () => ({
   infra: {
     GET: vi.fn(),
   },
 }))
 
-vi.mock('@/lib/clients/logger/logger', () => ({
+vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -82,8 +82,8 @@ vi.mock('next/server', async () => {
 })
 
 // Import mocked modules after mock setup
-import { infra } from '@/lib/clients/api'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { infra } from '@/core/shared/clients/api'
+import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 
 // ============================================================================
 // TEST HELPERS

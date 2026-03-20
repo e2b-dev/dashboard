@@ -1,3 +1,3 @@
-import type { ClientTeam } from '@/core/domains/teams/models'
+import type { ClientTeam } from '@/core/modules/teams/models'
 
 export type UserTeamsResponse = { teams: ClientTeam[] }

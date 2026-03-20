@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 
 export const forbiddenTeamAccessError = () =>
   new TRPCError({

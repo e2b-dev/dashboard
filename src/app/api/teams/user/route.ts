@@ -1,6 +1,6 @@
-import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
-import { createClient } from '@/lib/clients/supabase/server'
+import { createClient } from '@/core/shared/clients/supabase/server'
 import type { UserTeamsResponse } from './types'
 
 export async function GET() {

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
-import type { ClientTeam } from '@/core/domains/teams/models'
+import type { ClientTeam } from '@/core/modules/teams/models'
 import { useDashboard } from '@/features/dashboard/context'
 
 export const useTeamCookieManager = () => {

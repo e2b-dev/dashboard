@@ -1,18 +1,18 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
   BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
-} from '@/core/domains/builds/models'
+} from '@/core/modules/builds/models'
+import { api, infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
-import { api, infra } from '@/lib/clients/api'
-import type { components as InfraComponents } from '@/types/infra-api.types'
 
 type BuildsRepositoryDeps = {
   apiClient: typeof api

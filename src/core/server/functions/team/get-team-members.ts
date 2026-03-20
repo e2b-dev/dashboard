@@ -1,14 +1,14 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
+import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 import {
   authActionClient,
   withTeamAuthedRequestRepository,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 const withTeamsRepository = withTeamAuthedRequestRepository(
   createTeamsRepository,

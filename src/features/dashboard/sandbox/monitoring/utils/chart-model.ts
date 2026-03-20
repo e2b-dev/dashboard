@@ -1,7 +1,7 @@
 import type {
   SandboxEventModel,
   SandboxMetric,
-} from '@/core/domains/sandboxes/models'
+} from '@/core/modules/sandboxes/models'
 import type { MonitoringChartModel } from '../types/sandbox-metrics-chart'
 import {
   applyPauseWindows,

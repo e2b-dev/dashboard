@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'motion/react'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { updateTeamNameAction } from '@/core/server/actions/team-actions'
@@ -13,6 +14,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -38,6 +40,8 @@ export function NameCard({ className }: NameCardProps) {
   'use no memo'
 
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
 
   const { toast } = useToast()
 
@@ -70,6 +74,9 @@ export function NameCard({ className }: NameCardProps) {
           }
         },
         onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: trpc.teams.list.queryKey(),
+          })
           toast(defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message))
         },
         onError: ({ error }) => {

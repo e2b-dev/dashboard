@@ -2,12 +2,12 @@ import 'server-only'
 
 import type { User } from '@supabase/supabase-js'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { api } from '@/core/shared/clients/api'
+import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import type { components as DashboardComponents } from '@/core/shared/contracts/dashboard-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import { api } from '@/lib/clients/api'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
 import type { TeamLimits, TeamMember } from './models'
 
 type ApiUserTeam = {

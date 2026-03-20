@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
+import { ActionError } from '@/core/server/actions/utils'
 import type { RepoError } from '@/core/shared/result'
-import { ActionError } from '@/lib/utils/action'
 
 function trpcCodeFromRepoError(code: RepoError['code']): TRPCError['code'] {
   switch (code) {

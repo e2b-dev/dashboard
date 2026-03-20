@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type {
   SandboxEventModel,
   SandboxMetric,
-} from '@/core/domains/sandboxes/models'
+} from '@/core/modules/sandboxes/models'
 import { buildMonitoringChartModel } from '@/features/dashboard/sandbox/monitoring/utils/chart-model'
 
 const baseMetric = {

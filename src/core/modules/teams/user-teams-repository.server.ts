@@ -2,10 +2,10 @@ import 'server-only'
 
 import { secondsInDay } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import { api } from '@/lib/clients/api'
 import type { ClientTeam, ResolvedTeam } from './models'
 
 type ApiUserTeam = {

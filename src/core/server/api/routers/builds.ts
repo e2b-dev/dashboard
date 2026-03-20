@@ -4,8 +4,8 @@ import {
   type BuildLogModel,
   type BuildLogsModel,
   BuildStatusSchema,
-} from '@/core/domains/builds/models'
-import { createBuildsRepository } from '@/core/domains/builds/repository.server'
+} from '@/core/modules/builds/models'
+import { createBuildsRepository } from '@/core/modules/builds/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'

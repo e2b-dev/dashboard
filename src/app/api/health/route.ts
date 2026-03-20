@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
-import { api } from '@/lib/clients/api'
-import { kv } from '@/lib/clients/kv'
-import { l } from '@/lib/clients/logger/logger'
+import { api } from '@/core/shared/clients/api'
+import { kv } from '@/core/shared/clients/kv'
+import { l } from '@/core/shared/clients/logger/logger'
 
 export const maxDuration = 10
 

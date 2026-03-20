@@ -9,7 +9,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import type { UsageResponse } from '@/core/domains/billing/models'
+import type { UsageResponse } from '@/core/modules/billing/models'
 import { fillTimeSeriesWithEmptyPoints } from '@/lib/utils/time-series'
 import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {

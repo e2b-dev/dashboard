@@ -1,4 +1,4 @@
-import type { TeamItems } from '@/core/domains/billing/models'
+import type { TeamItems } from '@/core/modules/billing/models'
 import type { TeamLimits } from '@/core/server/functions/team/get-team-limits'
 
 export interface BillingData {

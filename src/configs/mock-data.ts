@@ -4,7 +4,7 @@ import type { MetricsResponse } from '@/app/api/teams/[teamId]/sandboxes/metrics
 import type {
   ClientSandboxesMetrics,
   ClientTeamMetrics,
-} from '@/core/domains/sandboxes/models.client'
+} from '@/core/modules/sandboxes/models.client'
 import type {
   DefaultTemplate,
   Sandbox,

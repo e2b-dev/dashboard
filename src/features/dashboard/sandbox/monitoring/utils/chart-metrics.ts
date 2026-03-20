@@ -1,5 +1,5 @@
 import { millisecondsInSecond } from 'date-fns/constants'
-import type { SandboxMetric } from '@/core/domains/sandboxes/models'
+import type { SandboxMetric } from '@/core/modules/sandboxes/models'
 import type {
   SandboxMetricsDataPoint,
   SandboxMetricsSeries,

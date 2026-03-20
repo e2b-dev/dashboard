@@ -43,11 +43,11 @@ const {
   mockResolveUserTeam: vi.fn(),
 }))
 
-vi.mock('@/lib/clients/supabase/server', () => ({
+vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
 }))
 
-vi.mock('@/lib/clients/supabase/admin', () => ({
+vi.mock('@/core/shared/clients/supabase/admin', () => ({
   supabaseAdmin: mockSupabaseAdmin,
 }))
 

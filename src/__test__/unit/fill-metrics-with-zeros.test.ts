@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ClientTeamMetrics } from '@/core/domains/sandboxes/models.client'
+import type { ClientTeamMetrics } from '@/core/modules/sandboxes/models.client'
 import { fillTeamMetricsWithZeros } from '@/core/server/functions/sandboxes/utils'
 
 describe('fillTeamMetricsWithZeros', () => {

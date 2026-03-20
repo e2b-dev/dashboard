@@ -1,4 +1,4 @@
-import type { SandboxDetailsModel } from '@/core/domains/sandboxes/models'
+import type { SandboxDetailsModel } from '@/core/modules/sandboxes/models'
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,

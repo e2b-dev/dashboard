@@ -1,15 +1,15 @@
 import 'server-only'
 
+import { cache } from 'react'
 import { z } from 'zod'
 import { USE_MOCK_DATA } from '@/configs/flags'
-import { createTeamsRepository } from '@/core/domains/teams/teams-repository.server'
+import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 import {
   authActionClient,
-  withTeamAuthedRequestRepository,
   withTeamIdResolution,
 } from '@/core/server/actions/client'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 export interface TeamLimits {
   concurrentInstances: number
@@ -31,22 +31,28 @@ const GetTeamLimitsSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,
 })
 
-const withTeamsRepository = withTeamAuthedRequestRepository(
-  createTeamsRepository,
-  (teamsRepository) => ({ teamsRepository })
+const getTeamLimitsCached = cache(
+  async (accessToken: string, teamId: string) => {
+    return createTeamsRepository({
+      accessToken,
+      teamId,
+    }).getTeamLimits()
+  }
 )
 
 export const getTeamLimits = authActionClient
   .schema(GetTeamLimitsSchema)
   .metadata({ serverFunctionName: 'getTeamLimits' })
   .use(withTeamIdResolution)
-  .use(withTeamsRepository)
   .action(async ({ ctx }) => {
     if (USE_MOCK_DATA) {
       return MOCK_TIER_LIMITS
     }
 
-    const limitsResult = await ctx.teamsRepository.getTeamLimits()
+    const limitsResult = await getTeamLimitsCached(
+      ctx.session.access_token,
+      ctx.teamId
+    )
 
     if (!limitsResult.ok) {
       return toActionErrorFromRepoError(limitsResult.error)

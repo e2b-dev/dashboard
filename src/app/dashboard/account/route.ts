@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
-import { createClient } from '@/lib/clients/supabase/server'
+import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
+import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
-import { resolveUserTeam } from '@/server/team/resolve-user-team'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()

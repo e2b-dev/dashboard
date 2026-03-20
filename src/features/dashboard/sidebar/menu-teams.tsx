@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
-import type { ClientTeam } from '@/core/domains/teams/models'
+import type { ClientTeam } from '@/core/modules/teams/models'
 import { useTeamCookieManager } from '@/lib/hooks/use-team'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {

@@ -4,7 +4,7 @@ import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { BASE_URL } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 import {
   getRewriteForPath,
   rewriteContentPagesHtml,

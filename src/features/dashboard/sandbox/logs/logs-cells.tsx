@@ -1,4 +1,4 @@
-import type { SandboxLogModel } from '@/core/domains/sandboxes/models'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import { LogLevelBadge } from '@/features/dashboard/common/log-cells'
 import CopyButtonInline from '@/ui/copy-button-inline'
 

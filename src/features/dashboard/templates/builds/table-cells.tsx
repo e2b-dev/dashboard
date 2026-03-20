@@ -7,7 +7,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
-} from '@/core/domains/builds/models'
+} from '@/core/modules/builds/models'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
@@ -176,7 +176,7 @@ export function Status({ status }: StatusProps) {
     },
   }
 
-  const { label, icon, variant } = config[status]
+  const { label, icon, variant } = config[status]!
 
   return (
     <div className="flex items-center gap-3 min-w-0">

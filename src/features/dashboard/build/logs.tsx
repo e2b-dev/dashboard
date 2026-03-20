@@ -9,7 +9,7 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import type {
   BuildDetailsModel,
   BuildLogModel,
-} from '@/core/domains/builds/models'
+} from '@/core/modules/builds/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,

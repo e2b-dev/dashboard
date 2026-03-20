@@ -3,7 +3,7 @@ import { z } from 'zod'
 import {
   createDefaultTemplatesRepository,
   createTemplatesRepository,
-} from '@/core/domains/templates/repository.server'
+} from '@/core/modules/templates/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import {
   withAuthedRequestRepository,

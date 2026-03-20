@@ -5,6 +5,7 @@ import { DashboardTeamGate } from '@/app/dashboard/[teamIdOrSlug]/team-gate'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
+import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
@@ -44,7 +45,9 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  prefetch(trpc.teams.list.queryOptions())
+  prefetch(
+    trpc.teams.list.queryOptions(undefined, DASHBOARD_TEAMS_LIST_QUERY_OPTIONS)
+  )
 
   return (
     <HydrateClient>

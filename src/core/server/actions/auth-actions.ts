@@ -8,6 +8,7 @@ import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
+import { returnServerError } from '@/core/server/actions/utils'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -17,11 +18,10 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
+import { l } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
+import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
-import { relativeUrlSchema } from '@/lib/schemas/url'
-import { returnServerError } from '@/lib/utils/action'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 async function validateCaptcha(captchaToken: string | undefined) {

@@ -2,9 +2,9 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
-import type { ResolvedTeam } from '@/core/domains/teams/models'
-import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
-import { l } from '@/lib/clients/logger/logger'
+import type { ResolvedTeam } from '@/core/modules/teams/models'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { l } from '@/core/shared/clients/logger/logger'
 
 export async function resolveUserTeam(
   accessToken: string

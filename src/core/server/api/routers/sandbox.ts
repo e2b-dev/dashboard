@@ -8,14 +8,14 @@ import {
   type SandboxDetailsModel,
   type SandboxLogModel,
   type SandboxLogsModel,
-} from '@/core/domains/sandboxes/models'
-import { createSandboxesRepository } from '@/core/domains/sandboxes/repository.server'
+} from '@/core/modules/sandboxes/models'
+import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
-import { SandboxIdSchema } from '@/lib/schemas/api'
 
 const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(

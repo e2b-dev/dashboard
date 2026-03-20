@@ -8,7 +8,7 @@ import { unauthorizedUserError } from '@/core/server/adapters/trpc-errors'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
-import { getTracer } from '@/lib/clients/tracer'
+import { getTracer } from '@/core/shared/clients/tracer'
 
 const createSupabaseServerClient = (headers: Headers) => {
   return createServerClient(

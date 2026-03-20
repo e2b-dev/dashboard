@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { createSupportRepository } from '@/core/domains/support/repository.server'
+import { createSupportRepository } from '@/core/modules/support/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'

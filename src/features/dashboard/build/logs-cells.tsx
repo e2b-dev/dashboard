@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale/en-US'
-import type { BuildLogModel } from '@/core/domains/builds/models'
+import type { BuildLogModel } from '@/core/modules/builds/models'
 import {
   LogLevelBadge,
   LogMessage,

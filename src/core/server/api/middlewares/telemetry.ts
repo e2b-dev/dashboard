@@ -9,12 +9,12 @@ import {
 import type { User } from '@supabase/supabase-js'
 import { TRPCError } from '@trpc/server'
 import { serializeError } from 'serialize-error'
+import { flattenClientInputValue } from '@/core/server/actions/utils'
 import { internalServerError } from '@/core/server/adapters/trpc-errors'
 import { t } from '@/core/server/trpc/init'
-import { l } from '@/lib/clients/logger/logger'
-import { getMeter } from '@/lib/clients/meter'
-import { getTracer } from '@/lib/clients/tracer'
-import { flattenClientInputValue } from '@/lib/utils/action'
+import { l } from '@/core/shared/clients/logger/logger'
+import { getMeter } from '@/core/shared/clients/meter'
+import { getTracer } from '@/core/shared/clients/tracer'
 
 /**
  * Telemetry State

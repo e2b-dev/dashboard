@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { getNowMemo } from '@/lib/utils/server'
 import { Skeleton } from '@/ui/primitives/skeleton'

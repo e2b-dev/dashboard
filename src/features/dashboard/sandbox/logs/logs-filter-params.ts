@@ -1,5 +1,5 @@
 import { createLoader, parseAsString, parseAsStringEnum } from 'nuqs/server'
-import type { SandboxLogModel } from '@/core/domains/sandboxes/models'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 
 export type LogLevelFilter = SandboxLogModel['level']
 

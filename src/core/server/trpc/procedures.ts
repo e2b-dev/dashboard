@@ -7,8 +7,8 @@ import {
   startTelemetryMiddleware,
 } from '@/core/server/api/middlewares/telemetry'
 import { getTeamIdFromSegment } from '@/core/server/functions/team/get-team-id-from-segment'
-import { getTracer } from '@/lib/clients/tracer'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { getTracer } from '@/core/shared/clients/tracer'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 import { t } from './init'
 
 /**

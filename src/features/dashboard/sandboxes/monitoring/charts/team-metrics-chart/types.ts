@@ -1,4 +1,4 @@
-import type { ClientTeamMetric } from '@/core/domains/sandboxes/models.client'
+import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
 
 export type ChartType = 'concurrent' | 'start-rate'
 

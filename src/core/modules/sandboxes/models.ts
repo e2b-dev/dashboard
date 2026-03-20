@@ -1,6 +1,6 @@
-import type { components as ArgusComponents } from '@/types/argus-api.types'
-import type { components as DashboardComponents } from '@/types/dashboard-api.types'
-import type { components as InfraComponents } from '@/types/infra-api.types'
+import type { components as ArgusComponents } from '@/contracts/argus-api'
+import type { components as DashboardComponents } from '@/contracts/dashboard-api'
+import type { components as InfraComponents } from '@/contracts/infra-api'
 
 export type SandboxLogLevel = InfraComponents['schemas']['LogLevel']
 export type Sandbox = InfraComponents['schemas']['ListedSandbox']

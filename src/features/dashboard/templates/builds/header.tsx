@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { BuildStatus } from '@/core/domains/builds/models'
+import type { BuildStatus } from '@/core/modules/builds/models'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {

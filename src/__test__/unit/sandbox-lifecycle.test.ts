@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   deriveSandboxLifecycleFromEvents,
   type SandboxEventModel,
-} from '@/core/domains/sandboxes/models'
+} from '@/core/modules/sandboxes/models'
 
 function createLifecycleEvent(
   overrides: Partial<SandboxEventModel> & Pick<SandboxEventModel, 'id' | 'type'>

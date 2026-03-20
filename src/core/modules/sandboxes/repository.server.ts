@@ -1,19 +1,19 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import type { SandboxEventModel } from '@/core/domains/sandboxes/models'
+import type { components as DashboardComponents } from '@/contracts/dashboard-api'
+import type { components as InfraComponents } from '@/contracts/infra-api'
+import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
+import { api, infra } from '@/core/shared/clients/api'
+import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import { api, infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
 import type {
   Sandboxes,
   SandboxesMetricsRecord,
   TeamMetric,
 } from '@/types/api.types'
-import type { components as DashboardComponents } from '@/types/dashboard-api.types'
-import type { components as InfraComponents } from '@/types/infra-api.types'
 
 type SandboxesRepositoryDeps = {
   apiClient: typeof api

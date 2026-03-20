@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { serializeError } from 'serialize-error'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
+import { l } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 export async function GET(request: Request) {

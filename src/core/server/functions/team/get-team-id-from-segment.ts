@@ -2,9 +2,9 @@ import 'server-only'
 
 import z from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
-import { createUserTeamsRepository } from '@/core/domains/teams/user-teams-repository.server'
-import { l } from '@/lib/clients/logger/logger'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { l } from '@/core/shared/clients/logger/logger'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 export const getTeamIdFromSegment = async (
   segment: string,

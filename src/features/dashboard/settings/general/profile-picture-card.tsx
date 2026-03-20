@@ -1,6 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
+import { useQueryClient } from '@tanstack/react-query'
 import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRef, useState } from 'react'
@@ -13,6 +14,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn, exponentialSmoothing } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { cardVariants } from '@/ui/primitives/card'
@@ -23,6 +25,8 @@ interface ProfilePictureCardProps {
 
 export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -30,7 +34,10 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   const { execute: uploadProfilePicture, isExecuting: isUploading } = useAction(
     uploadTeamProfilePictureAction,
     {
-      onSuccess: () => {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.list.queryKey(),
+        })
         toast(defaultSuccessToast(USER_MESSAGES.teamLogoUpdated.message))
       },
       onError: ({ error }) => {
@@ -54,8 +61,8 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   )
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
+    const file = e.target.files?.[0]
+    if (file) {
 
       const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
 

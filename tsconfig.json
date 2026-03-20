@@ -20,49 +20,14 @@
       }
     ],
     "paths": {
-      "@/domains/*": ["./src/core/domains/*"],
-      "@/shared/*": ["./src/core/shared/*"],
-      "@/lib/clients/action": ["./src/core/server/actions/client.ts"],
-      "@/lib/clients/*": ["./src/core/shared/clients/*"],
-      "@/lib/utils/action": ["./src/core/server/actions/utils.ts"],
-      "@/lib/schemas/*": ["./src/core/shared/schemas/*"],
-      "@/types/argus-api.types": [
+      "@/contracts/argus-api": [
         "./src/core/shared/contracts/argus-api.types.ts"
       ],
-      "@/types/dashboard-api.types": [
+      "@/contracts/dashboard-api": [
         "./src/core/shared/contracts/dashboard-api.types.ts"
       ],
-      "@/types/infra-api.types": [
+      "@/contracts/infra-api": [
         "./src/core/shared/contracts/infra-api.types.ts"
-      ],
-      "@/types/database.types": [
-        "./src/core/shared/contracts/database.types.ts"
-      ],
-      "@/types/errors": ["./src/core/shared/errors.ts"],
-      "@/server/api/errors": ["./src/core/server/adapters/trpc-errors.ts"],
-      "@/server/api/models/builds.models": [
-        "./src/core/domains/builds/models.ts"
-      ],
-      "@/server/api/models/sandboxes.models": [
-        "./src/core/domains/sandboxes/models.ts"
-      ],
-      "@/server/api/models/auth.models": ["./src/core/domains/auth/models.ts"],
-      "@/server/api/schemas/sandboxes": [
-        "./src/core/domains/sandboxes/schemas.ts"
-      ],
-      "@/server/api/init": ["./src/core/server/trpc/init.ts"],
-      "@/server/api/procedures": ["./src/core/server/trpc/procedures.ts"],
-      "@/server/api/routers": ["./src/core/server/api/routers/index.ts"],
-      "@/server/api/routers/*": ["./src/core/server/api/routers/*"],
-      "@/server/api/middlewares/*": ["./src/core/server/api/middlewares/*"],
-      "@/server/*": [
-        "./src/core/server/actions/*",
-        "./src/core/server/context/*",
-        "./src/core/server/adapters/*",
-        "./src/core/server/trpc/*",
-        "./src/core/server/http/*",
-        "./src/core/server/functions/*",
-        "./src/core/server/api/*"
       ],
       "@/*": ["./src/*"]
     },

@@ -1,4 +1,4 @@
-import type { SandboxEventModel } from '@/core/domains/sandboxes/models'
+import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import type {
   SandboxMetricsDataPoint,
   SandboxMetricsLifecycleEventMarker,

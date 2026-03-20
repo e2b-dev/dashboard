@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TeamIdOrSlugSchema } from '@/lib/schemas/team'
+import { TeamIdOrSlugSchema } from '@/core/shared/schemas/team'
 
 export { TeamIdOrSlugSchema }
 

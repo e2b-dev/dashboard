@@ -10,7 +10,7 @@ import type {
   PaymentMethodsCustomerSession,
   TeamItems,
   UsageResponse,
-} from '@/core/domains/billing/models'
+} from '@/core/modules/billing/models'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
