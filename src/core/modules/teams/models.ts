@@ -1,17 +1,7 @@
-import type { Database } from '@/core/shared/contracts/database.types'
+import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 
-export type ClientTeam = Database['public']['Tables']['teams']['Row'] & {
-  is_default?: boolean
-  transformed_default_name?: string
-}
-
-export type TeamLimits = {
-  concurrentInstances: number
-  diskMb: number
-  maxLengthHours: number
-  maxRamMb: number
-  maxVcpu: number
-}
+export type TeamModel = DashboardComponents['schemas']['UserTeam']
+export type TeamLimits = DashboardComponents['schemas']['UserTeamLimits']
 
 export type TeamMemberInfo = {
   id: string

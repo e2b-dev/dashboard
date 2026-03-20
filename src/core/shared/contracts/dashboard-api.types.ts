@@ -655,6 +655,9 @@ export interface components {
       tier: string
       email: string
       profilePictureUrl: string | null
+      isBlocked: boolean
+      isBanned: boolean
+      blockedReason: string | null
       isDefault: boolean
       limits: components['schemas']['UserTeamLimits']
     }

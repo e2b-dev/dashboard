@@ -5,6 +5,7 @@ import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hoo
 import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'motion/react'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { getTransformedDefaultTeamName } from '@/core/modules/teams/utils'
 import { updateTeamNameAction } from '@/core/server/actions/team-actions'
 import { UpdateTeamNameSchema } from '@/core/server/functions/team/types'
 import { useDashboard } from '@/features/dashboard/context'
@@ -93,6 +94,9 @@ export function NameCard({ className }: NameCardProps) {
   )
 
   const { watch } = form
+  const displayedNameHint = getTransformedDefaultTeamName(
+    optimisticState?.team ?? team
+  )
 
   return (
     <Card className={className}>
@@ -117,7 +121,7 @@ export function NameCard({ className }: NameCardProps) {
                     <Input placeholder="Acme, Inc." {...field} />
                   </FormControl>
                   <AnimatePresence initial={false}>
-                    {team.transformed_default_name && (
+                    {displayedNameHint && (
                       <motion.span
                         className="text-fg-tertiary ml-0.5 text-xs"
                         animate={{
@@ -133,7 +137,7 @@ export function NameCard({ className }: NameCardProps) {
                       >
                         Seen as -{' '}
                         <span className="text-accent-info-highlight">
-                          {team.transformed_default_name}
+                          {displayedNameHint}
                         </span>
                       </motion.span>
                     )}

@@ -318,18 +318,3 @@ export function useInvoices() {
     error,
   }
 }
-
-export function useTeamLimits() {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
-  const trpc = useTRPC()
-
-  const { data: teamLimits, isLoading } = useQuery({
-    ...trpc.billing.getTeamLimits.queryOptions({ teamIdOrSlug }),
-    throwOnError: true,
-  })
-
-  return {
-    teamLimits,
-    isLoading,
-  }
-}

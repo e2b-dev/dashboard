@@ -8,18 +8,7 @@ import type { components as DashboardComponents } from '@/core/shared/contracts/
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type { TeamLimits, TeamMember } from './models'
-
-type ApiUserTeam = {
-  id: string
-  limits: {
-    concurrentSandboxes: number
-    diskMb: number
-    maxLengthHours: number
-    maxRamMb: number
-    maxVcpu: number
-  }
-}
+import type { TeamMember } from './models'
 
 type TeamsRepositoryDeps = {
   apiClient: typeof api
@@ -30,7 +19,6 @@ type TeamsRepositoryDeps = {
 export type TeamsRequestScope = TeamRequestScope
 
 export interface TeamsRepository {
-  getTeamLimits(): Promise<RepoResult<TeamLimits>>
   listTeamMembers(): Promise<RepoResult<TeamMember[]>>
   updateTeamName(
     name: string
@@ -66,36 +54,6 @@ export function createTeamsRepository(
   }
 ): TeamsRepository {
   return {
-    async getTeamLimits(): Promise<RepoResult<TeamLimits>> {
-      const { data, error, response } = await deps.apiClient.GET('/teams', {
-        headers: deps.authHeaders(scope.accessToken, scope.teamId),
-      })
-
-      if (!response.ok || error || !data?.teams) {
-        return err(
-          repoErrorFromHttp(
-            response.status,
-            error?.message ?? 'Failed to fetch team limits',
-            error
-          )
-        )
-      }
-
-      const teams = data.teams as ApiUserTeam[]
-      const team = teams.find((candidate) => candidate.id === scope.teamId)
-
-      if (!team) {
-        return err(repoErrorFromHttp(404, 'Team not found'))
-      }
-
-      return ok({
-        concurrentInstances: team.limits.concurrentSandboxes,
-        diskMb: team.limits.diskMb,
-        maxLengthHours: team.limits.maxLengthHours,
-        maxRamMb: team.limits.maxRamMb,
-        maxVcpu: team.limits.maxVcpu,
-      })
-    },
     async listTeamMembers(): Promise<RepoResult<TeamMember[]>> {
       const { data, error, response } = await deps.apiClient.GET(
         '/teams/{teamId}/members',

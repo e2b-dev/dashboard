@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
-import type { ClientTeam } from '@/core/modules/teams/models'
+import type { TeamModel } from '@/core/modules/teams/models'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { useTeamCookieManager } from '@/lib/hooks/use-team'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
@@ -23,7 +24,7 @@ export default function DashboardSidebarMenuTeams() {
   useTeamCookieManager()
 
   const getNextUrl = useCallback(
-    (team: ClientTeam) => {
+    (team: TeamModel) => {
       const splitPath = pathname.split('/')
       splitPath[2] = team.slug
 
@@ -53,13 +54,13 @@ export default function DashboardSidebarMenuTeams() {
           <Link href={getNextUrl(team)} passHref key={team.id}>
             <DropdownMenuRadioItem value={team.id}>
               <Avatar className="size-5 shrink-0 border-none">
-                <AvatarImage src={team.profile_picture_url || undefined} />
+                <AvatarImage src={team.profilePictureUrl || undefined} />
                 <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
                   {team.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
               <span className="flex-1 truncate font-sans prose-label-highlight">
-                {team.transformed_default_name || team.name}
+                {getTeamDisplayName(team)}
               </span>
             </DropdownMenuRadioItem>
           </Link>

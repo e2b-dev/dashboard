@@ -39,8 +39,7 @@ export const GET = async (req: NextRequest) => {
       accessToken: session.access_token,
     }).listUserTeams()
     const defaultTeam = teamsResult.ok
-      ? (teamsResult.data.find((team) => team.is_default) ??
-        teamsResult.data[0])
+      ? (teamsResult.data.find((team) => team.isDefault) ?? teamsResult.data[0])
       : null
 
     if (!defaultTeam) {

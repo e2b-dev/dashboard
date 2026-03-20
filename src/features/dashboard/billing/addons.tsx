@@ -19,7 +19,7 @@ import { Skeleton } from '@/ui/primitives/skeleton'
 import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
 import { ADDON_500_SANDBOXES_ID, TIER_PRO_ID } from './constants'
-import { useBillingItems, useTeamLimits } from './hooks'
+import { useBillingItems } from './hooks'
 import { formatAddonQuantity } from './utils'
 
 interface AddonItemProps {
@@ -193,8 +193,7 @@ export default function Addons() {
   const trpc = useTRPC()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
-  const { teamLimits } = useTeamLimits()
-  const currentConcurrentSandboxesLimit = teamLimits?.concurrentInstances ?? 0
+  const currentConcurrentSandboxesLimit = team.limits.concurrentSandboxes
 
   const selectedTierId = tierData?.selected?.id
   const currentAddon = addonData?.current

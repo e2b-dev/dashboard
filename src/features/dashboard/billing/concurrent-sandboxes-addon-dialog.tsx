@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
@@ -95,14 +96,15 @@ function DialogContent_Inner({
   const itemsQueryKey = trpc.billing.getItems.queryOptions({
     teamIdOrSlug,
   }).queryKey
-  const teamLimitsQueryKey = trpc.billing.getTeamLimits.queryOptions({
-    teamIdOrSlug,
-  }).queryKey
+  const teamListQueryKey = trpc.teams.list.queryOptions(
+    undefined,
+    DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
+  ).queryKey
 
   const { confirmPayment, isConfirming } = usePaymentConfirmation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: itemsQueryKey })
-      queryClient.invalidateQueries({ queryKey: teamLimitsQueryKey })
+      queryClient.invalidateQueries({ queryKey: teamListQueryKey })
       onOpenChange(false)
     },
     onFallbackToPaymentElement: handleSwitchToPaymentElement,

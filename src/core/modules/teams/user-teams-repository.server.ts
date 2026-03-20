@@ -6,41 +6,7 @@ import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type { ClientTeam, ResolvedTeam } from './models'
-
-type ApiUserTeam = {
-  id: string
-  name: string
-  slug: string
-  tier: string
-  email: string
-  profilePictureUrl: string | null
-  isDefault: boolean
-  limits: {
-    concurrentSandboxes: number
-    diskMb: number
-    maxLengthHours: number
-    maxRamMb: number
-    maxVcpu: number
-  }
-}
-
-function mapApiTeamToClientTeam(apiTeam: ApiUserTeam): ClientTeam {
-  return {
-    id: apiTeam.id,
-    name: apiTeam.name,
-    slug: apiTeam.slug,
-    tier: apiTeam.tier,
-    email: apiTeam.email,
-    is_default: apiTeam.isDefault,
-    is_banned: false,
-    is_blocked: false,
-    blocked_reason: null,
-    cluster_id: null,
-    created_at: '',
-    profile_picture_url: apiTeam.profilePictureUrl,
-  }
-}
+import type { ResolvedTeam, TeamModel } from './models'
 
 type UserTeamsRepositoryDeps = {
   apiClient: typeof api
@@ -50,7 +16,7 @@ type UserTeamsRepositoryDeps = {
 export type UserTeamsRequestScope = RequestScope
 
 export interface UserTeamsRepository {
-  listUserTeams(): Promise<RepoResult<ClientTeam[]>>
+  listUserTeams(): Promise<RepoResult<TeamModel[]>>
   resolveTeamBySlug(
     slug: string,
     next?: { tags?: string[] }
@@ -64,7 +30,7 @@ export function createUserTeamsRepository(
     authHeaders: SUPABASE_AUTH_HEADERS,
   }
 ): UserTeamsRepository {
-  const listApiUserTeams = async (): Promise<RepoResult<ApiUserTeam[]>> => {
+  const listApiUserTeams = async (): Promise<RepoResult<TeamModel[]>> => {
     const { data, error, response } = await deps.apiClient.GET('/teams', {
       headers: deps.authHeaders(scope.accessToken),
     })
@@ -79,18 +45,18 @@ export function createUserTeamsRepository(
       )
     }
 
-    return ok(data.teams as ApiUserTeam[])
+    return ok(data.teams)
   }
 
   return {
-    async listUserTeams(): Promise<RepoResult<ClientTeam[]>> {
+    async listUserTeams(): Promise<RepoResult<TeamModel[]>> {
       const teamsResult = await listApiUserTeams()
 
       if (!teamsResult.ok) {
         return teamsResult
       }
 
-      return ok(teamsResult.data.map(mapApiTeamToClientTeam))
+      return ok(teamsResult.data)
     },
     async resolveTeamBySlug(
       slug: string,

@@ -2,14 +2,13 @@ import { AlertTriangle } from 'lucide-react'
 import { Suspense } from 'react'
 import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { getTeamMetricsMax } from '@/core/server/functions/sandboxes/get-team-metrics-max'
-import { getTeamLimits } from '@/core/server/functions/team/get-team-limits'
-import { formatNumber } from '@/lib/utils/formatting'
 import { getNowMemo } from '@/lib/utils/server'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import {
   ConcurrentSandboxesClient,
+  MaxConcurrentSandboxesClient,
   SandboxesStartRateClient,
 } from './header.client'
 import { MAX_DAYS_AGO } from './time-picker/constants'
@@ -106,14 +105,11 @@ export const ConcurrentSandboxes = async ({
   const now = getNowMemo()
   const start = now - 60_000
 
-  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
-    getTeamMetrics({
-      teamIdOrSlug,
-      startDate: start,
-      endDate: now,
-    }),
-    getTeamLimits({ teamIdOrSlug }),
-  ])
+  const teamMetricsResult = await getTeamMetrics({
+    teamIdOrSlug,
+    startDate: start,
+    endDate: now,
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -124,12 +120,7 @@ export const ConcurrentSandboxes = async ({
     )
   }
 
-  return (
-    <ConcurrentSandboxesClient
-      initialData={teamMetricsResult.data}
-      limit={teamLimitsResult?.data?.concurrentInstances}
-    />
-  )
+  return <ConcurrentSandboxesClient initialData={teamMetricsResult.data} />
 }
 
 export const SandboxesStartRate = async ({
@@ -171,15 +162,12 @@ export const MaxConcurrentSandboxes = async ({
   const end = Date.now()
   const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
-  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
-    getTeamMetricsMax({
-      teamIdOrSlug,
-      startDate: start,
-      endDate: end,
-      metric: 'concurrent_sandboxes',
-    }),
-    getTeamLimits({ teamIdOrSlug }),
-  ])
+  const teamMetricsResult = await getTeamMetricsMax({
+    teamIdOrSlug,
+    startDate: start,
+    endDate: end,
+    metric: 'concurrent_sandboxes',
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -190,20 +178,9 @@ export const MaxConcurrentSandboxes = async ({
     )
   }
 
-  const limit = teamLimitsResult?.data?.concurrentInstances
-
-  const concurrentSandboxes = teamMetricsResult.data.value
-
   return (
-    <>
-      <span className="prose-value-big mt-1">
-        {formatNumber(concurrentSandboxes)}
-      </span>
-      {!!limit && (
-        <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
-          LIMIT: {formatNumber(limit)}
-        </span>
-      )}
-    </>
+    <MaxConcurrentSandboxesClient
+      concurrentSandboxes={teamMetricsResult.data.value}
+    />
   )
 }

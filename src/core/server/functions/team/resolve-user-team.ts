@@ -36,7 +36,7 @@ export async function resolveUserTeam(
     return null
   }
 
-  const defaultTeam = teamsResult.data.find((t) => t.is_default)
+  const defaultTeam = teamsResult.data.find((t) => t.isDefault)
   const team = defaultTeam ?? teamsResult.data[0]
 
   if (!team) {

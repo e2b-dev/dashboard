@@ -95,7 +95,9 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
 
   return (
     <>
-      <div
+      <button
+        type="button"
+        aria-label="Upload team profile picture"
         className="relative cursor-pointer p-4 pr-0 md:p-6 md:pr-0"
         onClick={handleAvatarClick}
         onMouseEnter={() => setIsHovered(true)}
@@ -105,13 +107,13 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
           className={cn(
             'relative h-24 w-24',
             {
-              'border-none drop-shadow-lg filter': team.profile_picture_url,
+              'border-none drop-shadow-lg filter': team.profilePictureUrl,
             },
             className
           )}
         >
           <AvatarImage
-            src={team.profile_picture_url || ''}
+            src={team.profilePictureUrl || ''}
             alt={`${team.name}'s profile picture`}
           />
           <AvatarFallback className="bg-bg-hover relative text-2xl ">
@@ -175,7 +177,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
             ) : null}
           </AnimatePresence>
         </Avatar>
-      </div>
+      </button>
       <input
         type="file"
         ref={fileInputRef}

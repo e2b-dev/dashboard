@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
-import type { TeamLimits } from '@/core/server/functions/team/get-team-limits'
+import type { TeamLimits } from '@/core/modules/teams/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
@@ -23,7 +23,8 @@ import {
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useBillingItems, useTeamLimits } from './hooks'
+import { useDashboard } from '../context'
+import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import type { BillingTierData } from './types'
 import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
@@ -34,15 +35,15 @@ function formatCpu(vcpu: number): string {
 
 export default function SelectedPlan() {
   const { tierData, isLoading: isBillingLoading } = useBillingItems()
-  const { teamLimits, isLoading: isLimitsLoading } = useTeamLimits()
-  const isLoading = isBillingLoading || isLimitsLoading
+  const { team } = useDashboard()
+  const isLoading = isBillingLoading
 
   return (
     <section className="flex gap-5">
       <PlanAvatar selectedTier={tierData?.selected} isLoading={isLoading} />
       <PlanDetails
         selectedTier={tierData?.selected}
-        teamLimits={teamLimits}
+        teamLimits={team.limits}
         isLoading={isLoading}
       />
     </section>
@@ -213,7 +214,7 @@ function PlanFeatures({ teamLimits, isLoading }: PlanFeaturesProps) {
   const features = [
     {
       icon: <SandboxIcon className="size-4" />,
-      label: `${teamLimits.concurrentInstances} concurrent sandboxes`,
+      label: `${teamLimits.concurrentSandboxes} concurrent sandboxes`,
     },
     {
       icon: <TimeIcon className="size-4" />,

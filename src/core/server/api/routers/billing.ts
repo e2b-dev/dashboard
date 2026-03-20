@@ -74,15 +74,6 @@ export const billingRouter = createTRPCRouter({
     return result.data
   }),
 
-  getTeamLimits: billingAndTeamsRepositoryProcedure.query(async ({ ctx }) => {
-    const limitsResult = await ctx.teamsRepository.getTeamLimits()
-    if (!limitsResult.ok) {
-      throwTRPCErrorFromRepoError(limitsResult.error)
-    }
-
-    return limitsResult.data
-  }),
-
   setLimit: billingRepositoryProcedure
     .input(
       z.object({

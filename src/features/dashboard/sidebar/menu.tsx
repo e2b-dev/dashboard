@@ -4,6 +4,7 @@ import { ChevronsUpDown, LogOut, Plus, UserRoundCog } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { signOutAction } from '@/core/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
@@ -44,7 +45,7 @@ export default function DashboardSidebarMenu({
               size="lg"
               className={cn(
                 'h-14 flex',
-                'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:!px-0',
+                'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:px-0!',
                 className
               )}
             >
@@ -53,12 +54,12 @@ export default function DashboardSidebarMenu({
                   'shrink-0 transition-all duration-100 ease-in-out',
                   'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
                   {
-                    'drop-shadow-sm filter': team.profile_picture_url,
+                    'drop-shadow-sm filter': team.profilePictureUrl,
                   }
                 )}
               >
                 <AvatarImage
-                  src={team.profile_picture_url || undefined}
+                  src={team.profilePictureUrl || undefined}
                   className="group-data-[collapsible=icon]:size-full object-cover object-center"
                 />
                 <AvatarFallback className="bg-bg-hover border-0">
@@ -70,7 +71,7 @@ export default function DashboardSidebarMenu({
                   TEAM
                 </span>
                 <span className="text-fg truncate prose-body-highlight normal-case">
-                  {team.transformed_default_name || team.name}
+                  {getTeamDisplayName(team)}
                 </span>
               </div>
               <ChevronsUpDown className="text-fg-tertiary ml-auto size-4" />

@@ -2,14 +2,14 @@
 
 import { useEffect } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
-import type { ClientTeam } from '@/core/modules/teams/models'
+import type { TeamModel } from '@/core/modules/teams/models'
 import { useDashboard } from '@/features/dashboard/context'
 
 export const useTeamCookieManager = () => {
   const { team } = useDashboard()
 
   const updateTeamCookieState = useDebounceCallback(
-    async (iTeam: ClientTeam) => {
+    async (iTeam: TeamModel) => {
       await fetch('/api/team/state', {
         method: 'POST',
         body: JSON.stringify({

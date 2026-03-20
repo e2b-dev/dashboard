@@ -42,9 +42,9 @@ export default function SandboxInspectIncompatible({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
-      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
-        <AsciiBackgroundPattern className="w-1/2" />
-        <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
+      <div className="text-fill-highlight pointer-events-none absolute top-0 -left-250 flex justify-start overflow-hidden">
+        <AsciiBackgroundPattern className="w-auto text-right!" />
+        <AsciiBackgroundPattern className="w-auto text-right! -scale-x-100" />
       </div>
       <motion.div
         initial={{ opacity: 0 }}
