@@ -2264,6 +2264,17 @@ export interface components {
     SandboxAutoResumeConfig: {
       enabled: components['schemas']['SandboxAutoResumeEnabled']
     }
+    /**
+     * @description Action taken when the sandbox times out.
+     * @enum {string}
+     */
+    SandboxOnTimeout: 'kill' | 'pause'
+    /** @description Sandbox lifecycle policy returned by sandbox info. */
+    SandboxLifecycle: {
+      /** @description Whether the sandbox can auto-resume. */
+      autoResume: boolean
+      onTimeout: components['schemas']['SandboxOnTimeout']
+    }
     /** @description Log entry with timestamp and line */
     SandboxLog: {
       /**
@@ -2395,6 +2406,8 @@ export interface components {
       envdVersion: components['schemas']['EnvdVersion']
       /** @description Access token used for envd communication */
       envdAccessToken?: string
+      /** @description Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set. */
+      allowInternetAccess?: boolean | null
       /** @description Base domain where the sandbox traffic is accessible */
       domain?: string | null
       cpuCount: components['schemas']['CPUCount']
@@ -2402,6 +2415,8 @@ export interface components {
       diskSizeMB: components['schemas']['DiskSizeMB']
       metadata?: components['schemas']['SandboxMetadata']
       state: components['schemas']['SandboxState']
+      network?: components['schemas']['SandboxNetworkConfig']
+      lifecycle?: components['schemas']['SandboxLifecycle']
       volumeMounts?: components['schemas']['SandboxVolumeMount'][]
     }
     ListedSandbox: {
