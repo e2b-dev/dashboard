@@ -23,6 +23,18 @@ export const TAB_URL_MAP: Record<string, (teamSlug: string) => string> = {
   budget: (teamSlug) => PROTECTED_URLS.LIMITS(teamSlug),
 }
 
+function getTabRedirectPath(tab: string | null, teamSlug: string) {
+  if (tab && Object.hasOwn(TAB_URL_MAP, tab)) {
+    const urlGenerator = TAB_URL_MAP[tab]
+
+    if (urlGenerator) {
+      return urlGenerator(teamSlug)
+    }
+  }
+
+  return PROTECTED_URLS.SANDBOXES(teamSlug)
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
@@ -57,10 +69,7 @@ export async function GET(request: NextRequest) {
 
   await setTeamCookies(team.id, team.slug)
 
-  const urlGenerator = tab ? TAB_URL_MAP[tab] : null
-  const redirectPath = urlGenerator
-    ? urlGenerator(team.slug)
-    : PROTECTED_URLS.SANDBOXES(team.slug)
+  const redirectPath = getTabRedirectPath(tab, team.slug)
 
   const redirectUrl = new URL(redirectPath, request.url)
 

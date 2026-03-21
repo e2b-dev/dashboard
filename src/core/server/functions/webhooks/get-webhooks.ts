@@ -22,7 +22,7 @@ const withWebhooksRepository = withTeamAuthedRequestRepository(
 
 export const getWebhooks = authActionClient
   .schema(GetWebhooksSchema)
-  .metadata({ serverFunctionName: 'getWebhook' })
+  .metadata({ serverFunctionName: 'getWebhooks' })
   .use(withTeamSlugResolution)
   .use(withWebhooksRepository)
   .action(async ({ ctx }) => {
@@ -40,7 +40,7 @@ export const getWebhooks = authActionClient
           team_id: teamId,
           user_id: session.user.id,
         },
-        `Failed to get webhook: ${status}: ${result.error.message}`
+        `Failed to get webhooks: ${status}: ${result.error.message}`
       )
 
       return handleDefaultInfraError(status)

@@ -154,7 +154,7 @@ export function createBillingRepository(
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken),
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -172,7 +172,7 @@ export function createBillingRepository(
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken),
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
           },
           body: JSON.stringify({
             [key]: value,
@@ -193,7 +193,7 @@ export function createBillingRepository(
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken),
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
           },
         }
       )

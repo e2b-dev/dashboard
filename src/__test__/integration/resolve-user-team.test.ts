@@ -1,14 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { COOKIE_KEYS } from '@/configs/cookies'
 
-const { mockCookieStore, mockListUserTeams, mockCreateUserTeamsRepository } =
-  vi.hoisted(() => ({
-    mockCookieStore: {
-      get: vi.fn(),
-    },
-    mockListUserTeams: vi.fn(),
-    mockCreateUserTeamsRepository: vi.fn(),
-  }))
+const {
+  mockCookieStore,
+  mockListUserTeams,
+  mockResolveTeamBySlug,
+  mockCreateUserTeamsRepository,
+} = vi.hoisted(() => ({
+  mockCookieStore: {
+    get: vi.fn(),
+  },
+  mockListUserTeams: vi.fn(),
+  mockResolveTeamBySlug: vi.fn(),
+  mockCreateUserTeamsRepository: vi.fn(),
+}))
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => mockCookieStore),
@@ -43,6 +48,7 @@ describe('resolveUserTeam', () => {
     vi.clearAllMocks()
     mockCreateUserTeamsRepository.mockReturnValue({
       listUserTeams: mockListUserTeams,
+      resolveTeamBySlug: mockResolveTeamBySlug,
     })
   })
 
@@ -50,10 +56,17 @@ describe('resolveUserTeam', () => {
     vi.resetAllMocks()
   })
 
-  it('returns the cookie-backed team when both cookies exist', async () => {
+  it('returns the cookie-backed team when the cookie slug resolves', async () => {
     setupCookies({
       [COOKIE_KEYS.SELECTED_TEAM_ID]: 'team-cookie-id',
       [COOKIE_KEYS.SELECTED_TEAM_SLUG]: 'team-cookie-slug',
+    })
+    mockResolveTeamBySlug.mockResolvedValue({
+      ok: true,
+      data: {
+        id: 'team-cookie-id',
+        slug: 'team-cookie-slug',
+      },
     })
 
     const result = await resolveUserTeam('access-token')
@@ -62,7 +75,30 @@ describe('resolveUserTeam', () => {
       id: 'team-cookie-id',
       slug: 'team-cookie-slug',
     })
-    expect(mockCreateUserTeamsRepository).not.toHaveBeenCalled()
+    expect(mockResolveTeamBySlug).toHaveBeenCalledWith('team-cookie-slug')
+    expect(mockListUserTeams).not.toHaveBeenCalled()
+  })
+
+  it('returns the resolved team when the cookie id is stale but the slug is valid', async () => {
+    setupCookies({
+      [COOKIE_KEYS.SELECTED_TEAM_ID]: 'stale-team-id',
+      [COOKIE_KEYS.SELECTED_TEAM_SLUG]: 'team-cookie-slug',
+    })
+    mockResolveTeamBySlug.mockResolvedValue({
+      ok: true,
+      data: {
+        id: 'team-cookie-id',
+        slug: 'team-cookie-slug',
+      },
+    })
+
+    const result = await resolveUserTeam('access-token')
+
+    expect(result).toEqual({
+      id: 'team-cookie-id',
+      slug: 'team-cookie-slug',
+    })
+    expect(mockListUserTeams).not.toHaveBeenCalled()
   })
 
   it('returns the default slug-backed team when cookies are missing', async () => {
@@ -104,6 +140,28 @@ describe('resolveUserTeam', () => {
     })
   })
 
+  it('falls back to the repository when the cookie slug is no longer accessible', async () => {
+    setupCookies({
+      [COOKIE_KEYS.SELECTED_TEAM_ID]: 'team-cookie-id',
+      [COOKIE_KEYS.SELECTED_TEAM_SLUG]: 'team-cookie-slug',
+    })
+    mockResolveTeamBySlug.mockResolvedValue({
+      ok: false,
+      error: new Error('Team not found'),
+    })
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [createTeam({ id: 'team-db', slug: 'team-db', isDefault: true })],
+    })
+
+    const result = await resolveUserTeam('access-token')
+
+    expect(result).toEqual({
+      id: 'team-db',
+      slug: 'team-db',
+    })
+  })
+
   it('falls back to the repository when cookies are partial', async () => {
     setupCookies({
       [COOKIE_KEYS.SELECTED_TEAM_ID]: 'team-cookie-id',
@@ -119,6 +177,7 @@ describe('resolveUserTeam', () => {
       id: 'team-db',
       slug: 'team-db',
     })
+    expect(mockResolveTeamBySlug).not.toHaveBeenCalled()
   })
 
   it('returns null when no slug-backed team can be resolved', async () => {

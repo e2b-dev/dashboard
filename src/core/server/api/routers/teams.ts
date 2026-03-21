@@ -1,6 +1,7 @@
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
 import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
 
 const teamsRepositoryProcedure = protectedProcedure.use(
@@ -9,7 +10,7 @@ const teamsRepositoryProcedure = protectedProcedure.use(
   }))
 )
 
-export const teamsRouter = {
+export const teamsRouter = createTRPCRouter({
   list: teamsRepositoryProcedure.query(async ({ ctx }) => {
     const teamsResult = await ctx.teamsRepository.listUserTeams()
 
@@ -19,4 +20,4 @@ export const teamsRouter = {
 
     return teamsResult.data
   }),
-}
+})

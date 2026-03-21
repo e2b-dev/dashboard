@@ -254,5 +254,13 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       const expectedPath = PROTECTED_URLS.SANDBOXES(testTeamSlug)
       expect(response.headers.get('location')).toContain(expectedPath)
     })
+
+    it('should default to sandboxes when tab matches an inherited object key', async () => {
+      const request = createRequest({ tab: 'constructor' })
+      const response = await GET(request)
+
+      const expectedPath = PROTECTED_URLS.SANDBOXES(testTeamSlug)
+      expect(response.headers.get('location')).toContain(expectedPath)
+    })
   })
 })

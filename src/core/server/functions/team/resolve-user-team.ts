@@ -10,17 +10,48 @@ export async function resolveUserTeam(
   accessToken: string
 ): Promise<ResolvedTeam | null> {
   const cookieStore = await cookies()
+  const teamsRepository = createUserTeamsRepository({
+    accessToken,
+  })
 
   const cookieTeamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
   const cookieTeamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
 
-  if (cookieTeamId && cookieTeamSlug) {
-    return { id: cookieTeamId, slug: cookieTeamSlug }
+  if (cookieTeamSlug) {
+    const resolvedCookieTeam =
+      await teamsRepository.resolveTeamBySlug(cookieTeamSlug)
+
+    if (resolvedCookieTeam.ok) {
+      if (cookieTeamId && cookieTeamId !== resolvedCookieTeam.data.id) {
+        l.warn(
+          {
+            key: 'resolve_user_team:cookie_team_id_mismatch',
+            team_id: cookieTeamId,
+            context: {
+              resolved_team_id: resolvedCookieTeam.data.id,
+              team_slug: cookieTeamSlug,
+            },
+          },
+          'Selected team cookie id did not match the resolved team'
+        )
+      }
+
+      return resolvedCookieTeam.data
+    }
+
+    l.warn(
+      {
+        key: 'resolve_user_team:stale_cookie_team',
+        team_id: cookieTeamId,
+        context: {
+          team_slug: cookieTeamSlug,
+        },
+      },
+      'Selected team cookie could not be resolved for the current user'
+    )
   }
 
-  const teamsResult = await createUserTeamsRepository({
-    accessToken,
-  }).listUserTeams()
+  const teamsResult = await teamsRepository.listUserTeams()
 
   if (!teamsResult.ok) {
     l.error(
