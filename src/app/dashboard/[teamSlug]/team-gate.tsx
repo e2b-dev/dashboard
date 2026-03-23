@@ -5,6 +5,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { Suspense } from 'react'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DashboardContextProvider } from '@/features/dashboard/context'
+import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useTRPC } from '@/trpc/client'
 import Unauthorized from '../unauthorized'
 
@@ -40,7 +41,7 @@ function TeamContent({ teamSlug, user, children }: DashboardTeamGateProps) {
 
 export function DashboardTeamGate(props: DashboardTeamGateProps) {
   return (
-    <Suspense>
+    <Suspense fallback={<LoadingLayout />}>
       <TeamContent {...props} />
     </Suspense>
   )
