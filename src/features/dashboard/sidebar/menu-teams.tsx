@@ -3,7 +3,6 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
-import { useTeamCookieManager } from '@/lib/hooks/use-team'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenuItem,
@@ -20,8 +19,6 @@ export default function DashboardSidebarMenuTeams() {
   const searchParams = useSearchParams()
 
   const { user, team: selectedTeam, teams } = useDashboard()
-
-  useTeamCookieManager()
 
   const getNextUrl = useCallback(
     (team: TeamModel) => {
