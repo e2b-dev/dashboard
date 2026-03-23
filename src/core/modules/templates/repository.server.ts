@@ -7,6 +7,7 @@ import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { api, infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type {
@@ -14,10 +15,6 @@ import type {
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type {
-  DefaultTemplate,
-  Template,
-} from '@/core/modules/templates/models'
 
 type TemplatesRepositoryDeps = {
   apiClient: typeof api

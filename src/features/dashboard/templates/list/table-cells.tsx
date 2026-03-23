@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
 import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -15,10 +16,6 @@ import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
-import type {
-  DefaultTemplate,
-  Template,
-} from '@/core/modules/templates/models'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'

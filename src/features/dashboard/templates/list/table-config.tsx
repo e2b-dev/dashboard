@@ -11,10 +11,7 @@ import {
 } from '@tanstack/react-table'
 import posthog from 'posthog-js'
 import { useMemo } from 'react'
-import type {
-  DefaultTemplate,
-  Template,
-} from '@/core/modules/templates/models'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import {
   ActionsCell,
   CpuCell,
