@@ -1,4 +1,4 @@
-import { flexRender, Row, type Table } from '@tanstack/react-table'
+import { flexRender, type Table } from '@tanstack/react-table'
 import { ExternalLink, X } from 'lucide-react'
 import type { RefObject } from 'react'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
@@ -10,6 +10,7 @@ import { useTemplateTableStore } from './stores/table-store'
 
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
+const INITIAL_FALLBACK_ROW_COUNT = 100
 
 interface TemplatesTableBodyProps {
   templates: Template[] | undefined
@@ -38,9 +39,10 @@ export function TemplatesTableBody({
     overscan: VIRTUAL_OVERSCAN,
   })
 
-  // During initial virtualizer mount, virtualRows can be temporarily empty
-  // even when centerRows already has data.
-  const rows = virtualRows.length > 0 ? virtualRows : centerRows
+  const rows =
+    virtualRows.length > 0
+      ? virtualRows
+      : centerRows.slice(0, INITIAL_FALLBACK_ROW_COUNT)
 
   const isEmpty = templates && centerRows.length === 0
 

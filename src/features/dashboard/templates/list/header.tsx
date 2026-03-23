@@ -1,8 +1,6 @@
 import type { Table } from '@tanstack/react-table'
-import { Hexagon, ListFilter } from 'lucide-react'
 import { Suspense } from 'react'
 import type { Template } from '@/types/api.types'
-import { Badge } from '@/ui/primitives/badge'
 import TemplatesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 
@@ -13,12 +11,13 @@ interface TemplatesHeaderProps {
 export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
   'use no memo'
 
-  const showFilteredRowCount =
-    Object.keys(table.getState().columnFilters).length > 0 ||
-    table.getState().globalFilter
+  const { columnFilters, globalFilter } = table.getState()
+  const showFilteredRowCount = columnFilters.length > 0 || Boolean(globalFilter)
 
-  const filteredCount = table.getFilteredRowModel().rows.length
-  const totalCount = table.getCoreRowModel().rows.length
+  const totalCount = table.options.data.length
+  const filteredCount = showFilteredRowCount
+    ? table.getFilteredRowModel().rows.length
+    : totalCount
 
   return (
     <div className="flex min-w-0 flex-wrap items-start gap-1 sm:items-center">
