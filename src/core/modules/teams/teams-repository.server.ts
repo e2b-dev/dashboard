@@ -56,9 +56,9 @@ export function createTeamsRepository(
   return {
     async listTeamMembers(): Promise<RepoResult<TeamMember[]>> {
       const { data, error, response } = await deps.apiClient.GET(
-        '/teams/{teamId}/members',
+        '/teams/{teamID}/members',
         {
-          params: { path: { teamId: scope.teamId } },
+          params: { path: { teamID: scope.teamId } },
           headers: deps.authHeaders(scope.accessToken, scope.teamId),
         }
       )
@@ -104,9 +104,9 @@ export function createTeamsRepository(
       RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
     > {
       const { data, error, response } = await deps.apiClient.PATCH(
-        '/teams/{teamId}',
+        '/teams/{teamID}',
         {
-          params: { path: { teamId: scope.teamId } },
+          params: { path: { teamID: scope.teamId } },
           headers: deps.authHeaders(scope.accessToken, scope.teamId),
           body: { name },
         }
@@ -126,9 +126,9 @@ export function createTeamsRepository(
     },
     async addTeamMember(email): Promise<RepoResult<void>> {
       const { error, response } = await deps.apiClient.POST(
-        '/teams/{teamId}/members',
+        '/teams/{teamID}/members',
         {
-          params: { path: { teamId: scope.teamId } },
+          params: { path: { teamID: scope.teamId } },
           headers: deps.authHeaders(scope.accessToken, scope.teamId),
           body: { email },
         }
@@ -148,9 +148,9 @@ export function createTeamsRepository(
     },
     async removeTeamMember(userId): Promise<RepoResult<void>> {
       const { error, response } = await deps.apiClient.DELETE(
-        '/teams/{teamId}/members/{userId}',
+        '/teams/{teamID}/members/{userId}',
         {
-          params: { path: { teamId: scope.teamId, userId } },
+          params: { path: { teamID: scope.teamId, userId } },
           headers: deps.authHeaders(scope.accessToken, scope.teamId),
         }
       )
@@ -173,9 +173,9 @@ export function createTeamsRepository(
       RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
     > {
       const { data, error, response } = await deps.apiClient.PATCH(
-        '/teams/{teamId}',
+        '/teams/{teamID}',
         {
-          params: { path: { teamId: scope.teamId } },
+          params: { path: { teamID: scope.teamId } },
           headers: deps.authHeaders(scope.accessToken, scope.teamId),
           body: { profilePictureUrl },
         }
