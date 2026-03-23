@@ -218,6 +218,296 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/teams': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List user teams
+     * @description Returns all teams the authenticated user belongs to, with limits and default flag.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned user teams. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['UserTeamsResponse']
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/teams/resolve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Resolve team identity
+     * @description Resolves a team slug to the team's identity, validating the user is a member.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Team slug to resolve. */
+          slug: components['parameters']['teamSlug']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully resolved team. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamResolveResponse']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/teams/{teamID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Update team */
+    patch: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['UpdateTeamRequest']
+        }
+      }
+      responses: {
+        /** @description Successfully updated team. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['UpdateTeamResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
+    trace?: never
+  }
+  '/teams/{teamID}/members': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List team members */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned team members. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamMembersResponse']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /** Add team member */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AddTeamMemberRequest']
+        }
+      }
+      responses: {
+        /** @description Successfully added team member. */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/teams/{teamID}/members/{userId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove team member */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+          /** @description Identifier of the user. */
+          userId: components['parameters']['userId']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully removed team member. */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/defaults': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List default templates
+     * @description Returns the list of default templates with their latest build info and aliases.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned default templates. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['DefaultTemplatesResponse']
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -343,6 +633,96 @@ export interface components {
       /** @description Human-readable health check result. */
       message: string
     }
+    UserTeamLimits: {
+      /** Format: int64 */
+      maxLengthHours: number
+      /** Format: int32 */
+      concurrentSandboxes: number
+      /** Format: int32 */
+      concurrentTemplateBuilds: number
+      /** Format: int32 */
+      maxVcpu: number
+      /** Format: int32 */
+      maxRamMb: number
+      /** Format: int32 */
+      diskMb: number
+    }
+    UserTeam: {
+      /** Format: uuid */
+      id: string
+      name: string
+      slug: string
+      tier: string
+      email: string
+      profilePictureUrl: string | null
+      isBlocked: boolean
+      isBanned: boolean
+      blockedReason: string | null
+      isDefault: boolean
+      limits: components['schemas']['UserTeamLimits']
+    }
+    UserTeamsResponse: {
+      teams: components['schemas']['UserTeam'][]
+    }
+    TeamMember: {
+      /** Format: uuid */
+      id: string
+      email: string
+      isDefault: boolean
+      /** Format: uuid */
+      addedBy?: string | null
+      /** Format: date-time */
+      createdAt: string | null
+    }
+    TeamMembersResponse: {
+      members: components['schemas']['TeamMember'][]
+    }
+    UpdateTeamRequest: {
+      name?: string
+      profilePictureUrl?: string | null
+    }
+    UpdateTeamResponse: {
+      /** Format: uuid */
+      id: string
+      name: string
+      profilePictureUrl?: string | null
+    }
+    AddTeamMemberRequest: {
+      /** Format: email */
+      email: string
+    }
+    DefaultTemplateAlias: {
+      alias: string
+      namespace?: string | null
+    }
+    DefaultTemplate: {
+      id: string
+      aliases: components['schemas']['DefaultTemplateAlias'][]
+      /** Format: uuid */
+      buildId: string
+      /** Format: int64 */
+      ramMb: number
+      /** Format: int64 */
+      vcpu: number
+      /** Format: int64 */
+      totalDiskSizeMb: number | null
+      envdVersion?: string | null
+      /** Format: date-time */
+      createdAt: string
+      public: boolean
+      /** Format: int32 */
+      buildCount: number
+      /** Format: int64 */
+      spawnCount: number
+    }
+    DefaultTemplatesResponse: {
+      templates: components['schemas']['DefaultTemplate'][]
+    }
+    TeamResolveResponse: {
+      /** Format: uuid */
+      id: string
+      slug: string
+    }
   }
   responses: {
     /** @description Bad request */
@@ -406,6 +786,12 @@ export interface components {
     build_statuses: components['schemas']['BuildStatus'][]
     /** @description Comma-separated list of build IDs to get statuses for. */
     build_ids: string[]
+    /** @description Identifier of the team. */
+    teamID: string
+    /** @description Identifier of the user. */
+    userId: string
+    /** @description Team slug to resolve. */
+    teamSlug: string
   }
   requestBodies: never
   headers: never
