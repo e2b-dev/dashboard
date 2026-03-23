@@ -14,7 +14,7 @@ import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
-import type { Template } from '@/types/api.types'
+import type { Template } from '@/core/modules/templates/models'
 import ClientOnly from '@/ui/client-only'
 import {
   DataTable,

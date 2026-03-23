@@ -1,6 +1,6 @@
 import type { Table } from '@tanstack/react-table'
 import { Suspense } from 'react'
-import type { Template } from '@/types/api.types'
+import type { Template } from '@/core/modules/templates/models'
 import TemplatesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 

@@ -15,7 +15,10 @@ import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
-import type { DefaultTemplate, Template } from '@/types/api.types'
+import type {
+  DefaultTemplate,
+  Template,
+} from '@/core/modules/templates/models'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'

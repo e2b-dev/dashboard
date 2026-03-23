@@ -1,11 +1,14 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import type {
+  CreatedTeamAPIKey,
+  TeamAPIKey,
+} from '@/core/modules/keys/models'
 import { infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type { CreatedTeamAPIKey, TeamAPIKey } from '@/types/api.types'
 
 type KeysRepositoryDeps = {
   infraClient: typeof infra

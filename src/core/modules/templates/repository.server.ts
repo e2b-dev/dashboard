@@ -14,7 +14,10 @@ import type {
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type { DefaultTemplate, Template } from '@/types/api.types'
+import type {
+  DefaultTemplate,
+  Template,
+} from '@/core/modules/templates/models'
 
 type TemplatesRepositoryDeps = {
   apiClient: typeof api
