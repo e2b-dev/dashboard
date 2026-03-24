@@ -59,6 +59,114 @@ export const killSandboxAction = authActionClient
     }
   })
 
+const PauseSandboxSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  sandboxId: z.string().min(1, 'Sandbox ID is required'),
+})
+
+export const pauseSandboxAction = authActionClient
+  .schema(PauseSandboxSchema)
+  .metadata({ actionName: 'pauseSandbox' })
+  .use(withTeamIdResolution)
+  .action(async ({ parsedInput, ctx }) => {
+    const { sandboxId } = parsedInput
+    const { session, teamId } = ctx
+
+    const res = await infra.POST('/sandboxes/{sandboxID}/pause', {
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      },
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+    })
+
+    if (res.error) {
+      const status = res.response.status
+
+      l.error(
+        {
+          key: 'pause_sandbox_action:infra_error',
+          error: res.error,
+          user_id: session.user.id,
+          team_id: teamId,
+          sandbox_id: sandboxId,
+          context: {
+            status,
+          },
+        },
+        `Failed to pause sandbox: ${res.error.message}`
+      )
+
+      if (status === 404) {
+        return returnServerError('Sandbox not found')
+      }
+
+      if (status === 409) {
+        return returnServerError(
+          'Sandbox cannot be paused in its current state'
+        )
+      }
+
+      return returnServerError('Failed to pause sandbox')
+    }
+  })
+
+const ResumeSandboxSchema = z.object({
+  teamIdOrSlug: TeamIdOrSlugSchema,
+  sandboxId: z.string().min(1, 'Sandbox ID is required'),
+  timeout: z.number().int().positive().default(15),
+})
+
+export const resumeSandboxAction = authActionClient
+  .schema(ResumeSandboxSchema)
+  .metadata({ actionName: 'resumeSandbox' })
+  .use(withTeamIdResolution)
+  .action(async ({ parsedInput, ctx }) => {
+    const { sandboxId, timeout } = parsedInput
+    const { session, teamId } = ctx
+
+    const res = await infra.POST('/sandboxes/{sandboxID}/connect', {
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+      },
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: {
+        timeout,
+      },
+    })
+
+    if (res.error) {
+      const status = res.response.status
+
+      l.error(
+        {
+          key: 'resume_sandbox_action:infra_error',
+          error: res.error,
+          user_id: session.user.id,
+          team_id: teamId,
+          sandbox_id: sandboxId,
+          context: {
+            status,
+          },
+        },
+        `Failed to resume sandbox: ${res.error.message}`
+      )
+
+      if (status === 404) {
+        return returnServerError('Sandbox not found')
+      }
+
+      return returnServerError('Failed to resume sandbox')
+    }
+  })
+
 const RevalidateSandboxesSchema = z.object({
   teamIdOrSlug: TeamIdOrSlugSchema,
 })
