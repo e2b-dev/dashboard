@@ -3,8 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { l } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 
@@ -35,26 +35,21 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const teamsResult = await createUserTeamsRepository({
-      accessToken: session.access_token,
-    }).listUserTeams()
-    const defaultTeam = teamsResult.ok
-      ? (teamsResult.data.find((team) => team.isDefault) ?? teamsResult.data[0])
-      : null
+    const team = await resolveUserTeam(session.access_token)
 
-    if (!defaultTeam) {
+    if (!team) {
       return NextResponse.redirect(new URL(req.url).origin)
     }
 
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token, defaultTeam.id),
+        ...SUPABASE_AUTH_HEADERS(session.access_token, team.id),
       },
     })
 
     const filesystemUrl = PROTECTED_URLS.SANDBOX_FILESYSTEM(
-      defaultTeam.slug,
+      team.slug,
       sbx.sandboxId
     )
 
