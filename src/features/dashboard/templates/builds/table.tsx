@@ -3,6 +3,7 @@
 import {
   keepPreviousData,
   useInfiniteQuery,
+  useQueries,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
@@ -30,6 +31,7 @@ import BuildsEmpty from './empty'
 import {
   BackToTopButton,
   BuildId,
+  BuildTags,
   Duration,
   LoadMoreButton,
   Reason,
@@ -49,6 +51,7 @@ const COLUMN_WIDTHS = {
   template: 192,
   started: 126,
   duration: 96,
+  tags: 140,
 } as const
 
 const BuildsTable = () => {
@@ -126,6 +129,38 @@ const BuildsTable = () => {
     )
   )
 
+  // Fetch tags for unique templates in the builds list
+  const uniqueTemplateIds = useMemo(
+    () => [...new Set(builds.map((b) => b.templateId))],
+    [builds]
+  )
+
+  const tagQueries = useQueries({
+    queries: uniqueTemplateIds.map((templateId) =>
+      trpc.templates.getTemplateTags.queryOptions(
+        { teamIdOrSlug, templateId },
+        {
+          staleTime: 60_000,
+          refetchOnWindowFocus: false,
+        }
+      )
+    ),
+  })
+
+  const buildTagsMap = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const query of tagQueries) {
+      if (query.data?.tags) {
+        for (const tag of query.data.tags) {
+          const existing = map.get(tag.buildID) ?? []
+          existing.push(tag.tag)
+          map.set(tag.buildID, existing)
+        }
+      }
+    }
+    return map
+  }, [tagQueries])
+
   const buildsWithLiveStatus = useMemo(
     () => mergeBuildsWithLiveStatuses(builds, runningStatusesData),
     [builds, runningStatusesData]
@@ -165,6 +200,7 @@ const BuildsTable = () => {
           <colgroup>
             <col style={colStyle(COLUMN_WIDTHS.status)} />
             <col style={colStyle(COLUMN_WIDTHS.template)} />
+            <col style={colStyle(COLUMN_WIDTHS.tags)} />
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
             <col style={colStyle(COLUMN_WIDTHS.id)} />
@@ -175,6 +211,7 @@ const BuildsTable = () => {
             <TableRow>
               <TableHead>Status</TableHead>
               <TableHead>Template</TableHead>
+              <TableHead>Tags</TableHead>
               <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
                   Started
@@ -194,7 +231,7 @@ const BuildsTable = () => {
           >
             {showLoader && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
@@ -204,7 +241,7 @@ const BuildsTable = () => {
 
             {showEmpty && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <BuildsEmpty error={buildsError?.message} />
                 </TableCell>
               </TableRow>
@@ -215,7 +252,7 @@ const BuildsTable = () => {
                 {hasScrolledPastInitialPages && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
@@ -260,6 +297,14 @@ const BuildsTable = () => {
                           templateId={build.templateId}
                         />
                       </TableCell>
+                      <TableCell
+                        className="py-1.5 overflow-hidden"
+                        style={{ maxWidth: COLUMN_WIDTHS.tags }}
+                      >
+                        <BuildTags
+                          tags={buildTagsMap.get(build.id) ?? []}
+                        />
+                      </TableCell>
                       <TableCell className="py-1.5">
                         <StartedAt timestamp={build.createdAt} />
                       </TableCell>
@@ -286,7 +331,7 @@ const BuildsTable = () => {
                 {hasNextPage && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton

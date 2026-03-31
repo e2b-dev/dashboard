@@ -16,6 +16,7 @@ import type {
   ListedBuildDTO,
 } from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
+import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
@@ -204,5 +205,34 @@ export function Reason({
     <span className="block truncate max-w-0 min-w-full text-left text-fg-tertiary">
       {statusMessage}
     </span>
+  )
+}
+
+export function BuildTags({ tags }: { tags: string[] }) {
+  if (tags.length === 0) return null
+
+  return (
+    <div className="flex items-center gap-1 min-w-0">
+      <Badge variant="code" size="sm" className="shrink-0">
+        {tags[0]}
+      </Badge>
+      {tags.length > 1 && (
+        <HelpTooltip
+          trigger={
+            <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium shrink-0">
+              +{tags.length - 1}
+            </span>
+          }
+        >
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="code" size="sm">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </HelpTooltip>
+      )}
+    </div>
   )
 }
