@@ -290,10 +290,19 @@ export function TemplateNameCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const names = row.original.names
+  const templateId = row.original.templateID
+
+  // Some API responses include templateID in `names`; only use it when no
+  // human-readable alias/name is available.
+  const namesWithoutId = names.filter(
+    (name): name is string => Boolean(name) && name !== templateId
+  )
+  const displayNames = namesWithoutId.length > 0 ? namesWithoutId : names
 
   // Prefer a name without "/" as the primary display name
-  const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
-  const additionalNames = names.filter((name) => name !== primaryName)
+  const primaryName =
+    displayNames.find((name) => !name.includes('/')) ?? displayNames[0]
+  const additionalNames = displayNames.filter((name) => name !== primaryName)
 
   const [wasCopied, copy] = useClipboard(2000)
   const nameValue = (primaryName as string) ?? '--'
