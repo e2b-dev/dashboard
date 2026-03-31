@@ -28,9 +28,6 @@ export const SWR_KEYS = {
   TEAM_METRICS_HISTORICAL: (teamSlug: string, days: number) =>
     [`/api/teams/${teamSlug}/metrics`, teamSlug, 'historical', days] as const,
 
-  // sandbox metrics keys
-  SANDBOX_METRICS: (teamSlug: string, sandboxIds: string[]) =>
-    [`/api/teams/${teamSlug}/sandboxes/metrics`, sandboxIds] as const,
   SANDBOX_INFO: (sandboxId: string) =>
     [`/api/sandbox/details`, sandboxId] as const,
 

@@ -1,6 +1,5 @@
 import { addHours, subHours } from 'date-fns'
 import { nanoid } from 'nanoid'
-import type { MetricsResponse } from '@/app/api/teams/[teamSlug]/sandboxes/metrics/types'
 import type { Sandbox, Sandboxes } from '@/core/modules/sandboxes/models'
 import type {
   ClientSandboxesMetrics,
@@ -927,7 +926,9 @@ function generateMockSandboxes(count: number): Sandboxes {
   return sandboxes
 }
 
-function generateMockMetrics(sandboxes: Sandbox[]): MetricsResponse {
+function generateMockMetrics(sandboxes: Sandbox[]): {
+  metrics: ClientSandboxesMetrics
+} {
   const metrics: ClientSandboxesMetrics = {}
 
   // Define characteristics by template type
