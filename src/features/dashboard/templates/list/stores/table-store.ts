@@ -12,6 +12,7 @@ interface TemplateTableState {
   cpuCount?: number
   memoryMB?: number
   isPublic?: boolean
+  tagFilter?: string
   createdAfter?: Date
   createdBefore?: Date
 }
@@ -24,6 +25,7 @@ interface TemplateTableActions {
   setCpuCount: (value?: number) => void
   setMemoryMB: (value?: number) => void
   setIsPublic: (value?: boolean) => void
+  setTagFilter: (value?: string) => void
   setCreatedAfter: (value?: Date) => void
   setCreatedBefore: (value?: Date) => void
   resetFilters: () => void
@@ -39,6 +41,7 @@ const initialState: TemplateTableState = {
   cpuCount: undefined,
   memoryMB: undefined,
   isPublic: undefined,
+  tagFilter: undefined,
   createdAfter: undefined,
   createdBefore: undefined,
 }
@@ -104,6 +107,13 @@ export const useTemplateTableStore = create<Store>()(
           value: value,
         })
       },
+      setTagFilter: (value) => {
+        set(() => ({ tagFilter: value }))
+        trackTemplateTableInteraction('filtered', {
+          type: 'tag',
+          value: value,
+        })
+      },
       setCreatedAfter: (value) => {
         set((state) => ({ createdAfter: value }))
         trackTemplateTableInteraction('filtered', {
@@ -124,6 +134,7 @@ export const useTemplateTableStore = create<Store>()(
           cpuCount: initialState.cpuCount,
           memoryMB: initialState.memoryMB,
           isPublic: initialState.isPublic,
+          tagFilter: initialState.tagFilter,
           createdAfter: initialState.createdAfter,
           createdBefore: initialState.createdBefore,
           globalFilter: initialState.globalFilter,

@@ -134,6 +134,130 @@ export const templatesRouter = createTRPCRouter({
       return { success: true }
     }),
 
+  getTemplateTags: protectedTeamProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { templateId } = input
+
+      const res = await infra.GET('/templates/{templateID}/tags', {
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        const status = res.response.status
+
+        l.error(
+          {
+            key: 'trpc:templates:get_template_tags:infra_error',
+            error: res.error,
+            user_id: session.user.id,
+            team_id: teamId,
+            template_id: templateId,
+            context: { status },
+          },
+          `failed to fetch /templates/{templateID}/tags: ${res.error?.message || 'Unknown error'}`
+        )
+
+        throw apiError(status)
+      }
+
+      return { tags: res.data }
+    }),
+
+  assignTags: protectedTeamProcedure
+    .input(
+      z.object({
+        target: z.string(),
+        tags: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { target, tags } = input
+
+      const res = await infra.POST('/templates/tags', {
+        body: {
+          target,
+          tags,
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        const status = res.response.status
+
+        l.error(
+          {
+            key: 'trpc:templates:assign_tags:infra_error',
+            error: res.error,
+            user_id: session.user.id,
+            team_id: teamId,
+            context: { status, target, tags },
+          },
+          `failed to post /templates/tags: ${res.error?.message || 'Unknown error'}`
+        )
+
+        throw apiError(status)
+      }
+
+      return { tags: res.data.tags, buildID: res.data.buildID }
+    }),
+
+  removeTags: protectedTeamProcedure
+    .input(
+      z.object({
+        name: z.string(),
+        tags: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { session, teamId } = ctx
+      const { name, tags } = input
+
+      const res = await infra.DELETE('/templates/tags', {
+        body: {
+          name,
+          tags,
+        },
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        const status = res.response.status
+
+        l.error(
+          {
+            key: 'trpc:templates:remove_tags:infra_error',
+            error: res.error,
+            user_id: session.user.id,
+            team_id: teamId,
+            context: { status, name, tags },
+          },
+          `failed to delete /templates/tags: ${res.error?.message || 'Unknown error'}`
+        )
+
+        throw apiError(status)
+      }
+
+      return { success: true }
+    }),
+
   updateTemplate: protectedTeamProcedure
     .input(
       z.object({
@@ -359,6 +483,7 @@ async function getDefaultTemplatesCached() {
         }
         return a.alias
       }),
+      tags: [],
       createdAt: env.created_at,
       updatedAt: env.updated_at,
       createdBy: null,

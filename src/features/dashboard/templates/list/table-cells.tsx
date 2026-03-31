@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
-import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Check, Copy, Lock, LockOpen, MoreVertical, Plus, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -30,7 +30,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/ui/primitives/popover'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
 
@@ -454,6 +460,260 @@ export function VisibilityCell({
       {!isPublic && <Lock className="size-3 text-fg-tertiary" />}
       {isPublic ? 'Public' : 'Internal'}
     </Badge>
+  )
+}
+
+export function TagsCell({
+  row,
+}: CellContext<Template | DefaultTemplate, unknown>) {
+  const template = row.original
+  const tags = template.tags ?? []
+  const isDefault = 'isDefault' in template
+  const { team } = useDashboard()
+  const { teamIdOrSlug } =
+    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+
+  const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const [isOpen, setIsOpen] = useState(false)
+  const [newTag, setNewTag] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const templateName = template.aliases[0] || template.names[0]
+
+  const assignTagsMutation = useMutation(
+    trpc.templates.assignTags.mutationOptions({
+      onSuccess: async (data) => {
+        toast(
+          defaultSuccessToast(
+            <>
+              Tags updated for{' '}
+              <span className="prose-body-highlight">{templateName}</span>.
+            </>
+          )
+        )
+
+        await queryClient.cancelQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({ teamIdOrSlug }),
+        })
+
+        queryClient.setQueryData(
+          trpc.templates.getTemplates.queryKey({ teamIdOrSlug }),
+          (old) => {
+            if (!old?.templates) return old
+            return {
+              ...old,
+              templates: old.templates.map((t: Template) =>
+                t.templateID === template.templateID
+                  ? { ...t, tags: data.tags }
+                  : t
+              ),
+            }
+          }
+        )
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message || 'Failed to assign tag.'))
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({ teamIdOrSlug }),
+        })
+      },
+    })
+  )
+
+  const removeTagsMutation = useMutation(
+    trpc.templates.removeTags.mutationOptions({
+      onSuccess: async (_, variables) => {
+        toast(
+          defaultSuccessToast(
+            <>
+              Tag{' '}
+              <span className="prose-body-highlight">
+                {variables.tags[0]}
+              </span>{' '}
+              removed from{' '}
+              <span className="prose-body-highlight">{templateName}</span>.
+            </>
+          )
+        )
+
+        await queryClient.cancelQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({ teamIdOrSlug }),
+        })
+
+        queryClient.setQueryData(
+          trpc.templates.getTemplates.queryKey({ teamIdOrSlug }),
+          (old) => {
+            if (!old?.templates) return old
+            return {
+              ...old,
+              templates: old.templates.map((t: Template) =>
+                t.templateID === template.templateID
+                  ? {
+                      ...t,
+                      tags: t.tags.filter(
+                        (tag) => !variables.tags.includes(tag)
+                      ),
+                    }
+                  : t
+              ),
+            }
+          }
+        )
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message || 'Failed to remove tag.'))
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.templates.getTemplates.queryKey({ teamIdOrSlug }),
+        })
+      },
+    })
+  )
+
+  const handleAddTag = () => {
+    const tag = newTag.trim()
+    if (!tag || !templateName) return
+
+    assignTagsMutation.mutate({
+      teamIdOrSlug: team.slug ?? team.id,
+      target: `${templateName}:${tag}`,
+      tags: [tag],
+    })
+    setNewTag('')
+    inputRef.current?.focus()
+  }
+
+  const handleRemoveTag = (tag: string) => {
+    if (!templateName) return
+
+    removeTagsMutation.mutate({
+      teamIdOrSlug: team.slug ?? team.id,
+      name: templateName,
+      tags: [tag],
+    })
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddTag()
+    }
+  }
+
+  const isMutating =
+    assignTagsMutation.isPending || removeTagsMutation.isPending
+
+  return (
+    <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+      {tags.length > 0 ? (
+        <>
+          <Badge variant="code" size="sm" className="shrink-0">
+            {tags[0]}
+          </Badge>
+          {tags.length > 1 && (
+            <HelpTooltip
+              trigger={
+                <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium shrink-0">
+                  +{tags.length - 1}
+                </span>
+              }
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-fg-secondary text-xs">All tags:</span>
+                <div className="flex flex-wrap gap-1">
+                  {tags.map((tag) => (
+                    <Badge key={tag} variant="code" size="sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </HelpTooltip>
+          )}
+        </>
+      ) : (
+        <span className="text-fg-tertiary text-xs">--</span>
+      )}
+
+      {!isDefault && (
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-fg-tertiary size-5 shrink-0 opacity-0 group-hover/row:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Plus className="size-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-64 p-3"
+            align="start"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium text-fg-secondary uppercase">
+                Manage Tags
+              </span>
+
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="code"
+                      size="sm"
+                      className="gap-1 pr-0.5"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        disabled={isMutating}
+                        className="hover:text-accent-error-highlight p-0.5 rounded-sm transition-colors"
+                      >
+                        <X className="size-2.5" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5">
+                <Input
+                  ref={inputRef}
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Add tag..."
+                  className="h-7 text-xs"
+                  disabled={isMutating}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddTag}
+                  disabled={!newTag.trim() || isMutating}
+                  className="h-7 shrink-0"
+                >
+                  {isMutating ? (
+                    <Loader className="size-3" />
+                  ) : (
+                    <Plus className="size-3" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
   )
 }
 

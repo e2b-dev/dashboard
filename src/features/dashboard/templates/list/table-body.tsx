@@ -89,7 +89,7 @@ export function TemplatesTableBody({
         <DataTableRow
           key={row.id}
           isSelected={row.getIsSelected()}
-          className="h-8 border-b"
+          className="h-8 border-b group/row"
         >
           {row.getVisibleCells().map((cell) => (
             <DataTableCell key={cell.id} cell={cell}>

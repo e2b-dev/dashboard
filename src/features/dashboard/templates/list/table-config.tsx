@@ -18,6 +18,7 @@ import {
   CreatedAtCell,
   EnvdVersionCell,
   MemoryCell,
+  TagsCell,
   TemplateIdCell,
   TemplateNameCell,
   UpdatedAtCell,
@@ -136,6 +137,23 @@ export const useColumns = (deps: unknown[]) => {
         cell: VisibilityCell,
         enableSorting: false,
         filterFn: 'equals',
+      },
+      {
+        accessorKey: 'tags',
+        header: 'Tags',
+        accessorFn: (row) => row.tags?.join(', ') ?? '',
+        size: 160,
+        minSize: 100,
+        maxSize: 260,
+        enableResizing: true,
+        cell: TagsCell,
+        enableSorting: false,
+        filterFn: (row, _columnId, filterValue: string) => {
+          const tags = row.original.tags ?? []
+          return tags.some((tag) =>
+            tag.toLowerCase().includes(filterValue.toLowerCase())
+          )
+        },
       },
       {
         accessorKey: 'envdVersion',

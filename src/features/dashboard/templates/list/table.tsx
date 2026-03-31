@@ -69,7 +69,7 @@ export default function TemplatesTable() {
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
 
-  const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
+  const { cpuCount, memoryMB, isPublic, tagFilter } = useTemplateTableStore()
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
@@ -110,8 +110,16 @@ export default function TemplatesTable() {
       newFilters.push({ id: 'public', value: isPublic })
     }
 
+    // Handle tag filter
+    if (!tagFilter) {
+      newFilters = newFilters.filter((f) => f.id !== 'tags')
+    } else {
+      newFilters = newFilters.filter((f) => f.id !== 'tags')
+      newFilters.push({ id: 'tags', value: tagFilter })
+    }
+
     setColumnFilters(newFilters)
-  }, [cpuCount, memoryMB, isPublic])
+  }, [cpuCount, memoryMB, isPublic, tagFilter])
 
   const columns = useColumns([])
 

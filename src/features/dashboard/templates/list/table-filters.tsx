@@ -4,6 +4,7 @@ import { ListFilter } from 'lucide-react'
 import * as React from 'react'
 import { useDebounceValue } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
+import { Input } from '@/ui/primitives/input'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -128,6 +129,45 @@ const ResourcesFilter = () => {
   )
 }
 
+const TagsFilter = () => {
+  const { tagFilter, setTagFilter } = useTemplateTableStore()
+
+  const [localValue, setLocalValue] = React.useState(tagFilter || '')
+  const [debouncedValue] = useDebounceValue(localValue, 300)
+
+  React.useEffect(() => {
+    setTagFilter(debouncedValue || undefined)
+  }, [debouncedValue, setTagFilter])
+
+  return (
+    <div className="w-56 p-4">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label>Filter by tag</Label>
+          {localValue && (
+            <Button
+              variant="error"
+              size="sm"
+              onClick={() => {
+                setLocalValue('')
+              }}
+              className="h-6 text-xs"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+        <Input
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          placeholder="e.g. production, latest"
+          className="h-8 text-xs"
+        />
+      </div>
+    </div>
+  )
+}
+
 // Main component
 
 export interface TemplatesTableFiltersProps
@@ -142,12 +182,14 @@ const TemplatesTableFilters = React.forwardRef<
     cpuCount,
     memoryMB,
     isPublic,
+    tagFilter,
     createdAfter,
     createdBefore,
     setGlobalFilter,
     setCpuCount,
     setMemoryMB,
     setIsPublic,
+    setTagFilter,
     setCreatedAfter,
     setCreatedBefore,
   } = useTemplateTableStore()
@@ -172,6 +214,14 @@ const TemplatesTableFilters = React.forwardRef<
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   <ResourcesFilter />
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Tags</DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <TagsFilter />
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
@@ -232,6 +282,13 @@ const TemplatesTableFilters = React.forwardRef<
           label="Visibility"
           value={isPublic ? 'Public' : 'Internal'}
           onClick={() => setIsPublic(undefined)}
+        />
+      )}
+      {tagFilter && (
+        <TableFilterButton
+          label="Tag"
+          value={tagFilter}
+          onClick={() => setTagFilter(undefined)}
         />
       )}
       {(createdAfter || createdBefore) && (

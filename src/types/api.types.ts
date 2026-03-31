@@ -28,6 +28,7 @@ type Template = Pick<
   | 'spawnCount'
   | 'buildCount'
   | 'envdVersion'
+  | 'tags'
 >
 
 type DefaultTemplate = Template & {
