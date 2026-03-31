@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { secondsInDay } from 'date-fns/constants'
+import { secondsInDay, secondsInMinute } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -68,7 +68,7 @@ export function createUserTeamsRepository(
           params: { query: { slug } },
           headers: deps.authHeaders(scope.accessToken),
           next: {
-            revalidate: secondsInDay,
+            revalidate: secondsInMinute * 5,
             ...next,
           },
         }

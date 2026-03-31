@@ -167,10 +167,6 @@ export const authActionClient = actionClient.use(async ({ next }) => {
     throw UnauthenticatedError()
   }
 
-  if (!session) {
-    throw UnauthenticatedError()
-  }
-
   return next({
     ctx: {
       user,

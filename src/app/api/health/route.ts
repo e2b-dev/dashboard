@@ -58,6 +58,7 @@ export async function GET() {
     {
       status: allHealthy ? 200 : 503,
       headers: {
+        // vercel infra respects this to cache on cdn
         'Cache-Control': 'public, max-age=30, must-revalidate',
       },
     }

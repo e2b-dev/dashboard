@@ -61,15 +61,3 @@ export const killSandboxAction = authActionClient
       return returnServerError('Failed to kill sandbox')
     }
   })
-
-const RevalidateSandboxesSchema = z.object({
-  teamSlug: TeamSlugSchema,
-})
-
-export const revalidateSandboxes = authActionClient
-  .metadata({ serverFunctionName: 'revalidateSandboxes' })
-  .inputSchema(RevalidateSandboxesSchema)
-  .use(withTeamSlugResolution)
-  .action(async ({ ctx }) => {
-    updateTag(CACHE_TAGS.TEAM_SANDBOXES_LIST(ctx.teamId))
-  })

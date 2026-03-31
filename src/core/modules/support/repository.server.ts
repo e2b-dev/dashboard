@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
+import { serializeError } from 'serialize-error'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -209,7 +210,19 @@ export function createSupportRepository(
             file
           )
           attachmentIds.push(attachmentId)
-        } catch {}
+        } catch (error) {
+          l.error(
+            {
+              key: 'repositories:support:attachment_upload_error',
+              error: serializeError(error),
+              team_id: teamId,
+              context: {
+                file_name: file.name,
+              },
+            },
+            'failed to upload support ticket attachment'
+          )
+        }
       }
 
       const title = `Support Request [${teamName}]`
