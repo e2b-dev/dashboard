@@ -1,4 +1,5 @@
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { toRouteErrorResponse } from '@/core/server/adapters/repo-error'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import type { UserTeamsResponse } from './types'
@@ -17,7 +18,7 @@ export async function GET() {
     }).listUserTeams()
 
     if (!teamsResult.ok) {
-      return Response.json({ error: 'Failed to fetch teams' }, { status: 500 })
+      return toRouteErrorResponse(teamsResult.error)
     }
 
     return Response.json({
