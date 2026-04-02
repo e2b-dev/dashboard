@@ -65,9 +65,7 @@ export const getTeamMetrics = authActionClient
     })
 
     if (result.error) {
-      return returnServerError(
-        getPublicErrorMessage({ status: result.status })
-      )
+      return returnServerError(getPublicErrorMessage({ status: result.status }))
     }
 
     return result.data

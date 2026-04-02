@@ -55,8 +55,7 @@ export function createRepoError(input: {
 }
 
 const SAFE_AUTH_MESSAGE = 'Unauthorized'
-const SAFE_FORBIDDEN_MESSAGE =
-  'You are not authorized to access this resource'
+const SAFE_FORBIDDEN_MESSAGE = 'You are not authorized to access this resource'
 const SAFE_INTERNAL_MESSAGE =
   'An Unexpected Error Occurred, please try again. If the problem persists, please contact support.'
 
