@@ -1,4 +1,3 @@
-import { isExpectedStatus } from '@/core/server/adapters/error-observability'
 import { getPublicErrorMessage } from '@/core/shared/errors'
 
 type ActionErrorOptions = {
@@ -25,10 +24,13 @@ export const returnServerError = (
   throw new ActionError(message, options)
 }
 
-export function handleDefaultInfraError(status: number, cause?: unknown): never {
+export function handleDefaultInfraError(
+  status: number,
+  cause?: unknown
+): never {
   return returnServerError(getPublicErrorMessage({ status }), {
     cause,
-    expected: isExpectedStatus(status),
+    expected: status < 500,
   })
 }
 

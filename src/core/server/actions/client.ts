@@ -4,10 +4,10 @@ import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { z } from 'zod'
 import {
-  getObservedException,
   getObservedError,
   getObservedErrorMessage,
-} from '@/core/server/adapters/error-observability'
+  getObservedException,
+} from '@/core/server/adapters/errors'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'

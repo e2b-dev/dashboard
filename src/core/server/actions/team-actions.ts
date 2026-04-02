@@ -22,7 +22,7 @@ import {
   handleDefaultInfraError,
   returnServerError,
 } from '@/core/server/actions/utils'
-import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { toActionErrorFromRepoError } from '@/core/server/adapters/errors'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/core/shared/clients/storage'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'

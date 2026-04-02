@@ -4,7 +4,7 @@ import {
   createDefaultTemplatesRepository,
   createTemplatesRepository,
 } from '@/core/modules/templates/repository.server'
-import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import {
   withAuthedRequestRepository,
   withTeamAuthedRequestRepository,

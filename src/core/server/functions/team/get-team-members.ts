@@ -7,7 +7,7 @@ import {
   withTeamAuthedRequestRepository,
   withTeamSlugResolution,
 } from '@/core/server/actions/client'
-import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { toActionErrorFromRepoError } from '@/core/server/adapters/errors'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const withTeamsRepository = withTeamAuthedRequestRepository(

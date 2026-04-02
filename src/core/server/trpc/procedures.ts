@@ -1,6 +1,6 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import z from 'zod'
-import { forbiddenTeamAccessError } from '@/core/server/adapters/trpc-errors'
+import { forbiddenTeamAccessError } from '@/core/server/adapters/errors'
 import { authMiddleware } from '@/core/server/api/middlewares/auth'
 import {
   endTelemetryMiddleware,

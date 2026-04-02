@@ -1,7 +1,7 @@
 import {
   forbiddenTeamAccessError,
   unauthorizedUserError,
-} from '@/core/server/adapters/trpc-errors'
+} from '@/core/server/adapters/errors'
 import { t } from '@/core/server/trpc/init'
 import type {
   RequestScope,

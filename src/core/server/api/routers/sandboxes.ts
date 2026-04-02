@@ -11,7 +11,7 @@ import {
   GetTeamMetricsMaxSchema,
   GetTeamMetricsSchema,
 } from '@/core/modules/sandboxes/schemas'
-import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import {
   fillTeamMetricsWithZeros,

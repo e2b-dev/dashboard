@@ -6,7 +6,7 @@ import {
   BuildStatusSchema,
 } from '@/core/modules/builds/models'
 import { createBuildsRepository } from '@/core/modules/builds/repository.server'
-import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/repo-error'
+import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'

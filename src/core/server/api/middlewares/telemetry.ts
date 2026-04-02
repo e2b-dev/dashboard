@@ -8,14 +8,14 @@ import {
 } from '@opentelemetry/api'
 import type { User } from '@supabase/supabase-js'
 import { TRPCError } from '@trpc/server'
+import { flattenClientInputValue } from '@/core/server/actions/utils'
 import {
-  getObservedException,
   getObservedError,
   getObservedErrorMessage,
+  getObservedException,
+  internalServerError,
   isExpectedTRPCError,
-} from '@/core/server/adapters/error-observability'
-import { flattenClientInputValue } from '@/core/server/actions/utils'
-import { internalServerError } from '@/core/server/adapters/trpc-errors'
+} from '@/core/server/adapters/errors'
 import { t } from '@/core/server/trpc/init'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getMeter } from '@/core/shared/clients/meter'

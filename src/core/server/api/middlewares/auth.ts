@@ -4,7 +4,7 @@ import {
   parseCookieHeader,
   serializeCookieHeader,
 } from '@supabase/ssr'
-import { unauthorizedUserError } from '@/core/server/adapters/trpc-errors'
+import { unauthorizedUserError } from '@/core/server/adapters/errors'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
