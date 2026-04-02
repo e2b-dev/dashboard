@@ -53,6 +53,7 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  serializeErrorForLog: vi.fn((error) => error),
 }))
 
 vi.mock('@/lib/utils/cookies', () => ({

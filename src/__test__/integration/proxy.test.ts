@@ -19,6 +19,7 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: {
     error: vi.fn(),
   },
+  serializeErrorForLog: vi.fn((error) => error),
 }))
 
 // mock next/server to track redirects and responses
