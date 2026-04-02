@@ -77,17 +77,6 @@ export async function resolveUserTeam(
     return null
   }
 
-  if (!team.slug) {
-    l.warn(
-      {
-        key: 'resolve_user_team:missing_team_slug',
-        team_id: team.id,
-      },
-      'Failed to resolve a slug-backed team'
-    )
-    return null
-  }
-
   return {
     id: team.id,
     slug: team.slug,
