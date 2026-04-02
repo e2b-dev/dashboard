@@ -54,6 +54,41 @@ export function createRepoError(input: {
   }
 }
 
+const SAFE_AUTH_MESSAGE = 'Unauthorized'
+const SAFE_FORBIDDEN_MESSAGE =
+  'You are not authorized to access this resource'
+const SAFE_INTERNAL_MESSAGE =
+  'An Unexpected Error Occurred, please try again. If the problem persists, please contact support.'
+
+export function getPublicErrorMessage(input: {
+  code?: RepoErrorCode | string
+  status?: number
+}): string {
+  const { code, status } = input
+
+  if (code === 'unauthorized' || status === 401) return SAFE_AUTH_MESSAGE
+  if (code === 'forbidden' || status === 403) return SAFE_FORBIDDEN_MESSAGE
+  if (
+    code === 'internal' ||
+    code === 'unavailable' ||
+    (status !== undefined && status >= 500)
+  )
+    return SAFE_INTERNAL_MESSAGE
+
+  return SAFE_INTERNAL_MESSAGE
+}
+
+export function getPublicRepoErrorMessage(error: RepoError): string {
+  switch (error.code) {
+    case 'not_found':
+    case 'validation':
+    case 'conflict':
+      return error.message
+    default:
+      return getPublicErrorMessage({ code: error.code, status: error.status })
+  }
+}
+
 export function repoErrorFromHttp(
   status: number,
   message: string,

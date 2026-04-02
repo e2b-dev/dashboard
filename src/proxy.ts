@@ -1,9 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
 import { getAuthRedirect } from './core/server/http/proxy'
-import { l } from './core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
 
@@ -111,7 +110,7 @@ export async function proxy(request: NextRequest) {
     l.error(
       {
         key: 'middleware:unexpected_error',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
         context: {
           pathname: request.nextUrl.pathname,
           teamSlug: request.nextUrl.pathname.split('/')[2],

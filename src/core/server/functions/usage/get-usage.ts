@@ -9,6 +9,7 @@ import {
   withTeamSlugResolution,
 } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
+import { getPublicRepoErrorMessage } from '@/core/shared/errors'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const GetUsageAuthActionSchema = z.object({
@@ -33,7 +34,7 @@ export const getUsage = authActionClient
     }).getUsage()
 
     if (!result.ok) {
-      return returnServerError(result.error.message)
+      return returnServerError(getPublicRepoErrorMessage(result.error))
     }
 
     return result.data

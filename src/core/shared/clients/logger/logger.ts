@@ -1,5 +1,5 @@
 import pino, { type Logger } from 'pino'
-import type { ErrorObject } from 'serialize-error'
+import { type ErrorObject, serializeError } from 'serialize-error'
 
 interface PlatformContextKeys {
   team_id?: string
@@ -47,6 +47,34 @@ const REDACTION_PATHS = [
   '*.*.apiKey',
   '*.*.key',
 ]
+
+const stripStackFields = (
+  value: unknown,
+  seen = new WeakSet<object>()
+): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripStackFields(item, seen))
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return value
+  }
+
+  if (seen.has(value)) {
+    return '[Circular]'
+  }
+
+  seen.add(value)
+
+  const entries = Object.entries(value).filter(([key]) => key !== 'stack')
+
+  return Object.fromEntries(
+    entries.map(([key, item]) => [key, stripStackFields(item, seen)])
+  )
+}
+
+export const serializeErrorForLog = (error: unknown): ErrorObject | unknown =>
+  stripStackFields(serializeError(error)) as ErrorObject
 
 const createLogger = () => {
   const baseConfig = {

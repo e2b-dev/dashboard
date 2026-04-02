@@ -1,10 +1,10 @@
 import 'server-cli-only'
 
-import { serializeError } from 'serialize-error'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { getTeamMetricsCore } from '@/core/server/functions/sandboxes/get-team-metrics-core'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { getPublicErrorMessage } from '@/core/shared/errors'
 import { TeamMetricsRequestSchema, type TeamMetricsResponse } from './types'
 
 export async function POST(
@@ -21,7 +21,7 @@ export async function POST(
       l.warn(
         {
           key: 'team_metrics_route_handler:invalid_request',
-          error: serializeError(parsedInput.error),
+          error: serializeErrorForLog(parsedInput.error),
           team_slug: teamSlug,
           context: {
             request: parsedInput.data,
@@ -73,15 +73,15 @@ export async function POST(
     })
 
     if (result.error) {
-      // error already logged in core function
-      return Response.json({ error: result.error }, { status: result.status })
+      const safeMessage = getPublicErrorMessage({ status: result.status })
+      return Response.json({ error: safeMessage }, { status: result.status })
     }
 
     return Response.json(result.data! satisfies TeamMetricsResponse)
   } catch (error) {
     l.error({
       key: 'team_metrics_route_handler:unexpected_error',
-      error: serializeError(error),
+      error: serializeErrorForLog(error),
     })
 
     return Response.json({ error: 'Internal server error' }, { status: 500 })

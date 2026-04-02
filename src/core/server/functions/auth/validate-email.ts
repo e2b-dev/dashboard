@@ -1,7 +1,6 @@
 import { kv } from '@vercel/kv'
-import { serializeError } from 'serialize-error'
 import { KV_KEYS } from '@/configs/keys'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 /**
  * Response type from the ZeroBounce email validation API
@@ -90,7 +89,7 @@ export async function validateEmail(
   } catch (error) {
     l.error({
       key: 'validate_email:error',
-      error: serializeError(error),
+      error: serializeErrorForLog(error),
       context: {
         email,
       },

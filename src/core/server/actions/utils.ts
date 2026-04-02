@@ -1,27 +1,35 @@
-import { UnauthorizedError, UnknownError } from '@/core/shared/errors'
+import { isExpectedStatus } from '@/core/server/adapters/error-observability'
+import { getPublicErrorMessage } from '@/core/shared/errors'
+
+type ActionErrorOptions = {
+  cause?: unknown
+  expected?: boolean
+}
 
 export class ActionError extends Error {
-  constructor(message: string) {
+  public expected: boolean
+  public override cause?: unknown
+
+  constructor(message: string, options: ActionErrorOptions = {}) {
     super(message)
     this.name = 'ActionError'
+    this.expected = options.expected ?? true
+    this.cause = options.cause
   }
 }
 
-export const returnServerError = (message: string) => {
-  throw new ActionError(message)
+export const returnServerError = (
+  message: string,
+  options?: ActionErrorOptions
+) => {
+  throw new ActionError(message, options)
 }
 
-export function handleDefaultInfraError(status: number) {
-  switch (status) {
-    case 403:
-      return returnServerError(
-        'You may have reached your billing limits or your account may be blocked. Please check your billing settings or contact support.'
-      )
-    case 401:
-      return returnServerError(UnauthorizedError('Unauthorized').message)
-    default:
-      return returnServerError(UnknownError().message)
-  }
+export function handleDefaultInfraError(status: number, cause?: unknown): never {
+  return returnServerError(getPublicErrorMessage({ status }), {
+    cause,
+    expected: isExpectedStatus(status),
+  })
 }
 
 export const flattenClientInputValue = (

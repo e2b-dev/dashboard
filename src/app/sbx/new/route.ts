@@ -1,11 +1,10 @@
 import Sandbox from 'e2b'
 import { type NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 
 export const GET = async (req: NextRequest) => {
@@ -58,7 +57,7 @@ export const GET = async (req: NextRequest) => {
     l.warn(
       {
         key: 'sbx_new:unexpected_error',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       },
       `sbx_new: unexpected error`
     )

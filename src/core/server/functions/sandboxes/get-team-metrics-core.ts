@@ -115,7 +115,7 @@ export const getTeamMetricsCore = cache(
       )
 
       return {
-        error: handleDefaultInfraError(status),
+        error: handleDefaultInfraError(status, res.error),
         status,
       }
     }

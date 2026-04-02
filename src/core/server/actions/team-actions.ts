@@ -4,7 +4,6 @@ import { fileTypeFromBuffer } from 'file-type'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { returnValidationErrors } from 'next-safe-action'
-import { serializeError } from 'serialize-error'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
@@ -24,7 +23,7 @@ import {
   returnServerError,
 } from '@/core/server/actions/utils'
 import { toActionErrorFromRepoError } from '@/core/server/adapters/repo-error'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/core/shared/clients/storage'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
@@ -117,7 +116,7 @@ export const createTeamAction = authActionClient
         return returnServerError(error?.message ?? 'Failed to create team')
       }
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, error)
     }
 
     const data = (await response.json()) as CreateTeamsResponse
@@ -188,7 +187,7 @@ export const uploadTeamProfilePictureAction = authActionClient
 
     const result = await teamsRepository.updateTeamProfilePictureUrl(publicUrl)
     if (!result.ok) {
-      throw new Error(result.error.message)
+      return toActionErrorFromRepoError(result.error)
     }
 
     after(async () => {
@@ -208,7 +207,7 @@ export const uploadTeamProfilePictureAction = authActionClient
       } catch (cleanupError) {
         l.warn({
           key: 'upload_team_profile_picture_action:cleanup_error',
-          error: serializeError(cleanupError),
+          error: serializeErrorForLog(cleanupError),
           team_id: teamId,
           context: {
             image: image.name,

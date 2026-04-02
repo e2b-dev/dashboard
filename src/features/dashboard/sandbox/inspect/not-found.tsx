@@ -3,9 +3,8 @@
 import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -15,7 +14,6 @@ import SandboxInspectEmptyFrame from './empty'
 export default function SandboxInspectNotFound() {
   const router = useRouter()
   const { isRunning } = useSandboxContext()
-  const { trackInteraction } = useSandboxInspectAnalytics()
 
   const { teamSlug } = useParams()
 
@@ -34,7 +32,7 @@ export default function SandboxInspectNotFound() {
       l.error(
         {
           key: 'sandbox_inspect_not_found:save_root_path_failed',
-          error: serializeError(error),
+          error: serializeErrorForLog(error),
         },
         `${error instanceof Error ? error.message : 'Failed to save root path'}`
       )

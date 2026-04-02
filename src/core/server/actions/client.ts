@@ -2,12 +2,16 @@ import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import type { Session, User } from '@supabase/supabase-js'
 import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
-import { serializeError } from 'serialize-error'
 import { z } from 'zod'
+import {
+  getObservedException,
+  getObservedError,
+  getObservedErrorMessage,
+} from '@/core/server/adapters/error-observability'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { getTracer } from '@/core/shared/clients/tracer'
 import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
@@ -32,22 +36,47 @@ export interface TeamActionContext extends AuthActionContext {
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
     const s = trace.getActiveSpan()
+    const observedError = getObservedError(e)
+    const observedErrorMessage = getObservedErrorMessage(e)
 
-    s?.setStatus({ code: SpanStatusCode.ERROR })
-    s?.recordException(e)
+    s?.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: observedErrorMessage,
+    })
+    s?.recordException(getObservedException(e))
 
     if (e instanceof ActionError) {
+      const payload = {
+        key: e.expected
+          ? 'action_client:expected_server_error'
+          : 'action_client:unexpected_server_error',
+        public_message: e.message,
+        error: serializeErrorForLog(observedError),
+        transport_error:
+          observedError === e ? undefined : serializeErrorForLog(e),
+      }
+
+      if (e.expected) {
+        l.warn(payload, observedErrorMessage)
+      } else {
+        l.error(payload, observedErrorMessage)
+      }
+
       return e.message
     }
 
-    const sE = serializeError(e)
+    const sE = serializeErrorForLog(observedError) as {
+      code?: string
+      name?: string
+      message?: string
+    }
 
     l.error(
       {
         key: 'action_client:unexpected_server_error',
         error: sE,
       },
-      `${sE.name && `${sE.name}: `} ${sE.message || 'Unknown error'}`
+      `${sE.name && `${sE.name}: `} ${observedErrorMessage}`
     )
 
     return UnknownError().message
@@ -118,17 +147,27 @@ export const actionClient = createSafeActionClient({
     s.setAttribute('user_id', baseLogPayload.user_id)
   }
 
-  const error = result.serverError || result.validationErrors
+  const serverError = result.serverError
+  const validationErrors = result.validationErrors
+  const error = serverError || validationErrors
 
   if (error) {
     s.setStatus({ code: SpanStatusCode.ERROR })
-    s.recordException(error)
+    s.recordException(getObservedException(error))
 
-    const sE = serializeError(error)
+    const sE = serializeErrorForLog(error) as
+      | string
+      | {
+          code?: string
+          name?: string
+          message?: string
+        }
 
-    l.error(
+    l.warn(
       {
-        key: 'action_client:failure',
+        key: validationErrors
+          ? 'action_client:validation_failure'
+          : 'action_client:failure',
         ...baseLogPayload,
         error: sE,
       },

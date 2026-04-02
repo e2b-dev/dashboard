@@ -1,8 +1,7 @@
 import 'server-only'
 
-import { serializeError } from 'serialize-error'
 import type { OtpType } from '@/core/modules/auth/models'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { err, ok, type RepoResult } from '@/core/shared/result'
@@ -36,7 +35,7 @@ export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
         l.error(
           {
             key: 'auth_repository:verify_otp:error',
-            error: serializeError(error),
+            error: serializeErrorForLog(error),
             context: {
               type,
               token_hash_prefix: tokenHash.slice(0, 10),

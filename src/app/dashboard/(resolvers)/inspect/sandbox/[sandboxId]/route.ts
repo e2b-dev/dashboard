@@ -1,12 +1,11 @@
 import { cookies } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { infra } from '@/core/shared/clients/api'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { setTeamCookies } from '@/lib/utils/cookies'
@@ -230,7 +229,7 @@ export async function GET(
 
     return NextResponse.redirect(redirectUrl)
   } catch (error) {
-    const serializedError = serializeError(error)
+    const serializedError = serializeErrorForLog(error)
     const errorMessage =
       typeof serializedError === 'object' &&
       serializedError !== null &&

@@ -1,9 +1,8 @@
 import 'server-only'
 
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
-import { serializeError } from 'serialize-error'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
@@ -214,7 +213,7 @@ export function createSupportRepository(
           l.error(
             {
               key: 'repositories:support:attachment_upload_error',
-              error: serializeError(error),
+              error: serializeErrorForLog(error),
               team_id: teamId,
               context: {
                 file_name: file.name,

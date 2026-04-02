@@ -103,7 +103,7 @@ export const getTeamMetricsMax = authActionClient
         `Failed to get team metrics max: ${res.error.message}`
       )
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, res.error)
     }
 
     // since javascript timestamps are in milliseconds, we want to convert the timestamp back to milliseconds

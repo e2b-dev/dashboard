@@ -43,7 +43,7 @@ export const getWebhooks = authActionClient
         `Failed to get webhooks: ${status}: ${result.error.message}`
       )
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, result.error)
     }
 
     return { webhooks: result.data }

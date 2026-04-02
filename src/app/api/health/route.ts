@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { api } from '@/core/shared/clients/api'
 import { kv } from '@/core/shared/clients/kv'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export const maxDuration = 10
 
@@ -19,7 +18,7 @@ export async function GET() {
     l.error(
       {
         key: 'health_check:kv_error',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       },
       'KV health check failed'
     )
@@ -42,7 +41,7 @@ export async function GET() {
     l.error(
       {
         key: 'health_check:dashboard_api_error',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       },
       'Dashboard API health check failed'
     )

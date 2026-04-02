@@ -20,11 +20,6 @@ const withWebhooksRepository = withTeamAuthedRequestRepository(
   (webhooksRepository) => ({ webhooksRepository })
 )
 
-// Upsert Webhook (Create or Update)
-
-// NOTE: we combine insert and edit for now, since
-// the component calling these can be combined as well. [add-edit-dialog.tsx]
-// this results in less client side complexity.
 export const upsertWebhookAction = authActionClient
   .schema(UpsertWebhookSchema)
   .metadata({ actionName: 'upsertWebhook' })
@@ -77,15 +72,13 @@ export const upsertWebhookAction = authActionClient
         `Failed to ${mode === 'edit' ? 'update' : 'create'} webhook: ${status}: ${response.error.message}`
       )
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, response.error)
     }
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
   })
-
-// Delete Webhook
 
 export const deleteWebhookAction = authActionClient
   .schema(DeleteWebhookSchema)
@@ -115,15 +108,13 @@ export const deleteWebhookAction = authActionClient
         `Failed to delete webhook: ${status}: ${response.error.message}`
       )
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, response.error)
     }
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
 
     return { success: true }
   })
-
-// Update Webhook Secret
 
 export const updateWebhookSecretAction = authActionClient
   .schema(UpdateWebhookSecretSchema)
@@ -157,7 +148,7 @@ export const updateWebhookSecretAction = authActionClient
         `Failed to update webhook secret: ${status}: ${response.error.message}`
       )
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, response.error)
     }
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')

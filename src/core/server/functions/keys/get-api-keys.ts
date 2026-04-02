@@ -42,7 +42,7 @@ export const getTeamApiKeys = authActionClient
         },
       })
 
-      return handleDefaultInfraError(status)
+      return handleDefaultInfraError(status, result.error)
     }
 
     return { apiKeys: result.data }

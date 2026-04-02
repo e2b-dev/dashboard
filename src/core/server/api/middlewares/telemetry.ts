@@ -8,11 +8,16 @@ import {
 } from '@opentelemetry/api'
 import type { User } from '@supabase/supabase-js'
 import { TRPCError } from '@trpc/server'
-import { serializeError } from 'serialize-error'
+import {
+  getObservedException,
+  getObservedError,
+  getObservedErrorMessage,
+  isExpectedTRPCError,
+} from '@/core/server/adapters/error-observability'
 import { flattenClientInputValue } from '@/core/server/actions/utils'
 import { internalServerError } from '@/core/server/adapters/trpc-errors'
 import { t } from '@/core/server/trpc/init'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getMeter } from '@/core/shared/clients/meter'
 import { getTracer } from '@/core/shared/clients/tracer'
 
@@ -198,6 +203,8 @@ export const endTelemetryMiddleware = t.middleware(
 
       if (!result.ok) {
         const error = result.error
+        const observedError = getObservedError(error)
+        const observedErrorMessage = getObservedErrorMessage(error)
 
         metrics.errorCounter.add(1, {
           ...metrics.attrs,
@@ -207,54 +214,46 @@ export const endTelemetryMiddleware = t.middleware(
 
         span.setStatus({
           code: SpanStatusCode.ERROR,
-          message: error.message,
+          message: observedErrorMessage,
         })
-        span.recordException(error)
+        span.recordException(getObservedException(error))
 
-        // internal errors are mostly unexpected - log as error and potentially obfuscate
-        if (error.code === 'INTERNAL_SERVER_ERROR') {
+        const payload = {
+          ...contextAttrs,
+
+          'trpc.router.name': routerName,
+          'trpc.procedure.type': procedureType,
+          'trpc.procedure.name': procedureName,
+          'trpc.procedure.input': rawInput,
+          'trpc.procedure.duration_ms': durationMs,
+
+          error: serializeErrorForLog(observedError),
+          transport_error:
+            observedError === error ? undefined : serializeErrorForLog(error),
+        }
+
+        if (!isExpectedTRPCError(error)) {
           l.error(
             {
               key: 'trpc:unexpected_error',
-
-              ...contextAttrs,
-
-              'trpc.router.name': routerName,
-              'trpc.procedure.type': procedureType,
-              'trpc.procedure.name': procedureName,
-              'trpc.procedure.input': rawInput,
-              'trpc.procedure.duration_ms': durationMs,
-
-              error: serializeError(error),
+              ...payload,
             },
-            `[tRPC] ${routerName}.${procedureName}: ${error.code} ${error?.cause?.message || error.message}`
+            `[tRPC] ${routerName}.${procedureName}: ${error.code} ${observedErrorMessage}`
           )
 
-          // when it's internal error AND has a cause (unhandled errors), obfuscate
           if (error.cause) {
             throw internalServerError()
           }
 
-          // otherwise return as is
           return result
         }
 
-        // expected errors (validation, not found, etc) - log as warning
         l.warn(
           {
             key: 'trpc:procedure_failure',
-
-            ...contextAttrs,
-
-            'trpc.router.name': routerName,
-            'trpc.procedure.type': procedureType,
-            'trpc.procedure.name': procedureName,
-            'trpc.procedure.input': rawInput,
-            'trpc.procedure.duration_ms': durationMs,
-
-            error: serializeError(error),
+            ...payload,
           },
-          `[tRPC] ${routerName}.${procedureName}: ${error.code} ${error.message}`
+          `[tRPC] ${routerName}.${procedureName}: ${error.code} ${observedErrorMessage}`
         )
 
         return result
@@ -293,7 +292,7 @@ export const endTelemetryMiddleware = t.middleware(
           'trpc.router.name': routerName,
           'trpc.procedure.name': procedureName,
 
-          error: serializeError(error),
+          error: serializeErrorForLog(error),
         },
         `[tRPC] telemetry error in ${routerName}.${procedureName}${error && typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? `: ${error.message}` : ''}`
       )
