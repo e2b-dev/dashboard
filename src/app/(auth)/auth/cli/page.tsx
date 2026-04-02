@@ -36,7 +36,8 @@ async function handleCLIAuth(
   }
 
   const defaultTeam =
-    teamsResult.data.find((team) => team.isDefault) ?? teamsResult.data[0]
+    teamsResult.data.find((team) => team.isDefault && team.slug) ??
+    teamsResult.data.find((team) => team.slug)
 
   if (!defaultTeam) {
     throw new Error('Failed to resolve default team')
