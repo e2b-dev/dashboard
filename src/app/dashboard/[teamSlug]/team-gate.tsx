@@ -1,9 +1,10 @@
 'use client'
 
 import type { User } from '@supabase/supabase-js'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DashboardContextProvider } from '@/features/dashboard/context'
+import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useTRPC } from '@/trpc/client'
 import Unauthorized from '../unauthorized'
 
@@ -13,16 +14,24 @@ interface DashboardTeamGateProps {
   children: React.ReactNode
 }
 
-function TeamContent({ teamSlug, user, children }: DashboardTeamGateProps) {
+export function DashboardTeamGate({
+  teamSlug,
+  user,
+  children,
+}: DashboardTeamGateProps) {
   const trpc = useTRPC()
 
-  const { data: teams } = useSuspenseQuery(
+  const { data: teams, isPending } = useQuery(
     trpc.teams.list.queryOptions(undefined, DASHBOARD_TEAMS_LIST_QUERY_OPTIONS)
   )
 
-  const team = teams.find((candidate) => candidate.slug === teamSlug)
+  if (isPending) {
+    return <LoadingLayout />
+  }
 
-  if (!team) {
+  const team = teams?.find((candidate) => candidate.slug === teamSlug)
+
+  if (!team || !teams) {
     return <Unauthorized />
   }
 
@@ -35,7 +44,4 @@ function TeamContent({ teamSlug, user, children }: DashboardTeamGateProps) {
       {children}
     </DashboardContextProvider>
   )
-}
-export function DashboardTeamGate(props: DashboardTeamGateProps) {
-  return <TeamContent {...props} />
 }
