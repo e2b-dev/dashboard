@@ -2,6 +2,7 @@ import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
+import { INITIAL_BUILD_STATUSES } from '@/core/modules/builds/constants'
 import type {
   BuildStatus,
   ListedBuildModel,
@@ -12,7 +13,6 @@ import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import { INITIAL_BUILD_STATUSES } from '@/features/dashboard/templates/builds/constants'
 
 type BuildsRepositoryDeps = {
   apiClient: typeof api

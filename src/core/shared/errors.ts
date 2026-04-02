@@ -1,5 +1,14 @@
 import type { RepoError, RepoErrorCode } from './result'
 
+export const PUBLIC_ERROR_MESSAGE_UNAUTHORIZED = 'Unauthorized'
+export const PUBLIC_ERROR_MESSAGE_FORBIDDEN =
+  'You are not authorized to access this resource'
+export const PUBLIC_ERROR_MESSAGE_FORBIDDEN_TEAM =
+  'You are not authorized to access this team'
+export const PUBLIC_ERROR_MESSAGE_UNAUTHENTICATED = 'User not authenticated'
+export const PUBLIC_ERROR_MESSAGE_INTERNAL =
+  'An Unexpected Error Occurred, please try again. If the problem persists, please contact support.'
+
 export type E2BErrorCode =
   | 'UNAUTHENTICATED'
   | 'UNAUTHORIZED'
@@ -20,7 +29,7 @@ export class E2BError extends Error {
 }
 
 export const UnauthenticatedError = () =>
-  new E2BError('UNAUTHENTICATED', 'User not authenticated')
+  new E2BError('UNAUTHENTICATED', PUBLIC_ERROR_MESSAGE_UNAUTHENTICATED)
 
 export const UnauthorizedError = (message: string) =>
   new E2BError('UNAUTHORIZED', message)
@@ -34,11 +43,7 @@ export const InvalidParametersError = (message: string) =>
 export const ApiError = (message: string) => new E2BError('API_ERROR', message)
 
 export const UnknownError = (message?: string) =>
-  new E2BError(
-    'UNKNOWN',
-    message ??
-      'An Unexpected Error Occurred, please try again. If the problem persists, please contact support.'
-  )
+  new E2BError('UNKNOWN', message ?? PUBLIC_ERROR_MESSAGE_INTERNAL)
 
 export function createRepoError(input: {
   code: RepoErrorCode
@@ -54,27 +59,24 @@ export function createRepoError(input: {
   }
 }
 
-const SAFE_AUTH_MESSAGE = 'Unauthorized'
-const SAFE_FORBIDDEN_MESSAGE = 'You are not authorized to access this resource'
-const SAFE_INTERNAL_MESSAGE =
-  'An Unexpected Error Occurred, please try again. If the problem persists, please contact support.'
-
 export function getPublicErrorMessage(input: {
   code?: RepoErrorCode | string
   status?: number
 }): string {
   const { code, status } = input
 
-  if (code === 'unauthorized' || status === 401) return SAFE_AUTH_MESSAGE
-  if (code === 'forbidden' || status === 403) return SAFE_FORBIDDEN_MESSAGE
+  if (code === 'unauthorized' || status === 401)
+    return PUBLIC_ERROR_MESSAGE_UNAUTHORIZED
+  if (code === 'forbidden' || status === 403)
+    return PUBLIC_ERROR_MESSAGE_FORBIDDEN
   if (
     code === 'internal' ||
     code === 'unavailable' ||
     (status !== undefined && status >= 500)
   )
-    return SAFE_INTERNAL_MESSAGE
+    return PUBLIC_ERROR_MESSAGE_INTERNAL
 
-  return SAFE_INTERNAL_MESSAGE
+  return PUBLIC_ERROR_MESSAGE_INTERNAL
 }
 
 export function getPublicRepoErrorMessage(error: RepoError): string {

@@ -2,7 +2,12 @@ import { SpanStatusCode, trace } from '@opentelemetry/api'
 import { TRPCError } from '@trpc/server'
 import { ActionError } from '@/core/server/actions/utils'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { getPublicRepoErrorMessage } from '@/core/shared/errors'
+import {
+  getPublicRepoErrorMessage,
+  PUBLIC_ERROR_MESSAGE_FORBIDDEN_TEAM,
+  PUBLIC_ERROR_MESSAGE_INTERNAL,
+  PUBLIC_ERROR_MESSAGE_UNAUTHENTICATED,
+} from '@/core/shared/errors'
 import type { RepoError } from '@/core/shared/result'
 
 export function getObservedError(error: unknown): unknown {
@@ -77,20 +82,19 @@ export function isExpectedTRPCError(error: TRPCError): boolean {
 export const forbiddenTeamAccessError = () =>
   new TRPCError({
     code: 'FORBIDDEN',
-    message: 'You are not authorized to access this team',
+    message: PUBLIC_ERROR_MESSAGE_FORBIDDEN_TEAM,
   })
 
 export const unauthorizedUserError = () =>
   new TRPCError({
     code: 'UNAUTHORIZED',
-    message: 'You are not authenticated',
+    message: PUBLIC_ERROR_MESSAGE_UNAUTHENTICATED,
   })
 
 export const internalServerError = () =>
   new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
-    message:
-      'An Unexpected Error Occurred, please try again. If the problem persists, contact support.',
+    message: PUBLIC_ERROR_MESSAGE_INTERNAL,
   })
 
 function trpcCodeFromRepoError(code: RepoError['code']): TRPCError['code'] {
