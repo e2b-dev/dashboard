@@ -159,7 +159,7 @@ export function MetadataCell({
 
   return (
     <JsonPopover
-      className="text-fg-tertiary hover:text-fg hover:underline min-w-0"
+      className="text-fg-tertiary hover:text-fg hover:underline min-w-0 normal-case"
       json={parsedValue}
     >
       <span className="block w-full truncate">{value}</span>
