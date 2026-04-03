@@ -57,14 +57,16 @@ export default function DashboardSidebarMenuTeams() {
     (team: ClientTeam) => {
       const splitPath = pathname.split('/')
       // splitPath: ["", "dashboard", teamIdOrSlug, section?, resourceId?, ...]
+      const originalSlug = splitPath[2]
       splitPath[2] = team.slug
 
-      // If the current section has team-specific resource sub-paths
-      // and we're deeper than the section root, truncate to avoid 404s.
+      // If actually switching teams and the current section has team-specific
+      // resource sub-paths, truncate to the section root to avoid 404s.
       // e.g. /dashboard/old-team/sandboxes/abc123/monitoring
       //    → /dashboard/new-team/sandboxes
       const section = splitPath[3]
       if (
+        team.slug !== originalSlug &&
         section &&
         TEAM_SPECIFIC_RESOURCE_SEGMENTS.includes(section) &&
         splitPath.length > 4
