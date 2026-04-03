@@ -1,5 +1,5 @@
 import micromatch from 'micromatch'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 import { PROTECTED_URLS } from './urls'
 
 export interface TitleSegment {
@@ -30,14 +30,14 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   }),
   '/dashboard/*/sandboxes/*/*': (pathname) => {
     const parts = pathname.split('/')
-    const teamIdOrSlug = parts[2]!
+    const teamSlug = parts[2]!
     const sandboxId = parts[4]!
 
     return {
       title: [
         {
           label: 'Sandboxes',
-          href: PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug),
+          href: PROTECTED_URLS.SANDBOXES_LIST(teamSlug),
         },
         { label: sandboxId },
       ],
@@ -54,7 +54,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   }),
   '/dashboard/*/templates/*/builds/*': (pathname) => {
     const parts = pathname.split('/')
-    const teamIdOrSlug = parts[2]!
+    const teamSlug = parts[2]!
     const buildId = parts.pop()!
     const buildIdSliced = `${buildId.slice(0, 6)}...${buildId.slice(-6)}`
 
@@ -62,7 +62,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       title: [
         {
           label: 'Templates',
-          href: PROTECTED_URLS.TEMPLATES_BUILDS(teamIdOrSlug),
+          href: PROTECTED_URLS.TEMPLATES_BUILDS(teamSlug),
         },
         { label: `Build ${buildIdSliced}` },
       ],
@@ -112,11 +112,11 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   }),
   '/dashboard/*/billing/plan': (pathname) => {
     const parts = pathname.split('/')
-    const teamIdOrSlug = parts[2]!
+    const teamSlug = parts[2]!
 
     return {
       title: [
-        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamSlug) },
         {
           label: 'Plan & Add-ons',
         },
@@ -126,14 +126,14 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   },
   '/dashboard/*/billing/plan/select': (pathname) => {
     const parts = pathname.split('/')
-    const teamIdOrSlug = parts[2]!
+    const teamSlug = parts[2]!
 
     return {
       title: [
-        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamIdOrSlug) },
+        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamSlug) },
         {
           label: 'Plan & Add-ons',
-          href: PROTECTED_URLS.BILLING_PLAN(teamIdOrSlug),
+          href: PROTECTED_URLS.BILLING_PLAN(teamSlug),
         },
         { label: 'Change Plan' },
       ],

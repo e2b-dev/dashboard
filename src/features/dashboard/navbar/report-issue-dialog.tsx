@@ -181,7 +181,7 @@ export default function ContactSupportDialog({
     )
 
     contactSupportMutation.mutate({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       description,
       files: filePayloads.length > 0 ? filePayloads : undefined,
     })

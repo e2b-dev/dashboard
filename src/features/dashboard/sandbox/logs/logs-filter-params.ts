@@ -1,7 +1,7 @@
 import { createLoader, parseAsString, parseAsStringEnum } from 'nuqs/server'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 
-export type LogLevelFilter = SandboxLogDTO['level']
+export type LogLevelFilter = SandboxLogModel['level']
 
 export const LOG_LEVELS: LogLevelFilter[] = ['debug', 'info', 'warn', 'error']
 

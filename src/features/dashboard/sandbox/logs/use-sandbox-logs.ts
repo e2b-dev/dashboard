@@ -15,7 +15,7 @@ const DRAIN_AFTER_STOP_WINDOW_MS = 10_000
 const MIN_EMPTY_DRAIN_POLLS = 2
 
 interface UseSandboxLogsParams {
-  teamIdOrSlug: string
+  teamSlug: string
   sandboxId: string
   isRunning: boolean
   level: LogLevelFilter | null
@@ -23,7 +23,7 @@ interface UseSandboxLogsParams {
 }
 
 export function useSandboxLogs({
-  teamIdOrSlug,
+  teamSlug,
   sandboxId,
   isRunning,
   level,
@@ -50,10 +50,8 @@ export function useSandboxLogs({
   const isLoadingForwards = useStore(store, (s) => s.isLoadingForwards)
 
   useLayoutEffect(() => {
-    store
-      .getState()
-      .init(trpcClient, { teamIdOrSlug, sandboxId }, level, search)
-  }, [store, trpcClient, teamIdOrSlug, sandboxId, level, search])
+    store.getState().init(trpcClient, { teamSlug, sandboxId }, level, search)
+  }, [store, trpcClient, teamSlug, sandboxId, level, search])
 
   const isDraining = useRef(false)
   const prevIsRunningRef = useRef(isRunning)
@@ -81,7 +79,7 @@ export function useSandboxLogs({
   const shouldPoll = isInitialized && (isRunning || isDraining.current)
 
   const { isFetching: isPolling } = useQuery({
-    queryKey: ['sandboxLogsForward', teamIdOrSlug, sandboxId, level, search],
+    queryKey: ['sandboxLogsForward', teamSlug, sandboxId, level, search],
     queryFn: async () => {
       const { logsCount } = await store.getState().fetchMoreForwards()
 

@@ -2,7 +2,7 @@
 
 import type { InferSafeActionFnResult } from 'next-safe-action'
 import type { NonUndefined } from 'react-hook-form'
-import type { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
+import type { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { LiveSandboxCounter } from './live-counter'
 import { useRecentMetrics } from './monitoring/hooks/use-recent-metrics'
 

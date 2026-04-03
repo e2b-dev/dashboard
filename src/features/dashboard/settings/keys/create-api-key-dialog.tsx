@@ -7,8 +7,8 @@ import { usePostHog } from 'posthog-js/react'
 import { type FC, type ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { createApiKeyAction } from '@/core/server/actions/key-actions'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { createApiKeyAction } from '@/server/keys/key-actions'
 import CopyButton from '@/ui/copy-button'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
@@ -49,7 +49,7 @@ interface CreateApiKeyDialogProps {
 const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
   'use no memo'
 
-  const { teamIdOrSlug } = useParams() as { teamIdOrSlug: string }
+  const { teamSlug } = useParams() as { teamSlug: string }
 
   const [open, setOpen] = useState(false)
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null)
@@ -98,7 +98,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((values) =>
-                createApiKey({ teamIdOrSlug, name: values.name })
+                createApiKey({ teamSlug, name: values.name })
               )}
               className="flex flex-col gap-6"
             >

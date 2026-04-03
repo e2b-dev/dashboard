@@ -13,11 +13,11 @@ interface UsageLimitsProps {
 }
 
 export default function UsageLimits({ className }: UsageLimitsProps) {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/limits'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/limits'>()
   const trpc = useTRPC()
 
   const { data: limits, isLoading } = useQuery({
-    ...trpc.billing.getLimits.queryOptions({ teamIdOrSlug }),
+    ...trpc.billing.getLimits.queryOptions({ teamSlug }),
     throwOnError: true,
   })
 

@@ -4,6 +4,10 @@ import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type {
+  BuildStatus,
+  ListedBuildModel,
+} from '@/core/modules/builds/models'
 import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
@@ -11,10 +15,6 @@ import {
   formatDurationCompact,
   formatTimeAgoCompact,
 } from '@/lib/utils/formatting'
-import type {
-  BuildStatus,
-  ListedBuildDTO,
-} from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -42,8 +42,7 @@ export function Template({
   className?: string
 }) {
   const router = useRouter()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
@@ -57,7 +56,7 @@ export function Template({
         e.preventDefault()
 
         useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamIdOrSlug))
+        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
       }}
     >
       <p className="truncate">{template}</p>
@@ -176,7 +175,7 @@ export function Status({ status }: StatusProps) {
     },
   }
 
-  const { label, icon, variant } = config[status]
+  const { label, icon, variant } = config[status]!
 
   return (
     <div className="flex items-center gap-3 min-w-0">
@@ -196,7 +195,7 @@ export function Status({ status }: StatusProps) {
 export function Reason({
   statusMessage,
 }: {
-  statusMessage: ListedBuildDTO['statusMessage']
+  statusMessage: ListedBuildModel['statusMessage']
 }) {
   if (!statusMessage) return null
 

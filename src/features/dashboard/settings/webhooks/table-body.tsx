@@ -1,19 +1,19 @@
-import { getWebhooks } from '@/server/webhooks/get-webhooks'
+import { getWebhooks } from '@/core/server/functions/webhooks/get-webhooks'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import WebhooksEmpty from './empty'
 import WebhookTableRow from './table-row'
 
 interface TableBodyContentProps {
   params: Promise<{
-    teamIdOrSlug: string
+    teamSlug: string
   }>
 }
 
 export default async function TableBodyContent({
   params,
 }: TableBodyContentProps) {
-  const { teamIdOrSlug } = await params
-  const webhooksResult = await getWebhooks({ teamIdOrSlug })
+  const { teamSlug } = await params
+  const webhooksResult = await getWebhooks({ teamSlug })
 
   // undefined data indicates execution error so we disable the controls
   const hasError = webhooksResult?.data === undefined

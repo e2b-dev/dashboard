@@ -1,10 +1,12 @@
 'use client'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRef, useState } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { uploadTeamProfilePictureAction } from '@/core/server/actions/team-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -12,7 +14,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn, exponentialSmoothing } from '@/lib/utils'
-import { uploadTeamProfilePictureAction } from '@/server/team/team-actions'
+import { useTRPC } from '@/trpc/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { cardVariants } from '@/ui/primitives/card'
@@ -23,6 +25,8 @@ interface ProfilePictureCardProps {
 
 export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -30,7 +34,10 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   const { execute: uploadProfilePicture, isExecuting: isUploading } = useAction(
     uploadTeamProfilePictureAction,
     {
-      onSuccess: () => {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.list.queryKey(),
+        })
         toast(defaultSuccessToast(USER_MESSAGES.teamLogoUpdated.message))
       },
       onError: ({ error }) => {
@@ -54,9 +61,8 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
   )
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-
+    const file = e.target.files?.[0]
+    if (file) {
       const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
 
       if (file.size > MAX_FILE_SIZE) {
@@ -72,12 +78,8 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
         return
       }
 
-      const formData = new FormData()
-      formData.append('teamId', team.id)
-      formData.append('image', file)
-
       uploadProfilePicture({
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         image: file,
       })
     }
@@ -89,7 +91,9 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
 
   return (
     <>
-      <div
+      <button
+        type="button"
+        aria-label="Upload team profile picture"
         className="relative cursor-pointer p-4 pr-0 md:p-6 md:pr-0"
         onClick={handleAvatarClick}
         onMouseEnter={() => setIsHovered(true)}
@@ -99,13 +103,13 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
           className={cn(
             'relative h-24 w-24',
             {
-              'border-none drop-shadow-lg filter': team.profile_picture_url,
+              'border-none drop-shadow-lg filter': team.profilePictureUrl,
             },
             className
           )}
         >
           <AvatarImage
-            src={team.profile_picture_url || ''}
+            src={team.profilePictureUrl || ''}
             alt={`${team.name}'s profile picture`}
           />
           <AvatarFallback className="bg-bg-hover relative text-2xl ">
@@ -169,7 +173,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
             ) : null}
           </AnimatePresence>
         </Avatar>
-      </div>
+      </button>
       <input
         type="file"
         ref={fileInputRef}

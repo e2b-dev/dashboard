@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react'
 import { LOG_RETENTION_MS } from '@/configs/logs'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
@@ -26,7 +27,6 @@ import {
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
 import { cn } from '@/lib/utils'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
@@ -45,7 +45,7 @@ const SCROLL_LOAD_THRESHOLD_PX = 200
 const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
 
 interface LogsProps {
-  teamIdOrSlug: string
+  teamSlug: string
   sandboxId: string
 }
 
@@ -59,7 +59,7 @@ function checkIfSandboxStillHasLogs(startedAtIso: string) {
   return Date.now() - startedAtUnix < LOG_RETENTION_MS
 }
 
-export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
+export default function SandboxLogs({ teamSlug, sandboxId }: LogsProps) {
   'use no memo'
 
   const { sandboxInfo, sandboxLifecycle, isRunning } = useSandboxContext()
@@ -94,7 +94,7 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
 
   return (
     <LogsContent
-      teamIdOrSlug={teamIdOrSlug}
+      teamSlug={teamSlug}
       sandboxId={sandboxId}
       isRunning={isRunning}
       hasRetainedLogs={hasRetainedLogs}
@@ -107,7 +107,7 @@ export default function SandboxLogs({ teamIdOrSlug, sandboxId }: LogsProps) {
 }
 
 interface LogsContentProps {
-  teamIdOrSlug: string
+  teamSlug: string
   sandboxId: string
   isRunning: boolean
   hasRetainedLogs: boolean
@@ -118,7 +118,7 @@ interface LogsContentProps {
 }
 
 function LogsContent({
-  teamIdOrSlug,
+  teamSlug,
   sandboxId,
   isRunning,
   hasRetainedLogs,
@@ -129,7 +129,9 @@ function LogsContent({
 }: LogsContentProps) {
   const [scrollContainerElement, setScrollContainerElement] =
     useState<HTMLDivElement | null>(null)
-  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<SandboxLogDTO[]>([])
+  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<SandboxLogModel[]>(
+    []
+  )
 
   const {
     logs,
@@ -141,7 +143,7 @@ function LogsContent({
     isFetching,
     fetchNextPage,
   } = useSandboxLogs({
-    teamIdOrSlug,
+    teamSlug,
     sandboxId,
     isRunning,
     level,
@@ -309,7 +311,7 @@ function FiltersRow({
 }
 
 interface VirtualizedLogsBodyProps {
-  logs: SandboxLogDTO[]
+  logs: SandboxLogModel[]
   scrollContainerElement: HTMLDivElement
   onLoadMore: () => void
   hasNextPage: boolean
@@ -609,7 +611,7 @@ function useAutoScrollToBottom({
 }
 
 interface LogRowProps {
-  log: SandboxLogDTO
+  log: SandboxLogModel
   search: string
   shouldHighlight: boolean
   isZebraRow: boolean

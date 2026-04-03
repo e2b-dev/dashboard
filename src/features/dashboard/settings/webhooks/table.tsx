@@ -12,7 +12,7 @@ import TableBodyContent from './table-body'
 
 interface WebhooksTableProps {
   params: Promise<{
-    teamIdOrSlug: string
+    teamSlug: string
   }>
   className?: string
 }

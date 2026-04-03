@@ -3,9 +3,8 @@
 import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -15,9 +14,8 @@ import SandboxInspectEmptyFrame from './empty'
 export default function SandboxInspectNotFound() {
   const router = useRouter()
   const { isRunning } = useSandboxContext()
-  const { trackInteraction } = useSandboxInspectAnalytics()
 
-  const { teamIdOrSlug } = useParams()
+  const { teamSlug } = useParams()
 
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
   const [isPending, startTransition] = useTransition()
@@ -34,7 +32,7 @@ export default function SandboxInspectNotFound() {
       l.error(
         {
           key: 'sandbox_inspect_not_found:save_root_path_failed',
-          error: serializeError(error),
+          error: serializeErrorForLog(error),
         },
         `${error instanceof Error ? error.message : 'Failed to save root path'}`
       )
@@ -105,9 +103,7 @@ export default function SandboxInspectNotFound() {
   ) : (
     <Button
       variant="outline"
-      onClick={() =>
-        router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
-      }
+      onClick={() => router.push(PROTECTED_URLS.SANDBOXES(teamSlug as string))}
       className="w-full gap-2"
     >
       <ArrowLeft className="text-fg-tertiary h-4 w-4" />

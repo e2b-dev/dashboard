@@ -20,8 +20,8 @@ export default function SandboxLayout({
   header,
   tabsHeaderAccessory,
 }: SandboxLayoutProps) {
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
+  const { teamSlug } =
+    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
 
   const { sandboxInfo, isSandboxInfoLoading, isSandboxNotFound } =
     useSandboxContext()
@@ -82,7 +82,7 @@ export default function SandboxLayout({
           ) : (
             <SandboxInspectIncompatible
               templateNameOrId={sandboxInfo.alias || sandboxInfo.templateID}
-              teamIdOrSlug={teamIdOrSlug}
+              teamSlug={teamSlug}
             />
           )}
         </DashboardTab>

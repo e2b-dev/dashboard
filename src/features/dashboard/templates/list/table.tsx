@@ -10,11 +10,11 @@ import {
 } from '@tanstack/react-table'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import type { Template } from '@/core/modules/templates/models'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
-import type { Template } from '@/types/api.types'
 import ClientOnly from '@/ui/client-only'
 import {
   DataTable,
@@ -34,12 +34,11 @@ export default function TemplatesTable() {
   'use no memo'
 
   const trpc = useTRPC()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { data: templatesData, error: templatesError } = useSuspenseQuery(
     trpc.templates.getTemplates.queryOptions(
-      { teamIdOrSlug },
+      { teamSlug },
       {
         refetchOnMount: false,
         refetchOnWindowFocus: false,

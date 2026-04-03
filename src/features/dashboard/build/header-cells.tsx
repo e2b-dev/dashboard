@@ -23,8 +23,7 @@ export function Template({
   className?: string
 }) {
   const router = useRouter()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
@@ -38,7 +37,7 @@ export function Template({
         e.preventDefault()
 
         useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamIdOrSlug))
+        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
       }}
     >
       <p className="truncate">{template}</p>

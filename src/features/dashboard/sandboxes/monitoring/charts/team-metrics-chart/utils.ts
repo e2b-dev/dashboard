@@ -1,5 +1,5 @@
+import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
 import { formatAxisNumber } from '@/lib/utils/formatting'
-import type { ClientTeamMetric } from '@/types/sandboxes.types'
 import type { TeamMetricDataPoint } from './types'
 
 /**

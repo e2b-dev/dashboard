@@ -15,7 +15,7 @@ import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
 type SidebarNavArgs = {
-  teamIdOrSlug?: string
+  teamSlug?: string
 }
 
 export type SidebarNavItem = {
@@ -34,13 +34,13 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   // Base
   {
     label: 'Sandboxes',
-    href: (args) => PROTECTED_URLS.SANDBOXES(args.teamIdOrSlug!),
+    href: (args) => PROTECTED_URLS.SANDBOXES(args.teamSlug!),
     icon: Box,
     activeMatch: `/dashboard/*/sandboxes/**`,
   },
   {
     label: 'Templates',
-    href: (args) => PROTECTED_URLS.TEMPLATES(args.teamIdOrSlug!),
+    href: (args) => PROTECTED_URLS.TEMPLATES(args.teamSlug!),
     icon: Container,
     activeMatch: `/dashboard/*/templates/**`,
   },
@@ -52,7 +52,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
           label: 'Webhooks',
           group: 'integration',
           href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.WEBHOOKS(args.teamIdOrSlug!),
+            PROTECTED_URLS.WEBHOOKS(args.teamSlug!),
           icon: WebhookIcon,
           activeMatch: `/dashboard/*/webhooks`,
         },
@@ -62,21 +62,21 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   // Team
   {
     label: 'General',
-    href: (args) => PROTECTED_URLS.GENERAL(args.teamIdOrSlug!),
+    href: (args) => PROTECTED_URLS.GENERAL(args.teamSlug!),
     icon: Settings,
     group: 'team',
     activeMatch: `/dashboard/*/general`,
   },
   {
     label: 'API Keys',
-    href: (args) => PROTECTED_URLS.KEYS(args.teamIdOrSlug!),
+    href: (args) => PROTECTED_URLS.KEYS(args.teamSlug!),
     icon: Key,
     group: 'team',
     activeMatch: `/dashboard/*/keys`,
   },
   {
     label: 'Members',
-    href: (args) => PROTECTED_URLS.MEMBERS(args.teamIdOrSlug!),
+    href: (args) => PROTECTED_URLS.MEMBERS(args.teamSlug!),
     icon: Users,
     group: 'team',
     activeMatch: `/dashboard/*/members`,
@@ -87,16 +87,14 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     ? [
         {
           label: 'Usage',
-          href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.USAGE(args.teamIdOrSlug!),
+          href: (args: SidebarNavArgs) => PROTECTED_URLS.USAGE(args.teamSlug!),
           icon: Activity,
           group: 'billing',
           activeMatch: `/dashboard/*/usage/**`,
         },
         {
           label: 'Limits',
-          href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.LIMITS(args.teamIdOrSlug!),
+          href: (args: SidebarNavArgs) => PROTECTED_URLS.LIMITS(args.teamSlug!),
           group: 'billing',
           icon: GaugeIcon,
           activeMatch: `/dashboard/*/limits/**`,
@@ -104,7 +102,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
         {
           label: 'Billing',
           href: (args: SidebarNavArgs) =>
-            PROTECTED_URLS.BILLING(args.teamIdOrSlug!),
+            PROTECTED_URLS.BILLING(args.teamSlug!),
           icon: CreditCard,
           group: 'billing',
           activeMatch: `/dashboard/*/billing/**`,

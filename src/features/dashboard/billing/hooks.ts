@@ -264,11 +264,11 @@ export function usePaymentConfirmation({
 export { stripePromise }
 
 export function useBillingItems() {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing'>()
   const trpc = useTRPC()
 
   const { data: items, isLoading } = useQuery({
-    ...trpc.billing.getItems.queryOptions({ teamIdOrSlug }),
+    ...trpc.billing.getItems.queryOptions({ teamSlug }),
     throwOnError: true,
   })
 
@@ -287,11 +287,11 @@ export function useBillingItems() {
 }
 
 export function useUsage() {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing'>()
   const trpc = useTRPC()
 
   const { data: usage, isLoading } = useQuery({
-    ...trpc.billing.getUsage.queryOptions({ teamIdOrSlug }),
+    ...trpc.billing.getUsage.queryOptions({ teamSlug }),
     throwOnError: true,
   })
 
@@ -303,33 +303,18 @@ export function useUsage() {
 }
 
 export function useInvoices() {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing'>()
   const trpc = useTRPC()
 
   const {
     data: invoices,
     isLoading,
     error,
-  } = useQuery(trpc.billing.getInvoices.queryOptions({ teamIdOrSlug }))
+  } = useQuery(trpc.billing.getInvoices.queryOptions({ teamSlug }))
 
   return {
     invoices,
     isLoading,
     error,
-  }
-}
-
-export function useTeamLimits() {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/billing'>()
-  const trpc = useTRPC()
-
-  const { data: teamLimits, isLoading } = useQuery({
-    ...trpc.billing.getTeamLimits.queryOptions({ teamIdOrSlug }),
-    throwOnError: true,
-  })
-
-  return {
-    teamLimits,
-    isLoading,
   }
 }

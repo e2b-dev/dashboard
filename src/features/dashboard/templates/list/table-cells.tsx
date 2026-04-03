@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
 import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -15,7 +16,6 @@ import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
-import type { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
@@ -50,8 +50,7 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -75,13 +74,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
           (old) => {
             if (!old?.templates) return old
@@ -108,7 +107,7 @@ export function ActionsCell({
       onSettled: () => {
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -133,13 +132,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
 
           (old) => {
@@ -166,7 +165,7 @@ export function ActionsCell({
 
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -178,7 +177,7 @@ export function ActionsCell({
 
   const togglePublish = () => {
     updateTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
       public: !template.public,
     })
@@ -186,7 +185,7 @@ export function ActionsCell({
 
   const deleteTemplate = () => {
     deleteTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
     })
   }

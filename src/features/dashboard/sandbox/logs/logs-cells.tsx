@@ -1,5 +1,5 @@
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import { LogLevelBadge } from '@/features/dashboard/common/log-cells'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 const LOCAL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
@@ -14,7 +14,7 @@ const LOCAL_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
   hour12: false,
 })
 
-export const LogLevel = ({ level }: { level: SandboxLogDTO['level'] }) => {
+export const LogLevel = ({ level }: { level: SandboxLogModel['level'] }) => {
   return <LogLevelBadge level={level} />
 }
 
@@ -43,7 +43,7 @@ export const Timestamp = ({ timestampUnix }: TimestampProps) => {
 }
 
 interface MessageProps {
-  message: SandboxLogDTO['message']
+  message: SandboxLogModel['message']
   search: string
   shouldHighlight: boolean
 }

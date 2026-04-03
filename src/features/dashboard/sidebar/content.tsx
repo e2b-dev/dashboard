@@ -37,7 +37,7 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 
 export default function DashboardSidebarContent() {
   const { team } = useDashboard()
-  const selectedTeamIdentifier = team.slug ?? team.id
+  const selectedTeamSlug = team.slug
 
   const pathname = usePathname()
   const isMobile = useIsMobile()
@@ -64,7 +64,7 @@ export default function DashboardSidebarContent() {
           <SidebarMenu>
             {links.map((item) => {
               const href = item.href({
-                teamIdOrSlug: selectedTeamIdentifier ?? undefined,
+                teamSlug: selectedTeamSlug,
               })
 
               return (

@@ -24,7 +24,7 @@ import {
 } from '@/ui/primitives/form'
 
 interface LimitFormProps {
-  teamIdOrSlug: string
+  teamSlug: string
   className?: string
   originalValue: number | null
   type: 'limit' | 'alert'
@@ -40,7 +40,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 export default function LimitForm({
-  teamIdOrSlug,
+  teamSlug,
   className,
   originalValue,
   type,
@@ -60,7 +60,7 @@ export default function LimitForm({
   })
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
-    teamIdOrSlug,
+    teamSlug,
   }).queryKey
 
   const setLimitMutation = useMutation(
@@ -114,7 +114,7 @@ export default function LimitForm({
     }
 
     setLimitMutation.mutate({
-      teamIdOrSlug,
+      teamSlug,
       type,
       value: data.value,
     })
@@ -122,7 +122,7 @@ export default function LimitForm({
 
   const handleClear = () => {
     clearLimitMutation.mutate({
-      teamIdOrSlug,
+      teamSlug,
       type,
     })
   }

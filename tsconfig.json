@@ -20,6 +20,15 @@
       }
     ],
     "paths": {
+      "@/contracts/argus-api": [
+        "./src/core/shared/contracts/argus-api.types.ts"
+      ],
+      "@/contracts/dashboard-api": [
+        "./src/core/shared/contracts/dashboard-api.types.ts"
+      ],
+      "@/contracts/infra-api": [
+        "./src/core/shared/contracts/infra-api.types.ts"
+      ],
       "@/*": ["./src/*"]
     },
     "isolatedModules": true

@@ -3,13 +3,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useState } from 'react'
+import { updateWebhookSecretAction } from '@/core/server/actions/webhooks-actions'
+import { UpdateWebhookSecretSchema } from '@/core/server/functions/webhooks/schema'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { UpdateWebhookSecretSchema } from '@/server/webhooks/schema'
-import { updateWebhookSecretAction } from '@/server/webhooks/webhooks-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -42,6 +43,7 @@ export default function WebhookEditSecretDialog({
 }: WebhookEditSecretDialogProps) {
   'use no memo'
 
+  const { team } = useDashboard()
   const [open, setOpen] = useState(false)
 
   const webhookName = webhook.name
@@ -58,7 +60,7 @@ export default function WebhookEditSecretDialog({
       formProps: {
         mode: 'onChange',
         defaultValues: {
-          teamIdOrSlug: webhook.teamId,
+          teamSlug: team.slug,
           webhookId: webhook.id,
           signatureSecret: '',
         },
@@ -135,7 +137,7 @@ export default function WebhookEditSecretDialog({
         <Form {...form}>
           <form onSubmit={handleSubmitWithAction} className="min-w-0">
             {/* Hidden fields */}
-            <input type="hidden" {...form.register('teamIdOrSlug')} />
+            <input type="hidden" {...form.register('teamSlug')} />
             <input type="hidden" {...form.register('webhookId')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0">

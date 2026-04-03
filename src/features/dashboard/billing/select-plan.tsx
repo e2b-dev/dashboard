@@ -2,11 +2,12 @@
 
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import type { TierInfo } from '@/core/modules/billing/models'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
-import type { TierInfo } from '@/types/billing.types'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -175,7 +176,7 @@ function PlanCard({
     ? formatCurrency(tier.price_cents / 100)
     : 'FREE'
 
-  const teamDisplayName = team.transformed_default_name || team.name
+  const teamDisplayName = getTeamDisplayName(team)
 
   const buttonVariant = isBaseTier ? 'outline' : 'default'
   const buttonText = isBaseTier ? 'Downgrade' : 'Upgrade'
@@ -240,8 +241,8 @@ function PlanCard({
 export default function SelectPlan() {
   const { toast } = useToast()
   const { tierData, isLoading } = useBillingItems()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan/select'>()
+  const { teamSlug } =
+    useRouteParams<'/dashboard/[teamSlug]/billing/plan/select'>()
   const router = useRouter()
   const trpc = useTRPC()
 
@@ -273,11 +274,11 @@ export default function SelectPlan() {
     )
 
   const handleUpgrade = (tierId: string) => {
-    createCheckout({ teamIdOrSlug, tierId })
+    createCheckout({ teamSlug, tierId })
   }
 
   const handleDowngrade = () => {
-    openCustomerPortal({ teamIdOrSlug })
+    openCustomerPortal({ teamSlug })
   }
 
   const baseTier = tierData?.base

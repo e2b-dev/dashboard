@@ -81,8 +81,7 @@ export default function SandboxesTable() {
   'use no memo'
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
 
   const trpc = useTRPC()
 
@@ -97,7 +96,7 @@ export default function SandboxesTable() {
 
   const { data, refetch, isFetching } = useSuspenseQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
-      { teamIdOrSlug },
+      { teamSlug },
       {
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,

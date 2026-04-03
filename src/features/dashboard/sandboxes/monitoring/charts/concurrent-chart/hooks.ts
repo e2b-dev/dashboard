@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
+import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
 import { formatCompactDate, formatNumber } from '@/lib/utils/formatting'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import { transformMetrics } from '../team-metrics-chart'
