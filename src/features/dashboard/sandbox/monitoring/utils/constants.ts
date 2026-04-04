@@ -1,6 +1,7 @@
 import {
   millisecondsInDay,
   millisecondsInHour,
+  millisecondsInMinute,
   millisecondsInSecond,
 } from 'date-fns/constants'
 
@@ -54,6 +55,8 @@ export const SANDBOX_MONITORING_LIVE_POLLING_MS = 5_000
 export const SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS = millisecondsInHour
 export const SANDBOX_MONITORING_OVERFETCH_RATIO = 0.02
 export const SANDBOX_MONITORING_OVERFETCH_MIN_MS = 30 * millisecondsInSecond
+export const SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS =
+  2 * millisecondsInMinute
 
 export const SANDBOX_MONITORING_CHART_STROKE_VAR = '--stroke'
 export const SANDBOX_MONITORING_CHART_FALLBACK_STROKE = '#000'

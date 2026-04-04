@@ -15,6 +15,36 @@ import { parseDateTimestampMs } from './timeframe'
 export interface LifecyclePauseWindow {
   startMs: number
   endMs: number
+  kind: 'inactive' | 'beforeCreated' | 'createdReference'
+}
+
+function appendVisiblePauseWindow(
+  windows: LifecyclePauseWindow[],
+  startMs: number,
+  endMs: number,
+  rangeStart: number,
+  rangeEnd: number,
+  kind: LifecyclePauseWindow['kind'],
+  position: 'push' | 'unshift' = 'push'
+) {
+  const visibleWindow = toVisiblePauseWindow(
+    startMs,
+    endMs,
+    rangeStart,
+    rangeEnd,
+    kind
+  )
+
+  if (!visibleWindow) {
+    return
+  }
+
+  if (position === 'unshift') {
+    windows.unshift(visibleWindow)
+    return
+  }
+
+  windows.push(visibleWindow)
 }
 
 const EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
@@ -86,7 +116,8 @@ function toVisiblePauseWindow(
   startMs: number,
   endMs: number,
   rangeStart: number,
-  rangeEnd: number
+  rangeEnd: number,
+  kind: LifecyclePauseWindow['kind']
 ): LifecyclePauseWindow | null {
   const visibleStartMs = Math.max(startMs, rangeStart)
   const visibleEndMs = Math.min(endMs, rangeEnd)
@@ -102,6 +133,7 @@ function toVisiblePauseWindow(
   return {
     startMs: visibleStartMs,
     endMs: visibleEndMs,
+    kind,
   }
 }
 
@@ -114,8 +146,7 @@ export function buildInactiveWindows(
   const sortedEvents = sortLifecycleEventsByTimestamp(lifecycleEvents)
 
   let createdMs: number | null = null
-  let killedMs: number | null = null
-  let activePauseStartMs: number | null = null
+  let inactiveStartMs: number | null = null
 
   for (const event of sortedEvents) {
     const eventTimestampMs = parseDateTimestampMs(event.timestamp)
@@ -123,93 +154,71 @@ export function buildInactiveWindows(
       continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_EVENT_CREATED && createdMs === null) {
-      createdMs = eventTimestampMs
-      continue
-    }
-
-    if (event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED) {
-      activePauseStartMs = eventTimestampMs
-      continue
-    }
-
-    if (
-      event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED &&
-      activePauseStartMs !== null
-    ) {
-      if (eventTimestampMs > activePauseStartMs) {
-        const visibleWindow = toVisiblePauseWindow(
-          activePauseStartMs,
-          eventTimestampMs,
-          rangeStart,
-          rangeEnd
-        )
-
-        if (visibleWindow) {
-          windows.push(visibleWindow)
+    switch (event.type) {
+      case SANDBOX_LIFECYCLE_EVENT_CREATED:
+        if (createdMs === null) {
+          createdMs = eventTimestampMs
         }
-      }
+        break
 
-      activePauseStartMs = null
-      continue
-    }
+      case SANDBOX_LIFECYCLE_EVENT_PAUSED:
+      case SANDBOX_LIFECYCLE_EVENT_KILLED:
+        if (inactiveStartMs === null) {
+          inactiveStartMs = eventTimestampMs
+        }
+        break
 
-    if (event.type === SANDBOX_LIFECYCLE_EVENT_KILLED) {
-      killedMs = eventTimestampMs
+      case SANDBOX_LIFECYCLE_EVENT_RESUMED:
+        if (inactiveStartMs !== null && eventTimestampMs > inactiveStartMs) {
+          appendVisiblePauseWindow(
+            windows,
+            inactiveStartMs,
+            eventTimestampMs,
+            rangeStart,
+            rangeEnd,
+            'inactive'
+          )
+        }
+
+        inactiveStartMs = null
+        break
     }
   }
 
   // Before created: no data should exist
   if (createdMs !== null && createdMs >= rangeStart) {
     if (createdMs > rangeStart) {
-      const visibleWindow = toVisiblePauseWindow(
+      appendVisiblePauseWindow(
+        windows,
         rangeStart,
         createdMs,
         rangeStart,
-        rangeEnd
+        rangeEnd,
+        'beforeCreated',
+        'unshift'
       )
-      if (visibleWindow) {
-        windows.unshift(visibleWindow)
-      }
     } else {
       // createdMs === rangeStart: zero-width window as a connector reference
       // point so buildPauseWindowConnectors bridges to the first data point
-      windows.unshift({ startMs: createdMs, endMs: createdMs })
+      windows.unshift({
+        startMs: createdMs,
+        endMs: createdMs,
+        kind: 'createdReference',
+      })
     }
   }
 
-  // Open pause (sandbox currently paused, no resume yet)
-  if (activePauseStartMs !== null) {
-    const pauseEndMs = killedMs ?? rangeEnd
-    if (pauseEndMs > activePauseStartMs) {
-      const visibleWindow = toVisiblePauseWindow(
-        activePauseStartMs,
-        pauseEndMs,
-        rangeStart,
-        rangeEnd
-      )
-      if (visibleWindow) {
-        windows.push(visibleWindow)
-      }
-    }
-  }
-
-  // After killed: no data should exist
-  if (killedMs !== null && killedMs <= rangeEnd) {
-    if (killedMs < rangeEnd) {
-      const visibleWindow = toVisiblePauseWindow(
-        killedMs,
+  // Open inactive span (sandbox currently paused or killed, no resume yet).
+  if (inactiveStartMs !== null) {
+    if (rangeEnd > inactiveStartMs) {
+      appendVisiblePauseWindow(
+        windows,
+        inactiveStartMs,
         rangeEnd,
         rangeStart,
-        rangeEnd
+        rangeEnd,
+        'inactive'
       )
-      if (visibleWindow) {
-        windows.push(visibleWindow)
-      }
-    } else {
-      // killedMs === rangeEnd: zero-width window as a connector reference
-      // point so buildPauseWindowConnectors bridges from the last data point
-      windows.push({ startMs: killedMs, endMs: killedMs })
     }
   }
 
@@ -329,11 +338,70 @@ function buildPauseWindowConnectors(
     }
 
     const nextPoint = findFirstValidPointAfterTimestamp(data, pauseWindow.endMs)
-    if (nextPoint && nextPoint[1] !== null) {
+    if (pauseWindow.kind === 'inactive' && nextPoint && nextPoint[1] !== null) {
       connectors.push({
         from: [pauseWindow.endMs, nextPoint[1]],
         to: [nextPoint[0], nextPoint[1]],
       })
+    }
+  }
+
+  return connectors
+}
+
+function hasValidDataWithinWindow(
+  data: SandboxMetricsDataPoint[],
+  startMs: number,
+  endMs: number
+): boolean {
+  return data.some(
+    (point) => point[1] !== null && point[0] >= startMs && point[0] <= endMs
+  )
+}
+
+function buildSyntheticActiveWindowConnectors(
+  data: SandboxMetricsDataPoint[],
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
+) {
+  const connectors: NonNullable<SandboxMetricsSeries['connectors']> = []
+  let activeStartMs: number | null = null
+
+  for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
+    const eventTimestampMs = parseDateTimestampMs(event.timestamp)
+    if (eventTimestampMs === null) {
+      continue
+    }
+
+    if (
+      event.type === SANDBOX_LIFECYCLE_EVENT_CREATED ||
+      event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED
+    ) {
+      activeStartMs = eventTimestampMs
+      continue
+    }
+
+    if (
+      activeStartMs !== null &&
+      (event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED ||
+        event.type === SANDBOX_LIFECYCLE_EVENT_KILLED)
+    ) {
+      const visibleStartMs = Math.max(activeStartMs, rangeStart)
+      const visibleEndMs = Math.min(eventTimestampMs, rangeEnd)
+
+      if (
+        visibleEndMs > visibleStartMs &&
+        !hasValidDataWithinWindow(data, visibleStartMs, visibleEndMs)
+      ) {
+        connectors.push({
+          from: [visibleStartMs, 0],
+          to: [visibleEndMs, 0],
+          isSynthetic: true,
+        })
+      }
+
+      activeStartMs = null
     }
   }
 
@@ -381,15 +449,26 @@ function injectGapNullPoints(
 
 export function applyPauseWindows(
   series: SandboxMetricsSeries[],
-  pauseWindows: LifecyclePauseWindow[]
+  pauseWindows: LifecyclePauseWindow[],
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
 ): SandboxMetricsSeries[] {
-  if (pauseWindows.length === 0) {
+  if (pauseWindows.length === 0 && lifecycleEvents.length === 0) {
     return series
   }
 
   return series.map((line) => ({
     ...line,
-    connectors: buildPauseWindowConnectors(line.data, pauseWindows),
+    connectors: [
+      ...buildPauseWindowConnectors(line.data, pauseWindows),
+      ...buildSyntheticActiveWindowConnectors(
+        line.data,
+        lifecycleEvents,
+        rangeStart,
+        rangeEnd
+      ),
+    ],
     data: injectGapNullPoints(line.data, pauseWindows),
   }))
 }
