@@ -215,7 +215,7 @@ describe('buildMonitoringChartModel', () => {
     ])
   })
 
-  it('treats killed periods as inactive until the next resume', () => {
+  it('does not treat killed periods as paused gaps', () => {
     const metrics: SandboxMetric[] = [
       {
         ...baseMetric,
@@ -238,11 +238,6 @@ describe('buildMonitoringChartModel', () => {
         id: 'pause-1',
         type: 'sandbox.lifecycle.paused',
         timestamp: '1970-01-01T00:00:20.000Z',
-      }),
-      createLifecycleEvent({
-        id: 'pause-2',
-        type: 'sandbox.lifecycle.paused',
-        timestamp: '1970-01-01T00:00:30.000Z',
       }),
       createLifecycleEvent({
         id: 'kill-1',
