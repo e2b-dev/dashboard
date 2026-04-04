@@ -259,7 +259,8 @@ export function useSandboxMonitoringController(sandboxId: string) {
   const isLive =
     shouldPoll &&
     latestMetricTimestampMs !== null &&
-    Date.now() - latestMetricTimestampMs <= SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS
+    Date.now() - latestMetricTimestampMs <=
+      SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS
 
   return {
     lifecycleBounds,

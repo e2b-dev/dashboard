@@ -328,8 +328,7 @@ function hasValidDataWithinWindow(
   endMs: number
 ): boolean {
   return data.some(
-    (point) =>
-      point[1] !== null && point[0] >= startMs && point[0] <= endMs
+    (point) => point[1] !== null && point[0] >= startMs && point[0] <= endMs
   )
 }
 

@@ -357,13 +357,15 @@ function SandboxMetricsChart({
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
-      const latestPoint = [...line.data].reverse().find(
-        (point) =>
-          point &&
-          point[1] !== null &&
-          Number.isFinite(point[0]) &&
-          point[0] <= Date.now()
-      )
+      const latestPoint = [...line.data]
+        .reverse()
+        .find(
+          (point) =>
+            point &&
+            point[1] !== null &&
+            Number.isFinite(point[0]) &&
+            point[0] <= Date.now()
+        )
       const latestPointTimestampMs = latestPoint?.[0] ?? null
       const livePoint =
         isPolling &&
