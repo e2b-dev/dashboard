@@ -194,11 +194,7 @@ export default function SandboxMetricsCharts({
         startMs: renderedSnapshot?.fetchTimeframe.start ?? fetchTimeframe.start,
         endMs: renderedSnapshot?.fetchTimeframe.end ?? fetchTimeframe.end,
       }),
-    [
-      fetchTimeframe.end,
-      fetchTimeframe.start,
-      renderedSnapshot,
-    ]
+    [fetchTimeframe.end, fetchTimeframe.start, renderedSnapshot]
   )
   const resourceSeriesWithMarkerFormatters = useMemo(
     () =>
