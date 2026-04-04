@@ -46,6 +46,44 @@ interface RenderedMonitoringSnapshot {
   lifecycleEvents: SandboxEventDTO[]
 }
 
+function createRenderedMonitoringSnapshot(
+  timeframe: { start: number; end: number },
+  fetchTimeframe: { start: number; end: number },
+  metrics: SandboxMetric[],
+  lifecycleEvents: SandboxEventDTO[]
+): RenderedMonitoringSnapshot {
+  return {
+    timeframe: {
+      start: timeframe.start,
+      end: timeframe.end,
+    },
+    fetchTimeframe: {
+      start: fetchTimeframe.start,
+      end: fetchTimeframe.end,
+    },
+    metrics,
+    lifecycleEvents,
+  }
+}
+
+function isSameRenderedMonitoringSnapshot(
+  snapshot: RenderedMonitoringSnapshot | null,
+  timeframe: { start: number; end: number },
+  fetchTimeframe: { start: number; end: number },
+  metrics: SandboxMetric[],
+  lifecycleEvents: SandboxEventDTO[]
+): boolean {
+  return Boolean(
+    snapshot &&
+      snapshot.timeframe.start === timeframe.start &&
+      snapshot.timeframe.end === timeframe.end &&
+      snapshot.fetchTimeframe.start === fetchTimeframe.start &&
+      snapshot.fetchTimeframe.end === fetchTimeframe.end &&
+      snapshot.metrics === metrics &&
+      snapshot.lifecycleEvents === lifecycleEvents
+  )
+}
+
 function useChartZoom(options: {
   timeframe: { start: number; end: number }
   activePresetId: string | null
@@ -262,29 +300,23 @@ export default function SandboxMetricsCharts({
 
     setRenderedSnapshot((previous) => {
       if (
-        previous &&
-        previous.timeframe.start === timeframe.start &&
-        previous.timeframe.end === timeframe.end &&
-        previous.fetchTimeframe.start === fetchTimeframe.start &&
-        previous.fetchTimeframe.end === fetchTimeframe.end &&
-        previous.metrics === metrics &&
-        previous.lifecycleEvents === lifecycleEvents
+        isSameRenderedMonitoringSnapshot(
+          previous,
+          timeframe,
+          fetchTimeframe,
+          metrics,
+          lifecycleEvents
+        )
       ) {
         return previous
       }
 
-      return {
-        timeframe: {
-          start: timeframe.start,
-          end: timeframe.end,
-        },
-        fetchTimeframe: {
-          start: fetchTimeframe.start,
-          end: fetchTimeframe.end,
-        },
+      return createRenderedMonitoringSnapshot(
+        timeframe,
+        fetchTimeframe,
         metrics,
-        lifecycleEvents,
-      }
+        lifecycleEvents
+      )
     })
   }, [
     isInitialLoading,

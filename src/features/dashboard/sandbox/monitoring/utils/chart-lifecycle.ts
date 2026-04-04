@@ -18,6 +18,35 @@ export interface LifecyclePauseWindow {
   kind: 'inactive' | 'beforeCreated' | 'createdReference'
 }
 
+function appendVisiblePauseWindow(
+  windows: LifecyclePauseWindow[],
+  startMs: number,
+  endMs: number,
+  rangeStart: number,
+  rangeEnd: number,
+  kind: LifecyclePauseWindow['kind'],
+  position: 'push' | 'unshift' = 'push'
+) {
+  const visibleWindow = toVisiblePauseWindow(
+    startMs,
+    endMs,
+    rangeStart,
+    rangeEnd,
+    kind
+  )
+
+  if (!visibleWindow) {
+    return
+  }
+
+  if (position === 'unshift') {
+    windows.unshift(visibleWindow)
+    return
+  }
+
+  windows.push(visibleWindow)
+}
+
 const EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
 
 const VISIBLE_EVENT_TYPES = new Set([
@@ -125,56 +154,49 @@ export function buildInactiveWindows(
       continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_EVENT_CREATED && createdMs === null) {
-      createdMs = eventTimestampMs
-      continue
-    }
-
-    if (
-      event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED ||
-      event.type === SANDBOX_LIFECYCLE_EVENT_KILLED
-    ) {
-      if (inactiveStartMs === null) {
-        inactiveStartMs = eventTimestampMs
-      }
-      continue
-    }
-
-    if (
-      event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED &&
-      inactiveStartMs !== null
-    ) {
-      if (eventTimestampMs > inactiveStartMs) {
-        const visibleWindow = toVisiblePauseWindow(
-          inactiveStartMs,
-          eventTimestampMs,
-          rangeStart,
-          rangeEnd,
-          'inactive'
-        )
-
-        if (visibleWindow) {
-          windows.push(visibleWindow)
+    switch (event.type) {
+      case SANDBOX_LIFECYCLE_EVENT_CREATED:
+        if (createdMs === null) {
+          createdMs = eventTimestampMs
         }
-      }
+        break
 
-      inactiveStartMs = null
+      case SANDBOX_LIFECYCLE_EVENT_PAUSED:
+      case SANDBOX_LIFECYCLE_EVENT_KILLED:
+        if (inactiveStartMs === null) {
+          inactiveStartMs = eventTimestampMs
+        }
+        break
+
+      case SANDBOX_LIFECYCLE_EVENT_RESUMED:
+        if (inactiveStartMs !== null && eventTimestampMs > inactiveStartMs) {
+          appendVisiblePauseWindow(
+            windows,
+            inactiveStartMs,
+            eventTimestampMs,
+            rangeStart,
+            rangeEnd,
+            'inactive'
+          )
+        }
+
+        inactiveStartMs = null
+        break
     }
   }
 
   // Before created: no data should exist
   if (createdMs !== null && createdMs >= rangeStart) {
     if (createdMs > rangeStart) {
-      const visibleWindow = toVisiblePauseWindow(
+      appendVisiblePauseWindow(
+        windows,
         rangeStart,
         createdMs,
         rangeStart,
         rangeEnd,
-        'beforeCreated'
+        'beforeCreated',
+        'unshift'
       )
-      if (visibleWindow) {
-        windows.unshift(visibleWindow)
-      }
     } else {
       // createdMs === rangeStart: zero-width window as a connector reference
       // point so buildPauseWindowConnectors bridges to the first data point
@@ -189,16 +211,14 @@ export function buildInactiveWindows(
   // Open inactive span (sandbox currently paused or killed, no resume yet).
   if (inactiveStartMs !== null) {
     if (rangeEnd > inactiveStartMs) {
-      const visibleWindow = toVisiblePauseWindow(
+      appendVisiblePauseWindow(
+        windows,
         inactiveStartMs,
         rangeEnd,
         rangeStart,
         rangeEnd,
         'inactive'
       )
-      if (visibleWindow) {
-        windows.push(visibleWindow)
-      }
     }
   }
 
