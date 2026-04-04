@@ -287,16 +287,29 @@ describe('buildMonitoringChartModel', () => {
         type: 'sandbox.lifecycle.paused',
         timestamp: '1970-01-01T00:00:04.000Z',
       }),
+      createLifecycleEvent({
+        id: 'resumed',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '1970-01-01T00:00:08.000Z',
+      }),
     ]
 
     const result = buildMonitoringChartModel({
-      metrics: [],
+      metrics: [
+        {
+          ...baseMetric,
+          timestampUnix: 10,
+          cpuUsedPct: 50,
+          memUsed: 500,
+          diskUsed: 1_000,
+        },
+      ],
       lifecycleEvents,
       startMs: 0,
-      endMs: 10_000,
+      endMs: 12_000,
     })
 
-    expect(result.resourceSeries[0]?.data).toEqual([])
+    expect(result.resourceSeries[0]?.data).toEqual([[10_000, 50, null]])
     expect(result.resourceSeries[0]?.connectors).toEqual([
       {
         from: [1_000, 0],

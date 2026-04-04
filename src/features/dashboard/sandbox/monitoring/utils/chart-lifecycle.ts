@@ -305,14 +305,17 @@ function buildPauseWindowConnectors(
         from: [previousPoint[0], previousPoint[1]],
         to: [pauseWindow.startMs, previousPoint[1]],
       })
-    }
 
-    const nextPoint = findFirstValidPointAfterTimestamp(data, pauseWindow.endMs)
-    if (nextPoint && nextPoint[1] !== null) {
-      connectors.push({
-        from: [pauseWindow.endMs, nextPoint[1]],
-        to: [nextPoint[0], nextPoint[1]],
-      })
+      const nextPoint = findFirstValidPointAfterTimestamp(
+        data,
+        pauseWindow.endMs
+      )
+      if (nextPoint && nextPoint[1] !== null) {
+        connectors.push({
+          from: [pauseWindow.endMs, nextPoint[1]],
+          to: [nextPoint[0], nextPoint[1]],
+        })
+      }
     }
   }
 
