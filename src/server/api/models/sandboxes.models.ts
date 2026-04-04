@@ -124,7 +124,8 @@ export function deriveSandboxLifecycleFromEvents(
     }
 
     if (event.type === SANDBOX_LIFECYCLE_RESUMED_EVENT) {
-      const pausedAtMs = parseEventTimestampMs(pausedAt)
+      const pausedAtMs =
+        pausedAt === null ? null : parseEventTimestampMs(pausedAt)
       if (pausedAtMs === null || pausedAtMs <= timestampMs) {
         pausedAt = null
         endedAt = null
