@@ -427,7 +427,9 @@ function SandboxMetricsChart({
             lineStyle: {
               width: SANDBOX_MONITORING_CHART_LINE_WIDTH,
               color: resolvedLineColor,
-              opacity: CHART_CONNECTOR_LINE_OPACITY,
+              opacity: connector.isSynthetic
+                ? CHART_CONNECTOR_LINE_OPACITY * 0.6
+                : CHART_CONNECTOR_LINE_OPACITY,
               type: 'dashed',
             },
             connectNulls: false,

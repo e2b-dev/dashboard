@@ -319,6 +319,66 @@ function buildPauseWindowConnectors(
   return connectors
 }
 
+function hasValidDataWithinWindow(
+  data: SandboxMetricsDataPoint[],
+  startMs: number,
+  endMs: number
+): boolean {
+  return data.some(
+    (point) =>
+      point[1] !== null && point[0] >= startMs && point[0] <= endMs
+  )
+}
+
+function buildSyntheticActiveWindowConnectors(
+  data: SandboxMetricsDataPoint[],
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
+) {
+  const connectors: NonNullable<SandboxMetricsSeries['connectors']> = []
+  let activeStartMs: number | null = null
+
+  for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
+    const eventTimestampMs = parseDateTimestampMs(event.timestamp)
+    if (eventTimestampMs === null) {
+      continue
+    }
+
+    if (
+      event.type === SANDBOX_LIFECYCLE_EVENT_CREATED ||
+      event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED
+    ) {
+      activeStartMs = eventTimestampMs
+      continue
+    }
+
+    if (
+      activeStartMs !== null &&
+      (event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED ||
+        event.type === SANDBOX_LIFECYCLE_EVENT_KILLED)
+    ) {
+      const visibleStartMs = Math.max(activeStartMs, rangeStart)
+      const visibleEndMs = Math.min(eventTimestampMs, rangeEnd)
+
+      if (
+        visibleEndMs > visibleStartMs &&
+        !hasValidDataWithinWindow(data, visibleStartMs, visibleEndMs)
+      ) {
+        connectors.push({
+          from: [visibleStartMs, 0],
+          to: [visibleEndMs, 0],
+          isSynthetic: true,
+        })
+      }
+
+      activeStartMs = null
+    }
+  }
+
+  return connectors
+}
+
 function injectGapNullPoints(
   data: SandboxMetricsDataPoint[],
   inactiveWindows: LifecyclePauseWindow[]
@@ -360,15 +420,26 @@ function injectGapNullPoints(
 
 export function applyPauseWindows(
   series: SandboxMetricsSeries[],
-  pauseWindows: LifecyclePauseWindow[]
+  pauseWindows: LifecyclePauseWindow[],
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
 ): SandboxMetricsSeries[] {
-  if (pauseWindows.length === 0) {
+  if (pauseWindows.length === 0 && lifecycleEvents.length === 0) {
     return series
   }
 
   return series.map((line) => ({
     ...line,
-    connectors: buildPauseWindowConnectors(line.data, pauseWindows),
+    connectors: [
+      ...buildPauseWindowConnectors(line.data, pauseWindows),
+      ...buildSyntheticActiveWindowConnectors(
+        line.data,
+        lifecycleEvents,
+        rangeStart,
+        rangeEnd
+      ),
+    ],
     data: injectGapNullPoints(line.data, pauseWindows),
   }))
 }

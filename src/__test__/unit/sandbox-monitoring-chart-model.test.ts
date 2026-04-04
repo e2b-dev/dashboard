@@ -275,6 +275,37 @@ describe('buildMonitoringChartModel', () => {
     ])
   })
 
+  it('draws a synthetic dashed connector across an active lifecycle window when no metrics were collected', () => {
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '1970-01-01T00:00:01.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'paused',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:04.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics: [],
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 10_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [1_000, 0],
+        to: [4_000, 0],
+        isSynthetic: true,
+      },
+    ])
+  })
+
   it('builds visible lifecycle event markers for created, paused, resumed, and killed only', () => {
     const lifecycleEvents: SandboxEventDTO[] = [
       createLifecycleEvent({
