@@ -297,10 +297,6 @@ export default function SandboxMetricsCharts({
     timeframe.start,
   ])
 
-  if (renderedSnapshot === null) {
-    return <LoadingLayout />
-  }
-
   const handleHoverEnd = useCallback(() => {
     setHoveredTimestampMs(null)
   }, [])
@@ -327,6 +323,10 @@ export default function SandboxMetricsCharts({
     ? RESOURCE_CHART_GRID_SM
     : RESOURCE_CHART_GRID_MD
   const diskChartGrid = isMobile ? DISK_CHART_GRID_SM : DISK_CHART_GRID_MD
+
+  if (renderedSnapshot === null) {
+    return <LoadingLayout />
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
