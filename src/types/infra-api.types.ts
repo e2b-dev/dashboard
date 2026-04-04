@@ -2346,6 +2346,11 @@ export interface components {
       memTotal: number
       /**
        * Format: int64
+       * @description Cached memory (page cache) in bytes
+       */
+      memCache: number
+      /**
+       * Format: int64
        * @description Disk used in bytes
        */
       diskUsed: number
