@@ -88,7 +88,7 @@ describe('deriveSandboxLifecycleFromEvents', () => {
     expect(lifecycle.endedAt).toBeNull()
   })
 
-  it('uses first created event and latest killed event', () => {
+  it('uses first created event and ignores duplicate killed events without resume', () => {
     const events: SandboxEventDTO[] = [
       createLifecycleEvent({
         id: '1',
@@ -115,7 +115,48 @@ describe('deriveSandboxLifecycleFromEvents', () => {
     const lifecycle = deriveSandboxLifecycleFromEvents(events)
 
     expect(lifecycle.createdAt).toBe('2026-03-06T19:00:00.000Z')
-    expect(lifecycle.endedAt).toBe('2026-03-06T19:15:00.000Z')
+    expect(lifecycle.endedAt).toBe('2026-03-06T19:10:00.000Z')
+  })
+
+  it('ignores duplicate pauses and clears historical kills after resume', () => {
+    const events: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: '1',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '2026-03-06T19:00:00.000Z',
+      }),
+      createLifecycleEvent({
+        id: '2',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '2026-03-06T19:05:00.000Z',
+      }),
+      createLifecycleEvent({
+        id: '3',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '2026-03-06T19:06:00.000Z',
+      }),
+      createLifecycleEvent({
+        id: '4',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '2026-03-06T19:07:00.000Z',
+      }),
+      createLifecycleEvent({
+        id: '5',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '2026-03-06T19:08:00.000Z',
+      }),
+      createLifecycleEvent({
+        id: '6',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '2026-03-06T19:09:00.000Z',
+      }),
+    ]
+
+    const lifecycle = deriveSandboxLifecycleFromEvents(events)
+
+    expect(lifecycle.createdAt).toBe('2026-03-06T19:00:00.000Z')
+    expect(lifecycle.pausedAt).toBeNull()
+    expect(lifecycle.endedAt).toBe('2026-03-06T19:09:00.000Z')
   })
 
   it('ignores non-lifecycle events', () => {

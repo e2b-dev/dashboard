@@ -215,6 +215,71 @@ describe('buildMonitoringChartModel', () => {
     ])
   })
 
+  it('treats killed periods as inactive until the next resume', () => {
+    const metrics: SandboxMetric[] = [
+      {
+        ...baseMetric,
+        timestampUnix: 10,
+        cpuUsedPct: 10,
+        memUsed: 100,
+        diskUsed: 200,
+      },
+      {
+        ...baseMetric,
+        timestampUnix: 50,
+        cpuUsedPct: 50,
+        memUsed: 500,
+        diskUsed: 1_000,
+      },
+    ]
+
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'pause-1',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:20.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'pause-2',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:30.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'kill-1',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:40.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'kill-2',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:45.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'resume',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '1970-01-01T00:00:55.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics,
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 60_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([
+      [10_000, 10, null],
+      [50_000, null, null],
+    ])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [10_000, 10],
+        to: [20_000, 10],
+      },
+    ])
+  })
+
   it('builds visible lifecycle event markers for created, paused, resumed, and killed only', () => {
     const lifecycleEvents: SandboxEventDTO[] = [
       createLifecycleEvent({
