@@ -15,6 +15,7 @@ import { parseDateTimestampMs } from './timeframe'
 export interface LifecyclePauseWindow {
   startMs: number
   endMs: number
+  kind: 'inactive' | 'beforeCreated' | 'createdReference'
 }
 
 const EVENT_DEFAULT_COLOR_VAR = '--fg-tertiary'
@@ -86,7 +87,8 @@ function toVisiblePauseWindow(
   startMs: number,
   endMs: number,
   rangeStart: number,
-  rangeEnd: number
+  rangeEnd: number,
+  kind: LifecyclePauseWindow['kind']
 ): LifecyclePauseWindow | null {
   const visibleStartMs = Math.max(startMs, rangeStart)
   const visibleEndMs = Math.min(endMs, rangeEnd)
@@ -102,6 +104,7 @@ function toVisiblePauseWindow(
   return {
     startMs: visibleStartMs,
     endMs: visibleEndMs,
+    kind,
   }
 }
 
@@ -146,7 +149,8 @@ export function buildInactiveWindows(
           inactiveStartMs,
           eventTimestampMs,
           rangeStart,
-          rangeEnd
+          rangeEnd,
+          'inactive'
         )
 
         if (visibleWindow) {
@@ -165,7 +169,8 @@ export function buildInactiveWindows(
         rangeStart,
         createdMs,
         rangeStart,
-        rangeEnd
+        rangeEnd,
+        'beforeCreated'
       )
       if (visibleWindow) {
         windows.unshift(visibleWindow)
@@ -173,7 +178,11 @@ export function buildInactiveWindows(
     } else {
       // createdMs === rangeStart: zero-width window as a connector reference
       // point so buildPauseWindowConnectors bridges to the first data point
-      windows.unshift({ startMs: createdMs, endMs: createdMs })
+      windows.unshift({
+        startMs: createdMs,
+        endMs: createdMs,
+        kind: 'createdReference',
+      })
     }
   }
 
@@ -184,7 +193,8 @@ export function buildInactiveWindows(
         inactiveStartMs,
         rangeEnd,
         rangeStart,
-        rangeEnd
+        rangeEnd,
+        'inactive'
       )
       if (visibleWindow) {
         windows.push(visibleWindow)
@@ -305,17 +315,14 @@ function buildPauseWindowConnectors(
         from: [previousPoint[0], previousPoint[1]],
         to: [pauseWindow.startMs, previousPoint[1]],
       })
+    }
 
-      const nextPoint = findFirstValidPointAfterTimestamp(
-        data,
-        pauseWindow.endMs
-      )
-      if (nextPoint && nextPoint[1] !== null) {
-        connectors.push({
-          from: [pauseWindow.endMs, nextPoint[1]],
-          to: [nextPoint[0], nextPoint[1]],
-        })
-      }
+    const nextPoint = findFirstValidPointAfterTimestamp(data, pauseWindow.endMs)
+    if (pauseWindow.kind === 'inactive' && nextPoint && nextPoint[1] !== null) {
+      connectors.push({
+        from: [pauseWindow.endMs, nextPoint[1]],
+        to: [nextPoint[0], nextPoint[1]],
+      })
     }
   }
 

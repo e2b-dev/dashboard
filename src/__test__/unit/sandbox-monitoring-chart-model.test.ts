@@ -312,6 +312,10 @@ describe('buildMonitoringChartModel', () => {
     expect(result.resourceSeries[0]?.data).toEqual([[10_000, 50, null]])
     expect(result.resourceSeries[0]?.connectors).toEqual([
       {
+        from: [8_000, 50],
+        to: [10_000, 50],
+      },
+      {
         from: [1_000, 0],
         to: [4_000, 0],
         isSynthetic: true,
