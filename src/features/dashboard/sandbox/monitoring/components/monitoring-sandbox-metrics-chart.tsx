@@ -36,6 +36,7 @@ import {
   SANDBOX_MONITORING_CHART_FG_VAR,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
+  SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS,
 } from '../utils/constants'
 import { ChartOverlayLayer } from './chart-overlays'
 import { useChartOverlays } from './use-chart-overlays'
@@ -356,9 +357,24 @@ function SandboxMetricsChart({
       const areaOpacity = normalizeOpacity(line.areaOpacity, defaultAreaOpacity)
       const renderableSegments = splitLineDataIntoRenderableSegments(line.data)
       const connectorSegments = line.connectors ?? []
-      const livePoint = isPolling
-        ? findLivePoint(line.data, liveWindowMs)
-        : null
+      const latestPoint = [...line.data].reverse().find(
+        (point) =>
+          point &&
+          point[1] !== null &&
+          Number.isFinite(point[0]) &&
+          point[0] <= Date.now()
+      )
+      const latestPointTimestampMs = latestPoint?.[0] ?? null
+      const livePoint =
+        isPolling &&
+        latestPointTimestampMs !== null &&
+        Date.now() - latestPointTimestampMs <=
+          Math.max(liveWindowMs, SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS)
+          ? findLivePoint(
+              line.data,
+              Math.max(liveWindowMs, SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS)
+            )
+          : null
 
       const regularSeriesItems = renderableSegments.map(
         (segment, segmentIndex) => {
