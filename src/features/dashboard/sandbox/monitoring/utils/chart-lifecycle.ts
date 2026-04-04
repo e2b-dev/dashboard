@@ -114,7 +114,7 @@ export function buildInactiveWindows(
   const sortedEvents = sortLifecycleEventsByTimestamp(lifecycleEvents)
 
   let createdMs: number | null = null
-  let activePauseStartMs: number | null = null
+  let inactiveStartMs: number | null = null
 
   for (const event of sortedEvents) {
     const eventTimestampMs = parseDateTimestampMs(event.timestamp)
@@ -127,20 +127,23 @@ export function buildInactiveWindows(
       continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED) {
-      if (activePauseStartMs === null) {
-        activePauseStartMs = eventTimestampMs
+    if (
+      event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED ||
+      event.type === SANDBOX_LIFECYCLE_EVENT_KILLED
+    ) {
+      if (inactiveStartMs === null) {
+        inactiveStartMs = eventTimestampMs
       }
       continue
     }
 
     if (
       event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED &&
-      activePauseStartMs !== null
+      inactiveStartMs !== null
     ) {
-      if (eventTimestampMs > activePauseStartMs) {
+      if (eventTimestampMs > inactiveStartMs) {
         const visibleWindow = toVisiblePauseWindow(
-          activePauseStartMs,
+          inactiveStartMs,
           eventTimestampMs,
           rangeStart,
           rangeEnd
@@ -151,7 +154,7 @@ export function buildInactiveWindows(
         }
       }
 
-      activePauseStartMs = null
+      inactiveStartMs = null
     }
   }
 
@@ -174,11 +177,11 @@ export function buildInactiveWindows(
     }
   }
 
-  // Open pause (sandbox currently paused, no resume yet).
-  if (activePauseStartMs !== null) {
-    if (rangeEnd > activePauseStartMs) {
+  // Open inactive span (sandbox currently paused or killed, no resume yet).
+  if (inactiveStartMs !== null) {
+    if (rangeEnd > inactiveStartMs) {
       const visibleWindow = toVisiblePauseWindow(
-        activePauseStartMs,
+        inactiveStartMs,
         rangeEnd,
         rangeStart,
         rangeEnd

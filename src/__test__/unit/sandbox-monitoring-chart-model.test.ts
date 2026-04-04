@@ -215,7 +215,7 @@ describe('buildMonitoringChartModel', () => {
     ])
   })
 
-  it('does not treat killed periods as paused gaps', () => {
+  it('treats killed periods as inactive gaps until the next resume', () => {
     const metrics: SandboxMetric[] = [
       {
         ...baseMetric,
