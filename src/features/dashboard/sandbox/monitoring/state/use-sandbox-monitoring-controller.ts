@@ -268,6 +268,9 @@ export function useSandboxMonitoringController(sandboxId: string) {
     timeframe,
     fetchTimeframe,
     metrics: metricsQuery.data ?? [],
+    isInitialLoading:
+      lifecycleBounds === null ||
+      (metricsQuery.isPending && !metricsQuery.isFetched),
     isPolling: isLive,
     isRefetching: metricsQuery.isFetching,
     activePresetId,

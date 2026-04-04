@@ -1,8 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import type {
+  SandboxEventDTO,
+  SandboxMetric,
+} from '@/server/api/models/sandboxes.models'
 import { CpuIcon, MemoryIcon, StorageIcon } from '@/ui/primitives/icons'
 import { Separator } from '@/ui/primitives/separator'
 import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
@@ -32,6 +37,13 @@ interface ZoomResetSnapshot {
   start: number
   end: number
   presetId: string | null
+}
+
+interface RenderedMonitoringSnapshot {
+  timeframe: { start: number; end: number }
+  fetchTimeframe: { start: number; end: number }
+  metrics: SandboxMetric[]
+  lifecycleEvents: SandboxEventDTO[]
 }
 
 function useChartZoom(options: {
@@ -146,6 +158,7 @@ export default function SandboxMetricsCharts({
     metrics,
     timeframe,
     fetchTimeframe,
+    isInitialLoading,
     isPolling,
     isRefetching,
     activePresetId,
@@ -157,14 +170,8 @@ export default function SandboxMetricsCharts({
   const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
     null
   )
-  const [renderedTimeframe, setRenderedTimeframe] = useState(() => ({
-    start: timeframe.start,
-    end: timeframe.end,
-  }))
-  const [renderedFetchTimeframe, setRenderedFetchTimeframe] = useState(() => ({
-    start: fetchTimeframe.start,
-    end: fetchTimeframe.end,
-  }))
+  const [renderedSnapshot, setRenderedSnapshot] =
+    useState<RenderedMonitoringSnapshot | null>(null)
 
   const {
     canResetZoom,
@@ -182,16 +189,15 @@ export default function SandboxMetricsCharts({
   const chartModel = useMemo(
     () =>
       buildMonitoringChartModel({
-        metrics,
-        lifecycleEvents,
-        startMs: renderedFetchTimeframe.start,
-        endMs: renderedFetchTimeframe.end,
+        metrics: renderedSnapshot?.metrics ?? [],
+        lifecycleEvents: renderedSnapshot?.lifecycleEvents ?? [],
+        startMs: renderedSnapshot?.fetchTimeframe.start ?? fetchTimeframe.start,
+        endMs: renderedSnapshot?.fetchTimeframe.end ?? fetchTimeframe.end,
       }),
     [
-      lifecycleEvents,
-      metrics,
-      renderedFetchTimeframe.end,
-      renderedFetchTimeframe.start,
+      fetchTimeframe.end,
+      fetchTimeframe.start,
+      renderedSnapshot,
     ]
   )
   const resourceSeriesWithMarkerFormatters = useMemo(
@@ -254,44 +260,50 @@ export default function SandboxMetricsCharts({
   )
 
   useEffect(() => {
-    if (isRefetching) {
+    if (isInitialLoading || isRefetching) {
       return
     }
 
-    setRenderedTimeframe((previous) => {
+    setRenderedSnapshot((previous) => {
       if (
-        previous.start === timeframe.start &&
-        previous.end === timeframe.end
+        previous &&
+        previous.timeframe.start === timeframe.start &&
+        previous.timeframe.end === timeframe.end &&
+        previous.fetchTimeframe.start === fetchTimeframe.start &&
+        previous.fetchTimeframe.end === fetchTimeframe.end &&
+        previous.metrics === metrics &&
+        previous.lifecycleEvents === lifecycleEvents
       ) {
         return previous
       }
 
       return {
-        start: timeframe.start,
-        end: timeframe.end,
-      }
-    })
-
-    setRenderedFetchTimeframe((previous) => {
-      if (
-        previous.start === fetchTimeframe.start &&
-        previous.end === fetchTimeframe.end
-      ) {
-        return previous
-      }
-
-      return {
-        start: fetchTimeframe.start,
-        end: fetchTimeframe.end,
+        timeframe: {
+          start: timeframe.start,
+          end: timeframe.end,
+        },
+        fetchTimeframe: {
+          start: fetchTimeframe.start,
+          end: fetchTimeframe.end,
+        },
+        metrics,
+        lifecycleEvents,
       }
     })
   }, [
+    isInitialLoading,
     isRefetching,
-    timeframe.end,
-    timeframe.start,
     fetchTimeframe.end,
     fetchTimeframe.start,
+    lifecycleEvents,
+    metrics,
+    timeframe.end,
+    timeframe.start,
   ])
+
+  if (renderedSnapshot === null) {
+    return <LoadingLayout />
+  }
 
   const handleHoverEnd = useCallback(() => {
     setHoveredTimestampMs(null)
@@ -349,8 +361,8 @@ export default function SandboxMetricsCharts({
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           grid={resourceChartGrid}
-          xAxisMin={renderedTimeframe.start}
-          xAxisMax={renderedTimeframe.end}
+          xAxisMin={renderedSnapshot.timeframe.start}
+          xAxisMax={renderedSnapshot.timeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           yAxisFormatter={formatPercentAxisLabel}
           className={cn(
@@ -380,8 +392,8 @@ export default function SandboxMetricsCharts({
           hoveredTimestampMs={hoveredTimestampMs}
           showXAxisLabels
           grid={diskChartGrid}
-          xAxisMin={renderedTimeframe.start}
-          xAxisMax={renderedTimeframe.end}
+          xAxisMin={renderedSnapshot.timeframe.start}
+          xAxisMax={renderedSnapshot.timeframe.end}
           yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
           yAxisFormatter={formatPercentAxisLabel}
           className={cn(
