@@ -52,6 +52,8 @@ function buildSandboxLifecycle(
     return null
   }
 
+  const fallbackPausedAt =
+    sandboxInfo.state === 'paused' ? sandboxInfo.endAt : null
   const fallbackEndedAt =
     sandboxInfo.state === 'killed'
       ? (sandboxInfo.stoppedAt ?? sandboxInfo.endAt)
@@ -59,7 +61,7 @@ function buildSandboxLifecycle(
 
   return {
     createdAt: sandboxInfo.lifecycle?.createdAt ?? sandboxInfo.startedAt,
-    pausedAt: sandboxInfo.lifecycle?.pausedAt ?? null,
+    pausedAt: sandboxInfo.lifecycle?.pausedAt ?? fallbackPausedAt,
     endedAt: sandboxInfo.lifecycle?.endedAt ?? fallbackEndedAt,
     events: sandboxInfo.lifecycle?.events ?? [],
   }

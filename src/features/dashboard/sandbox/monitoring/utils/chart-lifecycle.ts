@@ -105,41 +105,6 @@ function toVisiblePauseWindow(
   }
 }
 
-function mergePauseWindows(
-  windows: LifecyclePauseWindow[]
-): LifecyclePauseWindow[] {
-  if (windows.length <= 1) {
-    return windows
-  }
-
-  const sortedWindows = [...windows].sort((a, b) => {
-    if (a.startMs !== b.startMs) {
-      return a.startMs - b.startMs
-    }
-
-    return a.endMs - b.endMs
-  })
-
-  const mergedWindows: LifecyclePauseWindow[] = [sortedWindows[0]!]
-
-  for (const window of sortedWindows.slice(1)) {
-    const previousWindow = mergedWindows[mergedWindows.length - 1]
-    if (!previousWindow) {
-      mergedWindows.push(window)
-      continue
-    }
-
-    if (window.startMs <= previousWindow.endMs) {
-      previousWindow.endMs = Math.max(previousWindow.endMs, window.endMs)
-      continue
-    }
-
-    mergedWindows.push({ ...window })
-  }
-
-  return mergedWindows
-}
-
 export function buildInactiveWindows(
   lifecycleEvents: SandboxEventDTO[],
   rangeStart: number,
@@ -227,7 +192,7 @@ export function buildInactiveWindows(
     }
   }
 
-  return mergePauseWindows(windows)
+  return windows
 }
 
 export function buildLifecycleEventMarkers(

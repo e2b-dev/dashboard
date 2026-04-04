@@ -45,6 +45,8 @@ export const sandboxRouter = createTRPCRouter({
         sandboxId
       )
       const derivedLifecycle = deriveSandboxLifecycleFromEvents(lifecycleEvents)
+      const fallbackPausedAt =
+        mappedDetails.state === 'paused' ? mappedDetails.endAt : null
       const fallbackEndedAt =
         mappedDetails.state === 'killed'
           ? (mappedDetails.stoppedAt ?? mappedDetails.endAt)
@@ -54,7 +56,7 @@ export const sandboxRouter = createTRPCRouter({
         ...mappedDetails,
         lifecycle: {
           createdAt: derivedLifecycle.createdAt ?? mappedDetails.startedAt,
-          pausedAt: derivedLifecycle.pausedAt,
+          pausedAt: derivedLifecycle.pausedAt ?? fallbackPausedAt,
           endedAt: derivedLifecycle.endedAt ?? fallbackEndedAt,
           events: derivedLifecycle.events,
         },

@@ -100,7 +100,7 @@ export function deriveSandboxLifecycleFromEvents(
   let createdAt: string | null = null
   let pausedAt: string | null = null
   let endedAt: string | null = null
-  let status: 'running' | 'paused' | 'killed' = 'running'
+  let lastEvent: SandboxEventDTO | null = null
 
   for (const event of lifecycleEvents) {
     const timestampMs = parseEventTimestampMs(event.timestamp)
@@ -110,37 +110,17 @@ export function deriveSandboxLifecycleFromEvents(
 
     if (event.type === SANDBOX_LIFECYCLE_CREATED_EVENT && createdAt === null) {
       createdAt = event.timestamp
-      status = 'running'
-      continue
     }
 
-    if (event.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
-      if (status !== 'paused') {
-        pausedAt = event.timestamp
-        endedAt = null
-        status = 'paused'
-      }
-      continue
-    }
+    lastEvent = event
+  }
 
-    if (event.type === SANDBOX_LIFECYCLE_RESUMED_EVENT) {
-      const pausedAtMs =
-        pausedAt === null ? null : parseEventTimestampMs(pausedAt)
-      if (pausedAtMs === null || pausedAtMs <= timestampMs) {
-        pausedAt = null
-        endedAt = null
-        status = 'running'
-      }
-      continue
-    }
+  if (lastEvent?.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
+    pausedAt = lastEvent.timestamp
+  }
 
-    if (event.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
-      if (status !== 'killed') {
-        endedAt = event.timestamp
-        pausedAt = null
-        status = 'killed'
-      }
-    }
+  if (lastEvent?.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
+    endedAt = lastEvent.timestamp
   }
 
   return {
