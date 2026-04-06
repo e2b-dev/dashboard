@@ -5,9 +5,10 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/ui'
 import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
-import { AlertPopover } from '@/ui/alert-popover'
+import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 
@@ -46,12 +47,24 @@ export default function KillButton({ className }: KillButtonProps) {
   }
 
   return (
-    <AlertPopover
+    <AlertDialog
       open={open}
       onOpenChange={setOpen}
       title="Kill Sandbox"
       description="Are you sure you want to kill this sandbox? The sandbox state will be lost and cannot be recovered."
-      confirm="Kill Sandbox"
+      confirm={
+        isExecuting ? (
+          <>
+            <Loader variant="slash" />
+            <span>Killing Sandbox...</span>
+          </>
+        ) : (
+          <>
+            <TrashIcon className="size-4" />
+            Kill Sandbox
+          </>
+        )
+      }
       trigger={
         <Button
           variant="ghost"
@@ -64,11 +77,10 @@ export default function KillButton({ className }: KillButtonProps) {
         </Button>
       }
       confirmProps={{
+        variant: 'error',
         disabled: isExecuting,
-        loading: isExecuting,
       }}
       onConfirm={handleKill}
-      onCancel={() => setOpen(false)}
     />
   )
 }
