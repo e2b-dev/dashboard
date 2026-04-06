@@ -356,6 +356,48 @@ describe('buildMonitoringChartModel', () => {
     ])
   })
 
+  it('draws a dashed connector from created to the first metric when the range starts before created', () => {
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '1970-01-01T00:00:01.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'killed',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:20.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics: [
+        {
+          ...baseMetric,
+          timestampUnix: 10,
+          cpuUsedPct: 50,
+          memUsed: 500,
+          diskUsed: 1_000,
+        },
+      ],
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 22_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([[10_000, 50, null]])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [10_000, 50],
+        to: [20_000, 50],
+      },
+      {
+        from: [1_000, 50],
+        to: [10_000, 50],
+      },
+    ])
+  })
+
   it('builds visible lifecycle event markers for created, paused, resumed, and killed only', () => {
     const lifecycleEvents: SandboxEventDTO[] = [
       createLifecycleEvent({

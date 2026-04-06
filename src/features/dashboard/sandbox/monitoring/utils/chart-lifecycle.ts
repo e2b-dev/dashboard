@@ -15,7 +15,7 @@ import { parseDateTimestampMs } from './timeframe'
 export interface LifecyclePauseWindow {
   startMs: number
   endMs: number
-  kind: 'inactive' | 'beforeCreated' | 'createdReference'
+  kind: 'inactive' | 'beforeCreated'
 }
 
 function appendVisiblePauseWindow(
@@ -197,14 +197,6 @@ export function buildInactiveWindows(
         'beforeCreated',
         'unshift'
       )
-    } else {
-      // createdMs === rangeStart: zero-width window as a connector reference
-      // point so buildPauseWindowConnectors bridges to the first data point
-      windows.unshift({
-        startMs: createdMs,
-        endMs: createdMs,
-        kind: 'createdReference',
-      })
     }
   }
 
@@ -297,9 +289,10 @@ function findLastValidPointBeforeTimestamp(
   return null
 }
 
-function findFirstValidPointAfterTimestamp(
+function findFirstValidPointWithinWindow(
   data: SandboxMetricsDataPoint[],
-  timestampMs: number
+  startMs: number,
+  endMs: number
 ): SandboxMetricsDataPoint | null {
   for (const point of data) {
     if (!point) {
@@ -311,7 +304,7 @@ function findFirstValidPointAfterTimestamp(
       continue
     }
 
-    if (pointTimestampMs > timestampMs) {
+    if (pointTimestampMs > startMs && pointTimestampMs <= endMs) {
       return point
     }
   }
@@ -334,18 +327,6 @@ function buildPauseWindowConnectors(
       connectors.push({
         from: [previousPoint[0], previousPoint[1]],
         to: [pauseWindow.startMs, previousPoint[1]],
-      })
-    }
-
-    const nextPoint = findFirstValidPointAfterTimestamp(data, pauseWindow.endMs)
-    if (
-      pauseWindow.kind !== 'beforeCreated' &&
-      nextPoint &&
-      nextPoint[1] !== null
-    ) {
-      connectors.push({
-        from: [pauseWindow.endMs, nextPoint[1]],
-        to: [nextPoint[0], nextPoint[1]],
       })
     }
   }
@@ -412,6 +393,70 @@ function buildSyntheticActiveWindowConnectors(
   return connectors
 }
 
+function buildActiveWindowStartConnectors(
+  data: SandboxMetricsDataPoint[],
+  lifecycleEvents: SandboxEventDTO[],
+  rangeStart: number,
+  rangeEnd: number
+) {
+  const connectors: NonNullable<SandboxMetricsSeries['connectors']> = []
+  let activeStartMs: number | null = null
+
+  const connectToFirstPointInWindow = (windowEndMs: number) => {
+    if (activeStartMs === null) {
+      return
+    }
+
+    const visibleStartMs = Math.max(activeStartMs, rangeStart)
+    const visibleEndMs = Math.min(windowEndMs, rangeEnd)
+    if (visibleEndMs <= visibleStartMs) {
+      return
+    }
+
+    const firstPoint = findFirstValidPointWithinWindow(
+      data,
+      visibleStartMs,
+      visibleEndMs
+    )
+    if (firstPoint && firstPoint[1] !== null) {
+      connectors.push({
+        from: [visibleStartMs, firstPoint[1]],
+        to: [firstPoint[0], firstPoint[1]],
+      })
+    }
+  }
+
+  for (const event of sortLifecycleEventsByTimestamp(lifecycleEvents)) {
+    const eventTimestampMs = parseDateTimestampMs(event.timestamp)
+    if (eventTimestampMs === null) {
+      continue
+    }
+
+    if (
+      event.type === SANDBOX_LIFECYCLE_EVENT_CREATED ||
+      event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED
+    ) {
+      activeStartMs = eventTimestampMs
+      continue
+    }
+
+    if (
+      activeStartMs !== null &&
+      (event.type === SANDBOX_LIFECYCLE_EVENT_PAUSED ||
+        event.type === SANDBOX_LIFECYCLE_EVENT_KILLED)
+    ) {
+      connectToFirstPointInWindow(eventTimestampMs)
+      activeStartMs = null
+    }
+  }
+
+  if (activeStartMs !== null) {
+    connectToFirstPointInWindow(rangeEnd)
+  }
+
+  return connectors
+}
+
 function injectGapNullPoints(
   data: SandboxMetricsDataPoint[],
   inactiveWindows: LifecyclePauseWindow[]
@@ -466,6 +511,12 @@ export function applyPauseWindows(
     ...line,
     connectors: [
       ...buildPauseWindowConnectors(line.data, pauseWindows),
+      ...buildActiveWindowStartConnectors(
+        line.data,
+        lifecycleEvents,
+        rangeStart,
+        rangeEnd
+      ),
       ...buildSyntheticActiveWindowConnectors(
         line.data,
         lifecycleEvents,
