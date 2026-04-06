@@ -32,7 +32,6 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     const parts = pathname.split('/')
     const teamIdOrSlug = parts[2]!
     const sandboxId = parts[4]!
-    const sandboxIdSliced = `${sandboxId.slice(0, 6)}...${sandboxId.slice(-6)}`
 
     return {
       title: [
@@ -40,7 +39,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
           label: 'Sandboxes',
           href: PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug),
         },
-        { label: sandboxIdSliced },
+        { label: sandboxId },
       ],
       type: 'custom',
       copyValue: sandboxId,

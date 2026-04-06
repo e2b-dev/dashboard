@@ -145,7 +145,7 @@ export const templatesRouter = createTRPCRouter({
       const { session, teamId } = ctx
       const { templateId, public: isPublic } = input
 
-      const res = await infra.PATCH('/templates/{templateID}', {
+      const res = await infra.PATCH('/v2/templates/{templateID}', {
         body: {
           public: isPublic,
         },
@@ -173,7 +173,7 @@ export const templatesRouter = createTRPCRouter({
               status,
             },
           },
-          `failed to patch /templates/{templateID}: ${res.error?.message || 'Unknown error'}`
+          `failed to patch /v2/templates/{templateID}: ${res.error?.message || 'Unknown error'}`
         )
 
         if (status === 404) {
