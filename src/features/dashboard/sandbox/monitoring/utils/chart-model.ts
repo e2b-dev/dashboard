@@ -58,11 +58,17 @@ export function buildMonitoringChartModel({
   )
   const resourceSeries = applyPauseWindows(
     buildResourceSeries(normalizedMetrics),
-    pauseWindows
+    pauseWindows,
+    lifecycleEvents,
+    rangeStart,
+    rangeEnd
   )
   const diskSeries = applyPauseWindows(
     buildDiskSeries(normalizedMetrics),
-    pauseWindows
+    pauseWindows,
+    lifecycleEvents,
+    rangeStart,
+    rangeEnd
   )
   return {
     resourceSeries,

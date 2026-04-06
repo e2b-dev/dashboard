@@ -9,6 +9,7 @@ export type SandboxMetricsDataPoint = [
 export interface SandboxMetricsSeriesConnector {
   from: [timestampMs: number, value: number]
   to: [timestampMs: number, value: number]
+  isSynthetic?: boolean
 }
 
 export interface SandboxMetricsMarkerValueFormatterInput {

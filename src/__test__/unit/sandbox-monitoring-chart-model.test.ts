@@ -215,6 +215,189 @@ describe('buildMonitoringChartModel', () => {
     ])
   })
 
+  it('treats killed periods as inactive gaps until the next resume', () => {
+    const metrics: SandboxMetric[] = [
+      {
+        ...baseMetric,
+        timestampUnix: 10,
+        cpuUsedPct: 10,
+        memUsed: 100,
+        diskUsed: 200,
+      },
+      {
+        ...baseMetric,
+        timestampUnix: 50,
+        cpuUsedPct: 50,
+        memUsed: 500,
+        diskUsed: 1_000,
+      },
+    ]
+
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'pause-1',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:20.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'kill-1',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:40.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'kill-2',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:45.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'resume',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '1970-01-01T00:00:55.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics,
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 60_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([
+      [10_000, 10, null],
+      [50_000, null, null],
+    ])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [10_000, 10],
+        to: [20_000, 10],
+      },
+    ])
+  })
+
+  it('draws a synthetic dashed connector across an active lifecycle window when no metrics were collected', () => {
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '1970-01-01T00:00:01.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'paused',
+        type: 'sandbox.lifecycle.paused',
+        timestamp: '1970-01-01T00:00:04.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'resumed',
+        type: 'sandbox.lifecycle.resumed',
+        timestamp: '1970-01-01T00:00:08.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics: [
+        {
+          ...baseMetric,
+          timestampUnix: 10,
+          cpuUsedPct: 50,
+          memUsed: 500,
+          diskUsed: 1_000,
+        },
+      ],
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 12_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([[10_000, 50, null]])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [8_000, 50],
+        to: [10_000, 50],
+      },
+      {
+        from: [1_000, 0],
+        to: [4_000, 0],
+        isSynthetic: true,
+      },
+    ])
+  })
+
+  it('draws a dashed connector from created to the first metric when the range starts at created', () => {
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '1970-01-01T00:00:01.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics: [
+        {
+          ...baseMetric,
+          timestampUnix: 10,
+          cpuUsedPct: 50,
+          memUsed: 500,
+          diskUsed: 1_000,
+        },
+      ],
+      lifecycleEvents,
+      startMs: 1_000,
+      endMs: 12_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([[10_000, 50, null]])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [1_000, 50],
+        to: [10_000, 50],
+      },
+    ])
+  })
+
+  it('draws a dashed connector from created to the first metric when the range starts before created', () => {
+    const lifecycleEvents: SandboxEventDTO[] = [
+      createLifecycleEvent({
+        id: 'created',
+        type: 'sandbox.lifecycle.created',
+        timestamp: '1970-01-01T00:00:01.000Z',
+      }),
+      createLifecycleEvent({
+        id: 'killed',
+        type: 'sandbox.lifecycle.killed',
+        timestamp: '1970-01-01T00:00:20.000Z',
+      }),
+    ]
+
+    const result = buildMonitoringChartModel({
+      metrics: [
+        {
+          ...baseMetric,
+          timestampUnix: 10,
+          cpuUsedPct: 50,
+          memUsed: 500,
+          diskUsed: 1_000,
+        },
+      ],
+      lifecycleEvents,
+      startMs: 0,
+      endMs: 22_000,
+    })
+
+    expect(result.resourceSeries[0]?.data).toEqual([[10_000, 50, null]])
+    expect(result.resourceSeries[0]?.connectors).toEqual([
+      {
+        from: [10_000, 50],
+        to: [20_000, 50],
+      },
+      {
+        from: [1_000, 50],
+        to: [10_000, 50],
+      },
+    ])
+  })
+
   it('builds visible lifecycle event markers for created, paused, resumed, and killed only', () => {
     const lifecycleEvents: SandboxEventDTO[] = [
       createLifecycleEvent({
