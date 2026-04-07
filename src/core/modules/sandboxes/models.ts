@@ -108,7 +108,7 @@ export function deriveSandboxLifecycleFromEvents(
   let createdAt: string | null = null
   let pausedAt: string | null = null
   let endedAt: string | null = null
-  let lastEvent: SandboxEventDTO | null = null
+  let lastEvent: SandboxEventModel | null = null
 
   for (const event of lifecycleEvents) {
     const timestampMs = parseEventTimestampMs(event.timestamp)
