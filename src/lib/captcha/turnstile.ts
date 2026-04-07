@@ -1,7 +1,7 @@
 'use server'
 
 import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
-import { l } from '@/lib/clients/logger/logger'
+import { l } from '@/core/shared/clients/logger/logger'
 
 interface TurnstileResponse {
   success: boolean

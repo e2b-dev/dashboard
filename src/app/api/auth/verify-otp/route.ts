@@ -1,13 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { flattenError } from 'zod'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
-import { isExternalOrigin } from '@/lib/utils/auth'
 import {
   ConfirmEmailInputSchema,
   type OtpType,
-} from '@/server/api/models/auth.models'
-import { authRepo } from '@/server/api/repositories/auth.repository'
+} from '@/core/modules/auth/models'
+import { authRepository } from '@/core/modules/auth/repository.server'
+import { l } from '@/core/shared/clients/logger/logger'
+import { isExternalOrigin } from '@/lib/utils/auth'
 
 /**
  * Determines the redirect URL based on OTP type.
@@ -109,7 +109,14 @@ export async function POST(request: NextRequest) {
       `verifying OTP token: ${token_hash.slice(0, 10)}`
     )
 
-    await authRepo.verifyOtp(token_hash, type)
+    const verifyResult = await authRepository.verifyOtp(token_hash, type)
+    if (!verifyResult.ok) {
+      const errorRedirectUrl = buildErrorRedirectUrl(
+        origin,
+        verifyResult.error.message
+      )
+      return NextResponse.json({ redirectUrl: errorRedirectUrl })
+    }
 
     const redirectUrl = buildRedirectUrl(type, next, origin)
 

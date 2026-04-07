@@ -3,9 +3,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import { areStringArraysEqual } from '@/lib/utils/array'
 import { useTRPC } from '@/trpc/client'
-import type { Sandboxes } from '@/types/api.types'
 import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
@@ -56,10 +56,10 @@ export function useSandboxesMetrics({
 
   const metricsQueryInput = useMemo(
     () => ({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       sandboxIds: activeSandboxIds,
     }),
-    [activeSandboxIds, team.id, team.slug]
+    [activeSandboxIds, team.slug]
   )
 
   const { data } = useQuery(

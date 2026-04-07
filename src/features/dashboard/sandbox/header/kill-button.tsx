@@ -3,8 +3,8 @@
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
 import { cn } from '@/lib/utils/ui'
-import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
@@ -40,7 +40,7 @@ export default function KillButton({ className }: KillButtonProps) {
     if (!canKill || !sandboxInfo?.sandboxID) return
 
     execute({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       sandboxId: sandboxInfo.sandboxID,
     })
   }

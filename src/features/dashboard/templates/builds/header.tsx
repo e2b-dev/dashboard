@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { BuildStatus } from '@/core/modules/builds/models'
 import { cn } from '@/lib/utils'
-import type { BuildStatus } from '@/server/api/models/builds.models'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,

@@ -7,9 +7,8 @@ import {
 } from '@trpc/tanstack-react-query'
 import { headers } from 'next/headers'
 import { cache } from 'react'
-
-import { createTRPCContext } from '@/server/api/init'
-import { createTRPCCaller, trpcAppRouter } from '@/server/api/routers'
+import { createTRPCCaller, trpcAppRouter } from '@/core/server/api/routers'
+import { createTRPCContext } from '@/core/server/trpc/init'
 import { createQueryClient } from './query-client'
 
 /**

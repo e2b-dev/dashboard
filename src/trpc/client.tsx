@@ -8,7 +8,7 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import { createTRPCContext } from '@trpc/tanstack-react-query'
 import { useState } from 'react'
 import SuperJSON from 'superjson'
-import type { TRPCAppRouter } from '@/server/api/routers'
+import type { TRPCAppRouter } from '@/core/server/api/routers'
 import { createQueryClient } from './query-client'
 
 export const { TRPCProvider, useTRPC, useTRPCClient } =

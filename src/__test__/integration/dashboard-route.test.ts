@@ -17,7 +17,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
  * 3. Tab parameter routing - all valid tabs and fallbacks
  * 4. Error handling - auth errors and missing teams
  * 5. Cookie setting - team persistence
- * 6. URL generation - correct paths for team slug/ID
+ * 6. URL generation - correct slug-backed paths
  */
 
 // create hoisted mocks
@@ -29,6 +29,7 @@ const {
 } = vi.hoisted(() => ({
   mockSupabaseClient: {
     auth: {
+      getSession: vi.fn(),
       getUser: vi.fn(),
       signOut: vi.fn(),
     },
@@ -43,11 +44,11 @@ const {
   mockResolveUserTeam: vi.fn(),
 }))
 
-vi.mock('@/lib/clients/supabase/server', () => ({
+vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
 }))
 
-vi.mock('@/lib/clients/supabase/admin', () => ({
+vi.mock('@/core/shared/clients/supabase/admin', () => ({
   supabaseAdmin: mockSupabaseAdmin,
 }))
 
@@ -63,7 +64,7 @@ vi.mock('@/lib/utils/auth', () => ({
   }),
 }))
 
-vi.mock('@/server/team/resolve-user-team', () => ({
+vi.mock('@/core/server/functions/team/resolve-user-team', () => ({
   resolveUserTeam: mockResolveUserTeam,
 }))
 
@@ -78,6 +79,9 @@ import { GET, TAB_URL_MAP } from '@/app/dashboard/route'
 describe('Dashboard Route - Team Resolution Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSupabaseClient.auth.getSession.mockResolvedValue({
+      data: { session: { access_token: 'session-token' } },
+    })
   })
 
   afterEach(() => {
@@ -117,8 +121,8 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       // execute
       const response = await GET(request)
 
-      // verify: resolveUserTeam was called with user ID
-      expect(mockResolveUserTeam).toHaveBeenCalledWith('user-123')
+      // verify: resolveUserTeam was called with session access token
+      expect(mockResolveUserTeam).toHaveBeenCalledWith('session-token')
 
       // verify: redirects to sandboxes page
       expect(response.status).toBe(307) // temporary redirect
@@ -251,18 +255,11 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       expect(response.headers.get('location')).toContain(expectedPath)
     })
 
-    it('should use team ID as fallback when slug is empty', async () => {
-      const testTeamId = 'team-id-only'
-
-      mockResolveUserTeam.mockResolvedValue({
-        id: testTeamId,
-        slug: '',
-      })
-
-      const request = createRequest({ tab: 'billing' })
+    it('should default to sandboxes when tab matches an inherited object key', async () => {
+      const request = createRequest({ tab: 'constructor' })
       const response = await GET(request)
 
-      const expectedPath = TAB_URL_MAP['billing']!(testTeamId)
+      const expectedPath = PROTECTED_URLS.SANDBOXES(testTeamSlug)
       expect(response.headers.get('location')).toContain(expectedPath)
     })
   })

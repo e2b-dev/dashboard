@@ -5,6 +5,8 @@ import { motion } from 'motion/react'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { API_KEYS_LAST_USED_FIRST_COLLECTION_DATE } from '@/configs/versioning'
+import type { TeamAPIKey } from '@/core/modules/keys/models'
+import { deleteApiKeyAction } from '@/core/server/actions/key-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -12,8 +14,6 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
-import { deleteApiKeyAction } from '@/server/keys/key-actions'
-import type { TeamAPIKey } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -63,7 +63,7 @@ export default function ApiKeyTableRow({
 
   const deleteKey = () => {
     executeDeleteKey({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       apiKeyId: apiKey.id,
     })
   }

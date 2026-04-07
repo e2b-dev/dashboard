@@ -9,42 +9,55 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 // MOCKS SETUP
 // ============================================================================
 
-const mockSupabaseClient = {
-  auth: {
-    getUser: vi.fn(),
-    getSession: vi.fn(),
+const {
+  mockSupabaseClient,
+  mockListUserTeams,
+  mockCreateUserTeamsRepository,
+  mockSetTeamCookies,
+} = vi.hoisted(() => ({
+  mockSupabaseClient: {
+    auth: {
+      getUser: vi.fn(),
+      getSession: vi.fn(),
+    },
   },
-}
+  mockListUserTeams: vi.fn(),
+  mockCreateUserTeamsRepository: vi.fn(),
+  mockSetTeamCookies: vi.fn(),
+}))
 
-vi.mock('@/lib/clients/supabase/server', () => ({
+vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
 }))
 
-vi.mock('@/lib/clients/supabase/admin', () => ({
-  supabaseAdmin: {
-    from: vi.fn(),
-  },
+vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
+  createUserTeamsRepository: mockCreateUserTeamsRepository,
 }))
 
-vi.mock('@/lib/clients/kv', () => ({
+vi.mock('@/core/shared/clients/kv', () => ({
   kv: {
     get: vi.fn(),
     set: vi.fn(),
   },
 }))
 
-vi.mock('@/lib/clients/api', () => ({
+vi.mock('@/core/shared/clients/api', () => ({
   infra: {
     GET: vi.fn(),
   },
 }))
 
-vi.mock('@/lib/clients/logger/logger', () => ({
+vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
   },
+  serializeErrorForLog: vi.fn((error) => error),
+}))
+
+vi.mock('@/lib/utils/cookies', () => ({
+  setTeamCookies: mockSetTeamCookies,
 }))
 
 vi.mock('next/headers', () => ({
@@ -82,8 +95,8 @@ vi.mock('next/server', async () => {
 })
 
 // Import mocked modules after mock setup
-import { infra } from '@/lib/clients/api'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
+import { infra } from '@/core/shared/clients/api'
+import { setTeamCookies } from '@/lib/utils/cookies'
 
 // ============================================================================
 // TEST HELPERS
@@ -117,24 +130,29 @@ function setupAuthenticatedUser(
 }
 
 function setupUserTeams(teams: Array<{ id: string; slug: string | null }>) {
-  const mockTeamsData = teams.map((team) => ({
-    teams: team,
-    is_default: false,
-  }))
-
-  vi.mocked(supabaseAdmin.from).mockImplementation(
-    () =>
-      ({
-        select: vi.fn(() => ({
-          eq: vi.fn(() =>
-            Promise.resolve({
-              data: mockTeamsData,
-              error: null,
-            })
-          ),
-        })),
-      }) as any
-  )
+  mockListUserTeams.mockResolvedValue({
+    ok: true,
+    data: teams.map((team) => ({
+      id: team.id,
+      slug: team.slug ?? '',
+      name: `Team ${team.id}`,
+      tier: 'pro',
+      email: `${team.id}@example.com`,
+      profilePictureUrl: null,
+      isBlocked: false,
+      isBanned: false,
+      blockedReason: null,
+      isDefault: false,
+      limits: {
+        maxLengthHours: 1,
+        concurrentSandboxes: 1,
+        concurrentTemplateBuilds: 1,
+        maxVcpu: 1,
+        maxRamMb: 512,
+        diskMb: 1024,
+      },
+    })),
+  })
 }
 
 function setupSandboxResponse(
@@ -142,45 +160,53 @@ function setupSandboxResponse(
   sandboxId: string,
   found: boolean
 ) {
-  vi.mocked(infra.GET).mockImplementation((path: string, options: any) => {
-    if (
-      path === '/sandboxes/{sandboxID}' &&
-      options.params.path.sandboxID === sandboxId &&
-      options.headers[SUPABASE_TEAM_HEADER] === teamId &&
-      Boolean(options.headers[SUPABASE_TOKEN_HEADER])
-    ) {
-      if (found) {
-        return Promise.resolve({
-          response: { status: 200 },
-          data: {
-            sandboxID: sandboxId,
-            templateID: 'template123',
-            clientID: 'client123',
-            startedAt: '2024-01-01T00:00:00Z',
-            endAt: '2024-01-02T00:00:00Z',
-            state: 'running',
-            cpuCount: 2,
-            memoryMB: 4096,
-            diskSizeMB: 10240,
-            envdVersion: '1.0.0',
-          },
-          error: null,
-        })
-      } else {
-        return Promise.resolve({
-          response: { status: 404 },
-          data: null,
-          error: { message: 'Sandbox not found' },
-        })
+  vi.mocked(infra.GET).mockImplementation(
+    (
+      path: string,
+      options: {
+        params: { path: { sandboxID: string } }
+        headers: Record<string, string | undefined>
       }
-    }
+    ) => {
+      if (
+        path === '/sandboxes/{sandboxID}' &&
+        options.params.path.sandboxID === sandboxId &&
+        options.headers[SUPABASE_TEAM_HEADER] === teamId &&
+        Boolean(options.headers[SUPABASE_TOKEN_HEADER])
+      ) {
+        if (found) {
+          return Promise.resolve({
+            response: { status: 200 },
+            data: {
+              sandboxID: sandboxId,
+              templateID: 'template123',
+              clientID: 'client123',
+              startedAt: '2024-01-01T00:00:00Z',
+              endAt: '2024-01-02T00:00:00Z',
+              state: 'running',
+              cpuCount: 2,
+              memoryMB: 4096,
+              diskSizeMB: 10240,
+              envdVersion: '1.0.0',
+            },
+            error: null,
+          })
+        } else {
+          return Promise.resolve({
+            response: { status: 404 },
+            data: null,
+            error: { message: 'Sandbox not found' },
+          })
+        }
+      }
 
-    return Promise.resolve({
-      response: { status: 404 },
-      data: null,
-      error: { message: 'Not found' },
-    })
-  })
+      return Promise.resolve({
+        response: { status: 404 },
+        data: null,
+        error: { message: 'Not found' },
+      })
+    }
+  )
 }
 
 // ============================================================================
@@ -188,11 +214,17 @@ function setupSandboxResponse(
 // ============================================================================
 
 describe('Sandbox Inspect Route - Integration Tests', () => {
-  let GET: any
+  let GET: (
+    request: NextRequest,
+    context: { params: Promise<{ sandboxId: string }> }
+  ) => Promise<Response>
 
   beforeEach(async () => {
     vi.clearAllMocks()
     mockRedirectCalls = []
+    mockCreateUserTeamsRepository.mockReturnValue({
+      listUserTeams: mockListUserTeams,
+    })
 
     // Dynamically import the route handler after mocks are set up
     const routeModule = await import(
@@ -303,7 +335,7 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
      * SECURITY TEST: Verifies session errors are handled properly
      */
     it('redirects to sign-in when session is invalid', async () => {
-      setupAuthenticatedUser('user-123', null as any)
+      setupAuthenticatedUser('user-123')
 
       mockSupabaseClient.auth.getSession.mockResolvedValue({
         data: { session: null },
@@ -450,6 +482,10 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
       expect(mockRedirectCalls[0]?.url).toContain(
         PROTECTED_URLS.SANDBOX('new-team', 'sbx789')
       )
+      expect(vi.mocked(setTeamCookies)).toHaveBeenCalledWith(
+        'team-456',
+        'new-team'
+      )
     })
   })
 
@@ -459,21 +495,10 @@ describe('Sandbox Inspect Route - Integration Tests', () => {
      */
     it('handles database errors gracefully', async () => {
       setupAuthenticatedUser()
-
-      // Setup: Database error when fetching teams
-      vi.mocked(supabaseAdmin.from).mockImplementation(
-        () =>
-          ({
-            select: vi.fn(() => ({
-              eq: vi.fn(() =>
-                Promise.resolve({
-                  data: null,
-                  error: { message: 'Database connection error' },
-                })
-              ),
-            })),
-          }) as any
-      )
+      mockListUserTeams.mockResolvedValue({
+        ok: false,
+        error: new Error('Database connection error'),
+      })
 
       const request = createMockRequest('sbx123')
       const params = createMockParams('sbx123')

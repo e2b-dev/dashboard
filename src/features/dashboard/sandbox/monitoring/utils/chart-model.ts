@@ -1,7 +1,7 @@
 import type {
-  SandboxEventDTO,
+  SandboxEventModel,
   SandboxMetric,
-} from '@/server/api/models/sandboxes.models'
+} from '@/core/modules/sandboxes/models'
 import type { MonitoringChartModel } from '../types/sandbox-metrics-chart'
 import {
   applyPauseWindows,
@@ -18,7 +18,7 @@ import {
 
 interface BuildMonitoringChartModelOptions {
   metrics: SandboxMetric[]
-  lifecycleEvents?: SandboxEventDTO[]
+  lifecycleEvents?: SandboxEventModel[]
   startMs: number
   endMs: number
 }

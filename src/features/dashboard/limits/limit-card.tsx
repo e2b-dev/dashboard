@@ -1,7 +1,7 @@
 'use client'
 
+import type { BillingLimit } from '@/core/modules/billing/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import type { BillingLimit } from '@/types/billing.types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
 import { useDashboard } from '../context'
 import LimitForm from './limit-form'
@@ -13,7 +13,7 @@ interface LimitCardProps {
 
 export default function LimitCard({ className, value }: LimitCardProps) {
   const { team } = useDashboard()
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/limits'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/limits'>()
 
   if (!team) return null
 
@@ -25,7 +25,7 @@ export default function LimitCard({ className, value }: LimitCardProps) {
       <CardContent className="text-fg-secondary max-w-[500px]">
         <LimitForm
           className="mb-4"
-          teamIdOrSlug={teamIdOrSlug}
+          teamSlug={teamSlug}
           originalValue={value}
           type="limit"
         />

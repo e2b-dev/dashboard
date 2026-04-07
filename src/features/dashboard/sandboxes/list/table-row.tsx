@@ -13,12 +13,11 @@ interface SandboxesTableRowProps {
 export const SandboxesTableRow = memo(function SandboxesTableRow({
   row,
 }: SandboxesTableRowProps) {
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
 
   return (
     <Link
-      href={PROTECTED_URLS.SANDBOX(teamIdOrSlug, row.original.sandboxID)}
+      href={PROTECTED_URLS.SANDBOX(teamSlug, row.original.sandboxID)}
       prefetch={false}
       passHref
     >

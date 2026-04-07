@@ -21,30 +21,30 @@ import {
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
-  teamIdOrSlug: string
+  teamSlug: string
 }
 
 export default function SandboxInspectIncompatible({
   templateNameOrId,
-  teamIdOrSlug,
+  teamSlug,
 }: SandboxInspectIncompatibleProps) {
   const codeClassNames = 'mx-0.5 h-5.5 rounded-none align-middle'
   const { trackInteraction } = useSandboxInspectAnalytics()
 
   useEffect(() => {
-    if (!templateNameOrId || !teamIdOrSlug) return
+    if (!templateNameOrId || !teamSlug) return
 
     trackInteraction('viewed_incompatible', {
-      team_id: teamIdOrSlug,
+      team_id: teamSlug,
       template_name_or_id: templateNameOrId,
     })
-  }, [trackInteraction, teamIdOrSlug])
+  }, [trackInteraction, teamSlug])
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-4 md:justify-center">
-      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 -z-10 flex overflow-hidden">
-        <AsciiBackgroundPattern className="w-1/2" />
-        <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
+      <div className="text-fill-highlight pointer-events-none absolute top-0 -left-250 flex justify-start overflow-hidden">
+        <AsciiBackgroundPattern className="w-auto text-right!" />
+        <AsciiBackgroundPattern className="w-auto text-right! -scale-x-100" />
       </div>
       <motion.div
         initial={{ opacity: 0 }}
@@ -125,7 +125,7 @@ export default function SandboxInspectIncompatible({
               className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
-              <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamIdOrSlug)}>
+              <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamSlug)}>
                 <ChevronLeft className="size-5" />
                 Back to sandboxes
               </Link>

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
-import type { UpsertWebhookSchemaType } from '@/server/webhooks/schema'
+import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
 import {

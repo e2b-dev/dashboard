@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
-import { kv } from '@/lib/clients/kv'
-import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-
-// NOTE - using cdn caching for rate limiting on db calls
+import { api } from '@/core/shared/clients/api'
+import { kv } from '@/core/shared/clients/kv'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export const maxDuration = 10
 
 export async function GET() {
   const checks = {
     kv: false,
-    supabase: false,
+    dashboardApi: false,
   }
 
-  // check kv
   try {
     await kv.ping()
     checks.kv = true
@@ -22,32 +18,36 @@ export async function GET() {
     l.error(
       {
         key: 'health_check:kv_error',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       },
       'KV health check failed'
     )
   }
 
-  // check supabase
-  const { data: _, error } = await supabaseAdmin
-    .from('teams')
-    .select('id')
-    .limit(1)
-    .single()
-
-  if (!error) {
-    checks.supabase = true
-  } else {
+  try {
+    const { error } = await api.GET('/health', {})
+    if (!error) {
+      checks.dashboardApi = true
+    } else {
+      l.error(
+        {
+          key: 'health_check:dashboard_api_error',
+          error,
+        },
+        'Dashboard API health check failed'
+      )
+    }
+  } catch (error) {
     l.error(
       {
-        key: 'health_check:supabase_error',
-        error: serializeError(error),
+        key: 'health_check:dashboard_api_error',
+        error: serializeErrorForLog(error),
       },
-      'Supabase health check failed'
+      'Dashboard API health check failed'
     )
   }
 
-  const allHealthy = checks.kv && checks.supabase
+  const allHealthy = checks.kv && checks.dashboardApi
 
   return NextResponse.json(
     {

@@ -5,9 +5,9 @@ import { cache } from 'react'
 import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
-import { infra } from '../clients/api'
-import { l } from '../clients/logger/logger'
-import { returnServerError } from './action'
+import { returnServerError } from '@/core/server/actions/utils'
+import { infra } from '@/core/shared/clients/api'
+import { l } from '@/core/shared/clients/logger/logger'
 
 /*
  *  This function generates an e2b user access token for a given user.
@@ -46,7 +46,7 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
   return res.data
 }
 
-export const getTeamMetadataFromCookies = async (teamIdOrSlug: string) => {
+export const getTeamMetadataFromCookies = async (teamSlug: string) => {
   const cookiesStore = await cookies()
 
   const cookieTeamId = cookiesStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
@@ -56,18 +56,16 @@ export const getTeamMetadataFromCookies = async (teamIdOrSlug: string) => {
     return null
   }
 
-  const isSensical =
-    cookieTeamId === teamIdOrSlug || cookieTeamSlug === teamIdOrSlug
   const isUUID = z.uuid().safeParse(cookieTeamId).success
 
-  if (isUUID && isSensical) {
-    return {
-      id: cookieTeamId,
-      slug: cookieTeamSlug,
-    }
+  if (!isUUID || cookieTeamSlug !== teamSlug) {
+    return null
   }
 
-  return null
+  return {
+    id: cookieTeamId,
+    slug: cookieTeamSlug,
+  }
 }
 
 /**

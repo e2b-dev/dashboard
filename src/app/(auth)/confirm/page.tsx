@@ -4,13 +4,13 @@ import { useMutation } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useTransition } from 'react'
 import { AUTH_URLS } from '@/configs/urls'
-import { AuthFormMessage } from '@/features/auth/form-message'
 import {
   type ConfirmEmailInput,
   ConfirmEmailInputSchema,
   type OtpType,
   OtpTypeSchema,
-} from '@/server/api/models/auth.models'
+} from '@/core/modules/auth/models'
+import { AuthFormMessage } from '@/features/auth/form-message'
 import { Button } from '@/ui/primitives/button'
 
 const OTP_TYPE_LABELS: Record<OtpType, string> = {
