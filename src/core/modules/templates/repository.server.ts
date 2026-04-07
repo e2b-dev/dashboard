@@ -102,7 +102,7 @@ export function createTemplatesRepository(
       return ok({ success: true as const })
     },
     async updateTemplateVisibility(templateId, isPublic) {
-      const res = await deps.infraClient.PATCH('/templates/{templateID}', {
+      const res = await deps.infraClient.PATCH('/v2/templates/{templateID}', {
         body: {
           public: isPublic,
         },
