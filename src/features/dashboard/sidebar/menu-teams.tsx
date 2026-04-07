@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
+import { TEAM_SPECIFIC_RESOURCE_SEGMENTS } from '@/configs/urls'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
@@ -23,7 +24,23 @@ export default function DashboardSidebarMenuTeams() {
   const getNextUrl = useCallback(
     (team: TeamModel) => {
       const splitPath = pathname.split('/')
+      // splitPath: ["", "dashboard", teamIdOrSlug, section?, resourceId?, ...]
+      const originalSlug = splitPath[2]
       splitPath[2] = team.slug
+
+      // If actually switching teams and the current section has team-specific
+      // resource sub-paths, truncate to the section root to avoid 404s.
+      // e.g. /dashboard/old-team/sandboxes/abc123/monitoring
+      //    → /dashboard/new-team/sandboxes
+      const section = splitPath[3]
+      if (
+        team.slug !== originalSlug &&
+        section &&
+        TEAM_SPECIFIC_RESOURCE_SEGMENTS.includes(section) &&
+        splitPath.length > 4
+      ) {
+        splitPath.length = 4
+      }
 
       const preservedParams = new URLSearchParams()
       for (const param of PRESERVED_SEARCH_PARAMS) {

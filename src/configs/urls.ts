@@ -60,6 +60,19 @@ export const RESOLVER_URLS = {
     `/dashboard/inspect/sandbox/${sandboxId}`,
 }
 
+/**
+ * Route segments (after teamIdOrSlug) that contain team-specific
+ * resource IDs in their sub-paths. When switching teams, paths
+ * deeper than the segment root will be truncated to avoid 404s.
+ *
+ * e.g. /dashboard/{team}/sandboxes/{sandboxId}/monitoring
+ *    → /dashboard/{newTeam}/sandboxes
+ */
+export const TEAM_SPECIFIC_RESOURCE_SEGMENTS: readonly string[] = [
+  'sandboxes',
+  'templates',
+]
+
 export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',

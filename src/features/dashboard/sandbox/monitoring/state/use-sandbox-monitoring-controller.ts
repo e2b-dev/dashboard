@@ -12,6 +12,7 @@ import {
   SANDBOX_LIFECYCLE_EVENT_KILLED,
   SANDBOX_MONITORING_DEFAULT_PRESET_ID,
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
+  SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS,
   SANDBOX_MONITORING_LIVE_POLLING_MS,
   SANDBOX_MONITORING_OVERFETCH_MIN_MS,
   SANDBOX_MONITORING_OVERFETCH_RATIO,
@@ -65,7 +66,13 @@ export function useSandboxMonitoringController(sandboxId: string) {
     !lifecycleBounds.isRunning &&
     (lifecycleState !== 'killed' || hasKilledEvent)
 
-  const activePresetId = urlParams.preset ?? null
+  const activePresetId =
+    urlParams.preset ??
+    (urlParams.start === null &&
+    urlParams.end === null &&
+    lifecycleBounds !== null
+      ? SANDBOX_MONITORING_DEFAULT_PRESET_ID
+      : null)
 
   // Derive the effective timeframe from URL params or active preset.
   const timeframe = useMemo(() => {
@@ -85,7 +92,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     return { start, end }
   }, [urlParams.start, urlParams.end, activePresetId, lifecycleBounds])
 
-  const isPolling =
+  const shouldPoll =
     !isLifecycleSettled &&
     (lifecycleBounds?.isRunning ?? false) &&
     timeframe.end + SANDBOX_MONITORING_OVERFETCH_MIN_MS >= Date.now()
@@ -155,7 +162,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
 
   // Live polling tick
   useEffect(() => {
-    if (!isPolling || isLifecycleSettled || !activePresetId) {
+    if (!shouldPoll || isLifecycleSettled || !activePresetId) {
       return
     }
 
@@ -197,7 +204,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
   }, [
     activePresetId,
     isLifecycleSettled,
-    isPolling,
+    shouldPoll,
     lifecycleBounds,
     setUrlParams,
   ])
@@ -221,7 +228,7 @@ export function useSandboxMonitoringController(sandboxId: string) {
     refetchOnWindowFocus: !isLifecycleSettled,
     refetchOnReconnect: false,
     staleTime: SANDBOX_MONITORING_LIVE_POLLING_MS,
-    refetchInterval: isPolling ? SANDBOX_MONITORING_LIVE_POLLING_MS : false,
+    refetchInterval: shouldPoll ? SANDBOX_MONITORING_LIVE_POLLING_MS : false,
     queryFn: async () => {
       if (!team?.slug) {
         return []
@@ -236,13 +243,35 @@ export function useSandboxMonitoringController(sandboxId: string) {
     },
   })
 
+  const latestMetricTimestampMs = useMemo(() => {
+    let latest: number | null = null
+
+    for (const metric of metricsQuery.data ?? []) {
+      const timestampMs = Math.floor(metric.timestampUnix * 1000)
+      if (Number.isFinite(timestampMs)) {
+        latest = latest === null ? timestampMs : Math.max(latest, timestampMs)
+      }
+    }
+
+    return latest
+  }, [metricsQuery.data])
+
+  const isLive =
+    shouldPoll &&
+    latestMetricTimestampMs !== null &&
+    Date.now() - latestMetricTimestampMs <=
+      SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS
+
   return {
     lifecycleBounds,
     lifecycleEvents: sandboxLifecycle?.events ?? [],
     timeframe,
     fetchTimeframe,
     metrics: metricsQuery.data ?? [],
-    isPolling,
+    isInitialLoading:
+      lifecycleBounds === null ||
+      (metricsQuery.isPending && !metricsQuery.isFetched),
+    isPolling: isLive,
     isRefetching: metricsQuery.isFetching,
     activePresetId,
     setPreset,
