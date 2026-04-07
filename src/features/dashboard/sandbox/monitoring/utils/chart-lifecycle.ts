@@ -346,7 +346,7 @@ function hasValidDataWithinWindow(
 
 function buildSyntheticActiveWindowConnectors(
   data: SandboxMetricsDataPoint[],
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ) {
@@ -395,7 +395,7 @@ function buildSyntheticActiveWindowConnectors(
 
 function buildActiveWindowStartConnectors(
   data: SandboxMetricsDataPoint[],
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ) {
@@ -499,7 +499,7 @@ function injectGapNullPoints(
 export function applyPauseWindows(
   series: SandboxMetricsSeries[],
   pauseWindows: LifecyclePauseWindow[],
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ): SandboxMetricsSeries[] {

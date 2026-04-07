@@ -233,7 +233,7 @@ describe('buildMonitoringChartModel', () => {
       },
     ]
 
-    const lifecycleEvents: SandboxEventDTO[] = [
+    const lifecycleEvents: SandboxEventModel[] = [
       createLifecycleEvent({
         id: 'pause-1',
         type: 'sandbox.lifecycle.paused',
@@ -276,7 +276,7 @@ describe('buildMonitoringChartModel', () => {
   })
 
   it('draws a synthetic dashed connector across an active lifecycle window when no metrics were collected', () => {
-    const lifecycleEvents: SandboxEventDTO[] = [
+    const lifecycleEvents: SandboxEventModel[] = [
       createLifecycleEvent({
         id: 'created',
         type: 'sandbox.lifecycle.created',
@@ -324,7 +324,7 @@ describe('buildMonitoringChartModel', () => {
   })
 
   it('draws a dashed connector from created to the first metric when the range starts at created', () => {
-    const lifecycleEvents: SandboxEventDTO[] = [
+    const lifecycleEvents: SandboxEventModel[] = [
       createLifecycleEvent({
         id: 'created',
         type: 'sandbox.lifecycle.created',
@@ -357,7 +357,7 @@ describe('buildMonitoringChartModel', () => {
   })
 
   it('draws a dashed connector from created to the first metric when the range starts before created', () => {
-    const lifecycleEvents: SandboxEventDTO[] = [
+    const lifecycleEvents: SandboxEventModel[] = [
       createLifecycleEvent({
         id: 'created',
         type: 'sandbox.lifecycle.created',
