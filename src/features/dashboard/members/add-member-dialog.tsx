@@ -2,7 +2,7 @@
 
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
-import { AddMemberEmailForm } from '@/features/dashboard/members/add-member-form'
+import { AddMemberForm } from '@/features/dashboard/members/add-member-form'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -32,7 +32,7 @@ export const AddMemberDialog = () => {
         <DialogHeader>
           <DialogTitle>Add new member</DialogTitle>
         </DialogHeader>
-        <AddMemberEmailForm onSuccess={() => setOpen(false)} />
+        <AddMemberForm onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )

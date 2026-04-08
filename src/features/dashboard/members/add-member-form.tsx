@@ -28,23 +28,23 @@ const addMemberSchema = z.object({
   email: z.email(),
 })
 
-type AddMemberFormValues = z.infer<typeof addMemberSchema>
+type AddMemberForm = z.infer<typeof addMemberSchema>
 
-interface AddMemberEmailFormProps {
+interface AddMemberFormProps {
   className?: string
   onSuccess?: () => void
 }
 
-export const AddMemberEmailForm = ({
+export const AddMemberForm = ({
   className,
   onSuccess,
-}: AddMemberEmailFormProps) => {
+}: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
   const { toast } = useToast()
 
-  const form = useForm<AddMemberFormValues>({
+  const form = useForm<AddMemberForm>({
     resolver: zodResolver(addMemberSchema),
     mode: 'onChange',
     defaultValues: {
@@ -63,7 +63,7 @@ export const AddMemberEmailForm = ({
     },
   })
 
-  const onSubmit = (data: AddMemberFormValues) => {
+  const onSubmit = (data: AddMemberForm) => {
     if (!team) return
 
     execute({
