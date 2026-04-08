@@ -218,9 +218,11 @@ export const signUpAction = actionClient
         }
       }
 
-      const isNewUser =
-        signUpData.user && signUpData.user.identities?.length !== 0
-      if (isNewUser && (ip || userAgent)) {
+      if (
+        signUpData.user &&
+        signUpData.user.identities?.length !== 0 &&
+        (ip || userAgent)
+      ) {
         try {
           await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
             app_metadata: {
