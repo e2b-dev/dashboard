@@ -196,7 +196,10 @@ const NameCell = ({
           ) : null}
         </div>
         {!isPending ? (
-          <span className="text-fg-tertiary block truncate text-sm" title={email}>
+          <span
+            className="text-fg-tertiary block truncate text-sm"
+            title={email}
+          >
             {email}
           </span>
         ) : null}
@@ -218,7 +221,7 @@ const ProvidersCell = ({
     ) : providers.length > 0 ? (
       <>
         <div className="flex flex-wrap gap-1 md:hidden">
-          {providers.slice(0, 1).map(({ key, label, Icon }) => (
+          {providers.map(({ key, label, Icon }) => (
             <Badge
               className="bg-bg-highlight text-fg-tertiary h-[18px] gap-0.5 uppercase prose-label-numeric"
               key={key}
@@ -290,7 +293,7 @@ const RemoveMemberDialog = ({
           <div className="flex shrink-0 items-center justify-end gap-5">
             <DialogClose asChild>
               <Button
-                className="font-sans normal-case not-italic text-fg-tertiary hover:text-fg-tertiary focus:text-fg-tertiary"
+                className="font-sans normal-case text-fg-tertiary hover:text-fg-tertiary focus:text-fg-tertiary"
                 disabled={isRemoving}
                 size="slate"
                 type="button"
@@ -300,7 +303,7 @@ const RemoveMemberDialog = ({
               </Button>
             </DialogClose>
             <Button
-              className="font-sans normal-case not-italic"
+              className="font-sans normal-case"
               loading={isRemoving}
               onClick={onRemove}
               size="md"

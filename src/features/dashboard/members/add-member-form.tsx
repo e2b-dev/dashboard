@@ -86,7 +86,7 @@ export const AddMemberEmailForm = ({
               <FormLabel className="sr-only">Email</FormLabel>
               <FormControl>
                 <Input
-                  className="h-9 font-sans not-italic"
+                  className="h-9 font-sans"
                   aria-label="Email"
                   placeholder="Enter email"
                   {...field}
@@ -97,7 +97,7 @@ export const AddMemberEmailForm = ({
           )}
         />
         <Button
-          className="normal-case font-sans not-italic"
+          className="normal-case font-sans"
           loading={isExecuting}
           type="submit"
           disabled={!form.formState.isValid}

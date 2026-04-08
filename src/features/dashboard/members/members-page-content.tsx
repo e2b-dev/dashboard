@@ -50,7 +50,7 @@ const MembersPageContent = ({
           />
           <Input
             aria-label="Search by name or email"
-            className="h-9 border-stroke pl-9 font-sans not-italic"
+            className="h-9 border-stroke pl-9 font-sans"
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name or email"
             type="search"

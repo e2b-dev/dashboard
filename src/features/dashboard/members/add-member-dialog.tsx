@@ -19,7 +19,7 @@ export const AddMemberDialog = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          className="normal-case font-sans not-italic"
+          className="normal-case font-sans"
           size="md"
           type="button"
           variant="default"
