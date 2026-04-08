@@ -4,9 +4,6 @@ import { ErrorIndicator } from '@/ui/error-indicator'
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/ui/primitives/card'
 import { Loader } from '@/ui/primitives/loader_d'
 import MembersPageContent from './members-page-content'
@@ -20,10 +17,6 @@ interface MemberCardProps {
 
 export const MemberCard = ({ params, className }: MemberCardProps) => (
   <Card className={className}>
-    <CardHeader>
-      <CardTitle>Members</CardTitle>
-      <CardDescription>Manage your team members.</CardDescription>
-    </CardHeader>
     <CardContent>
       <Suspense fallback={<MembersPageContentLoading />}>
         <MembersPageContentLoader params={params} />

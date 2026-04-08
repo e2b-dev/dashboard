@@ -43,7 +43,7 @@ const MembersPageContent = ({
   return (
     <div className={cn('flex w-full flex-col gap-6', className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full max-w-[280px]">
+        <div className="relative w-full md:max-w-[280px]">
           <Search
             aria-hidden
             className="text-fg-tertiary pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2"

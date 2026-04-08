@@ -28,10 +28,7 @@ export const AddMemberDialog = () => {
           Add new member
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className="max-w-[400px] gap-2"
-        hideClose
-      >
+      <DialogContent className="gap-2" hideClose>
         <DialogHeader>
           <DialogTitle>Add new member</DialogTitle>
         </DialogHeader>

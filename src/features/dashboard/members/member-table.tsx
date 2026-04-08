@@ -31,15 +31,15 @@ const MemberTable: FC<MemberTableProps> = ({
     <Table className={cn('w-full table-fixed', className)}>
       <colgroup>
         <col />
-        <col className="w-[200px]" />
-        <col className="w-[220px]" />
+        <col className="hidden md:table-column md:w-[200px]" />
+        <col className="w-[140px] md:w-[220px]" />
       </colgroup>
-      <TableHeader>
+      <TableHeader className="border-b-0">
         <TableRow className="border-stroke/80 hover:bg-transparent">
           <TableHead className="text-fg-tertiary font-sans! normal-case!">
             NAME
           </TableHead>
-          <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="text-fg-tertiary hidden font-sans! normal-case! md:table-cell">
             PROVIDERS
           </TableHead>
           <TableHead className="text-fg-tertiary font-sans! normal-case!">

@@ -1,14 +1,15 @@
 'use client'
 
 import { format, parseISO } from 'date-fns'
-import { Mail, Trash2 } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import type { IconType } from 'react-icons'
 import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { FiMail } from 'react-icons/fi'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { removeTeamMemberAction } from '@/core/server/actions/team-actions'
 import type { TeamMember } from '@/core/server/functions/team/types'
 import {
@@ -16,11 +17,19 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@/ui/primitives/dialog'
+import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
 import {
@@ -134,6 +143,7 @@ const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
         removeDialogOpen={removeDialogOpen}
         setRemoveDialogOpen={setRemoveDialogOpen}
         showRemove={showRemove}
+        teamName={getTeamDisplayName(team)}
       />
     </TableRow>
   )
@@ -168,12 +178,15 @@ const NameCell = ({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="text-fg min-w-0 truncate text-sm font-medium">
+          <span
+            className="text-fg min-w-0 truncate text-sm font-medium"
+            title={isPending ? email : (name ?? 'Anonymous')}
+          >
             {isPending ? email : (name ?? 'Anonymous')}
           </span>
           {isCurrentUser && !isPending ? (
             <Badge
-              className="hidden shrink-0 uppercase sm:inline-flex"
+              className="shrink-0 uppercase"
               size="sm"
               typography="regular"
               variant="default"
@@ -183,7 +196,7 @@ const NameCell = ({
           ) : null}
         </div>
         {!isPending ? (
-          <span className="text-fg-tertiary block truncate text-sm">
+          <span className="text-fg-tertiary block truncate text-sm" title={email}>
             {email}
           </span>
         ) : null}
@@ -199,7 +212,7 @@ const ProvidersCell = ({
   isPending: boolean
   providers: MemberProvider[]
 }) => (
-  <TableCell>
+  <TableCell className="hidden md:table-cell">
     {isPending ? (
       <span className="text-fg-tertiary font-sans text-sm">--</span>
     ) : providers.length > 0 ? (
@@ -221,6 +234,75 @@ const ProvidersCell = ({
   </TableCell>
 )
 
+const RemoveMemberDialog = ({
+  isRemoving,
+  memberEmail,
+  memberName,
+  onRemove,
+  open,
+  setOpen,
+  teamName,
+  trigger,
+}: {
+  isRemoving: boolean
+  memberEmail: string
+  memberName?: string
+  onRemove: () => void
+  open: boolean
+  setOpen: (v: boolean) => void
+  teamName?: string | null
+  trigger: ReactNode
+}) => {
+  const shortMemberName = memberName?.trim().split(/\s+/)[0] || memberEmail
+  const fullMemberName = memberName ?? memberEmail
+  const teamLabel = teamName || 'this team'
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent
+        className="gap-0 border-stroke p-4 pl-5 pr-8 shadow-[8px_69px_42px_0px_rgba(0,0,0,0.15),3px_31px_31px_0px_rgba(0,0,0,0.26),1px_8px_17px_0px_rgba(0,0,0,0.29)]"
+        hideClose
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="w-full text-left">
+              Remove {shortMemberName}?
+            </DialogTitle>
+            <DialogDescription className="prose-body mt-2 text-left">
+              {fullMemberName} will be removed from {teamLabel}
+            </DialogDescription>
+          </div>
+          <div className="flex shrink-0 items-center justify-end gap-5">
+            <DialogClose asChild>
+              <Button
+                className="font-sans normal-case not-italic text-fg-tertiary hover:text-fg-tertiary focus:text-fg-tertiary"
+                disabled={isRemoving}
+                size="slate"
+                type="button"
+                variant="ghost"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              className="font-sans normal-case not-italic"
+              loading={isRemoving}
+              onClick={onRemove}
+              size="md"
+              type="button"
+              variant="error"
+            >
+              <TrashIcon className="size-4" />
+              Remove
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 const AddedCell = ({
   addedByMember,
   addedBySystem,
@@ -233,6 +315,7 @@ const AddedCell = ({
   removeDialogOpen,
   setRemoveDialogOpen,
   showRemove,
+  teamName,
 }: {
   addedByMember?: TeamMember
   addedBySystem: boolean
@@ -245,6 +328,7 @@ const AddedCell = ({
   removeDialogOpen: boolean
   setRemoveDialogOpen: (v: boolean) => void
   showRemove: boolean
+  teamName?: string | null
 }) => (
   <TableCell>
     <div className="flex items-center gap-6">
@@ -267,22 +351,23 @@ const AddedCell = ({
         </Avatar>
       )}
       {showRemove ? (
-        <AlertDialog
-          confirm="Remove"
-          confirmProps={{ loading: isRemoving }}
-          description="Are you sure you want to remove this member from the team?"
-          onConfirm={onRemove}
-          onOpenChange={setRemoveDialogOpen}
+        <RemoveMemberDialog
+          isRemoving={isRemoving}
+          memberEmail={memberEmail}
+          memberName={memberName}
+          onRemove={onRemove}
           open={removeDialogOpen}
-          title="Remove Member"
+          setOpen={setRemoveDialogOpen}
+          teamName={teamName}
           trigger={
             <Button
               aria-label={`Remove ${memberName ?? memberEmail}`}
+              className="text-fg-tertiary hover:text-fg"
               size="iconSm"
               type="button"
               variant="ghost"
             >
-              <Trash2 className="size-4" />
+              <TrashIcon className="size-4" />
             </Button>
           }
         />
