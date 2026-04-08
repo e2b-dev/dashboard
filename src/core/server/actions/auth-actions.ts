@@ -218,13 +218,22 @@ export const signUpAction = actionClient
         }
       }
 
-      if (signUpData.user && (ip || userAgent)) {
-        await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
-          app_metadata: {
-            signup_ip: ip,
-            signup_user_agent: userAgent,
-          },
-        })
+      const isNewUser =
+        signUpData.user && signUpData.user.identities?.length !== 0
+      if (isNewUser && (ip || userAgent)) {
+        try {
+          await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
+            app_metadata: {
+              signup_ip: ip,
+              signup_user_agent: userAgent,
+            },
+          })
+        } catch (metaError) {
+          l.error(
+            { key: 'sign_up_action:metadata_update_error', error: metaError },
+            'sign_up_action: failed to write signup metadata to app_metadata'
+          )
+        }
       }
     }
   )
