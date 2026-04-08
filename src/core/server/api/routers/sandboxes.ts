@@ -55,7 +55,7 @@ export const sandboxesRouter = createTRPCRouter({
   getSandboxesMetrics: sandboxesRepositoryProcedure
     .input(
       z.object({
-        sandboxIds: z.array(z.string()),
+        sandboxIds: z.array(z.string()).max(100),
       })
     )
     .query(async ({ ctx, input }) => {
