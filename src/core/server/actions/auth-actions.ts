@@ -170,7 +170,8 @@ export const signUpAction = actionClient
       }
 
       const userAgent = headerStore.get('user-agent') ?? undefined
-      const ip = headerStore.get('x-forwarded-for') ?? undefined
+      const ip =
+        headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
 
       // basic security check, that password does not equal e-mail
       if (password && email && password.toLowerCase() === email.toLowerCase()) {
