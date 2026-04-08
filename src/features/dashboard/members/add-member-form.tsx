@@ -35,10 +35,7 @@ interface AddMemberFormProps {
   onSuccess?: () => void
 }
 
-export const AddMemberForm = ({
-  className,
-  onSuccess,
-}: AddMemberFormProps) => {
+export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()

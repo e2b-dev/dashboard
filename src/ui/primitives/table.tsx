@@ -140,7 +140,10 @@ const TableEmptyState = ({
   className,
 }: TableEmptyStateProps) => (
   <TableRow>
-    <TableCell className={cn('text-fg-tertiary p-6 text-center', className)} colSpan={colSpan}>
+    <TableCell
+      className={cn('text-fg-tertiary p-6 text-center', className)}
+      colSpan={colSpan}
+    >
       {children}
     </TableCell>
   </TableRow>
