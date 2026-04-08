@@ -90,7 +90,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     type: 'default',
   }),
   '/dashboard/*/members': () => ({
-    title: 'Members',
+    title: 'MEMBERS',
     type: 'default',
   }),
 

@@ -9,6 +9,7 @@ export type TeamMemberInfo = {
   name?: string
   avatar_url?: string
   providers?: string[]
+  createdAt: string | null
 }
 
 export type TeamMemberRelation = {

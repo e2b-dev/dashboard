@@ -27,19 +27,28 @@ const addMemberSchema = z.object({
   email: z.email(),
 })
 
-type AddMemberForm = z.infer<typeof addMemberSchema>
+type AddMemberFormValues = z.infer<typeof addMemberSchema>
 
-interface AddMemberFormProps {
+interface AddMemberEmailFormProps {
   className?: string
+  /** Called after a successful invite (e.g. close dialog). */
+  onSuccess?: () => void
+  submitLabel?: string
+  showLabel?: boolean
 }
 
-export default function AddMemberForm({ className }: AddMemberFormProps) {
+export const AddMemberEmailForm = ({
+  className,
+  onSuccess,
+  submitLabel = 'Add member',
+  showLabel = true,
+}: AddMemberEmailFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
   const { toast } = useToast()
 
-  const form = useForm<AddMemberForm>({
+  const form = useForm<AddMemberFormValues>({
     resolver: zodResolver(addMemberSchema),
     defaultValues: {
       email: '',
@@ -50,16 +59,15 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     onSuccess: () => {
       toast(defaultSuccessToast('The member has been added to the team.'))
       form.reset()
+      onSuccess?.()
     },
     onError: ({ error }) => {
       toast(defaultErrorToast(error.serverError || 'An error occurred.'))
     },
   })
 
-  function onSubmit(data: AddMemberForm) {
-    if (!team) {
-      return
-    }
+  const onSubmit = (data: AddMemberFormValues) => {
+    if (!team) return
 
     execute({
       teamSlug: team.slug,
@@ -71,31 +79,31 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('flex gap-2', className)}
+        className={cn('flex flex-col gap-4', className)}
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="relative flex-1">
-              <FormLabel className="">E-mail</FormLabel>
-              <div className="flex items-center gap-2">
-                <FormControl>
-                  <Input placeholder="member@acme.com" {...field} />
-                </FormControl>
-                <Button
-                  loading={isExecuting}
-                  type="submit"
-                  disabled={!form.formState.isValid}
-                  variant="outline"
-                >
-                  Add Member
-                </Button>
-              </div>
+            <FormItem>
+              {showLabel ? <FormLabel>E-mail</FormLabel> : null}
+              <FormControl>
+                <Input placeholder="member@acme.com" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <div className="flex justify-end gap-2">
+          <Button
+            loading={isExecuting}
+            type="submit"
+            disabled={!form.formState.isValid}
+            variant="default"
+          >
+            {submitLabel}
+          </Button>
+        </div>
       </form>
     </Form>
   )
