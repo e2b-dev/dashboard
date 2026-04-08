@@ -38,6 +38,8 @@ const _dateRangeRefineMessage = {
 
 // PUBLIC
 
+export const MAX_SANDBOX_IDS_PER_REQUEST = 100
+
 export const GetTeamMetricsSchema = z
   .object({
     startDate: _startDateSchema,

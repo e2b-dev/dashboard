@@ -5,12 +5,11 @@ import { useEffect, useMemo, useRef } from 'react'
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import type { ClientSandboxesMetrics } from '@/core/modules/sandboxes/models.client'
+import { MAX_SANDBOX_IDS_PER_REQUEST } from '@/core/modules/sandboxes/schemas'
 import { areStringArraysEqual } from '@/lib/utils/array'
 import { useTRPC } from '@/trpc/client'
 import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
-
-const MAX_SANDBOX_IDS_PER_REQUEST = 100
 
 interface UseSandboxesMetricsProps {
   sandboxes: Sandboxes
