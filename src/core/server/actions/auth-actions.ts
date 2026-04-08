@@ -9,7 +9,6 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -20,6 +19,7 @@ import {
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
 import { l } from '@/core/shared/clients/logger/logger'
+import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
