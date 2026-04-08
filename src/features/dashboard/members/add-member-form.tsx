@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Plus } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -31,17 +32,12 @@ type AddMemberFormValues = z.infer<typeof addMemberSchema>
 
 interface AddMemberEmailFormProps {
   className?: string
-  /** Called after a successful invite (e.g. close dialog). */
   onSuccess?: () => void
-  submitLabel?: string
-  showLabel?: boolean
 }
 
 export const AddMemberEmailForm = ({
   className,
   onSuccess,
-  submitLabel = 'Add member',
-  showLabel = true,
 }: AddMemberEmailFormProps) => {
   'use no memo'
 
@@ -50,6 +46,7 @@ export const AddMemberEmailForm = ({
 
   const form = useForm<AddMemberFormValues>({
     resolver: zodResolver(addMemberSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
     },
@@ -79,31 +76,37 @@ export const AddMemberEmailForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('flex flex-col gap-4', className)}
+        className={cn('flex items-start gap-1 py-1', className)}
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
-              {showLabel ? <FormLabel>E-mail</FormLabel> : null}
+            <FormItem className="flex-1">
+              <FormLabel className="sr-only">Email</FormLabel>
               <FormControl>
-                <Input placeholder="member@acme.com" {...field} />
+                <Input
+                  className="h-9 font-sans not-italic"
+                  aria-label="Email"
+                  placeholder="Enter email"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <div className="flex justify-end gap-2">
-          <Button
-            loading={isExecuting}
-            type="submit"
-            disabled={!form.formState.isValid}
-            variant="default"
-          >
-            {submitLabel}
-          </Button>
-        </div>
+        <Button
+          className="normal-case font-sans not-italic"
+          loading={isExecuting}
+          type="submit"
+          disabled={!form.formState.isValid}
+          size="md"
+          variant="default"
+        >
+          <Plus aria-hidden className="size-4 shrink-0" />
+          Add
+        </Button>
       </form>
     </Form>
   )

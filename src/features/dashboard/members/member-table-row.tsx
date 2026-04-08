@@ -22,11 +22,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { TableCell, TableRow } from '@/ui/primitives/table'
+import { useDashboard } from '../context'
 import {
+  isPendingTeamMember,
   isSystemAddedMember,
   shouldShowRemoveMemberAction,
 } from './member-table.utils'
-import { useDashboard } from '../context'
 
 interface TableRowProps {
   member: TeamMember
@@ -106,7 +107,7 @@ const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
       .filter((provider): provider is MemberProvider => provider !== null) ?? []
 
   const isCurrentUser = member.info.id === user?.id
-  const isPending = providers.length === 0 && !member.info.name
+  const isPending = isPendingTeamMember(member)
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
   const dateStr = formatDate(member.info.createdAt)
   const addedBySystem = isSystemAddedMember(member, addedByMember)

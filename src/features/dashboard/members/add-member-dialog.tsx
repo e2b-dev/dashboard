@@ -28,15 +28,14 @@ export const AddMemberDialog = () => {
           Add new member
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="max-w-[400px] gap-2"
+        hideClose
+      >
         <DialogHeader>
-          <DialogTitle>Add member</DialogTitle>
+          <DialogTitle>Add new member</DialogTitle>
         </DialogHeader>
-        <AddMemberEmailForm
-          showLabel={false}
-          submitLabel="Send invite"
-          onSuccess={() => setOpen(false)}
-        />
+        <AddMemberEmailForm onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )

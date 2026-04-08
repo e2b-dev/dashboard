@@ -15,6 +15,20 @@ const isSystemAddedMember = (
   addedByMember?: TeamMember
 ): boolean => !addedByMember || addedByMember.info.id === member.info.id
 
+// Returns whether a row should render as a pending invite. Example: ({ name: undefined, providers: ['saml'] }) -> true.
+const isPendingTeamMember = (member: TeamMember): boolean => {
+  const hasRecognizedProvider = member.info.providers?.some((provider) => {
+    const value = provider.toLowerCase()
+    return (
+      value.includes('google') ||
+      value.includes('github') ||
+      value.includes('email')
+    )
+  })
+
+  return !hasRecognizedProvider && !member.info.name
+}
+
 // Returns whether remove should be shown. Example: (default member, current user) -> false.
 const shouldShowRemoveMemberAction = (
   member: TeamMember,
@@ -24,6 +38,7 @@ const shouldShowRemoveMemberAction = (
 
 export {
   getAddedByMember,
+  isPendingTeamMember,
   isSystemAddedMember,
   shouldShowRemoveMemberAction,
 }

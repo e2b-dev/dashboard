@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/ui/primitives/input'
 import { AddMemberDialog } from './add-member-dialog'
 import MemberTable from './member-table'
+import { isPendingTeamMember } from './member-table.utils'
 
 interface MembersPageContentProps {
   members: TeamMember[]
@@ -30,8 +31,14 @@ const MembersPageContent = ({
     })
   }, [members, query])
 
-  const totalLabel =
-    members.length === 1 ? '1 member total' : `${members.length} members total`
+  const pendingCount = members.filter(isPendingTeamMember).length
+
+  const totalLabel = [
+    members.length === 1 ? '1 member total' : `${members.length} members total`,
+    pendingCount > 0 ? `${pendingCount} pending` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)}>
