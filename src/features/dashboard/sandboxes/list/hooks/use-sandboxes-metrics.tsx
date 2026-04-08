@@ -70,7 +70,7 @@ export function useSandboxesMetrics({
     [activeSandboxIds]
   )
 
-  const queryResults = useQueries({
+  const { metrics: mergedMetrics } = useQueries({
     queries: sandboxIdChunks.map((chunk) =>
       trpc.sandboxes.getSandboxesMetrics.queryOptions(
         {
@@ -87,17 +87,23 @@ export function useSandboxesMetrics({
         }
       )
     ),
-  })
-
-  const mergedMetrics = useMemo(() => {
-    const merged: ClientSandboxesMetrics = {}
-    for (const result of queryResults) {
-      if (result.data?.metrics) {
-        Object.assign(merged, result.data.metrics)
+    combine: (results) => {
+      const hasError = results.some((r) => r.isError)
+      if (hasError) {
+        return { metrics: undefined }
       }
-    }
-    return Object.keys(merged).length > 0 ? merged : undefined
-  }, [queryResults])
+
+      const merged: ClientSandboxesMetrics = {}
+      for (const result of results) {
+        if (result.data?.metrics) {
+          Object.assign(merged, result.data.metrics)
+        }
+      }
+      return {
+        metrics: Object.keys(merged).length > 0 ? merged : undefined,
+      }
+    },
+  })
 
   useEffect(() => {
     if (mergedMetrics) {
