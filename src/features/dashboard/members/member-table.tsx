@@ -6,18 +6,17 @@ import { cn } from '@/lib/utils'
 import {
   Table,
   TableBody,
-  TableCell,
+  TableEmptyState,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
 import { getAddedByMember } from './member-table.utils'
-import MemberTableRow from './member-table-row'
+import { MemberTableRow } from './member-table-row'
 
 interface MemberTableProps {
   allMembers: TeamMember[]
   members: TeamMember[]
-  /** Full list length before client-side search filter (for empty copy). */
   totalMemberCount: number
   className?: string
 }
@@ -49,13 +48,11 @@ const MemberTable: FC<MemberTableProps> = ({
     </TableHeader>
     <TableBody>
       {members.length === 0 ? (
-        <TableRow>
-          <TableCell className="text-fg-tertiary p-6 text-center" colSpan={3}>
-            {totalMemberCount === 0
-              ? 'No team members found.'
-              : 'No members match your search.'}
-          </TableCell>
-        </TableRow>
+        <TableEmptyState colSpan={3}>
+          {totalMemberCount === 0
+            ? 'No team members found.'
+            : 'No members match your search.'}
+        </TableEmptyState>
       ) : (
         members.map((member) => (
           <MemberTableRow

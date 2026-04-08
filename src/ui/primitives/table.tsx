@@ -128,11 +128,30 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = 'TableCaption'
 
+interface TableEmptyStateProps {
+  colSpan: number
+  children: React.ReactNode
+  className?: string
+}
+
+const TableEmptyState = ({
+  colSpan,
+  children,
+  className,
+}: TableEmptyStateProps) => (
+  <TableRow>
+    <TableCell className={cn('text-fg-tertiary p-6 text-center', className)} colSpan={colSpan}>
+      {children}
+    </TableCell>
+  </TableRow>
+)
+
 export {
   Table,
   TableBody,
   TableCaption,
   TableCell,
+  TableEmptyState,
   TableFooter,
   TableHead,
   TableHeader,

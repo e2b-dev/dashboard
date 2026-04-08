@@ -1,6 +1,5 @@
 'use client'
 
-import { format, parseISO } from 'date-fns'
 import { Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
@@ -17,6 +16,7 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
+import { formatDate } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
@@ -49,16 +49,6 @@ type MemberProvider = {
   Icon: IconType
 }
 
-// "2025-08-20T..." -> "Aug 20, 2025"
-const formatDate = (iso: string | null | undefined) => {
-  if (!iso) return null
-  try {
-    return format(parseISO(iso), 'MMM d, yyyy')
-  } catch {
-    return null
-  }
-}
-
 function normalizeProvider(provider: string): string {
   const value = provider.toLowerCase()
   if (value.includes('google')) return 'google'
@@ -78,7 +68,7 @@ function toMemberProvider(provider: string): MemberProvider | null {
   return null
 }
 
-const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
+export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const { toast } = useToast()
   const router = useRouter()
   const { team, user } = useDashboard()
@@ -118,7 +108,9 @@ const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const isCurrentUser = member.info.id === user?.id
   const isPending = isPendingTeamMember(member)
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
-  const dateStr = formatDate(member.info.createdAt)
+  const dateStr = member.info.createdAt
+    ? formatDate(new Date(member.info.createdAt), 'MMM d, yyyy')
+    : null
   const addedBySystem = isSystemAddedMember(member, addedByMember)
 
   return (
@@ -392,5 +384,3 @@ const AddedCell = ({
     </div>
   </TableCell>
 )
-
-export default MemberTableRow

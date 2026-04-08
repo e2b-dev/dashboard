@@ -142,6 +142,19 @@ export function formatCompactDate(timestamp: number): string {
   return format(date, 'yyyy MMM d, h:mm:ss a zzz')
 }
 
+const DATE_STRUCTURES = ['MMM d', 'MMM d, yyyy'] as const
+
+type DateStructure = (typeof DATE_STRUCTURES)[number]
+
+// Returns a formatted date string. Example: (new Date('2026-04-08'), 'MMM d, yyyy') -> 'Apr 8, 2026'.
+export const formatDate = (
+  date: Date,
+  dateStructure: DateStructure
+): string | null => {
+  if (!isValid(date)) return null
+  return format(date, dateStructure)
+}
+
 export function formatDay(timestamp: number): string {
   if (isThisYear(timestamp)) {
     return new Intl.DateTimeFormat('en-US', {
@@ -450,7 +463,7 @@ export function tryParseDatetime(input: string): Date | null {
 
   // Try parsing as timestamp first (for performance with numeric inputs)
   const timestamp = Number(input)
-  if (!isNaN(timestamp)) {
+  if (!Number.isNaN(timestamp)) {
     // if timestamp is less than 10 digits, multiply by 1000 to get milliseconds
     const date = new Date(
       timestamp < 10000000000 ? timestamp * 1000 : timestamp
