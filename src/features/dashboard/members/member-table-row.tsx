@@ -212,22 +212,36 @@ const ProvidersCell = ({
   isPending: boolean
   providers: MemberProvider[]
 }) => (
-  <TableCell className="hidden md:table-cell">
+  <TableCell>
     {isPending ? (
       <span className="text-fg-tertiary font-sans text-sm">--</span>
     ) : providers.length > 0 ? (
-      <div className="flex flex-wrap gap-1">
-        {providers.map(({ key, label, Icon }) => (
-          <Badge
-            className="bg-bg-highlight text-fg-tertiary h-[18px] gap-0.5 uppercase prose-label-numeric"
-            key={key}
-            size="sm"
-          >
-            <Icon className="size-3 shrink-0" />
-            {label}
-          </Badge>
-        ))}
-      </div>
+      <>
+        <div className="flex flex-wrap gap-1 md:hidden">
+          {providers.slice(0, 1).map(({ key, label, Icon }) => (
+            <Badge
+              className="bg-bg-highlight text-fg-tertiary h-[18px] gap-0.5 uppercase prose-label-numeric"
+              key={key}
+              size="sm"
+            >
+              <Icon className="size-3 shrink-0" />
+              {label}
+            </Badge>
+          ))}
+        </div>
+        <div className="hidden flex-wrap gap-1 md:flex">
+          {providers.map(({ key, label, Icon }) => (
+            <Badge
+              className="bg-bg-highlight text-fg-tertiary h-[18px] gap-0.5 uppercase prose-label-numeric"
+              key={key}
+              size="sm"
+            >
+              <Icon className="size-3 shrink-0" />
+              {label}
+            </Badge>
+          ))}
+        </div>
+      </>
     ) : (
       <span className="text-fg-tertiary font-sans text-sm">--</span>
     )}
