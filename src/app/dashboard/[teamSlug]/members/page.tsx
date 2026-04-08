@@ -1,3 +1,4 @@
+import { Page } from '@/features/dashboard/layouts/page'
 import { MemberCard } from '@/features/dashboard/members/member-card'
 
 interface MembersPageProps {
@@ -8,8 +9,8 @@ interface MembersPageProps {
 
 export default async function MembersPage({ params }: MembersPageProps) {
   return (
-    <div className="mx-auto w-full max-w-[900px]">
+    <Page>
       <MemberCard params={params} />
-    </div>
+    </Page>
   )
 }
