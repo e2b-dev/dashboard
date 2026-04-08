@@ -9,6 +9,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
+import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -168,6 +169,9 @@ export const signUpAction = actionClient
         throw new Error('Origin not found')
       }
 
+      const userAgent = headerStore.get('user-agent') ?? undefined
+      const ip = headerStore.get('x-forwarded-for') ?? undefined
+
       // basic security check, that password does not equal e-mail
       if (password && email && password.toLowerCase() === email.toLowerCase()) {
         return returnValidationErrors(signUpSchema, {
@@ -191,15 +195,13 @@ export const signUpAction = actionClient
         }
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
           data: validationResult?.data
-            ? {
-                email_validation: validationResult?.data,
-              }
+            ? { email_validation: validationResult.data }
             : undefined,
         },
       })
@@ -213,6 +215,15 @@ export const signUpAction = actionClient
           default:
             throw error
         }
+      }
+
+      if (signUpData.user && (ip || userAgent)) {
+        await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
+          app_metadata: {
+            signup_ip: ip,
+            signup_user_agent: userAgent,
+          },
+        })
       }
     }
   )
