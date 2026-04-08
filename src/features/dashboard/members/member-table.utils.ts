@@ -33,8 +33,7 @@ const isPendingTeamMember = (member: TeamMember): boolean => {
 const shouldShowRemoveMemberAction = (
   member: TeamMember,
   currentUserId?: string
-): boolean =>
-  !member.relation.is_default && member.info.id !== currentUserId
+): boolean => !member.relation.is_default && member.info.id !== currentUserId
 
 export {
   getAddedByMember,

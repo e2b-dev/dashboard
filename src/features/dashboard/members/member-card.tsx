@@ -1,10 +1,7 @@
 import { Suspense } from 'react'
 import { getTeamMembers } from '@/core/server/functions/team/get-team-members'
 import { ErrorIndicator } from '@/ui/error-indicator'
-import {
-  Card,
-  CardContent,
-} from '@/ui/primitives/card'
+import { Card, CardContent } from '@/ui/primitives/card'
 import { Loader } from '@/ui/primitives/loader_d'
 import MembersPageContent from './members-page-content'
 
