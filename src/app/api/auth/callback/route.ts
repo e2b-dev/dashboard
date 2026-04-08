@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -49,6 +50,39 @@ export async function GET(request: Request) {
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
+      const accessToken = data.session?.access_token
+      if (!accessToken) {
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_IN,
+          'Missing session access token after auth callback'
+        )
+      }
+
+      const userTeamsRepository = createUserTeamsRepository({
+        accessToken,
+      })
+
+      const bootstrapResult = await userTeamsRepository.bootstrapUser()
+
+      if (!bootstrapResult.ok) {
+        l.error(
+          {
+            key: 'auth_callback:bootstrap_error',
+            user_id: data.user.id,
+            error: serializeErrorForLog(bootstrapResult.error),
+          },
+          `Auth callback bootstrap error: ${bootstrapResult.error.message || 'Unknown error'}`
+        )
+
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_IN,
+          bootstrapResult.error.message ||
+            'Failed to setup account. Please try again or contact support.'
+        )
+      }
+
       l.info(
         {
           key: 'auth_callback:otp_exchanged',

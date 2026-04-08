@@ -4,6 +4,7 @@ import { COOKIE_KEYS } from '@/configs/cookies'
 const {
   mockCookieStore,
   mockListUserTeams,
+  mockBootstrapUser,
   mockResolveTeamBySlug,
   mockCreateUserTeamsRepository,
 } = vi.hoisted(() => ({
@@ -11,6 +12,7 @@ const {
     get: vi.fn(),
   },
   mockListUserTeams: vi.fn(),
+  mockBootstrapUser: vi.fn(),
   mockResolveTeamBySlug: vi.fn(),
   mockCreateUserTeamsRepository: vi.fn(),
 }))
@@ -48,6 +50,7 @@ describe('resolveUserTeam', () => {
     vi.clearAllMocks()
     mockCreateUserTeamsRepository.mockReturnValue({
       listUserTeams: mockListUserTeams,
+      bootstrapUser: mockBootstrapUser,
       resolveTeamBySlug: mockResolveTeamBySlug,
     })
   })
@@ -195,6 +198,46 @@ describe('resolveUserTeam', () => {
     expect(result).toBeNull()
   })
 
+  it('bootstraps once when the user has no teams', async () => {
+    setupCookies({})
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [],
+    })
+    mockBootstrapUser.mockResolvedValue({
+      ok: true,
+      data: {
+        id: 'bootstrapped-team',
+        slug: 'bootstrapped-team',
+      },
+    })
+
+    const result = await resolveUserTeam('access-token')
+
+    expect(result).toEqual({
+      id: 'bootstrapped-team',
+      slug: 'bootstrapped-team',
+    })
+    expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns null when bootstrap fails after empty team lookup', async () => {
+    setupCookies({})
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [],
+    })
+    mockBootstrapUser.mockResolvedValue({
+      ok: false,
+      error: new Error('Failed to bootstrap user'),
+    })
+
+    const result = await resolveUserTeam('access-token')
+
+    expect(result).toBeNull()
+    expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
+  })
+
   it('returns null when listing teams fails', async () => {
     setupCookies({})
     mockListUserTeams.mockResolvedValue({
@@ -205,5 +248,6 @@ describe('resolveUserTeam', () => {
     const result = await resolveUserTeam('access-token')
 
     expect(result).toBeNull()
+    expect(mockBootstrapUser).not.toHaveBeenCalled()
   })
 })

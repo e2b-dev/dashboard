@@ -6,7 +6,7 @@ import type { components as DashboardComponents } from '@/contracts/dashboard-ap
 import { api } from '@/core/shared/clients/api'
 import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import { repoErrorFromHttp } from '@/core/shared/errors'
-import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import type { TeamMember } from './models'
 
@@ -16,9 +16,14 @@ type TeamsRepositoryDeps = {
   adminClient: typeof supabaseAdmin
 }
 
-export type TeamsRequestScope = TeamRequestScope
+export type TeamsRequestScope = RequestScope & {
+  teamId?: string
+}
 
 export interface TeamsRepository {
+  createTeam(
+    name: string
+  ): Promise<RepoResult<DashboardComponents['schemas']['TeamResolveResponse']>>
   listTeamMembers(): Promise<RepoResult<TeamMember[]>>
   updateTeamName(
     name: string
@@ -45,6 +50,14 @@ function extractSignInProviders(user: User | null | undefined): string[] {
   return [...new Set([...appProviders, ...identityProviders])]
 }
 
+function requireTeamId(scope: TeamsRequestScope): string {
+  if (!scope.teamId) {
+    throw new Error('teamId is required for team-scoped repository operation')
+  }
+
+  return scope.teamId
+}
+
 export function createTeamsRepository(
   scope: TeamsRequestScope,
   deps: TeamsRepositoryDeps = {
@@ -54,12 +67,35 @@ export function createTeamsRepository(
   }
 ): TeamsRepository {
   return {
+    async createTeam(
+      name
+    ): Promise<
+      RepoResult<DashboardComponents['schemas']['TeamResolveResponse']>
+    > {
+      const { data, error, response } = await deps.apiClient.POST('/teams', {
+        headers: deps.authHeaders(scope.accessToken),
+        body: { name },
+      })
+
+      if (!response.ok || error || !data) {
+        return err(
+          repoErrorFromHttp(
+            response.status,
+            error?.message ?? 'Failed to create team',
+            error
+          )
+        )
+      }
+
+      return ok(data)
+    },
     async listTeamMembers(): Promise<RepoResult<TeamMember[]>> {
+      const teamId = requireTeamId(scope)
       const { data, error, response } = await deps.apiClient.GET(
         '/teams/{teamID}/members',
         {
-          params: { path: { teamID: scope.teamId } },
-          headers: deps.authHeaders(scope.accessToken, scope.teamId),
+          params: { path: { teamID: teamId } },
+          headers: deps.authHeaders(scope.accessToken, teamId),
         }
       )
 
@@ -103,11 +139,12 @@ export function createTeamsRepository(
     ): Promise<
       RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
     > {
+      const teamId = requireTeamId(scope)
       const { data, error, response } = await deps.apiClient.PATCH(
         '/teams/{teamID}',
         {
-          params: { path: { teamID: scope.teamId } },
-          headers: deps.authHeaders(scope.accessToken, scope.teamId),
+          params: { path: { teamID: teamId } },
+          headers: deps.authHeaders(scope.accessToken, teamId),
           body: { name },
         }
       )
@@ -125,11 +162,12 @@ export function createTeamsRepository(
       return ok(data)
     },
     async addTeamMember(email): Promise<RepoResult<void>> {
+      const teamId = requireTeamId(scope)
       const { error, response } = await deps.apiClient.POST(
         '/teams/{teamID}/members',
         {
-          params: { path: { teamID: scope.teamId } },
-          headers: deps.authHeaders(scope.accessToken, scope.teamId),
+          params: { path: { teamID: teamId } },
+          headers: deps.authHeaders(scope.accessToken, teamId),
           body: { email },
         }
       )
@@ -147,11 +185,12 @@ export function createTeamsRepository(
       return ok(undefined)
     },
     async removeTeamMember(userId): Promise<RepoResult<void>> {
+      const teamId = requireTeamId(scope)
       const { error, response } = await deps.apiClient.DELETE(
         '/teams/{teamID}/members/{userId}',
         {
-          params: { path: { teamID: scope.teamId, userId } },
-          headers: deps.authHeaders(scope.accessToken, scope.teamId),
+          params: { path: { teamID: teamId, userId } },
+          headers: deps.authHeaders(scope.accessToken, teamId),
         }
       )
 
@@ -172,11 +211,12 @@ export function createTeamsRepository(
     ): Promise<
       RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
     > {
+      const teamId = requireTeamId(scope)
       const { data, error, response } = await deps.apiClient.PATCH(
         '/teams/{teamID}',
         {
-          params: { path: { teamID: scope.teamId } },
-          headers: deps.authHeaders(scope.accessToken, scope.teamId),
+          params: { path: { teamID: teamId } },
+          headers: deps.authHeaders(scope.accessToken, teamId),
           body: { profilePictureUrl },
         }
       )

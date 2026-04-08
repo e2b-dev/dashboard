@@ -252,7 +252,72 @@ export interface paths {
       }
     }
     put?: never
-    post?: never
+    /** Create team */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['CreateTeamRequest']
+        }
+      }
+      responses: {
+        /** @description Successfully created team. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamResolveResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/users/bootstrap': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Bootstrap user */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully bootstrapped user. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamResolveResponse']
+          }
+        }
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
     delete?: never
     options?: never
     head?: never
@@ -690,6 +755,9 @@ export interface components {
     AddTeamMemberRequest: {
       /** Format: email */
       email: string
+    }
+    CreateTeamRequest: {
+      name: string
     }
     DefaultTemplateAlias: {
       alias: string

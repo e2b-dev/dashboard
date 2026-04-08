@@ -10,7 +10,7 @@ export async function resolveUserTeam(
   accessToken: string
 ): Promise<ResolvedTeam | null> {
   const cookieStore = await cookies()
-  const teamsRepository = createUserTeamsRepository({
+  const userTeamsRepository = createUserTeamsRepository({
     accessToken,
   })
 
@@ -19,7 +19,7 @@ export async function resolveUserTeam(
 
   if (cookieTeamSlug) {
     const resolvedCookieTeam =
-      await teamsRepository.resolveTeamBySlug(cookieTeamSlug)
+      await userTeamsRepository.resolveTeamBySlug(cookieTeamSlug)
 
     if (resolvedCookieTeam.ok) {
       if (cookieTeamId && cookieTeamId !== resolvedCookieTeam.data.id) {
@@ -51,7 +51,7 @@ export async function resolveUserTeam(
     )
   }
 
-  const teamsResult = await teamsRepository.listUserTeams()
+  const teamsResult = await userTeamsRepository.listUserTeams()
 
   if (!teamsResult.ok) {
     l.error(
@@ -64,7 +64,19 @@ export async function resolveUserTeam(
   }
 
   if (teamsResult.data.length === 0) {
-    return null
+    const bootstrapResult = await userTeamsRepository.bootstrapUser()
+
+    if (!bootstrapResult.ok) {
+      l.error(
+        {
+          key: 'resolve_user_team:bootstrap_error',
+        },
+        'Failed to bootstrap user team'
+      )
+      return null
+    }
+
+    return bootstrapResult.data
   }
 
   const defaultTeam = teamsResult.data.find(

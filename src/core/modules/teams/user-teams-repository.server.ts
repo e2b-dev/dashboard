@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { secondsInDay, secondsInMinute } from 'date-fns/constants'
+import { secondsInMinute } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -17,6 +17,7 @@ export type UserTeamsRequestScope = RequestScope
 
 export interface UserTeamsRepository {
   listUserTeams(): Promise<RepoResult<TeamModel[]>>
+  bootstrapUser(): Promise<RepoResult<ResolvedTeam>>
   resolveTeamBySlug(
     slug: string,
     next?: { tags?: string[] }
@@ -57,6 +58,29 @@ export function createUserTeamsRepository(
       }
 
       return ok(teamsResult.data)
+    },
+    async bootstrapUser(): Promise<RepoResult<ResolvedTeam>> {
+      const { data, error, response } = await deps.apiClient.POST(
+        '/users/bootstrap',
+        {
+          headers: deps.authHeaders(scope.accessToken),
+        }
+      )
+
+      if (!response.ok || error || !data) {
+        return err(
+          repoErrorFromHttp(
+            response.status,
+            error?.message ?? 'Failed to bootstrap user',
+            error
+          )
+        )
+      }
+
+      return ok({
+        id: data.id,
+        slug: data.slug,
+      })
     },
     async resolveTeamBySlug(
       slug: string,
