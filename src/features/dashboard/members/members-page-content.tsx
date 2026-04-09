@@ -35,8 +35,8 @@ const MembersPageContent = ({
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)}>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-[280px]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-[280px]">
           <Search
             aria-hidden
             className="text-fg-tertiary pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2"
@@ -53,7 +53,7 @@ const MembersPageContent = ({
         <AddMemberDialog />
       </div>
 
-      <div className="text-fg-tertiary flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between">
+      <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-center lg:justify-between">
         <p>All members have the same roles & permissions</p>
         <p className="shrink-0">{totalLabel}</p>
       </div>

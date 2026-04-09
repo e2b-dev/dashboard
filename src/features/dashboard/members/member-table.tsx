@@ -29,9 +29,9 @@ const MemberTable: FC<MemberTableProps> = ({
 }) => (
   <Table className={cn('w-full table-fixed', className)}>
     <colgroup>
-      <col />
-      <col className="w-[96px] md:w-[200px]" />
-      <col className="w-[112px] md:w-[220px]" />
+      <col className="w-[220px] lg:w-auto" />
+      <col className="w-[96px] lg:w-[200px]" />
+      <col className="w-[112px] lg:w-[220px]" />
     </colgroup>
     <TableHeader className="border-b-0">
       <TableRow className="border-stroke/80 hover:bg-transparent">
