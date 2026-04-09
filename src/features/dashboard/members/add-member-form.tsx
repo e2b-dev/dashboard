@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
+import { AddIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { useDashboard } from '../context'
 
@@ -31,9 +32,10 @@ type AddMemberForm = z.infer<typeof addMemberSchema>
 
 interface AddMemberFormProps {
   className?: string
+  onSuccess?: () => void
 }
 
-export default function AddMemberForm({ className }: AddMemberFormProps) {
+export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
@@ -41,6 +43,7 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
 
   const form = useForm<AddMemberForm>({
     resolver: zodResolver(addMemberSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
     },
@@ -50,16 +53,15 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     onSuccess: () => {
       toast(defaultSuccessToast('The member has been added to the team.'))
       form.reset()
+      onSuccess?.()
     },
     onError: ({ error }) => {
       toast(defaultErrorToast(error.serverError || 'An error occurred.'))
     },
   })
 
-  function onSubmit(data: AddMemberForm) {
-    if (!team) {
-      return
-    }
+  const onSubmit = (data: AddMemberForm) => {
+    if (!team) return
 
     execute({
       teamSlug: team.slug,
@@ -71,31 +73,37 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('flex gap-2', className)}
+        className={cn('flex items-start gap-1 py-1', className)}
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="relative flex-1">
-              <FormLabel className="">E-mail</FormLabel>
-              <div className="flex items-center gap-2">
-                <FormControl>
-                  <Input placeholder="member@acme.com" {...field} />
-                </FormControl>
-                <Button
-                  loading={isExecuting}
-                  type="submit"
-                  disabled={!form.formState.isValid}
-                  variant="outline"
-                >
-                  Add Member
-                </Button>
-              </div>
+            <FormItem className="flex-1">
+              <FormLabel className="sr-only">Email</FormLabel>
+              <FormControl>
+                <Input
+                  className="h-9 font-sans"
+                  aria-label="Email"
+                  placeholder="Enter email"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <Button
+          className="normal-case font-sans"
+          loading={isExecuting}
+          type="submit"
+          disabled={!form.formState.isValid}
+          size="md"
+          variant="default"
+        >
+          <AddIcon aria-hidden className="size-4 shrink-0" />
+          Add
+        </Button>
       </form>
     </Form>
   )
