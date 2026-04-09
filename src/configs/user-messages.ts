@@ -57,6 +57,12 @@ export const USER_MESSAGES = {
   failedUpdateLogo: {
     message: 'Failed to update logo.',
   },
+  teamLogoRemoved: {
+    message: 'Your team logo has been removed.',
+  },
+  failedRemoveLogo: {
+    message: 'Failed to remove logo.',
+  },
   emailInUse: {
     message: 'E-mail already in use.',
   },
