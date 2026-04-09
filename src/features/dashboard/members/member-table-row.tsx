@@ -3,7 +3,7 @@
 import { Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import type { IconType } from 'react-icons'
 import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { FiMail } from 'react-icons/fi'
@@ -21,14 +21,6 @@ import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from '@/ui/primitives/dialog'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
@@ -37,6 +29,7 @@ import {
   isSystemAddedMember,
   shouldShowRemoveMemberAction,
 } from './member-table.utils'
+import { RemoveMemberDialog } from './remove-member-dialog'
 
 interface TableRowProps {
   member: TeamMember
@@ -242,75 +235,6 @@ const ProvidersCell = ({
     )}
   </TableCell>
 )
-
-const RemoveMemberDialog = ({
-  isRemoving,
-  memberEmail,
-  memberName,
-  onRemove,
-  open,
-  setOpen,
-  teamName,
-  trigger,
-}: {
-  isRemoving: boolean
-  memberEmail: string
-  memberName?: string
-  onRemove: () => void
-  open: boolean
-  setOpen: (v: boolean) => void
-  teamName?: string | null
-  trigger: ReactNode
-}) => {
-  const shortMemberName = memberName?.trim().split(/\s+/)[0] || memberEmail
-  const fullMemberName = memberName ?? memberEmail
-  const teamLabel = teamName || 'this team'
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent
-        className="gap-0 border-stroke p-4 pl-5 pr-8 shadow-[8px_69px_42px_0px_rgba(0,0,0,0.15),3px_31px_31px_0px_rgba(0,0,0,0.26),1px_8px_17px_0px_rgba(0,0,0,0.29)]"
-        hideClose
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-          <div className="min-w-0 flex-1">
-            <DialogTitle className="w-full text-left">
-              Remove {shortMemberName}?
-            </DialogTitle>
-            <DialogDescription className="prose-body mt-2 text-left">
-              {fullMemberName} will be removed from {teamLabel}
-            </DialogDescription>
-          </div>
-          <div className="flex shrink-0 items-center justify-end gap-5">
-            <DialogClose asChild>
-              <Button
-                className="font-sans normal-case text-fg-tertiary hover:text-fg-tertiary focus:text-fg-tertiary"
-                disabled={isRemoving}
-                size="slate"
-                type="button"
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button
-              className="font-sans normal-case"
-              loading={isRemoving}
-              onClick={onRemove}
-              size="md"
-              type="button"
-              variant="error"
-            >
-              <TrashIcon className="size-4" />
-              Remove
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 const AddedCell = ({
   addedByMember,
