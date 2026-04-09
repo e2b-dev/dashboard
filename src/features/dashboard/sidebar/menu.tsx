@@ -7,7 +7,6 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { signOutAction } from '@/core/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +19,7 @@ import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'
+import { TeamAvatar } from './team-avatar'
 
 interface DashboardSidebarMenuProps {
   className?: string
@@ -49,7 +49,8 @@ export default function DashboardSidebarMenu({
                 className
               )}
             >
-              <Avatar
+              <TeamAvatar
+                team={team}
                 className={cn(
                   'shrink-0 transition-all duration-100 ease-in-out',
                   'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-[5px]',
@@ -57,15 +58,8 @@ export default function DashboardSidebarMenu({
                     'drop-shadow-sm filter': team.profilePictureUrl,
                   }
                 )}
-              >
-                <AvatarImage
-                  src={team.profilePictureUrl || undefined}
-                  className="group-data-[collapsible=icon]:size-full object-cover object-center"
-                />
-                <AvatarFallback className="bg-bg-hover border-0">
-                  {team.name?.charAt(0).toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
+                imageClassName="group-data-[collapsible=icon]:size-full"
+              />
               <div className="grid flex-1 text-left  leading-tight">
                 <span className="text-fg-tertiary font-mono truncate prose-label">
                   TEAM

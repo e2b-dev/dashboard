@@ -131,6 +131,45 @@ const UploadTeamProfilePictureSchema = zfd.formData(
   })
 )
 
+const RemoveTeamProfilePictureSchema = z.object({
+  teamSlug: zfd.text(),
+})
+
+export const removeTeamProfilePictureAction = authActionClient
+  .schema(RemoveTeamProfilePictureSchema)
+  .metadata({ actionName: 'removeTeamProfilePicture' })
+  .use(withTeamSlugResolution)
+  .use(withTeamsRepository)
+  .action(async ({ parsedInput, ctx }) => {
+    const { teamSlug } = parsedInput
+    const { teamId, teamsRepository } = ctx
+
+    const result = await teamsRepository.updateTeamProfilePictureUrl(null)
+    if (!result.ok) {
+      return toActionErrorFromRepoError(result.error)
+    }
+
+    after(async () => {
+      try {
+        const folderPath = `teams/${teamId}`
+        const files = await getFiles(folderPath)
+        for (const file of files) {
+          await deleteFile(file.name)
+        }
+      } catch (cleanupError) {
+        l.warn({
+          key: 'remove_team_profile_picture_action:cleanup_error',
+          error: serializeErrorForLog(cleanupError),
+          team_id: teamId,
+        })
+      }
+    })
+
+    revalidatePath(`/dashboard/${teamSlug}/general`, 'page')
+
+    return result.data
+  })
+
 export const uploadTeamProfilePictureAction = authActionClient
   .schema(UploadTeamProfilePictureSchema)
   .metadata({ actionName: 'uploadTeamProfilePicture' })

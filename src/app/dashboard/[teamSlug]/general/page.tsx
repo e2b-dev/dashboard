@@ -1,4 +1,5 @@
 import { Page } from '@/features/dashboard/layouts/page'
+import { DangerZone } from '@/features/dashboard/settings/general/danger-zone'
 import { TeamAvatar } from '@/features/dashboard/settings/general/team-avatar'
 import { TeamInfo } from '@/features/dashboard/settings/general/team-info'
 import { TeamName } from '@/features/dashboard/settings/general/team-name'
@@ -14,6 +15,8 @@ export default async function GeneralPage() {
           <TeamInfo />
         </div>
       </div>
+      <div className="border-b" />
+      <DangerZone />
     </Page>
   )
 }

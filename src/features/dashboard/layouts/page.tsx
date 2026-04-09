@@ -7,7 +7,7 @@ interface PageProps {
 }
 
 export const Page = ({ children, className }: PageProps) => (
-  <div className={cn('mx-auto w-full max-w-[900px]', className)}>
+  <div className={cn('mx-auto w-full max-w-[900px] px-4 md:px-0', className)}>
     {children}
   </div>
 )
