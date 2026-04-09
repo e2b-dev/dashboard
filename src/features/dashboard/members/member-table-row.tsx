@@ -25,9 +25,9 @@ import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
 import {
-  isPendingTeamMember,
-  isSystemAddedMember,
+  isPendingInvite,
   shouldShowRemoveMemberAction,
+  wasAddedBySystem,
 } from './member-table.utils'
 import { RemoveMemberDialog } from './remove-member-dialog'
 
@@ -99,12 +99,12 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
       .filter((provider): provider is MemberProvider => provider !== null) ?? []
 
   const isCurrentUser = member.info.id === user?.id
-  const isPending = isPendingTeamMember(member)
+  const isPending = isPendingInvite(member)
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
   const dateStr = member.info.createdAt
     ? formatDate(new Date(member.info.createdAt), 'MMM d, yyyy')
     : null
-  const addedBySystem = isSystemAddedMember(member, addedByMember)
+  const addedBySystem = wasAddedBySystem(member, addedByMember)
 
   return (
     <TableRow className="h-11">

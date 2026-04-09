@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/ui/primitives/input'
 import { AddMemberDialog } from './add-member-dialog'
 import MemberTable from './member-table'
-import { isPendingTeamMember } from './member-table.utils'
+import { isPendingInvite } from './member-table.utils'
 
 interface MembersPageContentProps {
   members: TeamMember[]
@@ -31,7 +31,7 @@ const MembersPageContent = ({
     })
   }, [members, query])
 
-  const pendingCount = members.filter(isPendingTeamMember).length
+  const pendingCount = members.filter(isPendingInvite).length
 
   const totalLabel = [
     members.length === 1 ? '1 member total' : `${members.length} members total`,

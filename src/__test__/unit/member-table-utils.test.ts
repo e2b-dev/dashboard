@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { TeamMember } from '@/core/modules/teams/models'
 import {
   getAddedByMember,
-  isPendingTeamMember,
-  isSystemAddedMember,
+  isPendingInvite,
   shouldShowRemoveMemberAction,
+  wasAddedBySystem,
 } from '@/features/dashboard/members/member-table.utils'
 
 const createMember = ({
@@ -99,9 +99,9 @@ describe('member table utils', () => {
       id: 'invited-id',
     })
 
-    expect(isSystemAddedMember(selfAdded, owner)).toBe(true)
-    expect(isSystemAddedMember(invited, owner)).toBe(false)
-    expect(isSystemAddedMember(invited, undefined)).toBe(true)
+    expect(wasAddedBySystem(selfAdded, owner)).toBe(true)
+    expect(wasAddedBySystem(invited, owner)).toBe(false)
+    expect(wasAddedBySystem(invited, undefined)).toBe(true)
   })
 
   it('treats invites without recognized providers as pending', () => {
@@ -117,7 +117,7 @@ describe('member table utils', () => {
       providers: ['github'],
     })
 
-    expect(isPendingTeamMember(pendingInvite)).toBe(true)
-    expect(isPendingTeamMember(activeMember)).toBe(false)
+    expect(isPendingInvite(pendingInvite)).toBe(true)
+    expect(isPendingInvite(activeMember)).toBe(false)
   })
 })
