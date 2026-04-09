@@ -102,5 +102,4 @@ describe('member table utils', () => {
     expect(wasAddedBySystem(invited, owner)).toBe(false)
     expect(wasAddedBySystem(invited, undefined)).toBe(true)
   })
-
 })
