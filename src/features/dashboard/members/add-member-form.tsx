@@ -1,7 +1,6 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -21,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
+import { AddIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { useDashboard } from '../context'
 
@@ -101,7 +101,7 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
           size="md"
           variant="default"
         >
-          <Plus aria-hidden className="size-4 shrink-0" />
+          <AddIcon aria-hidden className="size-4 shrink-0" />
           Add
         </Button>
       </form>

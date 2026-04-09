@@ -19,6 +19,7 @@ import {
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
 import { l } from '@/core/shared/clients/logger/logger'
+import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
@@ -168,6 +169,10 @@ export const signUpAction = actionClient
         throw new Error('Origin not found')
       }
 
+      const userAgent = headerStore.get('user-agent') ?? undefined
+      const ip =
+        headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
+
       // basic security check, that password does not equal e-mail
       if (password && email && password.toLowerCase() === email.toLowerCase()) {
         return returnValidationErrors(signUpSchema, {
@@ -191,15 +196,13 @@ export const signUpAction = actionClient
         }
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
           data: validationResult?.data
-            ? {
-                email_validation: validationResult?.data,
-              }
+            ? { email_validation: validationResult.data }
             : undefined,
         },
       })
@@ -212,6 +215,26 @@ export const signUpAction = actionClient
             return returnServerError(USER_MESSAGES.passwordWeak.message)
           default:
             throw error
+        }
+      }
+
+      if (
+        signUpData.user &&
+        signUpData.user.identities?.length !== 0 &&
+        (ip || userAgent)
+      ) {
+        try {
+          await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
+            app_metadata: {
+              signup_ip: ip,
+              signup_user_agent: userAgent,
+            },
+          })
+        } catch (metaError) {
+          l.error(
+            { key: 'sign_up_action:metadata_update_error', error: metaError },
+            'sign_up_action: failed to write signup metadata to app_metadata'
+          )
         }
       }
     }
