@@ -146,7 +146,12 @@ const DATE_STRUCTURES = ['MMM d', 'MMM d, yyyy'] as const
 
 type DateStructure = (typeof DATE_STRUCTURES)[number]
 
-// Returns a formatted date string. Example: (new Date('2026-04-08'), 'MMM d, yyyy') -> 'Apr 8, 2026'.
+/**
+ * Returns a formatted date string
+ * @param date - Date to format
+ * @param dateStructure - Supported date format structure
+ * @returns Formatted date string (e.g., "Apr 8, 2026") or null for invalid dates
+ */
 export const formatDate = (
   date: Date,
   dateStructure: DateStructure
