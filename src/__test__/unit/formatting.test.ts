@@ -12,6 +12,7 @@ import {
   formatNumber,
   formatTimeAxisLabel,
   parseUTCDateComponents,
+  pluralize,
 } from '@/lib/utils/formatting'
 
 describe('Date & Time Formatting', () => {
@@ -200,6 +201,25 @@ describe('Number Formatting', () => {
 
     it('formats multiple cores', () => {
       expect(formatCPUCores(4)).toBe('4 cores')
+    })
+  })
+
+  describe('pluralize', () => {
+    it('returns the singular word for a count of one', () => {
+      expect(pluralize(1, 'member')).toBe('member')
+    })
+
+    it('adds es for words ending in s-like sounds', () => {
+      expect(pluralize(2, 'class')).toBe('classes')
+      expect(pluralize(2, 'match')).toBe('matches')
+    })
+
+    it('changes a trailing consonant y to ies', () => {
+      expect(pluralize(2, 'company')).toBe('companies')
+    })
+
+    it('supports an explicit plural override for irregular nouns', () => {
+      expect(pluralize(2, 'person', 'people')).toBe('people')
     })
   })
 })

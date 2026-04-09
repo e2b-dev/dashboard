@@ -1,6 +1,5 @@
 'use client'
 
-import { Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
@@ -25,7 +24,6 @@ import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
 import {
-  isPendingInvite,
   shouldShowRemoveMemberAction,
   wasAddedBySystem,
 } from './member-table.utils'
@@ -99,7 +97,6 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
       .filter((provider): provider is MemberProvider => provider !== null) ?? []
 
   const isCurrentUser = member.info.id === user?.id
-  const isPending = isPendingInvite(member)
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
   const dateStr = member.info.createdAt
     ? formatDate(new Date(member.info.createdAt), 'MMM d, yyyy')
@@ -112,16 +109,14 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
         avatarUrl={member.info.avatar_url}
         email={member.info.email}
         isCurrentUser={isCurrentUser}
-        isPending={isPending}
         name={member.info.name}
       />
-      <ProvidersCell isPending={isPending} providers={providers} />
+      <ProvidersCell providers={providers} />
       <AddedCell
         addedByMember={addedByMember}
         addedBySystem={addedBySystem}
         dateStr={dateStr}
         isRemoving={isRemoving}
-        isPending={isPending}
         memberEmail={member.info.email}
         memberName={member.info.name}
         onRemove={() => handleRemoveMember(member.info.id)}
@@ -138,38 +133,30 @@ const NameCell = ({
   avatarUrl,
   email,
   isCurrentUser,
-  isPending,
   name,
 }: {
   avatarUrl?: string
   email: string
   isCurrentUser: boolean
-  isPending: boolean
   name?: string
 }) => (
   <TableCell className="max-w-0">
     <div className="flex min-w-0 items-center gap-3">
-      {isPending ? (
-        <div className="border-stroke text-fg-tertiary flex size-8 shrink-0 items-center justify-center border opacity-50">
-          <Mail className="size-4" />
-        </div>
-      ) : (
-        <Avatar className="border-stroke size-8 shrink-0 border">
-          <AvatarImage referrerPolicy="no-referrer" src={avatarUrl} />
-          <AvatarFallback className="bg-bg text-xl font-bold uppercase">
-            {(name?.charAt(0) ?? email.charAt(0)).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-      )}
+      <Avatar className="border-stroke size-8 shrink-0 border">
+        <AvatarImage referrerPolicy="no-referrer" src={avatarUrl} />
+        <AvatarFallback className="bg-bg text-xl font-bold uppercase">
+          {(name?.charAt(0) ?? email.charAt(0)).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <span
             className="text-fg min-w-0 truncate text-sm font-medium"
-            title={isPending ? email : (name ?? 'Anonymous')}
+            title={name ?? email}
           >
-            {isPending ? email : (name ?? 'Anonymous')}
+            {name ?? email}
           </span>
-          {isCurrentUser && !isPending ? (
+          {isCurrentUser ? (
             <Badge
               className="shrink-0 uppercase"
               size="sm"
@@ -180,7 +167,7 @@ const NameCell = ({
             </Badge>
           ) : null}
         </div>
-        {!isPending ? (
+        {name ? (
           <span
             className="text-fg-tertiary block truncate text-sm"
             title={email}
@@ -193,17 +180,9 @@ const NameCell = ({
   </TableCell>
 )
 
-const ProvidersCell = ({
-  isPending,
-  providers,
-}: {
-  isPending: boolean
-  providers: MemberProvider[]
-}) => (
+const ProvidersCell = ({ providers }: { providers: MemberProvider[] }) => (
   <TableCell>
-    {isPending ? (
-      <span className="text-fg-tertiary font-sans text-sm">--</span>
-    ) : providers.length > 0 ? (
+    {providers.length > 0 ? (
       <>
         <div className="flex flex-wrap gap-1 md:hidden">
           {providers.map(({ key, label, Icon }) => (
@@ -241,7 +220,6 @@ const AddedCell = ({
   addedBySystem,
   dateStr,
   isRemoving,
-  isPending,
   memberEmail,
   memberName,
   onRemove,
@@ -254,7 +232,6 @@ const AddedCell = ({
   addedBySystem: boolean
   dateStr: string | null
   isRemoving: boolean
-  isPending: boolean
   memberEmail: string
   memberName?: string
   onRemove: () => void
@@ -266,7 +243,7 @@ const AddedCell = ({
   <TableCell>
     <div className="flex items-center gap-6">
       <span className="text-fg-tertiary w-[92px] shrink-0 text-sm">
-        {isPending ? 'Pending...' : (dateStr ?? '—')}
+        {dateStr ?? '—'}
       </span>
       {addedBySystem ? (
         <div className="flex size-5 shrink-0 items-center justify-center">

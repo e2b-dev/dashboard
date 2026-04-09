@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { TeamMember } from '@/core/modules/teams/models'
 import {
   getAddedByMember,
-  isPendingInvite,
   shouldShowRemoveMemberAction,
   wasAddedBySystem,
 } from '@/features/dashboard/members/member-table.utils'
@@ -104,20 +103,4 @@ describe('member table utils', () => {
     expect(wasAddedBySystem(invited, undefined)).toBe(true)
   })
 
-  it('treats invites without recognized providers as pending', () => {
-    const pendingInvite = createMember({
-      email: 'pending@example.com',
-      id: 'pending-id',
-      providers: ['saml'],
-    })
-    const activeMember = createMember({
-      email: 'active@example.com',
-      id: 'active-id',
-      name: 'Active Member',
-      providers: ['github'],
-    })
-
-    expect(isPendingInvite(pendingInvite)).toBe(true)
-    expect(isPendingInvite(activeMember)).toBe(false)
-  })
 })

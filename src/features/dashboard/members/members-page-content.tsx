@@ -4,10 +4,10 @@ import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { TeamMember } from '@/core/modules/teams/models'
 import { cn } from '@/lib/utils'
+import { pluralize } from '@/lib/utils/formatting'
 import { Input } from '@/ui/primitives/input'
 import { AddMemberDialog } from './add-member-dialog'
 import MemberTable from './member-table'
-import { isPendingInvite } from './member-table.utils'
 
 interface MembersPageContentProps {
   members: TeamMember[]
@@ -31,14 +31,7 @@ const MembersPageContent = ({
     })
   }, [members, query])
 
-  const pendingCount = members.filter(isPendingInvite).length
-
-  const totalLabel = [
-    members.length === 1 ? '1 member total' : `${members.length} members total`,
-    pendingCount > 0 ? `${pendingCount} pending` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  const totalLabel = `${members.length} ${pluralize(members.length, 'member')} total`
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)}>

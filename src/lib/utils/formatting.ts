@@ -421,6 +421,29 @@ export function formatCPUCores(
 }
 
 /**
+ * Returns the singular or plural word for a count
+ * @param count - Number used to determine singular vs plural form
+ * @param singular - Singular form of the word
+ * @param plural - Optional plural form override (defaults to an inferred plural form)
+ * @returns Singular or plural word (e.g., "member" or "members")
+ */
+export const pluralize = (
+  count: number,
+  singular: string,
+  plural?: string
+): string => {
+  if (count === 1) return singular
+  if (plural) return plural
+  if (/[sxz]$/i.test(singular) || /(ch|sh)$/i.test(singular)) {
+    return `${singular}es`
+  }
+  if (/[^aeiou]y$/i.test(singular)) {
+    return `${singular.slice(0, -1)}ies`
+  }
+  return `${singular}s`
+}
+
+/**
  * Format a number for chart axis labels with smart abbreviation
  * Uses whole numbers when possible, abbreviated for large numbers
  * @param value - Number to format
