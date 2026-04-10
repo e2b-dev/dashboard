@@ -15,7 +15,6 @@ import { Button } from '@/ui/primitives/button'
 import { EditIcon, PhotoIcon, TrashIcon } from '@/ui/primitives/icons'
 import { RemovePhotoDialog } from './remove-photo-dialog'
 
-// Convert a File into base64 payload text. e.g. fileToBase64(imageFile) -> "iVBORw0KGgoAAAANSUhEUgAA..."
 const fileToBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -89,7 +88,14 @@ export const TeamAvatar = () => {
       return
     }
 
-    const base64 = await fileToBase64(file)
+    let base64: string
+    try {
+      base64 = await fileToBase64(file)
+    } catch {
+      toast(defaultErrorToast('Failed to read file. Please try again.'))
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
 
     uploadProfilePictureMutation.mutate({
       teamSlug: team.slug,
