@@ -13,29 +13,12 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   </div>
 )
 
-interface TeamInfoProps {
-  createdAt?: string | null
-}
-
-// "jan 1, 2025" — e.g. formatDate("2025-01-01T00:00:00Z") → "jan 1, 2025"
-const formatDate = (iso: string) => {
-  const date = new Date(iso)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-export const TeamInfo = ({ createdAt }: TeamInfoProps) => {
+export const TeamInfo = () => {
   const { team } = useDashboard()
-  const resolvedCreatedAt = createdAt ?? team.createdAt
 
   return (
     <div className="flex flex-col gap-3">
-      {resolvedCreatedAt && (
-        <InfoRow label="created" value={formatDate(resolvedCreatedAt)} />
-      )}
+      <InfoRow label="created" value="--" />
       <InfoRow label="primary email" value={team.email} />
     </div>
   )

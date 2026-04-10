@@ -1,8 +1,6 @@
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 
-export type TeamModel = DashboardComponents['schemas']['UserTeam'] & {
-  createdAt: string | null
-}
+export type TeamModel = DashboardComponents['schemas']['UserTeam']
 export type TeamLimits = DashboardComponents['schemas']['UserTeamLimits']
 
 export type TeamMemberInfo = {
