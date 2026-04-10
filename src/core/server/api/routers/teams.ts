@@ -3,7 +3,11 @@ import { fileTypeFromBuffer } from 'file-type'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
-import { TeamNameSchema } from '@/core/modules/teams/schemas'
+import {
+  AddTeamMemberSchema,
+  RemoveTeamMemberSchema,
+  TeamNameSchema,
+} from '@/core/modules/teams/schemas'
 import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
@@ -64,6 +68,24 @@ export const teamsRouter = createTRPCRouter({
       revalidatePath(`/dashboard/${input.teamSlug}/general`, 'page')
 
       return result.data
+    }),
+  addMember: teamsRepositoryProcedure
+    .input(AddTeamMemberSchema)
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.teamsRepository.addTeamMember(input.email)
+
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+
+      revalidatePath(`/dashboard/${input.teamSlug}/members`, 'page')
+    }),
+  removeMember: teamsRepositoryProcedure
+    .input(RemoveTeamMemberSchema)
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.teamsRepository.removeTeamMember(input.userId)
+
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+
+      revalidatePath(`/dashboard/${input.teamSlug}/members`, 'page')
     }),
   removeProfilePicture: teamsRepositoryProcedure.mutation(
     async ({ ctx, input }) => {
