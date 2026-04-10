@@ -7,11 +7,7 @@ import { ErrorIndicator } from '@/ui/error-indicator'
 import { Card, CardContent } from '@/ui/primitives/card'
 import MembersPageContent from './members-page-content'
 
-interface MemberCardProps {
-  className?: string
-}
-
-export const MemberCard = ({ className }: MemberCardProps) => {
+export const MemberCard = () => {
   const { team } = useDashboard()
   const trpc = useTRPC()
   const {
@@ -21,8 +17,8 @@ export const MemberCard = ({ className }: MemberCardProps) => {
   } = useQuery(trpc.teams.members.queryOptions({ teamSlug: team.slug }))
 
   return (
-    <Card className={className}>
-      <CardContent>
+    <Card>
+      <CardContent className="px-0">
         {error ? (
           <ErrorIndicator
             className="bg-bg w-full max-w-full"
