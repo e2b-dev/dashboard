@@ -22,7 +22,7 @@ import {
 } from '@/core/server/trpc/procedures'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { deleteFile, getFiles, uploadFile } from '@/core/shared/clients/storage'
-import { fileSchema } from '@/core/shared/schemas/file'
+import { FileSchema } from '@/core/shared/schemas/file'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
@@ -126,7 +126,7 @@ export const teamsRouter = createTRPCRouter({
   uploadProfilePicture: teamsRepositoryProcedure
     .input(
       z.object({
-        image: fileSchema,
+        image: FileSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {

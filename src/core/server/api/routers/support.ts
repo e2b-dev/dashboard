@@ -5,7 +5,7 @@ import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
-import { fileSchema } from '@/core/shared/schemas/file'
+import { FileSchema } from '@/core/shared/schemas/file'
 
 const E2B_API_KEY_REGEX = /e2b_[a-f0-9]{40}/i
 
@@ -23,7 +23,7 @@ export const supportRouter = createTRPCRouter({
     .input(
       z.object({
         description: z.string().min(1),
-        files: z.array(fileSchema).max(5).optional(),
+        files: z.array(FileSchema).max(5).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
