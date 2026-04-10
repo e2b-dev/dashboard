@@ -1,29 +1,17 @@
-import { InfoCard } from '@/features/dashboard/settings/general/info-card'
-import { NameCard } from '@/features/dashboard/settings/general/name-card'
-import { ProfilePictureCard } from '@/features/dashboard/settings/general/profile-picture-card'
-import Frame from '@/ui/frame'
+import { Page } from '@/features/dashboard/layouts/page'
+import { TeamAvatar } from '@/features/dashboard/settings/general/team-avatar'
+import { TeamInfo } from '@/features/dashboard/settings/general/team-info'
+import { TeamName } from '@/features/dashboard/settings/general/team-name'
 
-interface GeneralPageProps {
-  params: Promise<{
-    teamSlug: string
-  }>
-}
-
-export default async function GeneralPage({ params }: GeneralPageProps) {
+export default async function GeneralPage() {
   return (
-    <Frame
-      classNames={{
-        wrapper: 'w-full max-md:p-0',
-        frame: 'max-md:border-none',
-      }}
-    >
-      <section className="col-span-full flex-col">
-        <div className="flex gap-2 border-b md:gap-3">
-          <ProfilePictureCard className="size-32" />
-          <NameCard />
-        </div>
-        <InfoCard className="flex flex-col justify-between" />
-      </section>
-    </Frame>
+    <Page className="flex gap-8 py-6">
+      <TeamAvatar />
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <TeamName />
+        <div className="border-b" />
+        <TeamInfo />
+      </div>
+    </Page>
   )
 }

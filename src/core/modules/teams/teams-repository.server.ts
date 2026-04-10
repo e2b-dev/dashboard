@@ -26,7 +26,7 @@ export interface TeamsRepository {
   addTeamMember(email: string): Promise<RepoResult<void>>
   removeTeamMember(userId: string): Promise<RepoResult<void>>
   updateTeamProfilePictureUrl(
-    profilePictureUrl: string
+    profilePictureUrl: string | null
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
 }
 

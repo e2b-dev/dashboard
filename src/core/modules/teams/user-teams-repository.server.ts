@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { secondsInDay, secondsInMinute } from 'date-fns/constants'
+import { secondsInMinute } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -52,11 +52,7 @@ export function createUserTeamsRepository(
     async listUserTeams(): Promise<RepoResult<TeamModel[]>> {
       const teamsResult = await listApiUserTeams()
 
-      if (!teamsResult.ok) {
-        return teamsResult
-      }
-
-      return ok(teamsResult.data)
+      return teamsResult
     },
     async resolveTeamBySlug(
       slug: string,

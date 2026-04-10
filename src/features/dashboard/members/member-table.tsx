@@ -9,6 +9,7 @@ import {
   TableEmptyState,
   TableHead,
   TableHeader,
+  TableLoadingState,
   TableRow,
 } from '@/ui/primitives/table'
 import { getAddedByMember } from './member-table.utils'
@@ -16,6 +17,7 @@ import { MemberTableRow } from './member-table-row'
 
 interface MemberTableProps {
   allMembers: TeamMember[]
+  isLoading?: boolean
   members: TeamMember[]
   totalMemberCount: number
   className?: string
@@ -23,6 +25,7 @@ interface MemberTableProps {
 
 const MemberTable: FC<MemberTableProps> = ({
   allMembers,
+  isLoading = false,
   members,
   totalMemberCount,
   className,
@@ -47,7 +50,9 @@ const MemberTable: FC<MemberTableProps> = ({
       </TableRow>
     </TableHeader>
     <TableBody>
-      {members.length === 0 ? (
+      {isLoading ? (
+        <TableLoadingState colSpan={3} label="Loading members" />
+      ) : members.length === 0 ? (
         <TableEmptyState colSpan={3}>
           <p className="prose-body-highlight text-fg-tertiary">
             {totalMemberCount === 0

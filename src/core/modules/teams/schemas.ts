@@ -1,9 +1,7 @@
 import { z } from 'zod'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
-export { TeamSlugSchema }
-
-export const TeamNameSchema = z
+const TeamNameSchema = z
   .string()
   .trim()
   .min(1, { message: 'Team name cannot be empty' })
@@ -13,11 +11,28 @@ export const TeamNameSchema = z
       'Names can only contain letters and numbers, separated by spaces, underscores, hyphens, or dots',
   })
 
-export const UpdateTeamNameSchema = z.object({
+const UpdateTeamNameSchema = z.object({
   teamSlug: TeamSlugSchema,
   name: TeamNameSchema,
 })
 
-export const CreateTeamSchema = z.object({
+const CreateTeamSchema = z.object({
   name: TeamNameSchema,
 })
+
+const AddTeamMemberSchema = z.object({
+  email: z.email(),
+})
+
+const RemoveTeamMemberSchema = z.object({
+  userId: z.uuid(),
+})
+
+export {
+  AddTeamMemberSchema,
+  CreateTeamSchema,
+  RemoveTeamMemberSchema,
+  TeamNameSchema,
+  TeamSlugSchema,
+  UpdateTeamNameSchema,
+}
