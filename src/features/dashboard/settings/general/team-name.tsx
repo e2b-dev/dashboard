@@ -64,6 +64,7 @@ export const TeamName = () => {
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
+    if (updateNameMutation.isPending) return
     if (!name.trim() || name.trim() === team.name) return
     updateNameMutation.mutate({ teamSlug: team.slug, name: name.trim() })
   }
