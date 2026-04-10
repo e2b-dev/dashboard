@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { DetailsItem, DetailsRow } from '../../layouts/details-row'
 import { useSandboxContext } from '../context'
@@ -11,6 +12,12 @@ import { CpuSpecItem, DiskSpecItem, MemorySpecItem } from './spec-items'
 import StartedAt from './started-at'
 import Status from './status'
 import TemplateId from './template-id'
+
+interface HeaderDetailItem {
+  label: string
+  content: ReactNode
+  skeletonWidth: string
+}
 
 export default function SandboxDetailsHeader() {
   const { isRunning, sandboxInfo, isSandboxInfoLoading } = useSandboxContext()
@@ -39,36 +46,30 @@ export default function SandboxDetailsHeader() {
   const renderContent = (content: React.ReactNode, skeletonWidth: string) =>
     isInitialLoading ? <Skeleton className={`h-5 ${skeletonWidth}`} /> : content
 
+  const items: HeaderDetailItem[] = [
+    { label: 'status', content: statusContent, skeletonWidth: 'w-20' },
+    { label: 'template', content: templateContent, skeletonWidth: 'w-28' },
+    { label: 'metadata', content: metadataContent, skeletonWidth: 'w-20' },
+    { label: 'created at', content: createdAtContent, skeletonWidth: 'w-32' },
+    { label: timeoutLabel, content: timeoutContent, skeletonWidth: 'w-22' },
+    {
+      label: runningLabel,
+      content: runningDurationContent,
+      skeletonWidth: 'w-22',
+    },
+    { label: 'CPU', content: cpuSpecContent, skeletonWidth: 'w-20' },
+    { label: 'Memory', content: memorySpecContent, skeletonWidth: 'w-20' },
+    { label: 'Disk', content: diskSpecContent, skeletonWidth: 'w-20' },
+  ]
+
   return (
-    <header className="bg-bg relative z-30 w-full p-3 md:p-6">
-      <DetailsRow>
-        <DetailsItem label="status">
-          {renderContent(statusContent, 'w-20')}
-        </DetailsItem>
-        <DetailsItem label="template">
-          {renderContent(templateContent, 'w-28')}
-        </DetailsItem>
-        <DetailsItem label="metadata">
-          {renderContent(metadataContent, 'w-20')}
-        </DetailsItem>
-        <DetailsItem label="created at">
-          {renderContent(createdAtContent, 'w-32')}
-        </DetailsItem>
-        <DetailsItem label={timeoutLabel}>
-          {renderContent(timeoutContent, 'w-22')}
-        </DetailsItem>
-        <DetailsItem label={runningLabel}>
-          {renderContent(runningDurationContent, 'w-22')}
-        </DetailsItem>
-        <DetailsItem label="CPU">
-          {renderContent(cpuSpecContent, 'w-20')}
-        </DetailsItem>
-        <DetailsItem label="Memory">
-          {renderContent(memorySpecContent, 'w-20')}
-        </DetailsItem>
-        <DetailsItem label="Disk">
-          {renderContent(diskSpecContent, 'w-20')}
-        </DetailsItem>
+    <header className="bg-bg relative z-30 w-full border-b px-3 py-4 md:px-6 md:py-5">
+      <DetailsRow className="gap-x-5 gap-y-4 md:gap-x-7 md:gap-y-4">
+        {items.map((item) => (
+          <DetailsItem key={item.label} label={item.label}>
+            {renderContent(item.content, item.skeletonWidth)}
+          </DetailsItem>
+        ))}
       </DetailsRow>
     </header>
   )
