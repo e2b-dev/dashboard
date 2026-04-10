@@ -41,15 +41,18 @@ export const TeamName = () => {
       onError: (error) => {
         const validationMessages = getTRPCValidationMessages(error)
         if (validationMessages.length > 0) {
-          toast(
-            defaultErrorToast(
+          const validationToastContent =
+            validationMessages.length === 1 ? (
+              validationMessages[0]
+            ) : (
               <ul className="list-disc space-y-1 pl-4">
                 {validationMessages.map((message) => (
                   <li key={message}>{message}</li>
                 ))}
               </ul>
             )
-          )
+
+          toast(defaultErrorToast(validationToastContent))
           return
         }
 
@@ -140,58 +143,61 @@ export const TeamName = () => {
     <div className="flex items-end justify-between gap-4">
       <form
         onSubmit={handleSubmit}
-        className="relative flex min-w-0 flex-1 flex-col gap-1"
+        className="flex min-w-0 flex-1 items-end justify-between gap-4"
       >
-        <span className="text-fg-tertiary text-xs leading-[17px] font-normal uppercase">
-          name
-        </span>
-        <input
-          ref={inputRef}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          readOnly={!isEditing}
-          className="h-10 w-full bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
-          style={{
-            fontSize: `${fontSize}px`,
-            lineHeight: `${TEAM_NAME_INPUT_HEIGHT_PX}px`,
-          }}
-        />
-        <span
-          ref={textMeasureRef}
-          aria-hidden="true"
-          className="pointer-events-none absolute invisible whitespace-pre p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px]"
-        >
-          {name || ' '}
-        </span>
-      </form>
-      <div className="flex shrink-0 items-center gap-2 self-end">
-        {isEditing ? (
-          <>
-            <Button type="button" variant="ghost" onClick={handleCancel}>
-              Cancel
-            </Button>
+        <div className="relative flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-fg-tertiary text-xs leading-[17px] font-normal uppercase">
+            name
+          </span>
+          <input
+            ref={inputRef}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            readOnly={!isEditing}
+            className="h-10 w-full bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
+            style={{
+              fontSize: `${fontSize}px`,
+              lineHeight: `${TEAM_NAME_INPUT_HEIGHT_PX}px`,
+            }}
+          />
+          <span
+            ref={textMeasureRef}
+            aria-hidden="true"
+            className="pointer-events-none absolute invisible whitespace-pre p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px]"
+          >
+            {name || ' '}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 self-end">
+          {isEditing ? (
+            <>
+              <Button type="button" variant="ghost" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="outline"
+                size="icon"
+                className="size-9"
+                loading={updateNameMutation.isPending}
+                disabled={!name.trim() || name.trim() === team.name}
+              >
+                <CheckIcon className="size-6 shrink-0" />
+              </Button>
+            </>
+          ) : (
             <Button
+              type="button"
               variant="outline"
               size="icon"
               className="size-9"
-              onClick={() => handleSubmit()}
-              loading={updateNameMutation.isPending}
-              disabled={!name.trim() || name.trim() === team.name}
+              onClick={handleStartEditing}
             >
-              <CheckIcon className="size-6 shrink-0" />
+              <EditIcon className="size-4 shrink-0" />
             </Button>
-          </>
-        ) : (
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-9"
-            onClick={handleStartEditing}
-          >
-            <EditIcon className="size-4 shrink-0" />
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      </form>
     </div>
   )
 }
