@@ -31,6 +31,8 @@ const withTeamsRepository = withTeamAuthedRequestRepository(
   createTeamsRepository,
   (teamsRepository) => ({ teamsRepository })
 )
+const getStorageFilePath = (folderPath: string, fileName: string) =>
+  `${folderPath}/${fileName}`
 
 export const updateTeamNameAction = authActionClient
   .schema(UpdateTeamNameSchema)
@@ -154,7 +156,7 @@ export const removeTeamProfilePictureAction = authActionClient
         const folderPath = `teams/${teamId}`
         const files = await getFiles(folderPath)
         for (const file of files) {
-          await deleteFile(file.name)
+          await deleteFile(getStorageFilePath(folderPath, file.name))
         }
       } catch (cleanupError) {
         l.warn({
@@ -231,15 +233,13 @@ export const uploadTeamProfilePictureAction = authActionClient
 
     after(async () => {
       try {
-        const currentFileName = fileName
         const folderPath = `teams/${teamId}`
+        const currentFilePath = getStorageFilePath(folderPath, fileName)
         const files = await getFiles(folderPath)
 
         for (const file of files) {
-          const filePath = file.name
-          if (filePath === `${folderPath}/${currentFileName}`) {
-            continue
-          }
+          const filePath = getStorageFilePath(folderPath, file.name)
+          if (filePath === currentFilePath) continue
 
           await deleteFile(filePath)
         }
