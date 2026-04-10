@@ -1,14 +1,14 @@
 'use client'
 
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { IconType } from 'react-icons'
 import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { FiMail } from 'react-icons/fi'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type { TeamMember } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
-import type { TeamMember } from '@/core/server/functions/team/types'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -63,17 +63,25 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const { toast } = useToast()
   const router = useRouter()
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { team, user } = useDashboard()
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   const removeMemberMutation = useMutation(
     trpc.teams.removeMember.mutationOptions({
-      onSuccess: (_, input) => {
+      onSuccess: async (_, input) => {
         if (input.userId === user?.id) {
+          await queryClient.invalidateQueries({
+            queryKey: trpc.teams.list.queryKey(),
+          })
+
           router.push(PROTECTED_URLS.DASHBOARD)
+
           toast(defaultSuccessToast('You have left the team.'))
         } else {
-          router.refresh()
+          await queryClient.invalidateQueries({
+            queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
+          })
           toast(
             defaultSuccessToast('The member has been removed from the team.')
           )

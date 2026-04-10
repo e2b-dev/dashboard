@@ -1,8 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
@@ -40,8 +39,8 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
-  const router = useRouter()
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
   const form = useForm<AddMemberForm>({
@@ -54,10 +53,12 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
 
   const addMemberMutation = useMutation(
     trpc.teams.addMember.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
+        })
         toast(defaultSuccessToast('The member has been added to the team.'))
         form.reset()
-        router.refresh()
         onSuccess?.()
       },
       onError: (error) => {

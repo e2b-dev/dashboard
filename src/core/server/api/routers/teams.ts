@@ -54,6 +54,13 @@ export const teamsRouter = createTRPCRouter({
 
     return teamsResult.data
   }),
+  members: teamsRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.teamsRepository.listTeamMembers()
+
+    if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+
+    return result.data
+  }),
   updateName: teamsRepositoryProcedure
     .input(
       z.object({
