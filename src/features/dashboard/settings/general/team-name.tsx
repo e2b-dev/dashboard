@@ -1,10 +1,8 @@
 'use client'
 
-import { useQueryClient } from '@tanstack/react-query'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { updateTeamNameAction } from '@/core/server/actions/team-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -15,10 +13,6 @@ import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, EditIcon } from '@/ui/primitives/icons'
 
-const NAME_INPUT_CLASS =
-  'w-full bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none'
-const NAME_ACTION_ICON_CLASS = 'size-4 shrink-0'
-
 export const TeamName = () => {
   const { team } = useDashboard()
   const trpc = useTRPC()
@@ -28,27 +22,29 @@ export const TeamName = () => {
   const [name, setName] = useState(team.name)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { execute, isExecuting } = useAction(updateTeamNameAction, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: trpc.teams.list.queryKey(),
-      })
-      toast(defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message))
-      setIsEditing(false)
-    },
-    onError: ({ error }) => {
-      toast(
-        defaultErrorToast(
-          error.serverError || USER_MESSAGES.failedUpdateTeamName.message
+  const updateNameMutation = useMutation(
+    trpc.teams.updateName.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.list.queryKey(),
+        })
+        toast(defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message))
+        setIsEditing(false)
+      },
+      onError: (error) => {
+        toast(
+          defaultErrorToast(
+            error.message || USER_MESSAGES.failedUpdateTeamName.message
+          )
         )
-      )
-    },
-  })
+      },
+    })
+  )
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!name.trim() || name.trim() === team.name) return
-    execute({ teamSlug: team.slug, name: name.trim() })
+    updateNameMutation.mutate({ teamSlug: team.slug, name: name.trim() })
   }
 
   const handleCancel = () => {
@@ -57,7 +53,15 @@ export const TeamName = () => {
   }
 
   useEffect(() => {
-    if (isEditing) inputRef.current?.focus()
+    if (!isEditing) return
+
+    const input = inputRef.current
+    if (!input) return
+
+    input.focus()
+
+    const cursorPosition = input.value.length
+    input.setSelectionRange(cursorPosition, cursorPosition)
   }, [isEditing])
 
   const handleStartEditing = () => {
@@ -79,28 +83,24 @@ export const TeamName = () => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           readOnly={!isEditing}
-          className={NAME_INPUT_CLASS}
+          className="w-full bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
         />
       </form>
-      <div className="flex shrink-0 items-center gap-3 self-end">
+      <div className="flex shrink-0 items-center gap-2 self-end">
         {isEditing ? (
           <>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="text-fg-tertiary cursor-pointer text-sm leading-5 font-medium"
-            >
+            <Button type="button" variant="ghost" onClick={handleCancel}>
               Cancel
-            </button>
+            </Button>
             <Button
               variant="outline"
               size="icon"
               className="size-9"
               onClick={() => handleSubmit()}
-              loading={isExecuting}
+              loading={updateNameMutation.isPending}
               disabled={!name.trim() || name.trim() === team.name}
             >
-              <CheckIcon className={NAME_ACTION_ICON_CLASS} />
+              <CheckIcon className="size-6 shrink-0" />
             </Button>
           </>
         ) : (
@@ -110,7 +110,7 @@ export const TeamName = () => {
             className="size-9"
             onClick={handleStartEditing}
           >
-            <EditIcon className={NAME_ACTION_ICON_CLASS} />
+            <EditIcon className="size-4 shrink-0" />
           </Button>
         )}
       </div>

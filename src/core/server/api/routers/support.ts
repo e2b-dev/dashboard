@@ -5,14 +5,9 @@ import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
+import { fileSchema } from '@/core/shared/schemas/file'
 
 const E2B_API_KEY_REGEX = /e2b_[a-f0-9]{40}/i
-
-const fileSchema = z.object({
-  name: z.string(),
-  type: z.string(),
-  base64: z.string(),
-})
 
 const supportRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(

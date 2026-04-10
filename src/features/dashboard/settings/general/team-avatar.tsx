@@ -1,13 +1,8 @@
 'use client'
 
-import { useQueryClient } from '@tanstack/react-query'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
-import {
-  removeTeamProfilePictureAction,
-  uploadTeamProfilePictureAction,
-} from '@/core/server/actions/team-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -19,6 +14,18 @@ import { Avatar, AvatarImage, PatternAvatar } from '@/ui/primitives/avatar'
 import { Button } from '@/ui/primitives/button'
 import { EditIcon, PhotoIcon, TrashIcon } from '@/ui/primitives/icons'
 import { RemovePhotoDialog } from './remove-photo-dialog'
+
+// Convert a File into base64 payload text. e.g. fileToBase64(imageFile) -> "iVBORw0KGgoAAAANSUhEUgAA..."
+const fileToBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : null
+      resolve(result?.split(',')[1] ?? '')
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 
 export const TeamAvatar = () => {
   const { team } = useDashboard()
@@ -34,49 +41,43 @@ export const TeamAvatar = () => {
     })
   }
 
-  const { execute: uploadProfilePicture, isExecuting: isUploading } = useAction(
-    uploadTeamProfilePictureAction,
-    {
+  const uploadProfilePictureMutation = useMutation(
+    trpc.teams.uploadProfilePicture.mutationOptions({
       onSuccess: async () => {
         await invalidateTeams()
         toast(defaultSuccessToast(USER_MESSAGES.teamLogoUpdated.message))
       },
-      onError: ({ error }) => {
-        if (error.validationErrors?.fieldErrors.image) {
-          toast(defaultErrorToast(error.validationErrors.fieldErrors.image[0]))
-          return
-        }
+      onError: (error) => {
         toast(
           defaultErrorToast(
-            error.serverError || USER_MESSAGES.failedUpdateLogo.message
+            error.message || USER_MESSAGES.failedUpdateLogo.message
           )
         )
       },
       onSettled: () => {
         if (fileInputRef.current) fileInputRef.current.value = ''
       },
-    }
+    })
   )
 
-  const { execute: removeProfilePicture, isExecuting: isRemoving } = useAction(
-    removeTeamProfilePictureAction,
-    {
+  const removeProfilePictureMutation = useMutation(
+    trpc.teams.removeProfilePicture.mutationOptions({
       onSuccess: async () => {
         await invalidateTeams()
         setRemoveDialogOpen(false)
         toast(defaultSuccessToast(USER_MESSAGES.teamLogoRemoved.message))
       },
-      onError: ({ error }) => {
+      onError: (error) => {
         toast(
           defaultErrorToast(
-            error.serverError || USER_MESSAGES.failedRemoveLogo.message
+            error.message || USER_MESSAGES.failedRemoveLogo.message
           )
         )
       },
-    }
+    })
   )
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -88,7 +89,16 @@ export const TeamAvatar = () => {
       return
     }
 
-    uploadProfilePicture({ teamSlug: team.slug, image: file })
+    const base64 = await fileToBase64(file)
+
+    uploadProfilePictureMutation.mutate({
+      teamSlug: team.slug,
+      image: {
+        base64,
+        name: file.name,
+        type: file.type,
+      },
+    })
   }
 
   const hasPhoto = !!team.profilePictureUrl
@@ -110,7 +120,7 @@ export const TeamAvatar = () => {
           variant="outline"
           className={hasPhoto ? '' : 'w-full'}
           onClick={() => fileInputRef.current?.click()}
-          loading={isUploading}
+          loading={uploadProfilePictureMutation.isPending}
         >
           {hasPhoto ? (
             <>
@@ -140,13 +150,15 @@ export const TeamAvatar = () => {
         className="hidden"
         accept="image/jpeg, image/png"
         onChange={handleUpload}
-        disabled={isUploading}
+        disabled={uploadProfilePictureMutation.isPending}
       />
       <RemovePhotoDialog
         open={removeDialogOpen}
         onOpenChange={setRemoveDialogOpen}
-        isRemoving={isRemoving}
-        onConfirm={() => removeProfilePicture({ teamSlug: team.slug })}
+        isRemoving={removeProfilePictureMutation.isPending}
+        onConfirm={() =>
+          removeProfilePictureMutation.mutate({ teamSlug: team.slug })
+        }
       />
     </div>
   )
