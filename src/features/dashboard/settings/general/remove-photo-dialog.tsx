@@ -1,7 +1,12 @@
 'use client'
 
 import { Button } from '@/ui/primitives/button'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/ui/primitives/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/ui/primitives/dialog'
 import { TrashIcon } from '@/ui/primitives/icons'
 
 interface RemovePhotoDialogProps {

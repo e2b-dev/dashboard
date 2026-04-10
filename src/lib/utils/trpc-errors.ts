@@ -46,7 +46,10 @@ const getTRPCValidationMessages = (error: unknown): string[] => {
 
   const { formErrors, fieldErrors } = parsedError.data.data.zodError
 
-  return [...formErrors, ...Object.values(fieldErrors).flatMap((messages) => messages ?? [])]
+  return [
+    ...formErrors,
+    ...Object.values(fieldErrors).flatMap((messages) => messages ?? []),
+  ]
 }
 
 export { getTRPCValidationMessages, isNotFoundError }
