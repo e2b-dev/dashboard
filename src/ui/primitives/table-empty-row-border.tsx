@@ -12,6 +12,7 @@ const PATTERN_PATH_2 = `M32.944 -12.8C32.944 -13.344 32.76 -13.8 32.392 -14.168C
 export function TableEmptyRowBorder({ className }: TableEmptyRowBorderProps) {
   return (
     <svg
+      aria-hidden="true"
       width="43"
       height="44"
       viewBox="0 0 43 44"

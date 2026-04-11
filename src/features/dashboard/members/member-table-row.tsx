@@ -7,6 +7,7 @@ import type { IconType } from 'react-icons'
 import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { FiMail } from 'react-icons/fi'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { removeTeamMemberAction } from '@/core/server/actions/team-actions'
 import type { TeamMember } from '@/core/server/functions/team/types'
 import {
@@ -14,17 +15,23 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { AlertDialog } from '@/ui/alert-dialog'
+import { formatDate } from '@/lib/utils/formatting'
+import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
+import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
+import {
+  shouldShowRemoveMemberAction,
+  wasAddedBySystem,
+} from './member-table.utils'
+import { RemoveMemberDialog } from './remove-member-dialog'
 
 interface TableRowProps {
   member: TeamMember
-  addedByEmail?: string
-  index: number
+  addedByMember?: TeamMember
 }
 
 type MemberProvider = {
@@ -43,27 +50,19 @@ function normalizeProvider(provider: string): string {
 
 function toMemberProvider(provider: string): MemberProvider | null {
   const normalized = normalizeProvider(provider)
-  if (normalized === 'google') {
+  if (normalized === 'google')
     return { key: normalized, label: 'Google', Icon: FaGoogle }
-  }
-  if (normalized === 'github') {
+  if (normalized === 'github')
     return { key: normalized, label: 'GitHub', Icon: FaGithub }
-  }
-  if (normalized === 'email') {
+  if (normalized === 'email')
     return { key: normalized, label: 'Email', Icon: FiMail }
-  }
   return null
 }
 
-export default function MemberTableRow({
-  member,
-  addedByEmail,
-  index,
-}: TableRowProps) {
+export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const { toast } = useToast()
-  const { team } = useDashboard()
   const router = useRouter()
-  const { user } = useDashboard()
+  const { team, user } = useDashboard()
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   const { execute: removeMember, isExecuting: isRemoving } = useAction(
@@ -88,11 +87,8 @@ export default function MemberTableRow({
     }
   )
 
-  const handleRemoveMember = async (userId: string) => {
-    removeMember({
-      teamSlug: team.slug,
-      userId,
-    })
+  const handleRemoveMember = (userId: string) => {
+    removeMember({ teamSlug: team.slug, userId })
   }
 
   const providers =
@@ -100,63 +96,192 @@ export default function MemberTableRow({
       ?.map(toMemberProvider)
       .filter((provider): provider is MemberProvider => provider !== null) ?? []
 
+  const isCurrentUser = member.info.id === user?.id
+  const showRemove = shouldShowRemoveMemberAction(member, user?.id)
+  const dateStr = member.info.createdAt
+    ? formatDate(new Date(member.info.createdAt), 'MMM d, yyyy')
+    : null
+  const addedBySystem = wasAddedBySystem(member, addedByMember)
+
   return (
-    <TableRow key={`${member.info.id}-${index}`}>
-      <TableCell>
-        <Avatar className="size-8">
-          <AvatarImage src={member.info?.avatar_url} />
-          <AvatarFallback>
-            {member.info?.email?.charAt(0).toUpperCase() || '?'}
-          </AvatarFallback>
-        </Avatar>
-      </TableCell>
-      <TableCell className="min-w-36">
-        {member.info.id === user?.id
-          ? 'You'
-          : (member.info.name ?? 'Anonymous')}
-      </TableCell>
-      <TableCell className="text-fg-tertiary">{member.info.email}</TableCell>
-      <TableCell>
-        {providers.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {providers.map(({ key, label, Icon }) => (
-              <Badge
-                key={key}
-                size="sm"
-                className="bg-bg-highlight text-fg-tertiary uppercase prose-label-numeric"
-              >
-                <Icon className="size-3.5 mr-0.5" />
-                {label}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          <span className="text-fg-muted">-</span>
-        )}
-      </TableCell>
-      <TableCell className="text-fg-secondary">
-        {member.relation.added_by === user?.id ? 'You' : (addedByEmail ?? '')}
-      </TableCell>
-      <TableCell className="text-end">
-        {!member.relation.is_default && user?.id !== member.info.id && (
-          <AlertDialog
-            title="Remove Member"
-            description="Are you sure you want to remove this member from the team?"
-            confirm="Remove"
-            onConfirm={() => handleRemoveMember(member.info.id)}
-            confirmProps={{
-              loading: isRemoving,
-            }}
-            trigger={
-              <Button variant="muted" size="iconSm">
-                <span className="text-xs">X</span>
-              </Button>
-            }
-            open={removeDialogOpen}
-            onOpenChange={setRemoveDialogOpen}
-          />
-        )}
-      </TableCell>
+    <TableRow className="h-11">
+      <NameCell
+        avatarUrl={member.info.avatar_url}
+        email={member.info.email}
+        isCurrentUser={isCurrentUser}
+        name={member.info.name}
+      />
+      <ProvidersCell providers={providers} />
+      <AddedCell
+        addedByMember={addedByMember}
+        addedBySystem={addedBySystem}
+        dateStr={dateStr}
+        isRemoving={isRemoving}
+        memberEmail={member.info.email}
+        memberName={member.info.name}
+        onRemove={() => handleRemoveMember(member.info.id)}
+        removeDialogOpen={removeDialogOpen}
+        setRemoveDialogOpen={setRemoveDialogOpen}
+        showRemove={showRemove}
+        teamName={getTeamDisplayName(team)}
+      />
     </TableRow>
   )
 }
+
+const NameCell = ({
+  avatarUrl,
+  email,
+  isCurrentUser,
+  name,
+}: {
+  avatarUrl?: string
+  email: string
+  isCurrentUser: boolean
+  name?: string
+}) => (
+  <TableCell className="max-w-0">
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar className="border-stroke size-8 shrink-0 border">
+        <AvatarImage referrerPolicy="no-referrer" src={avatarUrl} />
+        <AvatarFallback className="bg-bg text-xl font-bold uppercase">
+          {(name?.charAt(0) ?? email.charAt(0)).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="text-fg min-w-0 truncate text-sm font-medium"
+            title={name ?? email}
+          >
+            {name ?? email}
+          </span>
+          {isCurrentUser ? (
+            <Badge
+              className="shrink-0 uppercase"
+              size="sm"
+              typography="regular"
+              variant="default"
+            >
+              You
+            </Badge>
+          ) : null}
+        </div>
+        {name ? (
+          <span
+            className="text-fg-tertiary block truncate text-sm"
+            title={email}
+          >
+            {email}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  </TableCell>
+)
+
+const ProvidersCell = ({ providers }: { providers: MemberProvider[] }) => (
+  <TableCell>
+    {providers.length > 0 ? (
+      <>
+        <div className="flex flex-wrap gap-1 md:hidden">
+          {providers.map(({ key, label, Icon }) => (
+            <Badge
+              className="bg-bg-highlight text-fg-tertiary h-[18px] gap-0.5 uppercase prose-label-numeric"
+              key={key}
+              size="sm"
+            >
+              <Icon className="size-3 shrink-0" />
+              {label}
+            </Badge>
+          ))}
+        </div>
+        <div className="hidden flex-wrap gap-1 md:flex">
+          {providers.map(({ key, label, Icon }) => (
+            <Badge
+              className="bg-bg-highlight text-fg-tertiary h-[18px] gap-0.5 uppercase prose-label-numeric"
+              key={key}
+              size="sm"
+            >
+              <Icon className="size-3 shrink-0" />
+              {label}
+            </Badge>
+          ))}
+        </div>
+      </>
+    ) : (
+      <span className="text-fg-tertiary font-sans text-sm">--</span>
+    )}
+  </TableCell>
+)
+
+const AddedCell = ({
+  addedByMember,
+  addedBySystem,
+  dateStr,
+  isRemoving,
+  memberEmail,
+  memberName,
+  onRemove,
+  removeDialogOpen,
+  setRemoveDialogOpen,
+  showRemove,
+  teamName,
+}: {
+  addedByMember?: TeamMember
+  addedBySystem: boolean
+  dateStr: string | null
+  isRemoving: boolean
+  memberEmail: string
+  memberName?: string
+  onRemove: () => void
+  removeDialogOpen: boolean
+  setRemoveDialogOpen: (v: boolean) => void
+  showRemove: boolean
+  teamName?: string | null
+}) => (
+  <TableCell>
+    <div className="flex items-center gap-6">
+      <span className="text-fg-tertiary w-[92px] shrink-0 text-sm">
+        {dateStr ?? '—'}
+      </span>
+      {addedBySystem ? (
+        <div className="flex size-5 shrink-0 items-center justify-center">
+          <E2BLogo className="text-fg-tertiary size-5" />
+        </div>
+      ) : (
+        <Avatar className="border-stroke size-5 shrink-0 border">
+          <AvatarImage
+            referrerPolicy="no-referrer"
+            src={addedByMember?.info.avatar_url}
+          />
+          <AvatarFallback className="bg-bg text-[10px] font-bold uppercase">
+            {addedByMember?.info.email?.charAt(0).toUpperCase() ?? '?'}
+          </AvatarFallback>
+        </Avatar>
+      )}
+      {showRemove ? (
+        <RemoveMemberDialog
+          isRemoving={isRemoving}
+          memberEmail={memberEmail}
+          memberName={memberName}
+          onRemove={onRemove}
+          open={removeDialogOpen}
+          setOpen={setRemoveDialogOpen}
+          teamName={teamName}
+          trigger={
+            <Button
+              aria-label={`Remove ${memberName ?? memberEmail}`}
+              className="text-fg-tertiary hover:text-fg"
+              size="iconSm"
+              type="button"
+              variant="ghost"
+            >
+              <TrashIcon className="size-4" />
+            </Button>
+          }
+        />
+      ) : null}
+    </div>
+  </TableCell>
+)

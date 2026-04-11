@@ -87,6 +87,7 @@ export function createTeamsRepository(
               name: user?.user_metadata?.name,
               avatar_url: user?.user_metadata?.avatar_url,
               providers: extractSignInProviders(user),
+              createdAt: member.createdAt,
             },
             relation: {
               added_by: member.addedBy ?? null,
