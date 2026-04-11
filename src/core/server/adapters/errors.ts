@@ -119,10 +119,6 @@ function logObfuscatedRepoError(
   error: RepoError
 ) {
   const publicMessage = getPublicRepoErrorMessage(error)
-  if (publicMessage === error.message) {
-    return
-  }
-
   const observedMessage = getObservedErrorMessage(error)
   const span = trace.getActiveSpan()
 
@@ -134,9 +130,12 @@ function logObfuscatedRepoError(
 
   const payload = {
     key: `transport:${transport}:repo_error`,
+    transport,
     repo_error_code: error.code,
     repo_error_status: error.status,
     public_message: publicMessage,
+    observed_message: observedMessage,
+    was_obfuscated: publicMessage !== error.message,
     error: serializeErrorForLog(error),
   }
 
