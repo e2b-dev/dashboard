@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { cardVariants } from '@/ui/primitives/card'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronsUp, ImagePlusIcon, Loader2, Pencil } from 'lucide-react'
+import { SpinnerIcon, UploadIcon, PhotoIcon, EditIcon } from '@/ui/primitives/icons'
 import { useAction } from 'next-safe-action/hooks'
 import { useRef, useState } from 'react'
 
@@ -109,10 +109,10 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
             alt={`${team.name}'s profile picture`}
           />
           <AvatarFallback className="bg-bg-hover relative text-2xl ">
-            <ImagePlusIcon className="text-fg-tertiary" />
+            <PhotoIcon className="text-fg-tertiary" />
             <Badge className="text-fg-secondary absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap uppercase backdrop-blur-md">
               Upload{' '}
-              <ChevronsUp className="text-accent-main-highlight size-4" />
+              <UploadIcon className="text-accent-main-highlight size-4" />
             </Badge>
           </AvatarFallback>
           <AnimatePresence>
@@ -139,7 +139,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
                 exit="initial"
                 transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
               >
-                <Pencil className="h-5 w-5 text-white" />
+                <EditIcon className="h-5 w-5 text-white" />
               </motion.div>
             ) : isUploading ? (
               <motion.div
@@ -164,7 +164,7 @@ export function ProfilePictureCard({ className }: ProfilePictureCardProps) {
                 exit="initial"
                 transition={{ duration: 0.2, ease: exponentialSmoothing(5) }}
               >
-                <Loader2 className="h-5 w-5 animate-spin text-white" />
+                <SpinnerIcon className="h-5 w-5 animate-spin text-white" />
               </motion.div>
             ) : null}
           </AnimatePresence>

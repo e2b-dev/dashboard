@@ -5,7 +5,7 @@ import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { getDefaultTeamRelation } from '@/server/auth/get-default-team'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
+import { CloudIcon, SystemIcon, LinkIcon } from '@/ui/primitives/icons'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { serializeError } from 'serialize-error'
@@ -50,10 +50,10 @@ function CLIIcons() {
   return (
     <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
-        <LaptopIcon size={50} />
+        <SystemIcon size={50} />
       </span>
       <span className="text-fg-secondary">
-        <Link2Icon size={30} />
+        <LinkIcon size={30} />
       </span>
       <span className="text-fg-tertiary">
         <CloudIcon size={50} />

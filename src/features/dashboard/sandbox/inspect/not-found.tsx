@@ -13,8 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { RefreshIcon } from '@/ui/primitives/icons'
-import { ArrowLeft, ArrowUp, Home } from 'lucide-react'
+import { RefreshIcon, ArrowLeftIcon, ArrowUpIcon, HomeIcon } from '@/ui/primitives/icons'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { serializeError } from 'serialize-error'
@@ -97,7 +96,7 @@ export default function SandboxInspectNotFound() {
                     onClick={() => setRootPath('')}
                     disabled={isPending && pendingPath === ''}
                   >
-                    <Home />
+                    <HomeIcon />
                     Reset
                   </Button>
                   <Button
@@ -106,7 +105,7 @@ export default function SandboxInspectNotFound() {
                     onClick={() => setRootPath('/')}
                     disabled={isPending && pendingPath === '/'}
                   >
-                    <ArrowUp />
+                    <ArrowUpIcon />
                     To Root
                   </Button>
                 </div>
@@ -139,7 +138,7 @@ export default function SandboxInspectNotFound() {
                 }
                 className="w-full"
               >
-                <ArrowLeft />
+                <ArrowLeftIcon />
                 Back to Sandboxes
               </Button>
             )}

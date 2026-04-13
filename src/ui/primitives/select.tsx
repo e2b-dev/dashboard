@@ -4,7 +4,7 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
-import { ChevronsUpDown } from 'lucide-react'
+import { SelectIcon } from '@/ui/primitives/icons'
 import {
   menuContentStyles,
   menuGroupStyles,
@@ -55,7 +55,7 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronsUpDown
+    <SelectIcon
       className={cn('text-fg-secondary ml-2 size-3.5', props.classNames?.icon)}
     />
   </SelectPrimitive.Trigger>

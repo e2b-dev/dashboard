@@ -1,7 +1,6 @@
 'use client'
 
-import { TimeIcon } from './primitives/icons'
-import { CalendarIcon } from 'lucide-react'
+import { TimeIcon, CalendarIcon } from './primitives/icons'
 import { memo, useCallback, useEffect, useState } from 'react'
 
 import { cn } from '@/lib/utils'

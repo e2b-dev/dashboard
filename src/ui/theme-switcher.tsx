@@ -9,7 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { Laptop, Moon, Sun } from 'lucide-react'
+import { MoonIcon, SunIcon, SystemIcon } from '@/ui/primitives/icons'
 import { useTheme } from 'next-themes'
 
 interface ThemeSwitcherProps {
@@ -29,9 +29,9 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
       <DropdownMenuTrigger className={className} asChild>
         <IconButton>
           {resolvedTheme === 'light' ? (
-            <Sun key="light" />
+            <SunIcon key="light" />
           ) : (
-            <Moon key="dark" />
+            <MoonIcon key="dark" />
           )}
         </IconButton>
       </DropdownMenuTrigger>
@@ -44,21 +44,21 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
             className="flex items-center gap-2"
             value="light"
           >
-            <Sun className="text-fg-secondary size-3.5" />
+            <SunIcon className="text-fg-secondary size-3.5" />
             <span>Light</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem
             className="flex items-center gap-2"
             value="dark"
           >
-            <Moon className="text-fg-secondary size-3.5" />
+            <MoonIcon className="text-fg-secondary size-3.5" />
             <span>Dark</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem
             className="flex items-center gap-2"
             value="system"
           >
-            <Laptop className="text-fg-secondary size-3.5" />
+            <SystemIcon className="text-fg-secondary size-3.5" />
             <span>System</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

@@ -7,7 +7,7 @@ import { Button } from '@/ui/primitives/button'
 import { Drawer, DrawerContent } from '@/ui/primitives/drawer'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { AnimatePresence } from 'framer-motion'
-import { Download } from 'lucide-react'
+import { DownloadIcon } from '@/ui/primitives/icons'
 import { useEffect, useState } from 'react'
 import ShikiHighlighter, { Language } from 'react-shiki'
 
@@ -157,7 +157,7 @@ function TextContent({
         <span className="text-fg-secondary">This file is empty.</span>
         <Button variant="secondary" onClick={onDownload}>
           Download
-          <Download />
+          <DownloadIcon />
         </Button>
       </div>
     )
@@ -218,7 +218,7 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
         </span>
         <Button variant="secondary" onClick={onDownload}>
           Download
-          <Download />
+          <DownloadIcon />
         </Button>
       </div>
     )

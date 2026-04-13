@@ -1,7 +1,7 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { ArrowLeft, HomeIcon, LayoutDashboard } from 'lucide-react'
+import { ArrowLeftIcon, HomeIcon, DashboardIcon } from './primitives/icons'
 import Link from 'next/link'
 import { Button } from './primitives/button'
 import {
@@ -36,7 +36,7 @@ export default function NotFound() {
             </Button>
             <Button variant="secondary" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD}>
-                <LayoutDashboard />
+                <DashboardIcon />
                 Dashboard
               </Link>
             </Button>
@@ -46,7 +46,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             className="w-full"
           >
-            <ArrowLeft />
+            <ArrowLeftIcon />
             Go Back
           </Button>
         </CardFooter>

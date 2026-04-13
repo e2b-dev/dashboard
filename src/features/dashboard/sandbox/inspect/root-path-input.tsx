@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRightIcon } from '@/ui/primitives/icons'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { serializeError } from 'serialize-error'
@@ -82,7 +82,7 @@ export default function RootPathInput({
         disabled={isPending || !isDirty}
         type="submit"
       >
-        Go {isPending ? <Loader /> : <ArrowRight />}
+        Go {isPending ? <Loader /> : <ArrowRightIcon />}
       </Button>
     </form>
   )

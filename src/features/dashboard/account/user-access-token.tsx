@@ -6,7 +6,7 @@ import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
-import { Eye, EyeOff } from 'lucide-react'
+import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 
@@ -60,12 +60,12 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
             <Loader />
           ) : token ? (
             isVisible ? (
-              <EyeOff />
+              <EyeOffIcon />
             ) : (
-              <Eye />
+              <EyeIcon />
             )
           ) : (
-            <Eye />
+            <EyeIcon />
           )}
         </IconButton>
         <CopyButton

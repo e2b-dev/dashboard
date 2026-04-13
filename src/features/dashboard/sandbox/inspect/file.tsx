@@ -2,8 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { AlertIcon } from '@/ui/primitives/icons'
-import { FileIcon } from 'lucide-react'
+import { AlertIcon, FileIcon } from '@/ui/primitives/icons'
 import { FilesystemNode } from './filesystem/types'
 import { useFile } from './hooks/use-file'
 import NodeLabel from './node-label'

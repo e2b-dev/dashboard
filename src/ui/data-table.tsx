@@ -9,11 +9,7 @@ import {
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
 import { Cell, Header } from '@tanstack/react-table'
-import {
-  ArrowDownWideNarrow,
-  ArrowUpDown,
-  ArrowUpNarrowWide,
-} from 'lucide-react'
+import { SortAscIcon, SortDescIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
 
 interface DataTableColumnHeaderProps<TData, TValue>
@@ -69,14 +65,14 @@ function DataTableHead<TData, TValue>({
             {sorting === undefined ? (
               // Show the arrow for the next state based on sortDescFirst
               header.column.columnDef.sortDescFirst ? (
-                <ArrowDownWideNarrow className="size-3" />
+                <SortDescIcon className="size-3" />
               ) : (
-                <ArrowUpNarrowWide className="size-3" />
+                <SortAscIcon className="size-3" />
               )
             ) : sorting ? (
-              <ArrowDownWideNarrow className="size-3" />
+              <SortDescIcon className="size-3" />
             ) : (
-              <ArrowUpNarrowWide className="size-3" />
+              <SortAscIcon className="size-3" />
             )}
           </div>
         )}

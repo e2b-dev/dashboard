@@ -2,8 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
-import { AlertIcon } from '@/ui/primitives/icons'
-import { FolderClosed, FolderOpen } from 'lucide-react'
+import { AlertIcon, FolderIcon, FolderOpenIcon } from '@/ui/primitives/icons'
 import { AnimatePresence, motion } from 'motion/react'
 import SandboxInspectEmptyNode from './empty'
 import { FilesystemNode } from './filesystem/types'
@@ -52,9 +51,9 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           )}
         >
           {isExpanded && isLoaded ? (
-            <FolderOpen className="size-3.5" />
+            <FolderOpenIcon className="size-3.5" />
           ) : (
-            <FolderClosed className="size-3.5" />
+            <FolderIcon className="size-3.5" />
           )}
         </span>
         <NodeLabel

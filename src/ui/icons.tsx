@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
-import { TerminalIcon } from 'lucide-react'
+import { TerminalCustomIcon } from '@/ui/primitives/icons'
 import { type HTMLAttributes } from 'react'
 import { IconBaseProps } from 'react-icons/lib'
 
@@ -21,7 +21,7 @@ export function IconContainer({
       {Icon ? (
         <Icon className="h-4 w-4" />
       ) : (
-        <TerminalIcon className="h-4 w-4" />
+        <TerminalCustomIcon className="h-4 w-4" />
       )}
     </div>
   )

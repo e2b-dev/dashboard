@@ -10,8 +10,7 @@ import {
   CardFooter,
   CardHeader,
 } from '@/ui/primitives/card'
-import { PersonsIcon } from '@/ui/primitives/icons'
-import { ArrowLeft, HomeIcon, ShieldX } from 'lucide-react'
+import { PersonsIcon, ArrowLeftIcon, HomeIcon, ShieldXIcon } from '@/ui/primitives/icons'
 import Link from 'next/link'
 
 export default function Unauthorized() {
@@ -21,7 +20,7 @@ export default function Unauthorized() {
       <Card className="w-full max-w-md border border-stroke bg-bg-1/40 backdrop-blur-lg z-10">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
-            <ShieldX className="h-12 w-12 text-fg-tertiary" />
+            <ShieldXIcon className="h-12 w-12 text-fg-tertiary" />
           </div>
           <span className="prose-value-big">403</span>
           <CardDescription>Access denied.</CardDescription>
@@ -52,7 +51,7 @@ export default function Unauthorized() {
             onClick={() => window.history.back()}
             className="w-full"
           >
-            <ArrowLeft />
+            <ArrowLeftIcon />
             Go Back
           </Button>
         </CardFooter>

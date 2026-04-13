@@ -1,8 +1,6 @@
 import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { RefreshIcon } from '@/ui/primitives/icons'
-import { CloseIcon } from '@/ui/primitives/icons'
-import { Download, FileIcon } from 'lucide-react'
+import { RefreshIcon, CloseIcon, DownloadIcon, FileIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import { FileContentState } from './filesystem/store'
 
@@ -33,7 +31,7 @@ export default function SandboxInspectViewerHeader({
       )}
 
       <IconButton onClick={onDownload}>
-        <Download />
+        <DownloadIcon />
       </IconButton>
 
       <IconButton onClick={onRefresh} disabled={isLoading}>
