@@ -660,6 +660,8 @@ export interface components {
       blockedReason: string | null
       isDefault: boolean
       limits: components['schemas']['UserTeamLimits']
+      /** Format: date-time */
+      createdAt: string
     }
     UserTeamsResponse: {
       teams: components['schemas']['UserTeam'][]

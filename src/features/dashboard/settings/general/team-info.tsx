@@ -1,6 +1,7 @@
 'use client'
 
 import { useDashboard } from '@/features/dashboard/context'
+import { formatDate } from '@/lib/utils/formatting'
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between">
@@ -15,10 +16,11 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 
 export const TeamInfo = () => {
   const { team } = useDashboard()
+  const createdAt = formatDate(new Date(team.createdAt), 'MMM d, yyyy') ?? '--'
 
   return (
     <div className="flex flex-col gap-3">
-      <InfoRow label="created" value="--" />
+      <InfoRow label="created" value={createdAt} />
       <InfoRow label="primary email" value={team.email} />
     </div>
   )
