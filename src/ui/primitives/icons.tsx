@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils/index'
 import React from 'react'
 
-const DEFAULT_CLASS_NAMES = 'size-6'
+const DEFAULT_CLASS_NAMES = 'size-4'
 
 export interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string
