@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { LucideIcon } from 'lucide-react'
-import { TerminalCustomIcon } from '@/ui/primitives/icons'
+import { TerminalCustomIcon, type Icon } from '@/ui/primitives/icons'
 import { type HTMLAttributes } from 'react'
 import { IconBaseProps } from 'react-icons/lib'
 
@@ -8,7 +7,7 @@ export function IconContainer({
   icon: Icon,
   ...props
 }: HTMLAttributes<HTMLDivElement> & {
-  icon?: LucideIcon
+  icon?: Icon
 }): React.ReactElement<unknown> {
   return (
     <div

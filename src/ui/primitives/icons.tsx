@@ -3,11 +3,13 @@ import React from 'react'
 
 const DEFAULT_CLASS_NAMES = 'size-6'
 
-interface IconProps extends React.SVGProps<SVGSVGElement> {
+export interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string
   height?: number
   width?: number
 }
+
+export type Icon = React.ComponentType<IconProps>
 
 export const SandboxIcon = ({ className, ...props }: IconProps) => (
   <svg
