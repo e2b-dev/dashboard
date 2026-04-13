@@ -88,6 +88,7 @@
   --accent-error-highlight: #ff4400;
   --accent-error-bg: rgba(255, 68, 0, 0.16);
   --accent-error-bg-large: rgba(255, 68, 0, 0.08);
+  --accent-error-bg-large-solid: #faebe6;
 
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgb(255, 135, 99, 0.16);
@@ -187,6 +188,7 @@
   --accent-error-highlight: #f54545;
   --accent-error-bg: rgba(245, 69, 69, 0.16);
   --accent-error-bg-large: rgba(245, 69, 69, 0.08);
+  --accent-error-bg-large-solid: #1d0f0f;
 
   --accent-secondary-error-highlight: #ff8763;
   --accent-secondary-error-bg: rgba(255, 135, 99, 0.16);
@@ -297,6 +299,7 @@
   --color-accent-error-highlight: var(--accent-error-highlight);
   --color-accent-error-bg: var(--accent-error-bg);
   --color-accent-error-bg-large: var(--accent-error-bg-large);
+  --color-accent-error-bg-large-solid: var(--accent-error-bg-large-solid);
 
   --color-accent-secondary-error-highlight: var(
     --accent-secondary-error-highlight

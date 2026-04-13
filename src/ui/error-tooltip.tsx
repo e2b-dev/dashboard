@@ -20,7 +20,7 @@ export default function ErrorTooltip({ children, trigger }: ErrorTooltipProps) {
             <WarningIcon className="text-accent-error-highlight size-4" />
           )}
         </TooltipTrigger>
-        <TooltipContent className="bg-accent-error-bg-large border-accent-error-highlight text-fg-secondary max-w-[200px] p-2 font-sans text-xs normal-case">
+        <TooltipContent className="bg-accent-error-bg-large-solid border-accent-error-highlight text-fg-secondary max-w-[200px] p-2 font-sans text-xs normal-case">
           <WarningIcon className="text-accent-error-highlight mb-2 size-4" />
           {children}
         </TooltipContent>
