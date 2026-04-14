@@ -7,7 +7,7 @@ import DashboardLayoutWrapper from './wrapper'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  params: Promise<{ teamIdOrSlug: string }>
+  params: Promise<{ teamSlug: string }>
 }
 
 export default function DashboardLayout({
@@ -17,10 +17,7 @@ export default function DashboardLayout({
   return (
     <div className="max-h-dvh h-full relative flex flex-col min-h-0">
       <DashboardLayoutHeader>
-        <LiveSandboxCounterServer
-          className="max-md:hidden"
-          params={params}
-        />
+        <LiveSandboxCounterServer className="max-md:hidden" params={params} />
       </DashboardLayoutHeader>
       <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>
       <DashboardLayoutFooter

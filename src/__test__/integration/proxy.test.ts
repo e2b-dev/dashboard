@@ -1,8 +1,9 @@
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { proxy } from '@/proxy'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { proxy } from '@/proxy'
+import { DOCUMENTATION_DOMAIN } from '../../../next.config.mjs'
 
 // mock supabase auth
 vi.mock('@supabase/ssr', () => ({
@@ -14,10 +15,11 @@ vi.mock('@supabase/ssr', () => ({
 }))
 
 // mock logger to avoid noise in tests
-vi.mock('@/lib/clients/logger/logger', () => ({
+vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: {
     error: vi.fn(),
   },
+  serializeErrorForLog: vi.fn((error) => error),
 }))
 
 // mock next/server to track redirects and responses
@@ -46,7 +48,7 @@ vi.mock('next/server', async () => {
     return response
   })
 
-  const mockNext = vi.fn((init?: { request?: NextRequest }) => {
+  const mockNext = vi.fn((_init?: { request?: NextRequest }) => {
     const response = new actual.NextResponse()
 
     Object.defineProperty(response, 'cookies', {
@@ -61,7 +63,7 @@ vi.mock('next/server', async () => {
   })
 
   const mockRewrite = vi.fn(
-    (url: URL | string, init?: { request?: { headers?: Headers } }) => {
+    (_url: URL | string, _init?: { request?: { headers?: Headers } }) => {
       const response = new actual.NextResponse()
 
       Object.defineProperty(response, 'headers', {
@@ -140,7 +142,7 @@ describe('Proxy Integration Tests', () => {
         path: PROTECTED_URLS.DASHBOARD,
       })
 
-      const response = await proxy(request)
+      await proxy(request)
 
       expect(NextResponse.redirect).toHaveBeenCalled()
       const redirectUrl = vi
@@ -154,7 +156,7 @@ describe('Proxy Integration Tests', () => {
         path: AUTH_URLS.SIGN_IN,
       })
 
-      const response = await proxy(request)
+      await proxy(request)
 
       expect(NextResponse.redirect).toHaveBeenCalled()
       const redirectUrl = vi
@@ -168,7 +170,7 @@ describe('Proxy Integration Tests', () => {
         path: '/dashboard/team-123/sandboxes',
       })
 
-      const response = await proxy(request)
+      await proxy(request)
 
       expect(NextResponse.redirect).not.toHaveBeenCalled()
       expect(NextResponse.next).toHaveBeenCalled()
@@ -191,7 +193,7 @@ describe('Proxy Integration Tests', () => {
         path: '/',
       })
 
-      const response = await proxy(request)
+      await proxy(request)
 
       expect(NextResponse.redirect).not.toHaveBeenCalled()
       expect(NextResponse.next).toHaveBeenCalled()
@@ -215,10 +217,44 @@ describe('Proxy Integration Tests', () => {
         path: '/',
       })
 
-      const response = await proxy(request)
+      await proxy(request)
 
       // should not crash, should return next()
       expect(NextResponse.next).toHaveBeenCalled()
+    })
+  })
+
+  describe('Middleware Rewrites', () => {
+    it('rewrites supported docs paths to the docs host', async () => {
+      const request = createMockRequest({
+        path: '/docs/quickstart',
+      })
+
+      await proxy(request)
+
+      expect(NextResponse.rewrite).toHaveBeenCalledTimes(1)
+      expect(NextResponse.rewrite).toHaveBeenCalledWith(
+        expect.objectContaining({
+          href: `https://${DOCUMENTATION_DOMAIN}/docs/quickstart`,
+        }),
+        expect.anything()
+      )
+    })
+
+    it('rewrites the sdk reference subtree to the docs host', async () => {
+      const request = createMockRequest({
+        path: '/docs/sdk-reference/python',
+      })
+
+      await proxy(request)
+
+      expect(NextResponse.rewrite).toHaveBeenCalledTimes(1)
+      expect(NextResponse.rewrite).toHaveBeenCalledWith(
+        expect.objectContaining({
+          href: `https://${DOCUMENTATION_DOMAIN}/docs/sdk-reference/python`,
+        }),
+        expect.anything()
+      )
     })
   })
 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { Slot } from '@radix-ui/react-slot'
-import { VariantProps, cva } from 'class-variance-authority'
+import { cva, type VariantProps } from 'class-variance-authority'
 import { CollapseLeftIcon, MenuIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
 

@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import ShikiHighlighter from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
 import { cn } from '@/lib/utils'
 import {
@@ -7,8 +9,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/ui/primitives/popover'
-import { useState } from 'react'
-import ShikiHighlighter from 'react-shiki'
 import { Button } from './primitives/button'
 import { ScrollArea, ScrollBar } from './primitives/scroll-area'
 

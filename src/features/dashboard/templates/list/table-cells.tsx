@@ -1,5 +1,9 @@
 'use client'
 
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { CellContext } from '@tanstack/react-table'
+import { useMemo, useState } from 'react'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -8,9 +12,9 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
-import { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
@@ -27,10 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { Loader } from '@/ui/primitives/loader_d'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CellContext } from '@tanstack/react-table'
 import { CheckIcon, CopyIcon, IndicatorDotsIcon, PrivateIcon, UnlockIcon } from '@/ui/primitives/icons'
-import { useMemo, useState } from 'react'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
 
@@ -50,8 +51,7 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -75,13 +75,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
           (old) => {
             if (!old?.templates) return old
@@ -108,7 +108,7 @@ export function ActionsCell({
       onSettled: () => {
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -133,13 +133,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
 
           (old) => {
@@ -166,7 +166,7 @@ export function ActionsCell({
 
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -178,7 +178,7 @@ export function ActionsCell({
 
   const togglePublish = () => {
     updateTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
       public: !template.public,
     })
@@ -186,7 +186,7 @@ export function ActionsCell({
 
   const deleteTemplate = () => {
     deleteTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
     })
   }
@@ -386,10 +386,11 @@ export function CreatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const [datePart, timePart] = useMemo(() => {
-    const date = new Date(dateValue)
-    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
-    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
+  const formattedTimestamp = useMemo(() => {
+    return formatLocalLogStyleTimestamp(dateValue, {
+      includeSeconds: false,
+      includeYear: true,
+    })
   }, [dateValue])
 
   return (
@@ -398,9 +399,13 @@ export function CreatedAtCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-secondary">{datePart}</span>{' '}
-      <span className="text-fg-tertiary">{timePart}</span>{' '}
-      <span className="text-fg-tertiary">UTC</span>
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.datePart ?? '--'}
+      </span>{' '}
+      {formattedTimestamp?.timePart ?? '--'}{' '}
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.timezonePart ?? ''}
+      </span>
     </div>
   )
 }
@@ -410,10 +415,11 @@ export function UpdatedAtCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const dateValue = getValue() as string
 
-  const [datePart, timePart] = useMemo(() => {
-    const date = new Date(dateValue)
-    const [isoDate, isoTimeWithMillis] = date.toISOString().split('T')
-    return [isoDate ?? '--', isoTimeWithMillis?.slice(0, 5) ?? '--']
+  const formattedTimestamp = useMemo(() => {
+    return formatLocalLogStyleTimestamp(dateValue, {
+      includeSeconds: false,
+      includeYear: true,
+    })
   }, [dateValue])
 
   return (
@@ -422,9 +428,13 @@ export function UpdatedAtCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-secondary">{datePart}</span>{' '}
-      <span className="text-fg-tertiary">{timePart}</span>{' '}
-      <span className="text-fg-tertiary">UTC</span>
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.datePart ?? '--'}
+      </span>{' '}
+      {formattedTimestamp?.timePart ?? '--'}{' '}
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.timezonePart ?? ''}
+      </span>
     </div>
   )
 }

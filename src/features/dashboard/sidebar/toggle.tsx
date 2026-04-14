@@ -1,5 +1,6 @@
 'use client'
 
+import { AnimatePresence, motion } from 'motion/react'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
 import { E2BLogo } from '@/ui/brand'
@@ -8,7 +9,6 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { useSidebar } from '@/ui/primitives/sidebar'
 import ShortcutTooltip from '@/ui/shortcut-tooltip'
 import { CollapseLeftIcon, ExpandRightIcon } from '@/ui/primitives/icons'
-import { AnimatePresence, motion } from 'motion/react'
 
 export default function DashboardSidebarToggle() {
   const { toggleSidebar, open, openMobile } = useSidebar()

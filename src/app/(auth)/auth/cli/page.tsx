@@ -1,14 +1,13 @@
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
-import { encodedRedirect } from '@/lib/utils/auth'
-import { generateE2BUserAccessToken } from '@/lib/utils/server'
-import { getDefaultTeamRelation } from '@/server/auth/get-default-team'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { CloudIcon, SystemIcon, LinkIcon } from '@/ui/primitives/icons'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
-import { serializeError } from 'serialize-error'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
+import { encodedRedirect } from '@/lib/utils/auth'
+import { generateE2BUserAccessToken } from '@/lib/utils/server'
+import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 
 // Types
 type CLISearchParams = Promise<{
@@ -21,7 +20,6 @@ type CLISearchParams = Promise<{
 
 async function handleCLIAuth(
   next: string,
-  userId: string,
   userEmail: string,
   supabaseAccessToken: string
 ) {
@@ -29,20 +27,31 @@ async function handleCLIAuth(
     throw new Error('Invalid redirect URL')
   }
 
-  try {
-    const defaultTeam = await getDefaultTeamRelation(userId)
-    const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
+  const teamsResult = await createUserTeamsRepository({
+    accessToken: supabaseAccessToken,
+  }).listUserTeams()
 
-    const searchParams = new URLSearchParams({
-      email: userEmail,
-      accessToken: e2bAccessToken.token,
-      defaultTeamId: defaultTeam.team_id,
-    })
-
-    return redirect(`${next}?${searchParams.toString()}`)
-  } catch (err) {
-    throw err
+  if (!teamsResult.ok) {
+    throw new Error('Failed to resolve default team')
   }
+
+  const defaultTeam =
+    teamsResult.data.find((team) => team.isDefault && team.slug) ??
+    teamsResult.data.find((team) => team.slug)
+
+  if (!defaultTeam) {
+    throw new Error('Failed to resolve default team')
+  }
+
+  const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
+
+  const searchParams = new URLSearchParams({
+    email: userEmail,
+    accessToken: e2bAccessToken.token,
+    defaultTeamId: defaultTeam.id,
+  })
+
+  return redirect(`${next}?${searchParams.toString()}`)
 }
 
 // UI Components
@@ -131,12 +140,11 @@ export default async function CLIAuthPage({
         throw new Error('No provider access token found')
       }
 
-      return await handleCLIAuth(
-        next,
-        user.id,
-        user.email!,
-        session.access_token
-      )
+      if (!user.email) {
+        throw new Error('No user email found')
+      }
+
+      return await handleCLIAuth(next, user.email, session.access_token)
     } catch (err) {
       if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
         throw err
@@ -145,7 +153,7 @@ export default async function CLIAuthPage({
       l.error(
         {
           key: 'cli_auth:unexpected_error',
-          error: serializeError(err),
+          error: serializeErrorForLog(err),
           user_id: user?.id,
           context: {
             next,

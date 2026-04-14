@@ -1,17 +1,16 @@
 'use client'
+import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
 import { CheckIcon, CopyIcon } from './primitives/icons'
 import {
   type ButtonHTMLAttributes,
+  forwardRef,
   type HTMLAttributes,
   type ReactNode,
-  forwardRef,
   useCallback,
   useRef,
 } from 'react'
-
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
-import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
 import { buttonVariants } from './primitives/button'
 import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
 

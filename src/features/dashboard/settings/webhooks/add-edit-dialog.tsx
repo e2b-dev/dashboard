@@ -1,12 +1,15 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useState } from 'react'
+import { upsertWebhookAction } from '@/core/server/actions/webhooks-actions'
+import { UpsertWebhookSchema } from '@/core/server/functions/webhooks/schema'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { UpsertWebhookSchema } from '@/server/webhooks/schema'
-import { upsertWebhookAction } from '@/server/webhooks/webhooks-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -17,16 +20,12 @@ import {
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import { Form } from '@/ui/primitives/form'
-import { CheckIcon } from '@/ui/primitives/icons'
+import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { AddIcon } from '@/ui/primitives/icons'
-import { useState } from 'react'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
 import { WEBHOOK_EVENTS } from './constants'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 type WebhookAddEditDialogProps =
   | {
@@ -62,9 +61,9 @@ export default function WebhookAddEditDialog({
   } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
     formProps: {
       mode: 'onChange',
-      disabled: !team.id,
+      disabled: !team.slug,
       defaultValues: {
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -74,7 +73,7 @@ export default function WebhookAddEditDialog({
         ...(isEditMode ? {} : { signatureSecret: '' }),
       },
       values: {
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         webhookId: isEditMode ? webhook?.id : undefined,
         mode,
         name: webhook?.name || '',
@@ -153,7 +152,7 @@ export default function WebhookAddEditDialog({
     if (currentEvents.includes(event)) {
       form.setValue(
         'events',
-        currentEvents.filter((e) => e !== event)
+        currentEvents.filter((eventName: string) => eventName !== event)
       )
     } else {
       form.setValue('events', [...currentEvents, event])
@@ -198,7 +197,7 @@ export default function WebhookAddEditDialog({
           <form onSubmit={handleSubmitWithAction} className="min-w-0">
             {/* Hidden fields */}
             <input type="hidden" {...form.register('mode')} />
-            <input type="hidden" {...form.register('teamIdOrSlug')} />
+            <input type="hidden" {...form.register('teamSlug')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0 overflow-hidden min-h-[350px]">
               <WebhookAddEditDialogSteps

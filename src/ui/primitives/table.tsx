@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
+import { TableEmptyRowBorder } from './table-empty-row-border'
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -128,11 +129,48 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = 'TableCaption'
 
+interface TableEmptyStateProps {
+  colSpan: number
+  children: React.ReactNode
+  className?: string
+}
+
+const EMPTY_STATE_ROWS = Array.from({ length: 3 })
+
+const TableEmptyState = ({
+  colSpan,
+  children,
+  className,
+}: TableEmptyStateProps) => (
+  <TableRow>
+    <TableCell className="p-0" colSpan={colSpan}>
+      <div
+        className={cn(
+          'w-full gap-2 relative flex flex-col justify-center items-center',
+          className
+        )}
+      >
+        {EMPTY_STATE_ROWS.map((_, index) => (
+          <div
+            key={index}
+            className="h-11 w-full border border-bg-highlight relative flex items-center gap-2 justify-center overflow-hidden"
+          >
+            <TableEmptyRowBorder className="absolute bottom-0 left-0 rotate-180 opacity-99" />
+            <TableEmptyRowBorder className="absolute bottom-0 right-0 opacity-99" />
+            {index === 1 && children}
+          </div>
+        ))}
+      </div>
+    </TableCell>
+  </TableRow>
+)
+
 export {
   Table,
   TableBody,
   TableCaption,
   TableCell,
+  TableEmptyState,
   TableFooter,
   TableHead,
   TableHeader,

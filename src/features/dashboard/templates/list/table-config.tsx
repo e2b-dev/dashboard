@@ -1,17 +1,17 @@
 'use client'
 
-import { DefaultTemplate, Template } from '@/types/api.types'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import {
-  ColumnDef,
-  FilterFn,
+  type ColumnDef,
+  type FilterFn,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  TableOptions,
+  type TableOptions,
 } from '@tanstack/react-table'
 import posthog from 'posthog-js'
 import { useMemo } from 'react'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import {
   ActionsCell,
   CpuCell,
@@ -107,7 +107,7 @@ export const useColumns = (deps: unknown[]) => {
         enableGlobalFilter: true,
         id: 'createdAt',
         header: 'Created',
-        size: 156,
+        size: 172,
         enableResizing: false,
         cell: CreatedAtCell,
         sortDescFirst: true,
@@ -119,7 +119,7 @@ export const useColumns = (deps: unknown[]) => {
         accessorKey: 'updatedAt',
         id: 'updatedAt',
         header: 'Updated',
-        size: 156,
+        size: 172,
         enableGlobalFilter: true,
         enableResizing: false,
         cell: UpdatedAtCell,

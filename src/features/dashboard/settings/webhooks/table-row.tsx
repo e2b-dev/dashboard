@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Badge } from '@/ui/primitives/badge'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
@@ -17,11 +18,10 @@ import {
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
-import { useState } from 'react'
 import WebhookAddEditDialog from './add-edit-dialog'
 import WebhookDeleteDialog from './delete-dialog'
 import WebhookEditSecretDialog from './edit-secret-dialog'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 interface WebhookTableRowProps {
   webhook: Webhook

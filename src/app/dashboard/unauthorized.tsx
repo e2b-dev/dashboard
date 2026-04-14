@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { AsciiBackgroundPattern } from '@/ui/patterns'
 import { Button } from '@/ui/primitives/button'
@@ -11,7 +12,6 @@ import {
   CardHeader,
 } from '@/ui/primitives/card'
 import { PersonsIcon, ArrowLeftIcon, HomeIcon, ShieldXIcon } from '@/ui/primitives/icons'
-import Link from 'next/link'
 
 export default function Unauthorized() {
   return (
@@ -59,9 +59,9 @@ export default function Unauthorized() {
 
       {/* Background pattern */}
       <div className="fixed inset-0 flex overflow-hidden">
-        <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 flex">
-          <AsciiBackgroundPattern className="w-1/2" />
-          <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
+        <div className="text-fill-highlight pointer-events-none absolute top-0 -left-250 flex justify-start overflow-hidden">
+          <AsciiBackgroundPattern className="w-auto text-right!" />
+          <AsciiBackgroundPattern className="w-auto text-right! -scale-x-100" />
         </div>
       </div>
     </div>

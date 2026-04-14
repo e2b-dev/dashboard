@@ -1,3 +1,5 @@
+import type { Cell, Header } from '@tanstack/react-table'
+import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -8,9 +10,7 @@ import {
   SelectValue,
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
-import { Cell, Header } from '@tanstack/react-table'
 import { SortAscIcon, SortDescIcon } from '@/ui/primitives/icons'
-import * as React from 'react'
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -36,7 +36,9 @@ function DataTableHead<TData, TValue>({
         'relative flex h-8 items-center align-middle group',
         'font-mono uppercase',
         '[&:has([role=checkbox])]:pr-0',
-        sorting !== undefined ? 'prose-label-highlight text-fg' : 'prose-label text-fg-tertiary',
+        sorting !== undefined
+          ? 'prose-label-highlight text-fg'
+          : 'prose-label text-fg-tertiary',
         className
       )}
       style={{
@@ -58,10 +60,12 @@ function DataTableHead<TData, TValue>({
       >
         {children}
         {canSort && (
-          <div className={cn(
-            "size-5 min-w-5 flex items-center justify-center",
-            sorting === undefined && "opacity-0 group-hover:opacity-100"
-          )}>
+          <div
+            className={cn(
+              'size-5 min-w-5 flex items-center justify-center',
+              sorting === undefined && 'opacity-0 group-hover:opacity-100'
+            )}
+          >
             {sorting === undefined ? (
               // Show the arrow for the next state based on sortDescFirst
               header.column.columnDef.sortDescFirst ? (
@@ -90,7 +94,10 @@ function DataTableHead<TData, TValue>({
             e.stopPropagation()
           }}
         >
-          <Separator className="h-full bg-icon-secondary" orientation="vertical" />
+          <Separator
+            className="h-full bg-icon-secondary"
+            orientation="vertical"
+          />
         </div>
       )}
     </div>
@@ -138,7 +145,7 @@ const DataTableRow = React.forwardRef<HTMLDivElement, DataTableRowProps>(
         ref={ref}
         className={cn(
           'transition-colors',
-          'flex w-full items-center gap-8',
+          'flex w-full items-center gap-6',
           'border-b border-stroke/60',
           {
             'bg-bg-hover': isSelected,

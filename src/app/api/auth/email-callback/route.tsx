@@ -1,7 +1,7 @@
-import { PROTECTED_URLS } from '@/configs/urls'
-import { createClient } from '@/lib/clients/supabase/server'
-import { encodedRedirect } from '@/lib/utils/auth'
 import { redirect } from 'next/navigation'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { createClient } from '@/core/shared/clients/supabase/server'
+import { encodedRedirect } from '@/lib/utils/auth'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)

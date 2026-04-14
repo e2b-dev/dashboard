@@ -1,6 +1,12 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
+import { useEffect, useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -8,7 +14,6 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { getUserProviders } from '@/lib/utils/auth'
-import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -26,11 +31,6 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { useEffect, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { useDashboard } from '../context'
 import { ReauthDialog } from './reauth-dialog'
 

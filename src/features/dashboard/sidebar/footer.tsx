@@ -1,9 +1,13 @@
 'use client'
 
-import { INCLUDE_DASHBOARD_FEEDBACK_SURVEY, INCLUDE_REPORT_ISSUE } from '@/configs/flags'
+import Link from 'next/link'
+import {
+  INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
+  INCLUDE_REPORT_ISSUE,
+} from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
-import { ExternalLinkIcon } from '@/ui/primitives/icons'
+import { BugIcon, DocsIcon, ExternalLinkIcon, FeedbackIcon, GithubIcon } from '@/ui/primitives/icons'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarFooter,
@@ -12,10 +16,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/ui/primitives/sidebar'
-import { BugIcon, DocsIcon, FeedbackIcon, GithubIcon } from '@/ui/primitives/icons'
-import Link from 'next/link'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
-import ReportIssuePopover from '../navbar/report-issue-popover'
+import ContactSupportDialog from '../navbar/report-issue-dialog'
 import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
@@ -62,7 +64,8 @@ export default function DashboardSidebarFooter() {
             <SidebarMenuItem
               key="survey"
               className={cn(
-                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
+                INCLUDE_REPORT_ISSUE && 'border-r',
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >
@@ -82,19 +85,15 @@ export default function DashboardSidebarFooter() {
               />
             </SidebarMenuItem>
           )}
-          {INCLUDE_DASHBOARD_FEEDBACK_SURVEY && INCLUDE_REPORT_ISSUE && (
-            /* separator */
-            <div className="border-r h-full hidden group-data-[collapsible=icon]:hidden group-data-[state=expanded]:block" />
-          )}
           {INCLUDE_REPORT_ISSUE && (
             <SidebarMenuItem
-              key="report-issue"
+              key="support"
               className={cn(
-                'flex-1 transition-all group-data-[collapsible=icon]:pl-2',
+                'flex-1 basis-1/2 transition-all group-data-[collapsible=icon]:pl-2',
                 SIDEBAR_TRANSITION_CLASSNAMES
               )}
             >
-              <ReportIssuePopover
+              <ContactSupportDialog
                 trigger={
                   <SidebarMenuButton
                     tooltip="Report Issue"

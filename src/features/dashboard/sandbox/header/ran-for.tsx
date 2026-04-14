@@ -4,22 +4,36 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSandboxContext } from '../context'
 
 export default function RanFor() {
-  const { sandboxInfo, isRunning } = useSandboxContext()
+  const { sandboxInfo, sandboxLifecycle, isRunning } = useSandboxContext()
 
   const state = sandboxInfo?.state
-  const startedAt = sandboxInfo?.startedAt
-  const endAt = sandboxInfo?.endAt
+  const startedAt = sandboxLifecycle?.createdAt
+  const pausedAt = sandboxLifecycle?.pausedAt
+  const endedAt = sandboxLifecycle?.endedAt
 
   const startDate = useMemo(
     () => (startedAt ? new Date(startedAt) : null),
     [startedAt]
   )
-  const endDate = useMemo(() => (endAt ? new Date(endAt) : null), [endAt])
+  const pausedDate = useMemo(
+    () => (pausedAt ? new Date(pausedAt) : null),
+    [pausedAt]
+  )
+  const endedDate = useMemo(
+    () => (endedAt ? new Date(endedAt) : null),
+    [endedAt]
+  )
 
   const calcRanFor = useCallback(() => {
     if (!startDate) return '-'
+    if (state === 'killed' && !endedDate) return 'N/A'
 
-    const end = state === 'running' ? new Date() : (endDate ?? new Date())
+    const end =
+      state === 'running'
+        ? new Date()
+        : state === 'paused'
+          ? (pausedDate ?? new Date())
+          : (endedDate ?? new Date())
     const start = startDate
     const diffMs = end.getTime() - start.getTime()
     if (diffMs < 0) return '-'
@@ -36,7 +50,7 @@ export default function RanFor() {
     if (hours > 0) parts.push(`${hours} hours`)
     if (minutes > 0) parts.push(`${minutes} minutes`)
     return parts.join(' ')
-  }, [startDate, state, endDate])
+  }, [endedDate, pausedDate, startDate, state])
 
   const [ranFor, setRanFor] = useState<string>(calcRanFor())
 

@@ -1,6 +1,6 @@
 import { formatAxisNumber } from '@/lib/utils/formatting'
-import { TimeRangePreset } from '@/ui/time-range-presets'
-import {
+import type { TimeRangePreset } from '@/ui/time-range-presets'
+import type {
   ComputeChartConfig,
   ComputeChartType,
 } from './compute-usage-chart/types'

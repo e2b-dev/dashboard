@@ -6,7 +6,11 @@ import {
   ChevronRightIcon,
 } from './icons'
 import * as React from 'react'
-import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker'
+import {
+  type DayButton,
+  DayPicker,
+  getDefaultClassNames,
+} from 'react-day-picker'
 
 import { cn } from '@/lib/utils/index'
 import { Button, buttonVariants } from '@/ui/primitives/button'

@@ -3,13 +3,12 @@ import 'server-only'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import {
   createTRPCOptionsProxy,
-  TRPCQueryOptions,
+  type TRPCQueryOptions,
 } from '@trpc/tanstack-react-query'
 import { headers } from 'next/headers'
 import { cache } from 'react'
-
-import { createTRPCContext } from '@/server/api/init'
-import { createTRPCCaller, trpcAppRouter } from '@/server/api/routers'
+import { createTRPCCaller, trpcAppRouter } from '@/core/server/api/routers'
+import { createTRPCContext } from '@/core/server/trpc/init'
 import { createQueryClient } from './query-client'
 
 /**
@@ -76,13 +75,11 @@ export function HydrateClient(props: { children: React.ReactNode }) {
 // NOTE - prefetches do not have to be awaited. pending queries will be hydrated and streamed to the client
 // not awaiting the queries is useful for not blocking route trees
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T
 ) {
   const queryClient = getQueryClient()
   if (queryOptions.queryKey[1]?.type === 'infinite') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     void queryClient.prefetchInfiniteQuery(queryOptions as any)
   } else {
     void queryClient.prefetchQuery(queryOptions)
@@ -90,12 +87,10 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 }
 
 export async function prefetchAsync<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends ReturnType<TRPCQueryOptions<any>>,
 >(queryOptions: T) {
   const queryClient = getQueryClient()
   if (queryOptions.queryKey[1]?.type === 'infinite') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await queryClient.prefetchInfiniteQuery(queryOptions as any)
   } else {
     await queryClient.prefetchQuery(queryOptions)

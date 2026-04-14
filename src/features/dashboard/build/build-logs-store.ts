@@ -1,15 +1,21 @@
 'use client'
 
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
-import type { useTRPCClient } from '@/trpc/client'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import type { BuildLogModel } from '@/core/modules/builds/models'
+import type { useTRPCClient } from '@/trpc/client'
+import {
+  countLeadingAtTimestamp,
+  countTrailingAtTimestamp,
+  dropLeadingAtTimestamp,
+  dropTrailingAtTimestamp,
+} from '../common/log-timestamp-utils'
 import type { LogLevelFilter } from './logs-filter-params'
 
-const FORWARD_CURSOR_PADDING_MS = 1
+const EMPTY_INIT_FORWARD_LOOKBACK_MS = 5_000
 
 interface BuildLogsParams {
-  teamIdOrSlug: string
+  teamSlug: string
   templateId: string
   buildId: string
 }
@@ -17,11 +23,14 @@ interface BuildLogsParams {
 type TRPCClient = ReturnType<typeof useTRPCClient>
 
 interface BuildLogsState {
-  logs: BuildLogDTO[]
+  logs: BuildLogModel[]
   hasMoreBackwards: boolean
   isLoadingBackwards: boolean
   isLoadingForwards: boolean
   backwardsCursor: number | null
+  backwardsSeenAtCursor: number
+  forwardCursor: number | null
+  forwardSeenAtCursor: number
   level: LogLevelFilter | null
   isInitialized: boolean
 
@@ -41,26 +50,7 @@ interface BuildLogsMutations {
   reset: () => void
 }
 
-interface BuildLogsComputed {
-  getNewestTimestamp: () => number | undefined
-  getOldestTimestamp: () => number | undefined
-}
-
-export type BuildLogsStoreData = BuildLogsState &
-  BuildLogsMutations &
-  BuildLogsComputed
-
-function getLogKey(log: BuildLogDTO): string {
-  return `${log.timestampUnix}:${log.level}:${log.message}`
-}
-
-function deduplicateLogs(
-  existingLogs: BuildLogDTO[],
-  newLogs: BuildLogDTO[]
-): BuildLogDTO[] {
-  const existingKeys = new Set(existingLogs.map(getLogKey))
-  return newLogs.filter((log) => !existingKeys.has(getLogKey(log)))
-}
+export type BuildLogsStoreData = BuildLogsState & BuildLogsMutations
 
 const initialState: BuildLogsState = {
   logs: [],
@@ -68,6 +58,9 @@ const initialState: BuildLogsState = {
   isLoadingBackwards: false,
   isLoadingForwards: false,
   backwardsCursor: null,
+  backwardsSeenAtCursor: 0,
+  forwardCursor: null,
+  forwardSeenAtCursor: 0,
   level: null,
   isInitialized: false,
   _trpcClient: null,
@@ -87,6 +80,10 @@ export const createBuildLogsStore = () =>
           state.isLoadingBackwards = false
           state.isLoadingForwards = false
           state.backwardsCursor = null
+          state.backwardsSeenAtCursor = 0
+          state.forwardCursor = null
+          state.forwardSeenAtCursor = 0
+          state.level = null
           state.isInitialized = false
         })
       },
@@ -98,7 +95,7 @@ export const createBuildLogsStore = () =>
         const paramsChanged =
           state._params?.buildId !== params.buildId ||
           state._params?.templateId !== params.templateId ||
-          state._params?.teamIdOrSlug !== params.teamIdOrSlug
+          state._params?.teamSlug !== params.teamSlug
         const levelChanged = state.level !== level
 
         if (paramsChanged || levelChanged || !state.isInitialized) {
@@ -117,13 +114,16 @@ export const createBuildLogsStore = () =>
         })
 
         try {
-          const result = await trpcClient.builds.buildLogsBackwards.query({
-            teamIdOrSlug: params.teamIdOrSlug,
-            templateId: params.templateId,
-            buildId: params.buildId,
-            level: level ?? undefined,
-            cursor: Date.now(),
-          })
+          const initCursor = Date.now()
+
+          const result =
+            await trpcClient.builds.buildLogsBackwardsReversed.query({
+              teamSlug: params.teamSlug,
+              templateId: params.templateId,
+              buildId: params.buildId,
+              level: level ?? undefined,
+              cursor: initCursor,
+            })
 
           // Ignore stale response if a newer init was called
           if (get()._initVersion !== requestVersion) {
@@ -131,9 +131,29 @@ export const createBuildLogsStore = () =>
           }
 
           set((s) => {
+            const backwardsCursor = result.nextCursor
+            const newestInitialTimestamp =
+              result.logs[result.logs.length - 1]?.timestampUnix
+
             s.logs = result.logs
-            s.hasMoreBackwards = result.nextCursor !== null
-            s.backwardsCursor = result.nextCursor
+            s.hasMoreBackwards = backwardsCursor !== null
+            s.backwardsCursor = backwardsCursor
+            s.backwardsSeenAtCursor =
+              backwardsCursor === null
+                ? 0
+                : countLeadingAtTimestamp(result.logs, backwardsCursor)
+
+            if (newestInitialTimestamp !== undefined) {
+              s.forwardCursor = newestInitialTimestamp
+              s.forwardSeenAtCursor = countTrailingAtTimestamp(
+                result.logs,
+                newestInitialTimestamp
+              )
+            } else {
+              s.forwardCursor = initCursor - EMPTY_INIT_FORWARD_LOOKBACK_MS
+              s.forwardSeenAtCursor = 0
+            }
+
             s.isLoadingBackwards = false
             s.isInitialized = true
           })
@@ -169,11 +189,11 @@ export const createBuildLogsStore = () =>
 
         try {
           const cursor =
-            state.backwardsCursor ?? state.getOldestTimestamp() ?? Date.now()
+            state.backwardsCursor ?? state.logs[0]?.timestampUnix ?? Date.now()
 
           const result =
-            await state._trpcClient.builds.buildLogsBackwards.query({
-              teamIdOrSlug: state._params.teamIdOrSlug,
+            await state._trpcClient.builds.buildLogsBackwardsReversed.query({
+              teamSlug: state._params.teamSlug,
               templateId: state._params.templateId,
               buildId: state._params.buildId,
               level: state.level ?? undefined,
@@ -186,10 +206,22 @@ export const createBuildLogsStore = () =>
           }
 
           set((s) => {
-            const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
-            s.logs = [...uniqueNewLogs, ...s.logs]
-            s.hasMoreBackwards = result.nextCursor !== null
-            s.backwardsCursor = result.nextCursor
+            const newLogs = dropTrailingAtTimestamp(
+              result.logs,
+              cursor,
+              state.backwardsSeenAtCursor
+            )
+            const nextLogs =
+              newLogs.length > 0 ? [...newLogs, ...s.logs] : s.logs
+            const backwardsCursor = result.nextCursor
+
+            s.logs = nextLogs
+            s.hasMoreBackwards = backwardsCursor !== null
+            s.backwardsCursor = backwardsCursor
+            s.backwardsSeenAtCursor =
+              backwardsCursor === null
+                ? 0
+                : countLeadingAtTimestamp(nextLogs, backwardsCursor)
             s.isLoadingBackwards = false
           })
         } catch {
@@ -217,13 +249,11 @@ export const createBuildLogsStore = () =>
         })
 
         try {
-          const newestTimestamp = state.getNewestTimestamp()
-          const cursor = newestTimestamp
-            ? newestTimestamp + FORWARD_CURSOR_PADDING_MS
-            : Date.now()
+          const cursor = state.forwardCursor ?? Date.now()
+          const seenAtCursor = state.forwardSeenAtCursor
 
           const result = await state._trpcClient.builds.buildLogsForward.query({
-            teamIdOrSlug: state._params.teamIdOrSlug,
+            teamSlug: state._params.teamSlug,
             templateId: state._params.templateId,
             buildId: state._params.buildId,
             level: state.level ?? undefined,
@@ -235,18 +265,36 @@ export const createBuildLogsStore = () =>
             return { logsCount: 0 }
           }
 
-          let uniqueLogsCount = 0
+          const newLogs = dropLeadingAtTimestamp(
+            result.logs,
+            cursor,
+            seenAtCursor
+          )
+          const logsCount = newLogs.length
 
           set((s) => {
-            const uniqueNewLogs = deduplicateLogs(s.logs, result.logs)
-            uniqueLogsCount = uniqueNewLogs.length
-            if (uniqueLogsCount > 0) {
-              s.logs = [...s.logs, ...uniqueNewLogs]
+            if (logsCount > 0) {
+              s.logs = [...s.logs, ...newLogs]
+
+              const newestTimestamp = newLogs[logsCount - 1]!.timestampUnix
+              const trailingAtNewest = countTrailingAtTimestamp(
+                newLogs,
+                newestTimestamp
+              )
+
+              s.forwardCursor = newestTimestamp
+              s.forwardSeenAtCursor =
+                newestTimestamp === cursor
+                  ? seenAtCursor + trailingAtNewest
+                  : trailingAtNewest
+            } else {
+              s.forwardCursor = cursor
+              s.forwardSeenAtCursor = seenAtCursor
             }
             s.isLoadingForwards = false
           })
 
-          return { logsCount: uniqueLogsCount }
+          return { logsCount }
         } catch {
           if (get()._initVersion !== requestVersion) {
             return { logsCount: 0 }
@@ -258,16 +306,6 @@ export const createBuildLogsStore = () =>
 
           return { logsCount: 0 }
         }
-      },
-
-      getNewestTimestamp: () => {
-        const state = get()
-        return state.logs[state.logs.length - 1]?.timestampUnix
-      },
-
-      getOldestTimestamp: () => {
-        const state = get()
-        return state.logs[0]?.timestampUnix
       },
     }))
   )

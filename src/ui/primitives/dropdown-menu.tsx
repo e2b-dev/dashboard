@@ -1,10 +1,9 @@
 'use client'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
+import type { VariantProps } from 'class-variance-authority'
 import * as React from 'react'
-
 import { cn } from '@/lib/utils'
-import { VariantProps } from 'class-variance-authority'
 import { ChevronRightIcon } from './icons'
 import { Checkbox } from './checkbox'
 import { CheckIcon } from './icons'

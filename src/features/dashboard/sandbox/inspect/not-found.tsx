@@ -1,30 +1,21 @@
 'use client'
 
-import { PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
-import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
-import { cn } from '@/lib/utils'
-import { AsciiBackgroundPattern } from '@/ui/patterns'
-import { Button } from '@/ui/primitives/button'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/ui/primitives/card'
-import { RefreshIcon, ArrowLeftIcon, ArrowUpIcon, HomeIcon } from '@/ui/primitives/icons'
+import { ArrowLeftIcon, ArrowUpIcon, HomeIcon, RefreshIcon } from '@/ui/primitives/icons'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
+import { cn } from '@/lib/utils'
+import { Button } from '@/ui/primitives/button'
 import { useSandboxContext } from '../context'
+import SandboxInspectEmptyFrame from './empty'
 
 export default function SandboxInspectNotFound() {
   const router = useRouter()
   const { isRunning } = useSandboxContext()
-  const { trackInteraction } = useSandboxInspectAnalytics()
 
-  const { teamIdOrSlug } = useParams()
+  const { teamSlug } = useParams()
 
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
   const [isPending, startTransition] = useTransition()
@@ -41,7 +32,7 @@ export default function SandboxInspectNotFound() {
       l.error(
         {
           key: 'sandbox_inspect_not_found:save_root_path_failed',
-          error: serializeError(error),
+          error: serializeErrorForLog(error),
         },
         `${error instanceof Error ? error.message : 'Failed to save root path'}`
       )
@@ -65,86 +56,66 @@ export default function SandboxInspectNotFound() {
     }
   }, [isPending])
 
-  return (
-    <>
-      <div className="text-fill-highlight pointer-events-none absolute -top-30 -right-100 flex overflow-hidden">
-        <AsciiBackgroundPattern className="w-1/2" />
-        <AsciiBackgroundPattern className="mi w-1/2 -scale-x-100" />
-      </div>
+  const description = isRunning
+    ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
+    : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'
 
-      <div className="animate-fade-slide-in flex w-full items-center justify-center pt-24 max-sm:p-4">
-        <Card className="border-stroke bg-bg-1/40 w-full max-w-md border backdrop-blur-lg">
-          <CardHeader className="text-center">
-            <CardTitle>
-              {isRunning ? 'Empty Directory' : 'Not Connected'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-fg-tertiary text-center">
-            <p>
-              {isRunning
-                ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
-                : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'}
-            </p>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-1 pt-4">
-            {isRunning ? (
-              <>
-                <div className="flex w-full gap-1">
-                  <Button
-                    variant="secondary"
-                    className="flex-1"
-                    onClick={() => setRootPath('')}
-                    disabled={isPending && pendingPath === ''}
-                  >
-                    <HomeIcon />
-                    Reset
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="flex-1"
-                    onClick={() => setRootPath('/')}
-                    disabled={isPending && pendingPath === '/'}
-                  >
-                    <ArrowUpIcon />
-                    To Root
-                  </Button>
-                </div>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    resetTransition(async () => {
-                      router.refresh()
-                    })
-                  }
-                  className="w-full"
-                  disabled={isResetPending}
-                >
-                  <RefreshIcon
-                    className={cn(
-                      'transition-transform',
-                      {
-                        'animate-spin': isResetPending,
-                      }
-                    )}
-                  />
-                  Refresh
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
-                }
-                className="w-full"
-              >
-                <ArrowLeftIcon />
-                Back to Sandboxes
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+  const actions = isRunning ? (
+    <>
+      <div className="flex w-full justify-between gap-4">
+        <Button
+          variant="secondary"
+          className="flex-1 gap-2"
+          onClick={() => setRootPath('')}
+          disabled={isPending && pendingPath === ''}
+        >
+          <HomeIcon className="text-fg-tertiary h-4 w-4" />
+          Reset
+        </Button>
+        <Button
+          variant="secondary"
+          className="flex-1 gap-2"
+          onClick={() => setRootPath('/')}
+          disabled={isPending && pendingPath === '/'}
+        >
+          <ArrowUpIcon className="text-fg-tertiary h-4 w-4" />
+          To Root
+        </Button>
       </div>
+      <Button
+        variant="secondary"
+        onClick={() =>
+          resetTransition(async () => {
+            router.refresh()
+          })
+        }
+        className="w-full gap-2"
+        disabled={isResetPending}
+      >
+        <RefreshIcon
+          className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
+            'animate-spin': isResetPending,
+          })}
+        />
+        Refresh
+      </Button>
     </>
+  ) : (
+    <Button
+      variant="secondary"
+      onClick={() => router.push(PROTECTED_URLS.SANDBOXES(teamSlug as string))}
+      className="w-full gap-2"
+    >
+      <ArrowLeftIcon className="text-fg-tertiary h-4 w-4" />
+      Back to Sandboxes
+    </Button>
+  )
+
+  return (
+    <SandboxInspectEmptyFrame
+      title={isRunning ? 'Empty Directory' : 'Not Connected'}
+      description={description}
+      actions={actions}
+    />
   )
 }

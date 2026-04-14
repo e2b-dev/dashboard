@@ -1,13 +1,13 @@
-import { l } from '@/lib/clients/logger/logger'
+import { Suspense } from 'react'
+import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
+import { l } from '@/core/shared/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { getNowMemo } from '@/lib/utils/server'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { Suspense } from 'react'
 import { LiveSandboxCounterClient } from './live-counter.client'
 
 interface LiveSandboxCounterServerProps {
-  params: Promise<{ teamIdOrSlug: string }>
+  params: Promise<{ teamSlug: string }>
   className?: string
 }
 
@@ -30,14 +30,14 @@ async function LiveSandboxCounterResolver({
   params,
   className,
 }: LiveSandboxCounterServerProps) {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   // use request-consistent timestamp for cache deduplication
   const now = getNowMemo()
   const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
-    teamIdOrSlug,
+    teamSlug,
     startDate: start,
     endDate: now,
   })
@@ -47,7 +47,7 @@ async function LiveSandboxCounterResolver({
       {
         key: 'live_sandbox_counter:error',
         context: {
-          teamIdOrSlug,
+          teamSlug,
           serverError: teamMetricsResult?.serverError,
         },
       },

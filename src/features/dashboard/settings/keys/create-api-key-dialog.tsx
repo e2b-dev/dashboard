@@ -1,7 +1,14 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useParams } from 'next/navigation'
+import { useAction } from 'next-safe-action/hooks'
+import { usePostHog } from 'posthog-js/react'
+import { type FC, type ReactNode, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { createApiKeyAction } from '@/core/server/actions/key-actions'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { createApiKeyAction } from '@/server/keys/key-actions'
 import CopyButton from '@/ui/copy-button'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
@@ -24,13 +31,6 @@ import {
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { useParams } from 'next/navigation'
-import { usePostHog } from 'posthog-js/react'
-import { FC, ReactNode, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 const formSchema = z.object({
   name: z
@@ -49,7 +49,7 @@ interface CreateApiKeyDialogProps {
 const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
   'use no memo'
 
-  const { teamIdOrSlug } = useParams() as { teamIdOrSlug: string }
+  const { teamSlug } = useParams() as { teamSlug: string }
 
   const [open, setOpen] = useState(false)
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null)
@@ -98,7 +98,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((values) =>
-                createApiKey({ teamIdOrSlug, name: values.name })
+                createApiKey({ teamSlug, name: values.name })
               )}
               className="flex flex-col gap-6"
             >

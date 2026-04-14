@@ -1,13 +1,17 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -25,14 +29,13 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { useDashboard } from '../context'
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name cannot be empty').max(100, 'Max 100 characters'),
+  name: z
+    .string()
+    .min(1, 'Name cannot be empty')
+    .max(100, 'Max 100 characters'),
 })
 
 type FormValues = z.infer<typeof formSchema>

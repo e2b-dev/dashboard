@@ -1,15 +1,14 @@
 'use client'
 
-import { l } from '@/lib/clients/logger/logger'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, useTransition } from 'react'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
 import { ArrowRightIcon } from '@/ui/primitives/icons'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
 
 interface RootPathInputProps {
   className?: string
@@ -37,7 +36,7 @@ export default function RootPathInput({
         key: 'sandbox_inspect_root_path_input:save_root_path_failed',
         message:
           error instanceof Error ? error.message : 'Failed to save root path',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       })
     }
   }

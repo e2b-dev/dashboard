@@ -1,3 +1,4 @@
+import { type FC, Suspense } from 'react'
 import { cn } from '@/lib/utils'
 import {
   Table,
@@ -7,12 +8,11 @@ import {
   TableRow,
 } from '@/ui/primitives/table'
 import { TableLoader } from '@/ui/table-loader'
-import { FC, Suspense } from 'react'
 import TableBodyContent from './table-body'
 
 interface WebhooksTableProps {
   params: Promise<{
-    teamIdOrSlug: string
+    teamSlug: string
   }>
   className?: string
 }

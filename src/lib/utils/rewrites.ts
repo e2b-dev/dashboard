@@ -1,12 +1,11 @@
+import * as cheerio from 'cheerio'
 import {
   MIDDLEWARE_REWRITE_CONFIG,
-  RewriteConfigType,
+  type RewriteConfigType,
   ROUTE_REWRITE_CONFIG,
 } from '@/configs/rewrites'
-import { RewriteConfig } from '@/types/rewrites.types'
-import * as cheerio from 'cheerio'
-import { serializeError } from 'serialize-error'
-import { l } from '../clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import type { RewriteConfig } from '@/types/rewrites.types'
 
 function getRewriteForPath(
   path: string,
@@ -20,15 +19,17 @@ function getRewriteForPath(
 
     const matchingRule = domainConfig.rules.find((rule) => {
       if (isIndex && rule.path === '/') {
-        return rule
+        return true
       }
 
       if (
         rule.path !== '/' &&
-        (path === rule.path || path.startsWith(rule.path + '/'))
+        (path === rule.path || path.startsWith(`${rule.path}/`))
       ) {
-        return rule
+        return true
       }
+
+      return false
     })
 
     if (matchingRule) {
@@ -115,7 +116,7 @@ function rewriteAbsoluteHrefsInDoc(
       l.warn(
         {
           key: 'cheerio_href_rewriter:failed',
-          error: serializeError(e),
+          error: serializeErrorForLog(e),
           context: { href },
         },
         `Failed to parse or set href="${href}"`

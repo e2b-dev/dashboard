@@ -1,11 +1,12 @@
 'use client'
 
-import { SIDEBAR_MAIN_LINKS, SidebarNavItem } from '@/configs/sidebar'
-import { cn } from '@/lib/utils'
 import micromatch from 'micromatch'
+import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
+import { SIDEBAR_MAIN_LINKS, type SidebarNavItem } from '@/configs/sidebar'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
@@ -17,7 +18,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
-import { usePathname } from 'next/navigation'
 import { useDashboard } from '../context'
 
 type GroupedLinks = {
@@ -37,7 +37,7 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 
 export default function DashboardSidebarContent() {
   const { team } = useDashboard()
-  const selectedTeamIdentifier = team.slug ?? team.id
+  const selectedTeamSlug = team.slug
 
   const pathname = usePathname()
   const isMobile = useIsMobile()
@@ -64,7 +64,7 @@ export default function DashboardSidebarContent() {
           <SidebarMenu>
             {links.map((item) => {
               const href = item.href({
-                teamIdOrSlug: selectedTeamIdentifier ?? undefined,
+                teamSlug: selectedTeamSlug,
               })
 
               return (

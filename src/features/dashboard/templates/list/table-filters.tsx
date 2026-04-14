@@ -1,5 +1,7 @@
 'use client'
 
+import * as React from 'react'
+import { useDebounceValue } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
@@ -19,8 +21,6 @@ import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
 import { FilterIcon } from '@/ui/primitives/icons'
-import * as React from 'react'
-import { useDebounceValue } from 'usehooks-ts'
 import { useTemplateTableStore } from './stores/table-store'
 
 // Components
@@ -152,7 +152,7 @@ const TemplatesTableFilters = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn('flex items-center gap-1', className)}
+      className={cn('flex min-w-0 flex-wrap items-center gap-1', className)}
       {...props}
     >
       <DropdownMenu>

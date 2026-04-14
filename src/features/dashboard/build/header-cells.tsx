@@ -1,3 +1,5 @@
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -8,8 +10,6 @@ import {
 import { cn } from '@/lib/utils/ui'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Button } from '@/ui/primitives/button'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { useTemplateTableStore } from '../templates/list/stores/table-store'
 
 export function Template({
@@ -22,8 +22,7 @@ export function Template({
   className?: string
 }) {
   const router = useRouter()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
@@ -35,7 +34,7 @@ export function Template({
         e.preventDefault()
 
         useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamIdOrSlug))
+        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
       }}
     >
       <p className="truncate">{template}</p>
@@ -81,7 +80,10 @@ export function RanFor({
   const formattedTimestamp = formatCompactDate(finishedAt)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary">
+    <CopyButtonInline
+      value={iso}
+      className="whitespace-nowrap text-fg-secondary group/time"
+    >
       In {formatDurationCompact(duration)}{' '}
       <span className="text-fg-tertiary">
         · {formattedTimestamp}
@@ -96,7 +98,10 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const formattedTimestamp = formatCompactDate(timestamp)
 
   return (
-    <CopyButtonInline value={iso} className="whitespace-nowrap text-fg-secondary">
+    <CopyButtonInline
+      value={iso}
+      className="whitespace-nowrap text-fg-secondary group/time"
+    >
       {formatTimeAgoCompact(elapsed)}{' '}
       <span className="text-fg-tertiary">
         · {formattedTimestamp}

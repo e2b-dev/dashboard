@@ -1,7 +1,8 @@
 'use client'
 
-import { ReactiveLiveBadge } from '@/ui/live'
 import { useCallback, useRef } from 'react'
+import { useDashboard } from '@/features/dashboard/context'
+import { ReactiveLiveBadge } from '@/ui/live'
 import { useTeamMetricsCharts } from '../../charts-context'
 import { AnimatedMetricDisplay } from '../animated-metric-display'
 import TeamMetricsChart from '../team-metrics-chart'
@@ -13,13 +14,8 @@ import {
   useTimeRangeDisplay,
 } from './hooks'
 
-interface ConcurrentChartProps {
-  concurrentInstancesLimit?: number
-}
-
-export default function ConcurrentChartClient({
-  concurrentInstancesLimit,
-}: ConcurrentChartProps) {
+export default function ConcurrentChartClient() {
+  const { team } = useDashboard()
   const {
     data,
     isPolling,
@@ -100,7 +96,7 @@ export default function ConcurrentChartClient({
         metrics={data.metrics}
         step={data.step}
         timeframe={timeframe}
-        concurrentLimit={concurrentInstancesLimit}
+        concurrentLimit={team.limits.concurrentSandboxes}
         onZoomEnd={(from, end) => setCustomRange(from, end)}
         onTooltipValueChange={handleTooltipValueChange}
         onHoverEnd={handleHoverEnd}

@@ -1,8 +1,8 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
-import { type NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-import { createTRPCContext } from '@/server/api/init'
-import { trpcAppRouter } from '@/server/api/routers'
+import { trpcAppRouter } from '@/core/server/api/routers'
+import { createTRPCContext } from '@/core/server/trpc/init'
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when

@@ -1,9 +1,9 @@
 'use client'
 
-import { signInWithOAuthAction } from '@/server/auth/auth-actions'
-import { Button } from '@/ui/primitives/button'
-import { useAction } from 'next-safe-action/hooks'
 import { useSearchParams } from 'next/navigation'
+import { useAction } from 'next-safe-action/hooks'
+import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
+import { Button } from '@/ui/primitives/button'
 
 export function OAuthProviders() {
   const searchParams = useSearchParams()

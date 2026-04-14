@@ -14,48 +14,64 @@ export const PROTECTED_URLS = {
   NEW_TEAM: '/dashboard/teams/new',
   TEAMS: '/dashboard/teams',
 
-  RESOLVED_ACCOUNT_SETTINGS: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/account`,
+  RESOLVED_ACCOUNT_SETTINGS: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/account`,
 
-  GENERAL: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/general`,
-  KEYS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/keys`,
-  MEMBERS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/members`,
+  GENERAL: (teamSlug: string) => `/dashboard/${teamSlug}/general`,
+  KEYS: (teamSlug: string) => `/dashboard/${teamSlug}/keys`,
+  MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
 
-  SANDBOXES: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes?tab=monitoring`,
-  SANDBOXES_MONITORING: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes?tab=monitoring`,
-  SANDBOXES_LIST: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes?tab=list`,
+  SANDBOXES: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/sandboxes?tab=monitoring`,
+  SANDBOXES_MONITORING: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/sandboxes?tab=monitoring`,
+  SANDBOXES_LIST: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/sandboxes?tab=list`,
 
-  SANDBOX: (teamIdOrSlug: string, sandboxId: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}`,
-  SANDBOX_INSPECT: (teamIdOrSlug: string, sandboxId: string) =>
-    `/dashboard/${teamIdOrSlug}/sandboxes/${sandboxId}/inspect`,
+  SANDBOX: (teamSlug: string, sandboxId: string) =>
+    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/monitoring`,
+  SANDBOX_MONITORING: (teamSlug: string, sandboxId: string) =>
+    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/monitoring`,
+  SANDBOX_LOGS: (teamSlug: string, sandboxId: string) =>
+    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/logs`,
+  SANDBOX_FILESYSTEM: (teamSlug: string, sandboxId: string) =>
+    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/filesystem`,
 
-  WEBHOOKS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/webhooks`,
+  WEBHOOKS: (teamSlug: string) => `/dashboard/${teamSlug}/webhooks`,
 
-  TEMPLATES: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/templates`,
-  TEMPLATES_LIST: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/templates?tab=list`,
-  TEMPLATES_BUILDS: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/templates?tab=builds`,
-  TEMPLATE_BUILD: (teamIdOrSlug: string, templateId: string, buildId: string) =>
-    `/dashboard/${teamIdOrSlug}/templates/${templateId}/builds/${buildId}`,
+  TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates`,
+  TEMPLATES_LIST: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/templates?tab=list`,
+  TEMPLATES_BUILDS: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/templates?tab=builds`,
+  TEMPLATE_BUILD: (teamSlug: string, templateId: string, buildId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/builds/${buildId}`,
 
-  USAGE: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/usage`,
-  BILLING: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/billing`,
-  BILLING_PLAN: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/billing/plan`,
-  BILLING_PLAN_SELECT: (teamIdOrSlug: string) =>
-    `/dashboard/${teamIdOrSlug}/billing/plan/select`,
-  LIMITS: (teamIdOrSlug: string) => `/dashboard/${teamIdOrSlug}/limits`,
+  USAGE: (teamSlug: string) => `/dashboard/${teamSlug}/usage`,
+  BILLING: (teamSlug: string) => `/dashboard/${teamSlug}/billing`,
+  BILLING_PLAN: (teamSlug: string) => `/dashboard/${teamSlug}/billing/plan`,
+  BILLING_PLAN_SELECT: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/billing/plan/select`,
+  LIMITS: (teamSlug: string) => `/dashboard/${teamSlug}/limits`,
 }
 
 export const RESOLVER_URLS = {
   INSPECT_SANDBOX: (sandboxId: string) =>
     `/dashboard/inspect/sandbox/${sandboxId}`,
 }
+
+/**
+ * Route segments (after teamIdOrSlug) that contain team-specific
+ * resource IDs in their sub-paths. When switching teams, paths
+ * deeper than the segment root will be truncated to avoid 404s.
+ *
+ * e.g. /dashboard/{team}/sandboxes/{sandboxId}/monitoring
+ *    → /dashboard/{newTeam}/sandboxes
+ */
+export const TEAM_SPECIFIC_RESOURCE_SEGMENTS: readonly string[] = [
+  'sandboxes',
+  'templates',
+]
 
 export const HELP_URLS = {
   BUILD_TEMPLATE:

@@ -1,21 +1,20 @@
-import { formatNumber } from '@/lib/utils/formatting'
+import { Suspense } from 'react'
+import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
+import { getTeamMetricsMax } from '@/core/server/functions/sandboxes/get-team-metrics-max'
 import { getNowMemo } from '@/lib/utils/server'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { getTeamMetricsMax } from '@/server/sandboxes/get-team-metrics-max'
-import { getTeamLimits } from '@/server/team/get-team-limits'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { WarningIcon } from '@/ui/primitives/icons'
-import { Suspense } from 'react'
 import {
   ConcurrentSandboxesClient,
+  MaxConcurrentSandboxesClient,
   SandboxesStartRateClient,
 } from './header.client'
 import { MAX_DAYS_AGO } from './time-picker/constants'
 
 interface MonitoringContentParams {
-  teamIdOrSlug: string
+  teamSlug: string
 }
 
 function BaseCard({ children }: { children: React.ReactNode }) {
@@ -100,20 +99,17 @@ export const ConcurrentSandboxes = async ({
 }: {
   params: Promise<MonitoringContentParams>
 }) => {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   // use request-consistent timestamp for cache deduplication
   const now = getNowMemo()
   const start = now - 60_000
 
-  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
-    getTeamMetrics({
-      teamIdOrSlug,
-      startDate: start,
-      endDate: now,
-    }),
-    getTeamLimits({ teamIdOrSlug }),
-  ])
+  const teamMetricsResult = await getTeamMetrics({
+    teamSlug,
+    startDate: start,
+    endDate: now,
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -124,12 +120,7 @@ export const ConcurrentSandboxes = async ({
     )
   }
 
-  return (
-    <ConcurrentSandboxesClient
-      initialData={teamMetricsResult.data}
-      limit={teamLimitsResult?.data?.concurrentInstances}
-    />
-  )
+  return <ConcurrentSandboxesClient initialData={teamMetricsResult.data} />
 }
 
 export const SandboxesStartRate = async ({
@@ -137,14 +128,14 @@ export const SandboxesStartRate = async ({
 }: {
   params: Promise<MonitoringContentParams>
 }) => {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   // use same request-consistent timestamp as ConcurrentSandboxes
   const now = getNowMemo()
   const start = now - 60_000
 
   const teamMetricsResult = await getTeamMetrics({
-    teamIdOrSlug,
+    teamSlug,
     startDate: start,
     endDate: now,
   })
@@ -166,20 +157,17 @@ export const MaxConcurrentSandboxes = async ({
 }: {
   params: Promise<MonitoringContentParams>
 }) => {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
   const end = Date.now()
   const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
-  const [teamMetricsResult, teamLimitsResult] = await Promise.all([
-    getTeamMetricsMax({
-      teamIdOrSlug,
-      startDate: start,
-      endDate: end,
-      metric: 'concurrent_sandboxes',
-    }),
-    getTeamLimits({ teamIdOrSlug }),
-  ])
+  const teamMetricsResult = await getTeamMetricsMax({
+    teamSlug,
+    startDate: start,
+    endDate: end,
+    metric: 'concurrent_sandboxes',
+  })
 
   if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
     return (
@@ -190,20 +178,9 @@ export const MaxConcurrentSandboxes = async ({
     )
   }
 
-  const limit = teamLimitsResult?.data?.concurrentInstances
-
-  const concurrentSandboxes = teamMetricsResult.data.value
-
   return (
-    <>
-      <span className="prose-value-big mt-1">
-        {formatNumber(concurrentSandboxes)}
-      </span>
-      {!!limit && (
-        <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
-          LIMIT: {formatNumber(limit)}
-        </span>
-      )}
-    </>
+    <MaxConcurrentSandboxesClient
+      concurrentSandboxes={teamMetricsResult.data.value}
+    />
   )
 }

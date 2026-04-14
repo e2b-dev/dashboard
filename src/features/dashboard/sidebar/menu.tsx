@@ -1,8 +1,11 @@
 'use client'
 
+import Link from 'next/link'
+import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
+import { signOutAction } from '@/core/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
-import { signOutAction } from '@/server/auth/auth-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,
@@ -14,8 +17,6 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { AccountSettingsIcon, AddIcon, LogoutIcon, UnpackIcon } from '@/ui/primitives/icons'
-import Link from 'next/link'
-import { useState } from 'react'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'
@@ -42,12 +43,12 @@ export default function DashboardSidebarMenu() {
                   'size-8 shrink-0 transition-all duration-100 ease-in-out',
                   'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
                   {
-                    'drop-shadow-sm filter': team.profile_picture_url,
+                    'drop-shadow-sm filter': team.profilePictureUrl,
                   }
                 )}
               >
                 <AvatarImage
-                  src={team.profile_picture_url || undefined}
+                  src={team.profilePictureUrl || undefined}
                   className="group-data-[collapsible=icon]:size-full object-cover object-center"
                 />
                 <AvatarFallback className="bg-bg-hover border-0">
@@ -59,7 +60,7 @@ export default function DashboardSidebarMenu() {
                   TEAM
                 </span>
                 <span className="text-fg truncate prose-body-highlight normal-case">
-                  {team.transformed_default_name || team.name}
+                  {getTeamDisplayName(team)}
                 </span>
               </div>
               <UnpackIcon className="text-fg-tertiary ml-auto !size-4" />

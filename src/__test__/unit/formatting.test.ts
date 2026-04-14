@@ -1,17 +1,19 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   formatAveragingPeriod,
   formatChartTimestampLocal,
   formatChartTimestampUTC,
   formatCompactDate,
   formatCPUCores,
+  formatDate,
   formatDecimal,
   formatDuration,
   formatMemory,
   formatNumber,
   formatTimeAxisLabel,
   parseUTCDateComponents,
+  pluralize,
 } from '@/lib/utils/formatting'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('Date & Time Formatting', () => {
   beforeEach(() => {
@@ -72,6 +74,22 @@ describe('Date & Time Formatting', () => {
       const timestamp = new Date('2023-01-05T14:30:00Z').getTime()
       const result = formatCompactDate(timestamp)
       expect(result).toContain('2023')
+    })
+  })
+
+  describe('formatDate', () => {
+    it('formats a date with the requested structure', () => {
+      const date = new Date('2024-01-05T14:30:00Z')
+      expect(formatDate(date, 'MMM d')).toBe('Jan 5')
+    })
+
+    it('supports a format that includes the year', () => {
+      const date = new Date('2024-01-05T14:30:00Z')
+      expect(formatDate(date, 'MMM d, yyyy')).toBe('Jan 5, 2024')
+    })
+
+    it('returns null for invalid dates', () => {
+      expect(formatDate(new Date('not-a-date'), 'MMM d')).toBeNull()
     })
   })
 
@@ -183,6 +201,25 @@ describe('Number Formatting', () => {
 
     it('formats multiple cores', () => {
       expect(formatCPUCores(4)).toBe('4 cores')
+    })
+  })
+
+  describe('pluralize', () => {
+    it('returns the singular word for a count of one', () => {
+      expect(pluralize(1, 'member')).toBe('member')
+    })
+
+    it('adds es for words ending in s-like sounds', () => {
+      expect(pluralize(2, 'class')).toBe('classes')
+      expect(pluralize(2, 'match')).toBe('matches')
+    })
+
+    it('changes a trailing consonant y to ies', () => {
+      expect(pluralize(2, 'company')).toBe('companies')
+    })
+
+    it('supports an explicit plural override for irregular nouns', () => {
+      expect(pluralize(2, 'person', 'people')).toBe('people')
     })
   })
 })

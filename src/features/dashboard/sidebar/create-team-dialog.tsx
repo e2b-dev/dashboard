@@ -1,13 +1,16 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useRouter } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { createTeamAction } from '@/core/server/actions/team-actions'
+import { CreateTeamSchema } from '@/core/server/functions/team/types'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { createTeamAction } from '@/server/team/team-actions'
-import { CreateTeamSchema } from '@/server/team/types'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -27,9 +30,6 @@ import {
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { useRouter } from 'next/navigation'
 
 interface CreateTeamDialogProps {
   open: boolean

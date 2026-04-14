@@ -1,6 +1,6 @@
+import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { cardVariants } from '@/ui/primitives/card'
-import { cva } from 'class-variance-authority'
 
 export const menuItemVariants = cva(
   [

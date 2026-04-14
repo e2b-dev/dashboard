@@ -1,20 +1,20 @@
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
-import { getTeamApiKeys } from '@/server/keys/get-api-keys'
+import { getTeamApiKeys } from '@/core/server/functions/keys/get-api-keys'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import ApiKeyTableRow from './table-row'
 
 interface TableBodyContentProps {
-  params: Promise<{ teamIdOrSlug: string }>
+  params: Promise<{ teamSlug: string }>
 }
 
 export default async function TableBodyContent({
   params,
 }: TableBodyContentProps) {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
 
-  const result = await getTeamApiKeys({ teamIdOrSlug })
+  const result = await getTeamApiKeys({ teamSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
     return (

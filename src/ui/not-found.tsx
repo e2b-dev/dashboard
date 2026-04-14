@@ -1,8 +1,8 @@
 'use client'
 
-import { PROTECTED_URLS } from '@/configs/urls'
 import { ArrowLeftIcon, HomeIcon, DashboardIcon } from './primitives/icons'
 import Link from 'next/link'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { Button } from './primitives/button'
 import {
   Card,

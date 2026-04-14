@@ -1,15 +1,14 @@
 'use client'
 
-import { ClientTeam } from '@/types/dashboard.types'
-import { User } from '@supabase/supabase-js'
-import { createContext, ReactNode, useContext, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { createContext, type ReactNode, useContext, useEffect } from 'react'
+import { useDebounceCallback } from 'usehooks-ts'
+import type { TeamModel } from '@/core/modules/teams/models'
 
 interface DashboardContextValue {
-  team: ClientTeam
+  team: TeamModel
+  teams: TeamModel[]
   user: User
-
-  setTeam: (team: ClientTeam) => void
-  setUser: (user: User) => void
 }
 
 const DashboardContext = createContext<DashboardContextValue | undefined>(
@@ -18,24 +17,35 @@ const DashboardContext = createContext<DashboardContextValue | undefined>(
 
 interface DashboardContextProviderProps {
   children: ReactNode
-  initialTeam: ClientTeam
+  initialTeam: TeamModel
+  initialTeams: TeamModel[]
   initialUser: User
 }
 
 export function DashboardContextProvider({
   children,
   initialTeam,
+  initialTeams,
   initialUser,
 }: DashboardContextProviderProps) {
-  const [team, setTeam] = useState(initialTeam)
-  const [user, setUser] = useState(initialUser)
+  const updateTeamCookieState = useDebounceCallback(async (team: TeamModel) => {
+    await fetch('/api/team/state', {
+      method: 'POST',
+      body: JSON.stringify({
+        teamId: team.id,
+        teamSlug: team.slug,
+      }),
+    })
+  }, 1000)
+
+  useEffect(() => {
+    updateTeamCookieState(initialTeam)
+  }, [initialTeam, updateTeamCookieState])
 
   const value = {
-    team,
-    user,
-
-    setTeam,
-    setUser,
+    team: initialTeam,
+    teams: initialTeams,
+    user: initialUser,
   }
 
   return (

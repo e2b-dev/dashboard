@@ -1,71 +1,78 @@
+import { Suspense } from 'react'
 import { PollingButton } from '@/ui/polling-button'
-import { Badge } from '@/ui/primitives/badge'
-import { FilterIcon } from '@/ui/primitives/icons'
-import { DotIcon } from '@/ui/primitives/icons'
+import { OpenSandboxDialog } from './open-sandbox-dialog'
 import {
-  sandboxesPollingIntervals,
-  useSandboxTableStore,
+  sandboxListPollingIntervals,
+  useSandboxListTableStore,
 } from './stores/table-store'
-import { SandboxesTable } from './table-config'
+import type { SandboxListTable } from './table-config'
 import SandboxesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 
 interface SandboxesHeaderProps {
-  searchInputRef: React.RefObject<HTMLInputElement | null>
-  table: SandboxesTable
+  table: SandboxListTable
   onRefresh: () => void
   isRefreshing: boolean
 }
 
 export function SandboxesHeader({
-  searchInputRef,
   table,
   onRefresh,
   isRefreshing,
 }: SandboxesHeaderProps) {
   'use no memo'
 
-  const { pollingInterval, setPollingInterval } = useSandboxTableStore()
+  const pollingInterval = useSandboxListTableStore(
+    (state) => state.pollingInterval
+  )
+  const setPollingInterval = useSandboxListTableStore(
+    (state) => state.setPollingInterval
+  )
+  const tableState = table.getState()
+  const { columnFilters, globalFilter } = tableState
 
-  const hasActiveFilters = () => {
-    return Object.keys(table.getState().columnFilters).length > 0
-  }
+  const showFilteredRowCount = columnFilters.length > 0 || Boolean(globalFilter)
 
-  const showFilteredRowCount =
-    hasActiveFilters() || table.getState().globalFilter
+  const filteredCount = table.getFilteredRowModel().rows.length
+  const totalCount = table.getCoreRowModel().rows.length
 
   return (
-    <header className="flex flex-col gap-4">
-      <div className="flex w-full flex-col gap-8">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <SearchInput ref={searchInputRef} className="max-w-[380px]" />
-            <PollingButton
-              intervals={sandboxesPollingIntervals}
-              interval={pollingInterval}
-              onIntervalChange={setPollingInterval}
-              onRefresh={onRefresh}
-              isRefreshing={isRefreshing}
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Badge size="lg" variant="positive" className="uppercase">
-              {table.getCoreRowModel().rows.length} running
-              <DotIcon className="size-3 fill-current" />
-            </Badge>
-            {showFilteredRowCount && (
-              <Badge size="lg" variant="info" className="uppercase">
-                {table.getFilteredRowModel().rows.length} filtered
-                <FilterIcon className="size-3 stroke-[3px]!" />
-              </Badge>
-            )}
-          </div>
+    <header className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-start md:justify-between">
+      <div className="flex min-w-0 flex-1 basis-full flex-wrap items-start gap-1 md:basis-0 md:items-center">
+        <div className="w-full sm:w-auto sm:shrink-0">
+          <SearchInput />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <SandboxesTableFilters />
-        </div>
+        <Suspense fallback={null}>
+          <SandboxesTableFilters className="w-full min-w-0 sm:w-auto" />
+        </Suspense>
+
+        <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />
+
+        <span className="prose-label-highlight h-9 flex w-full min-w-0 items-center gap-1 uppercase sm:w-auto">
+          {showFilteredRowCount ? (
+            <>
+              <span className="text-fg">
+                {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
+              </span>
+              <span className="text-fg-tertiary"> · </span>
+              <span className="text-fg-tertiary">{totalCount} total</span>
+            </>
+          ) : (
+            <span className="text-fg-tertiary">{totalCount} total</span>
+          )}
+        </span>
+      </div>
+
+      <div className="flex w-full items-center justify-between gap-2 md:ml-auto md:w-auto md:shrink-0 md:justify-start md:self-center">
+        <PollingButton
+          intervals={sandboxListPollingIntervals}
+          interval={pollingInterval}
+          onIntervalChange={setPollingInterval}
+          onRefresh={onRefresh}
+          isRefreshing={isRefreshing}
+        />
+        <OpenSandboxDialog />
       </div>
     </header>
   )

@@ -7,9 +7,89 @@ import * as chrono from 'chrono-node'
 import { format, isThisYear, isValid } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
+const LOCAL_LOG_STYLE_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: '2-digit',
+})
+
+const LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat(
+  undefined,
+  {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  }
+)
+
+const LOCAL_LOG_STYLE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+
+const LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER = new Intl.DateTimeFormat(
+  undefined,
+  {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }
+)
+
+const LOCAL_LOG_STYLE_TIMEZONE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  timeZoneName: 'short',
+})
+
 // ============================================================================
 // Date & Time Formatting
 // ============================================================================
+
+/**
+ * Format timestamp parts in local timezone, matching logs table style.
+ * Example: "Jan 05 14:32:09"
+ */
+export function formatLocalLogStyleTimestamp(
+  timestamp: number | string | Date,
+  {
+    includeSeconds = true,
+    includeYear = false,
+  }: {
+    includeSeconds?: boolean
+    includeYear?: boolean
+  } = {}
+): {
+  datePart: string
+  timePart: string
+  timezonePart: string
+  iso: string
+} | null {
+  const date = new Date(timestamp)
+
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  const timezonePart =
+    LOCAL_LOG_STYLE_TIMEZONE_FORMATTER.formatToParts(date).find(
+      (part) => part.type === 'timeZoneName'
+    )?.value ??
+    Intl.DateTimeFormat().resolvedOptions().timeZone ??
+    'Local'
+
+  return {
+    datePart: (includeYear
+      ? LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER
+      : LOCAL_LOG_STYLE_DATE_FORMATTER
+    ).format(date),
+    timePart: (includeSeconds
+      ? LOCAL_LOG_STYLE_TIME_FORMATTER
+      : LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER
+    ).format(date),
+    timezonePart,
+    iso: date.toISOString(),
+  }
+}
 
 /**
  * Format a timestamp for display in charts and tooltips in user's local timezone
@@ -60,6 +140,24 @@ export function formatCompactDate(timestamp: number): string {
   }
 
   return format(date, 'yyyy MMM d, h:mm:ss a zzz')
+}
+
+const DATE_STRUCTURES = ['MMM d', 'MMM d, yyyy'] as const
+
+type DateStructure = (typeof DATE_STRUCTURES)[number]
+
+/**
+ * Returns a formatted date string
+ * @param date - Date to format
+ * @param dateStructure - Supported date format structure
+ * @returns Formatted date string (e.g., "Apr 8, 2026") or null for invalid dates
+ */
+export const formatDate = (
+  date: Date,
+  dateStructure: DateStructure
+): string | null => {
+  if (!isValid(date)) return null
+  return format(date, dateStructure)
 }
 
 export function formatDay(timestamp: number): string {
@@ -328,6 +426,29 @@ export function formatCPUCores(
 }
 
 /**
+ * Returns the singular or plural word for a count
+ * @param count - Number used to determine singular vs plural form
+ * @param singular - Singular form of the word
+ * @param plural - Optional plural form override (defaults to an inferred plural form)
+ * @returns Singular or plural word (e.g., "member" or "members")
+ */
+export const pluralize = (
+  count: number,
+  singular: string,
+  plural?: string
+): string => {
+  if (count === 1) return singular
+  if (plural) return plural
+  if (/[sxz]$/i.test(singular) || /(ch|sh)$/i.test(singular)) {
+    return `${singular}es`
+  }
+  if (/[^aeiou]y$/i.test(singular)) {
+    return `${singular.slice(0, -1)}ies`
+  }
+  return `${singular}s`
+}
+
+/**
  * Format a number for chart axis labels with smart abbreviation
  * Uses whole numbers when possible, abbreviated for large numbers
  * @param value - Number to format
@@ -370,7 +491,7 @@ export function tryParseDatetime(input: string): Date | null {
 
   // Try parsing as timestamp first (for performance with numeric inputs)
   const timestamp = Number(input)
-  if (!isNaN(timestamp)) {
+  if (!Number.isNaN(timestamp)) {
     // if timestamp is less than 10 digits, multiply by 1000 to get milliseconds
     const date = new Date(
       timestamp < 10000000000 ? timestamp * 1000 : timestamp

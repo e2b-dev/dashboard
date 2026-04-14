@@ -1,12 +1,16 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAction } from 'next-safe-action/hooks'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { addTeamMemberAction } from '@/core/server/actions/team-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { addTeamMemberAction } from '@/server/team/team-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -17,10 +21,6 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { useDashboard } from '../context'
 
 const addMemberSchema = z.object({
@@ -31,9 +31,10 @@ type AddMemberForm = z.infer<typeof addMemberSchema>
 
 interface AddMemberFormProps {
   className?: string
+  onSuccess?: () => void
 }
 
-export default function AddMemberForm({ className }: AddMemberFormProps) {
+export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
@@ -41,6 +42,7 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
 
   const form = useForm<AddMemberForm>({
     resolver: zodResolver(addMemberSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
     },
@@ -50,19 +52,18 @@ export default function AddMemberForm({ className }: AddMemberFormProps) {
     onSuccess: () => {
       toast(defaultSuccessToast('The member has been added to the team.'))
       form.reset()
+      onSuccess?.()
     },
     onError: ({ error }) => {
       toast(defaultErrorToast(error.serverError || 'An error occurred.'))
     },
   })
 
-  function onSubmit(data: AddMemberForm) {
-    if (!team) {
-      return
-    }
+  const onSubmit = (data: AddMemberForm) => {
+    if (!team) return
 
     execute({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       email: data.email,
     })
   }

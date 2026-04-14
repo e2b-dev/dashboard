@@ -1,0 +1,440 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type {
+  SandboxEventModel,
+  SandboxMetric,
+} from '@/core/modules/sandboxes/models'
+import LoadingLayout from '@/features/dashboard/loading-layout'
+import { useIsMobile } from '@/lib/hooks/use-mobile'
+import { cn } from '@/lib/utils'
+import { CpuIcon, MemoryIcon, StorageIcon } from '@/ui/primitives/icons'
+import { Separator } from '@/ui/primitives/separator'
+import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
+import type { SandboxMetricsMarkerValueFormatterInput } from '../types/sandbox-metrics-chart'
+import { buildMonitoringChartModel } from '../utils/chart-model'
+import {
+  SANDBOX_MONITORING_CPU_SERIES_ID,
+  SANDBOX_MONITORING_DISK_SERIES_ID,
+  SANDBOX_MONITORING_PERCENT_MAX,
+  SANDBOX_MONITORING_RAM_SERIES_ID,
+} from '../utils/constants'
+import MonitoringChartSection from './monitoring-chart-section'
+import DiskChartHeader from './monitoring-disk-chart-header'
+import ResourceChartHeader from './monitoring-resource-chart-header'
+import SandboxMetricsChart from './monitoring-sandbox-metrics-chart'
+import SandboxMonitoringTimeRangeControls from './monitoring-time-range-controls'
+
+function formatPercentAxisLabel(value: number): string {
+  return `${Math.round(value)}%`
+}
+
+interface SandboxMetricsChartsProps {
+  sandboxId: string
+}
+
+interface ZoomResetSnapshot {
+  start: number
+  end: number
+  presetId: string | null
+}
+
+interface RenderedMonitoringSnapshot {
+  timeframe: { start: number; end: number }
+  fetchTimeframe: { start: number; end: number }
+  metrics: SandboxMetric[]
+  lifecycleEvents: SandboxEventModel[]
+}
+
+function createRenderedMonitoringSnapshot(
+  timeframe: { start: number; end: number },
+  fetchTimeframe: { start: number; end: number },
+  metrics: SandboxMetric[],
+  lifecycleEvents: SandboxEventModel[]
+): RenderedMonitoringSnapshot {
+  return {
+    timeframe: {
+      start: timeframe.start,
+      end: timeframe.end,
+    },
+    fetchTimeframe: {
+      start: fetchTimeframe.start,
+      end: fetchTimeframe.end,
+    },
+    metrics,
+    lifecycleEvents,
+  }
+}
+
+function isSameRenderedMonitoringSnapshot(
+  snapshot: RenderedMonitoringSnapshot | null,
+  timeframe: { start: number; end: number },
+  fetchTimeframe: { start: number; end: number },
+  metrics: SandboxMetric[],
+  lifecycleEvents: SandboxEventModel[]
+): boolean {
+  return Boolean(
+    snapshot &&
+      snapshot.timeframe.start === timeframe.start &&
+      snapshot.timeframe.end === timeframe.end &&
+      snapshot.fetchTimeframe.start === fetchTimeframe.start &&
+      snapshot.fetchTimeframe.end === fetchTimeframe.end &&
+      snapshot.metrics === metrics &&
+      snapshot.lifecycleEvents === lifecycleEvents
+  )
+}
+
+function useChartZoom(options: {
+  timeframe: { start: number; end: number }
+  activePresetId: string | null
+  setPreset: (presetId: string) => void
+  setCustomTimeframe: (start: number, end: number) => void
+  setHoveredTimestampMs: (value: number | null) => void
+}) {
+  const {
+    timeframe,
+    activePresetId,
+    setPreset,
+    setCustomTimeframe,
+    setHoveredTimestampMs,
+  } = options
+  const [zoomResetSnapshot, setZoomResetSnapshot] =
+    useState<ZoomResetSnapshot | null>(null)
+
+  const clearZoomSnapshot = useCallback(() => {
+    setZoomResetSnapshot(null)
+  }, [])
+
+  const handleBrushTimeRangeChange = useCallback(
+    (startTimestamp: number, endTimestamp: number) => {
+      if (
+        startTimestamp === timeframe.start &&
+        endTimestamp === timeframe.end
+      ) {
+        return
+      }
+
+      setZoomResetSnapshot((previous) => {
+        if (previous) {
+          return previous
+        }
+
+        return {
+          start: timeframe.start,
+          end: timeframe.end,
+          presetId: activePresetId,
+        }
+      })
+      setHoveredTimestampMs(null)
+      setCustomTimeframe(startTimestamp, endTimestamp)
+    },
+    [
+      activePresetId,
+      setCustomTimeframe,
+      setHoveredTimestampMs,
+      timeframe.end,
+      timeframe.start,
+    ]
+  )
+
+  const handleResetZoom = useCallback(() => {
+    if (!zoomResetSnapshot) {
+      return
+    }
+
+    setHoveredTimestampMs(null)
+    if (zoomResetSnapshot.presetId !== null) {
+      setPreset(zoomResetSnapshot.presetId)
+    } else {
+      setCustomTimeframe(zoomResetSnapshot.start, zoomResetSnapshot.end)
+    }
+    setZoomResetSnapshot(null)
+  }, [setCustomTimeframe, setHoveredTimestampMs, setPreset, zoomResetSnapshot])
+
+  return {
+    canResetZoom: zoomResetSnapshot !== null,
+    clearZoomSnapshot,
+    handleBrushTimeRangeChange,
+    handleResetZoom,
+  }
+}
+
+function renderPercentMarker(value: number) {
+  return (
+    <>
+      <span className="text-fg">{Math.round(value)}</span>
+      <span className="text-fg-secondary">%</span>
+    </>
+  )
+}
+
+function renderUsageMarker(usedMb: number | null, value: number) {
+  const normalizedUsedMb =
+    usedMb === null || !Number.isFinite(usedMb) ? 0 : Math.round(usedMb)
+
+  return (
+    <>
+      <span className="text-fg">{normalizedUsedMb.toLocaleString()}</span>
+      <span className="text-fg-secondary">MB</span>
+      <span className="text-fg-tertiary px-0.75">·</span>
+      <span className="text-fg">{Math.round(value)}</span>
+      <span className="text-fg-secondary">%</span>
+    </>
+  )
+}
+
+const RESOURCE_CHART_GRID_MD = { top: 36, bottom: 36, left: 64, right: 64 }
+const RESOURCE_CHART_GRID_SM = { top: 24, bottom: 36, left: 48, right: 42 }
+const DISK_CHART_GRID_MD = { top: 36, bottom: 36, left: 64, right: 64 }
+const DISK_CHART_GRID_SM = { top: 24, bottom: 36, left: 48, right: 42 }
+
+export default function SandboxMetricsCharts({
+  sandboxId,
+}: SandboxMetricsChartsProps) {
+  const isMobile = useIsMobile()
+  const {
+    metrics,
+    timeframe,
+    fetchTimeframe,
+    isInitialLoading,
+    isPolling,
+    isRefetching,
+    activePresetId,
+    setPreset,
+    setCustomTimeframe,
+    lifecycleBounds,
+    lifecycleEvents,
+  } = useSandboxMonitoringController(sandboxId)
+  const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
+    null
+  )
+  const [renderedSnapshot, setRenderedSnapshot] =
+    useState<RenderedMonitoringSnapshot | null>(null)
+
+  const {
+    canResetZoom,
+    clearZoomSnapshot,
+    handleBrushTimeRangeChange,
+    handleResetZoom,
+  } = useChartZoom({
+    timeframe,
+    activePresetId,
+    setPreset,
+    setCustomTimeframe,
+    setHoveredTimestampMs,
+  })
+
+  const chartModel = useMemo(
+    () =>
+      buildMonitoringChartModel({
+        metrics: renderedSnapshot?.metrics ?? [],
+        lifecycleEvents: renderedSnapshot?.lifecycleEvents ?? [],
+        startMs: renderedSnapshot?.fetchTimeframe.start ?? fetchTimeframe.start,
+        endMs: renderedSnapshot?.fetchTimeframe.end ?? fetchTimeframe.end,
+      }),
+    [fetchTimeframe.end, fetchTimeframe.start, renderedSnapshot]
+  )
+  const resourceSeriesWithMarkerFormatters = useMemo(
+    () =>
+      chartModel.resourceSeries.map((line) => {
+        if (line.id === SANDBOX_MONITORING_CPU_SERIES_ID) {
+          return {
+            ...line,
+            markerValueFormatter: ({
+              value,
+            }: SandboxMetricsMarkerValueFormatterInput) => (
+              <div className="flex items-center">
+                {renderPercentMarker(value)}
+                <CpuIcon className="size-3.5 ml-2 text-fg-tertiary" />
+              </div>
+            ),
+          }
+        }
+
+        if (line.id === SANDBOX_MONITORING_RAM_SERIES_ID) {
+          return {
+            ...line,
+            markerValueFormatter: ({
+              markerValue,
+              value,
+            }: SandboxMetricsMarkerValueFormatterInput) => (
+              <div className="flex items-center">
+                {renderUsageMarker(markerValue, value)}
+                <MemoryIcon className="size-3.5 ml-2 text-fg-tertiary" />
+              </div>
+            ),
+          }
+        }
+
+        return line
+      }),
+    [chartModel.resourceSeries]
+  )
+  const diskSeriesWithMarkerFormatters = useMemo(
+    () =>
+      chartModel.diskSeries.map((line) => {
+        if (line.id !== SANDBOX_MONITORING_DISK_SERIES_ID) {
+          return line
+        }
+
+        return {
+          ...line,
+          markerValueFormatter: ({
+            markerValue,
+            value,
+          }: SandboxMetricsMarkerValueFormatterInput) => (
+            <div className="flex items-center">
+              {renderUsageMarker(markerValue, value)}
+              <StorageIcon className="size-3.5 ml-2 text-fg-tertiary" />
+            </div>
+          ),
+        }
+      }),
+    [chartModel.diskSeries]
+  )
+
+  useEffect(() => {
+    if (isInitialLoading || isRefetching) {
+      return
+    }
+
+    setRenderedSnapshot((previous) => {
+      if (
+        isSameRenderedMonitoringSnapshot(
+          previous,
+          timeframe,
+          fetchTimeframe,
+          metrics,
+          lifecycleEvents
+        )
+      ) {
+        return previous
+      }
+
+      return createRenderedMonitoringSnapshot(
+        timeframe,
+        fetchTimeframe,
+        metrics,
+        lifecycleEvents
+      )
+    })
+  }, [
+    isInitialLoading,
+    isRefetching,
+    fetchTimeframe.end,
+    fetchTimeframe.start,
+    lifecycleEvents,
+    metrics,
+    timeframe.end,
+    timeframe.start,
+  ])
+
+  const handleHoverEnd = useCallback(() => {
+    setHoveredTimestampMs(null)
+  }, [])
+
+  const handlePresetSelect = useCallback(
+    (id: string) => {
+      clearZoomSnapshot()
+      setHoveredTimestampMs(null)
+      setPreset(id)
+    },
+    [clearZoomSnapshot, setPreset]
+  )
+
+  const handleCustomTimeRange = useCallback(
+    (start: number, end: number) => {
+      clearZoomSnapshot()
+      setHoveredTimestampMs(null)
+      setCustomTimeframe(start, end)
+    },
+    [clearZoomSnapshot, setCustomTimeframe]
+  )
+
+  const resourceChartGrid = isMobile
+    ? RESOURCE_CHART_GRID_SM
+    : RESOURCE_CHART_GRID_MD
+  const diskChartGrid = isMobile ? DISK_CHART_GRID_SM : DISK_CHART_GRID_MD
+
+  if (renderedSnapshot === null) {
+    return <LoadingLayout />
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {lifecycleBounds ? (
+        <div className="flex w-full items-center p-3 md:p-6 pb-0!">
+          <SandboxMonitoringTimeRangeControls
+            timeframe={timeframe}
+            lifecycle={lifecycleBounds}
+            isPolling={isPolling}
+            activePresetId={activePresetId}
+            onPresetSelect={handlePresetSelect}
+            onCustomTimeRange={handleCustomTimeRange}
+            canResetZoom={canResetZoom}
+            onResetZoom={handleResetZoom}
+          />
+        </div>
+      ) : null}
+
+      <MonitoringChartSection
+        className="flex-1 md:mt-3"
+        header={<ResourceChartHeader />}
+      >
+        <SandboxMetricsChart
+          series={resourceSeriesWithMarkerFormatters}
+          lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
+          isPolling={isPolling}
+          isMobile={isMobile}
+          hoveredTimestampMs={hoveredTimestampMs}
+          showXAxisLabels
+          grid={resourceChartGrid}
+          xAxisMin={renderedSnapshot.timeframe.start}
+          xAxisMax={renderedSnapshot.timeframe.end}
+          yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
+          yAxisFormatter={formatPercentAxisLabel}
+          className={cn(
+            'h-full w-full transition-opacity duration-200',
+            isRefetching && !isPolling
+              ? 'opacity-60 pointer-events-none'
+              : 'opacity-100'
+          )}
+          onHover={setHoveredTimestampMs}
+          onHoverEnd={handleHoverEnd}
+          onBrushEnd={handleBrushTimeRangeChange}
+        />
+      </MonitoringChartSection>
+
+      <Separator />
+
+      <MonitoringChartSection
+        className="flex-[0.8]"
+        header={<DiskChartHeader />}
+      >
+        <SandboxMetricsChart
+          series={diskSeriesWithMarkerFormatters}
+          lifecycleEventMarkers={chartModel.resourceLifecycleEventMarkers}
+          showEventLabels={false}
+          isPolling={isPolling}
+          isMobile={isMobile}
+          hoveredTimestampMs={hoveredTimestampMs}
+          showXAxisLabels
+          grid={diskChartGrid}
+          xAxisMin={renderedSnapshot.timeframe.start}
+          xAxisMax={renderedSnapshot.timeframe.end}
+          yAxisMax={SANDBOX_MONITORING_PERCENT_MAX}
+          yAxisFormatter={formatPercentAxisLabel}
+          className={cn(
+            'h-full w-full transition-opacity duration-200',
+            isRefetching && !isPolling
+              ? 'opacity-60 pointer-events-none'
+              : 'opacity-100'
+          )}
+          onHover={setHoveredTimestampMs}
+          onHoverEnd={handleHoverEnd}
+          onBrushEnd={handleBrushTimeRangeChange}
+        />
+      </MonitoringChartSection>
+    </div>
+  )
+}

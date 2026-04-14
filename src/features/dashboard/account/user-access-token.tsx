@@ -1,14 +1,14 @@
 'use client'
 
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
+import { getUserAccessTokenAction } from '@/core/server/actions/user-actions'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { getUserAccessTokenAction } from '@/server/user/user-actions'
 import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
 import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
 
 interface UserAccessTokenProps {
   className?: string

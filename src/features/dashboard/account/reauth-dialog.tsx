@@ -1,7 +1,7 @@
 'use client'
 
 import { PROTECTED_URLS } from '@/configs/urls'
-import { signOutAction } from '@/server/auth/auth-actions'
+import { signOutAction } from '@/core/server/actions/auth-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 
 interface ReauthDialogProps {

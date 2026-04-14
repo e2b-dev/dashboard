@@ -4,13 +4,12 @@ import CopyButton from '@/ui/copy-button'
 import { useSandboxContext } from '../context'
 
 export default function StartedAt() {
-  const { sandboxInfo } = useSandboxContext()
+  const { sandboxLifecycle } = useSandboxContext()
 
-  if (!sandboxInfo) {
+  const startedAt = sandboxLifecycle?.createdAt
+  if (!startedAt) {
     return null
   }
-
-  const startedAt = sandboxInfo.startedAt
 
   const date = new Date(startedAt)
   const now = new Date()

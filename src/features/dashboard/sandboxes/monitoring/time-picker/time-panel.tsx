@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { UseFormReturn, useForm } from 'react-hook-form'
+import { type UseFormReturn, useForm } from 'react-hook-form'
 
 import {
   parseDateTimeComponents,
@@ -33,7 +33,7 @@ import {
 import { TimeInput } from '@/ui/time-input'
 
 import { MAX_DAYS_AGO } from './constants'
-import { customTimeFormSchema, type CustomTimeFormValues } from './validation'
+import { type CustomTimeFormValues, customTimeFormSchema } from './validation'
 
 export interface TimePanelRef {
   form: UseFormReturn<CustomTimeFormValues>

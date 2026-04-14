@@ -1,14 +1,13 @@
-import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import { getTeamMetrics } from '@/server/sandboxes/get-team-metrics'
-import { getTeamLimits } from '@/server/team/get-team-limits'
 import { Suspense } from 'react'
+import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
+import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { TeamMetricsChartsProvider } from '../charts-context'
 import ConcurrentChartClient from './concurrent-chart'
 import ChartFallback from './fallback'
 import StartRateChartClient from './startrate-chart'
 
 interface TeamMetricsChartsProps {
-  params: Promise<{ teamIdOrSlug: string }>
+  params: Promise<{ teamSlug: string }>
   searchParams: Promise<{ start?: string; end?: string }>
 }
 
@@ -37,7 +36,7 @@ async function TeamMetricsChartsResolver({
   params,
   searchParams,
 }: TeamMetricsChartsProps) {
-  const { teamIdOrSlug } = await params
+  const { teamSlug } = await params
   const { start: startParam, end: endParam } = await searchParams
 
   // parse start/end from URL params with defaults
@@ -47,14 +46,11 @@ async function TeamMetricsChartsResolver({
     : now - TEAM_METRICS_INITIAL_RANGE_MS
   const end = endParam ? parseInt(endParam, 10) : now
 
-  const [teamMetricsResult, tierLimitsResult] = await Promise.all([
-    getTeamMetrics({
-      teamIdOrSlug,
-      startDate: start,
-      endDate: end,
-    }),
-    getTeamLimits({ teamIdOrSlug }),
-  ])
+  const teamMetricsResult = await getTeamMetrics({
+    teamSlug,
+    startDate: start,
+    endDate: end,
+  })
 
   if (
     !teamMetricsResult?.data ||
@@ -82,13 +78,9 @@ async function TeamMetricsChartsResolver({
     )
   }
 
-  const concurrentInstancesLimit = tierLimitsResult?.data?.concurrentInstances
-
   return (
     <TeamMetricsChartsProvider initialData={teamMetricsResult.data}>
-      <ConcurrentChartClient
-        concurrentInstancesLimit={concurrentInstancesLimit}
-      />
+      <ConcurrentChartClient />
       <StartRateChartClient />
     </TeamMetricsChartsProvider>
   )

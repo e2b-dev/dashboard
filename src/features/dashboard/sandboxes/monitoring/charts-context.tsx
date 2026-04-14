@@ -1,8 +1,14 @@
 'use client'
 
-import { TeamMetricsResponse } from '@/app/api/teams/[teamId]/metrics/types'
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from 'react'
 import useSWR from 'swr'
+import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
 import { useDashboard } from '../../context'
 import { useTimeframe } from './hooks/use-timeframe'
 
@@ -43,7 +49,7 @@ export function TeamMetricsChartsProvider({
   )
 
   const { data, error, isLoading, isValidating } = useSWR<TeamMetricsResponse>(
-    [`/api/teams/${team.id}/metrics`, timeframe.start, timeframe.end],
+    [`/api/teams/${team.slug}/metrics`, timeframe.start, timeframe.end],
     async ([url, start, end]: [string, number, number]) => {
       const response = await fetch(url, {
         method: 'POST',

@@ -9,6 +9,6 @@
 }
 
 /* Remove margin from alert description */
-[role='alert'] p {
+[role="alert"] p {
   margin: 0;
 }

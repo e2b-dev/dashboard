@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils'
-import { cva, VariantProps } from 'class-variance-authority'
+import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 export const cardVariants = cva('', {
   variants: {
@@ -50,7 +50,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn('prose-headline-small uppercase', className)}
+    className={cn('prose-headline-small uppercase font-sans', className)}
     {...props}
   />
 ))
@@ -60,7 +60,11 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn('text-fg-tertiary ', className)} {...props} />
+  <p
+    ref={ref}
+    className={cn('text-fg-tertiary font-sans', className)}
+    {...props}
+  />
 ))
 CardDescription.displayName = 'CardDescription'
 

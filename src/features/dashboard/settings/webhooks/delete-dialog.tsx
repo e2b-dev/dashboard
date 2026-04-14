@@ -1,19 +1,20 @@
 'use client'
 
+import { useAction } from 'next-safe-action/hooks'
+import { useState } from 'react'
+import { deleteWebhookAction } from '@/core/server/actions/webhooks-actions'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { deleteWebhookAction } from '@/server/webhooks/webhooks-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
-import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
-import { Webhook } from './types'
+import type { Webhook } from './types'
 
 interface WebhookDeleteDialogProps {
   children: React.ReactNode
@@ -24,6 +25,7 @@ export default function WebhookDeleteDialog({
   children: trigger,
   webhook,
 }: WebhookDeleteDialogProps) {
+  const { team } = useDashboard()
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
   const [confirmationUrl, setConfirmationUrl] = useState('')
@@ -81,7 +83,7 @@ export default function WebhookDeleteDialog({
       }}
       onConfirm={() => {
         executeDeleteWebhook({
-          teamId: webhook.teamId,
+          teamSlug: team.slug,
           webhookId: webhook.id,
         })
       }}

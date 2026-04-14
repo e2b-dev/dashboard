@@ -1,10 +1,10 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useQuery } from '@tanstack/react-query'
 import AlertCard from './alert-card'
 import LimitCard from './limit-card'
 
@@ -13,11 +13,11 @@ interface UsageLimitsProps {
 }
 
 export default function UsageLimits({ className }: UsageLimitsProps) {
-  const { teamIdOrSlug } = useRouteParams<'/dashboard/[teamIdOrSlug]/limits'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/limits'>()
   const trpc = useTRPC()
 
   const { data: limits, isLoading } = useQuery({
-    ...trpc.billing.getLimits.queryOptions({ teamIdOrSlug }),
+    ...trpc.billing.getLimits.queryOptions({ teamSlug }),
     throwOnError: true,
   })
 

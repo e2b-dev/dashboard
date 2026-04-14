@@ -1,11 +1,14 @@
 'use client'
 
+import { useMutation } from '@tanstack/react-query'
+import Link from 'next/link'
+import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type { AddonInfo } from '@/core/modules/billing/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
-import { AddonInfo } from '@/types/billing.types'
 import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -13,13 +16,10 @@ import { InfoIcon, SandboxIcon, UpgradeIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Loader } from '@/ui/primitives/loader'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { useMutation } from '@tanstack/react-query'
-import Link from 'next/link'
-import { useState } from 'react'
 import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
 import { ADDON_500_SANDBOXES_ID, TIER_PRO_ID } from './constants'
-import { useBillingItems, useTeamLimits } from './hooks'
+import { useBillingItems } from './hooks'
 import { formatAddonQuantity } from './utils'
 
 interface AddonItemProps {
@@ -163,8 +163,7 @@ function AddonsLoading() {
 }
 
 function AddonsUpgradePlaceholder() {
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing/plan'>()
 
   return (
     <div className="flex flex-col">
@@ -174,7 +173,7 @@ function AddonsUpgradePlaceholder() {
           Upgrade to Pro to purchase add-ons for higher concurrency limits.
         </p>
         <Button className="w-full sm:w-auto" asChild>
-          <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamIdOrSlug)}>
+          <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
             <UpgradeIcon className="size-4" />
             Upgrade to Pro
           </Link>
@@ -187,13 +186,11 @@ function AddonsUpgradePlaceholder() {
 export default function Addons() {
   const { team } = useDashboard()
   const { toast } = useToast()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing/plan'>()
   const trpc = useTRPC()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { tierData, addonData, isLoading } = useBillingItems()
-  const { teamLimits } = useTeamLimits()
-  const currentConcurrentSandboxesLimit = teamLimits?.concurrentInstances ?? 0
+  const currentConcurrentSandboxesLimit = team.limits.concurrentSandboxes
 
   const selectedTierId = tierData?.selected?.id
   const currentAddon = addonData?.current
@@ -216,7 +213,7 @@ export default function Addons() {
     if (!team) return
 
     createOrderMutation.mutate({
-      teamIdOrSlug,
+      teamSlug,
       itemId: ADDON_500_SANDBOXES_ID,
     })
   }

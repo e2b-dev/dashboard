@@ -1,5 +1,10 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -17,14 +22,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 interface LimitFormProps {
-  teamIdOrSlug: string
+  teamSlug: string
   className?: string
   originalValue: number | null
   type: 'limit' | 'alert'
@@ -40,7 +40,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 export default function LimitForm({
-  teamIdOrSlug,
+  teamSlug,
   className,
   originalValue,
   type,
@@ -60,7 +60,7 @@ export default function LimitForm({
   })
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
-    teamIdOrSlug,
+    teamSlug,
   }).queryKey
 
   const setLimitMutation = useMutation(
@@ -114,7 +114,7 @@ export default function LimitForm({
     }
 
     setLimitMutation.mutate({
-      teamIdOrSlug,
+      teamSlug,
       type,
       value: data.value,
     })
@@ -122,7 +122,7 @@ export default function LimitForm({
 
   const handleClear = () => {
     clearLimitMutation.mutate({
-      teamIdOrSlug,
+      teamSlug,
       type,
     })
   }

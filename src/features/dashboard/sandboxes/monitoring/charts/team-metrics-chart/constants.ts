@@ -1,4 +1,4 @@
-import { ChartType, TeamMetricChartConfig } from './types'
+import type { ChartType, TeamMetricChartConfig } from './types'
 
 export const CHART_CONFIGS: Record<ChartType, TeamMetricChartConfig> = {
   concurrent: {
