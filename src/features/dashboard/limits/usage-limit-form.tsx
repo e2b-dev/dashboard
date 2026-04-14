@@ -1,9 +1,8 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 import type { BillingLimit } from '@/core/modules/billing/models'
 import {
@@ -18,6 +17,7 @@ import {
 } from '@/lib/utils/currency'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
+import { EditIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { RemoveUsageLimitDialog } from './remove-usage-limit-dialog'
 import { SetUsageLimitDialog } from './set-usage-limit-dialog'
@@ -45,10 +45,12 @@ export const UsageLimitForm = ({
   originalValue,
   teamSlug,
 }: UsageLimitFormProps) => {
+  const inputRef = useRef<HTMLInputElement>(null)
   const [draftValue, setDraftValue] = useState(
     originalValue === null ? '' : formatCurrencyValue(originalValue)
   )
   const [isEditing, setIsEditing] = useState(originalValue === null)
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
   const [isSetDialogOpen, setIsSetDialogOpen] = useState(false)
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -64,6 +66,13 @@ export const UsageLimitForm = ({
     )
     setIsEditing(originalValue === null)
   }, [originalValue])
+
+  useEffect(() => {
+    if (!isEditing) return
+    inputRef.current?.focus()
+    const inputLength = inputRef.current?.value.length ?? 0
+    inputRef.current?.setSelectionRange(inputLength, inputLength)
+  }, [isEditing])
 
   const setLimitMutation = useMutation(
     trpc.billing.setLimit.mutationOptions({
@@ -90,11 +99,19 @@ export const UsageLimitForm = ({
   const parsedValue = limitValueSchema.safeParse(draftValue)
   const nextValue = parsedValue.success ? parsedValue.data : null
   const isMutating = setLimitMutation.isPending
+  const isRemoveIntent =
+    isEditing && originalValue !== null && draftValue.length === 0
   const canSave =
-    parsedValue.success && nextValue !== originalValue && !isMutating
-  const shouldShowCancel = originalValue !== null || draftValue.length > 0
+    isEditing &&
+    parsedValue.success &&
+    nextValue !== originalValue &&
+    !isMutating
+  const shouldShowCancel =
+    isEditing && (originalValue !== null || draftValue.length > 0)
 
   const handleCancel = () => {
+    inputRef.current?.blur()
+
     if (originalValue === null) {
       setDraftValue('')
       return
@@ -124,6 +141,12 @@ export const UsageLimitForm = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!isEditing) return
+
+    if (isRemoveIntent) {
+      setIsRemoveDialogOpen(true)
+      return
+    }
 
     if (!parsedValue.success) {
       toast(
@@ -138,51 +161,6 @@ export const UsageLimitForm = ({
     setIsSetDialogOpen(true)
   }
 
-  if (originalValue !== null && !isEditing)
-    return (
-      <div
-        className={cn(
-          'flex min-h-[72px] items-center justify-between gap-4 px-4 py-4 md:px-5',
-          className
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="prose-value-big text-fg">$</span>
-          <Input
-            aria-label="limit amount"
-            className="prose-value-big text-fg pointer-events-none h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none"
-            readOnly
-            tabIndex={-1}
-            value={formatCurrencyValue(originalValue)}
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <RemoveUsageLimitDialog
-            disabled={isMutating}
-            teamSlug={teamSlug}
-            onRemoved={() => {
-              setDraftValue('')
-              setIsEditing(true)
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            className="font-sans normal-case"
-            disabled={isMutating}
-            onClick={() => {
-              setDraftValue(formatCurrencyValue(originalValue))
-              setIsEditing(true)
-            }}
-          >
-            <Pencil className="size-4" />
-            Edit
-          </Button>
-        </div>
-      </div>
-    )
-
   return (
     <form
       className={cn(
@@ -195,40 +173,98 @@ export const UsageLimitForm = ({
         <span className="prose-value-big text-fg">$</span>
         <Input
           aria-label="limit amount"
-          autoFocus={originalValue !== null}
+          ref={inputRef}
           className="prose-value-big text-fg h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-tertiary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
           disabled={isMutating}
           inputMode="numeric"
-          onChange={(event) =>
+          onChange={(event) => {
+            if (!isEditing) return
             setDraftValue(sanitizeCurrencyInput(event.target.value))
-          }
+          }}
+          onFocus={() => {
+            if (originalValue === null || isEditing) return
+            setIsEditing(true)
+          }}
           placeholder="--"
+          readOnly={!isEditing && originalValue !== null}
           value={draftValue}
         />
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {shouldShowCancel && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="md"
-            className="font-sans normal-case text-fg-tertiary hover:text-fg"
-            disabled={isMutating}
-            onClick={handleCancel}
-          >
-            Cancel
-          </Button>
+        {originalValue !== null && !isEditing ? (
+          <>
+            <RemoveUsageLimitDialog
+              disabled={isMutating}
+              teamSlug={teamSlug}
+              onRemoved={() => {
+                setDraftValue('')
+                setIsEditing(true)
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              className="font-sans normal-case"
+              disabled={isMutating}
+              onClick={() => {
+                setDraftValue(formatCurrencyValue(originalValue))
+                setIsEditing(true)
+              }}
+            >
+              <EditIcon className="size-4" />
+              Edit
+            </Button>
+          </>
+        ) : (
+          <>
+            {shouldShowCancel && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="md"
+                className="font-sans normal-case text-fg-tertiary hover:text-fg"
+                disabled={isMutating}
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            )}
+            {isRemoveIntent ? (
+              <Button
+                type="button"
+                variant="default"
+                size="md"
+                className="font-sans normal-case"
+                disabled={isMutating}
+                onClick={() => setIsRemoveDialogOpen(true)}
+              >
+                Set
+              </Button>
+            ) : (
+              <SetUsageLimitDialog
+                confirmDisabled={!parsedValue.success}
+                loading={setLimitMutation.isPending}
+                onConfirm={handleSetConfirm}
+                onOpenChange={setIsSetDialogOpen}
+                open={isSetDialogOpen}
+                title={`Set $${nextValue === null ? '--' : formatCurrencyValue(nextValue)} usage limit?`}
+                triggerDisabled={!canSave}
+              />
+            )}
+          </>
         )}
-        <SetUsageLimitDialog
-          confirmDisabled={!parsedValue.success}
-          loading={setLimitMutation.isPending}
-          onConfirm={handleSetConfirm}
-          onOpenChange={setIsSetDialogOpen}
-          open={isSetDialogOpen}
-          title={`Set $${nextValue === null ? '--' : formatCurrencyValue(nextValue)} usage limit?`}
-          triggerDisabled={!canSave}
-        />
       </div>
+      <RemoveUsageLimitDialog
+        hideTrigger
+        onOpenChange={setIsRemoveDialogOpen}
+        open={isRemoveDialogOpen}
+        teamSlug={teamSlug}
+        onRemoved={() => {
+          setDraftValue('')
+          setIsEditing(true)
+        }}
+      />
     </form>
   )
 }

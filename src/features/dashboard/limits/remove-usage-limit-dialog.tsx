@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { BillingLimit } from '@/core/modules/billing/models'
 import {
@@ -16,22 +15,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
+import { TrashIcon } from '@/ui/primitives/icons'
 
 interface RemoveUsageLimitDialogProps {
   disabled?: boolean
+  hideTrigger?: boolean
   onRemoved: () => void
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
   teamSlug: string
 }
 
 export const RemoveUsageLimitDialog = ({
   disabled = false,
+  hideTrigger = false,
   onRemoved,
+  onOpenChange,
+  open,
   teamSlug,
 }: RemoveUsageLimitDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const isControlled = open !== undefined
+  const isOpen = isControlled ? open : internalIsOpen
+
+  const setIsOpen = (nextOpen: boolean) => {
+    if (!isControlled) setInternalIsOpen(nextOpen)
+    onOpenChange?.(nextOpen)
+  }
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
     teamSlug,
@@ -62,23 +75,22 @@ export const RemoveUsageLimitDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="md"
-          className="font-sans normal-case"
-          disabled={disabled || clearLimitMutation.isPending}
-          loading={clearLimitMutation.isPending}
-        >
-          <Trash2 className="size-4" />
-          Remove
-        </Button>
-      </DialogTrigger>
-      <DialogContent
-        hideClose
-        className="max-w-[505px] pr-8 sm:max-w-[505px]"
-      >
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            className="font-sans normal-case"
+            disabled={disabled || clearLimitMutation.isPending}
+            loading={clearLimitMutation.isPending}
+          >
+            <TrashIcon className="size-4" />
+            Remove
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent hideClose className="max-w-[505px] pr-8 sm:max-w-[505px]">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <DialogTitle>Remove usage limit?</DialogTitle>
@@ -107,7 +119,7 @@ export const RemoveUsageLimitDialog = ({
                 clearLimitMutation.mutate({ teamSlug, type: 'limit' })
               }
             >
-              <Trash2 className="size-4" />
+              <TrashIcon className="size-4" />
               Remove
             </Button>
           </div>
