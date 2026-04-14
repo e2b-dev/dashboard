@@ -28,7 +28,7 @@ const CopyButton: FC<CopyButtonProps> = ({ value, onCopy, ...props }) => {
           <motion.div
             key="check"
             initial={{ opacity: 0.2, scale: 0.97, filter: 'blur(1px)' }}
-            animate={{ opacity: 1.2, scale: 1.2, filter: 'blur(0px)' }}
+            animate={{ opacity: 1, scale: 1.2, filter: 'blur(0px)' }}
             exit={{ opacity: 0.2, scale: 0.97, filter: 'blur(1px)' }}
             transition={{ duration: 0.1, ease: EASE_APPEAR }}
           >
