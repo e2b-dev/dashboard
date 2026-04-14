@@ -1,8 +1,8 @@
 'use client'
 
-import { Bell, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrencyValue } from '@/lib/utils/currency'
+import { AlertIcon, WarningIcon } from '@/ui/primitives/icons'
 import { LimitAsciiIcon } from './limit-ascii-icon'
 import { UsageLimitForm } from './usage-limit-form'
 
@@ -17,19 +17,29 @@ const UsageLimitSectionInfo = ({
   email,
   value,
 }: Pick<UsageLimitSectionProps, 'email' | 'value'>) => {
-  const limitMessage =
-    value === null
-      ? 'All API requests are blocked after reaching this limit'
-      : `All API requests are blocked after reaching $${formatCurrencyValue(value)}`
+  const isValueSet = value !== null
+  const limitMessage = isValueSet
+    ? `All API requests are blocked after reaching $${formatCurrencyValue(value)}`
+    : 'All API requests are blocked after reaching this limit'
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-fg-tertiary prose-body flex items-start gap-2">
-        <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+      <p
+        className={cn(
+          'prose-body flex items-start gap-2',
+          isValueSet ? 'text-fg' : 'text-fg-tertiary'
+        )}
+      >
+        <WarningIcon
+          className={cn(
+            'mt-0.5 size-4 shrink-0',
+            isValueSet ? 'text-accent-warning-highlight' : 'text-fg-tertiary'
+          )}
+        />
         <span>{limitMessage}</span>
       </p>
       <p className="text-fg-tertiary prose-body flex items-start gap-2">
-        <Bell className="mt-0.5 size-4 shrink-0" />
+        <AlertIcon className="mt-0.5 size-4 shrink-0" />
         <span>
           Automatic alerts at 50%, 80%, 90% and 100% sent to{' '}
           <span className="prose-body-highlight">{email}</span>
