@@ -81,7 +81,9 @@ export const UsageAlertForm = ({
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
       onError: (error) => {
-        toast(defaultErrorToast(error.message || 'Failed to save billing alert.'))
+        toast(
+          defaultErrorToast(error.message || 'Failed to save billing alert.')
+        )
       },
     })
   )
@@ -155,7 +157,11 @@ export const UsageAlertForm = ({
     }
 
     if (parsedValue.data === originalValue) return
-    setAlertMutation.mutate({ teamSlug, type: 'alert', value: parsedValue.data })
+    setAlertMutation.mutate({
+      teamSlug,
+      type: 'alert',
+      value: parsedValue.data,
+    })
   }
 
   return (
