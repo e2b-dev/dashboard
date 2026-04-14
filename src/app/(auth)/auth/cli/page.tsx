@@ -50,13 +50,13 @@ function CLIIcons() {
   return (
     <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
-        <SystemIcon size={50} />
+        <SystemIcon className="size-8" />
       </span>
       <span className="text-fg-secondary">
-        <LinkIcon size={30} />
+        <LinkIcon className="size-4" />
       </span>
       <span className="text-fg-tertiary">
-        <CloudIcon size={50} />
+        <CloudIcon className="size-8" />
       </span>
     </p>
   )
