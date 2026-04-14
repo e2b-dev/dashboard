@@ -229,7 +229,7 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
       <span className="text-fg-secondary">This file is not readable.</span>
       <Button variant="secondary" onClick={onDownload}>
         Download
-        <Download />
+        <DownloadIcon />
       </Button>
     </div>
   )
