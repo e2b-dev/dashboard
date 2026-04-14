@@ -1,0 +1,13 @@
+import { Icon } from '@/ui/primitives/icons/icon'
+import type { IconProps } from '@/ui/primitives/icons/types'
+
+export const CpuIcon = (props: IconProps) => (
+  <Icon name="Cpu" viewBox="0 0 16 16" {...props}>
+    <path
+      d="M7.50013 3.33145V1.99756M10.1667 3.33361V2.00027M4.83345 3.3335V1.99756M7.49993 14.0002V12.6668M10.1667 14.0002V12.6669M4.83331 13.9998V12.6665M12.1667 10.667H13.5M12.1667 5.33329H13.5M12.1667 8.00003H13.5M1.5 7.99997H2.83333M1.5 10.667H2.83333M1.5 5.33329H2.83333M9.5008 8.00017C9.5008 9.10517 8.605 10.001 7.5 10.001C6.39493 10.001 5.49915 9.10517 5.49915 8.00017C5.49915 6.89517 6.39493 5.99933 7.5 5.99933C8.605 5.99933 9.5008 6.89517 9.5008 8.00017ZM2.83331 3.3335H12.1667V12.6668H2.83331V3.3335Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+  </Icon>
+)

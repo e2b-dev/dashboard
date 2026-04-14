@@ -1,7 +1,8 @@
 'use client'
 
-import { Bell, CircleDollarSign, TriangleAlert } from 'lucide-react'
+import { Bell, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { AlertAsciiIcon, LimitAsciiIcon } from '@/ui/primitives/icons'
 import LimitForm from './limit-form'
 
 type LimitType = 'limit' | 'alert'
@@ -17,15 +18,16 @@ interface LimitSectionProps {
 
 const currencyFormatter = new Intl.NumberFormat('en-US')
 
-const LimitPanelIcon = ({ type }: { type: LimitType }) => {
-  const iconClassName =
-    type === 'limit'
-      ? 'text-accent-warning-highlight'
-      : 'text-accent-main-highlight'
+const iconMap: Record<LimitType, typeof LimitAsciiIcon> = {
+  limit: LimitAsciiIcon,
+  alert: AlertAsciiIcon,
+}
 
+const LimitPanelIcon = ({ type }: { type: LimitType }) => {
+  const Icon = iconMap[type]
   return (
-    <div className="flex size-9 items-center justify-center rounded-full border border-stroke bg-bg-1">
-      <CircleDollarSign className={cn('size-4', iconClassName)} />
+    <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke opacity-50">
+      <Icon className="size-full" />
     </div>
   )
 }
@@ -80,11 +82,9 @@ export const LimitSection = ({
       <p className="text-fg-tertiary prose-label-highlight uppercase">
         {title}
       </p>
-      <div className="bg-bg flex min-h-[72px] w-full border border-stroke">
-        <div className="flex w-[56px] shrink-0 items-center justify-center border-r border-stroke px-2">
-          <LimitPanelIcon type={type} />
-        </div>
-        <div className="min-w-0 flex-1">
+      <div className="flex w-full">
+        <LimitPanelIcon type={type} />
+        <div className="bg-bg min-w-0 flex-1 border border-l-0 border-stroke">
           <LimitForm originalValue={value} teamSlug={teamSlug} type={type} />
         </div>
       </div>
