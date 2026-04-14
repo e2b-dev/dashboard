@@ -90,7 +90,7 @@ export function OpenSandboxDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="md">Inspect a Sandbox</Button>
+        <Button>Inspect a Sandbox</Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-[500px] max-h-[calc(100svh-2rem)] overflow-y-auto">
@@ -146,8 +146,8 @@ export function OpenSandboxDialog() {
           <DialogFooter>
             <Button
               type="submit"
-              variant="outline"
-              loading={isChecking}
+              variant="secondary"
+              loading={isChecking ? 'Checking...' : undefined}
               className="w-full sm:w-auto"
             >
               Open Details

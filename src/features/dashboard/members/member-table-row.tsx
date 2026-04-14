@@ -160,7 +160,6 @@ const NameCell = ({
             <Badge
               className="shrink-0 uppercase"
               size="sm"
-              typography="regular"
               variant="default"
             >
               You

@@ -48,8 +48,6 @@ export default function DashboardLayoutHeader({
           {copyableValue && (
             <CopyButton
               value={copyableValue}
-              size="iconSm"
-              variant="ghost"
               className="text-fg-tertiary shrink-0"
               aria-label="Copy identifier"
             />
