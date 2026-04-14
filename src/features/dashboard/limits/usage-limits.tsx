@@ -25,36 +25,32 @@ export const UsageLimits = ({ className }: UsageLimitsProps) => {
 
   if (!team) return null
 
-  if (isLoading || !limits)
-    return (
-      <div
-        className={cn(
-          'flex w-full max-w-[756px] flex-col gap-12 pt-8',
-          className
-        )}
-      >
-        <LimitsSectionSkeleton />
-        <LimitsSectionSkeleton />
-      </div>
-    )
-
   return (
     <div
       className={cn(
-        'flex w-full max-w-[756px] flex-col gap-12 pt-8',
+        'mx-auto flex w-full max-w-[600px] flex-col gap-12 pt-8',
         className
       )}
     >
-      <UsageLimitSection
-        email={team.email}
-        teamSlug={teamSlug}
-        value={limits.limit_amount_gte}
-      />
-      <UsageAlertSection
-        email={team.email}
-        teamSlug={teamSlug}
-        value={limits.alert_amount_gte}
-      />
+      {isLoading || !limits ? (
+        <>
+          <LimitsSectionSkeleton />
+          <LimitsSectionSkeleton />
+        </>
+      ) : (
+        <>
+          <UsageLimitSection
+            email={team.email}
+            teamSlug={teamSlug}
+            value={limits.limit_amount_gte}
+          />
+          <UsageAlertSection
+            email={team.email}
+            teamSlug={teamSlug}
+            value={limits.alert_amount_gte}
+          />
+        </>
+      )}
     </div>
   )
 }
