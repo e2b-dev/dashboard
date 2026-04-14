@@ -106,9 +106,14 @@ export const UsageAlertForm = ({
   const isMutating = setAlertMutation.isPending || clearAlertMutation.isPending
   const canSave =
     parsedValue.success && nextValue !== originalValue && !isMutating
+  const shouldShowCancel = originalValue !== null || draftValue.length > 0
 
   const handleCancel = () => {
-    if (originalValue === null) return
+    if (originalValue === null) {
+      setDraftValue('')
+      return
+    }
+
     setDraftValue(formatCurrencyValue(originalValue))
     setIsEditing(false)
   }
@@ -198,7 +203,7 @@ export const UsageAlertForm = ({
         />
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {originalValue !== null && (
+        {shouldShowCancel && (
           <Button
             type="button"
             variant="ghost"
