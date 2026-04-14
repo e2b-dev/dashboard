@@ -145,9 +145,13 @@ export const UsageAlertForm = ({
       >
         <div className="flex min-w-0 items-center gap-2">
           <span className="prose-value-big text-fg">$</span>
-          <span className="prose-value-big text-fg">
-            {formatCurrencyValue(originalValue)}
-          </span>
+          <Input
+            aria-label="alert amount"
+            className="prose-value-big text-fg pointer-events-none h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none"
+            readOnly
+            tabIndex={-1}
+            value={formatCurrencyValue(originalValue)}
+          />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button
@@ -168,7 +172,7 @@ export const UsageAlertForm = ({
             className="font-sans normal-case"
             disabled={isMutating}
             onClick={() => {
-              setDraftValue(originalValue.toString())
+              setDraftValue(formatCurrencyValue(originalValue))
               setIsEditing(true)
             }}
           >
