@@ -1,8 +1,10 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import type { BillingLimit } from '@/core/modules/billing/models'
 import {
@@ -12,15 +14,22 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
+  CurrencyInputSchema,
   formatCurrencyValue,
   sanitizeCurrencyInput,
 } from '@/lib/utils/currency'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
-import { EditIcon } from '@/ui/primitives/icons'
+import { EditIcon, TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { RemoveUsageLimitDialog } from './remove-usage-limit-dialog'
 import { SetUsageLimitDialog } from './set-usage-limit-dialog'
+
+const limitFormSchema = z.object({
+  amount: CurrencyInputSchema,
+})
+
+type LimitFormValues = z.infer<typeof limitFormSchema>
 
 interface UsageLimitFormProps {
   className?: string
@@ -28,27 +37,12 @@ interface UsageLimitFormProps {
   teamSlug: string
 }
 
-const saveErrorMessage = 'Failed to save billing limit.'
-const saveSuccessMessage = 'Billing limit saved.'
-const emptyErrorMessage = 'Enter a billing limit amount.'
-
-const limitValueSchema = z
-  .string()
-  .trim()
-  .min(1, 'Enter a value.')
-  .regex(/^\d+$/, 'Enter a whole USD amount.')
-  .transform(Number)
-  .refine((value) => value >= 1, 'Value must be at least 1.')
-
 export const UsageLimitForm = ({
   className,
   originalValue,
   teamSlug,
 }: UsageLimitFormProps) => {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [draftValue, setDraftValue] = useState(
-    originalValue === null ? '' : formatCurrencyValue(originalValue)
-  )
   const [isEditing, setIsEditing] = useState(originalValue === null)
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
   const [isSetDialogOpen, setIsSetDialogOpen] = useState(false)
@@ -60,12 +54,22 @@ export const UsageLimitForm = ({
     teamSlug,
   }).queryKey
 
+  const form = useForm<LimitFormValues>({
+    resolver: zodResolver(limitFormSchema),
+    mode: 'onChange',
+    defaultValues: {
+      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+    },
+  })
+
+  const draftValue = form.watch('amount')
+
   useEffect(() => {
-    setDraftValue(
-      originalValue === null ? '' : formatCurrencyValue(originalValue)
-    )
+    form.reset({
+      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+    })
     setIsEditing(originalValue === null)
-  }, [originalValue])
+  }, [originalValue, form.reset])
 
   useEffect(() => {
     if (!isEditing) return
@@ -84,26 +88,27 @@ export const UsageLimitForm = ({
             return { ...limits, limit_amount_gte: variables.value }
           }
         )
-        toast(defaultSuccessToast(saveSuccessMessage))
-        setDraftValue(formatCurrencyValue(variables.value))
+        toast(defaultSuccessToast('Billing limit saved.'))
+        form.reset({ amount: formatCurrencyValue(variables.value) })
         setIsEditing(false)
         setIsSetDialogOpen(false)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
       onError: (error) => {
-        toast(defaultErrorToast(error.message || saveErrorMessage))
+        toast(
+          defaultErrorToast(error.message || 'Failed to save billing limit.')
+        )
       },
     })
   )
 
-  const parsedValue = limitValueSchema.safeParse(draftValue)
-  const nextValue = parsedValue.success ? parsedValue.data : null
+  const nextValue = form.formState.isValid ? Number(draftValue) : null
   const isMutating = setLimitMutation.isPending
   const isRemoveIntent =
     isEditing && originalValue !== null && draftValue.length === 0
   const canSave =
     isEditing &&
-    parsedValue.success &&
+    form.formState.isValid &&
     nextValue !== originalValue &&
     !isMutating
   const shouldShowCancel =
@@ -113,33 +118,22 @@ export const UsageLimitForm = ({
     inputRef.current?.blur()
 
     if (originalValue === null) {
-      setDraftValue('')
+      form.reset({ amount: '' })
       return
     }
 
-    setDraftValue(formatCurrencyValue(originalValue))
+    form.reset({ amount: formatCurrencyValue(originalValue) })
     setIsEditing(false)
   }
 
   const handleSetConfirm = () => {
-    if (!parsedValue.success) {
-      toast(
-        defaultErrorToast(
-          parsedValue.error.issues[0]?.message || emptyErrorMessage
-        )
-      )
-      return
-    }
-
-    if (parsedValue.data === originalValue) return
-    setLimitMutation.mutate({
-      teamSlug,
-      type: 'limit',
-      value: parsedValue.data,
-    })
+    if (!form.formState.isValid) return
+    const value = Number(form.getValues('amount'))
+    if (value === originalValue) return
+    setLimitMutation.mutate({ teamSlug, type: 'limit', value })
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!isEditing) return
 
@@ -148,16 +142,19 @@ export const UsageLimitForm = ({
       return
     }
 
-    if (!parsedValue.success) {
+    const isValid = await form.trigger()
+    if (!isValid) {
       toast(
         defaultErrorToast(
-          parsedValue.error.issues[0]?.message || emptyErrorMessage
+          form.formState.errors.amount?.message ||
+            'Enter a billing limit amount.'
         )
       )
       return
     }
 
-    if (parsedValue.data === originalValue || isMutating) return
+    const value = Number(form.getValues('amount'))
+    if (value === originalValue || isMutating) return
     setIsSetDialogOpen(true)
   }
 
@@ -171,36 +168,48 @@ export const UsageLimitForm = ({
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <span className="prose-value-big text-fg">$</span>
-        <Input
-          aria-label="limit amount"
-          ref={inputRef}
-          className="prose-value-big text-fg h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-tertiary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
-          disabled={isMutating}
-          inputMode="numeric"
-          onChange={(event) => {
-            if (!isEditing) return
-            setDraftValue(sanitizeCurrencyInput(event.target.value))
-          }}
-          onFocus={() => {
-            if (originalValue === null || isEditing) return
-            setIsEditing(true)
-          }}
-          placeholder="--"
-          readOnly={!isEditing && originalValue !== null}
-          value={draftValue}
+        <Controller
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <Input
+              aria-label="limit amount"
+              ref={(el) => {
+                field.ref(el)
+                inputRef.current = el
+              }}
+              className="prose-value-big text-fg h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-tertiary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
+              disabled={isMutating}
+              inputMode="numeric"
+              onChange={(event) => {
+                if (!isEditing) return
+                field.onChange(sanitizeCurrencyInput(event.target.value))
+              }}
+              onBlur={field.onBlur}
+              onFocus={() => {
+                if (originalValue === null || isEditing) return
+                setIsEditing(true)
+              }}
+              placeholder="--"
+              readOnly={!isEditing && originalValue !== null}
+              value={field.value}
+            />
+          )}
         />
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {originalValue !== null && !isEditing ? (
           <>
-            <RemoveUsageLimitDialog
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
               disabled={isMutating}
-              teamSlug={teamSlug}
-              onRemoved={() => {
-                setDraftValue('')
-                setIsEditing(true)
-              }}
-            />
+              onClick={() => setIsRemoveDialogOpen(true)}
+            >
+              <TrashIcon className="size-4" />
+              Remove
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -208,7 +217,7 @@ export const UsageLimitForm = ({
               className="font-sans normal-case"
               disabled={isMutating}
               onClick={() => {
-                setDraftValue(formatCurrencyValue(originalValue))
+                form.reset({ amount: formatCurrencyValue(originalValue) })
                 setIsEditing(true)
               }}
             >
@@ -243,7 +252,7 @@ export const UsageLimitForm = ({
               </Button>
             ) : (
               <SetUsageLimitDialog
-                confirmDisabled={!parsedValue.success}
+                confirmDisabled={!form.formState.isValid}
                 loading={setLimitMutation.isPending}
                 onConfirm={handleSetConfirm}
                 onOpenChange={setIsSetDialogOpen}
@@ -261,7 +270,7 @@ export const UsageLimitForm = ({
         open={isRemoveDialogOpen}
         teamSlug={teamSlug}
         onRemoved={() => {
-          setDraftValue('')
+          form.reset({ amount: '' })
           setIsEditing(true)
         }}
       />

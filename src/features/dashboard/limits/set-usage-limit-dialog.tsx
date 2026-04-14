@@ -1,4 +1,5 @@
-import { TriangleAlert } from 'lucide-react'
+'use client'
+
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -7,6 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
+import { WarningIcon } from '@/ui/primitives/icons'
 
 interface SetUsageLimitDialogProps {
   confirmDisabled: boolean
@@ -45,7 +47,7 @@ export const SetUsageLimitDialog = ({
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex items-start gap-2">
               <div className="mt-0.5 shrink-0">
-                <TriangleAlert className="text-accent-warning-highlight size-4" />
+                <WarningIcon className="text-accent-warning-highlight size-4" />
               </div>
               <DialogTitle className="text-fg">{title}</DialogTitle>
             </div>

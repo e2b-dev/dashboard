@@ -1,7 +1,10 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import type { BillingLimit } from '@/core/modules/billing/models'
 import {
@@ -11,6 +14,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
+  CurrencyInputSchema,
   formatCurrencyValue,
   sanitizeCurrencyInput,
 } from '@/lib/utils/currency'
@@ -19,19 +23,17 @@ import { Button } from '@/ui/primitives/button'
 import { EditIcon, TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 
+const AlertFormSchema = z.object({
+  amount: CurrencyInputSchema,
+})
+
+type AlertFormValues = z.infer<typeof AlertFormSchema>
+
 interface UsageAlertFormProps {
   className?: string
   originalValue: number | null
   teamSlug: string
 }
-
-const alertValueSchema = z
-  .string()
-  .trim()
-  .min(1, 'Enter a value.')
-  .regex(/^\d+$/, 'Enter a whole USD amount.')
-  .transform(Number)
-  .refine((value) => value >= 1, 'Value must be at least 1.')
 
 export const UsageAlertForm = ({
   className,
@@ -40,9 +42,6 @@ export const UsageAlertForm = ({
 }: UsageAlertFormProps) => {
   const hasMountedRef = useRef(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [draftValue, setDraftValue] = useState(
-    originalValue === null ? '' : formatCurrencyValue(originalValue)
-  )
   const [isEditing, setIsEditing] = useState(originalValue === null)
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -52,12 +51,22 @@ export const UsageAlertForm = ({
     teamSlug,
   }).queryKey
 
+  const form = useForm<AlertFormValues>({
+    resolver: zodResolver(AlertFormSchema),
+    mode: 'onChange',
+    defaultValues: {
+      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+    },
+  })
+
+  const draftValue = form.watch('amount')
+
   useEffect(() => {
-    setDraftValue(
-      originalValue === null ? '' : formatCurrencyValue(originalValue)
-    )
+    form.reset({
+      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+    })
     setIsEditing(originalValue === null)
-  }, [originalValue])
+  }, [originalValue, form.reset])
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -82,7 +91,7 @@ export const UsageAlertForm = ({
           }
         )
         toast(defaultSuccessToast('Billing alert saved.'))
-        setDraftValue(formatCurrencyValue(variables.value))
+        form.reset({ amount: formatCurrencyValue(variables.value) })
         setIsEditing(false)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
@@ -105,7 +114,7 @@ export const UsageAlertForm = ({
           }
         )
         toast(defaultSuccessToast('Billing alert removed.'))
-        setDraftValue('')
+        form.reset({ amount: '' })
         setIsEditing(true)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
@@ -117,14 +126,13 @@ export const UsageAlertForm = ({
     })
   )
 
-  const parsedValue = alertValueSchema.safeParse(draftValue)
-  const nextValue = parsedValue.success ? parsedValue.data : null
   const isMutating = setAlertMutation.isPending || clearAlertMutation.isPending
   const isClearIntent =
     isEditing && originalValue !== null && draftValue.length === 0
   const canSave =
     isEditing &&
-    (isClearIntent || (parsedValue.success && nextValue !== originalValue)) &&
+    (isClearIntent ||
+      (form.formState.isValid && Number(draftValue) !== originalValue)) &&
     !isMutating
   const shouldShowCancel =
     isEditing && (originalValue !== null || draftValue.length > 0)
@@ -135,15 +143,15 @@ export const UsageAlertForm = ({
     inputRef.current?.blur()
 
     if (originalValue === null) {
-      setDraftValue('')
+      form.reset({ amount: '' })
       return
     }
 
-    setDraftValue(formatCurrencyValue(originalValue))
+    form.reset({ amount: formatCurrencyValue(originalValue) })
     setIsEditing(false)
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!isEditing) return
 
@@ -152,22 +160,20 @@ export const UsageAlertForm = ({
       return
     }
 
-    if (!parsedValue.success) {
+    const isValid = await form.trigger()
+    if (!isValid) {
       toast(
         defaultErrorToast(
-          parsedValue.error.issues[0]?.message ||
+          form.formState.errors.amount?.message ||
             'Enter a billing alert amount.'
         )
       )
       return
     }
 
-    if (parsedValue.data === originalValue) return
-    setAlertMutation.mutate({
-      teamSlug,
-      type: 'alert',
-      value: parsedValue.data,
-    })
+    const value = Number(form.getValues('amount'))
+    if (value === originalValue) return
+    setAlertMutation.mutate({ teamSlug, type: 'alert', value })
   }
 
   return (
@@ -180,23 +186,33 @@ export const UsageAlertForm = ({
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <span className="prose-value-big text-fg">$</span>
-        <Input
-          aria-label="alert amount"
-          ref={inputRef}
-          className="prose-value-big text-fg h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-tertiary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
-          disabled={isMutating}
-          inputMode="numeric"
-          onChange={(event) => {
-            if (!isEditing) return
-            setDraftValue(sanitizeCurrencyInput(event.target.value))
-          }}
-          onFocus={() => {
-            if (originalValue === null || isEditing) return
-            setIsEditing(true)
-          }}
-          placeholder="--"
-          readOnly={!isEditing && originalValue !== null}
-          value={draftValue}
+        <Controller
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <Input
+              aria-label="alert amount"
+              ref={(el) => {
+                field.ref(el)
+                inputRef.current = el
+              }}
+              className="prose-value-big text-fg h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-tertiary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
+              disabled={isMutating}
+              inputMode="numeric"
+              onChange={(event) => {
+                if (!isEditing) return
+                field.onChange(sanitizeCurrencyInput(event.target.value))
+              }}
+              onBlur={field.onBlur}
+              onFocus={() => {
+                if (originalValue === null || isEditing) return
+                setIsEditing(true)
+              }}
+              placeholder="--"
+              readOnly={!isEditing && originalValue !== null}
+              value={field.value}
+            />
+          )}
         />
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -223,7 +239,7 @@ export const UsageAlertForm = ({
               className="font-sans normal-case"
               disabled={isMutating}
               onClick={() => {
-                setDraftValue(formatCurrencyValue(originalValue))
+                form.reset({ amount: formatCurrencyValue(originalValue) })
                 setIsEditing(true)
               }}
             >
