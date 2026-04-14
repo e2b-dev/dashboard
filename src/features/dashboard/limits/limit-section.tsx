@@ -2,8 +2,8 @@
 
 import { Bell, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { AlertAsciiIcon } from '@/ui/primitives/alert-ascii-icon'
-import { LimitAsciiIcon } from '@/ui/primitives/limit-ascii-icon'
+import { AlertAsciiIcon } from './alert-ascii-icon'
+import { LimitAsciiIcon } from './limit-ascii-icon'
 import LimitForm from './limit-form'
 
 type LimitType = 'limit' | 'alert'
