@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useDashboard } from '../context'
-import { UsageAlertSection, UsageLimitSection } from './limit-section'
+import { UsageAlertSection } from './usage-alert-section'
+import { UsageLimitSection } from './usage-limit-section'
 
 interface UsageLimitsProps {
   className?: string

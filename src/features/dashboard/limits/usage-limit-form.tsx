@@ -168,8 +168,8 @@ export const UsageLimitForm = ({
         )}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span className="text-fg prose-value-big">$</span>
-          <span className="text-fg prose-value-big">
+          <span className="prose-value-big text-fg">$</span>
+          <span className="prose-value-big text-fg">
             {formatCurrencyValue(originalValue)}
           </span>
         </div>
@@ -210,11 +210,11 @@ export const UsageLimitForm = ({
         onSubmit={handleSubmit}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-fg prose-value-big">$</span>
+          <span className="prose-value-big text-fg">$</span>
           <Input
             aria-label="limit amount"
             autoFocus={originalValue !== null}
-            className="text-fg prose-value-big h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-secondary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
+            className="prose-value-big text-fg h-auto border-0 bg-transparent px-0 py-0 font-mono shadow-none placeholder:text-fg-tertiary hover:bg-transparent focus:bg-transparent focus:[border-bottom:0] focus:outline-none"
             disabled={isMutating}
             inputMode="numeric"
             onChange={(event) =>
