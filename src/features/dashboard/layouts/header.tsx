@@ -54,7 +54,7 @@ export default function DashboardLayoutHeader({
           )}
         </div>
 
-        <ClientOnly className="flex items-center pl-2">
+        <ClientOnly className="flex items-center pl-2 pr-2">
           <ThemeSwitcher />
         </ClientOnly>
 

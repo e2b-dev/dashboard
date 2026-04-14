@@ -70,37 +70,37 @@ export default function DashboardSidebarMenu() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             collisionPadding={10}
-            className="w-[280px] px-4 pt-3 pb-2"
+            className="w-[280px] p-2"
             align="start"
             sideOffset={4}
           >
             <DashboardSidebarMenuTeams />
 
             <DropdownMenuItem
-              className="text-accent-main-highlight mt-1 h-9 px-0 py-0 font-sans prose-body-highlight"
+              className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
               onSelect={() => setCreateTeamOpen(true)}
             >
-              <AddIcon className="ml-0.5 size-5" /> Create New Team
+              <AddIcon className="ml-0.5" /> Create new team
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="-mx-4" />
+            <DropdownMenuSeparator className="-mx-2" />
 
             <DropdownMenuGroup className="gap-0 pt-0 pb-0">
               <DropdownMenuItem
-                className="h-9 px-0 py-0 font-sans prose-body-highlight"
+                className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
                 asChild
               >
                 <Link href={PROTECTED_URLS.ACCOUNT_SETTINGS}>
-                  <AccountSettingsIcon className="size-4" /> Account Settings
+                  <AccountSettingsIcon className="ml-0.5" /> Account settings
                 </Link>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 variant="error"
-                className="h-9 px-0 py-0 font-sans prose-body-highlight"
+                className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
                 onSelect={handleLogout}
               >
-                <LogoutIcon className="size-4" /> Log Out
+                <LogoutIcon className="ml-0.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

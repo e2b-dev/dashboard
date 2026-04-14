@@ -102,14 +102,14 @@ export default function DashboardSidebarFooter() {
               <ContactSupportDialog
                 trigger={
                   <SidebarMenuButton
-                    tooltip="Report Issue"
+                    tooltip="Support"
                     className={cn(
                       'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-[35px]! group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
                     <BugIcon className="hidden group-data-[collapsible=icon]:block" />
-                    Report Issue
+                    Support
                   </SidebarMenuButton>
                 }
               />
