@@ -38,6 +38,7 @@ export const UsageAlertForm = ({
   originalValue,
   teamSlug,
 }: UsageAlertFormProps) => {
+  const hasMountedRef = useRef(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const [draftValue, setDraftValue] = useState(
     originalValue === null ? '' : formatCurrencyValue(originalValue)
@@ -59,6 +60,11 @@ export const UsageAlertForm = ({
   }, [originalValue])
 
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+
     if (!isEditing) return
     inputRef.current?.focus()
     const inputLength = inputRef.current?.value.length ?? 0
