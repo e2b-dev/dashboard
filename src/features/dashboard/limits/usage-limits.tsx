@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { useDashboard } from '../context'
-import { LimitSection } from './limit-section'
+import { UsageAlertSection, UsageLimitSection } from './limit-section'
 
 interface UsageLimitsProps {
   className?: string
@@ -44,18 +44,14 @@ export const UsageLimits = ({ className }: UsageLimitsProps) => {
         className
       )}
     >
-      <LimitSection
+      <UsageLimitSection
         email={team.email}
         teamSlug={teamSlug}
-        title="Usage Limit"
-        type="limit"
         value={limits.limit_amount_gte}
       />
-      <LimitSection
+      <UsageAlertSection
         email={team.email}
         teamSlug={teamSlug}
-        title="Usage Alert"
-        type="alert"
         value={limits.alert_amount_gte}
       />
     </div>

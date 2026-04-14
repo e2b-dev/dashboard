@@ -4,53 +4,38 @@ import { Bell, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AlertAsciiIcon } from './alert-ascii-icon'
 import { LimitAsciiIcon } from './limit-ascii-icon'
-import LimitForm from './limit-form'
+import { UsageAlertForm } from './usage-alert-form'
+import { UsageLimitForm } from './usage-limit-form'
 
-type LimitType = 'limit' | 'alert'
-
-interface LimitSectionProps {
+interface UsageLimitSectionProps {
   className?: string
   email: string
   teamSlug: string
-  title: string
-  type: LimitType
+  value: number | null
+}
+
+interface UsageAlertSectionProps {
+  className?: string
+  email: string
+  teamSlug: string
   value: number | null
 }
 
 const currencyFormatter = new Intl.NumberFormat('en-US')
 
-const iconMap: Record<LimitType, typeof LimitAsciiIcon> = {
-  limit: LimitAsciiIcon,
-  alert: AlertAsciiIcon,
-}
-
-const LimitPanelIcon = ({ type }: { type: LimitType }) => {
-  const Icon = iconMap[type]
+const LimitPanelIcon = ({ icon }: { icon: typeof LimitAsciiIcon }) => {
+  const Icon = icon
   return (
-    <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke opacity-50">
+    <div className="flex w-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke opacity-50">
       <Icon className="size-full" />
     </div>
   )
 }
 
-const LimitSectionInfo = ({
+const UsageLimitSectionInfo = ({
   email,
-  type,
   value,
-}: Pick<LimitSectionProps, 'email' | 'type' | 'value'>) => {
-  if (type === 'alert') {
-    const alertMessage =
-      value === null
-        ? `Informative alert will be sent to ${email} when this threshold is reached`
-        : `Informative alert will be sent to ${email} when the $${currencyFormatter.format(value)} threshold is reached`
-
-    return (
-      <p className="text-fg-secondary prose-body max-w-[450px]">
-        {alertMessage}
-      </p>
-    )
-  }
-
+}: Pick<UsageLimitSectionProps, 'email' | 'value'>) => {
   const limitMessage =
     value === null
       ? 'All API requests are blocked after reaching this limit'
@@ -70,26 +55,60 @@ const LimitSectionInfo = ({
   )
 }
 
-export const LimitSection = ({
+const UsageAlertSectionInfo = ({
+  email,
+  value,
+}: Pick<UsageAlertSectionProps, 'email' | 'value'>) => {
+  const alertMessage =
+    value === null
+      ? `Informative alert will be sent to ${email} when this threshold is reached`
+      : `Informative alert will be sent to ${email} when the $${currencyFormatter.format(value)} threshold is reached`
+
+  return (
+    <p className="text-fg-secondary prose-body max-w-[450px]">{alertMessage}</p>
+  )
+}
+
+export const UsageLimitSection = ({
   className,
   email,
   teamSlug,
-  title,
-  type,
   value,
-}: LimitSectionProps) => {
+}: UsageLimitSectionProps) => {
   return (
     <section className={cn('flex flex-col gap-4', className)}>
       <p className="text-fg-tertiary prose-label-highlight uppercase">
-        {title}
+        Usage Limit
       </p>
       <div className="flex w-full">
-        <LimitPanelIcon type={type} />
+        <LimitPanelIcon icon={LimitAsciiIcon} />
         <div className="bg-bg min-w-0 flex-1 border border-l-0 border-stroke">
-          <LimitForm originalValue={value} teamSlug={teamSlug} type={type} />
+          <UsageLimitForm originalValue={value} teamSlug={teamSlug} />
         </div>
       </div>
-      <LimitSectionInfo email={email} type={type} value={value} />
+      <UsageLimitSectionInfo email={email} value={value} />
+    </section>
+  )
+}
+
+export const UsageAlertSection = ({
+  className,
+  email,
+  teamSlug,
+  value,
+}: UsageAlertSectionProps) => {
+  return (
+    <section className={cn('flex flex-col gap-4', className)}>
+      <p className="text-fg-tertiary prose-label-highlight uppercase">
+        Usage Alert
+      </p>
+      <div className="flex w-full">
+        <LimitPanelIcon icon={AlertAsciiIcon} />
+        <div className="bg-bg min-w-0 flex-1 border border-l-0 border-stroke">
+          <UsageAlertForm originalValue={value} teamSlug={teamSlug} />
+        </div>
+      </div>
+      <UsageAlertSectionInfo email={email} value={value} />
     </section>
   )
 }
