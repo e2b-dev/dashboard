@@ -52,7 +52,7 @@ export function PollingButton({
   const concatenatedIsRefreshing = isRefreshingProp || isRefreshing
 
   return (
-    <div className={cn('flex h-6 items-center gap-1 px-0', className)}>
+    <div className={cn('flex h-9 items-center gap-1 px-0', className)}>
       <IconButton
         onClick={refresh}
         disabled={concatenatedIsRefreshing}
