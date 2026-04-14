@@ -157,11 +157,7 @@ const NameCell = ({
             {name ?? email}
           </span>
           {isCurrentUser ? (
-            <Badge
-              className="shrink-0 uppercase"
-              size="sm"
-              variant="default"
-            >
+            <Badge className="shrink-0 uppercase" size="sm" variant="default">
               You
             </Badge>
           ) : null}
