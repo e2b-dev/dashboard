@@ -6,9 +6,9 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import { ArrowRightIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
-import { ArrowRightIcon } from '@/ui/primitives/icons'
 
 interface RootPathInputProps {
   className?: string

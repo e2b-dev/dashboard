@@ -4,7 +4,6 @@ import { DialogTitle } from '@radix-ui/react-dialog'
 import { useState } from 'react'
 import { AnimatedMetricDisplay } from '@/features/dashboard/sandboxes/monitoring/charts/animated-metric-display'
 import { cn } from '@/lib/utils'
-import { IconButton } from '@/ui/primitives/icon-button'
 import {
   Card,
   CardContent,
@@ -12,6 +11,7 @@ import {
   cardVariants,
 } from '@/ui/primitives/card'
 import { Dialog, DialogContent } from '@/ui/primitives/dialog'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { UnpackIcon } from '@/ui/primitives/icons'
 import ComputeUsageChart from './compute-usage-chart'
 import { useUsageCharts } from './usage-charts-context'
@@ -142,9 +142,7 @@ export function UsageMetricChart({
         open={isFullscreen}
         onOpenChange={(open) => !open && setFullscreenMetric(null)}
       >
-        <DialogContent
-          className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full p-0"
-        >
+        <DialogContent className="sm:max-w-[min(90svw,2200px)] w-full max-h-[min(70svh,1200px)] h-full p-0">
           {/* title just here to avoid accessibility dev error from radix */}
           <DialogTitle className="sr-only">
             {METRIC_CONFIGS[metric].title}

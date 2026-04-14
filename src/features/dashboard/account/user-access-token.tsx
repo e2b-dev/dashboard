@@ -6,9 +6,9 @@ import { getUserAccessTokenAction } from '@/core/server/actions/user-actions'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
+import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
-import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
 
 interface UserAccessTokenProps {
   className?: string
@@ -68,11 +68,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
             <EyeIcon />
           )}
         </IconButton>
-        <CopyButton
-          variant="secondary"
-          value={token ?? ''}
-          disabled={!token}
-        />
+        <CopyButton variant="secondary" value={token ?? ''} disabled={!token} />
       </div>
     </div>
   )

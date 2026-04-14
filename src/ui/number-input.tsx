@@ -1,9 +1,9 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { ChevronDownIcon, ChevronUpIcon } from './primitives/icons'
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 import { IconButton } from './primitives/icon-button'
+import { ChevronDownIcon, ChevronUpIcon } from './primitives/icons'
 import { Input } from './primitives/input'
 
 export interface NumberInputProps
@@ -100,10 +100,7 @@ export function NumberInput({
         <IconButton
           type="button"
           variant="secondary"
-          className={cn(
-            'h-4.5 border-r-0',
-            buttonClassName
-          )}
+          className={cn('h-4.5 border-r-0', buttonClassName)}
           onClick={increment}
           disabled={disabled || value >= max}
         >
@@ -113,10 +110,7 @@ export function NumberInput({
         <IconButton
           type="button"
           variant="secondary"
-          className={cn(
-            'h-4.5 border-t-0 border-r-0',
-            buttonClassName
-          )}
+          className={cn('h-4.5 border-t-0 border-r-0', buttonClassName)}
           onClick={decrement}
           disabled={disabled || value <= min}
         >

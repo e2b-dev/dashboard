@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Badge } from '@/ui/primitives/badge'
-import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   EditIcon,
   IndicatorDotsIcon,
@@ -113,7 +113,8 @@ export default function WebhookTableRow({
               </WebhookAddEditDialog>
               <WebhookEditSecretDialog webhook={webhook}>
                 <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  <PrivateIcon className="size-4 text-fg-tertiary" /> Rotate Secret
+                  <PrivateIcon className="size-4 text-fg-tertiary" /> Rotate
+                  Secret
                 </DropdownMenuItem>
               </WebhookEditSecretDialog>
               <WebhookDeleteDialog webhook={webhook}>

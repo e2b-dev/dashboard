@@ -2,12 +2,11 @@
 
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { CollapseLeftIcon, MenuIcon } from '@/ui/primitives/icons'
 import * as React from 'react'
-
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import { CollapseLeftIcon, MenuIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Separator } from '@/ui/primitives/separator'
 import {
@@ -559,7 +558,8 @@ export const sidebarMenuButtonVariants = cva(
       },
       size: {
         default: 'h-9',
-        switcher: 'h-12 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:border-0',
+        switcher:
+          'h-12 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:border-0',
       },
     },
     defaultVariants: {

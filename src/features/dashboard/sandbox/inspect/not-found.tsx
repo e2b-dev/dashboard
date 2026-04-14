@@ -1,6 +1,5 @@
 'use client'
 
-import { ArrowLeftIcon, ArrowUpIcon, HomeIcon, RefreshIcon } from '@/ui/primitives/icons'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -8,6 +7,12 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import {
+  ArrowLeftIcon,
+  ArrowUpIcon,
+  HomeIcon,
+  RefreshIcon,
+} from '@/ui/primitives/icons'
 import { useSandboxContext } from '../context'
 import SandboxInspectEmptyFrame from './empty'
 

@@ -85,9 +85,7 @@ export function RanFor({
       className="whitespace-nowrap text-fg-secondary group/time"
     >
       In {formatDurationCompact(duration)}{' '}
-      <span className="text-fg-tertiary">
-        · {formattedTimestamp}
-      </span>
+      <span className="text-fg-tertiary">· {formattedTimestamp}</span>
     </CopyButtonInline>
   )
 }
@@ -103,9 +101,7 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
       className="whitespace-nowrap text-fg-secondary group/time"
     >
       {formatTimeAgoCompact(elapsed)}{' '}
-      <span className="text-fg-tertiary">
-        · {formattedTimestamp}
-      </span>
+      <span className="text-fg-tertiary">· {formattedTimestamp}</span>
     </CopyButtonInline>
   )
 }

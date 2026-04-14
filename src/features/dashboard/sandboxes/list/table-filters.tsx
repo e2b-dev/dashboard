@@ -19,11 +19,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { AddIcon, FilterIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { AddIcon, FilterIcon } from '@/ui/primitives/icons'
 
 // Components
 const RunningSinceFilter = memo(function RunningSinceFilter() {

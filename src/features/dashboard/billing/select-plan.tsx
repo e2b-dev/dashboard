@@ -198,9 +198,7 @@ function PlanCard({
           </div>
 
           {isCurrentPlan ? (
-            <Button disabled>
-              Your current plan
-            </Button>
+            <Button disabled>Your current plan</Button>
           ) : (
             <div className="flex items-center gap-4 flex-wrap">
               <span className="prose-body text-fg-tertiary">

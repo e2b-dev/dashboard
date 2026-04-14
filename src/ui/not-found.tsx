@@ -1,6 +1,5 @@
 'use client'
 
-import { ArrowLeftIcon, HomeIcon, DashboardIcon } from './primitives/icons'
 import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { Button } from './primitives/button'
@@ -11,6 +10,7 @@ import {
   CardFooter,
   CardHeader,
 } from './primitives/card'
+import { ArrowLeftIcon, DashboardIcon, HomeIcon } from './primitives/icons'
 
 export default function NotFound() {
   return (

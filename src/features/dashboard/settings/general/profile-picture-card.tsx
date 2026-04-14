@@ -17,7 +17,12 @@ import { useTRPC } from '@/trpc/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { cardVariants } from '@/ui/primitives/card'
-import { SpinnerIcon, UploadIcon, PhotoIcon, EditIcon } from '@/ui/primitives/icons'
+import {
+  EditIcon,
+  PhotoIcon,
+  SpinnerIcon,
+  UploadIcon,
+} from '@/ui/primitives/icons'
 
 interface ProfilePictureCardProps {
   className?: string

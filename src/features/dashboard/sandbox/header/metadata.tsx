@@ -17,9 +17,7 @@ export default function Metadata() {
   }
 
   return (
-    <JsonPopover
-      json={sandboxInfo?.metadata}
-    >
+    <JsonPopover json={sandboxInfo?.metadata}>
       <MetadataIcon className="size-3.5" />
       Metadata
     </JsonPopover>

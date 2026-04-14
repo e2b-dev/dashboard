@@ -14,7 +14,6 @@ import {
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,8 +22,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { TableCell, TableRow } from '@/ui/primitives/table'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { IndicatorDotsIcon } from '@/ui/primitives/icons'
+import { TableCell, TableRow } from '@/ui/primitives/table'
 
 interface TableRowProps {
   apiKey: TeamAPIKey

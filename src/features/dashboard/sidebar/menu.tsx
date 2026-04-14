@@ -15,8 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import {
+  AccountSettingsIcon,
+  AddIcon,
+  LogoutIcon,
+  UnpackIcon,
+} from '@/ui/primitives/icons'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
-import { AccountSettingsIcon, AddIcon, LogoutIcon, UnpackIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'
@@ -34,10 +39,7 @@ export default function DashboardSidebarMenu() {
       <SidebarMenuItem className="h-14 px-3 pb-2 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              variant="outline"
-              size="switcher"
-            >
+            <SidebarMenuButton variant="outline" size="switcher">
               <Avatar
                 className={cn(
                   'size-8 shrink-0 transition-all duration-100 ease-in-out',

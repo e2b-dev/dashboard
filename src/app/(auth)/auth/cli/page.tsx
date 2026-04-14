@@ -1,4 +1,3 @@
-import { CloudIcon, SystemIcon, LinkIcon } from '@/ui/primitives/icons'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
@@ -8,6 +7,7 @@ import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { CloudIcon, LinkIcon, SystemIcon } from '@/ui/primitives/icons'
 
 // Types
 type CLISearchParams = Promise<{

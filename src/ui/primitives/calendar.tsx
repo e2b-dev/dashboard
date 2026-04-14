@@ -1,19 +1,14 @@
 'use client'
 
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from './icons'
 import * as React from 'react'
 import {
   type DayButton,
   DayPicker,
   getDefaultClassNames,
 } from 'react-day-picker'
-
 import { cn } from '@/lib/utils/index'
 import { Button, buttonVariants } from '@/ui/primitives/button'
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from './icons'
 
 // we need to properly type the Calendar props to work with react-day-picker's union types
 // the DayPicker component has different prop requirements based on the mode
@@ -259,7 +254,7 @@ function CalendarDayButton({
     <Button
       ref={ref}
       variant="tertiary"
-      size='none'
+      size="none"
       data-day={day.date.toLocaleDateString()}
       data-selected-single={
         modifiers.selected &&

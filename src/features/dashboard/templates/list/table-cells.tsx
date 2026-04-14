@@ -20,7 +20,6 @@ import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,8 +29,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
+import {
+  CheckIcon,
+  CopyIcon,
+  IndicatorDotsIcon,
+  PrivateIcon,
+  UnlockIcon,
+} from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader_d'
-import { CheckIcon, CopyIcon, IndicatorDotsIcon, PrivateIcon, UnlockIcon } from '@/ui/primitives/icons'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
 
@@ -228,11 +234,7 @@ export function ActionsCell({
             className="size-5"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
           >
-            {isUpdating ? (
-              <Loader className="size-4" />
-            ) : (
-              <IndicatorDotsIcon />
-            )}
+            {isUpdating ? <Loader className="size-4" /> : <IndicatorDotsIcon />}
           </IconButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

@@ -11,7 +11,12 @@ import {
   CardFooter,
   CardHeader,
 } from '@/ui/primitives/card'
-import { PersonsIcon, ArrowLeftIcon, HomeIcon, ShieldXIcon } from '@/ui/primitives/icons'
+import {
+  ArrowLeftIcon,
+  HomeIcon,
+  PersonsIcon,
+  ShieldXIcon,
+} from '@/ui/primitives/icons'
 
 export default function Unauthorized() {
   return (

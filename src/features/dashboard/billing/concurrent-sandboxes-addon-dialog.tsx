@@ -7,7 +7,6 @@ import {
   useStripe,
 } from '@stripe/react-stripe-js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertIcon, ArrowRightIcon, CardIcon, CreditsIcon } from '@/ui/primitives/icons'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
@@ -23,7 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { SandboxIcon } from '@/ui/primitives/icons'
+import {
+  AlertIcon,
+  ArrowRightIcon,
+  CardIcon,
+  CreditsIcon,
+  SandboxIcon,
+} from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../context'
 import {

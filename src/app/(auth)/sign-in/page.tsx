@@ -149,7 +149,10 @@ export default function Login() {
 
           <input type="hidden" {...form.register('returnTo')} />
 
-          <Button type="submit" loading={isExecuting ? 'Signing in...' : undefined}>
+          <Button
+            type="submit"
+            loading={isExecuting ? 'Signing in...' : undefined}
+          >
             Sign in
           </Button>
         </form>

@@ -117,11 +117,7 @@ function AvailableAddons({
                   <Loader variant="slash" size="sm" />
                 </div>
               ) : (
-                <Button
-                  variant="secondary"
-                  onClick={onAdd}
-                  disabled={disabled}
-                >
+                <Button variant="secondary" onClick={onAdd} disabled={disabled}>
                   Buy
                 </Button>
               )}

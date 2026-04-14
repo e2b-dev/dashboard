@@ -1,9 +1,9 @@
 'use client'
 
-import { AlertIcon, FolderIcon, FolderOpenIcon } from '@/ui/primitives/icons'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
+import { AlertIcon, FolderIcon, FolderOpenIcon } from '@/ui/primitives/icons'
 import SandboxInspectEmptyNode from './empty-node'
 import type { FilesystemNode } from './filesystem/types'
 import { useDirectory } from './hooks/use-directory'

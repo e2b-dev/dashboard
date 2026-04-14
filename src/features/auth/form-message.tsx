@@ -1,9 +1,9 @@
 'use client'
 
-import { AlertIcon, InfoIcon, SuccessIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
+import { AlertIcon, InfoIcon, SuccessIcon } from '@/ui/primitives/icons'
 
 // TODO: this type is used in more places than just authentication
 // -> should probably be renamed / moved to a more appropriate location

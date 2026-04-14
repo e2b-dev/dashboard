@@ -17,7 +17,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import { ChevronLeftIcon, ExternalLinkIcon, WarningIcon } from '@/ui/primitives/icons'
+import {
+  ChevronLeftIcon,
+  ExternalLinkIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string

@@ -58,7 +58,9 @@ export default function DashboardSidebarCommand({
           )}
           onClick={() => setOpen(true)}
         >
-          <span className="group-data-[collapsible=icon]:hidden">&gt; Go to</span>
+          <span className="group-data-[collapsible=icon]:hidden">
+            &gt; Go to
+          </span>
           <Kbd
             keys={['cmd', 'k']}
             className="pointer-events-none group-data-[collapsible=icon]:mx-auto ml-auto"

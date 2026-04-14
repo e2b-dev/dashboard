@@ -1,6 +1,5 @@
 'use client'
 
-import { RefreshIcon } from './primitives/icons'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { cn } from '@/lib/utils'
@@ -13,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from './primitives/card'
+import { RefreshIcon } from './primitives/icons'
 
 interface ErrorIndicatorProps {
   title?: string

@@ -1,3 +1,4 @@
+import { JSX } from 'react'
 import {
   AccountSettingsIcon,
   CardIcon,
@@ -10,7 +11,6 @@ import {
   UsageIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
-import { JSX } from 'react'
 import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 

@@ -52,11 +52,7 @@ export default function KillButton({ className }: KillButtonProps) {
       description="Are you sure you want to kill this sandbox? The sandbox state will be lost and cannot be recovered."
       confirm="Kill Sandbox"
       trigger={
-        <Button
-          variant="error"
-          className={className}
-          disabled={!canKill}
-        >
+        <Button variant="error" className={className} disabled={!canKill}>
           <TrashIcon />
           Kill
         </Button>

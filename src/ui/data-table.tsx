@@ -2,6 +2,7 @@ import type { Cell, Header } from '@tanstack/react-table'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import { SortAscIcon, SortDescIcon } from '@/ui/primitives/icons'
 import {
   Select,
   SelectContent,
@@ -10,7 +11,6 @@ import {
   SelectValue,
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
-import { SortAscIcon, SortDescIcon } from '@/ui/primitives/icons'
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {

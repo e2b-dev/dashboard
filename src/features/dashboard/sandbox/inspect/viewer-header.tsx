@@ -1,8 +1,13 @@
-import { IconButton } from '@/ui/primitives/icon-button'
-import { RefreshIcon, CloseIcon, DownloadIcon, FileIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import CopyButton from '@/ui/copy-button'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
+import {
+  CloseIcon,
+  DownloadIcon,
+  FileIcon,
+  RefreshIcon,
+} from '@/ui/primitives/icons'
 import type { FileContentState } from './filesystem/store'
 
 interface SandboxInspectViewerHeaderProps {

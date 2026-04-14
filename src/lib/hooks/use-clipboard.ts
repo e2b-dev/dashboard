@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from 'react'
 
 /**
  * Hook for copying text to clipboard with temporary success state
@@ -10,25 +10,25 @@ import { useState, useCallback } from "react";
 export const useClipboard = (
   duration: number = 3000
 ): [boolean, (text: string) => Promise<void>] => {
-  const [wasCopied, setWasCopied] = useState(false);
+  const [wasCopied, setWasCopied] = useState(false)
 
   const copy = useCallback(
     async (text: string) => {
       try {
-        await navigator.clipboard.writeText(text);
-        setWasCopied(true);
+        await navigator.clipboard.writeText(text)
+        setWasCopied(true)
 
         // Reset wasCopied after duration
         setTimeout(() => {
-          setWasCopied(false);
-        }, duration);
+          setWasCopied(false)
+        }, duration)
       } catch (err) {
-        console.error("Failed to copy text:", err);
-        setWasCopied(false);
+        console.error('Failed to copy text:', err)
+        setWasCopied(false)
       }
     },
     [duration]
-  );
+  )
 
-  return [wasCopied, copy];
-};
+  return [wasCopied, copy]
+}

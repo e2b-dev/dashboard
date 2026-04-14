@@ -35,7 +35,10 @@ export function JsonPopover({
         <Button
           variant="quaternary"
           size="none"
-          className={cn('cursor-pointer justify-start truncate font-sans whitespace-nowrap', className)}
+          className={cn(
+            'cursor-pointer justify-start truncate font-sans whitespace-nowrap',
+            className
+          )}
           onClick={(e) => {
             e.stopPropagation()
             e.preventDefault()

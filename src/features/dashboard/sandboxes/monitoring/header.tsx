@@ -4,8 +4,8 @@ import { getTeamMetricsMax } from '@/core/server/functions/sandboxes/get-team-me
 import { getNowMemo } from '@/lib/utils/server'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import { WarningIcon } from '@/ui/primitives/icons'
+import { Skeleton } from '@/ui/primitives/skeleton'
 import {
   ConcurrentSandboxesClient,
   MaxConcurrentSandboxesClient,

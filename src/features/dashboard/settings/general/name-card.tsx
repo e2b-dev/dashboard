@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormOptimisticAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'motion/react'
+import { useMemo } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { getTransformedDefaultTeamName } from '@/core/modules/teams/utils'
 import { updateTeamNameAction } from '@/core/server/actions/team-actions'
@@ -34,7 +35,6 @@ import {
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
-import { useMemo } from 'react'
 
 interface NameCardProps {
   className?: string

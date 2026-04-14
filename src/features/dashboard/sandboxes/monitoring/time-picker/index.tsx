@@ -1,9 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronRightIcon } from '@/ui/primitives/icons'
 import { memo, type ReactNode, useCallback, useEffect, useRef } from 'react'
-
 import { cn } from '@/lib/utils'
 import { tryParseDatetime } from '@/lib/utils/formatting'
 import type { TimeframeState } from '@/lib/utils/timeframe'
@@ -15,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { ChevronRightIcon } from '@/ui/primitives/icons'
 import { RadioGroup, RadioGroupItem } from '@/ui/primitives/radio-group'
 
 import { MAX_DAYS_AGO, TIME_OPTIONS } from './constants'

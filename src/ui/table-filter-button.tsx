@@ -1,6 +1,6 @@
-import { CloseIcon } from './primitives/icons'
 import React from 'react'
 import { Button } from './primitives/button'
+import { CloseIcon } from './primitives/icons'
 
 interface TableFilterButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {

@@ -1,18 +1,16 @@
 'use client'
 
-import { TimeIcon, CalendarIcon } from './primitives/icons'
 import { memo, useCallback, useEffect, useState } from 'react'
-
 import { cn } from '@/lib/utils'
 import {
   formatDateWithSpaces,
   formatTimeWithSpaces,
   tryParseDatetime,
 } from '@/lib/utils/formatting'
-
 import { NumberInput } from './number-input'
-import { IconButton } from './primitives/icon-button'
 import { Calendar } from './primitives/calendar'
+import { IconButton } from './primitives/icon-button'
+import { CalendarIcon, TimeIcon } from './primitives/icons'
 import { Input } from './primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
@@ -152,9 +150,7 @@ export const TimeInput = memo(function TimeInput({
           />
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
             <PopoverTrigger asChild>
-              <IconButton
-                tabIndex={-1}
-              >
+              <IconButton tabIndex={-1}>
                 <CalendarIcon />
               </IconButton>
             </PopoverTrigger>
@@ -199,9 +195,7 @@ export const TimeInput = memo(function TimeInput({
               </span>
 
               <PopoverTrigger asChild>
-                <IconButton
-                  tabIndex={-1}
-                >
+                <IconButton tabIndex={-1}>
                   <TimeIcon />
                 </IconButton>
               </PopoverTrigger>

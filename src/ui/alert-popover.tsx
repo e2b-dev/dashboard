@@ -47,11 +47,7 @@ export const AlertPopover: FC<AlertPopoverProps> = ({
             <Button variant="quaternary" onClick={onCancel}>
               {cancel}
             </Button>
-            <Button
-              variant="error"
-              onClick={onConfirm}
-              {...confirmProps}
-            >
+            <Button variant="error" onClick={onConfirm} {...confirmProps}>
               {confirm}
             </Button>
           </div>

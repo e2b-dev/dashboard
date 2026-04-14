@@ -19,7 +19,13 @@ export default function Status() {
 
   return (
     <Badge variant={isRunning ? 'positive' : 'error'} className="uppercase">
-      <DotIcon className={isRunning ? 'size-3 animate-pulse fill-current' : 'size-3 fill-current'} />
+      <DotIcon
+        className={
+          isRunning
+            ? 'size-3 animate-pulse fill-current'
+            : 'size-3 fill-current'
+        }
+      />
       {isRunning ? 'Running' : 'Stopped'}
     </Badge>
   )

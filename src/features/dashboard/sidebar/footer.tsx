@@ -7,7 +7,13 @@ import {
 } from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
-import { BugIcon, DocsIcon, ExternalLinkIcon, FeedbackIcon, GithubIcon } from '@/ui/primitives/icons'
+import {
+  BugIcon,
+  DocsIcon,
+  ExternalLinkIcon,
+  FeedbackIcon,
+  GithubIcon,
+} from '@/ui/primitives/icons'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarFooter,

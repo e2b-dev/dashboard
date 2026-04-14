@@ -1,12 +1,12 @@
 'use client'
 
-import { IconButton } from '@/ui/primitives/icon-button'
-import { DotIcon, RefreshIcon } from '@/ui/primitives/icons'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
+import { DotIcon, RefreshIcon } from '@/ui/primitives/icons'
 import { useSandboxContext } from '../context'
 
 export default function RemainingTime() {
@@ -66,7 +66,9 @@ export default function RemainingTime() {
           disabled={isSandboxInfoLoading}
         >
           <RefreshIcon
-            className={cn(isSandboxInfoLoading && 'animate-spin duration-300 ease-in-out')}
+            className={cn(
+              isSandboxInfoLoading && 'animate-spin duration-300 ease-in-out'
+            )}
           />
         </IconButton>
       </motion.div>

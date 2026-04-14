@@ -1,6 +1,5 @@
 'use client'
 import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
-import { CheckIcon, CopyIcon } from './primitives/icons'
 import {
   type ButtonHTMLAttributes,
   forwardRef,
@@ -12,6 +11,7 @@ import {
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from './primitives/button'
+import { CheckIcon, CopyIcon } from './primitives/icons'
 import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
 
 export type CodeBlockProps = HTMLAttributes<HTMLElement> & {
@@ -171,7 +171,9 @@ function CopyButton({
       onClick={onCopy}
       {...props}
     >
-      <CheckIcon className={cn('transition-transform', !isCopied && 'scale-0')} />
+      <CheckIcon
+        className={cn('transition-transform', !isCopied && 'scale-0')}
+      />
       <CopyIcon
         className={cn('absolute transition-transform', isCopied && 'scale-0')}
       />

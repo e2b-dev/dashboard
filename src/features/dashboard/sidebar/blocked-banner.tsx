@@ -1,11 +1,11 @@
 'use client'
 
-import { WarningIcon } from '@/ui/primitives/icons'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn, exponentialSmoothing } from '@/lib/utils'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 

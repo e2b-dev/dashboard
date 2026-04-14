@@ -8,8 +8,8 @@ import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { Drawer, DrawerContent } from '@/ui/primitives/drawer'
-import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { DownloadIcon } from '@/ui/primitives/icons'
+import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 
 import {
   MAX_VIEWABLE_FILE_SIZE_BYTES,

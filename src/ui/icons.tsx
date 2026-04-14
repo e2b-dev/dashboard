@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils'
-import { TerminalCustomIcon, type Icon } from '@/ui/primitives/icons'
 import { type HTMLAttributes } from 'react'
 import { IconBaseProps } from 'react-icons/lib'
+import { cn } from '@/lib/utils'
+import { type Icon, TerminalCustomIcon } from '@/ui/primitives/icons'
 
 export function IconContainer({
   icon: Icon,

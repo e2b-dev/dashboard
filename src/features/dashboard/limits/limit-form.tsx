@@ -189,7 +189,7 @@ export default function LimitForm({
             {originalValue !== null && (
               <Button
                 type="button"
-                variant="error" 
+                variant="error"
                 disabled={isSaving || isClearing}
                 loading={isClearing ? 'Clearing...' : undefined}
                 onClick={handleClear}

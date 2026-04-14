@@ -2,7 +2,6 @@
 
 import { useTheme } from 'next-themes'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
-import { IconButton } from '@/ui/primitives/icon-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { MoonIcon, SunIcon, SystemIcon } from '@/ui/primitives/icons'
 
 interface ThemeSwitcherProps {

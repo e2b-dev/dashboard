@@ -17,10 +17,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { FilterIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
-import { FilterIcon } from '@/ui/primitives/icons'
 import { useTemplateTableStore } from './stores/table-store'
 
 // Components
@@ -111,10 +111,7 @@ const ResourcesFilter = () => {
               className="w-full"
             />
             {localValues.memory > 0 && (
-              <Button
-                variant="secondary"
-                onClick={handleClearMemory}
-              >
+              <Button variant="secondary" onClick={handleClearMemory}>
                 Clear
               </Button>
             )}

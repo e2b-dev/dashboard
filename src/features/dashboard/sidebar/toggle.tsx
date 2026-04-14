@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils'
 import { E2BLogo } from '@/ui/brand'
 import ClientOnly from '@/ui/client-only'
 import { IconButton } from '@/ui/primitives/icon-button'
+import { CollapseLeftIcon, ExpandRightIcon } from '@/ui/primitives/icons'
 import { useSidebar } from '@/ui/primitives/sidebar'
 import ShortcutTooltip from '@/ui/shortcut-tooltip'
-import { CollapseLeftIcon, ExpandRightIcon } from '@/ui/primitives/icons'
 
 export default function DashboardSidebarToggle() {
   const { toggleSidebar, open, openMobile } = useSidebar()
@@ -50,11 +50,7 @@ export default function DashboardSidebarToggle() {
       </AnimatePresence>
       <ShortcutTooltip keys={['ctrl', 's']}>
         <IconButton onClick={toggleSidebar}>
-          {isOpen ? (
-            <CollapseLeftIcon />
-          ) : (
-            <ExpandRightIcon />
-          )}
+          {isOpen ? <CollapseLeftIcon /> : <ExpandRightIcon />}
         </IconButton>
       </ShortcutTooltip>
     </div>
