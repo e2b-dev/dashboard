@@ -41,6 +41,8 @@ next-env.d.ts
 CLAUDE.md
 .agent
 
+# Cursor IDE
+.cursor/
 
 # tooling
 /template

@@ -1,0 +1,78 @@
+'use client'
+
+import { Key } from 'lucide-react'
+import type { FC } from 'react'
+import type { TeamAPIKey } from '@/core/modules/keys/models'
+import { cn } from '@/lib/utils'
+import {
+  Table,
+  TableBody,
+  TableEmptyState,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/ui/primitives/table'
+import { ApiKeysTableRow } from './api-keys-table-row'
+
+interface ApiKeysTableProps {
+  apiKeys: TeamAPIKey[]
+  teamSlug: string
+  totalKeyCount: number
+  className?: string
+}
+
+export const ApiKeysTable: FC<ApiKeysTableProps> = ({
+  apiKeys,
+  teamSlug,
+  totalKeyCount,
+  className,
+}) => (
+  <Table className={cn('w-full table-fixed', className)}>
+    <colgroup>
+      <col className="min-w-[200px] lg:w-[32%]" />
+      <col className="w-[200px] lg:w-[22%]" />
+      <col className="w-[112px] lg:w-[14%]" />
+      <col className="min-w-[160px] lg:w-[22%]" />
+      <col className="w-12 lg:w-[10%]" />
+    </colgroup>
+    <TableHeader className="border-b-0">
+      <TableRow className="border-stroke/80 hover:bg-transparent">
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          LABEL
+        </TableHead>
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          ID
+        </TableHead>
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          LAST USED
+        </TableHead>
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          ADDED
+        </TableHead>
+        <TableHead className="text-fg-tertiary w-12 p-0 font-sans! normal-case!">
+          <span className="sr-only">Actions</span>
+        </TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {apiKeys.length === 0 ? (
+        <TableEmptyState colSpan={5}>
+          <p className="prose-body-highlight flex items-center justify-center gap-2 text-fg-tertiary">
+            <Key aria-hidden className="size-4 shrink-0 opacity-70" />
+            {totalKeyCount === 0
+              ? 'No keys added yet'
+              : 'No keys match your search.'}
+          </p>
+        </TableEmptyState>
+      ) : (
+        apiKeys.map((apiKey) => (
+          <ApiKeysTableRow
+            key={apiKey.id}
+            apiKey={apiKey}
+            teamSlug={teamSlug}
+          />
+        ))
+      )}
+    </TableBody>
+  </Table>
+)
