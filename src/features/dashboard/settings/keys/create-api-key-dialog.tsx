@@ -10,13 +10,12 @@ import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -36,16 +35,6 @@ import {
 } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
-
-/** Neutral focus inside compound fields (Input defaults to accent bottom border). */
-const compoundInputClass = cn(
-  'h-10 min-h-10 min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 font-sans text-sm normal-case shadow-none',
-  'placeholder:text-fg-tertiary',
-  'hover:bg-bg-hover focus:bg-bg-hover',
-  'focus-visible:outline-none focus-visible:ring-0',
-  'focus:border-0 focus:outline-none',
-  'focus:[border-bottom:1px_solid_var(--stroke)] focus:[border-bottom-style:solid]'
-)
 
 const formSchema = z.object({
   name: z
@@ -88,6 +77,9 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
       name: '',
     },
   })
+
+  const nameDraft = form.watch('name')
+  const canSubmit = nameDraft.trim().length > 0
 
   const createMutation = useMutation(
     trpc.teams.createApiKey.mutationOptions({
@@ -132,33 +124,37 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent hideClose>
+      <DialogContent>
         {!createdKey ? (
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit((values) => {
-                createMutation.mutate({ teamSlug, name: values.name })
-              })}
-            >
-              <div className="border-stroke border-b px-5 py-4">
-                <h2 className="prose-headline-small text-fg uppercase">
-                  Create new key
-                </h2>
-              </div>
-              <div className="px-5 py-5">
+          <>
+            <DialogHeader>
+              <DialogTitle>Create new key</DialogTitle>
+              <DialogDescription className="sr-only">
+                Enter a name and create a new API key for this team.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit((values) => {
+                  createMutation.mutate({ teamSlug, name: values.name })
+                })}
+              >
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <FormItem className="gap-0">
+                    <FormItem>
                       <Label className="sr-only" htmlFor={field.name}>
                         Key name
                       </Label>
-                      <div className="border-stroke bg-bg flex min-h-10 overflow-hidden rounded-md border shadow-xs">
+                      <div className="flex items-stretch gap-1 py-1">
                         <FormControl>
                           <Input
                             id={field.name}
-                            className={compoundInputClass}
+                            className={cn(
+                              'h-9 min-h-9 flex-1 rounded-none border-stroke bg-bg font-sans text-sm normal-case',
+                              'placeholder:text-fg-tertiary'
+                            )}
                             placeholder="Enter key name"
                             autoComplete="off"
                             data-1p-ignore
@@ -168,80 +164,86 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                         </FormControl>
                         <Button
                           type="submit"
-                          variant="default"
-                          size="md"
-                          className="border-stroke h-10 shrink-0 gap-1.5 rounded-none border-0 border-l px-4 font-sans normal-case"
+                          variant={canSubmit ? 'default' : 'muted'}
+                          className="h-9 shrink-0 gap-1 px-3 font-sans normal-case"
+                          disabled={!canSubmit || createMutation.isPending}
                           loading={createMutation.isPending}
-                          disabled={createMutation.isPending}
                         >
                           <AddIcon className="size-4" aria-hidden />
                           Create
                         </Button>
                       </div>
-                      <FormMessage className="mt-2" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </>
         ) : (
           <>
-            <DialogHeader className="border-stroke border-b px-5 py-4">
-              <DialogTitle className="text-fg">{successTitle}</DialogTitle>
+            <DialogHeader>
+              <DialogTitle>{successTitle}</DialogTitle>
+              <DialogDescription className="sr-only">
+                Your new API key is shown once. Copy it before closing.
+              </DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col gap-4 px-5 py-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-1">
                 <Input
                   readOnly
                   value={createdKey}
-                  className="border-stroke focus:border-stroke h-10 flex-1 rounded-md border font-mono text-xs shadow-xs"
+                  className="border-stroke h-9 min-h-0 flex-1 rounded-none border font-mono text-sm"
                 />
                 <Button
                   type="button"
                   variant="default"
-                  size="md"
-                  className="h-10 shrink-0 gap-2 px-4 font-sans normal-case sm:min-w-[96px]"
+                  className="h-9 shrink-0 gap-1.5 px-3 font-sans normal-case active:translate-y-0"
                   onClick={() => {
                     void copyReveal(createdKey)
                     posthog.capture('copied API key')
                   }}
                 >
-                  {copiedReveal ? (
-                    <CheckIcon className="size-4" aria-hidden />
-                  ) : (
-                    <CopyIcon className="size-4" />
-                  )}
+                  <span
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center"
+                    aria-hidden
+                  >
+                    {copiedReveal ? (
+                      <CheckIcon className="size-5" />
+                    ) : (
+                      <CopyIcon className="size-4" />
+                    )}
+                  </span>
                   Copy
                 </Button>
               </div>
-              <Alert
-                variant="warning"
-                className="border-stroke pr-4 shadow-xs"
-                border="left"
-              >
-                <WarningIcon className="size-4 shrink-0" aria-hidden />
-                <div>
-                  <AlertTitle className="text-accent-warning-highlight mb-1 font-sans text-xs font-bold uppercase">
+              <div className="flex flex-col gap-1.5">
+                <div className="bg-accent-warning-bg/90 flex w-fit items-center gap-0.5 py-0.5 pr-1.5 pl-0.5">
+                  <WarningIcon
+                    className="text-accent-warning-highlight size-3 shrink-0"
+                    aria-hidden
+                  />
+                  <span className="text-accent-warning-highlight prose-label uppercase">
                     Important
-                  </AlertTitle>
-                  <AlertDescription className="text-fg font-sans text-sm leading-snug normal-case">
-                    Copy the key now. You won&apos;t be able to view it again.
-                  </AlertDescription>
+                  </span>
                 </div>
-              </Alert>
+                <div className="flex items-start justify-between gap-4">
+                  <p className="text-fg prose-body min-w-0 flex-1">
+                    Copy the key now. You won&apos;t be able to view it again.
+                  </p>
+                  <DialogClose asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="slate"
+                      className="text-fg-tertiary hover:text-fg shrink-0 font-sans text-sm font-medium normal-case"
+                    >
+                      Close
+                    </Button>
+                  </DialogClose>
+                </div>
+              </div>
             </div>
-            <DialogFooter className="border-stroke border-t px-5 py-4 sm:justify-end">
-              <DialogClose asChild>
-                <Button
-                  variant="ghost"
-                  size="slate"
-                  className="text-fg font-sans normal-case underline-offset-4 hover:underline"
-                >
-                  Close
-                </Button>
-              </DialogClose>
-            </DialogFooter>
           </>
         )}
       </DialogContent>
