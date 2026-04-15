@@ -1,9 +1,9 @@
 'use client'
 
-import { Key } from 'lucide-react'
 import type { FC } from 'react'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { cn } from '@/lib/utils'
+import { KeyIcon } from '@/ui/primitives/icons'
 import {
   Table,
   TableBody,
@@ -57,12 +57,13 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
     <TableBody>
       {apiKeys.length === 0 ? (
         <TableEmptyState colSpan={5}>
-          <p className="prose-body-highlight flex items-center justify-center gap-2 text-fg-tertiary">
-            <Key aria-hidden className="size-4 shrink-0 opacity-70" />
-            {totalKeyCount === 0
-              ? 'No keys added yet'
-              : 'No keys match your search.'}
-          </p>
+          <KeyIcon
+            aria-hidden
+            className="size-4 shrink-0 opacity-80 text-fg-tertiary"
+          />
+          {totalKeyCount === 0
+            ? 'No keys added yet'
+            : 'No keys match your search.'}
         </TableEmptyState>
       ) : (
         apiKeys.map((apiKey) => (

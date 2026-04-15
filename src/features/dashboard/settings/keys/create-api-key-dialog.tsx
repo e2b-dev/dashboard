@@ -2,13 +2,13 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckIcon, Plus } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 import { type FC, type ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
@@ -28,9 +28,24 @@ import {
   FormItem,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CopyIcon } from '@/ui/primitives/icons'
+import {
+  AddIcon,
+  CheckIcon,
+  CopyIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
+
+/** Neutral focus inside compound fields (Input defaults to accent bottom border). */
+const compoundInputClass = cn(
+  'h-10 min-h-10 min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 font-sans text-sm normal-case shadow-none',
+  'placeholder:text-fg-tertiary',
+  'hover:bg-bg-hover focus:bg-bg-hover',
+  'focus-visible:outline-none focus-visible:ring-0',
+  'focus:border-0 focus:outline-none',
+  'focus:[border-bottom:1px_solid_var(--stroke)] focus:[border-bottom-style:solid]'
+)
 
 const formSchema = z.object({
   name: z
@@ -112,42 +127,38 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
             type="button"
             className="h-9 w-full shrink-0 gap-2 font-sans normal-case lg:w-auto lg:self-start"
           >
-            <Plus className="size-4" aria-hidden />
+            <AddIcon className="size-4" aria-hidden />
             Create a key
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-[512px] gap-0 p-0">
+      <DialogContent hideClose>
         {!createdKey ? (
-          <>
-            <DialogHeader className="border-stroke border-b px-5 py-4">
-              <DialogTitle className="font-sans text-base font-semibold tracking-tight uppercase">
-                Create new key
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit((values) => {
-                  createMutation.mutate({ teamSlug, name: values.name })
-                })}
-                className="flex flex-col gap-4 px-5 py-4"
-              >
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((values) => {
+                createMutation.mutate({ teamSlug, name: values.name })
+              })}
+            >
+              <div className="border-stroke border-b px-5 py-4">
+                <h2 className="prose-headline-small text-fg uppercase">
+                  Create new key
+                </h2>
+              </div>
+              <div className="px-5 py-5">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <FormItem className="gap-2">
-                      <Label
-                        className="text-fg-tertiary sr-only"
-                        htmlFor={field.name}
-                      >
+                    <FormItem className="gap-0">
+                      <Label className="sr-only" htmlFor={field.name}>
                         Key name
                       </Label>
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <div className="border-stroke bg-bg flex min-h-10 overflow-hidden rounded-md border shadow-xs">
                         <FormControl>
                           <Input
                             id={field.name}
-                            className="h-9 font-sans normal-case"
+                            className={compoundInputClass}
                             placeholder="Enter key name"
                             autoComplete="off"
                             data-1p-ignore
@@ -157,39 +168,40 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                         </FormControl>
                         <Button
                           type="submit"
-                          className="h-9 shrink-0 gap-1.5 font-sans normal-case sm:min-w-[100px]"
+                          variant="default"
+                          size="md"
+                          className="border-stroke h-10 shrink-0 gap-1.5 rounded-none border-0 border-l px-4 font-sans normal-case"
                           loading={createMutation.isPending}
                           disabled={createMutation.isPending}
                         >
-                          <Plus className="size-4" aria-hidden />
+                          <AddIcon className="size-4" aria-hidden />
                           Create
                         </Button>
                       </div>
-                      <FormMessage />
+                      <FormMessage className="mt-2" />
                     </FormItem>
                   )}
                 />
-              </form>
-            </Form>
-          </>
+              </div>
+            </form>
+          </Form>
         ) : (
           <>
             <DialogHeader className="border-stroke border-b px-5 py-4">
-              <DialogTitle className="font-sans text-base font-semibold tracking-tight uppercase">
-                {successTitle}
-              </DialogTitle>
+              <DialogTitle className="text-fg">{successTitle}</DialogTitle>
             </DialogHeader>
-            <div className="flex flex-col gap-4 px-5 py-4">
+            <div className="flex flex-col gap-4 px-5 py-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
                 <Input
                   readOnly
                   value={createdKey}
-                  className="h-9 flex-1 font-mono text-xs"
+                  className="border-stroke focus:border-stroke h-10 flex-1 rounded-md border font-mono text-xs shadow-xs"
                 />
                 <Button
                   type="button"
                   variant="default"
-                  className="h-9 shrink-0 gap-2 px-4 font-sans normal-case sm:min-w-[88px]"
+                  size="md"
+                  className="h-10 shrink-0 gap-2 px-4 font-sans normal-case sm:min-w-[96px]"
                   onClick={() => {
                     void copyReveal(createdKey)
                     posthog.capture('copied API key')
@@ -203,18 +215,29 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                   Copy
                 </Button>
               </div>
-              <Alert variant="warning" className="border-stroke">
-                <AlertTitle className="font-sans text-xs font-semibold uppercase">
-                  Important
-                </AlertTitle>
-                <AlertDescription className="font-sans text-sm normal-case leading-snug">
-                  Copy the key now. You won&apos;t be able to view it again.
-                </AlertDescription>
+              <Alert
+                variant="warning"
+                className="border-stroke pr-4 shadow-xs"
+                border="left"
+              >
+                <WarningIcon className="size-4 shrink-0" aria-hidden />
+                <div>
+                  <AlertTitle className="text-accent-warning-highlight mb-1 font-sans text-xs font-bold uppercase">
+                    Important
+                  </AlertTitle>
+                  <AlertDescription className="text-fg font-sans text-sm leading-snug normal-case">
+                    Copy the key now. You won&apos;t be able to view it again.
+                  </AlertDescription>
+                </div>
               </Alert>
             </div>
-            <DialogFooter className="border-stroke border-t px-5 py-4">
+            <DialogFooter className="border-stroke border-t px-5 py-4 sm:justify-end">
               <DialogClose asChild>
-                <Button variant="muted" className="font-sans normal-case">
+                <Button
+                  variant="ghost"
+                  size="slate"
+                  className="text-fg font-sans normal-case underline-offset-4 hover:underline"
+                >
                   Close
                 </Button>
               </DialogClose>

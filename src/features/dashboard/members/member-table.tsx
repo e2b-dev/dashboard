@@ -49,11 +49,9 @@ const MemberTable: FC<MemberTableProps> = ({
     <TableBody>
       {members.length === 0 ? (
         <TableEmptyState colSpan={3}>
-          <p className="prose-body-highlight text-fg-tertiary">
-            {totalMemberCount === 0
-              ? 'No team members found.'
-              : 'No members match your search.'}
-          </p>
+          {totalMemberCount === 0
+            ? 'No team members found.'
+            : 'No members match your search.'}
         </TableEmptyState>
       ) : (
         members.map((member) => (
