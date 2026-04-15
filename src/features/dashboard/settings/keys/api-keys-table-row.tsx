@@ -6,7 +6,7 @@ import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { UserAvatar } from '@/features/dashboard/shared'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { formatDate } from '@/lib/utils/formatting'
+import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -17,7 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
-import { getLastUsedLabel, toIsoUtcString } from './api-keys-utils'
+import { getLastUsedLabel } from './api-keys-utils'
 import { DeleteApiKeyDialog } from './delete-api-key-dialog'
 
 interface ApiKeysTableRowProps {
@@ -113,7 +113,7 @@ const ApiKeyLastUsedCell = ({
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="font-mono text-xs">
-          {toIsoUtcString(new Date(lastUsedAt))}
+          {formatUTCTimestamp(new Date(lastUsedAt))}
         </TooltipContent>
       </Tooltip>
     ) : (

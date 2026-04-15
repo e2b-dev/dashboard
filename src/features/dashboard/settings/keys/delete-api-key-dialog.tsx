@@ -8,6 +8,7 @@ import {
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
+import { formatRelativeAgo } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -20,7 +21,6 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { TrashIcon } from '@/ui/primitives/icons'
-import { formatShortRelativeAgo } from './api-keys-utils'
 
 interface DeleteApiKeyDialogProps {
   open: boolean
@@ -72,7 +72,7 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
       </p>
       {lastUsedAt ? (
         <p className="text-fg-tertiary font-sans text-sm">
-          Last used: {formatShortRelativeAgo(new Date(lastUsedAt))}
+          Last used: {formatRelativeAgo(new Date(lastUsedAt))}
         </p>
       ) : null}
     </div>
