@@ -29,11 +29,10 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
 }) => (
   <Table className={cn('w-full table-fixed', className)}>
     <colgroup>
-      <col className="min-w-[200px] lg:w-[32%]" />
-      <col className="w-[200px] lg:w-[22%]" />
-      <col className="w-[112px] lg:w-[14%]" />
-      <col className="min-w-[160px] lg:w-[22%]" />
-      <col className="w-12 lg:w-[10%]" />
+      <col className="min-w-[260px] lg:w-[44%]" />
+      <col className="w-[132px] lg:w-[16%]" />
+      <col className="w-[96px] lg:w-[12%]" />
+      <col className="min-w-[188px] lg:w-[28%]" />
     </colgroup>
     <TableHeader className="border-b-0">
       <TableRow className="border-stroke/80 hover:bg-transparent">
@@ -49,14 +48,11 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
         <TableHead className="text-fg-tertiary font-sans! normal-case!">
           ADDED
         </TableHead>
-        <TableHead className="text-fg-tertiary w-12 p-0 font-sans! normal-case!">
-          <span className="sr-only">Actions</span>
-        </TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
       {apiKeys.length === 0 ? (
-        <TableEmptyState colSpan={5}>
+        <TableEmptyState colSpan={4}>
           <KeyIcon
             aria-hidden
             className="size-4 shrink-0 opacity-80 text-fg-tertiary"
