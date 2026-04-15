@@ -1,4 +1,4 @@
-import { revalidatePath, updateTag } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { CACHE_TAGS } from '@/configs/cache'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
@@ -76,7 +76,7 @@ export const teamsRouter = createTRPCRouter({
         throwTRPCErrorFromRepoError(result.error)
       }
 
-      updateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
+      revalidateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId), 'default')
       revalidatePath(`/dashboard/${teamSlug}/keys`, 'page')
 
       return { createdApiKey: result.data }
@@ -106,7 +106,7 @@ export const teamsRouter = createTRPCRouter({
         throwTRPCErrorFromRepoError(result.error)
       }
 
-      updateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
+      revalidateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId), 'default')
       revalidatePath(`/dashboard/${teamSlug}/keys`, 'page')
     }),
 })
