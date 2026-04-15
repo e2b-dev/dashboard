@@ -34,7 +34,7 @@ const ApiKeysSearchField = ({
     count === 0 ? 'Add an API key to start searching' : 'Search by title or ID'
 
   return (
-    <div className="relative w-full lg:max-w-[min(100%,420px)]">
+    <div className="relative w-full md:w-[280px] md:max-w-none md:shrink-0">
       <SearchIcon
         aria-hidden
         className="text-fg-tertiary pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2"
@@ -68,9 +68,7 @@ const ApiKeysTotalLabel = ({
     ? `Showing ${filteredCount} of ${totalCount} ${pluralize(totalCount, 'key')}`
     : `${totalCount} ${pluralize(totalCount, 'key')} in total`
 
-  return (
-    <p className="shrink-0 lg:text-right">{label}</p>
-  )
+  return <p className="shrink-0 lg:text-right">{label}</p>
 }
 
 export const ApiKeysPageContent = ({
@@ -117,33 +115,35 @@ export const ApiKeysPageContent = ({
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <ApiKeysSearchField
-          count={apiKeys.length}
-          onChange={setQuery}
-          value={query}
-        />
-        <CreateApiKeyDialog teamSlug={teamSlug} />
-      </div>
+      <div className="mx-auto flex w-full max-w-[900px] flex-col gap-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <ApiKeysSearchField
+            count={apiKeys.length}
+            onChange={setQuery}
+            value={query}
+          />
+          <CreateApiKeyDialog teamSlug={teamSlug} />
+        </div>
 
-      <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-start lg:justify-between">
-        <p className="max-w-[520px] leading-[17px] tracking-[-0.16px]">
-          These keys authenticate API requests from your team&apos;s
-          applications.
-        </p>
-        <ApiKeysTotalLabel
-          filteredCount={filtered.length}
-          hasActiveSearch={hasActiveSearch}
-          totalCount={apiKeys.length}
-        />
-      </div>
+        <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-start lg:justify-between">
+          <p className="max-w-[520px] leading-[17px] tracking-[-0.16px]">
+            These keys authenticate API requests from your team&apos;s
+            applications.
+          </p>
+          <ApiKeysTotalLabel
+            filteredCount={filtered.length}
+            hasActiveSearch={hasActiveSearch}
+            totalCount={apiKeys.length}
+          />
+        </div>
 
-      <div className="bg-bg w-full overflow-x-auto">
-        <ApiKeysTable
-          apiKeys={filtered}
-          teamSlug={teamSlug}
-          totalKeyCount={apiKeys.length}
-        />
+        <div className="bg-bg w-full overflow-x-auto">
+          <ApiKeysTable
+            apiKeys={filtered}
+            teamSlug={teamSlug}
+            totalKeyCount={apiKeys.length}
+          />
+        </div>
       </div>
     </div>
   )

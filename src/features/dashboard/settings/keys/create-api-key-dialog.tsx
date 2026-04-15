@@ -117,7 +117,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
         {children ?? (
           <Button
             type="button"
-            className="h-9 w-full shrink-0 gap-2 font-sans normal-case lg:w-auto lg:self-start"
+            className="h-9 w-full shrink-0 gap-2 font-sans normal-case md:w-auto md:self-start"
           >
             <AddIcon className="size-4" aria-hidden />
             Create a key

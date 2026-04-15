@@ -4,10 +4,10 @@ import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
+import { UserAvatar } from '@/features/dashboard/shared'
 import { formatDate } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import CopyButton from '@/ui/copy-button'
-import { Avatar, AvatarFallback } from '@/ui/primitives/avatar'
 import { Button } from '@/ui/primitives/button'
 import { KeyIcon, TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
@@ -22,12 +22,6 @@ import { DeleteApiKeyDialog } from './delete-api-key-dialog'
 interface ApiKeysTableRowProps {
   apiKey: TeamAPIKey
   teamSlug: string
-}
-
-const initialsFromEmail = (email: string) => {
-  const local = email.split('@')[0] ?? '?'
-  if (local.length <= 2) return local.toUpperCase()
-  return local.slice(0, 2).toUpperCase()
 }
 
 export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
@@ -118,11 +112,7 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
             ) : apiKey.createdBy ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Avatar className="size-6 border-stroke">
-                    <AvatarFallback className="text-[10px]">
-                      {initialsFromEmail(apiKey.createdBy.email)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar email={apiKey.createdBy.email} />
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   {apiKey.createdBy.email}
