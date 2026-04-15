@@ -46,6 +46,8 @@ export const UsageAlertForm = ({
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const formattedOriginalValue =
+    originalValue === null ? '' : formatCurrencyValue(originalValue)
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
     teamSlug,
@@ -55,7 +57,7 @@ export const UsageAlertForm = ({
     resolver: zodResolver(AlertFormSchema),
     mode: 'onChange',
     defaultValues: {
-      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+      amount: formattedOriginalValue,
     },
   })
 
@@ -63,10 +65,10 @@ export const UsageAlertForm = ({
 
   useEffect(() => {
     form.reset({
-      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+      amount: formattedOriginalValue,
     })
     setIsEditing(originalValue === null)
-  }, [originalValue, form.reset])
+  }, [formattedOriginalValue, originalValue, form.reset])
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -126,18 +128,27 @@ export const UsageAlertForm = ({
     })
   )
 
+  const clearAlert = (): void =>
+    clearAlertMutation.mutate({ teamSlug, type: 'alert' })
+
   const isMutating = setAlertMutation.isPending || clearAlertMutation.isPending
+  const nextValue = form.formState.isValid ? Number(draftValue) : null
   const isClearIntent =
     isEditing && originalValue !== null && draftValue.length === 0
   const canSave =
     isEditing &&
-    (isClearIntent ||
-      (form.formState.isValid && Number(draftValue) !== originalValue)) &&
+    (isClearIntent || (nextValue !== null && nextValue !== originalValue)) &&
     !isMutating
   const shouldShowCancel =
     isEditing && (originalValue !== null || draftValue.length > 0)
 
-  const handleCancel = () => {
+  const startEditing = (): void => {
+    if (originalValue === null) return
+    form.reset({ amount: formattedOriginalValue })
+    setIsEditing(true)
+  }
+
+  const handleCancel = (): void => {
     const activeElement = document.activeElement
     if (activeElement instanceof HTMLElement) activeElement.blur()
     inputRef.current?.blur()
@@ -147,7 +158,7 @@ export const UsageAlertForm = ({
       return
     }
 
-    form.reset({ amount: formatCurrencyValue(originalValue) })
+    form.reset({ amount: formattedOriginalValue })
     setIsEditing(false)
   }
 
@@ -156,7 +167,7 @@ export const UsageAlertForm = ({
     if (!isEditing) return
 
     if (isClearIntent) {
-      clearAlertMutation.mutate({ teamSlug, type: 'alert' })
+      clearAlert()
       return
     }
 
@@ -205,8 +216,8 @@ export const UsageAlertForm = ({
               }}
               onBlur={field.onBlur}
               onFocus={() => {
-                if (originalValue === null || isEditing) return
-                setIsEditing(true)
+                if (isEditing) return
+                startEditing()
               }}
               placeholder="--"
               readOnly={!isEditing && originalValue !== null}
@@ -225,9 +236,7 @@ export const UsageAlertForm = ({
               className="font-sans normal-case"
               disabled={isMutating}
               loading={clearAlertMutation.isPending}
-              onClick={() =>
-                clearAlertMutation.mutate({ teamSlug, type: 'alert' })
-              }
+              onClick={clearAlert}
             >
               <TrashIcon className="size-4" />
               Remove
@@ -238,10 +247,7 @@ export const UsageAlertForm = ({
               size="md"
               className="font-sans normal-case"
               disabled={isMutating}
-              onClick={() => {
-                form.reset({ amount: formatCurrencyValue(originalValue) })
-                setIsEditing(true)
-              }}
+              onClick={startEditing}
             >
               <EditIcon className="size-4" />
               Edit

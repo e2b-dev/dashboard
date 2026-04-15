@@ -49,6 +49,8 @@ export const UsageLimitForm = ({
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const formattedOriginalValue =
+    originalValue === null ? '' : formatCurrencyValue(originalValue)
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
     teamSlug,
@@ -58,7 +60,7 @@ export const UsageLimitForm = ({
     resolver: zodResolver(limitFormSchema),
     mode: 'onChange',
     defaultValues: {
-      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+      amount: formattedOriginalValue,
     },
   })
 
@@ -66,10 +68,10 @@ export const UsageLimitForm = ({
 
   useEffect(() => {
     form.reset({
-      amount: originalValue === null ? '' : formatCurrencyValue(originalValue),
+      amount: formattedOriginalValue,
     })
     setIsEditing(originalValue === null)
-  }, [originalValue, form.reset])
+  }, [formattedOriginalValue, originalValue, form.reset])
 
   useEffect(() => {
     if (!isEditing) return
@@ -113,8 +115,17 @@ export const UsageLimitForm = ({
     !isMutating
   const shouldShowCancel =
     isEditing && (originalValue !== null || draftValue.length > 0)
+  const setLimitTitle = `Set $${nextValue === null ? '--' : formatCurrencyValue(nextValue)} usage limit?`
 
-  const handleCancel = () => {
+  const startEditing = (): void => {
+    if (originalValue === null) return
+    form.reset({ amount: formattedOriginalValue })
+    setIsEditing(true)
+  }
+
+  const openRemoveDialog = (): void => setIsRemoveDialogOpen(true)
+
+  const handleCancel = (): void => {
     inputRef.current?.blur()
 
     if (originalValue === null) {
@@ -122,11 +133,11 @@ export const UsageLimitForm = ({
       return
     }
 
-    form.reset({ amount: formatCurrencyValue(originalValue) })
+    form.reset({ amount: formattedOriginalValue })
     setIsEditing(false)
   }
 
-  const handleSetConfirm = () => {
+  const handleSetConfirm = (): void => {
     if (!form.formState.isValid) return
     const value = Number(form.getValues('amount'))
     if (value === originalValue) return
@@ -187,8 +198,8 @@ export const UsageLimitForm = ({
               }}
               onBlur={field.onBlur}
               onFocus={() => {
-                if (originalValue === null || isEditing) return
-                setIsEditing(true)
+                if (isEditing) return
+                startEditing()
               }}
               placeholder="--"
               readOnly={!isEditing && originalValue !== null}
@@ -205,7 +216,7 @@ export const UsageLimitForm = ({
               variant="outline"
               size="md"
               disabled={isMutating}
-              onClick={() => setIsRemoveDialogOpen(true)}
+              onClick={openRemoveDialog}
             >
               <TrashIcon className="size-4" />
               Remove
@@ -216,10 +227,7 @@ export const UsageLimitForm = ({
               size="md"
               className="font-sans normal-case"
               disabled={isMutating}
-              onClick={() => {
-                form.reset({ amount: formatCurrencyValue(originalValue) })
-                setIsEditing(true)
-              }}
+              onClick={startEditing}
             >
               <EditIcon className="size-4" />
               Edit
@@ -246,7 +254,7 @@ export const UsageLimitForm = ({
                 size="md"
                 className="font-sans normal-case"
                 disabled={isMutating}
-                onClick={() => setIsRemoveDialogOpen(true)}
+                onClick={openRemoveDialog}
               >
                 Set
               </Button>
@@ -257,7 +265,7 @@ export const UsageLimitForm = ({
                 onConfirm={handleSetConfirm}
                 onOpenChange={setIsSetDialogOpen}
                 open={isSetDialogOpen}
-                title={`Set $${nextValue === null ? '--' : formatCurrencyValue(nextValue)} usage limit?`}
+                title={setLimitTitle}
                 triggerDisabled={!canSave}
               />
             )}
