@@ -16,7 +16,7 @@ interface MembersPageContentProps {
   className?: string
 }
 
-const MembersPageContent = ({
+export const MembersPageContent = ({
   members,
   isLoading = false,
   className,
@@ -76,5 +76,3 @@ const MembersPageContent = ({
     </div>
   )
 }
-
-export default MembersPageContent

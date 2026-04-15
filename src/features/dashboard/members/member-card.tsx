@@ -5,7 +5,7 @@ import { useDashboard } from '@/features/dashboard/context'
 import { useTRPC } from '@/trpc/client'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { Card, CardContent } from '@/ui/primitives/card'
-import MembersPageContent from './members-page-content'
+import { MembersPageContent } from './members-page-content'
 
 export const MemberCard = () => {
   const { team } = useDashboard()
@@ -18,7 +18,7 @@ export const MemberCard = () => {
 
   return (
     <Card>
-      <CardContent className="px-0">
+      <CardContent className="p-0">
         {error ? (
           <ErrorIndicator
             className="bg-bg w-full max-w-full"

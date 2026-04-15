@@ -118,7 +118,7 @@ export const TeamAvatar = (): ReactElement => {
     removeProfilePictureMutation.mutate({ teamSlug: team.slug })
 
   return (
-    <div className="flex shrink-0 flex-col gap-3">
+    <div className="flex shrink-0 flex-col gap-2">
       {hasPhoto ? (
         <Avatar className="size-36">
           <AvatarImage
@@ -132,7 +132,12 @@ export const TeamAvatar = (): ReactElement => {
       <div className="flex gap-2">
         <Button
           variant="outline"
-          className={hasPhoto ? '' : 'w-full'}
+          size="md"
+          className={
+            hasPhoto
+              ? 'prose-body-highlight w-[100px] gap-1 pl-2.5 pr-3 font-sans normal-case'
+              : 'prose-body-highlight w-full gap-1 pl-2.5 pr-3 font-sans normal-case'
+          }
           onClick={handleUploadClick}
           loading={uploadProfilePictureMutation.isPending}
         >
@@ -140,7 +145,12 @@ export const TeamAvatar = (): ReactElement => {
           {uploadLabel}
         </Button>
         {hasPhoto && (
-          <Button variant="outline" size="icon" onClick={handleRemoveClick}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-9"
+            onClick={handleRemoveClick}
+          >
             <TrashIcon className="size-4" />
           </Button>
         )}
