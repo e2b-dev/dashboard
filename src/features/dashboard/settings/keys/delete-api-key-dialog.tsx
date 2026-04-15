@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import {
   defaultErrorToast,
@@ -16,7 +16,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
@@ -57,63 +56,65 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
     })
   )
 
-  const title = `DELETE '${apiKey.name}' KEY?`
+  const keyLabel = apiKey.name.trim() ? apiKey.name : 'Untitled'
   const lastUsedAt = apiKey.lastUsed
-  const isNeverUsed = !lastUsedAt
-
-  const body: ReactNode = isNeverUsed ? (
-    <span className="text-fg-tertiary font-sans text-sm">
-      It was never used
-    </span>
-  ) : (
-    <div className="flex flex-col gap-2 text-left">
-      <p className="text-fg-tertiary font-sans text-sm">
-        Deleting this key will immediately disable all associated applications
-      </p>
-      {lastUsedAt ? (
-        <p className="text-fg-tertiary font-sans text-sm">
-          Last used: {formatRelativeAgo(new Date(lastUsedAt))}
-        </p>
-      ) : null}
-    </div>
-  )
+  const lastUsedLabel = lastUsedAt
+    ? `Last used: ${formatRelativeAgo(new Date(lastUsedAt))}`
+    : null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose>
-        <DialogHeader className="border-stroke border-b px-5 py-4">
-          <DialogTitle className="text-fg">{title}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Confirm deletion of this API key. This cannot be undone.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="px-5 py-5">{body}</div>
-        <DialogFooter className="border-stroke bg-bg/30 border-t px-5 py-4 sm:justify-end sm:gap-3">
-          <DialogClose asChild>
+      <DialogContent hideClose className="gap-0 sm:max-w-[520px]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <DialogHeader className="min-w-0 flex-1 text-left">
+            <DialogTitle>{`Delete '${keyLabel}' key?`}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Confirm deletion of this API key. This cannot be undone.
+            </DialogDescription>
+            {lastUsedLabel ? (
+              <div className="mt-3 flex flex-col gap-3">
+                <p className="text-fg-secondary font-sans text-sm">
+                  Deleting this key will immediately disable all associated
+                  applications
+                </p>
+                <p className="text-fg-tertiary font-sans text-sm">
+                  {lastUsedLabel}
+                </p>
+              </div>
+            ) : (
+              <p className="text-fg-secondary mt-2 font-sans text-sm">
+                It was never used
+              </p>
+            )}
+          </DialogHeader>
+          <div className="flex shrink-0 items-center justify-end gap-5">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="slate"
+                disabled={deleteMutation.isPending}
+                className="text-fg-tertiary font-sans normal-case hover:text-fg-tertiary focus:text-fg-tertiary"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
             <Button
               type="button"
-              variant="ghost"
+              variant="error"
               size="md"
-              className="text-fg-secondary font-sans normal-case hover:text-fg"
+              loading={deleteMutation.isPending}
+              disabled={deleteMutation.isPending}
+              className="gap-2 font-sans normal-case"
+              onClick={() => {
+                deleteMutation.mutate({ teamSlug, apiKeyId: apiKey.id })
+              }}
             >
-              Cancel
+              <TrashIcon className="size-4" aria-hidden />
+              Delete
             </Button>
-          </DialogClose>
-          <Button
-            type="button"
-            variant="error"
-            size="md"
-            loading={deleteMutation.isPending}
-            disabled={deleteMutation.isPending}
-            className="gap-2 font-sans normal-case"
-            onClick={() => {
-              deleteMutation.mutate({ teamSlug, apiKeyId: apiKey.id })
-            }}
-          >
-            <TrashIcon className="size-4" aria-hidden />
-            Delete
-          </Button>
-        </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
