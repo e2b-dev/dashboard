@@ -1,7 +1,13 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import {
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { useDashboard } from '@/features/dashboard/context'
 import {
@@ -18,7 +24,18 @@ const TEAM_NAME_MAX_FONT_SIZE_PX = 32
 const TEAM_NAME_MIN_FONT_SIZE_PX = 18
 const TEAM_NAME_INPUT_HEIGHT_PX = 40
 
-export const TeamName = () => {
+const getValidationToastContent = (messages: string[]): ReactNode =>
+  messages.length === 1 ? (
+    messages[0]
+  ) : (
+    <ul className="list-disc space-y-1 pl-4">
+      {messages.map((message) => (
+        <li key={message}>{message}</li>
+      ))}
+    </ul>
+  )
+
+export const TeamName = (): ReactElement => {
   const { team } = useDashboard()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -28,6 +45,8 @@ export const TeamName = () => {
   const [fontSize, setFontSize] = useState(TEAM_NAME_MAX_FONT_SIZE_PX)
   const inputRef = useRef<HTMLInputElement>(null)
   const textMeasureRef = useRef<HTMLSpanElement>(null)
+  const trimmedName = name.trim()
+  const isSaveDisabled = !trimmedName || trimmedName === team.name
 
   const updateNameMutation = useMutation(
     trpc.teams.updateName.mutationOptions({
@@ -38,21 +57,12 @@ export const TeamName = () => {
         toast(defaultSuccessToast(USER_MESSAGES.teamNameUpdated.message))
         setIsEditing(false)
       },
-      onError: (error) => {
+      onError: (error): void => {
         const validationMessages = getTRPCValidationMessages(error)
         if (validationMessages.length > 0) {
-          const validationToastContent =
-            validationMessages.length === 1 ? (
-              validationMessages[0]
-            ) : (
-              <ul className="list-disc space-y-1 pl-4">
-                {validationMessages.map((message) => (
-                  <li key={message}>{message}</li>
-                ))}
-              </ul>
-            )
-
-          toast(defaultErrorToast(validationToastContent))
+          toast(
+            defaultErrorToast(getValidationToastContent(validationMessages))
+          )
           return
         }
 
@@ -65,28 +75,22 @@ export const TeamName = () => {
     })
   )
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (updateNameMutation.isPending) return
-    if (!name.trim() || name.trim() === team.name) return
-    updateNameMutation.mutate({ teamSlug: team.slug, name: name.trim() })
+  const handleSubmit = (event?: React.FormEvent<HTMLFormElement>): void => {
+    event?.preventDefault()
+    if (updateNameMutation.isPending || isSaveDisabled) return
+    updateNameMutation.mutate({ teamSlug: team.slug, name: trimmedName })
   }
 
-  const handleCancel = () => {
+  const handleCancel = (): void => {
     setName(team.name)
     setIsEditing(false)
   }
 
   useEffect(() => {
-    if (!isEditing) return
-
-    const input = inputRef.current
-    if (!input) return
-
-    input.focus()
-
-    const cursorPosition = input.value.length
-    input.setSelectionRange(cursorPosition, cursorPosition)
+    if (!isEditing || !inputRef.current) return
+    inputRef.current.focus()
+    const cursorPosition = inputRef.current.value.length
+    inputRef.current.setSelectionRange(cursorPosition, cursorPosition)
   }, [isEditing])
 
   useEffect(() => {
@@ -96,7 +100,7 @@ export const TeamName = () => {
 
     let frameId = 0
 
-    const updateFontSize = () => {
+    const updateFontSize = (): void => {
       const availableWidth = input.clientWidth
       if (!availableWidth) return
 
@@ -118,7 +122,7 @@ export const TeamName = () => {
       )
     }
 
-    const scheduleFontSizeUpdate = () => {
+    const scheduleFontSizeUpdate = (): void => {
       window.cancelAnimationFrame(frameId)
       frameId = window.requestAnimationFrame(updateFontSize)
     }
@@ -134,10 +138,14 @@ export const TeamName = () => {
     }
   }, [name])
 
-  const handleStartEditing = () => {
+  const handleStartEditing = (): void => {
     setName(team.name)
     setIsEditing(true)
   }
+
+  const handleNameChange = ({
+    target,
+  }: React.ChangeEvent<HTMLInputElement>): void => setName(target.value)
 
   return (
     <div className="flex items-end justify-between gap-4">
@@ -152,7 +160,7 @@ export const TeamName = () => {
           <input
             ref={inputRef}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={handleNameChange}
             readOnly={!isEditing}
             className="h-10 w-full bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
             style={{
@@ -180,7 +188,7 @@ export const TeamName = () => {
                 size="icon"
                 className="size-9"
                 loading={updateNameMutation.isPending}
-                disabled={!name.trim() || name.trim() === team.name}
+                disabled={isSaveDisabled}
               >
                 <CheckIcon className="size-6 shrink-0" />
               </Button>

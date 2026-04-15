@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { type ReactElement, useRef, useState } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { useDashboard } from '@/features/dashboard/context'
 import {
@@ -15,7 +15,10 @@ import { Button } from '@/ui/primitives/button'
 import { EditIcon, PhotoIcon, TrashIcon } from '@/ui/primitives/icons'
 import { RemovePhotoDialog } from './remove-photo-dialog'
 
-const fileToBase64 = (file: File) =>
+const MAX_PROFILE_PICTURE_SIZE_BYTES = 5 * 1024 * 1024
+
+// Converts a file into a base64 payload string; example: File("logo.png") -> "iVBORw0KGgo..."
+const fileToBase64 = (file: File): Promise<string> =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
@@ -26,15 +29,22 @@ const fileToBase64 = (file: File) =>
     reader.readAsDataURL(file)
   })
 
-export const TeamAvatar = () => {
+export const TeamAvatar = (): ReactElement => {
   const { team } = useDashboard()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+  const hasPhoto = Boolean(team.profilePictureUrl)
+  const UploadIcon = hasPhoto ? EditIcon : PhotoIcon
+  const uploadLabel = hasPhoto ? 'Change' : 'Add photo'
 
-  const invalidateTeams = async () => {
+  const resetFileInput = (): void => {
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const invalidateTeams = async (): Promise<void> => {
     await queryClient.invalidateQueries({
       queryKey: trpc.teams.list.queryKey(),
     })
@@ -53,9 +63,7 @@ export const TeamAvatar = () => {
           )
         )
       },
-      onSettled: () => {
-        if (fileInputRef.current) fileInputRef.current.value = ''
-      },
+      onSettled: resetFileInput,
     })
   )
 
@@ -76,38 +84,38 @@ export const TeamAvatar = () => {
     })
   )
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleUpload = async ({
+    target,
+  }: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = target.files?.[0]
     if (!file) return
 
-    const MAX_FILE_SIZE = 5 * 1024 * 1024
-
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_PROFILE_PICTURE_SIZE_BYTES) {
       toast(defaultErrorToast('Profile picture must be less than 5MB.'))
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      resetFileInput()
       return
     }
 
-    let base64: string
     try {
-      base64 = await fileToBase64(file)
+      const base64 = await fileToBase64(file)
+      uploadProfilePictureMutation.mutate({
+        teamSlug: team.slug,
+        image: {
+          base64,
+          name: file.name,
+          type: file.type,
+        },
+      })
     } catch {
       toast(defaultErrorToast('Failed to read file. Please try again.'))
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      return
+      resetFileInput()
     }
-
-    uploadProfilePictureMutation.mutate({
-      teamSlug: team.slug,
-      image: {
-        base64,
-        name: file.name,
-        type: file.type,
-      },
-    })
   }
 
-  const hasPhoto = !!team.profilePictureUrl
+  const handleUploadClick = (): void => fileInputRef.current?.click()
+  const handleRemoveClick = (): void => setRemoveDialogOpen(true)
+  const handleRemoveConfirm = (): void =>
+    removeProfilePictureMutation.mutate({ teamSlug: team.slug })
 
   return (
     <div className="flex shrink-0 flex-col gap-3">
@@ -125,27 +133,14 @@ export const TeamAvatar = () => {
         <Button
           variant="outline"
           className={hasPhoto ? '' : 'w-full'}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={handleUploadClick}
           loading={uploadProfilePictureMutation.isPending}
         >
-          {hasPhoto ? (
-            <>
-              <EditIcon className="size-4" />
-              Change
-            </>
-          ) : (
-            <>
-              <PhotoIcon className="size-4" />
-              Add photo
-            </>
-          )}
+          <UploadIcon className="size-4" />
+          {uploadLabel}
         </Button>
         {hasPhoto && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setRemoveDialogOpen(true)}
-          >
+          <Button variant="outline" size="icon" onClick={handleRemoveClick}>
             <TrashIcon className="size-4" />
           </Button>
         )}
@@ -162,9 +157,7 @@ export const TeamAvatar = () => {
         open={removeDialogOpen}
         onOpenChange={setRemoveDialogOpen}
         isRemoving={removeProfilePictureMutation.isPending}
-        onConfirm={() =>
-          removeProfilePictureMutation.mutate({ teamSlug: team.slug })
-        }
+        onConfirm={handleRemoveConfirm}
       />
     </div>
   )
