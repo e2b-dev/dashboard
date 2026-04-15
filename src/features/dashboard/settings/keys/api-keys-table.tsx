@@ -29,10 +29,11 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
 }) => (
   <Table className={cn('w-full table-fixed', className)}>
     <colgroup>
-      <col className="min-w-[260px] lg:w-[44%]" />
+      <col className="min-w-[260px] lg:w-[42%]" />
       <col className="w-[132px] lg:w-[16%]" />
       <col className="w-[96px] lg:w-[12%]" />
-      <col className="min-w-[188px] lg:w-[28%]" />
+      <col className="w-[128px] lg:w-[128px]" />
+      <col className="w-[60px] lg:w-[60px]" />
     </colgroup>
     <TableHeader className="border-b-0">
       <TableRow className="border-stroke/80 hover:bg-transparent">
@@ -48,11 +49,14 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
         <TableHead className="text-fg-tertiary font-sans! normal-case!">
           ADDED
         </TableHead>
+        <TableHead className="w-[60px] p-0">
+          <span className="sr-only">API key options</span>
+        </TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
       {apiKeys.length === 0 ? (
-        <TableEmptyState colSpan={4}>
+        <TableEmptyState colSpan={5}>
           <KeyIcon
             aria-hidden
             className="size-4 shrink-0 opacity-80 text-fg-tertiary"

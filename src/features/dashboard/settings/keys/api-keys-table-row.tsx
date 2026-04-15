@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { CheckIcon, CopyIcon, KeyIcon, RemoveIcon } from '@/ui/primitives/icons'
+import { CheckIcon, CopyIcon, KeyIcon, TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import {
   Tooltip,
@@ -41,6 +41,9 @@ interface ApiKeyLastUsedCellProps {
 
 interface ApiKeyAddedCellProps {
   addedDate: string
+}
+
+interface ApiKeyOptionsProps {
   createdBy?: TeamAPIKey['createdBy'] | null
   isCliKey: boolean
   keyName: string | null
@@ -48,7 +51,7 @@ interface ApiKeyAddedCellProps {
 }
 
 const ApiKeyNameCell = ({ name }: ApiKeyNameCellProps) => (
-  <TableCell className="py-[6px] text-left">
+  <TableCell className="py-2 text-left">
     <div className="flex min-w-0 items-center gap-3">
       <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
         <KeyIcon aria-hidden className="text-fg-tertiary size-4" />
@@ -101,7 +104,7 @@ const ApiKeyLastUsedCell = ({
   lastUsedAt,
   lastUsedLabel,
 }: ApiKeyLastUsedCellProps) => (
-  <TableCell className="py-[6px] text-left text-sm text-fg-tertiary">
+  <TableCell className="py-2 text-left text-sm text-fg-tertiary">
     {lastUsedAt ? (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -119,16 +122,22 @@ const ApiKeyLastUsedCell = ({
   </TableCell>
 )
 
-const ApiKeyAddedCell = ({
-  addedDate,
+const ApiKeyAddedCell = ({ addedDate }: ApiKeyAddedCellProps) => (
+  <TableCell className="pl-3 pr-0 py-2 text-left text-sm text-fg-tertiary">
+    <span className="block w-[92px] shrink-0 whitespace-nowrap">
+      {addedDate}
+    </span>
+  </TableCell>
+)
+
+const ApiKeyOptions = ({
   createdBy,
   isCliKey,
   keyName,
   onDelete,
-}: ApiKeyAddedCellProps) => (
-  <TableCell className="py-[6px] text-left text-sm text-fg-tertiary">
-    <div className="flex items-center gap-6">
-      <span className="w-[92px] shrink-0 whitespace-nowrap">{addedDate}</span>
+}: ApiKeyOptionsProps) => (
+  <TableCell className="px-0 py-2 text-right text-sm text-fg-tertiary">
+    <div className="ml-auto flex w-full items-center justify-between">
       {isCliKey ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -141,7 +150,7 @@ const ApiKeyAddedCell = ({
       ) : createdBy ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span>
+            <span className="shrink-0">
               <UserAvatar email={createdBy.email} />
             </span>
           </TooltipTrigger>
@@ -153,12 +162,12 @@ const ApiKeyAddedCell = ({
       <Button
         type="button"
         variant="ghost"
-        size="iconSm"
+        size="slate"
         className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
         aria-label={`Delete ${keyName ?? 'API key'}`}
         onClick={onDelete}
       >
-        <RemoveIcon className="size-4" />
+        <TrashIcon className="size-4" />
       </Button>
     </div>
   </TableCell>
@@ -185,10 +194,9 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
         teamSlug={teamSlug}
         apiKey={apiKey}
       />
-
-      <TableRow className="h-11">
+      <TableRow className="h-12">
         <ApiKeyNameCell name={apiKey.name} />
-        <TableCell className="py-[6px] text-left">
+        <TableCell className="py-2 text-left">
           <ApiKeyIdBadge
             value={maskDisplay}
             onCopy={() => {
@@ -200,8 +208,8 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
           lastUsedAt={lastUsedAt}
           lastUsedLabel={lastUsedLabel}
         />
-        <ApiKeyAddedCell
-          addedDate={addedDate}
+        <ApiKeyAddedCell addedDate={addedDate} />
+        <ApiKeyOptions
           createdBy={apiKey.createdBy}
           isCliKey={isCliKey}
           keyName={apiKey.name}
