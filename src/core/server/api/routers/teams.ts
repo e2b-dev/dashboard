@@ -1,6 +1,4 @@
-import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
-import { CACHE_TAGS } from '@/configs/cache'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
@@ -59,7 +57,7 @@ export const teamsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { name, teamSlug } = input
+      const { name } = input
 
       const result = await ctx.keysRepository.createApiKey(name)
 
@@ -76,9 +74,6 @@ export const teamsRouter = createTRPCRouter({
         throwTRPCErrorFromRepoError(result.error)
       }
 
-      revalidateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId), 'default')
-      revalidatePath(`/dashboard/${teamSlug}/keys`, 'page')
-
       return { createdApiKey: result.data }
     }),
 
@@ -89,7 +84,7 @@ export const teamsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { apiKeyId, teamSlug } = input
+      const { apiKeyId } = input
 
       const result = await ctx.keysRepository.deleteApiKey(apiKeyId)
 
@@ -105,8 +100,5 @@ export const teamsRouter = createTRPCRouter({
 
         throwTRPCErrorFromRepoError(result.error)
       }
-
-      revalidateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId), 'default')
-      revalidatePath(`/dashboard/${teamSlug}/keys`, 'page')
     }),
 })
