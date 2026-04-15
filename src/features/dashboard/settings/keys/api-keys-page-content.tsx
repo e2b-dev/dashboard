@@ -51,13 +51,25 @@ const ApiKeysSearchField = ({
   )
 }
 
-const ApiKeysTotalLabel = ({ count }: { count: number }) => {
-  if (count === 0) return null
+interface ApiKeysTotalLabelProps {
+  totalCount: number
+  filteredCount: number
+  hasActiveSearch: boolean
+}
+
+const ApiKeysTotalLabel = ({
+  totalCount,
+  filteredCount,
+  hasActiveSearch,
+}: ApiKeysTotalLabelProps) => {
+  if (totalCount === 0) return null
+
+  const label = hasActiveSearch
+    ? `Showing ${filteredCount} of ${totalCount} ${pluralize(totalCount, 'key')}`
+    : `${totalCount} ${pluralize(totalCount, 'key')} in total`
 
   return (
-    <p className="shrink-0 lg:text-right">
-      {count} {pluralize(count, 'key')} in total
-    </p>
+    <p className="shrink-0 lg:text-right">{label}</p>
   )
 }
 
@@ -67,6 +79,7 @@ export const ApiKeysPageContent = ({
 }: ApiKeysPageContentProps) => {
   const trpc = useTRPC()
   const [query, setQuery] = useState('')
+  const hasActiveSearch = query.trim().length > 0
 
   const { data, isLoading, isError, error } = useQuery(
     trpc.teams.listApiKeys.queryOptions({ teamSlug })
@@ -118,7 +131,11 @@ export const ApiKeysPageContent = ({
           These keys authenticate API requests from your team&apos;s
           applications.
         </p>
-        <ApiKeysTotalLabel count={apiKeys.length} />
+        <ApiKeysTotalLabel
+          filteredCount={filtered.length}
+          hasActiveSearch={hasActiveSearch}
+          totalCount={apiKeys.length}
+        />
       </div>
 
       <div className="bg-bg w-full overflow-x-auto">
