@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
-      const userId = data.user.id
+      const userId = data.user?.id
 
       if (!data.session?.access_token || !userId) {
         throw encodedRedirect(
@@ -67,20 +67,13 @@ export async function GET(request: Request) {
         const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
 
         if (!bootstrapResult.ok) {
-          l.error(
+          l.warn(
             {
               key: 'auth_callback:bootstrap_error',
-              user_id: data.user.id,
+              user_id: userId,
               error: serializeErrorForLog(bootstrapResult.error),
             },
-            `Auth callback bootstrap error: ${bootstrapResult.error.message || 'Unknown error'}`
-          )
-
-          throw encodedRedirect(
-            'error',
-            AUTH_URLS.SIGN_IN,
-            bootstrapResult.error.message ||
-              'Failed to setup account. Please try again or contact support.'
+            `Auth callback bootstrap failed; continuing with sign-in flow`
           )
         }
       }
@@ -88,7 +81,7 @@ export async function GET(request: Request) {
       l.info(
         {
           key: 'auth_callback:otp_exchanged',
-          user_id: data.user.id,
+          user_id: userId,
         },
         `OTP successfully exchanged for user session`
       )

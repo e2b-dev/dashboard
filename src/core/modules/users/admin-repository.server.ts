@@ -2,9 +2,9 @@ import 'server-only'
 
 import { ADMIN_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
+import type { ResolvedTeam } from '@/core/modules/teams/models'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { err, ok, type RepoResult } from '@/core/shared/result'
-import type { ResolvedTeam } from '../teams/models'
 
 type AdminUsersRepositoryDeps = {
   apiClient: typeof api
