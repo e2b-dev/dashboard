@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { secondsInMinute } from 'date-fns/constants'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { ADMIN_AUTH_HEADERS, SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
@@ -11,6 +11,7 @@ import type { ResolvedTeam, TeamModel } from './models'
 type UserTeamsRepositoryDeps = {
   apiClient: typeof api
   authHeaders: typeof SUPABASE_AUTH_HEADERS
+  adminHeaders: typeof ADMIN_AUTH_HEADERS
 }
 
 export type UserTeamsRequestScope = RequestScope
@@ -29,6 +30,7 @@ export function createUserTeamsRepository(
   deps: UserTeamsRepositoryDeps = {
     apiClient: api,
     authHeaders: SUPABASE_AUTH_HEADERS,
+    adminHeaders: ADMIN_AUTH_HEADERS,
   }
 ): UserTeamsRepository {
   const listApiUserTeams = async (): Promise<RepoResult<TeamModel[]>> => {
@@ -60,10 +62,20 @@ export function createUserTeamsRepository(
       return ok(teamsResult.data)
     },
     async bootstrapUser(): Promise<RepoResult<ResolvedTeam>> {
+      if (!process.env.DASHBOARD_API_ADMIN_TOKEN) {
+        return err(
+          repoErrorFromHttp(
+            500,
+            'DASHBOARD_API_ADMIN_TOKEN is not configured',
+            new Error('DASHBOARD_API_ADMIN_TOKEN is not configured')
+          )
+        )
+      }
+
       const { data, error, response } = await deps.apiClient.POST(
-        '/users/bootstrap',
+        '/admin/users/bootstrap',
         {
-          headers: deps.authHeaders(scope.accessToken),
+          headers: deps.adminHeaders(process.env.DASHBOARD_API_ADMIN_TOKEN),
         }
       )
 
