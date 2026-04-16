@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { ENABLE_USER_BOOTSTRAP } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -60,26 +61,28 @@ export async function GET(request: Request) {
         )
       }
 
-      const adminUsersRepository = createAdminUsersRepository()
+      if (ENABLE_USER_BOOTSTRAP) {
+        const adminUsersRepository = createAdminUsersRepository()
 
-      const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
+        const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
 
-      if (!bootstrapResult.ok) {
-        l.error(
-          {
-            key: 'auth_callback:bootstrap_error',
-            user_id: data.user.id,
-            error: serializeErrorForLog(bootstrapResult.error),
-          },
-          `Auth callback bootstrap error: ${bootstrapResult.error.message || 'Unknown error'}`
-        )
+        if (!bootstrapResult.ok) {
+          l.error(
+            {
+              key: 'auth_callback:bootstrap_error',
+              user_id: data.user.id,
+              error: serializeErrorForLog(bootstrapResult.error),
+            },
+            `Auth callback bootstrap error: ${bootstrapResult.error.message || 'Unknown error'}`
+          )
 
-        throw encodedRedirect(
-          'error',
-          AUTH_URLS.SIGN_IN,
-          bootstrapResult.error.message ||
-            'Failed to setup account. Please try again or contact support.'
-        )
+          throw encodedRedirect(
+            'error',
+            AUTH_URLS.SIGN_IN,
+            bootstrapResult.error.message ||
+              'Failed to setup account. Please try again or contact support.'
+          )
+        }
       }
 
       l.info(

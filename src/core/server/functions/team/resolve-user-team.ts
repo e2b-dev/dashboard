@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { ENABLE_USER_BOOTSTRAP } from '@/configs/flags'
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import type { ResolvedTeam } from '@/core/modules/teams/models'
@@ -15,7 +16,6 @@ export async function resolveUserTeam(
   const userTeamsRepository = createUserTeamsRepository({
     accessToken,
   })
-  const adminUsersRepository = createAdminUsersRepository()
 
   const cookieTeamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
   const cookieTeamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
@@ -67,6 +67,11 @@ export async function resolveUserTeam(
   }
 
   if (teamsResult.data.length === 0) {
+    if (!ENABLE_USER_BOOTSTRAP) {
+      return null
+    }
+
+    const adminUsersRepository = createAdminUsersRepository()
     const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
 
     if (!bootstrapResult.ok) {
