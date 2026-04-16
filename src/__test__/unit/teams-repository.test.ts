@@ -2,6 +2,16 @@ import { describe, expect, it, vi } from 'vitest'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 
+vi.mock('@/core/shared/clients/supabase/admin', () => ({
+  supabaseAdmin: {
+    auth: {
+      admin: {
+        getUserById: vi.fn(),
+      },
+    },
+  },
+}))
+
 function createApiResponse<T>(input: {
   ok: boolean
   status: number
