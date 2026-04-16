@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
+import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 
 function createApiResponse<T>(input: {
   ok: boolean
