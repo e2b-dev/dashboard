@@ -11,7 +11,6 @@ export const SUPABASE_AUTH_HEADERS = (token: string, teamId?: string) => ({
 })
 
 export const ADMIN_AUTH_HEADERS = (token: string) => ({
-  [SUPABASE_TOKEN_HEADER]: 'xxx',
   [ADMIN_TOKEN_HEADER]: token,
 })
 export const CLI_GENERATED_KEY_NAME = 'CLI login/configure'

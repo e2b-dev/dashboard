@@ -7,6 +7,7 @@ const {
   mockBootstrapUser,
   mockResolveTeamBySlug,
   mockCreateUserTeamsRepository,
+  mockCreateAdminUsersRepository,
 } = vi.hoisted(() => ({
   mockCookieStore: {
     get: vi.fn(),
@@ -15,6 +16,7 @@ const {
   mockBootstrapUser: vi.fn(),
   mockResolveTeamBySlug: vi.fn(),
   mockCreateUserTeamsRepository: vi.fn(),
+  mockCreateAdminUsersRepository: vi.fn(),
 }))
 
 vi.mock('next/headers', () => ({
@@ -25,7 +27,14 @@ vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
   createUserTeamsRepository: mockCreateUserTeamsRepository,
 }))
 
+vi.mock('@/core/modules/users/admin-repository.server', () => ({
+  createAdminUsersRepository: mockCreateAdminUsersRepository,
+}))
+
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
+
+const TEST_USER_ID = 'user-123'
+const TEST_ACCESS_TOKEN = 'access-token'
 
 function setupCookies(cookieValues: Record<string, string | undefined>) {
   mockCookieStore.get.mockImplementation((key: string) => {
@@ -50,8 +59,10 @@ describe('resolveUserTeam', () => {
     vi.clearAllMocks()
     mockCreateUserTeamsRepository.mockReturnValue({
       listUserTeams: mockListUserTeams,
-      bootstrapUser: mockBootstrapUser,
       resolveTeamBySlug: mockResolveTeamBySlug,
+    })
+    mockCreateAdminUsersRepository.mockReturnValue({
+      bootstrapUser: mockBootstrapUser,
     })
   })
 
@@ -72,7 +83,7 @@ describe('resolveUserTeam', () => {
       },
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-cookie-id',
@@ -95,7 +106,7 @@ describe('resolveUserTeam', () => {
       },
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-cookie-id',
@@ -114,14 +125,14 @@ describe('resolveUserTeam', () => {
       ],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-b',
       slug: 'team-b',
     })
     expect(mockCreateUserTeamsRepository).toHaveBeenCalledWith({
-      accessToken: 'access-token',
+      accessToken: TEST_ACCESS_TOKEN,
     })
   })
 
@@ -135,7 +146,7 @@ describe('resolveUserTeam', () => {
       ],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-slugged',
@@ -157,7 +168,7 @@ describe('resolveUserTeam', () => {
       data: [createTeam({ id: 'team-db', slug: 'team-db', isDefault: true })],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-db',
@@ -174,7 +185,7 @@ describe('resolveUserTeam', () => {
       data: [createTeam({ id: 'team-db', slug: 'team-db', isDefault: true })],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-db',
@@ -193,7 +204,7 @@ describe('resolveUserTeam', () => {
       ],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toBeNull()
   })
@@ -212,13 +223,15 @@ describe('resolveUserTeam', () => {
       },
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'bootstrapped-team',
       slug: 'bootstrapped-team',
     })
+    expect(mockCreateAdminUsersRepository).toHaveBeenCalledTimes(1)
     expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapUser).toHaveBeenCalledWith(TEST_USER_ID)
   })
 
   it('returns null when bootstrap fails after empty team lookup', async () => {
@@ -232,10 +245,12 @@ describe('resolveUserTeam', () => {
       error: new Error('Failed to bootstrap user'),
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toBeNull()
+    expect(mockCreateAdminUsersRepository).toHaveBeenCalledTimes(1)
     expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapUser).toHaveBeenCalledWith(TEST_USER_ID)
   })
 
   it('returns null when listing teams fails', async () => {
@@ -245,7 +260,7 @@ describe('resolveUserTeam', () => {
       error: new Error('Failed to fetch user teams'),
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toBeNull()
     expect(mockBootstrapUser).not.toHaveBeenCalled()

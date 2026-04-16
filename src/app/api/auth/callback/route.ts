@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -50,20 +50,19 @@ export async function GET(request: Request) {
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
-      const accessToken = data.session?.access_token
-      if (!accessToken) {
+      const userId = data.user.id
+
+      if (!data.session?.access_token || !userId) {
         throw encodedRedirect(
           'error',
           AUTH_URLS.SIGN_IN,
-          'Missing session access token after auth callback'
+          'Missing session after auth callback'
         )
       }
 
-      const userTeamsRepository = createUserTeamsRepository({
-        accessToken,
-      })
+      const adminUsersRepository = createAdminUsersRepository()
 
-      const bootstrapResult = await userTeamsRepository.bootstrapUser()
+      const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
 
       if (!bootstrapResult.ok) {
         l.error(

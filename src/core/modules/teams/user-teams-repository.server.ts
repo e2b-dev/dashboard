@@ -1,28 +1,26 @@
-import "server-only";
+import 'server-only'
 
-import { secondsInMinute } from "date-fns/constants";
-import { ADMIN_AUTH_HEADERS, SUPABASE_AUTH_HEADERS } from "@/configs/api";
-import { api } from "@/core/shared/clients/api";
-import { repoErrorFromHttp } from "@/core/shared/errors";
-import type { RequestScope } from "@/core/shared/repository-scope";
-import { err, ok, type RepoResult } from "@/core/shared/result";
-import type { ResolvedTeam, TeamModel } from "./models";
+import { secondsInMinute } from 'date-fns/constants'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { api } from '@/core/shared/clients/api'
+import { repoErrorFromHttp } from '@/core/shared/errors'
+import type { RequestScope } from '@/core/shared/repository-scope'
+import { err, ok, type RepoResult } from '@/core/shared/result'
+import type { ResolvedTeam, TeamModel } from './models'
 
 type UserTeamsRepositoryDeps = {
-  apiClient: typeof api;
-  authHeaders: typeof SUPABASE_AUTH_HEADERS;
-  adminHeaders: typeof ADMIN_AUTH_HEADERS;
-};
+  apiClient: typeof api
+  authHeaders: typeof SUPABASE_AUTH_HEADERS
+}
 
-export type UserTeamsRequestScope = RequestScope;
+export type UserTeamsRequestScope = RequestScope
 
 export interface UserTeamsRepository {
-  listUserTeams(): Promise<RepoResult<TeamModel[]>>;
-  bootstrapUser(): Promise<RepoResult<ResolvedTeam>>;
+  listUserTeams(): Promise<RepoResult<TeamModel[]>>
   resolveTeamBySlug(
     slug: string,
-    next?: { tags?: string[] },
-  ): Promise<RepoResult<ResolvedTeam>>;
+    next?: { tags?: string[] }
+  ): Promise<RepoResult<ResolvedTeam>>
 }
 
 export function createUserTeamsRepository(
@@ -30,79 +28,42 @@ export function createUserTeamsRepository(
   deps: UserTeamsRepositoryDeps = {
     apiClient: api,
     authHeaders: SUPABASE_AUTH_HEADERS,
-    adminHeaders: ADMIN_AUTH_HEADERS,
-  },
+  }
 ): UserTeamsRepository {
   const listApiUserTeams = async (): Promise<RepoResult<TeamModel[]>> => {
-    const { data, error, response } = await deps.apiClient.GET("/teams", {
+    const { data, error, response } = await deps.apiClient.GET('/teams', {
       headers: deps.authHeaders(scope.accessToken),
-    });
+    })
 
     if (!response.ok || error || !data?.teams) {
       return err(
         repoErrorFromHttp(
           response.status,
-          error?.message ?? "Failed to fetch user teams",
-          error,
-        ),
-      );
+          error?.message ?? 'Failed to fetch user teams',
+          error
+        )
+      )
     }
 
-    return ok(data.teams);
-  };
+    return ok(data.teams)
+  }
 
   return {
     async listUserTeams(): Promise<RepoResult<TeamModel[]>> {
-      const teamsResult = await listApiUserTeams();
+      const teamsResult = await listApiUserTeams()
 
       if (!teamsResult.ok) {
-        return teamsResult;
+        return teamsResult
       }
 
-      return ok(teamsResult.data);
-    },
-    async bootstrapUser(): Promise<RepoResult<ResolvedTeam>> {
-      if (!process.env.DASHBOARD_API_ADMIN_TOKEN) {
-        return err(
-          repoErrorFromHttp(
-            500,
-            "DASHBOARD_API_ADMIN_TOKEN is not configured",
-            new Error("DASHBOARD_API_ADMIN_TOKEN is not configured"),
-          ),
-        );
-      }
-
-      const { data, error, response } = await deps.apiClient.POST(
-        "/admin/users/bootstrap",
-        {
-          headers: {
-            ...deps.adminHeaders(process.env.DASHBOARD_API_ADMIN_TOKEN),
-            ...deps.authHeaders(scope.accessToken),
-          },
-        },
-      );
-
-      if (!response.ok || error || !data) {
-        return err(
-          repoErrorFromHttp(
-            response.status,
-            error?.message ?? "Failed to bootstrap user",
-            error,
-          ),
-        );
-      }
-
-      return ok({
-        id: data.id,
-        slug: data.slug,
-      });
+      return ok(teamsResult.data)
     },
     async resolveTeamBySlug(
       slug: string,
-      next?: { tags?: string[] },
+      next?: { tags?: string[] }
     ): Promise<RepoResult<ResolvedTeam>> {
       const { data, error, response } = await deps.apiClient.GET(
-        "/teams/resolve",
+        '/teams/resolve',
         {
           params: { query: { slug } },
           headers: deps.authHeaders(scope.accessToken),
@@ -110,23 +71,23 @@ export function createUserTeamsRepository(
             revalidate: secondsInMinute * 5,
             ...next,
           },
-        },
-      );
+        }
+      )
 
       if (!response.ok || error || !data) {
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? "Failed to resolve team",
-            error,
-          ),
-        );
+            error?.message ?? 'Failed to resolve team',
+            error
+          )
+        )
       }
 
       return ok({
         id: data.id,
         slug: data.slug,
-      });
+      })
     },
-  };
+  }
 }

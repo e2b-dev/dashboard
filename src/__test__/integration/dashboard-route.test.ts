@@ -121,8 +121,11 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       // execute
       const response = await GET(request)
 
-      // verify: resolveUserTeam was called with session access token
-      expect(mockResolveUserTeam).toHaveBeenCalledWith('session-token')
+      // verify: resolveUserTeam was called with authenticated user id and session access token
+      expect(mockResolveUserTeam).toHaveBeenCalledWith(
+        'user-123',
+        'session-token'
+      )
 
       // verify: redirects to sandboxes page
       expect(response.status).toBe(307) // temporary redirect

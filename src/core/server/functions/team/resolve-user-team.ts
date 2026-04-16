@@ -4,15 +4,18 @@ import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import type { ResolvedTeam } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
 import { l } from '@/core/shared/clients/logger/logger'
 
 export async function resolveUserTeam(
+  userId: string,
   accessToken: string
 ): Promise<ResolvedTeam | null> {
   const cookieStore = await cookies()
   const userTeamsRepository = createUserTeamsRepository({
     accessToken,
   })
+  const adminUsersRepository = createAdminUsersRepository()
 
   const cookieTeamId = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_ID)?.value
   const cookieTeamSlug = cookieStore.get(COOKIE_KEYS.SELECTED_TEAM_SLUG)?.value
@@ -64,7 +67,7 @@ export async function resolveUserTeam(
   }
 
   if (teamsResult.data.length === 0) {
-    const bootstrapResult = await userTeamsRepository.bootstrapUser()
+    const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
 
     if (!bootstrapResult.ok) {
       l.error(
