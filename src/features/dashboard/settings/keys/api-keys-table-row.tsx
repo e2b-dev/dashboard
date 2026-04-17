@@ -110,9 +110,7 @@ const ApiKeyLastUsedCell = ({
     {lastUsedAt ? (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-default">
-            {lastUsedLabel}
-          </span>
+          <span className="cursor-default">{lastUsedLabel}</span>
         </TooltipTrigger>
         <TooltipContent side="top" className="font-mono text-xs">
           {formatUTCTimestamp(new Date(lastUsedAt))}
