@@ -1,7 +1,6 @@
 import { Page } from '@/features/dashboard/layouts/page'
 import { ApiKeysPageContent } from '@/features/dashboard/settings/keys'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
-import { Card, CardContent } from '@/ui/primitives/card'
 
 interface KeysPageProps {
   params: Promise<{
@@ -17,11 +16,7 @@ export default async function KeysPage({ params }: KeysPageProps) {
   return (
     <HydrateClient>
       <Page>
-        <Card className="border-stroke/80">
-          <CardContent className="pb-8 pt-6">
-            <ApiKeysPageContent teamSlug={teamSlug} />
-          </CardContent>
-        </Card>
+        <ApiKeysPageContent teamSlug={teamSlug} />
       </Page>
     </HydrateClient>
   )
