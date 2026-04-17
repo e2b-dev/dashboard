@@ -28,7 +28,7 @@ export const UsageLimits = ({ className }: UsageLimitsProps) => {
   return (
     <div
       className={cn(
-        'mx-auto flex w-full max-w-[600px] flex-col gap-12 pt-8',
+        'mx-auto flex w-full max-w-[600px] flex-col gap-12',
         className
       )}
     >
