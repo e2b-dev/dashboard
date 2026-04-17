@@ -9,11 +9,7 @@ interface UserAvatarProps {
   className?: string
 }
 
-export const UserAvatar = ({
-  email,
-  url,
-  className,
-}: UserAvatarProps) => (
+export const UserAvatar = ({ email, url, className }: UserAvatarProps) => (
   <Avatar className={cn('border-stroke size-5 shrink-0 border', className)}>
     <AvatarImage referrerPolicy="no-referrer" src={url ?? undefined} />
     <AvatarFallback className="bg-bg text-[10px] font-bold uppercase">
