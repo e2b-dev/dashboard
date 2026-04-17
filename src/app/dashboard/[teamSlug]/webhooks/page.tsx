@@ -1,16 +1,8 @@
-import { Plus } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { INCLUDE_ARGUS } from '@/configs/flags'
-import WebhookAddEditDialog from '@/features/dashboard/settings/webhooks/add-edit-dialog'
-import WebhooksTable from '@/features/dashboard/settings/webhooks/table'
-import Frame from '@/ui/frame'
-import { Button } from '@/ui/primitives/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from '@/ui/primitives/card'
+import { getWebhooks } from '@/core/server/functions/webhooks/get-webhooks'
+import { Page } from '@/features/dashboard/layouts/page'
+import { WebhooksPageContent } from '@/features/dashboard/settings/webhooks/webhooks-page-content'
 
 interface WebhooksPageClientProps {
   params: Promise<{
@@ -25,36 +17,17 @@ export default async function WebhooksPage({
     return notFound()
   }
 
+  const { teamSlug } = await params
+
+  const webhooksResult = await getWebhooks({ teamSlug })
+
+  const hasError = webhooksResult?.data === undefined
+
+  const webhooks = webhooksResult?.data?.webhooks ?? []
+
   return (
-    <Frame
-      classNames={{
-        wrapper: 'w-full max-md:p-0',
-        frame: 'max-md:border-none',
-      }}
-    >
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <CardDescription className="max-w-[600px] text-fg">
-              Webhooks allow your external service to be notified when sandbox
-              lifecycle events happen. When the specified event happens, we'll
-              send a POST request to the configured URLs.
-            </CardDescription>
-
-            <WebhookAddEditDialog mode="add">
-              <Button className="w-full sm:w-auto sm:self-start">
-                <Plus className="size-4" /> Add Webhook
-              </Button>
-            </WebhookAddEditDialog>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="w-full overflow-x-auto">
-            <WebhooksTable params={params} className="min-w-[900px]" />
-          </div>
-        </CardContent>
-      </Card>
-    </Frame>
+    <Page>
+      <WebhooksPageContent hasError={hasError} webhooks={webhooks} />
+    </Page>
   )
 }
