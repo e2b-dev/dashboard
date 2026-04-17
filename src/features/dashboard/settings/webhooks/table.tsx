@@ -15,7 +15,6 @@ interface WebhooksTableProps {
   webhooks: Webhook[]
   totalWebhookCount: number
   hasError: boolean
-  hasActiveSearch: boolean
   className?: string
 }
 
@@ -23,17 +22,12 @@ const WebhooksTable = ({
   webhooks,
   totalWebhookCount,
   hasError,
-  hasActiveSearch,
   className,
 }: WebhooksTableProps) => {
   const hasNoWebhooks = totalWebhookCount === 0
-  const emptyMessage = hasError
-    ? 'Failed to get webhooks. Try again or contact support.'
-    : hasNoWebhooks
-      ? 'No webhooks added yet'
-      : hasActiveSearch
-        ? 'No webhooks match your search.'
-        : 'No webhooks added yet'
+  const emptyMessage = hasNoWebhooks
+    ? 'No webhooks added yet'
+    : 'No webhooks match your search.'
 
   return (
     <Table className={cn('w-full table-fixed', className)}>
@@ -60,27 +54,26 @@ const WebhooksTable = ({
         </TableRow>
       </TableHeader>
       <TableBody className="[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80">
-        {hasError || webhooks.length === 0 ? (
+        {hasError ? (
+          <TableEmptyState colSpan={4}>
+            <WebhookIcon
+              aria-hidden
+              className="text-accent-error-highlight size-4 shrink-0"
+            />
+            <p className="text-accent-error-highlight prose-body-highlight">
+              Failed to get webhooks. Try again or contact support.
+            </p>
+          </TableEmptyState>
+        ) : webhooks.length === 0 ? (
           <TableEmptyState colSpan={4}>
             <WebhookIcon
               aria-hidden
               className={cn(
                 'size-4 shrink-0',
-                hasError
-                  ? 'text-accent-error-highlight'
-                  : hasNoWebhooks
-                    ? 'text-fg'
-                    : 'text-fg-tertiary opacity-80'
+                hasNoWebhooks ? 'text-fg' : 'text-fg-tertiary opacity-80'
               )}
             />
-            <span
-              className={cn(
-                hasError && 'text-accent-error-highlight',
-                !hasError && 'text-fg'
-              )}
-            >
-              {emptyMessage}
-            </span>
+            <p className="prose-body-highlight text-fg">{emptyMessage}</p>
           </TableEmptyState>
         ) : (
           webhooks.map((webhook, index) => (

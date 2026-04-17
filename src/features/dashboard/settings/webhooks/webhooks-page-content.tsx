@@ -90,7 +90,7 @@ export const WebhooksPageContent = ({
   }, [normalizedQuery, webhooks])
 
   return (
-    <div className={cn('flex w-full flex-col gap-6 p-4 sm:p-6', className)}>
+    <div className={cn('flex w-full flex-col gap-6', className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <WebhooksSearchField
           count={webhooks.length}
@@ -99,8 +99,13 @@ export const WebhooksPageContent = ({
         />
 
         <WebhookAddEditDialog mode="add">
-          <Button className="w-full md:w-auto md:self-start">
-            <AddIcon className="size-4" />
+          <Button
+            className="w-full font-sans normal-case prose-body-highlight md:w-auto md:self-start"
+            size="md"
+            type="button"
+            variant="default"
+          >
+            <AddIcon aria-hidden className="size-4" />
             Add a webhook
           </Button>
         </WebhookAddEditDialog>
@@ -120,7 +125,6 @@ export const WebhooksPageContent = ({
 
       <div className="bg-bg w-full overflow-x-auto">
         <WebhooksTable
-          hasActiveSearch={hasActiveSearch}
           hasError={hasError}
           totalWebhookCount={webhooks.length}
           webhooks={filteredWebhooks}
