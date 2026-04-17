@@ -6,6 +6,7 @@ import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { UserAvatar } from '@/features/dashboard/shared'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
 import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Badge } from '@/ui/primitives/badge'
@@ -30,8 +31,7 @@ interface ApiKeyNameCellProps {
 }
 
 interface ApiKeyIdBadgeProps {
-  value: string
-  onCopy: () => void
+  id: string
 }
 
 interface ApiKeyLastUsedCellProps {
@@ -63,14 +63,24 @@ const ApiKeyNameCell = ({ name }: ApiKeyNameCellProps) => (
   </TableCell>
 )
 
-const ApiKeyIdBadge = ({ value, onCopy }: ApiKeyIdBadgeProps) => {
-  const [wasCopied, copy] = useClipboard()
+const getApiKeyIdBadgeLabel = (id: string) => {
+  if (id.length <= 10) return id
+  return `${id.slice(0, 6)}...${id.slice(-4)}`
+}
 
-  const handleCopy = (event: React.MouseEvent<HTMLButtonElement>) => {
+const ApiKeyIdBadge = ({ id }: ApiKeyIdBadgeProps) => {
+  const posthog = usePostHog()
+  const { toast } = useToast()
+  const [wasCopied, copy] = useClipboard()
+  const displayId = getApiKeyIdBadgeLabel(id)
+
+  const handleCopy = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
-    void copy(value)
-    onCopy()
+
+    await copy(id)
+    posthog.capture('copied API key id')
+    toast(defaultSuccessToast('ID copied to clipboard'))
   }
 
   return (
@@ -78,13 +88,13 @@ const ApiKeyIdBadge = ({ value, onCopy }: ApiKeyIdBadgeProps) => {
       className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric"
       size="sm"
     >
-      <span>{value}</span>
+      <span>{displayId}</span>
       <Button
         type="button"
         variant="ghost"
         size="slate"
         className="text-fg-tertiary hover:text-fg h-3 w-3 shrink-0 active:translate-y-0"
-        aria-label={`Copy API key ID ${value}`}
+        aria-label="Copy full API key ID"
         onClick={handleCopy}
       >
         {wasCopied ? (
@@ -169,10 +179,8 @@ const ApiKeyAddedCell = ({
 )
 
 export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
-  const posthog = usePostHog()
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const maskDisplay = `${apiKey.mask.prefix}${apiKey.mask.maskedValuePrefix}...${apiKey.mask.maskedValueSuffix}`
   const addedDate = apiKey.createdAt
     ? (formatDate(new Date(apiKey.createdAt), 'MMM d, yyyy') ?? '—')
     : '—'
@@ -192,12 +200,7 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
       <TableRow className="h-12">
         <ApiKeyNameCell name={apiKey.name} />
         <TableCell className="py-2 text-left">
-          <ApiKeyIdBadge
-            value={maskDisplay}
-            onCopy={() => {
-              posthog.capture('copied API key id')
-            }}
-          />
+          <ApiKeyIdBadge id={apiKey.id} />
         </TableCell>
         <ApiKeyLastUsedCell
           lastUsedAt={lastUsedAt}
