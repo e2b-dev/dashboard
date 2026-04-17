@@ -8,6 +8,12 @@ export const getMaskedIdSearchString = (apiKey: TeamAPIKey): string => {
   return `${prefix}${maskedValuePrefix}...${maskedValueSuffix}`.toLowerCase()
 }
 
+/** Builds the visible ID badge label; e.g. `"e2b_c28e178eecf2"` -> `"e2b_c2...ecf2"` */
+export const getApiKeyIdBadgeLabel = (id: string): string => {
+  if (id.length <= 10) return id
+  return `${id.slice(0, 6)}...${id.slice(-4)}`
+}
+
 /** Returns true when the key name or masked id contains the trimmed query (case-insensitive). */
 export const matchesApiKeySearch = (
   apiKey: TeamAPIKey,
@@ -16,6 +22,8 @@ export const matchesApiKeySearch = (
   const q = query.trim().toLowerCase()
   if (!q) return true
   if (apiKey.name.toLowerCase().includes(q)) return true
+  if (apiKey.id.toLowerCase().includes(q)) return true
+  if (getApiKeyIdBadgeLabel(apiKey.id).toLowerCase().includes(q)) return true
   return getMaskedIdSearchString(apiKey).includes(q)
 }
 

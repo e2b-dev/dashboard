@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
-import { getLastUsedLabel } from './api-keys-utils'
+import { getApiKeyIdBadgeLabel, getLastUsedLabel } from './api-keys-utils'
 import { DeleteApiKeyDialog } from './delete-api-key-dialog'
 
 interface ApiKeysTableRowProps {
@@ -62,11 +62,6 @@ const ApiKeyNameCell = ({ name }: ApiKeyNameCellProps) => (
     </div>
   </TableCell>
 )
-
-const getApiKeyIdBadgeLabel = (id: string) => {
-  if (id.length <= 10) return id
-  return `${id.slice(0, 6)}...${id.slice(-4)}`
-}
 
 const ApiKeyIdBadge = ({ id }: ApiKeyIdBadgeProps) => {
   const posthog = usePostHog()
@@ -115,7 +110,7 @@ const ApiKeyLastUsedCell = ({
     {lastUsedAt ? (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-default border-b border-dotted border-fg-tertiary/40">
+          <span className="cursor-default">
             {lastUsedLabel}
           </span>
         </TooltipTrigger>
@@ -135,48 +130,52 @@ const ApiKeyAddedCell = ({
   isCliKey,
   keyName,
   onDelete,
-}: ApiKeyAddedCellProps) => (
-  <TableCell className="pl-3 pr-0 py-2 text-left text-sm text-fg-tertiary">
-    <div className="flex items-center gap-6 justify-between">
-      <span className="block w-[92px] shrink-0 whitespace-nowrap">
-        {addedDate}
-      </span>
-      <div className="flex items-center gap-6">
-        {isCliKey ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
-                <E2BLogo className="size-5" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">Added through E2B CLI</TooltipContent>
-          </Tooltip>
-        ) : createdBy ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="shrink-0">
-                <UserAvatar email={createdBy.email} />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">{createdBy.email}</TooltipContent>
-          </Tooltip>
-        ) : (
-          <span className="size-5 shrink-0" aria-hidden />
-        )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="slate"
-          className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
-          aria-label={`Delete ${keyName ?? 'API key'}`}
-          onClick={onDelete}
-        >
-          <TrashIcon className="size-4" />
-        </Button>
+}: ApiKeyAddedCellProps) => {
+  const createdByEmail = createdBy?.email?.trim() || 'Unknown user'
+
+  return (
+    <TableCell className="pl-3 pr-0 py-2 text-left text-sm text-fg-tertiary">
+      <div className="flex items-center gap-6 justify-between">
+        <span className="block w-[92px] shrink-0 whitespace-nowrap">
+          {addedDate}
+        </span>
+        <div className="flex items-center gap-6">
+          {isCliKey ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
+                  <E2BLogo className="size-5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">Added through E2B CLI</TooltipContent>
+            </Tooltip>
+          ) : createdBy ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="cursor-default shrink-0">
+                  <UserAvatar email={createdByEmail} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">{createdByEmail}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="size-5 shrink-0" aria-hidden />
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="slate"
+            className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
+            aria-label={`Delete ${keyName ?? 'API key'}`}
+            onClick={onDelete}
+          >
+            <TrashIcon className="size-4" />
+          </Button>
+        </div>
       </div>
-    </div>
-  </TableCell>
-)
+    </TableCell>
+  )
+}
 
 export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false)
