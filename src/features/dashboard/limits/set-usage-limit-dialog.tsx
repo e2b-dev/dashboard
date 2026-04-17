@@ -52,14 +52,14 @@ export const SetUsageLimitDialog = ({
               <DialogTitle className="text-fg">{title}</DialogTitle>
             </div>
             <DialogDescription className="text-fg-secondary prose-body max-w-[311px]">
-              If your API usage hits this limit, all requests including sandbox
-              creation will be blocked.
+              If your API usage hits this limit, all requests—including sandbox
+              creation—will be blocked.
             </DialogDescription>
             <p className="text-accent-warning-highlight prose-body-highlight">
               This may disrupt your services.
             </p>
           </div>
-          <div className="flex shrink-0 items-center justify-end gap-5 self-end sm:self-center">
+          <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-center">
             <Button
               type="button"
               variant="ghost"

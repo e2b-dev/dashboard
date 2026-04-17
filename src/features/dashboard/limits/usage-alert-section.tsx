@@ -23,9 +23,13 @@ const UsageAlertSectionInfo = ({
 
   return (
     <p className="text-fg-tertiary prose-body max-w-[450px]">
-      Informative alert will be sent to{' '}
-      <span className="prose-body-highlight">{email}</span> when {thresholdText}{' '}
-      is reached
+      <span>Informative alert will be sent to </span>
+      <span className="prose-body-highlight">{email}</span>
+      <span>
+        {' when '}
+        <br aria-hidden="true" />
+        {thresholdText} is reached
+      </span>
     </p>
   )
 }

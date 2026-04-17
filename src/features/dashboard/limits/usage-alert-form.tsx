@@ -139,6 +139,7 @@ export const UsageAlertForm = ({
     isEditing &&
     (isClearIntent || (nextValue !== null && nextValue !== originalValue)) &&
     !isMutating
+  const isInputEditable = isEditing || originalValue === null
   const shouldShowCancel =
     isEditing && (originalValue !== null || draftValue.length > 0)
 
@@ -215,12 +216,13 @@ export const UsageAlertForm = ({
                 field.onChange(sanitizeCurrencyInput(event.target.value))
               }}
               onBlur={field.onBlur}
-              onFocus={() => {
-                if (isEditing) return
-                startEditing()
+              onMouseDown={(event) => {
+                if (isInputEditable) return
+                event.preventDefault()
               }}
               placeholder="--"
               readOnly={!isEditing && originalValue !== null}
+              tabIndex={isInputEditable ? undefined : -1}
               value={field.value}
             />
           )}

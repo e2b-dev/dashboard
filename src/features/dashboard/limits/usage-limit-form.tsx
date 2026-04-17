@@ -113,6 +113,7 @@ export const UsageLimitForm = ({
     form.formState.isValid &&
     nextValue !== originalValue &&
     !isMutating
+  const isInputEditable = isEditing || originalValue === null
   const shouldShowCancel =
     isEditing && (originalValue !== null || draftValue.length > 0)
   const setLimitTitle = `Set $${nextValue === null ? '--' : formatCurrencyValue(nextValue)} usage limit?`
@@ -126,6 +127,8 @@ export const UsageLimitForm = ({
   const openRemoveDialog = (): void => setIsRemoveDialogOpen(true)
 
   const handleCancel = (): void => {
+    const activeElement = document.activeElement
+    if (activeElement instanceof HTMLElement) activeElement.blur()
     inputRef.current?.blur()
 
     if (originalValue === null) {
@@ -197,12 +200,13 @@ export const UsageLimitForm = ({
                 field.onChange(sanitizeCurrencyInput(event.target.value))
               }}
               onBlur={field.onBlur}
-              onFocus={() => {
-                if (isEditing) return
-                startEditing()
+              onMouseDown={(event) => {
+                if (isInputEditable) return
+                event.preventDefault()
               }}
               placeholder="--"
               readOnly={!isEditing && originalValue !== null}
+              tabIndex={isInputEditable ? undefined : -1}
               value={field.value}
             />
           )}

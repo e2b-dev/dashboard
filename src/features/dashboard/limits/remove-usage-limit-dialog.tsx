@@ -100,7 +100,7 @@ export const RemoveUsageLimitDialog = ({
               API limits will be removed and usage will become uncapped
             </DialogDescription>
           </div>
-          <div className="flex shrink-0 items-center justify-end gap-5 self-end sm:self-center">
+          <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-center">
             <Button
               type="button"
               variant="ghost"
