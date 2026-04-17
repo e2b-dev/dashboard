@@ -32,34 +32,30 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
   return (
     <Table className={cn('w-full table-fixed', className)}>
       <colgroup>
-        <col className="min-w-[260px] lg:w-[42%]" />
+        <col className="min-w-[260px] lg:w-[48%]" />
         <col className="w-[132px] lg:w-[16%]" />
         <col className="w-[96px] lg:w-[12%]" />
-        <col className="w-[128px] lg:w-[128px]" />
-        <col className="w-[60px] lg:w-[60px]" />
+        <col className="w-[180px] lg:w-[24%]" />
       </colgroup>
       <TableHeader className="border-b-0">
         <TableRow className="border-stroke/80 hover:bg-transparent">
-          <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
             LABEL
           </TableHead>
-          <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
             ID
           </TableHead>
-          <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
             LAST USED
           </TableHead>
-          <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
             ADDED
-          </TableHead>
-          <TableHead className="w-[60px] p-0">
-            <span className="sr-only">API key options</span>
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody>
+      <TableBody className="[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80">
         {apiKeys.length === 0 ? (
-          <TableEmptyState colSpan={5}>
+          <TableEmptyState colSpan={4}>
             <KeyIcon
               aria-hidden
               className={cn(

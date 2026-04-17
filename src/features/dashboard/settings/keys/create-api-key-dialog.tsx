@@ -124,7 +124,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className={cn(createdKey && 'gap-2')}>
         {!createdKey ? (
           <>
             <DialogHeader>

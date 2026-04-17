@@ -41,9 +41,6 @@ interface ApiKeyLastUsedCellProps {
 
 interface ApiKeyAddedCellProps {
   addedDate: string
-}
-
-interface ApiKeyOptionsProps {
   createdBy?: TeamAPIKey['createdBy'] | null
   isCliKey: boolean
   keyName: string | null
@@ -122,53 +119,51 @@ const ApiKeyLastUsedCell = ({
   </TableCell>
 )
 
-const ApiKeyAddedCell = ({ addedDate }: ApiKeyAddedCellProps) => (
-  <TableCell className="pl-3 pr-0 py-2 text-left text-sm text-fg-tertiary">
-    <span className="block w-[92px] shrink-0 whitespace-nowrap">
-      {addedDate}
-    </span>
-  </TableCell>
-)
-
-const ApiKeyOptions = ({
+const ApiKeyAddedCell = ({
+  addedDate,
   createdBy,
   isCliKey,
   keyName,
   onDelete,
-}: ApiKeyOptionsProps) => (
-  <TableCell className="px-0 py-2 text-right text-sm text-fg-tertiary">
-    <div className="ml-auto flex w-full items-center justify-between">
-      {isCliKey ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
-              <E2BLogo className="size-5" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top">Added through E2B CLI</TooltipContent>
-        </Tooltip>
-      ) : createdBy ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="shrink-0">
-              <UserAvatar email={createdBy.email} />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top">{createdBy.email}</TooltipContent>
-        </Tooltip>
-      ) : (
-        <span className="size-5 shrink-0" aria-hidden />
-      )}
-      <Button
-        type="button"
-        variant="ghost"
-        size="slate"
-        className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
-        aria-label={`Delete ${keyName ?? 'API key'}`}
-        onClick={onDelete}
-      >
-        <TrashIcon className="size-4" />
-      </Button>
+}: ApiKeyAddedCellProps) => (
+  <TableCell className="pl-3 pr-0 py-2 text-left text-sm text-fg-tertiary">
+    <div className="flex items-center gap-6 justify-between">
+      <span className="block w-[92px] shrink-0 whitespace-nowrap">
+        {addedDate}
+      </span>
+      <div className="flex items-center gap-6">
+        {isCliKey ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
+                <E2BLogo className="size-5" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">Added through E2B CLI</TooltipContent>
+          </Tooltip>
+        ) : createdBy ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="shrink-0">
+                <UserAvatar email={createdBy.email} />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">{createdBy.email}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <span className="size-5 shrink-0" aria-hidden />
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="slate"
+          className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
+          aria-label={`Delete ${keyName ?? 'API key'}`}
+          onClick={onDelete}
+        >
+          <TrashIcon className="size-4" />
+        </Button>
+      </div>
     </div>
   </TableCell>
 )
@@ -208,8 +203,8 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
           lastUsedAt={lastUsedAt}
           lastUsedLabel={lastUsedLabel}
         />
-        <ApiKeyAddedCell addedDate={addedDate} />
-        <ApiKeyOptions
+        <ApiKeyAddedCell
+          addedDate={addedDate}
           createdBy={apiKey.createdBy}
           isCliKey={isCliKey}
           keyName={apiKey.name}
