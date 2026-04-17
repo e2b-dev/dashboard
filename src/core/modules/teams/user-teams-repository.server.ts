@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { secondsInDay, secondsInMinute } from 'date-fns/constants'
+import { secondsInMinute } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'

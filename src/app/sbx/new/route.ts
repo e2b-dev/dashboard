@@ -34,7 +34,7 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const team = await resolveUserTeam(session.access_token)
+    const team = await resolveUserTeam(data.user.id, session.access_token)
 
     if (!team) {
       return NextResponse.redirect(new URL(req.url).origin)

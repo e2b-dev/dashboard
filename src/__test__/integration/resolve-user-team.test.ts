@@ -2,17 +2,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { COOKIE_KEYS } from '@/configs/cookies'
 
 const {
+  mockFlags,
   mockCookieStore,
   mockListUserTeams,
+  mockBootstrapUser,
   mockResolveTeamBySlug,
   mockCreateUserTeamsRepository,
+  mockCreateAdminUsersRepository,
 } = vi.hoisted(() => ({
+  mockFlags: {
+    enableUserBootstrap: true,
+  },
   mockCookieStore: {
     get: vi.fn(),
   },
   mockListUserTeams: vi.fn(),
+  mockBootstrapUser: vi.fn(),
   mockResolveTeamBySlug: vi.fn(),
   mockCreateUserTeamsRepository: vi.fn(),
+  mockCreateAdminUsersRepository: vi.fn(),
 }))
 
 vi.mock('next/headers', () => ({
@@ -23,7 +31,20 @@ vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
   createUserTeamsRepository: mockCreateUserTeamsRepository,
 }))
 
+vi.mock('@/core/modules/users/admin-repository.server', () => ({
+  createAdminUsersRepository: mockCreateAdminUsersRepository,
+}))
+
+vi.mock('@/configs/flags', () => ({
+  get ENABLE_USER_BOOTSTRAP() {
+    return mockFlags.enableUserBootstrap
+  },
+}))
+
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
+
+const TEST_USER_ID = 'user-123'
+const TEST_ACCESS_TOKEN = 'access-token'
 
 function setupCookies(cookieValues: Record<string, string | undefined>) {
   mockCookieStore.get.mockImplementation((key: string) => {
@@ -46,9 +67,13 @@ function createTeam(overrides: Record<string, unknown> = {}) {
 describe('resolveUserTeam', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFlags.enableUserBootstrap = true
     mockCreateUserTeamsRepository.mockReturnValue({
       listUserTeams: mockListUserTeams,
       resolveTeamBySlug: mockResolveTeamBySlug,
+    })
+    mockCreateAdminUsersRepository.mockReturnValue({
+      bootstrapUser: mockBootstrapUser,
     })
   })
 
@@ -69,7 +94,7 @@ describe('resolveUserTeam', () => {
       },
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-cookie-id',
@@ -92,7 +117,7 @@ describe('resolveUserTeam', () => {
       },
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-cookie-id',
@@ -111,14 +136,14 @@ describe('resolveUserTeam', () => {
       ],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-b',
       slug: 'team-b',
     })
     expect(mockCreateUserTeamsRepository).toHaveBeenCalledWith({
-      accessToken: 'access-token',
+      accessToken: TEST_ACCESS_TOKEN,
     })
   })
 
@@ -132,7 +157,7 @@ describe('resolveUserTeam', () => {
       ],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-slugged',
@@ -154,7 +179,7 @@ describe('resolveUserTeam', () => {
       data: [createTeam({ id: 'team-db', slug: 'team-db', isDefault: true })],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-db',
@@ -171,7 +196,7 @@ describe('resolveUserTeam', () => {
       data: [createTeam({ id: 'team-db', slug: 'team-db', isDefault: true })],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toEqual({
       id: 'team-db',
@@ -190,9 +215,68 @@ describe('resolveUserTeam', () => {
       ],
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toBeNull()
+  })
+
+  it('bootstraps once when the user has no teams', async () => {
+    setupCookies({})
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [],
+    })
+    mockBootstrapUser.mockResolvedValue({
+      ok: true,
+      data: {
+        id: 'bootstrapped-team',
+        slug: 'bootstrapped-team',
+      },
+    })
+
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
+
+    expect(result).toEqual({
+      id: 'bootstrapped-team',
+      slug: 'bootstrapped-team',
+    })
+    expect(mockCreateAdminUsersRepository).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapUser).toHaveBeenCalledWith(TEST_USER_ID)
+  })
+
+  it('returns null when bootstrap fails after empty team lookup', async () => {
+    setupCookies({})
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [],
+    })
+    mockBootstrapUser.mockResolvedValue({
+      ok: false,
+      error: new Error('Failed to bootstrap user'),
+    })
+
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
+
+    expect(result).toBeNull()
+    expect(mockCreateAdminUsersRepository).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapUser).toHaveBeenCalledWith(TEST_USER_ID)
+  })
+
+  it('returns null without bootstrapping when bootstrap is disabled', async () => {
+    mockFlags.enableUserBootstrap = false
+    setupCookies({})
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [],
+    })
+
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
+
+    expect(result).toBeNull()
+    expect(mockCreateAdminUsersRepository).not.toHaveBeenCalled()
+    expect(mockBootstrapUser).not.toHaveBeenCalled()
   })
 
   it('returns null when listing teams fails', async () => {
@@ -202,8 +286,9 @@ describe('resolveUserTeam', () => {
       error: new Error('Failed to fetch user teams'),
     })
 
-    const result = await resolveUserTeam('access-token')
+    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toBeNull()
+    expect(mockBootstrapUser).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
+import { ENABLE_USER_BOOTSTRAP } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -49,10 +51,37 @@ export async function GET(request: Request) {
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
+      const userId = data.user?.id
+
+      if (!data.session?.access_token || !userId) {
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_IN,
+          'Missing session after auth callback'
+        )
+      }
+
+      if (ENABLE_USER_BOOTSTRAP) {
+        const adminUsersRepository = createAdminUsersRepository()
+
+        const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
+
+        if (!bootstrapResult.ok) {
+          l.warn(
+            {
+              key: 'auth_callback:bootstrap_error',
+              user_id: userId,
+              error: serializeErrorForLog(bootstrapResult.error),
+            },
+            `Auth callback bootstrap failed; continuing with sign-in flow`
+          )
+        }
+      }
+
       l.info(
         {
           key: 'auth_callback:otp_exchanged',
-          user_id: data.user.id,
+          user_id: userId,
         },
         `OTP successfully exchanged for user session`
       )
