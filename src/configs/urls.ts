@@ -32,6 +32,8 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/monitoring`,
   SANDBOX_MONITORING: (teamSlug: string, sandboxId: string) =>
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/monitoring`,
+  SANDBOX_EVENTS: (teamSlug: string, sandboxId: string) =>
+    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/events`,
   SANDBOX_LOGS: (teamSlug: string, sandboxId: string) =>
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/logs`,
   SANDBOX_FILESYSTEM: (teamSlug: string, sandboxId: string) =>
@@ -77,6 +79,8 @@ export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
   START_COMMAND: 'https://e2b.dev/docs/sandbox-template/start-cmd',
+  SANDBOX_LIFECYCLE_EVENTS:
+    'https://e2b.dev/docs/sandbox/lifecycle-events-api',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV
