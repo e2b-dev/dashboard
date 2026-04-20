@@ -22,7 +22,7 @@ import { CheckIcon, EditIcon } from '@/ui/primitives/icons'
 
 const TEAM_NAME_MAX_FONT_SIZE_PX = 32
 const TEAM_NAME_MIN_FONT_SIZE_PX = 18
-const TEAM_NAME_INPUT_HEIGHT_PX = 40
+const TEAM_NAME_LINE_HEIGHT_PX = 32
 
 const getValidationToastContent = (messages: string[]): ReactNode =>
   messages.length === 1 ? (
@@ -162,10 +162,10 @@ export const TeamName = (): ReactElement => {
             value={name}
             onChange={handleNameChange}
             readOnly={!isEditing}
-            className="h-10 w-full bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
+            className="h-8 w-full appearance-none bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
             style={{
               fontSize: `${fontSize}px`,
-              lineHeight: `${TEAM_NAME_INPUT_HEIGHT_PX}px`,
+              lineHeight: `${TEAM_NAME_LINE_HEIGHT_PX}px`,
             }}
           />
           <span
