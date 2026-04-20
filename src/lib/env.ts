@@ -5,6 +5,9 @@ export const serverSchema = z.object({
   KV_REST_API_TOKEN: z.string().min(1),
   KV_REST_API_URL: z.url(),
 
+  ENABLE_USER_BOOTSTRAP: z.string().optional(),
+  DASHBOARD_API_ADMIN_TOKEN: z.string().min(1).optional(),
+
   BILLING_API_URL: z.url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
