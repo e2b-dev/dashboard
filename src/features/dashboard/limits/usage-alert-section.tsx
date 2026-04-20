@@ -47,7 +47,7 @@ export const UsageAlertSection = ({
         <div className="flex w-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke opacity-50">
           <AlertAsciiIcon className="size-full" />
         </div>
-        <div className="bg-bg min-w-0 flex-1 border border-stroke transition-colors focus-within:border-stroke-active focus-within:bg-bg-highlight">
+        <div className="bg-bg min-w-0 flex-1 border border-stroke transition-colors hover:border-stroke-active focus-within:border-stroke-active focus-within:bg-bg-highlight">
           <UsageAlertForm originalValue={value} teamSlug={teamSlug} />
         </div>
       </div>
