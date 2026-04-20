@@ -50,16 +50,14 @@ function InvoicesEmpty({ error }: InvoicesEmptyProps) {
   return (
     <TableEmptyState colSpan={4}>
       <InvoiceIcon
-        className={cn('size-4', error && 'text-accent-error-highlight')}
-      />
-      <p
         className={cn(
-          'prose-body-highlight',
+          'size-4 shrink-0',
           error && 'text-accent-error-highlight'
         )}
-      >
+      />
+      <span className={cn(error && 'text-accent-error-highlight')}>
         {error ? error : 'No invoices yet'}
-      </p>
+      </span>
     </TableEmptyState>
   )
 }
