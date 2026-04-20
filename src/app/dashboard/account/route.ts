@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))
   }
 
-  const team = await resolveUserTeam(session.access_token)
+  const team = await resolveUserTeam(data.user.id, session.access_token)
 
   if (!team) {
     await supabase.auth.signOut()

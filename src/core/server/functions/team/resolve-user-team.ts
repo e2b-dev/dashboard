@@ -2,15 +2,18 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
+import { ENABLE_USER_BOOTSTRAP } from '@/configs/flags'
 import type { ResolvedTeam } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
 import { l } from '@/core/shared/clients/logger/logger'
 
 export async function resolveUserTeam(
+  userId: string,
   accessToken: string
 ): Promise<ResolvedTeam | null> {
   const cookieStore = await cookies()
-  const teamsRepository = createUserTeamsRepository({
+  const userTeamsRepository = createUserTeamsRepository({
     accessToken,
   })
 
@@ -19,7 +22,7 @@ export async function resolveUserTeam(
 
   if (cookieTeamSlug) {
     const resolvedCookieTeam =
-      await teamsRepository.resolveTeamBySlug(cookieTeamSlug)
+      await userTeamsRepository.resolveTeamBySlug(cookieTeamSlug)
 
     if (resolvedCookieTeam.ok) {
       if (cookieTeamId && cookieTeamId !== resolvedCookieTeam.data.id) {
@@ -51,7 +54,7 @@ export async function resolveUserTeam(
     )
   }
 
-  const teamsResult = await teamsRepository.listUserTeams()
+  const teamsResult = await userTeamsRepository.listUserTeams()
 
   if (!teamsResult.ok) {
     l.error(
@@ -64,7 +67,24 @@ export async function resolveUserTeam(
   }
 
   if (teamsResult.data.length === 0) {
-    return null
+    if (!ENABLE_USER_BOOTSTRAP) {
+      return null
+    }
+
+    const adminUsersRepository = createAdminUsersRepository()
+    const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
+
+    if (!bootstrapResult.ok) {
+      l.error(
+        {
+          key: 'resolve_user_team:bootstrap_error',
+        },
+        'Failed to bootstrap user team'
+      )
+      return null
+    }
+
+    return bootstrapResult.data
   }
 
   const defaultTeam = teamsResult.data.find(

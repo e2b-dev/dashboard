@@ -49,10 +49,20 @@ export async function GET(request: Request) {
 
       throw encodedRedirect('error', AUTH_URLS.SIGN_IN, error.message)
     } else {
+      const userId = data.user?.id
+
+      if (!data.session?.access_token || !userId) {
+        throw encodedRedirect(
+          'error',
+          AUTH_URLS.SIGN_IN,
+          'Missing session after auth callback'
+        )
+      }
+
       l.info(
         {
           key: 'auth_callback:otp_exchanged',
-          user_id: data.user.id,
+          user_id: userId,
         },
         `OTP successfully exchanged for user session`
       )
