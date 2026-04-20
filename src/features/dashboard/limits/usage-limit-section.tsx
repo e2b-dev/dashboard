@@ -55,12 +55,19 @@ export const UsageLimitSection = ({
   teamSlug,
   value,
 }: UsageLimitSectionProps) => {
+  const isValueSet = value !== null
+
   return (
     <section className={cn('flex flex-col gap-4', className)}>
       <p className="text-fg prose-label-highlight uppercase">Usage Limit</p>
       <div className="flex w-full gap-2">
-        <div className="flex w-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke opacity-50">
-          <LimitAsciiIcon className="size-full" />
+        <div
+          className={cn(
+            'flex w-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke',
+            !isValueSet && 'opacity-50'
+          )}
+        >
+          <LimitAsciiIcon active={isValueSet} className="size-full" />
         </div>
         <div className="bg-bg min-w-0 flex-1 border border-stroke transition-colors hover:border-stroke-active focus-within:border-stroke-active focus-within:bg-bg-highlight">
           <UsageLimitForm originalValue={value} teamSlug={teamSlug} />

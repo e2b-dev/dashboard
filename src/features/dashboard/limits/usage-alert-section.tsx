@@ -40,12 +40,19 @@ export const UsageAlertSection = ({
   teamSlug,
   value,
 }: UsageAlertSectionProps) => {
+  const isValueSet = value !== null
+
   return (
     <section className={cn('flex flex-col gap-4', className)}>
       <p className="text-fg prose-label-highlight uppercase">Usage Alert</p>
       <div className="flex w-full gap-2">
-        <div className="flex w-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke opacity-50">
-          <AlertAsciiIcon className="size-full" />
+        <div
+          className={cn(
+            'flex w-[72px] shrink-0 items-center justify-center overflow-hidden border border-stroke',
+            !isValueSet && 'opacity-50'
+          )}
+        >
+          <AlertAsciiIcon active={isValueSet} className="size-full" />
         </div>
         <div className="bg-bg min-w-0 flex-1 border border-stroke transition-colors hover:border-stroke-active focus-within:border-stroke-active focus-within:bg-bg-highlight">
           <UsageAlertForm originalValue={value} teamSlug={teamSlug} />

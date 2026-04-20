@@ -1,7 +1,6 @@
-import type React from 'react'
-import { cn } from '@/lib/utils/index'
+import { AsciiIcon } from './ascii-icon'
 
-const LINES = [
+const INACTIVE_LINES = [
   '                                ',
   '                                ',
   '                                ',
@@ -20,26 +19,52 @@ const LINES = [
   '                                ',
 ]
 
-const TEXT_STYLE: React.CSSProperties = {
-  fontSize: '3.802px',
-  fontFamily: 'var(--font-mono)',
-  fontWeight: 600,
-  letterSpacing: '-0.038px',
-  lineHeight: '4px',
-  fontFeatureSettings: "'ss03' 1",
+const ACTIVE_LINES = [
+  '                                ',
+  '                                ',
+  '                                ',
+  '                                ',
+  '            ---**---            ',
+  [
+    { text: '          -**-----' },
+    { className: 'text-accent-secondary-error-highlight', text: '-' },
+    { text: '**-          ' },
+  ],
+  '        -**- -      -**-        ',
+  [
+    { text: '        ' },
+    { className: 'text-accent-main-highlight', text: '**' },
+    { text: '  -**-      **        ' },
+  ],
+  [
+    { text: '        *-    -' },
+    { className: 'text-accent-main-highlight', text: '-' },
+    { text: '-     -*        ' },
+  ],
+  '        **            **        ',
+  '        -**-        -**-        ',
+  [
+    { text: '          --        ' },
+    { className: 'text-accent-main-highlight', text: '-' },
+    { text: '-          ' },
+  ],
+  '                                ',
+  '                                ',
+  '                                ',
+  '                                ',
+]
+
+interface LimitAsciiIconProps {
+  active?: boolean
+  className?: string
 }
 
-export const LimitAsciiIcon = ({ className }: { className?: string }) => (
-  <div className={cn('relative size-[72px]', className)}>
-    <div
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-fg uppercase"
-      style={TEXT_STYLE}
-    >
-      {LINES.map((line, i) => (
-        <p key={i} className="m-0 whitespace-pre">
-          {line}
-        </p>
-      ))}
-    </div>
-  </div>
+export const LimitAsciiIcon = ({
+  active = false,
+  className,
+}: LimitAsciiIconProps) => (
+  <AsciiIcon
+    className={className}
+    lines={active ? ACTIVE_LINES : INACTIVE_LINES}
+  />
 )
