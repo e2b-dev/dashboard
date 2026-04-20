@@ -5,11 +5,9 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
-  getSortedRowModel,
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { Braces } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
@@ -25,6 +23,11 @@ import {
 } from '@/ui/data-table'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge, type BadgeProps } from '@/ui/primitives/badge'
+import {
+  ArrowDownIcon,
+  HistoryIcon,
+  MetadataIcon,
+} from '@/ui/primitives/icons'
 
 const sandboxEventDataSchema = z.record(z.string(), z.unknown())
 
@@ -55,27 +58,29 @@ export const SandboxEventsTable = ({ events }: SandboxEventsTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'timestamp', desc: true },
   ])
+  const isTimestampDescending = sorting[0]?.desc ?? true
+  const sortedEvents = useMemo(
+    () =>
+      [...events].sort((eventA, eventB) =>
+        isTimestampDescending
+          ? eventB.timestamp.localeCompare(eventA.timestamp)
+          : eventA.timestamp.localeCompare(eventB.timestamp)
+      ),
+    [events, isTimestampDescending]
+  )
 
   const table = useReactTable<SandboxEventModel>({
-    data: events,
+    data: sortedEvents,
     columns: EVENT_COLUMNS,
-    state: { sorting },
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    enableSorting: true,
-    enableSortingRemoval: false,
-    enableMultiSort: false,
-    onSortingChange: setSorting,
   })
 
   const columnSizeVars = useColumnSizeVars(table)
+  const rows = table.getRowModel().rows
 
   return (
-    <div className="bg-bg min-h-0 flex-1 overflow-x-auto">
-      <DataTable
-        className="h-full min-w-[980px] overflow-y-auto"
-        style={{ ...columnSizeVars }}
-      >
+    <div className="min-h-0 flex-1 overflow-auto">
+      <DataTable className="min-w-[980px]" style={{ ...columnSizeVars }}>
         <DataTableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
           {table.getHeaderGroups().map((headerGroup) => (
             <DataTableRow key={headerGroup.id} className="border-b-0">
@@ -83,16 +88,42 @@ export const SandboxEventsTable = ({ events }: SandboxEventsTableProps) => {
                 <DataTableHead
                   key={header.id}
                   header={header}
-                  sorting={sorting.find((item) => item.id === header.id)?.desc}
+                  sorting={
+                    header.id === 'timestamp'
+                      ? isTimestampDescending
+                      : undefined
+                  }
                 >
-                  <span>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
+                  {header.isPlaceholder ? null : header.id === 'timestamp' ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1"
+                      onClick={() =>
+                        setSorting([
+                          { id: 'timestamp', desc: !isTimestampDescending },
+                        ])
+                      }
+                    >
+                      <span>
+                        {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
-                  </span>
+                      </span>
+                      <ArrowDownIcon
+                        className={
+                          isTimestampDescending ? 'size-3' : 'size-3 rotate-180'
+                        }
+                      />
+                    </button>
+                  ) : (
+                    <span>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </span>
+                  )}
                 </DataTableHead>
               ))}
             </DataTableRow>
@@ -100,21 +131,39 @@ export const SandboxEventsTable = ({ events }: SandboxEventsTableProps) => {
         </DataTableHeader>
 
         <DataTableBody>
-          {table.getRowModel().rows.map((row) => (
-            <DataTableRow key={row.id} className="min-h-11 items-stretch">
-              {row.getVisibleCells().map((cell) => (
-                <DataTableCell
-                  key={cell.id}
-                  cell={cell}
-                  className="min-h-11 items-stretch py-2"
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </DataTableCell>
-              ))}
-            </DataTableRow>
-          ))}
+          {rows.length > 0 ? (
+            rows.map((row) => (
+              <DataTableRow key={row.id} className="min-h-11 items-stretch">
+                {row.getVisibleCells().map((cell) => (
+                  <DataTableCell
+                    key={cell.id}
+                    cell={cell}
+                    className="min-h-11 items-stretch py-2"
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </DataTableCell>
+                ))}
+              </DataTableRow>
+            ))
+          ) : (
+            <EventsEmptyState />
+          )}
         </DataTableBody>
       </DataTable>
+    </div>
+  )
+}
+
+const EventsEmptyState = () => {
+  return (
+    <div className="flex h-[35svh] w-full min-w-[980px] flex-col items-center justify-center gap-2 p-6">
+      <div className="flex items-center gap-2">
+        <HistoryIcon className="size-5" />
+        <p className="prose-body-highlight">No events found</p>
+      </div>
+      <p className="text-fg-tertiary text-sm">
+        Lifecycle events for this sandbox will appear here once available.
+      </p>
     </div>
   )
 }
@@ -182,7 +231,7 @@ const EventDetailsCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
         className: 'w-full justify-start',
       }}
     >
-      <Braces className="size-3.5" />
+      <MetadataIcon className="size-3.5" />
       <span className="block min-w-0 truncate font-mono normal-case">
         {preview}
       </span>
@@ -201,13 +250,11 @@ const EventIdCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
 const EVENT_COLUMNS: ColumnDef<SandboxEventModel>[] = [
   {
     accessorKey: 'timestamp',
-    header: 'Timestamp',
+    header: 'TIMESTAMP',
     cell: TimestampCell,
     size: 250,
     minSize: 220,
-    sortingFn: (rowA, rowB) =>
-      rowA.original.timestamp.localeCompare(rowB.original.timestamp),
-    sortDescFirst: true,
+    enableSorting: false,
   },
   {
     accessorKey: 'type',
