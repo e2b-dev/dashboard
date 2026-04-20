@@ -39,16 +39,16 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
       </colgroup>
       <TableHeader className="border-b-0">
         <TableRow className="border-stroke/80 hover:bg-transparent">
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
             LABEL
           </TableHead>
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
             ID
           </TableHead>
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
             LAST USED
           </TableHead>
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
+          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
             ADDED
           </TableHead>
         </TableRow>
