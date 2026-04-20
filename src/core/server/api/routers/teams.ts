@@ -5,6 +5,7 @@ import { after } from 'next/server'
 import { z } from 'zod'
 import {
   AddTeamMemberSchema,
+  CreateTeamSchema,
   RemoveTeamMemberSchema,
   TeamNameSchema,
 } from '@/core/modules/teams/schemas'
@@ -41,6 +42,12 @@ const teamsRepositoryProcedure = protectedTeamProcedure.use(
   }))
 )
 
+const authedTeamsRepositoryProcedure = protectedProcedure.use(
+  withAuthedRequestRepository(createTeamsRepository, (teamsRepository) => ({
+    teamsRepository,
+  }))
+)
+
 const getStorageFilePath = (folderPath: string, fileName: string) =>
   `${folderPath}/${fileName}`
 
@@ -54,6 +61,15 @@ export const teamsRouter = createTRPCRouter({
 
     return teamsResult.data
   }),
+  create: authedTeamsRepositoryProcedure
+    .input(CreateTeamSchema)
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.teamsRepository.createTeam(input.name)
+
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+
+      return result.data
+    }),
   members: teamsRepositoryProcedure.query(async ({ ctx }) => {
     const result = await ctx.teamsRepository.listTeamMembers()
 
