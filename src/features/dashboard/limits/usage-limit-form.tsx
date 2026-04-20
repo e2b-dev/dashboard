@@ -22,6 +22,7 @@ import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { EditIcon, TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
+import { focusBlockInputOnMouseDown } from './focus-block-input'
 import { RemoveUsageLimitDialog } from './remove-usage-limit-dialog'
 import { SetUsageLimitDialog } from './set-usage-limit-dialog'
 
@@ -178,6 +179,7 @@ export const UsageLimitForm = ({
         'flex min-h-[72px] items-center justify-between gap-4 px-4 py-4 md:px-5',
         className
       )}
+      onMouseDown={focusBlockInputOnMouseDown}
       onSubmit={handleSubmit}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
