@@ -91,7 +91,7 @@ export const UsageLimitForm = ({
             return { ...limits, limit_amount_gte: variables.value }
           }
         )
-        toast(defaultSuccessToast('Billing limit saved.'))
+        toast(defaultSuccessToast('Limit set successfully.'))
         form.reset({ amount: formatCurrencyValue(variables.value) })
         setIsEditing(false)
         setIsSetDialogOpen(false)

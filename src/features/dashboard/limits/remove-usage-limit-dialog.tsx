@@ -62,7 +62,7 @@ export const RemoveUsageLimitDialog = ({
             return { ...limits, limit_amount_gte: null }
           }
         )
-        toast(defaultSuccessToast('Billing limit removed.'))
+        toast(defaultSuccessToast('Limit removed successfully.'))
         onRemoved()
         setIsOpen(false)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })

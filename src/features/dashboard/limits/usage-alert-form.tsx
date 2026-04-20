@@ -93,7 +93,7 @@ export const UsageAlertForm = ({
             return { ...limits, alert_amount_gte: variables.value }
           }
         )
-        toast(defaultSuccessToast('Billing alert saved.'))
+        toast(defaultSuccessToast('Alert set successfully.'))
         form.reset({ amount: formatCurrencyValue(variables.value) })
         setIsEditing(false)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
@@ -116,7 +116,7 @@ export const UsageAlertForm = ({
             return { ...limits, alert_amount_gte: null }
           }
         )
-        toast(defaultSuccessToast('Billing alert removed.'))
+        toast(defaultSuccessToast('Alert removed successfully.'))
         form.reset({ amount: '' })
         setIsEditing(true)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
