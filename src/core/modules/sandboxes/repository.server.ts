@@ -3,6 +3,7 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
+import type { SandboxLifecycleEventType } from '@/core/modules/sandboxes/lifecycle-event-types'
 import type {
   SandboxEventModel,
   Sandboxes,
@@ -36,6 +37,13 @@ export interface GetSandboxMetricsOptions {
   endUnixMs: number
 }
 
+export interface ListSandboxLifecycleEventsOptions {
+  offset?: number
+  limit?: number
+  orderAsc?: boolean
+  types?: SandboxLifecycleEventType[]
+}
+
 export interface SandboxesRepository {
   getSandboxLogs(
     sandboxId: string,
@@ -55,6 +63,10 @@ export interface SandboxesRepository {
   >
   getSandboxLifecycleEvents(
     sandboxId: string
+  ): Promise<RepoResult<SandboxEventModel[]>>
+  listSandboxLifecycleEvents(
+    sandboxId: string,
+    options?: ListSandboxLifecycleEventsOptions
   ): Promise<RepoResult<SandboxEventModel[]>>
   getSandboxMetrics(
     sandboxId: string,
@@ -89,6 +101,62 @@ export function createSandboxesRepository(
     authHeaders: SUPABASE_AUTH_HEADERS,
   }
 ): SandboxesRepository {
+  /** Fetches one sandbox lifecycle events page. Example: { offset: 20, limit: 20 } -> the next 20 events. */
+  const listSandboxLifecycleEventsPage = async (
+    sandboxId: string,
+    options: ListSandboxLifecycleEventsOptions = {}
+  ): Promise<RepoResult<SandboxEventModel[]>> => {
+    const result = await deps.infraClient.GET('/events/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+        query: {
+          offset: options.offset,
+          limit: options.limit,
+          orderAsc: options.orderAsc,
+          types: options.types,
+        },
+      },
+      headers: {
+        ...deps.authHeaders(scope.accessToken, scope.teamId),
+      },
+      cache: 'no-store',
+    })
+
+    if (!result.response.ok || result.error) {
+      const status = result.response.status
+
+      l.error({
+        key: 'repositories:sandboxes:list_sandbox_lifecycle_events:infra_error',
+        error: result.error,
+        team_id: scope.teamId,
+        context: {
+          status,
+          path: '/events/sandboxes/{sandboxID}',
+          sandbox_id: sandboxId,
+          offset: options.offset,
+          limit: options.limit,
+          order_asc: options.orderAsc,
+          types: options.types,
+        },
+      })
+
+      return err(
+        repoErrorFromHttp(
+          status,
+          status === 404
+            ? SANDBOX_NOT_FOUND_MESSAGE
+            : (result.error?.message ??
+                'Failed to fetch sandbox lifecycle events'),
+          result.error
+        )
+      )
+    }
+
+    return ok(result.data ?? [])
+  }
+
   return {
     async getSandboxLogs(sandboxId, options = {}) {
       const result = await deps.infraClient.GET(
@@ -239,57 +307,16 @@ export function createSandboxesRepository(
         pageIndex < SANDBOX_EVENTS_MAX_PAGES;
         pageIndex += 1, offset += SANDBOX_EVENTS_PAGE_SIZE
       ) {
-        try {
-          const result = await deps.infraClient.GET(
-            '/events/sandboxes/{sandboxID}',
-            {
-              params: {
-                path: {
-                  sandboxID: sandboxId,
-                },
-                query: {
-                  offset,
-                  limit: SANDBOX_EVENTS_PAGE_SIZE,
-                  orderAsc: true,
-                },
-              },
-              headers: {
-                ...deps.authHeaders(scope.accessToken, scope.teamId),
-              },
-              cache: 'no-store',
-            }
-          )
+        const result = await listSandboxLifecycleEventsPage(sandboxId, {
+          offset,
+          limit: SANDBOX_EVENTS_PAGE_SIZE,
+          orderAsc: true,
+        })
 
-          if (!result.response.ok || result.error) {
-            l.warn({
-              key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_error',
-              error: result.error,
-              team_id: scope.teamId,
-              context: {
-                status: result.response.status,
-                path: '/events/sandboxes/{sandboxID}',
-                sandbox_id: sandboxId,
-                offset,
-                limit: SANDBOX_EVENTS_PAGE_SIZE,
-              },
-            })
-            break
-          }
-
-          const page = result.data ?? []
-          lifecycleEvents.push(
-            ...page.filter((event) =>
-              event.type.startsWith(SANDBOX_LIFECYCLE_EVENT_PREFIX)
-            )
-          )
-
-          if (page.length < SANDBOX_EVENTS_PAGE_SIZE) {
-            break
-          }
-        } catch (error) {
+        if (!result.ok) {
           l.warn({
-            key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_exception',
-            error,
+            key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_error',
+            error: result.error,
             team_id: scope.teamId,
             context: {
               path: '/events/sandboxes/{sandboxID}',
@@ -300,9 +327,23 @@ export function createSandboxesRepository(
           })
           break
         }
+
+        const page = result.data
+        lifecycleEvents.push(
+          ...page.filter((event) =>
+            event.type.startsWith(SANDBOX_LIFECYCLE_EVENT_PREFIX)
+          )
+        )
+
+        if (page.length < SANDBOX_EVENTS_PAGE_SIZE) {
+          break
+        }
       }
 
       return ok(lifecycleEvents)
+    },
+    async listSandboxLifecycleEvents(sandboxId, options = {}) {
+      return listSandboxLifecycleEventsPage(sandboxId, options)
     },
     async getSandboxMetrics(sandboxId, options) {
       const startUnixSeconds = Math.floor(options.startUnixMs / 1000)

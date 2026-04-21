@@ -5,10 +5,9 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
-  type SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { z } from 'zod'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
@@ -23,51 +22,24 @@ import {
   DataTableRow,
 } from '@/ui/data-table'
 import { JsonPopover } from '@/ui/json-popover'
-import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 import { ArrowDownIcon, HistoryIcon, MetadataIcon } from '@/ui/primitives/icons'
+import { SandboxEventTypeBadge } from './event-type-badge'
 
 const sandboxEventDataSchema = z.record(z.string(), z.unknown())
 
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  'sandbox.lifecycle.created': 'Created',
-  'sandbox.lifecycle.updated': 'Updated',
-  'sandbox.lifecycle.paused': 'Paused',
-  'sandbox.lifecycle.resumed': 'Resumed',
-  'sandbox.lifecycle.killed': 'Killed',
-}
-
-const EVENT_TYPE_VARIANTS: Record<
-  string,
-  NonNullable<BadgeProps['variant']>
-> = {
-  'sandbox.lifecycle.created': 'positive',
-  'sandbox.lifecycle.updated': 'main',
-  'sandbox.lifecycle.paused': 'warning',
-  'sandbox.lifecycle.resumed': 'info',
-  'sandbox.lifecycle.killed': 'error',
-}
-
 interface SandboxEventsTableProps {
   events: SandboxEventModel[]
+  isTimestampDescending: boolean
+  onToggleTimestampSort: () => void
 }
 
-export const SandboxEventsTable = ({ events }: SandboxEventsTableProps) => {
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: 'timestamp', desc: true },
-  ])
-  const isTimestampDescending = sorting[0]?.desc ?? true
-  const sortedEvents = useMemo(
-    () =>
-      [...events].sort((eventA, eventB) =>
-        isTimestampDescending
-          ? eventB.timestamp.localeCompare(eventA.timestamp)
-          : eventA.timestamp.localeCompare(eventB.timestamp)
-      ),
-    [events, isTimestampDescending]
-  )
-
+export const SandboxEventsTable = ({
+  events,
+  isTimestampDescending,
+  onToggleTimestampSort,
+}: SandboxEventsTableProps) => {
   const table = useReactTable<SandboxEventModel>({
-    data: sortedEvents,
+    data: events,
     columns: EVENT_COLUMNS,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -95,11 +67,7 @@ export const SandboxEventsTable = ({ events }: SandboxEventsTableProps) => {
                     <button
                       type="button"
                       className="inline-flex items-center gap-1"
-                      onClick={() =>
-                        setSorting([
-                          { id: 'timestamp', desc: !isTimestampDescending },
-                        ])
-                      }
+                      onClick={onToggleTimestampSort}
                     >
                       <span>
                         {flexRender(
@@ -194,14 +162,9 @@ const TimestampCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
 }
 
 const EventTypeCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
-  const label = EVENT_TYPE_LABELS[row.original.type] ?? row.original.type
-  const variant = EVENT_TYPE_VARIANTS[row.original.type] ?? 'default'
-
   return (
     <div className="flex min-h-7 min-w-0 items-center">
-      <Badge variant={variant} size="sm" className="w-fit uppercase">
-        {label}
-      </Badge>
+      <SandboxEventTypeBadge type={row.original.type} />
     </div>
   )
 }

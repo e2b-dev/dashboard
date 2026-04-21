@@ -309,6 +309,13 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: Successfully returned the sandbox events
@@ -357,6 +364,13 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: Successfully returned the sandbox events
