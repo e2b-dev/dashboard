@@ -88,6 +88,10 @@ const sdk = new NodeSDK({
       '@opentelemetry/instrumentation-fs': {
         enabled: false,
       },
+      // disable default HTTP spans because FetchInstrumentation covers fetch calls
+      '@opentelemetry/instrumentation-http': {
+        enabled: false,
+      },
     }),
     new FetchInstrumentation(),
   ],
