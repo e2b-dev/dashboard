@@ -1,51 +1,34 @@
-import { Suspense } from 'react'
-import { getTeamMembers } from '@/core/server/functions/team/get-team-members'
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { useDashboard } from '@/features/dashboard/context'
+import { useTRPC } from '@/trpc/client'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { Card, CardContent } from '@/ui/primitives/card'
-import { Loader } from '@/ui/primitives/loader_d'
-import MembersPageContent from './members-page-content'
+import { MembersPageContent } from './members-page-content'
 
-interface MemberCardProps {
-  params: Promise<{
-    teamSlug: string
-  }>
-  className?: string
+export const MemberCard = () => {
+  const { team } = useDashboard()
+  const trpc = useTRPC()
+  const {
+    data: members,
+    error,
+    isLoading,
+  } = useQuery(trpc.teams.members.queryOptions({ teamSlug: team.slug }))
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        {error ? (
+          <ErrorIndicator
+            className="bg-bg w-full max-w-full"
+            description="Could not load team members"
+            message={error.message || 'Unknown error'}
+          />
+        ) : (
+          <MembersPageContent isLoading={isLoading} members={members ?? []} />
+        )}
+      </CardContent>
+    </Card>
+  )
 }
-
-export const MemberCard = ({ params, className }: MemberCardProps) => (
-  <Card className={className}>
-    <CardContent>
-      <Suspense fallback={<MembersPageContentLoading />}>
-        <MembersPageContentLoader params={params} />
-      </Suspense>
-    </CardContent>
-  </Card>
-)
-
-const MembersPageContentLoader = async ({ params }: MemberCardProps) => {
-  const { teamSlug } = await params
-
-  try {
-    const result = await getTeamMembers({ teamSlug })
-
-    if (!result?.data || result.serverError || result.validationErrors) {
-      throw new Error(result?.serverError || 'Unknown error')
-    }
-
-    return <MembersPageContent members={result.data} />
-  } catch (error) {
-    return (
-      <ErrorIndicator
-        className="bg-bg w-full max-w-full"
-        description="Could not load team members"
-        message={error instanceof Error ? error.message : 'Unknown error'}
-      />
-    )
-  }
-}
-
-const MembersPageContentLoading = () => (
-  <div className="flex items-center justify-center py-24">
-    <Loader />
-  </div>
-)

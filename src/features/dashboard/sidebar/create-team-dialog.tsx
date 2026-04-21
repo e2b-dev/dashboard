@@ -1,16 +1,18 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { createTeamAction } from '@/core/server/actions/team-actions'
-import { CreateTeamSchema } from '@/core/server/functions/team/types'
+import { CreateTeamSchema } from '@/core/modules/teams/schemas'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
+import { getTRPCValidationMessages } from '@/lib/utils/trpc-errors'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -35,48 +37,58 @@ interface CreateTeamDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function CreateTeamDialog({
+export const CreateTeamDialog = ({
   open,
   onOpenChange,
-}: CreateTeamDialogProps) {
+}: CreateTeamDialogProps) => {
   'use no memo'
 
   const router = useRouter()
-
-  const {
-    form,
-    resetFormAndAction,
-    handleSubmitWithAction,
-    action: { isExecuting },
-  } = useHookFormAction(createTeamAction, zodResolver(CreateTeamSchema), {
-    formProps: {
-      defaultValues: {
-        name: '',
-      },
-    },
-    actionProps: {
-      onError: async ({ error }) => {
-        toast(defaultErrorToast(error.serverError || 'Failed to create team'))
-      },
-      onSuccess: async (result) => {
-        toast(defaultSuccessToast('Team was created'))
-
-        if (result.data && result.data.slug) {
-          router.push(PROTECTED_URLS.SANDBOXES(result.data.slug))
-          router.refresh()
-        }
-
-        handleDialogChange(false)
-      },
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const form = useForm({
+    resolver: zodResolver(CreateTeamSchema),
+    defaultValues: {
+      name: '',
     },
   })
+  const createTeamMutation = useMutation(
+    trpc.teams.create.mutationOptions({
+      onError: async (error) => {
+        const validationMessages = getTRPCValidationMessages(error)
+        if (validationMessages.length > 0) {
+          toast(defaultErrorToast(validationMessages[0]))
+          return
+        }
+
+        toast(defaultErrorToast(error.message || 'Failed to create team'))
+      },
+      onSuccess: async (team) => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.list.queryKey(),
+        })
+        toast(defaultSuccessToast('Team was created'))
+        handleDialogChange(false)
+
+        if (!team.slug) return
+
+        router.push(PROTECTED_URLS.SANDBOXES(team.slug))
+        router.refresh()
+      },
+    })
+  )
+
+  const handleSubmit = form.handleSubmit(({ name }) =>
+    createTeamMutation.mutate({ name })
+  )
 
   const handleDialogChange = (value: boolean) => {
     onOpenChange(value)
 
     if (value) return
 
-    resetFormAndAction()
+    form.reset()
+    createTeamMutation.reset()
   }
 
   return (
@@ -90,7 +102,7 @@ export function CreateTeamDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmitWithAction}>
+          <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-3 pb-6">
               <FormField
                 control={form.control}
@@ -101,7 +113,7 @@ export function CreateTeamDialog({
                     <FormControl>
                       <Input
                         placeholder="Enter team name"
-                        disabled={isExecuting}
+                        disabled={createTeamMutation.isPending}
                         {...field}
                       />
                     </FormControl>
@@ -116,14 +128,14 @@ export function CreateTeamDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleDialogChange(false)}
-                disabled={isExecuting}
+                disabled={createTeamMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isExecuting}
-                loading={isExecuting}
+                disabled={createTeamMutation.isPending}
+                loading={createTeamMutation.isPending}
               >
                 Create Team
               </Button>

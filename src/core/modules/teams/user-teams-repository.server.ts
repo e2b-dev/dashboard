@@ -52,11 +52,7 @@ export function createUserTeamsRepository(
     async listUserTeams(): Promise<RepoResult<TeamModel[]>> {
       const teamsResult = await listApiUserTeams()
 
-      if (!teamsResult.ok) {
-        return teamsResult
-      }
-
-      return ok(teamsResult.data)
+      return teamsResult
     },
     async resolveTeamBySlug(
       slug: string,

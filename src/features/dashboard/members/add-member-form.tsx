@@ -1,16 +1,16 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { addTeamMemberAction } from '@/core/server/actions/team-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -39,6 +39,8 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
   const form = useForm<AddMemberForm>({
@@ -49,21 +51,26 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
     },
   })
 
-  const { execute, isExecuting } = useAction(addTeamMemberAction, {
-    onSuccess: () => {
-      toast(defaultSuccessToast('The member has been added to the team.'))
-      form.reset()
-      onSuccess?.()
-    },
-    onError: ({ error }) => {
-      toast(defaultErrorToast(error.serverError || 'An error occurred.'))
-    },
-  })
+  const addMemberMutation = useMutation(
+    trpc.teams.addMember.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
+        })
+        toast(defaultSuccessToast('The member has been added to the team.'))
+        form.reset()
+        onSuccess?.()
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message || 'An error occurred.'))
+      },
+    })
+  )
 
   const onSubmit = (data: AddMemberForm) => {
     if (!team) return
 
-    execute({
+    addMemberMutation.mutate({
       teamSlug: team.slug,
       email: data.email,
     })
@@ -95,7 +102,7 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
         />
         <Button
           className="normal-case font-sans"
-          loading={isExecuting}
+          loading={addMemberMutation.isPending}
           type="submit"
           disabled={!form.formState.isValid}
           size="md"

@@ -6,16 +6,19 @@ import type { TeamMember } from '@/core/modules/teams/models'
 import { cn } from '@/lib/utils'
 import { pluralize } from '@/lib/utils/formatting'
 import { Input } from '@/ui/primitives/input'
+import { Skeleton } from '@/ui/primitives/skeleton'
 import { AddMemberDialog } from './add-member-dialog'
 import MemberTable from './member-table'
 
 interface MembersPageContentProps {
   members: TeamMember[]
+  isLoading?: boolean
   className?: string
 }
 
-const MembersPageContent = ({
+export const MembersPageContent = ({
   members,
+  isLoading = false,
   className,
 }: MembersPageContentProps) => {
   const [query, setQuery] = useState('')
@@ -55,12 +58,17 @@ const MembersPageContent = ({
 
       <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-center lg:justify-between">
         <p>All members have the same roles & permissions</p>
-        <p className="shrink-0">{totalLabel}</p>
+        {isLoading ? (
+          <Skeleton className="h-4 w-24 border-0" />
+        ) : (
+          <p className="shrink-0">{totalLabel}</p>
+        )}
       </div>
 
       <div className="bg-bg w-full overflow-x-auto">
         <MemberTable
           allMembers={members}
+          isLoading={isLoading}
           members={filtered}
           totalMemberCount={members.length}
         />
@@ -68,5 +76,3 @@ const MembersPageContent = ({
     </div>
   )
 }
-
-export default MembersPageContent

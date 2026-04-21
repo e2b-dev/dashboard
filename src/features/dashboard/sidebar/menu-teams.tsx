@@ -4,7 +4,6 @@ import { useCallback } from 'react'
 import { TEAM_SPECIFIC_RESOURCE_SEGMENTS } from '@/configs/urls'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -12,6 +11,7 @@ import {
   DropdownMenuRadioItem,
 } from '@/ui/primitives/dropdown-menu'
 import { useDashboard } from '../context'
+import { TeamAvatar } from './team-avatar'
 
 const PRESERVED_SEARCH_PARAMS = ['tab'] as const
 
@@ -67,12 +67,7 @@ export default function DashboardSidebarMenuTeams() {
         teams.map((team) => (
           <Link href={getNextUrl(team)} passHref key={team.id}>
             <DropdownMenuRadioItem value={team.id}>
-              <Avatar className="size-5 shrink-0 border-none">
-                <AvatarImage src={team.profilePictureUrl || undefined} />
-                <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
-                  {team.name?.charAt(0).toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
+              <TeamAvatar team={team} className="size-5 shrink-0 border-none" />
               <span className="flex-1 truncate font-sans prose-label-highlight">
                 {getTeamDisplayName(team)}
               </span>
