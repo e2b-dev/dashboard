@@ -1,9 +1,5 @@
 import type { Cell, Header } from '@tanstack/react-table'
-import {
-  ArrowDownWideNarrow,
-  ArrowUpDown,
-  ArrowUpNarrowWide,
-} from 'lucide-react'
+import { ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
