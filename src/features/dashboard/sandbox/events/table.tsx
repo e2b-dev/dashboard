@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { z } from 'zod'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
+import { IdBadge } from '@/features/dashboard/settings/keys/id-badge'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { JsonPopover } from '@/ui/json-popover'
@@ -20,10 +21,9 @@ import { SandboxEventTypeBadge } from './event-type-badge'
 
 const sandboxEventDataSchema = z.record(z.string(), z.unknown())
 const EVENT_COLUMN_WIDTHS = {
-  timestamp: 250,
-  event: 260,
-  details: 320,
-  id: 230,
+  timestamp: 192,
+  event: 120,
+  id: 176,
 } as const
 
 const colStyle = (width: number) => ({
@@ -45,16 +45,16 @@ export const SandboxEventsTable = ({
 }: SandboxEventsTableProps) => {
   return (
     <div className="min-h-0 flex-1 overflow-auto">
-      <Table className="min-w-[980px] table-fixed">
+      <Table className="min-w-[760px] table-fixed">
         <colgroup>
           <col style={colStyle(EVENT_COLUMN_WIDTHS.timestamp)} />
-          <col style={colStyle(EVENT_COLUMN_WIDTHS.event)} />
-          <col style={colStyle(EVENT_COLUMN_WIDTHS.details)} />
           <col style={colStyle(EVENT_COLUMN_WIDTHS.id)} />
+          <col style={colStyle(EVENT_COLUMN_WIDTHS.event)} />
+          <col />
         </colgroup>
         <TableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
           <TableRow className="border-b-0">
-            <TableHead className="text-fg" data-state="selected">
+            <TableHead className="px-0 pr-4 text-fg" data-state="selected">
               <button
                 type="button"
                 className="inline-flex items-center gap-1"
@@ -68,9 +68,9 @@ export const SandboxEventsTable = ({
                 />
               </button>
             </TableHead>
-            <TableHead>Event</TableHead>
-            <TableHead>Details</TableHead>
-            <TableHead>ID</TableHead>
+            <TableHead className="px-0 pr-4">ID</TableHead>
+            <TableHead className="px-0 pr-4">Event</TableHead>
+            <TableHead className="px-0">Details</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -78,17 +78,17 @@ export const SandboxEventsTable = ({
           {events.length > 0 ? (
             events.map((event) => (
               <TableRow key={event.id} className="h-11">
-                <TableCell className="py-2">
+                <TableCell className="px-0 py-2 pr-4">
                   <TimestampCell timestamp={event.timestamp} />
                 </TableCell>
-                <TableCell className="py-2">
+                <TableCell className="px-0 py-2 pr-4">
+                  <EventIdCell id={event.id} />
+                </TableCell>
+                <TableCell className="px-0 py-2 pr-4">
                   <EventTypeCell type={event.type} />
                 </TableCell>
-                <TableCell className="py-2">
+                <TableCell className="px-0 py-2">
                   <EventDetailsCell eventData={event.eventData} />
-                </TableCell>
-                <TableCell className="py-2">
-                  <EventIdCell id={event.id} />
                 </TableCell>
               </TableRow>
             ))
@@ -136,10 +136,12 @@ const TimestampCell = ({
   return (
     <CopyButtonInline
       value={formattedTimestamp.iso}
-      className="inline-flex h-[18px] items-center font-mono leading-none group prose-table-numeric truncate"
+      className="inline-flex h-[18px] items-center gap-[1ch] font-mono leading-none group prose-table-numeric truncate"
     >
-      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
-      {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>
+      <span>
+        {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+      </span>
     </CopyButtonInline>
   )
 }
@@ -191,8 +193,8 @@ const EventDetailsCell = ({
 
 const EventIdCell = ({ id }: { id: SandboxEventModel['id'] }) => {
   return (
-    <div className="min-h-7 select-all overflow-hidden whitespace-nowrap font-mono text-fg-tertiary prose-table-numeric">
-      {id}
+    <div className="flex min-h-7 min-w-0 items-center">
+      <IdBadge id={id} />
     </div>
   )
 }
