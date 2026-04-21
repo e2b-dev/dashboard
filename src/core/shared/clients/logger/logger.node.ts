@@ -1,34 +1,11 @@
 import pino from 'pino'
-
-const REDACTION_PATHS = [
-  'password',
-  'confirmPassword',
-  'accessToken',
-  'secret',
-  'token',
-  'apiKey',
-  '*.password',
-  '*.confirmPassword',
-  '*.accessToken',
-  '*.secret',
-  '*.token',
-  '*.apiKey',
-  '*.key',
-  '*.sandboxIds',
-  '*.*.password',
-  '*.*.confirmPassword',
-  '*.*.accessToken',
-  '*.*.secret',
-  '*.*.token',
-  '*.*.apiKey',
-  '*.*.key',
-]
+import { REDACTION_CENSOR, REDACTION_PATHS } from './redaction'
 
 const createLogger = () => {
   const baseConfig = {
     redact: {
       paths: REDACTION_PATHS,
-      censor: '[Redacted]',
+      censor: REDACTION_CENSOR,
     },
   }
 

@@ -1,5 +1,6 @@
 import pino, { type Logger } from 'pino'
 import { type ErrorObject, serializeError } from 'serialize-error'
+import { REDACTION_CENSOR, REDACTION_PATHS } from './redaction'
 import {
   formatRequestLogMessage,
   getRequestObservabilityContext,
@@ -32,30 +33,6 @@ interface ILogger {
   debug(context: ILoggerContext, message?: string, ...args: unknown[]): void
   trace(context: ILoggerContext, message?: string, ...args: unknown[]): void
 }
-
-const REDACTION_PATHS = [
-  'password',
-  'confirmPassword',
-  'accessToken',
-  'secret',
-  'token',
-  'apiKey',
-  '*.password',
-  '*.confirmPassword',
-  '*.accessToken',
-  '*.secret',
-  '*.token',
-  '*.apiKey',
-  '*.key',
-  '*.sandboxIds',
-  '*.*.password',
-  '*.*.confirmPassword',
-  '*.*.accessToken',
-  '*.*.secret',
-  '*.*.token',
-  '*.*.apiKey',
-  '*.*.key',
-]
 
 const stripStackFields = (
   value: unknown,
@@ -102,7 +79,7 @@ const createLogger = () => {
   const baseConfig = {
     redact: {
       paths: REDACTION_PATHS,
-      censor: '[Redacted]',
+      censor: REDACTION_CENSOR,
     },
     level: 'debug',
   }

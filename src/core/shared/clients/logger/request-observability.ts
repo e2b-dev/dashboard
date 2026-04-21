@@ -21,6 +21,41 @@ function safelyParseUrl(url: string): URL | null {
   }
 }
 
+function stripSearchAndHash(value: string): string {
+  return value.split('#', 1)[0]?.split('?', 1)[0] ?? value
+}
+
+function sanitizeRequestUrl(url?: string): string | undefined {
+  if (!url) {
+    return undefined
+  }
+
+  const parsedUrl = safelyParseUrl(url)
+
+  if (!parsedUrl) {
+    return stripSearchAndHash(url)
+  }
+
+  parsedUrl.search = ''
+  parsedUrl.hash = ''
+
+  return parsedUrl.toString()
+}
+
+function getRequestPath(url?: string): string | undefined {
+  if (!url) {
+    return undefined
+  }
+
+  const parsedUrl = safelyParseUrl(url)
+
+  if (parsedUrl) {
+    return parsedUrl.pathname
+  }
+
+  return stripSearchAndHash(url)
+}
+
 function deriveOriginFromHeaders(headers: HeaderStore): string | undefined {
   const origin = headers.get('origin')
   if (origin) {
@@ -44,12 +79,14 @@ export function createRequestObservabilityContext(input: {
   transport?: string
   handlerName?: string
 }): RequestObservabilityContext {
-  const parsedUrl = input.requestUrl ? safelyParseUrl(input.requestUrl) : null
+  const sanitizedRequestUrl = sanitizeRequestUrl(input.requestUrl)
   const requestPath =
-    input.requestPath ?? parsedUrl?.pathname ?? input.fallbackPath
+    getRequestPath(input.requestPath) ??
+    getRequestPath(input.requestUrl) ??
+    input.fallbackPath
 
   return {
-    request_url: parsedUrl?.toString() ?? input.requestUrl,
+    request_url: sanitizedRequestUrl,
     request_path: requestPath,
     transport: input.transport,
     handler_name: input.handlerName,

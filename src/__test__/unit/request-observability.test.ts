@@ -19,10 +19,25 @@ describe('request observability', () => {
     expect(requestContext.handler_name).toBe('addTeamMember')
   })
 
+  it('removes query strings and hashes from logged request URLs', () => {
+    const requestContext = createRequestObservabilityContext({
+      requestUrl:
+        'https://dashboard.test/auth/callback?code=secret-code&returnTo=%2Fdashboard#acct',
+      transport: 'route',
+      handlerName: 'authCallback',
+    })
+
+    expect(requestContext.request_url).toBe(
+      'https://dashboard.test/auth/callback'
+    )
+    expect(requestContext.request_path).toBe('/auth/callback')
+  })
+
   it('prefers referer when deriving browser-origin request context', () => {
     const headers = new Headers({
       origin: 'https://dashboard.test',
-      referer: 'https://dashboard.test/dashboard/acme/sandboxes',
+      referer:
+        'https://dashboard.test/dashboard/acme/sandboxes?tab=logs&token=secret',
       'next-url': '/api/trpc',
     })
 
@@ -38,6 +53,16 @@ describe('request observability', () => {
       'https://dashboard.test/dashboard/acme/sandboxes'
     )
     expect(requestContext.request_path).toBe('/dashboard/acme/sandboxes')
+  })
+
+  it('strips query strings from explicit request paths', () => {
+    const requestContext = createRequestObservabilityContext({
+      requestPath: '/api/trpc?batch=1&input=secret-payload',
+      transport: 'trpc',
+      handlerName: 'http',
+    })
+
+    expect(requestContext.request_path).toBe('/api/trpc')
   })
 
   it('prefixes log messages with the request path', () => {
