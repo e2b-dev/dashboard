@@ -54,7 +54,10 @@ export const SandboxEventsTable = ({
         </colgroup>
         <TableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
           <TableRow className="border-b-0">
-            <TableHead className="px-0 pr-4 text-fg" data-state="selected">
+            <TableHead
+              className="px-0 h-min pb-3 pr-4 text-fg"
+              data-state="selected"
+            >
               <button
                 type="button"
                 className="inline-flex items-center gap-1"
@@ -68,9 +71,9 @@ export const SandboxEventsTable = ({
                 />
               </button>
             </TableHead>
-            <TableHead className="px-0 pr-4">ID</TableHead>
-            <TableHead className="px-0 pr-4">Event</TableHead>
-            <TableHead className="px-0">Details</TableHead>
+            <TableHead className="px-0 h-min pb-3 pr-4">ID</TableHead>
+            <TableHead className="px-0 h-min pb-3 pr-4">Event</TableHead>
+            <TableHead className="px-0 h-min pb-3">Details</TableHead>
           </TableRow>
         </TableHeader>
 
