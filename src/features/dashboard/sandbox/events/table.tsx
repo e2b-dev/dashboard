@@ -198,13 +198,10 @@ const EventTypeCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
   const variant = EVENT_TYPE_VARIANTS[row.original.type] ?? 'default'
 
   return (
-    <div className="flex min-h-7 min-w-0 flex-col justify-center gap-1">
+    <div className="flex min-h-7 min-w-0 items-center">
       <Badge variant={variant} size="sm" className="w-fit uppercase">
         {label}
       </Badge>
-      <span className="truncate font-mono text-[11px] text-fg-tertiary">
-        {row.original.type}
-      </span>
     </div>
   )
 }
