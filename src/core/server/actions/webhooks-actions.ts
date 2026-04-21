@@ -7,7 +7,7 @@ import {
   withTeamAuthedRequestRepository,
   withTeamSlugResolution,
 } from '@/core/server/actions/client'
-import { handleDefaultInfraError } from '@/core/server/actions/utils'
+import { toActionErrorFromRepoError } from '@/core/server/adapters/errors'
 import {
   DeleteWebhookSchema,
   UpdateWebhookSecretSchema,
@@ -72,7 +72,7 @@ export const upsertWebhookAction = authActionClient
         `Failed to ${mode === 'edit' ? 'update' : 'create'} webhook: ${status}: ${response.error.message}`
       )
 
-      return handleDefaultInfraError(status, response.error)
+      return toActionErrorFromRepoError(response.error)
     }
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
@@ -108,7 +108,7 @@ export const deleteWebhookAction = authActionClient
         `Failed to delete webhook: ${status}: ${response.error.message}`
       )
 
-      return handleDefaultInfraError(status, response.error)
+      return toActionErrorFromRepoError(response.error)
     }
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')
@@ -148,7 +148,7 @@ export const updateWebhookSecretAction = authActionClient
         `Failed to update webhook secret: ${status}: ${response.error.message}`
       )
 
-      return handleDefaultInfraError(status, response.error)
+      return toActionErrorFromRepoError(response.error)
     }
 
     revalidatePath(`/dashboard/${teamSlug}/webhooks`, 'page')

@@ -8,6 +8,7 @@ import {
   getObservedError,
   getObservedErrorMessage,
   getObservedException,
+  toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
@@ -258,10 +259,16 @@ export const withTeamSlugResolution = createMiddleware<{
     )
   }
 
-  const teamId = await getTeamIdFromSlug(
+  const teamIdResult = await getTeamIdFromSlug(
     clientInput.teamSlug as string,
     ctx.session.access_token
   )
+
+  if (!teamIdResult.ok) {
+    return toActionErrorFromRepoError(teamIdResult.error)
+  }
+
+  const teamId = teamIdResult.data
 
   if (!teamId) {
     l.warn(

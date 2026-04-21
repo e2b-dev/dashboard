@@ -1,5 +1,6 @@
 import 'server-cli-only'
 
+import { toRouteErrorResponse } from '@/core/server/adapters/errors'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import { getTeamMetricsCore } from '@/core/server/functions/sandboxes/get-team-metrics-core'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
@@ -60,7 +61,16 @@ export async function POST(
           return Response.json({ error: 'Unauthenticated' }, { status: 401 })
         }
 
-        const teamId = await getTeamIdFromSlug(teamSlug, session.access_token)
+        const teamIdResult = await getTeamIdFromSlug(
+          teamSlug,
+          session.access_token
+        )
+
+        if (!teamIdResult.ok) {
+          return toRouteErrorResponse(teamIdResult.error)
+        }
+
+        const teamId = teamIdResult.data
 
         if (!teamId) {
           l.warn(
