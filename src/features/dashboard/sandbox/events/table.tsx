@@ -13,6 +13,7 @@ import { z } from 'zod'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import CopyButtonInline from '@/ui/copy-button-inline'
 import {
   DataTable,
   DataTableBody,
@@ -23,11 +24,7 @@ import {
 } from '@/ui/data-table'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge, type BadgeProps } from '@/ui/primitives/badge'
-import {
-  ArrowDownIcon,
-  HistoryIcon,
-  MetadataIcon,
-} from '@/ui/primitives/icons'
+import { ArrowDownIcon, HistoryIcon, MetadataIcon } from '@/ui/primitives/icons'
 
 const sandboxEventDataSchema = z.record(z.string(), z.unknown())
 
@@ -172,21 +169,27 @@ const TimestampCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
   const formattedTimestamp = useMemo(
     () =>
       formatLocalLogStyleTimestamp(row.original.timestamp, {
-        includeYear: true,
+        includeCentiseconds: true,
       }),
     [row.original.timestamp]
   )
 
+  if (!formattedTimestamp) {
+    return (
+      <div className="min-h-7 whitespace-nowrap font-mono prose-table-numeric">
+        --
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-7 whitespace-nowrap font-mono prose-table-numeric">
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
-      </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
-    </div>
+    <CopyButtonInline
+      value={formattedTimestamp.iso}
+      className="min-h-7 font-mono group prose-table-numeric truncate"
+    >
+      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
+      {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+    </CopyButtonInline>
   )
 }
 
