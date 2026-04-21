@@ -1,5 +1,6 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import type { Session, User } from '@supabase/supabase-js'
+import { headers } from 'next/headers'
 import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { z } from 'zod'
@@ -7,11 +8,16 @@ import {
   getObservedError,
   getObservedErrorMessage,
   getObservedException,
+  toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import {
+  createRequestObservabilityContextFromHeaders,
+  withRequestObservabilityContext,
+} from '@/core/shared/clients/logger/request-observability'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import { getTracer } from '@/core/shared/clients/tracer'
 import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
@@ -105,14 +111,23 @@ export const actionClient = createSafeActionClient({
   const name = actionOrFunctionName
 
   const s = t.startSpan(`${type}:${name}`)
+  const headerStore = await headers()
+  const requestObservabilityContext =
+    createRequestObservabilityContextFromHeaders(headerStore, {
+      fallbackPath: `/server/${type}s/${name}`,
+      transport: type,
+      handlerName: name,
+      preferReferer: true,
+    })
 
   const startTime = performance.now()
 
-  const result = await context.with(
-    trace.setSpan(context.active(), s),
-    async () => {
-      return next()
-    }
+  const result = await withRequestObservabilityContext(
+    requestObservabilityContext,
+    () =>
+      context.with(trace.setSpan(context.active(), s), async () => {
+        return next()
+      })
   )
 
   const duration = performance.now() - startTime
@@ -122,6 +137,9 @@ export const actionClient = createSafeActionClient({
     server_function_name: name,
     server_function_input: clientInput,
     server_function_duration_ms: duration.toFixed(3),
+    request_url: requestObservabilityContext.request_url,
+    request_path: requestObservabilityContext.request_path,
+    team_slug: flattenClientInputValue(clientInput, 'teamSlug'),
     team_id: flattenClientInputValue(clientInput, 'teamId'),
     template_id: flattenClientInputValue(clientInput, 'templateId'),
     sandbox_id: flattenClientInputValue(clientInput, 'sandboxId'),
@@ -136,6 +154,9 @@ export const actionClient = createSafeActionClient({
   )
   if (baseLogPayload.team_id) {
     s.setAttribute('team_id', baseLogPayload.team_id)
+  }
+  if (baseLogPayload.team_slug) {
+    s.setAttribute('team_slug', baseLogPayload.team_slug)
   }
   if (baseLogPayload.template_id) {
     s.setAttribute('template_id', baseLogPayload.template_id)
@@ -238,10 +259,16 @@ export const withTeamSlugResolution = createMiddleware<{
     )
   }
 
-  const teamId = await getTeamIdFromSlug(
+  const teamIdResult = await getTeamIdFromSlug(
     clientInput.teamSlug as string,
     ctx.session.access_token
   )
+
+  if (!teamIdResult.ok) {
+    return toActionErrorFromRepoError(teamIdResult.error)
+  }
+
+  const teamId = teamIdResult.data
 
   if (!teamId) {
     l.warn(
