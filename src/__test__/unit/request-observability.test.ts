@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createTRPCContext } from '@/core/server/trpc/init'
 import {
   createRequestObservabilityContext,
   createRequestObservabilityContextFromHeaders,
@@ -45,5 +46,20 @@ describe('request observability', () => {
         request_path: '/dashboard/acme/sandboxes',
       })
     ).toBe('/dashboard/acme/sandboxes: action addTeamMember failed')
+  })
+
+  it('preserves request observability in the tRPC context', async () => {
+    const requestObservability = createRequestObservabilityContext({
+      requestUrl: 'https://dashboard.test/dashboard/acme/sandboxes',
+      transport: 'trpc',
+      handlerName: 'http',
+    })
+
+    const context = await createTRPCContext({
+      headers: new Headers(),
+      requestObservability,
+    })
+
+    expect(context.requestObservability).toEqual(requestObservability)
   })
 })

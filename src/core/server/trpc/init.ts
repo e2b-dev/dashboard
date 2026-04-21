@@ -18,7 +18,6 @@ export const createTRPCContext = async (opts: {
     session: undefined as Session | undefined,
     user: undefined as User | undefined,
     teamId: undefined as string | undefined,
-    requestObservability: undefined as RequestObservabilityContext | undefined,
   }
 }
 
