@@ -103,7 +103,7 @@ export const SandboxEventsTable = ({
                   <DataTableCell
                     key={cell.id}
                     cell={cell}
-                    className="min-h-11 items-stretch py-2"
+                    className="min-h-11 items-center py-2"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </DataTableCell>
@@ -144,7 +144,7 @@ const TimestampCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
 
   if (!formattedTimestamp) {
     return (
-      <div className="min-h-7 whitespace-nowrap font-mono prose-table-numeric">
+      <div className="inline-flex h-[18px] items-center whitespace-nowrap font-mono leading-none prose-table-numeric">
         --
       </div>
     )
@@ -153,7 +153,7 @@ const TimestampCell = ({ row }: CellContext<SandboxEventModel, unknown>) => {
   return (
     <CopyButtonInline
       value={formattedTimestamp.iso}
-      className="min-h-7 font-mono group prose-table-numeric truncate"
+      className="inline-flex h-[18px] items-center font-mono leading-none group prose-table-numeric truncate"
     >
       <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
       {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
