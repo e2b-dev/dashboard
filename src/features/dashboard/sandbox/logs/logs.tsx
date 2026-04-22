@@ -6,8 +6,11 @@ import {
   type Virtualizer,
 } from '@tanstack/react-virtual'
 import {
+  type Dispatch,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactNode,
+  type SetStateAction,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -28,8 +31,24 @@ import {
   LogsTableHeader,
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
-import { ChevronRightIcon } from '@/ui/primitives/icons'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  IndicatorDotsIcon,
+} from '@/ui/primitives/icons'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
@@ -49,6 +68,8 @@ const COLUMN_WIDTHS_PX = {
 const ROW_HEIGHT_PX = 26
 const LOG_DETAILS_MIN_HEIGHT_PX = 96
 const LOG_DETAILS_PADDING_Y_PX = 24
+const LOG_DETAILS_ACTIONS_HEIGHT_PX = 24
+const LOG_DETAILS_ACTIONS_GAP_PX = 8
 const LOG_DETAILS_LINE_HEIGHT_PX = 20
 const LOG_DETAILS_FIELD_GAP_PX = 6
 const LOG_DETAILS_ENTRY_HEADER_HEIGHT_PX = 28
@@ -59,6 +80,7 @@ const SCROLL_LOAD_THRESHOLD_PX = 200
 const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
 const STRUCTURED_LOG_ENTRIES_FIELD = 'entries'
 const LOG_DETAILS_APPROX_CHARS_PER_LINE = 110
+const LOG_DEEP_LINK_PARAM = 'log'
 
 interface LogsProps {
   teamSlug: string
@@ -420,6 +442,14 @@ function VirtualizedLogsBody({
     virtualizer.measure()
   }, [expandedLogIds, virtualizer])
 
+  useScrollToDeepLinkedLog({
+    logs,
+    logsStartIndex,
+    scrollContainerElement,
+    setExpandedLogIds,
+    virtualizer,
+  })
+
   const scrollToLatestLog = useCallback(() => {
     if (logs.length === 0) return
     virtualizer.scrollToIndex(liveStatusRowIndex, { align: 'end' })
@@ -684,13 +714,43 @@ interface LogRowProps {
 }
 
 function getLogRowId(log: SandboxLogModel, logIndex: number) {
-  return [
-    log.timestampUnix,
-    logIndex,
-    log.level,
-    log.logger ?? '',
-    log.message,
-  ].join(':')
+  return getLogFingerprint(log) || `${log.timestampUnix}:${logIndex}`
+}
+
+function getLogFingerprint(log: SandboxLogModel) {
+  return `${log.timestampUnix}:${hashString(
+    stableStringify({
+      fields: log.fields,
+      level: log.level,
+      logger: log.logger,
+      message: log.message,
+    })
+  )}`
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`
+  }
+
+  if (isRecord(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(',')}}`
+  }
+
+  return JSON.stringify(value)
+}
+
+function hashString(value: string) {
+  let hash = 5381
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(index)
+  }
+
+  return (hash >>> 0).toString(36)
 }
 
 function getLogFieldEntries(log: SandboxLogModel) {
@@ -745,6 +805,8 @@ function getLogDetailsHeight(log: SandboxLogModel) {
   return Math.max(
     LOG_DETAILS_MIN_HEIGHT_PX,
     LOG_DETAILS_PADDING_Y_PX +
+      LOG_DETAILS_ACTIONS_HEIGHT_PX +
+      LOG_DETAILS_ACTIONS_GAP_PX +
       structuredEntriesHeight +
       structuredEntriesGapHeight +
       separateFieldListGapHeight +
@@ -812,6 +874,58 @@ function getStructuredEntryHeight(entry: unknown) {
   return LOG_DETAILS_ENTRY_HEADER_HEIGHT_PX + bodyHeight
 }
 
+interface UseScrollToDeepLinkedLogParams {
+  logs: SandboxLogModel[]
+  logsStartIndex: number
+  scrollContainerElement: HTMLDivElement
+  setExpandedLogIds: Dispatch<SetStateAction<Set<string>>>
+  virtualizer: Virtualizer<HTMLDivElement, Element>
+}
+
+function useScrollToDeepLinkedLog({
+  logs,
+  logsStartIndex,
+  scrollContainerElement,
+  setExpandedLogIds,
+  virtualizer,
+}: UseScrollToDeepLinkedLogParams) {
+  const didScrollRef = useRef(false)
+
+  useEffect(() => {
+    if (didScrollRef.current || logs.length === 0) {
+      return
+    }
+
+    const targetLogId = new URLSearchParams(window.location.search).get(
+      LOG_DEEP_LINK_PARAM
+    )
+    if (!targetLogId) {
+      return
+    }
+
+    const logIndex = logs.findIndex(
+      (log, index) => getLogRowId(log, index) === targetLogId
+    )
+    if (logIndex === -1) {
+      return
+    }
+
+    didScrollRef.current = true
+    setExpandedLogIds((current) => new Set(current).add(targetLogId))
+
+    requestAnimationFrame(() => {
+      virtualizer.scrollToIndex(logsStartIndex + logIndex, { align: 'center' })
+      scrollContainerElement.focus({ preventScroll: true })
+    })
+  }, [
+    logs,
+    logsStartIndex,
+    scrollContainerElement,
+    setExpandedLogIds,
+    virtualizer,
+  ])
+}
+
 function LogRow({
   logId,
   log,
@@ -870,6 +984,7 @@ function LogRow({
           : `${ROW_HEIGHT_PX}px`,
       }}
       className={cn(
+        'group/log-row',
         canExpand && 'cursor-pointer hover:bg-bg-hover focus:bg-bg-hover',
         isExpanded
           ? 'border-l-2 bg-bg'
@@ -953,16 +1068,114 @@ function LogRow({
           shouldHighlight={shouldHighlight}
         />
       </TableCell>
-      {isExpanded ? <LogFieldsDetails log={log} /> : null}
+      {isExpanded ? <LogFieldsDetails log={log} logId={logId} /> : null}
     </LogVirtualRow>
   )
 }
 
-interface LogFieldsDetailsProps {
+interface LogDetailsActionsProps {
   log: SandboxLogModel
+  logId: string
 }
 
-function LogFieldsDetails({ log }: LogFieldsDetailsProps) {
+function LogDetailsActions({ log, logId }: LogDetailsActionsProps) {
+  const link = getLogDeepLink(logId)
+  const json = getLogJson(log)
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <IconButton type="button" aria-label="Log options" className="size-6">
+          <IndicatorDotsIcon />
+        </IconButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Options</DropdownMenuLabel>
+          <LogActionMenuItem
+            value={link}
+            label="Copy link"
+            copiedLabel="Copied link"
+            icon={<ExternalLinkIcon className="size-4" />}
+          />
+          <LogActionMenuItem
+            value={json}
+            label="Copy JSON"
+            copiedLabel="Copied JSON"
+            icon={<CopyIcon className="size-4" />}
+          />
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+interface LogActionMenuItemProps {
+  value: string
+  label: string
+  copiedLabel: string
+  icon: ReactNode
+}
+
+function LogActionMenuItem({
+  value,
+  label,
+  copiedLabel,
+  icon,
+}: LogActionMenuItemProps) {
+  const [wasCopied, copy] = useClipboard()
+
+  const handleSelect = useCallback(
+    (event: Event) => {
+      event.preventDefault()
+      copy(value)
+    },
+    [copy, value]
+  )
+
+  return (
+    <DropdownMenuItem inset onSelect={handleSelect}>
+      {wasCopied ? <CheckIcon className="size-4" /> : icon}
+      {wasCopied ? copiedLabel : label}
+    </DropdownMenuItem>
+  )
+}
+
+function getLogDeepLink(logId: string) {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+
+  const url = new URL(window.location.href)
+  url.searchParams.set(LOG_DEEP_LINK_PARAM, logId)
+  url.hash = ''
+  return url.toString()
+}
+
+function getLogJson(log: SandboxLogModel) {
+  const jsonValue: Record<string, unknown> = {
+    timestamp: new Date(log.timestampUnix).toISOString(),
+    level: log.level,
+    message: log.message,
+  }
+
+  if (log.logger) {
+    jsonValue.logger = log.logger
+  }
+
+  if (log.fields) {
+    jsonValue.fields = log.fields
+  }
+
+  return JSON.stringify(jsonValue, null, 2)
+}
+
+interface LogFieldsDetailsProps {
+  log: SandboxLogModel
+  logId: string
+}
+
+function LogFieldsDetails({ log, logId }: LogFieldsDetailsProps) {
   const entries = getLogFieldEntries(log)
   const structuredEntries = getStructuredLogEntries(log)
   if (entries.length === 0 && structuredEntries.length === 0) {
@@ -976,6 +1189,9 @@ function LogFieldsDetails({ log }: LogFieldsDetailsProps) {
       onClick={(event) => event.stopPropagation()}
     >
       <div className="h-full overflow-visible border-t border-stroke/70 bg-bg px-4 py-3">
+        <div className="mb-2 flex h-6 items-center justify-end">
+          <LogDetailsActions log={log} logId={logId} />
+        </div>
         <div className="space-y-3">
           {structuredEntries.length > 0 ? (
             <div className="space-y-3">

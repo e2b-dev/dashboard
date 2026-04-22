@@ -16,6 +16,7 @@ interface LogsTableHeaderProps {
   timestampWidth: number
   levelWidth: number
   loggerWidth?: number
+  actionsWidth?: number
   dataWidth?: number
   timestampSortDirection?: 'asc' | 'desc'
 }
@@ -25,6 +26,7 @@ export function LogsTableHeader({
   timestampWidth,
   levelWidth,
   loggerWidth,
+  actionsWidth,
   dataWidth,
   timestampSortDirection = 'desc',
 }: LogsTableHeaderProps) {
@@ -75,6 +77,15 @@ export function LogsTableHeader({
         >
           Message
         </TableHead>
+        {actionsWidth !== undefined ? (
+          <TableHead
+            aria-label="Log actions"
+            className="px-0 h-min pb-3"
+            style={{ display: 'flex', width: actionsWidth }}
+          >
+            <span />
+          </TableHead>
+        ) : null}
         {dataWidth !== undefined ? (
           <TableHead
             className="px-0 h-min pb-3"
