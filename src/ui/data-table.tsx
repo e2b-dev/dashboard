@@ -1,12 +1,8 @@
 import type { Cell, Header } from '@tanstack/react-table'
-import {
-  ArrowDownWideNarrow,
-  ArrowUpDown,
-  ArrowUpNarrowWide,
-} from 'lucide-react'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import { SortAscIcon, SortDescIcon } from '@/ui/primitives/icons'
 import {
   Select,
   SelectContent,
@@ -73,14 +69,14 @@ function DataTableHead<TData, TValue>({
             {sorting === undefined ? (
               // Show the arrow for the next state based on sortDescFirst
               header.column.columnDef.sortDescFirst ? (
-                <ArrowDownWideNarrow className="size-3" />
+                <SortDescIcon className="size-3" />
               ) : (
-                <ArrowUpNarrowWide className="size-3" />
+                <SortAscIcon className="size-3" />
               )
             ) : sorting ? (
-              <ArrowDownWideNarrow className="size-3" />
+              <SortDescIcon className="size-3" />
             ) : (
-              <ArrowUpNarrowWide className="size-3" />
+              <SortAscIcon className="size-3" />
             )}
           </div>
         )}
@@ -179,7 +175,6 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
         className={cn(
           // Base table styles from table.tsx
           'w-full caption-bottom',
-          'font-mono',
           // Div table styles
           'w-fit',
           className
@@ -265,32 +260,32 @@ function DataTablePagination({
         </div>
         <div className="flex items-center gap-1">
           <Button
-            variant="outline"
-            size="iconSm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(0)}
             disabled={pageIndex === 0}
           >
             ««
           </Button>
           <Button
-            variant="outline"
-            size="iconSm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(pageIndex - 1)}
             disabled={pageIndex === 0}
           >
             «
           </Button>
           <Button
-            variant="outline"
-            size="iconSm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(pageIndex + 1)}
             disabled={pageIndex === pageCount - 1}
           >
             »
           </Button>
           <Button
-            variant="outline"
-            size="iconSm"
+            variant="tertiary"
+            size="none"
             onClick={() => onPageChange(pageCount - 1)}
             disabled={pageIndex === pageCount - 1}
           >

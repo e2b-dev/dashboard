@@ -200,7 +200,7 @@ export function PasswordSettings({
             </p>
             <Button
               type="submit"
-              loading={isPending}
+              loading={isPending ? 'Updating...' : undefined}
               onClick={form.handleSubmit(onSubmit)}
               disabled={isPending || !form.formState.isValid}
             >

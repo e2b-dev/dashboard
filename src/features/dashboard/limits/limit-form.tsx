@@ -137,7 +137,7 @@ export default function LimitForm({
           className={cn('space-y-3', className)}
           onSubmit={form.handleSubmit(handleSave)}
         >
-          <div className="flex w-min items-end gap-2">
+          <div className="flex w-min items-end gap-1">
             <FormField
               control={form.control}
               name="value"
@@ -176,14 +176,13 @@ export default function LimitForm({
             />
             <Button
               type="submit"
-              variant="outline"
-              className="h-9 px-4"
+              variant="secondary"
               disabled={
                 form.getValues('value') === originalValue ||
                 isSaving ||
                 isClearing
               }
-              loading={isSaving}
+              loading={isSaving ? 'Setting...' : undefined}
             >
               Set
             </Button>
@@ -191,10 +190,8 @@ export default function LimitForm({
               <Button
                 type="button"
                 variant="error"
-                size="sm"
-                className="h-9 px-4"
                 disabled={isSaving || isClearing}
-                loading={isClearing}
+                loading={isClearing ? 'Clearing...' : undefined}
                 onClick={handleClear}
               >
                 Clear
@@ -207,7 +204,7 @@ export default function LimitForm({
   }
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center gap-1', className)}>
       <div className="text-accent-main-highlight mx-2 prose-value-small">
         {'$ '}
         <span className="text-fg prose-value-big">
@@ -216,8 +213,7 @@ export default function LimitForm({
       </div>
       <Button
         type="button"
-        variant="outline"
-        size="sm"
+        variant="secondary"
         onClick={() => setIsEditing(true)}
       >
         Edit
@@ -225,10 +221,9 @@ export default function LimitForm({
       <Button
         type="button"
         variant="error"
-        size="sm"
         onClick={handleClear}
         disabled={isSaving || isClearing}
-        loading={isClearing}
+        loading={isClearing ? 'Clearing...' : undefined}
       >
         Clear
       </Button>

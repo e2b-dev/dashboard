@@ -1,9 +1,9 @@
 'use client'
 
-import { AlertCircle, FolderClosed, FolderOpen } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
+import { AlertIcon, FolderIcon, FolderOpenIcon } from '@/ui/primitives/icons'
 import SandboxInspectEmptyNode from './empty-node'
 import type { FilesystemNode } from './filesystem/types'
 import { useDirectory } from './hooks/use-directory'
@@ -51,9 +51,9 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
           )}
         >
           {isExpanded && isLoaded ? (
-            <FolderOpen className="size-3.5" />
+            <FolderOpenIcon className="size-3.5" />
           ) : (
-            <FolderClosed className="size-3.5" />
+            <FolderIcon className="size-3.5" />
           )}
         </span>
         <NodeLabel
@@ -63,7 +63,7 @@ export default function SandboxInspectDir({ dir }: SandboxInspectDirProps) {
         />
         {hasError && (
           <span className="text-accent-error-highlight flex items-center gap-1 truncate pt-0.5 pl-1 text-xs text-ellipsis">
-            <AlertCircle className="size-3" />
+            <AlertIcon className="size-3" />
             {error}
           </span>
         )}

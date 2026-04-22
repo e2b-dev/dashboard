@@ -31,17 +31,17 @@ export function InfoCard({ className }: InfoCardProps) {
           <div className="flex items-center gap-2">
             <Badge variant="info">E-Mail</Badge>
             <span>{team.email}</span>
-            <CopyButton value={team.email} variant="ghost" className="size-5" />
+            <CopyButton value={team.email} />
           </div>
           <div className="flex items-center gap-2">
             <Badge>Team ID</Badge>
             <span>{team.id}</span>
-            <CopyButton value={team.id} variant="ghost" className="size-5" />
+            <CopyButton value={team.id} />
           </div>
           <div className="flex items-center gap-2">
             <Badge>Team Slug</Badge>
             <span>{team.slug}</span>
-            <CopyButton value={team.slug} variant="ghost" className="size-5" />
+            <CopyButton value={team.slug} />
           </div>
         </div>
       </CardContent>

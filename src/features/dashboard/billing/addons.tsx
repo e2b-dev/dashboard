@@ -117,13 +117,8 @@ function AvailableAddons({
                   <Loader variant="slash" size="sm" />
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={onAdd}
-                  disabled={disabled}
-                >
-                  Buy Add-on
+                <Button variant="secondary" onClick={onAdd} disabled={disabled}>
+                  Buy
                 </Button>
               )}
             </>
@@ -173,7 +168,7 @@ function AddonsUpgradePlaceholder() {
         <p className="prose-body text-fg-tertiary">
           Upgrade to Pro to purchase add-ons for higher concurrency limits.
         </p>
-        <Button variant="default" className="w-full sm:w-auto" asChild>
+        <Button className="w-full sm:w-auto" asChild>
           <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
             <UpgradeIcon className="size-4" />
             Upgrade to Pro

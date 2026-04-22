@@ -54,18 +54,16 @@ export const RemoveMemberDialog = ({
               <Button
                 className="font-sans normal-case text-fg-tertiary hover:text-fg-tertiary focus:text-fg-tertiary"
                 disabled={isRemoving}
-                size="slate"
                 type="button"
-                variant="ghost"
+                variant="tertiary"
               >
                 Cancel
               </Button>
             </DialogClose>
             <Button
               className="font-sans normal-case"
-              loading={isRemoving}
+              loading={isRemoving ? 'Removing...' : undefined}
               onClick={onRemove}
-              size="md"
               type="button"
               variant="error"
             >

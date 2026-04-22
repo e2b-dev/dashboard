@@ -124,7 +124,10 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
               />
 
               <DialogFooter>
-                <Button type="submit" loading={isPending}>
+                <Button
+                  type="submit"
+                  loading={isPending ? 'Creating Key...' : undefined}
+                >
                   Create Key
                 </Button>
               </DialogFooter>
@@ -154,7 +157,7 @@ const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="muted">Close</Button>
+                <Button variant="tertiary">Close</Button>
               </DialogClose>
             </DialogFooter>
           </>

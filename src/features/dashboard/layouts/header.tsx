@@ -38,7 +38,7 @@ export default function DashboardLayoutHeader({
         className
       )}
     >
-      <div className="flex items-center w-full relative min-h-6 gap-2">
+      <div className="flex items-center w-full relative min-h-6 gap-1 md:gap-2">
         <SidebarTrigger className="w-7 h-7 md:hidden -translate-x-1 shrink-0" />
 
         <div className="min-w-0 flex-1 flex items-center gap-2">
@@ -48,15 +48,13 @@ export default function DashboardLayoutHeader({
           {copyableValue && (
             <CopyButton
               value={copyableValue}
-              size="iconSm"
-              variant="ghost"
               className="text-fg-tertiary shrink-0"
               aria-label="Copy identifier"
             />
           )}
         </div>
 
-        <ClientOnly>
+        <ClientOnly className="flex items-center pl-2 pr-2">
           <ThemeSwitcher />
         </ClientOnly>
 

@@ -1,9 +1,9 @@
 'use client'
 
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
+import { AlertIcon, InfoIcon, SuccessIcon } from '@/ui/primitives/icons'
 
 // TODO: this type is used in more places than just authentication
 // -> should probably be renamed / moved to a more appropriate location
@@ -29,7 +29,7 @@ export function AuthFormMessage({
     >
       {'success' in message && (
         <Alert variant="success">
-          <CheckCircle2 className="h-4 w-4" />
+          <SuccessIcon className="h-4 w-4" />
           <AlertDescription>
             {decodeURIComponent(message.success!)}
           </AlertDescription>
@@ -37,7 +37,7 @@ export function AuthFormMessage({
       )}
       {'error' in message && (
         <Alert variant="error">
-          <AlertCircle className="h-4 w-4" />
+          <AlertIcon className="h-4 w-4" />
           <AlertDescription>
             {decodeURIComponent(message.error!)}
           </AlertDescription>
@@ -45,7 +45,7 @@ export function AuthFormMessage({
       )}
       {'message' in message && (
         <Alert variant="info">
-          <Info className="h-4 w-4" />
+          <InfoIcon className="h-4 w-4" />
           <AlertDescription>
             {decodeURIComponent(message.message!)}
           </AlertDescription>

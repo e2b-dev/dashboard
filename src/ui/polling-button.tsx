@@ -1,7 +1,6 @@
-import { RefreshCw } from 'lucide-react'
 import { usePolling } from '@/lib/hooks/use-polling'
 import { cn } from '@/lib/utils'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   Select,
   SelectContent,
@@ -9,6 +8,7 @@ import {
   SelectTrigger,
 } from '@/ui/primitives/select'
 import { Separator } from '@/ui/primitives/separator'
+import { RefreshIcon } from './primitives/icons'
 
 export interface PollingInterval {
   value: number
@@ -52,23 +52,21 @@ export function PollingButton({
   const concatenatedIsRefreshing = isRefreshingProp || isRefreshing
 
   return (
-    <div className={cn('flex h-6 items-center gap-1 px-0', className)}>
-      <Button
-        variant="ghost"
-        size="sm"
+    <div className={cn('flex h-9 items-center gap-1 px-0', className)}>
+      <IconButton
         onClick={refresh}
-        className="text-fg-tertiary h-6"
         disabled={concatenatedIsRefreshing}
+        className="mr-2"
       >
-        <RefreshCw
-          className={cn('size-3.5', concatenatedIsRefreshing && 'animate-spin')}
+        <RefreshIcon
+          className={cn(concatenatedIsRefreshing && 'animate-spin')}
         />
-      </Button>
+      </IconButton>
 
       <Separator orientation="vertical" className="h-5" />
 
       <Select value={interval.toString()} onValueChange={handleIntervalChange}>
-        <SelectTrigger className="text-fg-secondary h-6 w-fit gap-1 border-none bg-transparent pl-2 whitespace-nowrap">
+        <SelectTrigger className="text-fg-secondary h-9 w-fit gap-1 border-none bg-transparent pl-2 whitespace-nowrap">
           Auto-refresh
           <span className="text-accent-main-highlight ml-1">
             {interval === 0 ? 'Off' : formatSeconds(remainingSeconds)}
