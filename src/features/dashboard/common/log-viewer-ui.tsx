@@ -1,5 +1,5 @@
 import type { VirtualItem, Virtualizer } from '@tanstack/react-virtual'
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -12,14 +12,20 @@ import {
 } from '@/ui/primitives/table'
 
 interface LogsTableHeaderProps {
+  expanderWidth?: number
   timestampWidth: number
   levelWidth: number
+  loggerWidth?: number
+  dataWidth?: number
   timestampSortDirection?: 'asc' | 'desc'
 }
 
 export function LogsTableHeader({
+  expanderWidth,
   timestampWidth,
   levelWidth,
+  loggerWidth,
+  dataWidth,
   timestampSortDirection = 'desc',
 }: LogsTableHeaderProps) {
   return (
@@ -28,6 +34,15 @@ export function LogsTableHeader({
       style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
     >
       <TableRow style={{ display: 'flex', minWidth: '100%' }}>
+        {expanderWidth !== undefined ? (
+          <TableHead
+            aria-label="Log details"
+            className="px-0 h-min pb-3"
+            style={{ display: 'flex', width: expanderWidth }}
+          >
+            <span />
+          </TableHead>
+        ) : null}
         <TableHead
           data-state="selected"
           className="px-0 h-min pb-3 pr-4 text-fg"
@@ -46,12 +61,28 @@ export function LogsTableHeader({
         >
           Level
         </TableHead>
+        {loggerWidth !== undefined ? (
+          <TableHead
+            className="px-0 h-min pb-3 pr-4"
+            style={{ display: 'flex', width: loggerWidth }}
+          >
+            Logger
+          </TableHead>
+        ) : null}
         <TableHead
-          className="px-0 h-min pb-3"
+          className="px-0 h-min pb-3 pr-4"
           style={{ display: 'flex', flex: 1 }}
         >
           Message
         </TableHead>
+        {dataWidth !== undefined ? (
+          <TableHead
+            className="px-0 h-min pb-3"
+            style={{ display: 'flex', width: dataWidth }}
+          >
+            Data
+          </TableHead>
+        ) : null}
       </TableRow>
     </TableHeader>
   )
@@ -109,10 +140,12 @@ export function getLogVirtualRowStyle(
   }
 }
 
-interface LogVirtualRowProps {
+interface LogVirtualRowProps
+  extends Omit<HTMLAttributes<HTMLTableRowElement>, 'children' | 'style'> {
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>
   height: number
+  style?: CSSProperties
   className?: string
   children: ReactNode
 }
@@ -121,15 +154,18 @@ export function LogVirtualRow({
   virtualRow,
   virtualizer,
   height,
+  style,
   className,
   children,
+  ...props
 }: LogVirtualRowProps) {
   return (
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => virtualizer.measureElement(node)}
       className={className}
-      style={getLogVirtualRowStyle(virtualRow, height)}
+      style={{ ...getLogVirtualRowStyle(virtualRow, height), ...style }}
+      {...props}
     >
       {children}
     </TableRow>
