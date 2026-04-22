@@ -39,10 +39,7 @@ export function LogLevelFilter({
     <div className={cn('flex w-full min-h-0 justify-between gap-3', className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="font-sans w-min normal-case prose-body-highlight h-9"
-          >
+          <Button variant="secondary" className="w-min">
             <LevelIndicator level={selectedLevel} />
             Min Level · {selectedLabel}
           </Button>

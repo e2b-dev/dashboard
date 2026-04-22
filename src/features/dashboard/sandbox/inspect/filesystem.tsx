@@ -26,7 +26,7 @@ export default function SandboxInspectFilesystem({
     isRunning && children.length === 0 && (!isLoaded || isLoading)
 
   return (
-    <div className="h-full flex-1 flex flex-col gap-4 overflow-hidden">
+    <div className="h-full flex-1 flex flex-col gap-1 overflow-hidden">
       <StoppedBanner rootNodeCount={children.length} />
       <SandboxInspectFrame
         initial={{

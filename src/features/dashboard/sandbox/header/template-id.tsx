@@ -13,14 +13,9 @@ export default function TemplateId() {
   }, [sandboxInfo])
 
   return (
-    <Badge variant="info">
+    <Badge>
       <p>{value}</p>
-      <CopyButton
-        size="slate"
-        className="size-3.5"
-        variant="ghost"
-        value={value}
-      />
+      <CopyButton value={value} />
     </Badge>
   )
 }

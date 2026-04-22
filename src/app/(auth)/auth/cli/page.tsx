@@ -1,4 +1,3 @@
-import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
@@ -8,6 +7,7 @@ import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { CloudIcon, LinkIcon, SystemIcon } from '@/ui/primitives/icons'
 
 // Types
 type CLISearchParams = Promise<{
@@ -59,13 +59,13 @@ function CLIIcons() {
   return (
     <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
-        <LaptopIcon size={50} />
+        <SystemIcon className="size-8" />
       </span>
       <span className="text-fg-secondary">
-        <Link2Icon size={30} />
+        <LinkIcon className="size-4" />
       </span>
       <span className="text-fg-tertiary">
-        <CloudIcon size={50} />
+        <CloudIcon className="size-8" />
       </span>
     </p>
   )

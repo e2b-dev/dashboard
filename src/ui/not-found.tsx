@@ -1,6 +1,5 @@
 'use client'
 
-import { ArrowLeft, HomeIcon, LayoutDashboard } from 'lucide-react'
 import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { Button } from './primitives/button'
@@ -11,6 +10,7 @@ import {
   CardFooter,
   CardHeader,
 } from './primitives/card'
+import { ArrowLeftIcon, DashboardIcon, HomeIcon } from './primitives/icons'
 
 export default function NotFound() {
   return (
@@ -26,27 +26,27 @@ export default function NotFound() {
             changed, or is temporarily unavailable.
           </p>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4 pt-4">
-          <div className="flex w-full justify-between gap-4">
-            <Button variant="outline" asChild className="flex-1">
-              <Link href="/" className="gap-2">
-                <HomeIcon className="h-4 w-4 text-fg-tertiary" />
+        <CardFooter className="flex flex-col gap-1">
+          <div className="flex w-full gap-1">
+            <Button variant="secondary" asChild className="flex-1">
+              <Link href="/">
+                <HomeIcon />
                 Home
               </Link>
             </Button>
-            <Button variant="outline" asChild className="flex-1">
-              <Link href={PROTECTED_URLS.DASHBOARD} className="gap-2">
-                <LayoutDashboard className="h-4 w-4 text-fg-tertiary" />
+            <Button variant="secondary" asChild className="flex-1">
+              <Link href={PROTECTED_URLS.DASHBOARD}>
+                <DashboardIcon />
                 Dashboard
               </Link>
             </Button>
           </div>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => window.history.back()}
-            className="w-full gap-2"
+            className="w-full"
           >
-            <ArrowLeft className="h-4 w-4 text-fg-tertiary" />
+            <ArrowLeftIcon />
             Go Back
           </Button>
         </CardFooter>

@@ -1,8 +1,8 @@
-import { ExternalLink, X } from 'lucide-react'
 import type { RefObject } from 'react'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { DataTableBody } from '@/ui/data-table'
 import { Button } from '@/ui/primitives/button'
+import { AddIcon, CloseIcon } from '@/ui/primitives/icons'
 import SandboxesListEmpty from './empty'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { useSandboxListTableStore } from './stores/table-store'
@@ -71,8 +71,8 @@ export const SandboxesTableBody = ({
         title="No Results Found"
         description="No sandboxes match your current filters."
         actions={
-          <Button variant="outline" onClick={resetFilters} className="w-full">
-            Reset Filters <X className="text-fg-tertiary size-4" />
+          <Button variant="secondary" onClick={resetFilters} className="w-full">
+            Reset Filters <CloseIcon className="text-fg-tertiary size-4" />
           </Button>
         }
         className="h-full max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
@@ -82,10 +82,10 @@ export const SandboxesTableBody = ({
         title="No Sandboxes Yet"
         description="Running sandboxes can be observed here."
         actions={
-          <Button variant="outline" asChild className="w-full gap-2">
+          <Button variant="secondary" asChild className="w-full gap-2">
             <a href="/docs/quickstart" target="_blank" rel="noopener">
+              <AddIcon />
               Create a Sandbox
-              <ExternalLink className="size-3.5" />
             </a>
           </Button>
         }

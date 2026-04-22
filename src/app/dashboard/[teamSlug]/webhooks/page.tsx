@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { INCLUDE_ARGUS } from '@/configs/flags'
 import WebhookAddEditDialog from '@/features/dashboard/settings/webhooks/add-edit-dialog'
@@ -11,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
 } from '@/ui/primitives/card'
+import { AddIcon } from '@/ui/primitives/icons'
 
 interface WebhooksPageClientProps {
   params: Promise<{
@@ -43,7 +43,7 @@ export default async function WebhooksPage({
 
             <WebhookAddEditDialog mode="add">
               <Button className="w-full sm:w-auto sm:self-start">
-                <Plus className="size-4" /> Add Webhook
+                <AddIcon className="size-4" /> Add Webhook
               </Button>
             </WebhookAddEditDialog>
           </div>

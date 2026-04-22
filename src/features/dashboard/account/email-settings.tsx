@@ -159,7 +159,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
               Has to be a valid e-mail address.
             </p>
             <Button
-              loading={isPending}
+              loading={isPending ? 'Saving...' : undefined}
               disabled={form.watch('email') === user?.email}
               type="submit"
               onClick={form.handleSubmit((values) =>

@@ -1,11 +1,11 @@
 'use client'
 
-import { RotateCcw } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
-import { TimeIcon } from '@/ui/primitives/icons'
+import { IconButton } from '@/ui/primitives/icon-button'
+import { RefreshIcon, TimeIcon } from '@/ui/primitives/icons'
 import {
   Popover,
   PopoverContent,
@@ -189,8 +189,7 @@ export default function SandboxMonitoringTimeRangeControls({
         <Popover open={isOpen} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
             <Button
-              size="md"
-              variant="outline"
+              variant="secondary"
               className="prose-label-highlight font-sans"
             >
               {isPolling ? (
@@ -234,15 +233,13 @@ export default function SandboxMonitoringTimeRangeControls({
 
       {canResetZoom ? (
         <div className="flex items-center gap-1">
-          <Button
-            size="md"
-            variant="outline"
+          <IconButton
             onClick={onResetZoom}
             title="Reset zoom"
             aria-label="Reset zoom"
           >
-            <RotateCcw className="size-4" />
-          </Button>
+            <RefreshIcon />
+          </IconButton>
         </div>
       ) : null}
     </div>
