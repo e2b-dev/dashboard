@@ -721,9 +721,11 @@ function getLogFingerprint(log: SandboxLogModel) {
   return `${log.timestampUnix}:${hashString(
     stableStringify({
       fields: log.fields,
+      capturedBy: log.capturedBy,
       level: log.level,
       logger: log.logger,
       message: log.message,
+      origin: log.origin,
     })
   )}`
 }
@@ -754,17 +756,30 @@ function hashString(value: string) {
 }
 
 function getLogFieldEntries(log: SandboxLogModel) {
+  const entries: [string, unknown][] = []
+
+  if (log.origin) {
+    entries.push(['origin', log.origin])
+  }
+
+  if (log.capturedBy) {
+    entries.push(['captured_by', log.capturedBy])
+  }
+
   if (!log.fields) {
-    return []
+    return entries
   }
 
   const structuredEntries = getStructuredLogEntries(log)
 
-  return Object.entries(log.fields).filter(
-    ([key, value]) =>
-      value !== undefined &&
-      !(key === STRUCTURED_LOG_ENTRIES_FIELD && structuredEntries.length > 0)
-  )
+  return [
+    ...entries,
+    ...Object.entries(log.fields).filter(
+      ([key, value]) =>
+        value !== undefined &&
+        !(key === STRUCTURED_LOG_ENTRIES_FIELD && structuredEntries.length > 0)
+    ),
+  ]
 }
 
 function getStructuredLogEntries(log: SandboxLogModel) {
@@ -1159,8 +1174,16 @@ function getLogJson(log: SandboxLogModel) {
     message: log.message,
   }
 
+  if (log.origin) {
+    jsonValue.origin = log.origin
+  }
+
   if (log.logger) {
     jsonValue.logger = log.logger
+  }
+
+  if (log.capturedBy) {
+    jsonValue.captured_by = log.capturedBy
   }
 
   if (log.fields) {
