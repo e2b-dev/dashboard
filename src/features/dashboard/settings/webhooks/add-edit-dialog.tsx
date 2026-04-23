@@ -199,7 +199,7 @@ export default function WebhookAddEditDialog({
             <input type="hidden" {...form.register('mode')} />
             <input type="hidden" {...form.register('teamSlug')} />
 
-            <div className="flex flex-col gap-4 pb-6 min-w-0 overflow-hidden min-h-[350px]">
+            <div className="flex flex-col gap-4 pb-4 min-w-0 overflow-hidden min-h-[350px]">
               <WebhookAddEditDialogSteps
                 currentStep={currentStep}
                 form={form}

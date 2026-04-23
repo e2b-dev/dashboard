@@ -150,6 +150,8 @@ export function WebhookAddEditDialogSteps({
                     placeholder="Example webhook"
                     disabled={isLoading}
                     className="min-w-0"
+                    clearable
+                    onClear={() => field.onChange('')}
                     {...field}
                   />
                 </FormControl>
@@ -170,6 +172,8 @@ export function WebhookAddEditDialogSteps({
                     placeholder="https://example.com/postreceive"
                     disabled={isLoading}
                     className="min-w-0"
+                    clearable
+                    onClear={() => field.onChange('')}
                     {...field}
                   />
                 </FormControl>
