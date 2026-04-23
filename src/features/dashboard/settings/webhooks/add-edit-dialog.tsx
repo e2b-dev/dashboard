@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
-import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { upsertWebhookAction } from '@/core/server/actions/webhooks-actions'
 import { UpsertWebhookSchema } from '@/core/server/functions/webhooks/schema'
@@ -21,7 +20,7 @@ import {
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import { Form } from '@/ui/primitives/form'
-import { CheckIcon } from '@/ui/primitives/icons'
+import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
@@ -239,7 +238,7 @@ export default function WebhookAddEditDialog({
                       {currentStep === 1 ? (
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="secondary"
                           onClick={handleNext}
                           disabled={!isStep1Valid}
                           className="w-full"
@@ -250,7 +249,7 @@ export default function WebhookAddEditDialog({
                         <>
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="secondary"
                             onClick={handleBack}
                             className="w-full"
                           >
@@ -261,7 +260,7 @@ export default function WebhookAddEditDialog({
                             className="w-full"
                             disabled={!isStep2Valid}
                           >
-                            <PlusIcon className="size-4" />
+                            <AddIcon />
                             Add
                           </Button>
                         </>

@@ -1,8 +1,8 @@
 'use client'
 
-import { Upload } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { UploadIcon } from '@/ui/primitives/icons'
 
 interface FileDropZoneProps {
   onFilesSelected: (files: File[]) => void
@@ -101,7 +101,7 @@ export default function FileDropZone({
         isDisabled && 'cursor-not-allowed opacity-50 border-stroke'
       )}
     >
-      <Upload className="size-5 text-fg-tertiary" />
+      <UploadIcon className="size-5 text-fg-tertiary" />
       <p className="text-sm text-fg-secondary">
         {isUploading
           ? 'Uploading...'

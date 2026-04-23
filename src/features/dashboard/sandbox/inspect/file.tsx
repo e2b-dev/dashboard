@@ -1,8 +1,8 @@
 'use client'
 
-import { AlertCircle, FileIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
+import { AlertIcon, FileIcon } from '@/ui/primitives/icons'
 import type { FilesystemNode } from './filesystem/types'
 import { useFile } from './hooks/use-file'
 import NodeLabel from './node-label'
@@ -42,7 +42,7 @@ export default function SandboxInspectFile({ file }: SandboxInspectFileProps) {
       <NodeLabel name={file.name} isActive={isSelected} isLoading={isLoading} />
       {hasError && (
         <span className="text-accent-warning-highlight flex items-center gap-1 truncate pt-0.5 pl-1 align-baseline text-xs text-ellipsis">
-          <AlertCircle className="size-3" />
+          <AlertIcon className="size-3" />
           {error}
         </span>
       )}

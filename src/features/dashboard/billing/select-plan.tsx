@@ -178,7 +178,7 @@ function PlanCard({
 
   const teamDisplayName = getTeamDisplayName(team)
 
-  const buttonVariant = isBaseTier ? 'outline' : 'default'
+  const buttonVariant = isBaseTier ? 'secondary' : 'primary'
   const buttonText = isBaseTier ? 'Downgrade' : 'Upgrade'
 
   return (
@@ -198,9 +198,7 @@ function PlanCard({
           </div>
 
           {isCurrentPlan ? (
-            <Badge variant="default" className="h-8 px-3">
-              Your current plan
-            </Badge>
+            <Button disabled>Your current plan</Button>
           ) : (
             <div className="flex items-center gap-4 flex-wrap">
               <span className="prose-body text-fg-tertiary">
@@ -210,7 +208,7 @@ function PlanCard({
               <Button
                 variant={buttonVariant}
                 onClick={onSelectPlan}
-                loading={isSelectingPlan}
+                loading={isSelectingPlan ? 'Loading...' : undefined}
                 disabled={isSelectingPlan}
               >
                 {!isBaseTier && <UpgradeIcon className="size-4" />}

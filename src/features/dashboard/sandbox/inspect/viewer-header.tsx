@@ -1,7 +1,13 @@
-import { Download, FileIcon, RefreshCcw, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import CopyButton from '@/ui/copy-button'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
+import {
+  CloseIcon,
+  DownloadIcon,
+  FileIcon,
+  RefreshIcon,
+} from '@/ui/primitives/icons'
 import type { FileContentState } from './filesystem/store'
 
 interface SandboxInspectViewerHeaderProps {
@@ -27,23 +33,14 @@ export default function SandboxInspectViewerHeader({
       <span className="mr-auto ">{name}</span>
 
       {fileContentState?.type === 'text' && (
-        <CopyButton
-          variant="ghost"
-          size="iconSm"
-          value={fileContentState.text}
-        />
+        <CopyButton value={fileContentState.text} />
       )}
 
-      <Button variant="ghost" size="iconSm" onClick={onDownload}>
-        <Download className="h-4 w-4" />
-      </Button>
+      <IconButton onClick={onDownload}>
+        <DownloadIcon />
+      </IconButton>
 
-      <Button
-        variant="ghost"
-        size="iconSm"
-        onClick={onRefresh}
-        disabled={isLoading}
-      >
+      <IconButton onClick={onRefresh} disabled={isLoading}>
         <motion.div
           initial={false}
           animate={{ rotate: isLoading ? 360 : 0 }}
@@ -55,13 +52,13 @@ export default function SandboxInspectViewerHeader({
             bounce: 0,
           }}
         >
-          <RefreshCcw className="h-4 w-4" />
+          <RefreshIcon />
         </motion.div>
-      </Button>
+      </IconButton>
 
-      <Button variant="ghost" size="iconSm" onClick={onClose}>
-        <X className="h-4 w-4" />
-      </Button>
+      <IconButton onClick={onClose}>
+        <CloseIcon />
+      </IconButton>
     </div>
   )
 }

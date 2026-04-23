@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/ui'
 import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 
 export const E2BLogo = ({

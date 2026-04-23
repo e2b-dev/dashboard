@@ -20,7 +20,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { AddIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { useDashboard } from '../context'
 
@@ -73,37 +72,31 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('flex items-start gap-1 py-1', className)}
+        className={cn('flex gap-1', className)}
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel className="sr-only">Email</FormLabel>
-              <FormControl>
-                <Input
-                  className="h-9 font-sans"
-                  aria-label="Email"
-                  placeholder="Enter email"
-                  {...field}
-                />
-              </FormControl>
+            <FormItem className="relative flex-1">
+              <FormLabel className="">E-mail</FormLabel>
+              <div className="flex items-center gap-1">
+                <FormControl>
+                  <Input placeholder="member@acme.com" {...field} />
+                </FormControl>
+                <Button
+                  loading={isExecuting ? 'Adding...' : undefined}
+                  type="submit"
+                  disabled={!form.formState.isValid}
+                  variant="secondary"
+                >
+                  Add Member
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button
-          className="normal-case font-sans"
-          loading={isExecuting}
-          type="submit"
-          disabled={!form.formState.isValid}
-          size="md"
-          variant="default"
-        >
-          <AddIcon aria-hidden className="size-4 shrink-0" />
-          Add
-        </Button>
       </form>
     </Form>
   )

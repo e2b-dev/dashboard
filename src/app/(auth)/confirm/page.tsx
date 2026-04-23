@@ -115,7 +115,9 @@ export default function ConfirmPage() {
       <div className="mt-5">
         <Button
           onClick={handleConfirm}
-          loading={mutation.isPending || isPending}
+          loading={
+            mutation.isPending || isPending ? 'Confirming...' : undefined
+          }
           disabled={!isValidParams}
           className="w-full"
         >

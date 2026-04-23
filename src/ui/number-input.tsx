@@ -1,9 +1,9 @@
 'use client'
 
-import { ChevronDown, ChevronUp } from 'lucide-react'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from './primitives/button'
+import { IconButton } from './primitives/icon-button'
+import { ChevronDownIcon, ChevronUpIcon } from './primitives/icons'
 import { Input } from './primitives/input'
 
 export interface NumberInputProps
@@ -97,34 +97,26 @@ export function NumberInput({
   return (
     <div className={cn('flex items-center', className)}>
       <div className="flex flex-col">
-        <Button
+        <IconButton
           type="button"
-          variant="outline"
-          size="icon"
-          className={cn(
-            'bg-bg-1 h-[1.125rem] border-r-0 px-2 py-0',
-            buttonClassName
-          )}
+          variant="secondary"
+          className={cn('h-4.5 border-r-0', buttonClassName)}
           onClick={increment}
           disabled={disabled || value >= max}
         >
-          <ChevronUp className="h-3 w-3" />
+          <ChevronUpIcon />
           <span className="sr-only">Increase</span>
-        </Button>
-        <Button
+        </IconButton>
+        <IconButton
           type="button"
-          variant="outline"
-          size="icon"
-          className={cn(
-            'bg-bg-1 h-[1.125rem] border-t-0 border-r-0 px-2',
-            buttonClassName
-          )}
+          variant="secondary"
+          className={cn('h-4.5 border-t-0 border-r-0', buttonClassName)}
           onClick={decrement}
           disabled={disabled || value <= min}
         >
-          <ChevronDown className="h-3 w-3" />
+          <ChevronDownIcon />
           <span className="sr-only">Decrease</span>
-        </Button>
+        </IconButton>
       </div>
       <Input
         {...props}

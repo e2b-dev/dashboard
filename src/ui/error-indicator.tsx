@@ -1,6 +1,5 @@
 'use client'
 
-import { RefreshCcw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { cn } from '@/lib/utils'
@@ -13,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from './primitives/card'
+import { RefreshIcon } from './primitives/icons'
 
 interface ErrorIndicatorProps {
   title?: string
@@ -50,12 +50,12 @@ export function ErrorIndicator({
       )}
       <CardFooter className="px-auto flex flex-col gap-4 py-4">
         <Button
-          variant="outline"
+          variant="secondary"
           onClick={() => startTransition(() => router.refresh())}
-          className="w-full max-w-md gap-2"
+          className="w-full max-w-md gap-1"
         >
-          <RefreshCcw
-            className={`text-fg-tertiary h-4 w-4 duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
+          <RefreshIcon
+            className={`duration-500 ease-in-out ${isPending ? 'animate-spin' : ''}`}
           />
           Refresh
         </Button>
