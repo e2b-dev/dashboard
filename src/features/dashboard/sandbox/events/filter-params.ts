@@ -1,4 +1,4 @@
-import { createLoader, parseAsString, parseAsStringEnum } from 'nuqs/server'
+import { parseAsString, parseAsStringEnum } from 'nuqs/server'
 
 const SANDBOX_EVENTS_ORDER_VALUES: ['asc', 'desc'] = ['asc', 'desc']
 
@@ -9,11 +9,4 @@ const sandboxEventsFilterParams = {
   order: parseAsStringEnum(SANDBOX_EVENTS_ORDER_VALUES),
 }
 
-const loadSandboxEventsFilters = createLoader(sandboxEventsFilterParams)
-
-export {
-  loadSandboxEventsFilters,
-  SANDBOX_EVENTS_ORDER_VALUES,
-  sandboxEventsFilterParams,
-}
-export type { SandboxEventsOrder }
+export { sandboxEventsFilterParams, type SandboxEventsOrder }

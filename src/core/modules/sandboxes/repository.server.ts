@@ -3,7 +3,6 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
-import type { SandboxLifecycleEventType } from '@/core/modules/sandboxes/lifecycle-event-types'
 import type {
   SandboxEventModel,
   Sandboxes,
@@ -37,11 +36,10 @@ export interface GetSandboxMetricsOptions {
   endUnixMs: number
 }
 
-interface ListSandboxLifecycleEventsOptions {
+interface ListSandboxLifecycleEventsPageOptions {
   offset?: number
   limit?: number
   orderAsc?: boolean
-  types?: SandboxLifecycleEventType[]
 }
 
 export interface SandboxesRepository {
@@ -100,7 +98,7 @@ export function createSandboxesRepository(
   /** Fetches one sandbox lifecycle events page. Example: { offset: 20, limit: 20 } -> the next 20 events. */
   const listSandboxLifecycleEventsPage = async (
     sandboxId: string,
-    options: ListSandboxLifecycleEventsOptions = {}
+    options: ListSandboxLifecycleEventsPageOptions = {}
   ): Promise<RepoResult<SandboxEventModel[]>> => {
     const result = await deps.infraClient.GET('/events/sandboxes/{sandboxID}', {
       params: {
@@ -111,7 +109,6 @@ export function createSandboxesRepository(
           offset: options.offset,
           limit: options.limit,
           orderAsc: options.orderAsc,
-          types: options.types,
         },
       },
       headers: {
@@ -134,7 +131,6 @@ export function createSandboxesRepository(
           offset: options.offset,
           limit: options.limit,
           order_asc: options.orderAsc,
-          types: options.types,
         },
       })
 

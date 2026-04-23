@@ -53,7 +53,6 @@ export interface paths {
           offset?: number
           limit?: number
           orderAsc?: boolean
-          types?: string[]
         }
         header?: never
         path: {
@@ -99,7 +98,6 @@ export interface paths {
           offset?: number
           limit?: number
           orderAsc?: boolean
-          types?: string[]
         }
         header?: never
         path?: never
