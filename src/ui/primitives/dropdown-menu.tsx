@@ -2,11 +2,10 @@
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import type { VariantProps } from 'class-variance-authority'
-import { ChevronRight } from 'lucide-react'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Checkbox } from './checkbox'
-import { CheckIcon } from './icons'
+import { CheckIcon, ChevronRightIcon } from './icons'
 import {
   menuContentStyles,
   menuGroupStyles,
@@ -51,7 +50,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto size-4 text-fg-tertiary" />
+    <ChevronRightIcon className="ml-auto size-4 text-fg-tertiary" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =

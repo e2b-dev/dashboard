@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { WarningIcon } from './primitives/icons'
 import {
   Tooltip,
   TooltipContent,
@@ -17,11 +17,11 @@ export default function ErrorTooltip({ children, trigger }: ErrorTooltipProps) {
       <Tooltip>
         <TooltipTrigger tabIndex={-1} type="button">
           {trigger || (
-            <AlertTriangle className="text-accent-error-highlight size-4" />
+            <WarningIcon className="text-accent-error-highlight size-4" />
           )}
         </TooltipTrigger>
-        <TooltipContent className="bg-accent-error-bg-large border-accent-error-highlight text-fg-secondary max-w-[200px] p-2 font-sans text-xs normal-case">
-          <AlertTriangle className="text-accent-error-highlight mb-2 size-4" />
+        <TooltipContent className="bg-accent-error-bg-large-solid border-accent-error-highlight text-fg-secondary max-w-[200px] p-2 font-sans text-xs normal-case">
+          <WarningIcon className="text-accent-error-highlight mb-2 size-4" />
           {children}
         </TooltipContent>
       </Tooltip>

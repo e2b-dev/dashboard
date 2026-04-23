@@ -1,6 +1,5 @@
 'use client'
 
-import { AlertTriangle } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
@@ -10,6 +9,7 @@ import {
   CardTitle,
   cardVariants,
 } from '@/ui/primitives/card'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { useSandboxContext } from '../context'
 import { useLastUpdated, useWatcherError } from './hooks/use-watcher'
 
@@ -42,9 +42,9 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
             'overflow-hidden border'
           )}
         >
-          <CardHeader className="!p-4">
+          <CardHeader className="p-4!">
             <CardTitle className="inline-flex items-center gap-2">
-              <AlertTriangle className="size-5 text-accent-warning-highlight" />
+              <WarningIcon className="size-5 text-accent-warning-highlight" />
               <span className="prose-headline-small uppercase">
                 {showWatcherError
                   ? 'Live filesystem updates disabled'

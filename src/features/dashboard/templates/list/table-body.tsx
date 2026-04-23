@@ -1,11 +1,11 @@
 import { flexRender, type Table } from '@tanstack/react-table'
-import { ExternalLink, X } from 'lucide-react'
 import type { RefObject } from 'react'
 import type { Template } from '@/core/modules/templates/models'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
 import { Button } from '@/ui/primitives/button'
+import { CloseIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
 import { useTemplateTableStore } from './stores/table-store'
 
 const ROW_HEIGHT_PX = 32
@@ -58,8 +58,8 @@ export function TemplatesTableBody({
           title="No Results Found"
           description="No templates match your current filters"
           message={
-            <Button variant="default" onClick={resetFilters}>
-              Reset Filters <X className="text-accent-main-highlight size-4" />
+            <Button onClick={resetFilters}>
+              Reset Filters <CloseIcon />
             </Button>
           }
           className="h-[70%] max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]"
@@ -72,10 +72,10 @@ export function TemplatesTableBody({
         title="No Templates Yet"
         description="Your Templates can be managed here"
         message={
-          <Button variant="default" asChild>
+          <Button asChild>
             <a href="/docs/sandbox-template" target="_blank" rel="noopener">
               Create a Template
-              <ExternalLink className="size-3.5" />
+              <ExternalLinkIcon />
             </a>
           </Button>
         }

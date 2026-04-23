@@ -9,7 +9,7 @@ import {
   withTeamAuthedRequestRepository,
   withTeamSlugResolution,
 } from '@/core/server/actions/client'
-import { returnServerError } from '@/core/server/actions/utils'
+import { toActionErrorFromRepoError } from '@/core/server/adapters/errors'
 import { l } from '@/core/shared/clients/logger/logger'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
@@ -53,7 +53,7 @@ export const createApiKeyAction = authActionClient
         },
       })
 
-      return returnServerError('Failed to create API Key')
+      return toActionErrorFromRepoError(result.error)
     }
 
     updateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))
@@ -92,7 +92,7 @@ export const deleteApiKeyAction = authActionClient
         },
       })
 
-      return returnServerError('Failed to delete API Key')
+      return toActionErrorFromRepoError(result.error)
     }
 
     updateTag(CACHE_TAGS.TEAM_API_KEYS(ctx.teamId))

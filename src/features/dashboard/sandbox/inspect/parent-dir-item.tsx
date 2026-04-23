@@ -1,11 +1,11 @@
 'use client'
 
-import { FolderUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import path from 'path'
 import { useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { DataTableRow } from '@/ui/data-table'
+import { FolderUpIcon } from '@/ui/primitives/icons'
 
 interface SandboxInspectParentDirItemProps {
   rootPath: string
@@ -55,7 +55,7 @@ export default function SandboxInspectParentDirItem({
         }
       }}
     >
-      <FolderUp className="size-3.5 [color:var(--color-fg-tertiary)]" />
+      <FolderUpIcon className="size-3.5 [color:var(--color-fg-tertiary)]" />
       <span className="truncate">..</span>
     </DataTableRow>
   )

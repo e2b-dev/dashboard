@@ -1,18 +1,16 @@
 'use client'
 
-import { CalendarIcon, Clock as ClockIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useState } from 'react'
-
 import { cn } from '@/lib/utils'
 import {
   formatDateWithSpaces,
   formatTimeWithSpaces,
   tryParseDatetime,
 } from '@/lib/utils/formatting'
-
 import { NumberInput } from './number-input'
-import { Button } from './primitives/button'
 import { Calendar } from './primitives/calendar'
+import { IconButton } from './primitives/icon-button'
+import { CalendarIcon, TimeIcon } from './primitives/icons'
 import { Input } from './primitives/input'
 import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
@@ -150,16 +148,11 @@ export const TimeInput = memo(function TimeInput({
               'placeholder:prose-label'
             )}
           />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2">
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className=" h-8 w-8"
-                tabIndex={-1}
-              >
-                <CalendarIcon className="size-4 text-fg-tertiary" />
-              </Button>
+              <IconButton tabIndex={-1}>
+                <CalendarIcon />
+              </IconButton>
             </PopoverTrigger>
           </div>
         </div>
@@ -196,20 +189,15 @@ export const TimeInput = memo(function TimeInput({
                 'placeholder:prose-label'
               )}
             />
-            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <span className="prose-label text-fg-tertiary font-mono">
                 {getTimezoneIdentifier()}
               </span>
 
               <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  tabIndex={-1}
-                >
-                  <ClockIcon className="size-4 text-fg-tertiary" />
-                </Button>
+                <IconButton tabIndex={-1}>
+                  <TimeIcon />
+                </IconButton>
               </PopoverTrigger>
             </div>
           </div>
