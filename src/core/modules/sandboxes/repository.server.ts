@@ -37,7 +37,7 @@ export interface GetSandboxMetricsOptions {
   endUnixMs: number
 }
 
-export interface ListSandboxLifecycleEventsOptions {
+interface ListSandboxLifecycleEventsOptions {
   offset?: number
   limit?: number
   orderAsc?: boolean
@@ -63,10 +63,6 @@ export interface SandboxesRepository {
   >
   getSandboxLifecycleEvents(
     sandboxId: string
-  ): Promise<RepoResult<SandboxEventModel[]>>
-  listSandboxLifecycleEvents(
-    sandboxId: string,
-    options?: ListSandboxLifecycleEventsOptions
   ): Promise<RepoResult<SandboxEventModel[]>>
   getSandboxMetrics(
     sandboxId: string,
@@ -341,9 +337,6 @@ export function createSandboxesRepository(
       }
 
       return ok(lifecycleEvents)
-    },
-    async listSandboxLifecycleEvents(sandboxId, options = {}) {
-      return listSandboxLifecycleEventsPage(sandboxId, options)
     },
     async getSandboxMetrics(sandboxId, options) {
       const startUnixSeconds = Math.floor(options.startUnixMs / 1000)

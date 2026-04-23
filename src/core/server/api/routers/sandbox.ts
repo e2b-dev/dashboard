@@ -1,6 +1,5 @@
 import { millisecondsInDay } from 'date-fns/constants'
 import { z } from 'zod'
-import { SANDBOX_LIFECYCLE_EVENT_TYPE_VALUES } from '@/core/modules/sandboxes/lifecycle-event-types'
 import {
   deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToModel,
@@ -29,44 +28,6 @@ const sandboxRepositoryProcedure = protectedTeamProcedure.use(
 
 export const sandboxRouter = createTRPCRouter({
   // QUERIES
-
-  events: sandboxRepositoryProcedure
-    .input(
-      z.object({
-        sandboxId: SandboxIdSchema,
-        offset: z.number().int().min(0).optional(),
-        limit: z.number().int().min(1).max(100).optional(),
-        orderAsc: z.boolean().optional(),
-        type: z.enum(SANDBOX_LIFECYCLE_EVENT_TYPE_VALUES).optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { sandboxId, type } = input
-      const offset = input.offset ?? 0
-      const limit = input.limit ?? 20
-      const orderAsc = input.orderAsc ?? false
-
-      const eventsResult = await ctx.sandboxesRepository.listSandboxLifecycleEvents(
-        sandboxId,
-        {
-          offset,
-          limit,
-          orderAsc,
-          types: type ? [type] : undefined,
-        }
-      )
-      if (!eventsResult.ok) {
-        throwTRPCErrorFromRepoError(eventsResult.error)
-      }
-
-      return {
-        events: eventsResult.data,
-        hasNextPage: eventsResult.data.length === limit,
-        hasPreviousPage: offset > 0,
-        limit,
-        offset,
-      }
-    }),
 
   details: sandboxRepositoryProcedure
     .input(
