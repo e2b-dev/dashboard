@@ -3,8 +3,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
-import ShikiHighlighter from 'react-shiki'
-import { useShikiTheme } from '@/configs/shiki'
 import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
@@ -18,12 +16,12 @@ import {
 import { CopyIcon, ExternalLinkIcon, WarningIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
-import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import {
+  WEBHOOK_DOCS_URL,
+  WEBHOOK_EVENT_LABELS,
   WEBHOOK_EVENTS,
-  WEBHOOK_EXAMPLE_PAYLOAD,
   WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
 } from './constants'
 
@@ -38,6 +36,41 @@ type WebhookAddEditDialogStepsProps = {
   mode: 'add' | 'edit'
 }
 
+const WebhookExamplePayload = () => (
+  <div className="bg-bg border border-stroke flex w-full items-center px-4 py-2.5 font-mono text-[13px] leading-5 text-fg-secondary whitespace-pre-wrap">
+    <div className="flex-1 min-w-px">
+      <div>{'{'}</div>
+      <div>
+        {'  '}
+        <span className="text-accent-main-highlight">{'"type"'}</span>
+        {': "sandbox.lifecycle.created",'}
+      </div>
+      <div>
+        {'  '}
+        <span className="text-accent-main-highlight">{'"sandboxId"'}</span>
+        {': "<UUID>",'}
+      </div>
+      <div>
+        {'  '}
+        <span className="text-accent-main-highlight">{'"timestamp"'}</span>
+        {': "<TIMESTAMP>",'}
+      </div>
+      <div className="text-fg-tertiary">
+        {'  // ... more fields, '}
+        <a
+          href={WEBHOOK_DOCS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-fg"
+        >
+          see docs
+        </a>
+      </div>
+      <div>{'}'}</div>
+    </div>
+  </div>
+)
+
 export function WebhookAddEditDialogSteps({
   currentStep,
   form,
@@ -48,7 +81,6 @@ export function WebhookAddEditDialogSteps({
   handleEventToggle,
   mode,
 }: WebhookAddEditDialogStepsProps) {
-  const shikiTheme = useShikiTheme()
   const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
     'pre-generated'
   )
@@ -188,7 +220,7 @@ export function WebhookAddEditDialogSteps({
                           htmlFor={`event-${event}`}
                           className="cursor-pointer select-none"
                         >
-                          {event}
+                          {WEBHOOK_EVENT_LABELS[event]}
                         </Label>
                       </div>
                     ))}
@@ -203,25 +235,12 @@ export function WebhookAddEditDialogSteps({
           <div className="flex flex-col gap-2 min-w-0">
             <p className="text-fg-tertiary prose-body break-words">
               We'll send a POST request with a JSON payload to{' '}
-              <span className="break-all text-fg">
+              <span className="break-all">
                 {form.watch('url') || 'https://example.com/postreceive'}
               </span>{' '}
               for each event. Example:
             </p>
-            <div className="border overflow-hidden w-full">
-              <ScrollArea>
-                <ShikiHighlighter
-                  language="json"
-                  theme={shikiTheme}
-                  className="px-3 py-2 text-xs"
-                  addDefaultStyles={false}
-                  showLanguage={false}
-                >
-                  {WEBHOOK_EXAMPLE_PAYLOAD}
-                </ShikiHighlighter>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </div>
+            <WebhookExamplePayload />
           </div>
         </motion.div>
       )}
