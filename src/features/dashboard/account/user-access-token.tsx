@@ -1,12 +1,12 @@
 'use client'
 
-import { Eye, EyeOff } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { getUserAccessTokenAction } from '@/core/server/actions/user-actions'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import CopyButton from '@/ui/copy-button'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
+import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
 
@@ -36,17 +36,16 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
 
   return (
     <div className={className}>
-      <div className="mt-2 flex items-center">
+      <div className="flex gap-1 items-center">
         <Input
           type={isVisible ? 'text' : 'password'}
           value={token ?? '••••••••••••••••'}
           readOnly
           className="bg-bg-1 font-mono"
         />
-        <Button
+        <IconButton
           type="button"
-          variant="outline"
-          size="icon"
+          variant="secondary"
           onClick={() => {
             if (token) {
               setIsVisible(!isVisible)
@@ -55,27 +54,21 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
               fetchToken()
             }
           }}
-          className="ml-2"
           disabled={isPending}
         >
           {isPending ? (
             <Loader />
           ) : token ? (
             isVisible ? (
-              <EyeOff className="size-4" />
+              <EyeOffIcon />
             ) : (
-              <Eye className="size-4" />
+              <EyeIcon />
             )
           ) : (
-            <Eye className="size-4" />
+            <EyeIcon />
           )}
-        </Button>
-        <CopyButton
-          value={token ?? ''}
-          variant="outline"
-          className="ml-2"
-          disabled={!token}
-        />
+        </IconButton>
+        <CopyButton variant="secondary" value={token ?? ''} disabled={!token} />
       </div>
     </div>
   )

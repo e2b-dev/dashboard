@@ -1,9 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
 import { memo, type ReactNode, useCallback, useEffect, useRef } from 'react'
-
 import { cn } from '@/lib/utils'
 import { tryParseDatetime } from '@/lib/utils/formatting'
 import type { TimeframeState } from '@/lib/utils/timeframe'
@@ -15,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { ChevronRightIcon } from '@/ui/primitives/icons'
 import { RadioGroup, RadioGroupItem } from '@/ui/primitives/radio-group'
 
 import { MAX_DAYS_AGO, TIME_OPTIONS } from './constants'
@@ -253,7 +252,7 @@ export const TimePicker = memo(function TimePicker({
                   <RadioGroupItem value="custom" />
                   <span className="prose-body">Custom</span>
                 </div>
-                <ChevronRight className="size-4 text-fg-tertiary" />
+                <ChevronRightIcon className="size-4 text-fg-tertiary" />
               </DropdownMenuItem>
             </RadioGroup>
           </div>

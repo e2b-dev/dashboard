@@ -1,7 +1,6 @@
 'use client'
 
 import { AnimatePresence } from 'framer-motion'
-import { Download } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ShikiHighlighter, { type Language } from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
@@ -9,6 +8,7 @@ import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { Drawer, DrawerContent } from '@/ui/primitives/drawer'
+import { DownloadIcon } from '@/ui/primitives/icons'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 
 import {
@@ -155,9 +155,9 @@ function TextContent({
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
         <span className="text-fg-secondary">This file is empty.</span>
-        <Button variant="warning" size="sm" onClick={onDownload}>
+        <Button variant="secondary" onClick={onDownload}>
           Download
-          <Download className="ml-1.5 h-4 w-4" />
+          <DownloadIcon />
         </Button>
       </div>
     )
@@ -215,9 +215,9 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
         <span className="text-fg-secondary">
           File is too large to preview ({sizeMB} MB). Limit is {maxSizeMB} MB.
         </span>
-        <Button variant="warning" size="sm" onClick={onDownload}>
+        <Button variant="secondary" onClick={onDownload}>
           Download
-          <Download className="ml-1.5 h-4 w-4" />
+          <DownloadIcon />
         </Button>
       </div>
     )
@@ -226,9 +226,9 @@ function UnreadableContent({ state, onDownload }: UnreadableContentProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3">
       <span className="text-fg-secondary">This file is not readable.</span>
-      <Button variant="warning" size="sm" onClick={onDownload}>
+      <Button variant="secondary" onClick={onDownload}>
         Download
-        <Download className="ml-1.5 h-4 w-4" />
+        <DownloadIcon />
       </Button>
     </div>
   )

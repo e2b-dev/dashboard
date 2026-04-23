@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { Loader } from '@/ui/primitives/loader_d'
 import { Textarea } from '@/ui/primitives/textarea'
 import { PiSmileyStarEyesFill } from './icons'
@@ -74,19 +75,16 @@ export function SurveyContent({
                 ? // Emoji ratings
                   (question.scale === 3 ? EMOJIS_3 : EMOJIS_5).map(
                     (emoji, emojiIndex) => (
-                      <Button
+                      <IconButton
                         key={emojiIndex}
                         type="button"
-                        variant={'ghost'}
-                        size="iconLg"
-                        className={cn(
-                          'text-fg-tertiary hover:text-fg-secondary size-14 hover:scale-[1.03]',
-                          {
-                            'bg-bg-highlight focus:bg-bg-highlight text-fg border':
-                              responses[currentQuestionIndex] ===
-                              String(emojiIndex + 1),
-                          }
-                        )}
+                        variant="secondary"
+                        size="xl"
+                        className="border-transparent hover:scale-[1.03]"
+                        data-selected={
+                          responses[currentQuestionIndex] ===
+                          String(emojiIndex + 1)
+                        }
                         onClick={() =>
                           setResponses((prev) => ({
                             ...prev,
@@ -95,7 +93,7 @@ export function SurveyContent({
                         }
                       >
                         {emoji}
-                      </Button>
+                      </IconButton>
                     )
                   )
                 : // Numeric ratings
@@ -106,10 +104,11 @@ export function SurveyContent({
                         type="button"
                         variant={
                           responses[currentQuestionIndex] === String(num)
-                            ? 'default'
-                            : 'outline'
+                            ? 'primary'
+                            : 'tertiary'
                         }
-                        size="iconLg"
+                        size="none"
+                        className="size-9"
                         onClick={() =>
                           setResponses((prev) => ({
                             ...prev,
@@ -177,7 +176,7 @@ export function SurveyContent({
           <div className="flex justify-between">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => setCurrentQuestionIndex((i) => Math.max(0, i - 1))}
               disabled={currentQuestionIndex === 0}
             >

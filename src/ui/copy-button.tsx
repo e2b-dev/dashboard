@@ -1,40 +1,52 @@
 'use client'
 
-import { CheckIcon } from 'lucide-react'
-import type { FC } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { FC } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { Button, type ButtonProps } from '@/ui/primitives/button'
-import { CopyIcon } from './primitives/icons'
+import { EASE_APPEAR } from '@/lib/utils/ui'
+import { IconButton, IconButtonProps } from '@/ui/primitives/icon-button'
+import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
 
-interface CopyButtonProps extends ButtonProps {
+interface CopyButtonProps extends IconButtonProps {
   value: string
   onCopy?: () => void
 }
 
-const CopyButton: FC<CopyButtonProps> = ({
-  value,
-  onCopy,
-  onClick,
-  ...props
-}) => {
-  const [wasCopied, copy] = useClipboard()
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    e.preventDefault()
-    copy(value)
-    onCopy?.()
-    onClick?.(e)
-  }
+const CopyButton: FC<CopyButtonProps> = ({ value, onCopy, ...props }) => {
+  const [wasCopied, copy] = useClipboard(1000)
 
   return (
-    <Button type="button" size="icon" onClick={handleClick} {...props}>
-      {wasCopied ? (
-        <CheckIcon className="h-4 w-4" />
-      ) : (
-        <CopyIcon className="h-4 w-4" />
-      )}
-    </Button>
+    <IconButton
+      onClick={() => {
+        copy(value)
+        onCopy?.()
+      }}
+      {...props}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {wasCopied ? (
+          <motion.div
+            key="check"
+            initial={{ opacity: 0.2, scale: 0.97, filter: 'blur(1px)' }}
+            animate={{ opacity: 1, scale: 1.2, filter: 'blur(0px)' }}
+            exit={{ opacity: 0.2, scale: 0.97, filter: 'blur(1px)' }}
+            transition={{ duration: 0.1, ease: EASE_APPEAR }}
+          >
+            <CheckIcon />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="copy"
+            initial={{ opacity: 0.2, scale: 0.9, filter: 'blur(1px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0.2, scale: 0.9, filter: 'blur(1px)' }}
+            transition={{ duration: 0.1, ease: EASE_APPEAR }}
+          >
+            <CopyIcon />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </IconButton>
   )
 }
 
