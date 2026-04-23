@@ -79,7 +79,6 @@ export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
   START_COMMAND: 'https://e2b.dev/docs/sandbox-template/start-cmd',
-  SANDBOX_LIFECYCLE_EVENTS: 'https://e2b.dev/docs/sandbox/lifecycle-events-api',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV

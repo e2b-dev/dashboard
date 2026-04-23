@@ -1,8 +1,6 @@
 import {
-  getSandboxLifecycleEventLabel,
-  SANDBOX_LIFECYCLE_EVENT_TYPE_VALUES,
   type SandboxLifecycleEventType,
-  sandboxLifecycleEventTypeSchema,
+  SandboxLifecycleEventTypeSchema,
 } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -14,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { SandboxEventTypeBadge } from './event-type-badge'
+import { SANDBOX_EVENT_TYPE_MAP } from './event-type-map'
 
 const ALL_EVENT_TYPES_VALUE = 'all'
 
@@ -28,14 +27,12 @@ export const EventTypeFilter = ({
   onTypeChange,
   className,
 }: EventTypeFilterProps) => {
-  const selectedTypeLabel = type ? getSandboxLifecycleEventLabel(type) : 'All'
-
   return (
     <div className={cn('flex min-h-0', className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" className="font-sans w-min normal-case">
-            Events · {selectedTypeLabel}
+            Events · {type ? SANDBOX_EVENT_TYPE_MAP[type].label : 'All'}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -47,16 +44,13 @@ export const EventTypeFilter = ({
                 return
               }
 
-              const parsedType =
-                sandboxLifecycleEventTypeSchema.safeParse(value)
-              if (!parsedType.success) return
-              onTypeChange(parsedType.data)
+              onTypeChange(SandboxLifecycleEventTypeSchema.parse(value))
             }}
           >
             <DropdownMenuRadioItem value={ALL_EVENT_TYPES_VALUE}>
               All events
             </DropdownMenuRadioItem>
-            {SANDBOX_LIFECYCLE_EVENT_TYPE_VALUES.map((type) => (
+            {SandboxLifecycleEventTypeSchema.options.map((type) => (
               <DropdownMenuRadioItem key={type} value={type}>
                 <SandboxEventTypeBadge type={type} />
               </DropdownMenuRadioItem>
