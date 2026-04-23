@@ -18,7 +18,9 @@ const toUrlValue = (type: SandboxLifecycleEventType) =>
   type.split('.').slice(2).join('.')
 
 // Re-adds the "sandbox.lifecycle." prefix from a URL value, e.g. "created" -> "sandbox.lifecycle.created"
-const fromUrlValue = (value: string | null): SandboxLifecycleEventType | null => {
+const fromUrlValue = (
+  value: string | null
+): SandboxLifecycleEventType | null => {
   if (!value) return null
   const parsed = SandboxLifecycleEventTypeSchema.safeParse(
     `sandbox.lifecycle.${value}`
