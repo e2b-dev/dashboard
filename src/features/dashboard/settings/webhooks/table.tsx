@@ -53,7 +53,12 @@ const WebhooksTable = ({
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody className="[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80">
+      <TableBody
+        className={cn(
+          webhooks.length > 0 &&
+            '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80'
+        )}
+      >
         {hasError ? (
           <TableEmptyState colSpan={4}>
             <WebhookIcon
