@@ -35,8 +35,8 @@ export const EventTypeFilter = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            className="font-sans w-min normal-case prose-body-highlight h-9"
+            variant="secondary"
+            className="font-sans w-min normal-case"
           >
             Type · {selectedTypeLabel}
           </Button>
