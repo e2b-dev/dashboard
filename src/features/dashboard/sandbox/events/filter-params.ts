@@ -1,8 +1,4 @@
-import {
-  createLoader,
-  parseAsString,
-  parseAsStringEnum,
-} from 'nuqs/server'
+import { createLoader, parseAsString, parseAsStringEnum } from 'nuqs/server'
 
 const SANDBOX_EVENTS_ORDER_VALUES: ['asc', 'desc'] = ['asc', 'desc']
 
