@@ -101,9 +101,8 @@ export const WebhooksPageContent = ({
         <WebhookAddEditDialog mode="add">
           <Button
             className="w-full font-sans normal-case prose-body-highlight md:w-auto md:self-start"
-            size="md"
             type="button"
-            variant="default"
+            variant="primary"
           >
             <AddIcon aria-hidden className="size-4" />
             Add a webhook
