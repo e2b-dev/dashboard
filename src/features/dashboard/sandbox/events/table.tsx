@@ -21,9 +21,11 @@ import { SandboxEventTypeBadge } from './event-type-badge'
 
 const sandboxEventDataSchema = z.record(z.string(), z.unknown())
 const EVENT_COLUMN_WIDTHS = {
-  timestamp: 192,
-  event: 120,
-  id: 176,
+  // Match the compact sandbox logs timestamp width.
+  timestamp: 148 + 16,
+  // Sized to fit the fixed-width badge content plus cell padding.
+  id: 92 + 16,
+  event: 72 + 16,
 } as const
 
 const colStyle = (width: number) => ({
@@ -45,7 +47,7 @@ export const SandboxEventsTable = ({
 }: SandboxEventsTableProps) => {
   return (
     <div className="min-h-0 flex-1 overflow-auto">
-      <Table className="min-w-[760px] table-fixed">
+      <Table className="min-w-[620px] table-fixed">
         <colgroup>
           <col style={colStyle(EVENT_COLUMN_WIDTHS.timestamp)} />
           <col style={colStyle(EVENT_COLUMN_WIDTHS.id)} />
@@ -139,9 +141,9 @@ const TimestampCell = ({
   return (
     <CopyButtonInline
       value={formattedTimestamp.iso}
-      className="inline-flex h-[18px] items-center gap-[1ch] font-mono leading-none group prose-table-numeric truncate"
+      className="inline-flex h-[18px] items-center font-mono leading-none group prose-table-numeric truncate"
     >
-      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>
+      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
       <span>
         {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
       </span>

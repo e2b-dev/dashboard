@@ -34,11 +34,8 @@ export const EventTypeFilter = ({
     <div className={cn('flex min-h-0', className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="secondary"
-            className="font-sans w-min normal-case"
-          >
-            Type · {selectedTypeLabel}
+          <Button variant="secondary" className="font-sans w-min normal-case">
+            Events · {selectedTypeLabel}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
