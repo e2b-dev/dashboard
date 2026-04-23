@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Creates an exponential smoothing easing function based on the mathematical
- * formula: 1 - exp(-speed * t)
+ * formula: 1 - exp(-speed * t).
  *
  * This provides natural, smooth animations that start fast and slow down
  * as they approach the target, similar to physical damping.
