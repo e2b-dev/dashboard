@@ -34,8 +34,7 @@ export const SetUsageLimitDialog = ({
       <DialogTrigger asChild>
         <Button
           type="button"
-          variant="default"
-          size="md"
+          variant="primary"
           className="font-sans normal-case"
           disabled={triggerDisabled}
         >
@@ -62,9 +61,8 @@ export const SetUsageLimitDialog = ({
           <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-center">
             <Button
               type="button"
-              variant="ghost"
-              size="md"
-              className="font-sans normal-case text-fg-tertiary hover:text-fg"
+              variant="quaternary"
+              className="font-sans normal-case"
               disabled={loading}
               onClick={() => onOpenChange(false)}
             >
@@ -72,11 +70,10 @@ export const SetUsageLimitDialog = ({
             </Button>
             <Button
               type="button"
-              variant="default"
-              size="md"
+              variant="primary"
               className="font-sans normal-case"
               disabled={confirmDisabled}
-              loading={loading}
+              loading={loading ? 'Setting...' : undefined}
               onClick={onConfirm}
             >
               Set

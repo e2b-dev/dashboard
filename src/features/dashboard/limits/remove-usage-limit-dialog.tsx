@@ -81,11 +81,10 @@ export const RemoveUsageLimitDialog = ({
         <DialogTrigger asChild>
           <Button
             type="button"
-            variant="outline"
-            size="md"
+            variant="secondary"
             className="font-sans normal-case"
             disabled={disabled || clearLimitMutation.isPending}
-            loading={clearLimitMutation.isPending}
+            loading={clearLimitMutation.isPending ? 'Removing...' : undefined}
           >
             <TrashIcon className="size-4" />
             Remove
@@ -103,9 +102,8 @@ export const RemoveUsageLimitDialog = ({
           <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-center">
             <Button
               type="button"
-              variant="ghost"
-              size="md"
-              className="font-sans normal-case text-fg-tertiary hover:text-fg"
+              variant="quaternary"
+              className="font-sans normal-case"
               disabled={clearLimitMutation.isPending}
               onClick={() => setIsOpen(false)}
             >
@@ -114,9 +112,8 @@ export const RemoveUsageLimitDialog = ({
             <Button
               type="button"
               variant="error"
-              size="md"
               className="font-sans normal-case"
-              loading={clearLimitMutation.isPending}
+              loading={clearLimitMutation.isPending ? 'Removing...' : undefined}
               onClick={() =>
                 clearLimitMutation.mutate({ teamSlug, type: 'limit' })
               }

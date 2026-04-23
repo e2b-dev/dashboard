@@ -219,8 +219,7 @@ export const UsageLimitForm = ({
           <>
             <Button
               type="button"
-              variant="outline"
-              size="md"
+              variant="secondary"
               disabled={isMutating}
               onClick={openRemoveDialog}
             >
@@ -229,8 +228,7 @@ export const UsageLimitForm = ({
             </Button>
             <Button
               type="button"
-              variant="outline"
-              size="md"
+              variant="secondary"
               className="font-sans normal-case"
               disabled={isMutating}
               onClick={startEditing}
@@ -244,9 +242,8 @@ export const UsageLimitForm = ({
             {shouldShowCancel && (
               <Button
                 type="button"
-                variant="ghost"
-                size="md"
-                className="font-sans normal-case text-fg-tertiary hover:text-fg"
+                variant="quaternary"
+                className="font-sans normal-case"
                 disabled={isMutating}
                 onClick={handleCancel}
               >
@@ -256,8 +253,7 @@ export const UsageLimitForm = ({
             {isRemoveIntent ? (
               <Button
                 type="button"
-                variant="default"
-                size="md"
+                variant="primary"
                 className="font-sans normal-case"
                 disabled={isMutating}
                 onClick={openRemoveDialog}

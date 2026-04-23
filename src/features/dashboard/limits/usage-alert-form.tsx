@@ -235,11 +235,10 @@ export const UsageAlertForm = ({
           <>
             <Button
               type="button"
-              variant="outline"
-              size="md"
+              variant="secondary"
               className="font-sans normal-case"
               disabled={isMutating}
-              loading={clearAlertMutation.isPending}
+              loading={clearAlertMutation.isPending ? 'Removing...' : undefined}
               onClick={clearAlert}
             >
               <TrashIcon className="size-4" />
@@ -247,8 +246,7 @@ export const UsageAlertForm = ({
             </Button>
             <Button
               type="button"
-              variant="outline"
-              size="md"
+              variant="secondary"
               className="font-sans normal-case"
               disabled={isMutating}
               onClick={startEditing}
@@ -262,9 +260,8 @@ export const UsageAlertForm = ({
             {shouldShowCancel && (
               <Button
                 type="button"
-                variant="ghost"
-                size="md"
-                className="font-sans normal-case text-fg-tertiary hover:text-fg"
+                variant="quaternary"
+                className="font-sans normal-case"
                 disabled={isMutating}
                 onClick={handleCancel}
               >
@@ -273,11 +270,10 @@ export const UsageAlertForm = ({
             )}
             <Button
               type="submit"
-              variant="default"
-              size="md"
+              variant="primary"
               className="font-sans normal-case"
               disabled={!canSave}
-              loading={setAlertMutation.isPending}
+              loading={setAlertMutation.isPending ? 'Setting...' : undefined}
             >
               Set
             </Button>
