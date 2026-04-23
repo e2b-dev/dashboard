@@ -19,11 +19,10 @@ import {
 } from '@/ui/primitives/table'
 import { SandboxEventTypeBadge } from './event-type-badge'
 
-const sandboxEventDataSchema = z.record(z.string(), z.unknown())
+const SandboxEventDataSchema = z.record(z.string(), z.unknown())
+
 const EVENT_COLUMN_WIDTHS = {
-  // Match the compact sandbox logs timestamp width.
   timestamp: 148 + 16,
-  // Sized to fit the fixed-width badge content plus cell padding.
   id: 92 + 16,
   event: 72 + 16,
 } as const
@@ -165,7 +164,7 @@ const EventDetailsCell = ({
   eventData: SandboxEventModel['eventData']
 }) => {
   const parsedEventData = useMemo(
-    () => sandboxEventDataSchema.safeParse(eventData),
+    () => SandboxEventDataSchema.safeParse(eventData),
     [eventData]
   )
 
