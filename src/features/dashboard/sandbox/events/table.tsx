@@ -7,7 +7,7 @@ import { IdBadge } from '@/features/dashboard/settings/keys/id-badge'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { JsonPopover } from '@/ui/json-popover'
-import { ArrowDownIcon, HistoryIcon, MetadataIcon } from '@/ui/primitives/icons'
+import { ArrowDownIcon, HistoryIcon } from '@/ui/primitives/icons'
 import {
   Table,
   TableBody,
@@ -178,20 +178,18 @@ const EventDetailsCell = ({
     return <span className="block w-full truncate text-fg-tertiary">n/a</span>
   }
 
-  const preview = JSON.stringify(parsedEventData.data)
+  return <EventDetailsJsonCell json={parsedEventData.data} />
+}
+
+const EventDetailsJsonCell = ({ json }: { json: Record<string, unknown> }) => {
+  const preview = JSON.stringify(json)
 
   return (
     <JsonPopover
-      className="text-fg-tertiary hover:text-fg min-w-0 justify-start hover:underline"
-      json={parsedEventData.data}
-      buttonProps={{
-        className: 'w-full justify-start',
-      }}
+      className="text-fg-tertiary hover:text-fg hover:underline min-w-0 normal-case"
+      json={json}
     >
-      <MetadataIcon className="size-3.5" />
-      <span className="block min-w-0 truncate font-mono normal-case">
-        {preview}
-      </span>
+      <span className="block w-full truncate">{preview}</span>
     </JsonPopover>
   )
 }
