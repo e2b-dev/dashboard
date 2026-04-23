@@ -80,17 +80,17 @@ export const SandboxEventsTable = ({
         <TableBody>
           {events.length > 0 ? (
             events.map((event) => (
-              <TableRow key={event.id} className="h-11">
-                <TableCell className="px-0 py-2 pr-4">
+              <TableRow key={event.id} className="h-8">
+                <TableCell className="px-0 py-0 pr-4">
                   <TimestampCell timestamp={event.timestamp} />
                 </TableCell>
-                <TableCell className="px-0 py-2 pr-4">
+                <TableCell className="px-0 py-0 pr-4">
                   <EventIdCell id={event.id} />
                 </TableCell>
-                <TableCell className="px-0 py-2 pr-4">
+                <TableCell className="px-0 py-0 pr-4">
                   <EventTypeCell type={event.type} />
                 </TableCell>
-                <TableCell className="px-0 py-2">
+                <TableCell className="px-0 py-0">
                   <EventDetailsCell eventData={event.eventData} />
                 </TableCell>
               </TableRow>
@@ -151,7 +151,7 @@ const TimestampCell = ({
 
 const EventTypeCell = ({ type }: { type: SandboxEventModel['type'] }) => {
   return (
-    <div className="flex min-h-7 min-w-0 items-center">
+    <div className="flex h-8 min-w-0 items-center">
       <SandboxEventTypeBadge type={type} />
     </div>
   )
@@ -196,7 +196,7 @@ const EventDetailsCell = ({
 
 const EventIdCell = ({ id }: { id: SandboxEventModel['id'] }) => {
   return (
-    <div className="flex min-h-7 min-w-0 items-center">
+    <div className="flex h-8 min-w-0 items-center">
       <IdBadge id={id} />
     </div>
   )
