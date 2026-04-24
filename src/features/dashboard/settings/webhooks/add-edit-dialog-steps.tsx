@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
 import {
@@ -35,6 +36,8 @@ type WebhookAddEditDialogStepsProps = {
   handleAllToggle: () => void
   handleEventToggle: (event: string) => void
   mode: 'add' | 'edit'
+  hasCopied: boolean
+  onCopied: () => void
 }
 
 const WebhookExamplePayload = ({ eventType }: { eventType: WebhookEvent }) => (
@@ -82,6 +85,8 @@ export function WebhookAddEditDialogSteps({
   handleAllToggle,
   handleEventToggle,
   mode,
+  hasCopied,
+  onCopied,
 }: WebhookAddEditDialogStepsProps) {
   const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
     'pre-generated'
@@ -95,7 +100,7 @@ export function WebhookAddEditDialogSteps({
     return Array.from(array, (byte) => chars[byte % chars.length]).join('')
   }, [])
 
-  const [copied, setCopied] = useState(false)
+  const [copied, copy] = useClipboard(150)
 
   const customSecretInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -129,13 +134,8 @@ export function WebhookAddEditDialogSteps({
   }, [mode, secretType, preGeneratedSecret, form])
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(preGeneratedSecret)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
-    }
+    await copy(preGeneratedSecret)
+    setTimeout(onCopied, 150)
   }
 
   return (
@@ -319,6 +319,7 @@ export function WebhookAddEditDialogSteps({
                       </FormControl>
                       <Button
                         type="button"
+                        variant={hasCopied ? 'secondary' : 'primary'}
                         onClick={handleCopy}
                         disabled={isLoading}
                         className="shrink-0 relative"

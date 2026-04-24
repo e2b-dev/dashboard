@@ -51,6 +51,7 @@ export default function WebhookAddEditDialog({
   const [currentStep, setCurrentStep] = useState(1)
   const [lastSelectedEvent, setLastSelectedEvent] =
     useState<WebhookEvent | null>(null)
+  const [hasCopied, setHasCopied] = useState(false)
 
   const isEditMode = mode === 'edit'
   const totalSteps = isEditMode ? 1 : 2
@@ -115,6 +116,7 @@ export default function WebhookAddEditDialog({
     if (value) return
 
     setCurrentStep(1)
+    setHasCopied(false)
     resetFormAndAction()
   }
 
@@ -223,6 +225,8 @@ export default function WebhookAddEditDialog({
                 handleAllToggle={handleAllToggle}
                 handleEventToggle={handleEventToggle}
                 mode={mode}
+                hasCopied={hasCopied}
+                onCopied={() => setHasCopied(true)}
               />
             </div>
 
@@ -268,6 +272,7 @@ export default function WebhookAddEditDialog({
                       </Button>
                       <Button
                         type="submit"
+                        variant={hasCopied ? 'primary' : 'secondary'}
                         className="w-full"
                         disabled={!isStep2Valid}
                       >
