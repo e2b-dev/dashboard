@@ -43,7 +43,15 @@ export type SandboxDetailsModel =
 export interface SandboxLogModel {
   timestampUnix: number
   level: SandboxLogLevel
+  logger?: string
   message: string
+  origin?: 'user' | 'platform'
+  capturedBy?: {
+    logger?: string
+    message?: string
+    event_type?: string
+  }
+  fields?: Record<string, unknown>
 }
 
 export interface SandboxLogsModel {
@@ -141,14 +149,183 @@ export function deriveSandboxLifecycleFromEvents(
 
 // mappings
 
-export function mapInfraSandboxLogToModel(
-  log: InfraComponents['schemas']['SandboxLogEntry']
-): SandboxLogModel {
-  return {
-    timestampUnix: new Date(log.timestamp).getTime(),
-    level: log.level,
-    message: log.message,
+const LOG_LEVEL_ALIASES: Record<string, SandboxLogLevel> = {
+  trace: 'debug',
+  debug: 'debug',
+  info: 'info',
+  warning: 'warn',
+  warn: 'warn',
+  error: 'error',
+  fatal: 'error',
+  panic: 'error',
+}
+
+const PROMOTED_DATA_FIELDS = new Set([
+  'level',
+  'severity',
+  'logger',
+  'name',
+  'message',
+  'msg',
+])
+
+function getStringField(value: unknown) {
+  return typeof value === 'string' && value.trim() !== ''
+    ? value.trim()
+    : undefined
+}
+
+function normalizeLogLevel(value?: string) {
+  if (!value) return undefined
+
+  return LOG_LEVEL_ALIASES[value.toLowerCase()]
+}
+
+interface ParsedDataField {
+  fields?: Record<string, unknown>
+  level?: SandboxLogLevel
+  logger?: string
+  message?: string
+}
+
+function visibleDataFields(data: Record<string, unknown>) {
+  const visibleEntries = Object.entries(data).filter(
+    ([key]) => !PROMOTED_DATA_FIELDS.has(key)
+  )
+
+  return visibleEntries.length > 0
+    ? Object.fromEntries(visibleEntries)
+    : undefined
+}
+
+function parseJsonObject(value: string) {
+  try {
+    const parsed = JSON.parse(value)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return undefined
+    }
+
+    return parsed as Record<string, unknown>
+  } catch {
+    return undefined
   }
+}
+
+function parseJsonLineObjects(value: string) {
+  const lines = value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  if (lines.length <= 1) {
+    return undefined
+  }
+
+  const parsedLines: Record<string, unknown>[] = []
+  for (const line of lines) {
+    const parsed = parseJsonObject(line)
+    if (!parsed) {
+      return undefined
+    }
+
+    parsedLines.push(parsed)
+  }
+
+  return parsedLines
+}
+
+function parseDataObject(data: Record<string, unknown>): ParsedDataField {
+  return {
+    fields: visibleDataFields(data),
+    level: normalizeLogLevel(
+      getStringField(data.level) ?? getStringField(data.severity)
+    ),
+    logger: getStringField(data.logger) ?? getStringField(data.name),
+    message: getStringField(data.message) ?? getStringField(data.msg),
+  }
+}
+
+function parseDataFields(value?: string): ParsedDataField[] | undefined {
+  const trimmed = value?.trim()
+  if (!trimmed) return undefined
+
+  const jsonLines = parseJsonLineObjects(trimmed)
+  if (jsonLines) {
+    return jsonLines.map(parseDataObject)
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return [{ fields: { data: parsed } }]
+    }
+
+    return [parseDataObject(parsed as Record<string, unknown>)]
+  } catch {
+    return [{ fields: { data: trimmed } }]
+  }
+}
+
+function isCapturedUserLog(log: InfraComponents['schemas']['SandboxLogEntry']) {
+  return Boolean(
+    getStringField(log.fields.captured_by_logger) ||
+      getStringField(log.fields.captured_by_message) ||
+      getStringField(log.fields.captured_by_event_type) ||
+      getStringField(log.fields.event_type) === 'stdout' ||
+      getStringField(log.fields.event_type) === 'stderr' ||
+      (getStringField(log.fields.logger) === 'process' &&
+        getStringField(log.message) === 'Streaming process event')
+  )
+}
+
+function getCapturedBy(log: InfraComponents['schemas']['SandboxLogEntry']) {
+  if (!isCapturedUserLog(log)) {
+    return undefined
+  }
+
+  const capturedBy = {
+    logger:
+      getStringField(log.fields.captured_by_logger) ??
+      getStringField(log.fields.logger),
+    message:
+      getStringField(log.fields.captured_by_message) ??
+      getStringField(log.message),
+    event_type:
+      getStringField(log.fields.captured_by_event_type) ??
+      getStringField(log.fields.event_type),
+  }
+
+  return Object.values(capturedBy).some(Boolean) ? capturedBy : undefined
+}
+
+export function mapInfraSandboxLogToModels(
+  log: InfraComponents['schemas']['SandboxLogEntry']
+): SandboxLogModel[] {
+  const parsedDataFields = parseDataFields(log.fields.data)
+  if (!parsedDataFields) {
+    return [
+      {
+        timestampUnix: new Date(log.timestamp).getTime(),
+        level: log.level,
+        logger: log.fields.logger,
+        message: log.message,
+        fields: undefined,
+      },
+    ]
+  }
+
+  const capturedBy = getCapturedBy(log)
+  const origin = capturedBy ? 'user' : undefined
+
+  return parsedDataFields.map((data) => ({
+    timestampUnix: new Date(log.timestamp).getTime(),
+    level: data?.level ?? log.level,
+    logger: data?.logger ?? (origin ? undefined : log.fields.logger),
+    message: data?.message ?? log.message,
+    origin,
+    capturedBy,
+    fields: data?.fields,
+  }))
 }
 
 export function mapInfraSandboxDetailsToModel(
