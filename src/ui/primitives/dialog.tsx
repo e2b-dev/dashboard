@@ -1,7 +1,7 @@
 'use client'
 
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import * as React from 'react'
+import type * as React from 'react'
 import { cn } from '@/lib/utils/ui'
 import { CloseIcon } from '@/ui/primitives/icons'
 
@@ -71,8 +71,8 @@ function DialogContent({
           [
             'bg-bg-1 text-body text-fg-secondary',
             'fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]',
-            'z-50 grid w-full max-w-[calc(100%-2rem)] sm:max-w-lg',
-            'gap-3 border p-5 pt-4',
+            'z-50 grid w-[calc(100%-2rem)] max-h-[calc(100svh-2rem)] overflow-y-auto sm:w-full sm:max-w-lg',
+            'gap-3 border p-5 pt-4 focus:ring-0 focus:outline-none',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'anim-ease-appear anim-duration-normal', // exit animation is faster
             'data-[state=open]:anim-duration-slow',
@@ -135,7 +135,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('!text-headline-small uppercase', className)}
+      className={cn('text-headline-small! uppercase', className)}
       {...props}
     />
   )
