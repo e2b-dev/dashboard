@@ -188,8 +188,8 @@ export default function WebhookAddEditDialog({
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="overflow-y-auto max-h-[calc(100svh-2rem)]">
-        <DialogHeader>
+      <DialogContent className="flex flex-col gap-4 px-6 pt-5 pb-6 h-[685px] max-h-[calc(100svh-2rem)] overflow-hidden">
+        <DialogHeader className="gap-0.5">
           <DialogTitle>
             {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
           </DialogTitle>
@@ -204,12 +204,15 @@ export default function WebhookAddEditDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmitWithAction} className="min-w-0">
+          <form
+            onSubmit={handleSubmitWithAction}
+            className="flex flex-1 flex-col justify-between gap-4 min-w-0 min-h-0"
+          >
             {/* Hidden fields */}
             <input type="hidden" {...form.register('mode')} />
             <input type="hidden" {...form.register('teamSlug')} />
 
-            <div className="flex flex-col gap-4 pb-4 min-w-0 overflow-hidden min-h-[350px]">
+            <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <WebhookAddEditDialogSteps
                 currentStep={currentStep}
                 form={form}
@@ -257,7 +260,7 @@ export default function WebhookAddEditDialog({
                     <>
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="tertiary"
                         onClick={handleBack}
                         className="w-full"
                       >

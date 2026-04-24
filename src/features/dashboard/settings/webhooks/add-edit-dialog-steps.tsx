@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
 import { Button } from '@/ui/primitives/button'
@@ -13,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CopyIcon, WarningIcon } from '@/ui/primitives/icons'
+import { CheckIcon, CopyIcon, WarningIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
@@ -96,6 +96,15 @@ export function WebhookAddEditDialogSteps({
   }, [])
 
   const [copied, setCopied] = useState(false)
+
+  const customSecretInputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (secretType !== 'custom') return
+    const id = window.setTimeout(() => {
+      customSecretInputRef.current?.focus()
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [secretType])
 
   // sync secret with form state and validation - only in 'add' mode
   // in 'edit' mode, we should never touch the signature secret
@@ -312,14 +321,21 @@ export function WebhookAddEditDialogSteps({
                         type="button"
                         onClick={handleCopy}
                         disabled={isLoading}
-                        className="shrink-0"
+                        className="shrink-0 relative"
                       >
-                        <CopyIcon className="size-4" />
-                        {copied ? 'Copied' : 'Copy'}
+                        <span
+                          className={copied ? 'invisible contents' : 'contents'}
+                        >
+                          <CopyIcon className="size-4" />
+                          Copy
+                        </span>
+                        {copied && (
+                          <CheckIcon className="absolute size-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        )}
                       </Button>
                     </div>
-                    <div className="flex gap-2 items-start">
-                      <WarningIcon className="size-4 text-accent-warning-highlight shrink-0 mt-0.5" />
+                    <div className="flex gap-1.5 items-center">
+                      <WarningIcon className="size-4 text-accent-warning-highlight shrink-0" />
                       <p className="text-fg-secondary prose-body">
                         Copy and store it now. You won't be able to view it
                         again.
@@ -343,6 +359,10 @@ export function WebhookAddEditDialogSteps({
                         disabled={isLoading}
                         className="min-w-0"
                         {...field}
+                        ref={(el) => {
+                          field.ref(el)
+                          customSecretInputRef.current = el
+                        }}
                       />
                     </FormControl>
                     <p className="text-fg-tertiary prose-body">
