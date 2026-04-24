@@ -13,15 +13,12 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import {
-  CurrencyInputSchema,
-  formatCurrencyValue,
-  sanitizeCurrencyInput,
-} from '@/lib/utils/currency'
+import { formatNumber } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { EditIcon, TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
+import { CurrencyInputSchema, sanitizeCurrencyInput } from './currency-input'
 import { focusBlockInputOnMouseDown } from './focus-block-input'
 import { RemoveUsageLimitDialog } from './remove-usage-limit-dialog'
 import { SetUsageLimitDialog } from './set-usage-limit-dialog'
@@ -51,7 +48,7 @@ export const UsageLimitForm = ({
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const formattedOriginalValue =
-    originalValue === null ? '' : formatCurrencyValue(originalValue)
+    originalValue === null ? '' : formatNumber(originalValue)
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
     teamSlug,
@@ -92,7 +89,7 @@ export const UsageLimitForm = ({
           }
         )
         toast(defaultSuccessToast('Limit set successfully.'))
-        form.reset({ amount: formatCurrencyValue(variables.value) })
+        form.reset({ amount: formatNumber(variables.value) })
         setIsEditing(false)
         setIsSetDialogOpen(false)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
@@ -117,7 +114,7 @@ export const UsageLimitForm = ({
   const isInputEditable = isEditing || originalValue === null
   const shouldShowCancel =
     isEditing && (originalValue !== null || draftValue.length > 0)
-  const setLimitTitle = `Set $${nextValue === null ? '--' : formatCurrencyValue(nextValue)} usage limit?`
+  const setLimitTitle = `Set $${nextValue === null ? '--' : formatNumber(nextValue)} usage limit?`
 
   const startEditing = (): void => {
     if (originalValue === null) return

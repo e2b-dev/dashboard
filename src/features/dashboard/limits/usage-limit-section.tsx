@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { formatCurrencyValue } from '@/lib/utils/currency'
+import { formatNumber } from '@/lib/utils/formatting'
 import { AlertIcon, WarningIcon } from '@/ui/primitives/icons'
 import { LimitAsciiIcon } from './limit-ascii-icon'
 import { UsageLimitForm } from './usage-limit-form'
@@ -19,7 +19,7 @@ const UsageLimitSectionInfo = ({
 }: Pick<UsageLimitSectionProps, 'email' | 'value'>) => {
   const isValueSet = value !== null
   const limitMessage = isValueSet
-    ? `All API requests are blocked after reaching $${formatCurrencyValue(value)}`
+    ? `All API requests are blocked after reaching $${formatNumber(value)}`
     : 'All API requests are blocked after reaching this limit'
 
   return (

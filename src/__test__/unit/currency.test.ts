@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   CurrencyInputSchema,
-  formatCurrencyValue,
   sanitizeCurrencyInput,
-} from '@/lib/utils/currency'
+} from '@/features/dashboard/limits/currency-input'
 
 describe('sanitizeCurrencyInput', () => {
   it.each([
@@ -13,17 +12,6 @@ describe('sanitizeCurrencyInput', () => {
     ['', ''],
   ])('returns %p -> %p', (value: string, expected: string) => {
     expect(sanitizeCurrencyInput(value)).toBe(expected)
-  })
-})
-
-describe('formatCurrencyValue', () => {
-  it.each([
-    [1250, '1,250'],
-    [100, '100'],
-    [0, '0'],
-    [1000000, '1,000,000'],
-  ])('returns %p -> %p', (value: number, expected: string) => {
-    expect(formatCurrencyValue(value)).toBe(expected)
   })
 })
 

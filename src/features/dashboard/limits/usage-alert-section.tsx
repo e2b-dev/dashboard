@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { formatCurrencyValue } from '@/lib/utils/currency'
+import { formatNumber } from '@/lib/utils/formatting'
 import { AlertAsciiIcon } from './alert-ascii-icon'
 import { UsageAlertForm } from './usage-alert-form'
 
@@ -17,9 +17,7 @@ const UsageAlertSectionInfo = ({
   value,
 }: Pick<UsageAlertSectionProps, 'email' | 'value'>) => {
   const thresholdText =
-    value === null
-      ? 'this threshold'
-      : `the $${formatCurrencyValue(value)} threshold`
+    value === null ? 'this threshold' : `the $${formatNumber(value)} threshold`
 
   return (
     <p className="text-fg-tertiary prose-body max-w-[450px]">

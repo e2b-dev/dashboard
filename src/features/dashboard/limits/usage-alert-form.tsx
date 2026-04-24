@@ -13,15 +13,12 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import {
-  CurrencyInputSchema,
-  formatCurrencyValue,
-  sanitizeCurrencyInput,
-} from '@/lib/utils/currency'
+import { formatNumber } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { EditIcon, TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
+import { CurrencyInputSchema, sanitizeCurrencyInput } from './currency-input'
 import { focusBlockInputOnMouseDown } from './focus-block-input'
 
 const AlertFormSchema = z.object({
@@ -48,7 +45,7 @@ export const UsageAlertForm = ({
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const formattedOriginalValue =
-    originalValue === null ? '' : formatCurrencyValue(originalValue)
+    originalValue === null ? '' : formatNumber(originalValue)
 
   const limitsQueryKey = trpc.billing.getLimits.queryOptions({
     teamSlug,
@@ -94,7 +91,7 @@ export const UsageAlertForm = ({
           }
         )
         toast(defaultSuccessToast('Alert set successfully.'))
-        form.reset({ amount: formatCurrencyValue(variables.value) })
+        form.reset({ amount: formatNumber(variables.value) })
         setIsEditing(false)
         queryClient.invalidateQueries({ queryKey: limitsQueryKey })
       },
