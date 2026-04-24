@@ -39,7 +39,7 @@ next-env.d.ts
 
 # AI agents and related files
 CLAUDE.md
-.cursor/
+.cursor
 .agent
 
 
