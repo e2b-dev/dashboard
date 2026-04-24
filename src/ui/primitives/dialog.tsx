@@ -71,7 +71,7 @@ function DialogContent({
           [
             'bg-bg-1 text-body text-fg-secondary',
             'fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]',
-            'z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-lg',
+            'z-50 grid w-[calc(100%-2rem)] max-h-[calc(100svh-2rem)] overflow-y-auto sm:w-full sm:max-w-lg',
             'gap-3 border p-5 pt-4 focus:ring-0 focus:outline-none',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'anim-ease-appear anim-duration-normal', // exit animation is faster
