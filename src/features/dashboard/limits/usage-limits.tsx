@@ -23,8 +23,6 @@ export const UsageLimits = ({ className }: UsageLimitsProps) => {
     throwOnError: true,
   })
 
-  if (!team) return null
-
   return (
     <div
       className={cn(
