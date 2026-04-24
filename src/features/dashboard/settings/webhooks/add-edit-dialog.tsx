@@ -24,7 +24,7 @@ import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
-import { WEBHOOK_EVENTS } from './constants'
+import { WEBHOOK_EVENTS, type WebhookEvent } from './constants'
 import type { Webhook } from './types'
 
 type WebhookAddEditDialogProps =
@@ -49,6 +49,8 @@ export default function WebhookAddEditDialog({
   const { team } = useDashboard()
   const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [lastSelectedEvent, setLastSelectedEvent] =
+    useState<WebhookEvent | null>(null)
 
   const isEditMode = mode === 'edit'
   const totalSteps = isEditMode ? 1 : 2
@@ -156,8 +158,16 @@ export default function WebhookAddEditDialog({
       )
     } else {
       form.setValue('events', [...currentEvents, event])
+      const matched = WEBHOOK_EVENTS.find((e) => e === event)
+      if (matched) setLastSelectedEvent(matched)
     }
   }
+
+  const exampleEventType: WebhookEvent =
+    lastSelectedEvent && selectedEvents.includes(lastSelectedEvent)
+      ? lastSelectedEvent
+      : (WEBHOOK_EVENTS.find((event) => selectedEvents.includes(event)) ??
+        WEBHOOK_EVENTS[0])
 
   const handleNext = async () => {
     if (currentStep === 1) {
@@ -205,6 +215,7 @@ export default function WebhookAddEditDialog({
                 form={form}
                 isLoading={isLoading}
                 selectedEvents={selectedEvents}
+                exampleEventType={exampleEventType}
                 allEventsSelected={allEventsSelected}
                 handleAllToggle={handleAllToggle}
                 handleEventToggle={handleEventToggle}
@@ -232,39 +243,34 @@ export default function WebhookAddEditDialog({
                       <CheckIcon className="size-4" />
                       Confirm
                     </Button>
+                  ) : currentStep === 1 ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={handleNext}
+                      disabled={!isStep1Valid}
+                      className="w-full"
+                    >
+                      Next
+                    </Button>
                   ) : (
-                    /* Add mode: show next/back navigation */
                     <>
-                      {currentStep === 1 ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={handleNext}
-                          disabled={!isStep1Valid}
-                          className="w-full"
-                        >
-                          Next
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={handleBack}
-                            className="w-full"
-                          >
-                            Back
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={!isStep2Valid}
-                          >
-                            <AddIcon />
-                            Add
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleBack}
+                        className="w-full"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={!isStep2Valid}
+                      >
+                        <AddIcon />
+                        Add
+                      </Button>
                     </>
                   )}
                 </>

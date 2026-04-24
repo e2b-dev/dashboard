@@ -13,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CopyIcon, ExternalLinkIcon, WarningIcon } from '@/ui/primitives/icons'
+import { CopyIcon, WarningIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
@@ -22,7 +22,7 @@ import {
   WEBHOOK_DOCS_URL,
   WEBHOOK_EVENT_LABELS,
   WEBHOOK_EVENTS,
-  WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
+  type WebhookEvent,
 } from './constants'
 
 type WebhookAddEditDialogStepsProps = {
@@ -30,20 +30,21 @@ type WebhookAddEditDialogStepsProps = {
   form: UseFormReturn<UpsertWebhookSchemaType>
   isLoading: boolean
   selectedEvents: string[]
+  exampleEventType: WebhookEvent
   allEventsSelected: boolean
   handleAllToggle: () => void
   handleEventToggle: (event: string) => void
   mode: 'add' | 'edit'
 }
 
-const WebhookExamplePayload = () => (
+const WebhookExamplePayload = ({ eventType }: { eventType: WebhookEvent }) => (
   <div className="bg-bg border border-stroke flex w-full items-center px-4 py-2.5 font-mono text-[13px] leading-5 text-fg-secondary whitespace-pre-wrap">
     <div className="flex-1 min-w-px">
       <div>{'{'}</div>
       <div>
         {'  '}
         <span className="text-accent-main-highlight">{'"type"'}</span>
-        {': "sandbox.lifecycle.created",'}
+        {`: "${eventType}",`}
       </div>
       <div>
         {'  '}
@@ -76,6 +77,7 @@ export function WebhookAddEditDialogSteps({
   form,
   isLoading,
   selectedEvents,
+  exampleEventType,
   allEventsSelected,
   handleAllToggle,
   handleEventToggle,
@@ -237,14 +239,14 @@ export function WebhookAddEditDialogSteps({
 
           {/* Description */}
           <div className="flex flex-col gap-2 min-w-0">
-            <p className="text-fg-tertiary prose-body break-words">
+            <p className="text-fg-tertiary prose-body wrap-break-word">
               We'll send a POST request with a JSON payload to{' '}
               <span className="break-all">
                 {form.watch('url') || 'https://example.com/postreceive'}
               </span>{' '}
               for each event. Example:
             </p>
-            <WebhookExamplePayload />
+            <WebhookExamplePayload eventType={exampleEventType} />
           </div>
         </motion.div>
       )}
@@ -260,24 +262,11 @@ export function WebhookAddEditDialogSteps({
         >
           {/* Section Title and Description */}
           <div className="flex flex-col gap-2">
-            <p className="text-fg-secondary prose-label uppercase">
-              Signature Secret
-            </p>
+            <p className="text-fg-secondary prose-label uppercase">Secret</p>
             <p className="text-fg-tertiary prose-body">
-              This secret is used to verify webhook authenticity. Each request
-              includes an <code className="text-fg">e2b-signature</code> header
-              generated with HMAC SHA-256. Validate this in your endpoint to
-              ensure requests are from E2B and untampered.
+              A secret verifies that webhooks are from us and untampered. Use
+              our pre-generated one or add your own.
             </p>
-            <a
-              href={WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fg-link hover:text-fg-link-hover prose-body inline-flex items-center gap-1 w-fit"
-            >
-              View validation examples
-              <ExternalLinkIcon className="size-3" />
-            </a>
           </div>
 
           {/* Tabs */}
@@ -332,8 +321,8 @@ export function WebhookAddEditDialogSteps({
                     <div className="flex gap-2 items-start">
                       <WarningIcon className="size-4 text-accent-warning-highlight shrink-0 mt-0.5" />
                       <p className="text-fg-secondary prose-body">
-                        Store this secret securely. You won't be able to view it
-                        again after creating the webhook.
+                        Copy and store it now. You won't be able to view it
+                        again.
                       </p>
                     </div>
                   </div>
