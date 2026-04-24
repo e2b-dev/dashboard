@@ -10,6 +10,7 @@ import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.s
 import {
   GetTeamMetricsMaxSchema,
   GetTeamMetricsSchema,
+  MAX_SANDBOX_IDS_PER_REQUEST,
 } from '@/core/modules/sandboxes/schemas'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
@@ -55,7 +56,7 @@ export const sandboxesRouter = createTRPCRouter({
   getSandboxesMetrics: sandboxesRepositoryProcedure
     .input(
       z.object({
-        sandboxIds: z.array(z.string()),
+        sandboxIds: z.array(z.string()).max(MAX_SANDBOX_IDS_PER_REQUEST),
       })
     )
     .query(async ({ ctx, input }) => {
