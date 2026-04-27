@@ -1,8 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { getDashboardLayoutConfig } from '@/configs/layout'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { useDashboard } from '@/features/dashboard/context'
+import { BlockIcon } from '@/ui/primitives/icons'
 
 interface DashboardLayoutFooterProps {
   statusBanner: React.ReactNode
@@ -11,7 +14,7 @@ interface DashboardLayoutFooterProps {
 export default function DashboardLayoutFooter({
   statusBanner,
 }: DashboardLayoutFooterProps) {
-  const { user } = useDashboard()
+  const { team, user } = useDashboard()
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
   const footerTitle =
@@ -26,6 +29,21 @@ export default function DashboardLayoutFooter({
         {user.email ?? 'ANONYMOUS@UNKNOWN.COM'}
         {`:${footerTitle}`}
       </span>
+
+      {team.isBlocked && (
+        <div className="inline-flex shrink-0 items-center gap-1.5 text-accent-error-highlight">
+          <BlockIcon className="size-4" />
+          <span className="whitespace-nowrap text-xs uppercase md:prose-label">
+            Team suspended—overdue payment.{' '}
+            <Link
+              href={PROTECTED_URLS.BILLING(team.slug)}
+              className="underline"
+            >
+              Pay now.
+            </Link>
+          </span>
+        </div>
+      )}
 
       {statusBanner}
     </footer>
