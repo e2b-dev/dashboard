@@ -4,8 +4,8 @@ import { TeamSlugSchema } from '@/core/shared/schemas/team'
 const WebhookUrlSchema = z.httpUrl('Must be a valid URL').trim()
 const WebhookSecretSchema = z
   .string()
-  .min(32, 'Secret must be at least 32 characters')
   .trim()
+  .min(32, 'Secret must be at least 32 characters')
 
 export const UpsertWebhookSchema = z
   .object({

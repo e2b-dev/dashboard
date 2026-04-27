@@ -125,9 +125,8 @@ export function WebhookAddEditDialogSteps({
       // explicitly clear any errors since pre-generated is always valid
       form.clearErrors('signatureSecret')
     } else {
-      // clear for custom input
       form.setValue('signatureSecret', '', {
-        shouldValidate: false,
+        shouldValidate: true,
         shouldDirty: false,
       })
     }
@@ -366,10 +365,13 @@ export function WebhookAddEditDialogSteps({
                         }}
                       />
                     </FormControl>
-                    <p className="text-fg-tertiary prose-body">
-                      {'> 32 characters'}
-                    </p>
-                    <FormMessage />
+                    {form.formState.errors.signatureSecret ? (
+                      <FormMessage />
+                    ) : (
+                      <p className="text-fg-tertiary prose-body">
+                        {'> 32 characters'}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
