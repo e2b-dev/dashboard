@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type {
   AddOnOrderConfirmResponse,
@@ -8,6 +9,7 @@ import type {
   CustomerPortalResponse,
   Invoice,
   PaymentMethodsCustomerSession,
+  PaymentMethodsSession,
   TeamItems,
   UsageResponse,
 } from '@/core/modules/billing/models'
@@ -35,10 +37,33 @@ export interface BillingRepository {
   createOrder(itemId: string): Promise<RepoResult<AddOnOrderCreateResponse>>
   confirmOrder(orderId: string): Promise<RepoResult<AddOnOrderConfirmResponse>>
   getCustomerSession(): Promise<RepoResult<PaymentMethodsCustomerSession>>
+  createPaymentMethodsSession(): Promise<RepoResult<PaymentMethodsSession>>
 }
 
 async function parseText(response: Response): Promise<string> {
   return (await response.text()) || 'Request failed'
+}
+
+const PaymentMethodsSessionResponseSchema = z.object({
+  client_secret: z.string().min(1),
+  setup_intent_client_secret: z.string().min(1),
+})
+
+// Parses payment session JSON; { client_secret: "cs_123", setup_intent_client_secret: "seti_123" } -> typed secrets.
+const parsePaymentMethodsSession = async (
+  response: Response
+): Promise<RepoResult<PaymentMethodsSession>> => {
+  const parseResult = PaymentMethodsSessionResponseSchema.safeParse(
+    await response.json()
+  )
+
+  if (!parseResult.success) {
+    return err(
+      repoErrorFromHttp(500, 'Invalid payment methods session response')
+    )
+  }
+
+  return ok(parseResult.data)
 }
 
 export function createBillingRepository(
@@ -245,7 +270,7 @@ export function createBillingRepository(
     },
     async getCustomerSession() {
       const res = await fetch(
-        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods/customer-session`,
+        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods-session`,
         {
           method: 'POST',
           headers: {
@@ -260,6 +285,24 @@ export function createBillingRepository(
       }
 
       return ok((await res.json()) as PaymentMethodsCustomerSession)
+    },
+    async createPaymentMethodsSession() {
+      const res = await fetch(
+        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.ok) {
+        return err(repoErrorFromHttp(res.status, await parseText(res)))
+      }
+
+      return parsePaymentMethodsSession(res)
     },
   }
 }

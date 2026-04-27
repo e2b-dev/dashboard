@@ -59,6 +59,11 @@ export interface PaymentMethodsCustomerSession {
   client_secret: string
 }
 
+export interface PaymentMethodsSession {
+  client_secret: string
+  setup_intent_client_secret: string
+}
+
 export interface TierLimits {
   sandbox_concurrency: number
   max_cpu: number
