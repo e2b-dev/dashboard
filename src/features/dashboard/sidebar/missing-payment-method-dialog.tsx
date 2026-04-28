@@ -30,6 +30,7 @@ import { isMissingPaymentMethodBlockReason } from './team-blockage'
 
 const TEAM_UNBLOCK_POLL_ATTEMPTS = 15
 const TEAM_UNBLOCK_POLL_INTERVAL_MS = 2000
+const PAYMENT_METHOD_LOADING_MESSAGE = 'Loading payment method...'
 
 // Waits before retrying team status polling; 2000 -> resolves after 2 seconds.
 const wait = (ms: number) =>
@@ -91,7 +92,7 @@ function MissingPaymentMethodDialogContent({
       </DialogHeader>
 
       {paymentMethodsSessionMutation.isPending ? (
-        <LoadingState message="Loading payment method form..." />
+        <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
       ) : paymentMethodsSessionMutation.isError ? (
         <PaymentMethodsSessionError
           onRetry={() =>
@@ -304,7 +305,7 @@ function PaymentMethodsSetupForm({
       </Alert>
 
       {!isPaymentElementReady && !paymentElementLoadError && (
-        <LoadingState message="Loading payment details..." />
+        <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
       )}
 
       {paymentElementLoadError && (
