@@ -284,10 +284,7 @@ const PaymentMethodsSetupForm = ({
         type="submit"
         className="w-full justify-center"
         disabled={
-          !stripe ||
-          !elements ||
-          !isPaymentElementReady ||
-          isProcessing
+          !stripe || !elements || !isPaymentElementReady || isProcessing
         }
         loading={isProcessing ? paymentSubmitLoadingLabel : undefined}
       >
