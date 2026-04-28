@@ -22,9 +22,9 @@ export default function TeamBlockedIndicator() {
       <span className="truncate text-xs uppercase md:prose-label">
         {isBillingLimit ? (
           <>
-            Team suspended.{' '}
+            Billing limit reached.{' '}
             <Link href={PROTECTED_URLS.LIMITS(team.slug)} className="underline">
-              Settle outstanding payment.
+              Update limit.
             </Link>
           </>
         ) : (
