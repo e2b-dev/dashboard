@@ -49,23 +49,6 @@ const PaymentMethodsSessionResponseSchema = z.object({
   setup_intent_client_secret: z.string().min(1),
 })
 
-// Parses payment session JSON; { client_secret: "cs_123", setup_intent_client_secret: "seti_123" } -> typed secrets.
-const parsePaymentMethodsSession = async (
-  response: Response
-): Promise<RepoResult<PaymentMethodsSession>> => {
-  const parseResult = PaymentMethodsSessionResponseSchema.safeParse(
-    await response.json()
-  )
-
-  if (!parseResult.success) {
-    return err(
-      repoErrorFromHttp(500, 'Invalid payment methods session response')
-    )
-  }
-
-  return ok(parseResult.data)
-}
-
 export function createBillingRepository(
   scope: BillingScope,
   deps: BillingRepositoryDeps = {
@@ -270,7 +253,7 @@ export function createBillingRepository(
     },
     async getCustomerSession() {
       const res = await fetch(
-        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods-session`,
+        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods/customer-session`,
         {
           method: 'POST',
           headers: {
@@ -302,7 +285,17 @@ export function createBillingRepository(
         return err(repoErrorFromHttp(res.status, await parseText(res)))
       }
 
-      return parsePaymentMethodsSession(res)
+      const parseResult = PaymentMethodsSessionResponseSchema.safeParse(
+        await res.json()
+      )
+
+      if (!parseResult.success) {
+        return err(
+          repoErrorFromHttp(500, 'Invalid payment methods session response')
+        )
+      }
+
+      return ok(parseResult.data)
     },
   }
 }
