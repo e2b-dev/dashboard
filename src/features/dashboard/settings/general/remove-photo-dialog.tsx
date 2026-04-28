@@ -47,7 +47,7 @@ export const RemovePhotoDialog = ({
             type="button"
             variant="error"
             onClick={onConfirm}
-            loading={isRemoving}
+            loading={isRemoving ? 'Removing...' : undefined}
             disabled={isRemoving}
           >
             <TrashIcon className="size-4 shrink-0" />

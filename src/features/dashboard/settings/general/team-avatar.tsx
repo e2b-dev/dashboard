@@ -12,6 +12,7 @@ import {
 import { useTRPC } from '@/trpc/client'
 import { Avatar, AvatarImage, PatternAvatar } from '@/ui/primitives/avatar'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { EditIcon, PhotoIcon, TrashIcon } from '@/ui/primitives/icons'
 import { RemovePhotoDialog } from './remove-photo-dialog'
 
@@ -131,28 +132,28 @@ export const TeamAvatar = (): ReactElement => {
       )}
       <div className="flex gap-2">
         <Button
-          variant="outline"
-          size="md"
+          variant="secondary"
           className={
             hasPhoto
               ? 'prose-body-highlight w-[100px] gap-1 pl-2.5 pr-3 font-sans normal-case'
               : 'prose-body-highlight w-full gap-1 pl-2.5 pr-3 font-sans normal-case'
           }
           onClick={handleUploadClick}
-          loading={uploadProfilePictureMutation.isPending}
+          loading={
+            uploadProfilePictureMutation.isPending ? 'Uploading...' : undefined
+          }
         >
           <UploadIcon className="size-4" />
           {uploadLabel}
         </Button>
         {hasPhoto && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-9"
+          <IconButton
+            aria-label="Remove profile photo"
+            variant="secondary"
             onClick={handleRemoveClick}
           >
             <TrashIcon className="size-4" />
-          </Button>
+          </IconButton>
         )}
       </div>
       <input

@@ -18,7 +18,9 @@ import {
 import { getTRPCValidationMessages } from '@/lib/utils/trpc-errors'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { CheckIcon, EditIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 
 const TEAM_NAME_MAX_FONT_SIZE_PX = 32
 const TEAM_NAME_MIN_FONT_SIZE_PX = 18
@@ -179,30 +181,31 @@ export const TeamName = (): ReactElement => {
         <div className="flex shrink-0 items-center gap-2 self-end">
           {isEditing ? (
             <>
-              <Button type="button" variant="ghost" onClick={handleCancel}>
+              <Button type="button" variant="quaternary" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button
+              <IconButton
+                aria-label="Save team name"
                 type="submit"
-                variant="outline"
-                size="icon"
-                className="size-9"
-                loading={updateNameMutation.isPending}
+                variant="secondary"
                 disabled={isSaveDisabled}
               >
-                <CheckIcon className="size-6 shrink-0" />
-              </Button>
+                {updateNameMutation.isPending ? (
+                  <Loader variant="slash" size="sm" />
+                ) : (
+                  <CheckIcon className="size-6 shrink-0" />
+                )}
+              </IconButton>
             </>
           ) : (
-            <Button
+            <IconButton
+              aria-label="Edit team name"
               type="button"
-              variant="outline"
-              size="icon"
-              className="size-9"
+              variant="secondary"
               onClick={handleStartEditing}
             >
               <EditIcon className="size-4 shrink-0" />
-            </Button>
+            </IconButton>
           )}
         </div>
       </form>
