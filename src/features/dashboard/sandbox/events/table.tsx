@@ -1,12 +1,10 @@
 'use client'
 
 import { useMemo } from 'react'
-import { z } from 'zod'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import { IdBadge } from '@/features/dashboard/settings/keys/id-badge'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
-import { JsonPopover } from '@/ui/json-popover'
 import { ArrowDownIcon, HistoryIcon } from '@/ui/primitives/icons'
 import {
   Table,
@@ -19,12 +17,9 @@ import {
 } from '@/ui/primitives/table'
 import { SandboxEventTypeBadge } from './event-type-badge'
 
-const SandboxEventDataSchema = z.record(z.string(), z.unknown())
-
 const EVENT_COLUMN_WIDTHS = {
   timestamp: 148 + 16,
   id: 92 + 16,
-  event: 72 + 16,
 } as const
 
 const colStyle = (width: number) => ({
@@ -46,11 +41,10 @@ export const SandboxEventsTable = ({
 }: SandboxEventsTableProps) => {
   return (
     <div className="min-h-0 flex-1 overflow-auto">
-      <Table className="min-w-[620px] table-fixed">
+      <Table className="min-w-[360px] table-fixed">
         <colgroup>
           <col style={colStyle(EVENT_COLUMN_WIDTHS.timestamp)} />
           <col style={colStyle(EVENT_COLUMN_WIDTHS.id)} />
-          <col style={colStyle(EVENT_COLUMN_WIDTHS.event)} />
           <col />
         </colgroup>
         <TableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
@@ -73,8 +67,7 @@ export const SandboxEventsTable = ({
               </button>
             </TableHead>
             <TableHead className="px-0 h-min pb-3 pr-4">ID</TableHead>
-            <TableHead className="px-0 h-min pb-3 pr-4">Event</TableHead>
-            <TableHead className="px-0 h-min pb-3">Details</TableHead>
+            <TableHead className="px-0 h-min pb-3">Event</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -88,11 +81,8 @@ export const SandboxEventsTable = ({
                 <TableCell className="px-0 py-0 pr-4">
                   <EventIdCell id={event.id} />
                 </TableCell>
-                <TableCell className="px-0 py-0 pr-4">
-                  <EventTypeCell type={event.type} />
-                </TableCell>
                 <TableCell className="px-0 py-0">
-                  <EventDetailsCell eventData={event.eventData} />
+                  <EventTypeCell type={event.type} />
                 </TableCell>
               </TableRow>
             ))
@@ -107,7 +97,7 @@ export const SandboxEventsTable = ({
 
 const EventsEmptyState = () => {
   return (
-    <TableEmptyState colSpan={4}>
+    <TableEmptyState colSpan={3}>
       <div className="flex items-center gap-2">
         <HistoryIcon className="size-5" />
         <p className="prose-body-highlight text-fg-tertiary">No events found</p>
@@ -155,41 +145,6 @@ const EventTypeCell = ({ type }: { type: SandboxEventModel['type'] }) => {
     <div className="flex h-8 min-w-0 items-center">
       <SandboxEventTypeBadge type={type} />
     </div>
-  )
-}
-
-const EventDetailsCell = ({
-  eventData,
-}: {
-  eventData: SandboxEventModel['eventData']
-}) => {
-  const parsedEventData = useMemo(
-    () => SandboxEventDataSchema.safeParse(eventData),
-    [eventData]
-  )
-
-  if (!parsedEventData.success) {
-    return <span className="block w-full truncate text-fg-tertiary">n/a</span>
-  }
-
-  const entries = Object.entries(parsedEventData.data)
-  if (entries.length === 0) {
-    return <span className="block w-full truncate text-fg-tertiary">n/a</span>
-  }
-
-  return <EventDetailsJsonCell json={parsedEventData.data} />
-}
-
-const EventDetailsJsonCell = ({ json }: { json: Record<string, unknown> }) => {
-  const preview = JSON.stringify(json)
-
-  return (
-    <JsonPopover
-      className="text-fg-tertiary hover:text-fg hover:underline min-w-0 normal-case"
-      json={json}
-    >
-      <span className="block w-full truncate">{preview}</span>
-    </JsonPopover>
   )
 }
 
