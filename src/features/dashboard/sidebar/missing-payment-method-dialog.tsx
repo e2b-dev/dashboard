@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { AlertIcon, ArrowRightIcon, CardIcon } from '@/ui/primitives/icons'
+import { ArrowRightIcon, CardIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { stripePromise, usePaymentElementAppearance } from '../billing/hooks'
 import { useDashboard } from '../context'
@@ -71,6 +71,7 @@ const MissingPaymentMethodDialogContent = ({
             error.message || 'Failed to load payment method form.'
           )
         )
+        onOpenChange(false)
       },
     })
   )
@@ -93,43 +94,14 @@ const MissingPaymentMethodDialogContent = ({
 
       {paymentMethodsSessionMutation.isPending ? (
         <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
-      ) : paymentMethodsSessionMutation.isError ? (
-        <PaymentMethodsSessionError
-          onRetry={() =>
-            paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
-          }
-        />
       ) : session ? (
         <PaymentMethodsSetupElements
           customerSessionClientSecret={session.client_secret}
           setupIntentClientSecret={session.setup_intent_client_secret}
-          onRefreshSession={() =>
-            paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
-          }
           onOpenChange={onOpenChange}
         />
       ) : null}
     </>
-  )
-}
-
-const PaymentMethodsSessionError = ({ onRetry }: { onRetry: () => void }) => {
-  return (
-    <div className="space-y-4">
-      <Alert variant="error">
-        <AlertIcon className="size-4" />
-        <AlertDescription className="prose-label">
-          We could not load the payment form. Please try again.
-        </AlertDescription>
-      </Alert>
-      <Button
-        variant="secondary"
-        className="w-full justify-center"
-        onClick={onRetry}
-      >
-        Retry
-      </Button>
-    </div>
   )
 }
 
@@ -145,14 +117,12 @@ const LoadingState = ({ message }: { message: string }) => {
 interface PaymentMethodsSetupElementsProps {
   customerSessionClientSecret: string
   setupIntentClientSecret: string
-  onRefreshSession: () => void
   onOpenChange: (open: boolean) => void
 }
 
 const PaymentMethodsSetupElements = ({
   customerSessionClientSecret,
   setupIntentClientSecret,
-  onRefreshSession,
   onOpenChange,
 }: PaymentMethodsSetupElementsProps) => {
   const appearance = usePaymentElementAppearance()
@@ -168,21 +138,14 @@ const PaymentMethodsSetupElements = ({
         loader: 'never',
       }}
     >
-      <PaymentMethodsSetupForm
-        onRefreshSession={onRefreshSession}
-        onOpenChange={onOpenChange}
-      />
+      <PaymentMethodsSetupForm onOpenChange={onOpenChange} />
     </Elements>
   )
 }
 
 const PaymentMethodsSetupForm = ({
-  onRefreshSession,
   onOpenChange,
-}: Pick<
-  PaymentMethodsSetupElementsProps,
-  'onRefreshSession' | 'onOpenChange'
->) => {
+}: Pick<PaymentMethodsSetupElementsProps, 'onOpenChange'>) => {
   const stripe = useStripe()
   const elements = useElements()
   const trpc = useTRPC()
@@ -192,16 +155,7 @@ const PaymentMethodsSetupForm = ({
   const { team } = useDashboard()
   const [isSaving, setIsSaving] = useState(false)
   const [isCheckingTeamStatus, setIsCheckingTeamStatus] = useState(false)
-  const [teamRecoveryError, setTeamRecoveryError] = useState<string | null>(
-    null
-  )
-  const [paymentConfirmationError, setPaymentConfirmationError] = useState<
-    string | null
-  >(null)
   const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)
-  const [paymentElementLoadError, setPaymentElementLoadError] = useState<
-    string | null
-  >(null)
 
   const teamListQueryOptions = trpc.teams.list.queryOptions(
     undefined,
@@ -236,8 +190,6 @@ const PaymentMethodsSetupForm = ({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setTeamRecoveryError(null)
-    setPaymentConfirmationError(null)
 
     if (!stripe || !elements || !isPaymentElementReady) {
       toast(defaultErrorToast('Payment form is still loading.'))
@@ -260,10 +212,6 @@ const PaymentMethodsSetupForm = ({
           error.message ?? 'Failed to save payment method. Please try again.'
         )
       )
-      setPaymentConfirmationError(
-        error.message ??
-          'Failed to save payment method. Reload the form and try again.'
-      )
       setIsSaving(false)
       return
     }
@@ -278,8 +226,10 @@ const PaymentMethodsSetupForm = ({
     setIsCheckingTeamStatus(false)
 
     if (!isTeamUnblocked) {
-      setTeamRecoveryError(
-        'Payment method saved, but your team is still blocked. Please wait a moment and try checking again.'
+      toast(
+        defaultErrorToast(
+          'Payment method saved, but your team is still blocked. Please wait a moment and try again.'
+        )
       )
       setIsSaving(false)
       return
@@ -304,68 +254,23 @@ const PaymentMethodsSetupForm = ({
         </AlertDescription>
       </Alert>
 
-      {!isPaymentElementReady && !paymentElementLoadError && (
+      {!isPaymentElementReady && (
         <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
-      )}
-
-      {paymentElementLoadError && (
-        <div className="space-y-3">
-          <Alert variant="error">
-            <AlertIcon className="size-4" />
-            <AlertDescription className="prose-label">
-              {paymentElementLoadError}
-            </AlertDescription>
-          </Alert>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full justify-center"
-            onClick={onRefreshSession}
-          >
-            Reload payment form
-          </Button>
-        </div>
-      )}
-
-      {paymentConfirmationError && (
-        <div className="space-y-3">
-          <Alert variant="error">
-            <AlertIcon className="size-4" />
-            <AlertDescription className="prose-label">
-              {paymentConfirmationError}
-            </AlertDescription>
-          </Alert>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full justify-center"
-            onClick={onRefreshSession}
-          >
-            Reload payment form
-          </Button>
-        </div>
-      )}
-
-      {teamRecoveryError && (
-        <Alert variant="warning">
-          <AlertIcon className="size-4" />
-          <AlertDescription className="prose-label">
-            {teamRecoveryError}
-          </AlertDescription>
-        </Alert>
       )}
 
       <PaymentElement
         onReady={() => {
-          setPaymentElementLoadError(null)
           setIsPaymentElementReady(true)
         }}
         onLoadError={(event) => {
           setIsPaymentElementReady(false)
-          setPaymentElementLoadError(
-            event.error.message ??
-              'Failed to load payment details. Please refresh and try again.'
+          toast(
+            defaultErrorToast(
+              event.error.message ??
+                'Failed to load payment details. Please refresh and try again.'
+            )
           )
+          onOpenChange(false)
         }}
         options={{
           layout: {
@@ -382,7 +287,6 @@ const PaymentMethodsSetupForm = ({
           !stripe ||
           !elements ||
           !isPaymentElementReady ||
-          !!paymentElementLoadError ||
           isProcessing
         }
         loading={isProcessing ? paymentSubmitLoadingLabel : undefined}
