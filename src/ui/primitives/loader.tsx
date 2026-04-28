@@ -64,7 +64,7 @@ const StyledLoader = styled.div<StyledLoaderProps>`
 `
 
 const Loader = React.forwardRef<HTMLDivElement, LoaderProps>(
-  ({ className, variant = 'square', size = 'md', ...props }, ref) => {
+  ({ className, variant = 'slash', size = 'md', ...props }, ref) => {
     return (
       <>
         <style jsx global>{`

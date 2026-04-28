@@ -9,6 +9,7 @@ import { headers } from 'next/headers'
 import { cache } from 'react'
 import { createTRPCCaller, trpcAppRouter } from '@/core/server/api/routers'
 import { createTRPCContext } from '@/core/server/trpc/init'
+import { createRequestObservabilityContextFromHeaders } from '@/core/shared/clients/logger/request-observability'
 import { createQueryClient } from './query-client'
 
 /**
@@ -21,6 +22,12 @@ const createContext = cache(async () => {
 
   return createTRPCContext({
     headers: heads,
+    requestObservability: createRequestObservabilityContextFromHeaders(heads, {
+      fallbackPath: '/trpc/rsc',
+      transport: 'trpc',
+      handlerName: 'rsc',
+      preferReferer: true,
+    }),
   })
 })
 

@@ -102,11 +102,10 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
         />
         <Button
           className="normal-case font-sans"
-          loading={addMemberMutation.isPending}
+          loading={addMemberMutation.isPending ? 'Adding...' : undefined}
           type="submit"
-          disabled={!form.formState.isValid}
-          size="md"
-          variant="default"
+          disabled={!form.formState.isValid || addMemberMutation.isPending}
+          variant="primary"
         >
           <AddIcon aria-hidden className="size-4 shrink-0" />
           Add

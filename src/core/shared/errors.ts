@@ -96,6 +96,13 @@ export function repoErrorFromHttp(
   cause?: unknown
 ): RepoError {
   switch (status) {
+    case 400:
+      return createRepoError({
+        code: 'validation',
+        status,
+        message,
+        cause,
+      })
     case 401:
       return createRepoError({
         code: 'unauthorized',

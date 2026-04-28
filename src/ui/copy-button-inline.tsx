@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils/ui'
+import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
 
 export default function CopyButtonInline({
   value,
@@ -11,33 +12,35 @@ export default function CopyButtonInline({
   children: React.ReactNode
   className?: string
 }) {
-  const [wasCopied, copy] = useClipboard()
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const [capturedWidth, setCapturedWidth] = useState<number | null>(null)
+  const [wasCopied, copy] = useClipboard(2000)
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (buttonRef.current && !wasCopied) {
-      setCapturedWidth(buttonRef.current.offsetWidth)
-    }
     copy(value)
   }
 
   return (
     <span
-      ref={buttonRef}
       onClick={handleClick}
-      style={
-        wasCopied && capturedWidth ? { minWidth: capturedWidth } : undefined
-      }
       className={cn(
-        'block transition-colors cursor-copy',
-        'hover:text-accent-main-highlight',
-        className,
-        wasCopied && 'text-accent-main-highlight font-sans!'
+        'relative inline-flex items-center min-w-0 group/copy cursor-pointer hover:opacity-80',
+        className
       )}
     >
-      {wasCopied ? 'Copied!' : children}
+      <span className="truncate">{children}</span>
+      <span
+        className={cn(
+          'absolute left-full ml-1 opacity-0 group-hover/copy:opacity-100',
+          wasCopied && 'opacity-100!'
+        )}
+        aria-hidden="true"
+      >
+        {wasCopied ? (
+          <CheckIcon className="size-3.5 text-icon" />
+        ) : (
+          <CopyIcon className="size-3.5 text-icon-secondary" />
+        )}
+      </span>
     </span>
   )
 }

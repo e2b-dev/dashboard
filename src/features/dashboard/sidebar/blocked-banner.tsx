@@ -1,11 +1,11 @@
 'use client'
 
-import { AlertOctagonIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn, exponentialSmoothing } from '@/lib/utils'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 
@@ -45,7 +45,9 @@ export default function TeamBlockageAlert({
                 'bg-accent-error-bg text-accent-error-highlight border-accent-error-bg',
             }}
             onClick={handleClick}
-            className="h-12 bg-accent-error-bg"
+            className={cn('h-9 bg-accent-error-bg', {
+              'cursor-default': !handleClick,
+            })}
             asChild
           >
             <motion.button
@@ -54,9 +56,9 @@ export default function TeamBlockageAlert({
               exit={{ opacity: 0, filter: 'blur(8px)' }}
               transition={{ duration: 0.4, ease: exponentialSmoothing(4) }}
             >
-              <AlertOctagonIcon className="size-4 group-data-[collapsible=icon]:size-5! transition-[size]" />
+              <WarningIcon className="size-4 group-data-[collapsible=icon]:size-5! transition-[size]" />
               <div className="flex flex-col gap-0 overflow-hidden">
-                <span className="prose-headline-small uppercase">
+                <span className="prose-body-highlight uppercase">
                   Team is Blocked
                 </span>
                 {team.blockedReason && (

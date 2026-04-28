@@ -1,6 +1,5 @@
 'use client'
 
-import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { AddMemberForm } from '@/features/dashboard/members/add-member-form'
 import { Button } from '@/ui/primitives/button'
@@ -11,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
+import { AddIcon } from '@/ui/primitives/icons'
 
 export const AddMemberDialog = () => {
   const [open, setOpen] = useState(false)
@@ -18,13 +18,8 @@ export const AddMemberDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          className="normal-case font-sans"
-          size="md"
-          type="button"
-          variant="default"
-        >
-          <Plus aria-hidden className="size-4 shrink-0" />
+        <Button type="button">
+          <AddIcon />
           Add new member
         </Button>
       </DialogTrigger>

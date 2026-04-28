@@ -1,10 +1,10 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { TeamMember } from '@/core/modules/teams/models'
 import { cn } from '@/lib/utils'
 import { pluralize } from '@/lib/utils/formatting'
+import { SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { AddMemberDialog } from './add-member-dialog'
@@ -40,7 +40,7 @@ export const MembersPageContent = ({
     <div className={cn('flex w-full flex-col gap-6', className)}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-[280px]">
-          <Search
+          <SearchIcon
             aria-hidden
             className="text-fg-tertiary pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2"
           />

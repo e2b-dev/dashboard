@@ -1,6 +1,9 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import z from 'zod'
-import { forbiddenTeamAccessError } from '@/core/server/adapters/errors'
+import {
+  forbiddenTeamAccessError,
+  throwTRPCErrorFromRepoError,
+} from '@/core/server/adapters/errors'
 import { authMiddleware } from '@/core/server/api/middlewares/auth'
 import {
   endTelemetryMiddleware,
@@ -72,7 +75,7 @@ export const protectedTeamProcedure = t.procedure
     span.setAttribute('trpc.middleware.name', 'teamAuth')
 
     try {
-      const teamId = await context.with(
+      const teamIdResult = await context.with(
         trace.setSpan(context.active(), span),
         async () => {
           return await getTeamIdFromSlug(
@@ -81,6 +84,12 @@ export const protectedTeamProcedure = t.procedure
           )
         }
       )
+
+      if (!teamIdResult.ok) {
+        throwTRPCErrorFromRepoError(teamIdResult.error)
+      }
+
+      const teamId = teamIdResult.data
 
       if (!teamId) {
         span.setStatus({

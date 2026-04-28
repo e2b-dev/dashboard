@@ -1,19 +1,14 @@
 'use client'
 
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from 'lucide-react'
 import * as React from 'react'
 import {
   type DayButton,
   DayPicker,
   getDefaultClassNames,
 } from 'react-day-picker'
-
 import { cn } from '@/lib/utils/index'
 import { Button, buttonVariants } from '@/ui/primitives/button'
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from './icons'
 
 // we need to properly type the Calendar props to work with react-day-picker's union types
 // the DayPicker component has different prop requirements based on the mode
@@ -81,7 +76,7 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   captionLayout = 'label',
-  buttonVariant = 'ghost',
+  buttonVariant = 'tertiary',
   formatters,
   components,
   minDate,
@@ -258,8 +253,8 @@ function CalendarDayButton({
   return (
     <Button
       ref={ref}
-      variant="ghost"
-      size="icon"
+      variant="tertiary"
+      size="none"
       data-day={day.date.toLocaleDateString()}
       data-selected-single={
         modifiers.selected &&
@@ -274,7 +269,7 @@ function CalendarDayButton({
       data-outside={modifiers.outside}
       className={cn(
         // base styles
-        'p-auto',
+        'size-[30px] p-auto',
         'text-fg prose-body',
         'hover:bg-bg-highlight transition-colors',
         'focus-visible:ring-1 focus-visible:ring-accent-main-highlight focus-visible:ring-offset-0',

@@ -3,12 +3,13 @@ import 'server-only'
 import { CACHE_TAGS } from '@/configs/cache'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { l } from '@/core/shared/clients/logger/logger'
+import { err, ok, type RepoResult } from '@/core/shared/result'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 export const getTeamIdFromSlug = async (
   teamSlug: string,
   accessToken: string
-) => {
+): Promise<RepoResult<string | null>> => {
   if (!TeamSlugSchema.safeParse(teamSlug).success) {
     l.warn(
       {
@@ -18,7 +19,7 @@ export const getTeamIdFromSlug = async (
       'get_team_id_from_slug - invalid team slug'
     )
 
-    return null
+    return ok(null)
   }
 
   const resolvedTeam = await createUserTeamsRepository({
@@ -28,16 +29,32 @@ export const getTeamIdFromSlug = async (
   })
 
   if (!resolvedTeam.ok) {
+    if (
+      resolvedTeam.error.code === 'forbidden' ||
+      resolvedTeam.error.code === 'not_found'
+    ) {
+      l.warn(
+        {
+          key: 'get_team_id_from_slug:team_not_accessible',
+          context: { teamSlug },
+        },
+        'get_team_id_from_slug - team slug is not accessible for the current user'
+      )
+
+      return ok(null)
+    }
+
     l.warn(
       {
         key: 'get_team_id_from_slug:resolve_failed',
+        error: resolvedTeam.error,
         context: { teamSlug },
       },
       'get_team_id_from_slug - failed to resolve'
     )
 
-    return null
+    return err(resolvedTeam.error)
   }
 
-  return resolvedTeam.data.id
+  return ok(resolvedTeam.data.id)
 }

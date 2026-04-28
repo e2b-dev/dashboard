@@ -1,6 +1,5 @@
 'use client'
 import type { ScrollAreaViewportProps } from '@radix-ui/react-scroll-area'
-import { Check, Copy } from 'lucide-react'
 import {
   type ButtonHTMLAttributes,
   forwardRef,
@@ -12,6 +11,7 @@ import {
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from './primitives/button'
+import { CheckIcon, CopyIcon } from './primitives/icons'
 import { ScrollArea, ScrollBar, ScrollViewport } from './primitives/scroll-area'
 
 export type CodeBlockProps = HTMLAttributes<HTMLElement> & {
@@ -160,7 +160,8 @@ function CopyButton({
       type="button"
       className={cn(
         buttonVariants({
-          variant: 'ghost',
+          variant: 'tertiary',
+          size: 'none',
         }),
         'transition-opacity group-hover:opacity-100 [&_svg]:size-3.5',
         !isCopied && '[@media(hover:hover)]:opacity-0',
@@ -170,8 +171,10 @@ function CopyButton({
       onClick={onCopy}
       {...props}
     >
-      <Check className={cn('transition-transform', !isCopied && 'scale-0')} />
-      <Copy
+      <CheckIcon
+        className={cn('transition-transform', !isCopied && 'scale-0')}
+      />
+      <CopyIcon
         className={cn('absolute transition-transform', isCopied && 'scale-0')}
       />
     </button>

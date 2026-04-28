@@ -1,7 +1,7 @@
 'use client'
 
-import { Circle, Square } from 'lucide-react'
 import { Badge } from '@/ui/primitives/badge'
+import { DotIcon, PausedIcon } from '@/ui/primitives/icons'
 import { useSandboxContext } from '../context'
 
 export default function Status() {
@@ -11,7 +11,7 @@ export default function Status() {
   if (state === 'paused') {
     return (
       <Badge variant="warning" className="uppercase">
-        <Square className="size-2 fill-current" />
+        <PausedIcon className="size-2 fill-current" />
         Paused
       </Badge>
     )
@@ -19,11 +19,13 @@ export default function Status() {
 
   return (
     <Badge variant={isRunning ? 'positive' : 'error'} className="uppercase">
-      {isRunning ? (
-        <Circle className="size-2 animate-pulse fill-current" />
-      ) : (
-        <Square className="size-2 fill-current" />
-      )}
+      <DotIcon
+        className={
+          isRunning
+            ? 'size-3 animate-pulse fill-current'
+            : 'size-3 fill-current'
+        }
+      />
       {isRunning ? 'Running' : 'Stopped'}
     </Badge>
   )

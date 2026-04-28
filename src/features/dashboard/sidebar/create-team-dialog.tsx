@@ -126,7 +126,7 @@ export const CreateTeamDialog = ({
             <DialogFooter>
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => handleDialogChange(false)}
                 disabled={createTeamMutation.isPending}
               >
@@ -135,7 +135,10 @@ export const CreateTeamDialog = ({
               <Button
                 type="submit"
                 disabled={createTeamMutation.isPending}
-                loading={createTeamMutation.isPending}
+                loading={
+                  createTeamMutation.isPending ? 'Creating Team...' : undefined
+                }
+                variant="primary"
               >
                 Create Team
               </Button>
