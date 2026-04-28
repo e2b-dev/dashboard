@@ -12,6 +12,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { capitalize } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
 import { Button } from '@/ui/primitives/button'
@@ -26,7 +27,6 @@ import { AlertIcon, ArrowRightIcon, CardIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { stripePromise, usePaymentElementAppearance } from '../billing/hooks'
 import { useDashboard } from '../context'
-import { isMissingPaymentMethodBlockReason } from './team-blockage'
 
 const TEAM_UNBLOCK_POLL_ATTEMPTS = 15
 const TEAM_UNBLOCK_POLL_INTERVAL_MS = 2000
@@ -395,5 +395,13 @@ function PaymentMethodsSetupForm({
 }
 
 // Checks active team recovery status; { isBlocked: true, blockedReason: "payment_method_missing" } -> true.
-const isTeamMissingPaymentMethodBlocked = (team: TeamModel) =>
-  team.isBlocked && isMissingPaymentMethodBlockReason(team.blockedReason)
+const isTeamMissingPaymentMethodBlocked = (team: TeamModel) => {
+  if (!team.isBlocked || !team.blockedReason) return false
+
+  const formattedReason = capitalize(team.blockedReason).toLowerCase()
+
+  return (
+    formattedReason.includes('payment method missing') ||
+    formattedReason.includes('missing payment method')
+  )
+}

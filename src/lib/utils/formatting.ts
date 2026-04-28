@@ -7,6 +7,15 @@ import * as chrono from 'chrono-node'
 import { format, isThisYear, isValid } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
+// Capitalizes a readable string; "payment_method_missing" -> "Payment method missing".
+export const capitalize = (value: string) => {
+  const formattedValue = value.toLowerCase().replace(/[_-]+/g, ' ').trim()
+
+  if (!formattedValue) return formattedValue
+
+  return formattedValue.charAt(0).toUpperCase() + formattedValue.slice(1)
+}
+
 const LOCAL_LOG_STYLE_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: 'short',
   day: '2-digit',

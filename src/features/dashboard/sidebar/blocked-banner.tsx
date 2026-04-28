@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn, exponentialSmoothing } from '@/lib/utils'
+import { capitalize } from '@/lib/utils/formatting'
 import { WarningIcon } from '@/ui/primitives/icons'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 import { MissingPaymentMethodDialog } from './missing-payment-method-dialog'
-import { isMissingPaymentMethodBlockReason } from './team-blockage'
 
 interface TeamBlockageAlertProps {
   className?: string
@@ -29,9 +29,12 @@ export default function TeamBlockageAlert({
   )
 
   const isMissingPaymentMethod = useMemo(
-    () =>
-      team.isBlocked && isMissingPaymentMethodBlockReason(team.blockedReason),
+    () => team.isBlocked && isMissingPaymentMethodReason(team.blockedReason),
     [team.blockedReason, team.isBlocked]
+  )
+  const displayedBlockReason = useMemo(
+    () => (team.blockedReason ? capitalize(team.blockedReason) : null),
+    [team.blockedReason]
   )
 
   useEffect(() => {
@@ -60,7 +63,7 @@ export default function TeamBlockageAlert({
             <SidebarMenuButton
               variant="error"
               tooltip={{
-                children: team.blockedReason ?? 'Team is blocked',
+                children: displayedBlockReason ?? 'Team is blocked',
                 className:
                   'bg-accent-error-bg text-accent-error-highlight border-accent-error-bg',
               }}
@@ -81,9 +84,9 @@ export default function TeamBlockageAlert({
                   <span className="prose-body-highlight uppercase">
                     Team is Blocked
                   </span>
-                  {team.blockedReason && (
+                  {displayedBlockReason && (
                     <span className="text-accent-error-highlight/80 ml-0.25 truncate text-xs">
-                      {team.blockedReason}
+                      {displayedBlockReason}
                     </span>
                   )}
                 </div>
@@ -97,5 +100,16 @@ export default function TeamBlockageAlert({
         onOpenChange={setIsPaymentMethodDialogOpen}
       />
     </>
+  )
+}
+
+const isMissingPaymentMethodReason = (reason?: string | null) => {
+  if (!reason) return false
+
+  const formattedReason = capitalize(reason).toLowerCase()
+
+  return (
+    formattedReason.includes('payment method missing') ||
+    formattedReason.includes('missing payment method')
   )
 }
