@@ -43,10 +43,10 @@ interface MissingPaymentMethodDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function MissingPaymentMethodDialog({
+export const MissingPaymentMethodDialog = ({
   open,
   onOpenChange,
-}: MissingPaymentMethodDialogProps) {
+}: MissingPaymentMethodDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -56,9 +56,9 @@ export function MissingPaymentMethodDialog({
   )
 }
 
-function MissingPaymentMethodDialogContent({
+const MissingPaymentMethodDialogContent = ({
   onOpenChange,
-}: Pick<MissingPaymentMethodDialogProps, 'onOpenChange'>) {
+}: Pick<MissingPaymentMethodDialogProps, 'onOpenChange'>) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -113,7 +113,7 @@ function MissingPaymentMethodDialogContent({
   )
 }
 
-function PaymentMethodsSessionError({ onRetry }: { onRetry: () => void }) {
+const PaymentMethodsSessionError = ({ onRetry }: { onRetry: () => void }) => {
   return (
     <div className="space-y-4">
       <Alert variant="error">
@@ -133,7 +133,7 @@ function PaymentMethodsSessionError({ onRetry }: { onRetry: () => void }) {
   )
 }
 
-function LoadingState({ message }: { message: string }) {
+const LoadingState = ({ message }: { message: string }) => {
   return (
     <div className="flex items-center justify-center py-6 gap-2">
       <Loader variant="slash" size="sm" />
@@ -149,12 +149,12 @@ interface PaymentMethodsSetupElementsProps {
   onOpenChange: (open: boolean) => void
 }
 
-function PaymentMethodsSetupElements({
+const PaymentMethodsSetupElements = ({
   customerSessionClientSecret,
   setupIntentClientSecret,
   onRefreshSession,
   onOpenChange,
-}: PaymentMethodsSetupElementsProps) {
+}: PaymentMethodsSetupElementsProps) => {
   const appearance = usePaymentElementAppearance()
 
   return (
@@ -176,13 +176,13 @@ function PaymentMethodsSetupElements({
   )
 }
 
-function PaymentMethodsSetupForm({
+const PaymentMethodsSetupForm = ({
   onRefreshSession,
   onOpenChange,
 }: Pick<
   PaymentMethodsSetupElementsProps,
   'onRefreshSession' | 'onOpenChange'
->) {
+>) => {
   const stripe = useStripe()
   const elements = useElements()
   const trpc = useTRPC()
