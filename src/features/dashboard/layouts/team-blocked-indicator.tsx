@@ -23,10 +23,7 @@ export default function TeamBlockedIndicator() {
         {isBillingLimit ? (
           <>
             Team suspended.{' '}
-            <Link
-              href={PROTECTED_URLS.LIMITS(team.slug)}
-              className="underline"
-            >
+            <Link href={PROTECTED_URLS.LIMITS(team.slug)} className="underline">
               Settle outstanding payment.
             </Link>
           </>
