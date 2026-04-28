@@ -1,57 +1,74 @@
-import { type FC, Suspense } from 'react'
+'use client'
+
+import type { FC } from 'react'
+import type { TeamMember } from '@/core/modules/teams/models'
 import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { Loader } from '@/ui/primitives/loader_d'
 import {
   Table,
   TableBody,
-  TableCell,
+  TableEmptyState,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import MemberTableBody from './member-table-body'
+import { getAddedByMember } from './member-table.utils'
+import { MemberTableRow } from './member-table-row'
 
 interface MemberTableProps {
-  params: Promise<{
-    teamIdOrSlug: string
-  }>
+  allMembers: TeamMember[]
+  members: TeamMember[]
+  totalMemberCount: number
   className?: string
 }
 
-const MemberTable: FC<MemberTableProps> = ({ params, className }) => {
-  return (
-    <Table className={cn('min-w-[800px]', className)}>
-      <TableHeader>
-        <TableRow>
-          <th className="w-[50px]"></th>
-          <TableHead className="w-[200px]">Name</TableHead>
-          <TableHead className="w-[250px]">E-Mail</TableHead>
-          <TableHead className="w-[200px]">Added By</TableHead>
-          <th className="w-[50px]"></th>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <Suspense
-          fallback={
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-left">
-                <Alert className="w-full text-left" variant="info">
-                  <AlertTitle className="flex items-center gap-2">
-                    <Loader />
-                    Loading members...
-                  </AlertTitle>
-                  <AlertDescription>This may take a moment.</AlertDescription>
-                </Alert>
-              </TableCell>
-            </TableRow>
-          }
-        >
-          <MemberTableBody params={params} />
-        </Suspense>
-      </TableBody>
-    </Table>
-  )
-}
+const MemberTable: FC<MemberTableProps> = ({
+  allMembers,
+  members,
+  totalMemberCount,
+  className,
+}) => (
+  <Table className={cn('w-full table-fixed', className)}>
+    <colgroup>
+      <col className="w-[220px] lg:w-auto" />
+      <col className="w-[96px] lg:w-[200px]" />
+      <col className="w-[112px] lg:w-[220px]" />
+    </colgroup>
+    <TableHeader className="border-b-0">
+      <TableRow className="border-stroke/80 hover:bg-transparent">
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          NAME
+        </TableHead>
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          PROVIDERS
+        </TableHead>
+        <TableHead className="text-fg-tertiary font-sans! normal-case!">
+          ADDED
+        </TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {members.length === 0 ? (
+        <TableEmptyState colSpan={3}>
+          <p className="prose-body-highlight text-fg-tertiary">
+            {totalMemberCount === 0
+              ? 'No team members found.'
+              : 'No members match your search.'}
+          </p>
+        </TableEmptyState>
+      ) : (
+        members.map((member) => (
+          <MemberTableRow
+            addedByMember={getAddedByMember(
+              allMembers,
+              member.relation.added_by
+            )}
+            key={member.info.id}
+            member={member}
+          />
+        ))
+      )}
+    </TableBody>
+  </Table>
+)
 
 export default MemberTable

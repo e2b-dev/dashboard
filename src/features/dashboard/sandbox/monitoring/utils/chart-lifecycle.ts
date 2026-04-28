@@ -1,4 +1,4 @@
-import type { SandboxEventDTO } from '@/server/api/models/sandboxes.models'
+import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import type {
   SandboxMetricsDataPoint,
   SandboxMetricsLifecycleEventMarker,
@@ -76,8 +76,8 @@ const EVENT_STYLES: Record<string, { label: string; colorVar: string }> = {
 }
 
 function sortLifecycleEventsByTimestamp(
-  events: SandboxEventDTO[]
-): SandboxEventDTO[] {
+  events: SandboxEventModel[]
+): SandboxEventModel[] {
   return [...events].sort((a, b) => {
     const timestampA =
       parseDateTimestampMs(a.timestamp) ?? Number.MAX_SAFE_INTEGER
@@ -138,7 +138,7 @@ function toVisiblePauseWindow(
 }
 
 export function buildInactiveWindows(
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ): LifecyclePauseWindow[] {
@@ -218,7 +218,7 @@ export function buildInactiveWindows(
 }
 
 export function buildLifecycleEventMarkers(
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ): SandboxMetricsLifecycleEventMarker[] {
@@ -346,7 +346,7 @@ function hasValidDataWithinWindow(
 
 function buildSyntheticActiveWindowConnectors(
   data: SandboxMetricsDataPoint[],
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ) {
@@ -395,7 +395,7 @@ function buildSyntheticActiveWindowConnectors(
 
 function buildActiveWindowStartConnectors(
   data: SandboxMetricsDataPoint[],
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ) {
@@ -499,7 +499,7 @@ function injectGapNullPoints(
 export function applyPauseWindows(
   series: SandboxMetricsSeries[],
   pauseWindows: LifecyclePauseWindow[],
-  lifecycleEvents: SandboxEventDTO[],
+  lifecycleEvents: SandboxEventModel[],
   rangeStart: number,
   rangeEnd: number
 ): SandboxMetricsSeries[] {

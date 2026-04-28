@@ -1,14 +1,7 @@
 'use client'
 
-import {
-  Lock,
-  MoreHorizontal,
-  Pencil,
-  Webhook as WebhookIcon,
-} from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { IconButton } from '@/ui/primitives/icon-button'
+import {
+  EditIcon,
+  IndicatorDotsIcon,
+  PrivateIcon,
+  TrashIcon,
+  WebhookIcon,
+} from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import WebhookAddEditDialog from './add-edit-dialog'
 import WebhookDeleteDialog from './delete-dialog'
@@ -100,20 +100,21 @@ export default function WebhookTableRow({
       <TableCell className="text-right w-[5%]">
         <DropdownMenu onOpenChange={setDropDownOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="size-4" />
-            </Button>
+            <IconButton>
+              <IndicatorDotsIcon />
+            </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
               <WebhookAddEditDialog mode="edit" webhook={webhook}>
                 <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  <Pencil className="size-4 text-fg-tertiary" /> Edit
+                  <EditIcon className="size-4 text-fg-tertiary" /> Edit
                 </DropdownMenuItem>
               </WebhookAddEditDialog>
               <WebhookEditSecretDialog webhook={webhook}>
                 <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  <Lock className="size-4 text-fg-tertiary" /> Rotate Secret
+                  <PrivateIcon className="size-4 text-fg-tertiary" /> Rotate
+                  Secret
                 </DropdownMenuItem>
               </WebhookEditSecretDialog>
               <WebhookDeleteDialog webhook={webhook}>

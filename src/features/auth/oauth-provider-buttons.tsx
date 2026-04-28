@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
-import { signInWithOAuthAction } from '@/server/auth/auth-actions'
+import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
 
 export function OAuthProviders() {
@@ -14,7 +14,7 @@ export function OAuthProviders() {
   return (
     <div className="mt-4 flex flex-col gap-2">
       <Button
-        variant="muted"
+        variant="secondary"
         onClick={() =>
           execute({ provider: 'google', returnTo: returnTo || undefined })
         }
@@ -43,7 +43,7 @@ export function OAuthProviders() {
       </Button>
 
       <Button
-        variant="muted"
+        variant="secondary"
         onClick={() =>
           execute({ provider: 'github', returnTo: returnTo || undefined })
         }

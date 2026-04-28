@@ -1,13 +1,12 @@
 'use client'
 
-import { ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
-import { l } from '@/lib/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import { ArrowRightIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader_d'
 
@@ -37,7 +36,7 @@ export default function RootPathInput({
         key: 'sandbox_inspect_root_path_input:save_root_path_failed',
         message:
           error instanceof Error ? error.message : 'Failed to save root path',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       })
     }
   }
@@ -77,12 +76,12 @@ export default function RootPathInput({
       />
 
       <Button
-        className="z-20 mr-1.5 h-7 absolute right-0 top-1/2 -translate-y-1/2 active:-translate-y-1/2"
-        size="sm"
+        className="z-20 mr-1.5 absolute right-0 top-1/2 -translate-y-1/2 active:-translate-y-1/2"
+        variant="tertiary"
         disabled={isPending || !isDirty}
         type="submit"
       >
-        Go {isPending ? <Loader /> : <ArrowRight className="size-4" />}
+        Go {isPending ? <Loader /> : <ArrowRightIcon />}
       </Button>
     </form>
   )

@@ -6,6 +6,10 @@ import {
   type Virtualizer,
 } from '@tanstack/react-virtual'
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import type {
+  BuildDetailsModel,
+  BuildLogModel,
+} from '@/core/modules/builds/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
   type LogLevelValue,
@@ -19,10 +23,6 @@ import {
   LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
 import { cn } from '@/lib/utils'
-import type {
-  BuildDetailsDTO,
-  BuildLogDTO,
-} from '@/server/api/models/builds.models'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
 import { LOG_RETENTION_MS } from '../templates/builds/constants'
@@ -39,15 +39,15 @@ const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
 
 interface LogsProps {
-  buildDetails: BuildDetailsDTO | undefined
-  teamIdOrSlug: string
+  buildDetails: BuildDetailsModel | undefined
+  teamSlug: string
   templateId: string
   buildId: string
 }
 
 export default function Logs({
   buildDetails,
-  teamIdOrSlug,
+  teamSlug,
   templateId,
   buildId,
 }: LogsProps) {
@@ -80,7 +80,7 @@ export default function Logs({
   return (
     <LogsContent
       buildDetails={buildDetails}
-      teamIdOrSlug={teamIdOrSlug}
+      teamSlug={teamSlug}
       templateId={templateId}
       buildId={buildId}
       level={level}
@@ -90,8 +90,8 @@ export default function Logs({
 }
 
 interface LogsContentProps {
-  buildDetails: BuildDetailsDTO
-  teamIdOrSlug: string
+  buildDetails: BuildDetailsModel
+  teamSlug: string
   templateId: string
   buildId: string
   level: BuildLogLevelFilter | null
@@ -100,14 +100,14 @@ interface LogsContentProps {
 
 function LogsContent({
   buildDetails,
-  teamIdOrSlug,
+  teamSlug,
   templateId,
   buildId,
   level,
   setLevel,
 }: LogsContentProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<BuildLogDTO[]>([])
+  const [lastNonEmptyLogs, setLastNonEmptyLogs] = useState<BuildLogModel[]>([])
 
   const { isRefetchingFromFilterChange, onFetchComplete } =
     useFilterRefetchTracking(level)
@@ -120,7 +120,7 @@ function LogsContent({
     isFetching,
     fetchNextPage,
   } = useBuildLogs({
-    teamIdOrSlug,
+    teamSlug,
     templateId,
     buildId,
     level,
@@ -232,7 +232,7 @@ function EmptyBody({ hasRetainedLogs }: EmptyBodyProps) {
 }
 
 interface VirtualizedLogsBodyProps {
-  logs: BuildLogDTO[]
+  logs: BuildLogModel[]
   scrollContainerRef: RefObject<HTMLDivElement | null>
   startedAt: number
   onLoadMore: () => void
@@ -497,7 +497,7 @@ function useAutoScrollToBottom({
 }
 
 interface LogRowProps {
-  log: BuildLogDTO
+  log: BuildLogModel
   isZebraRow: boolean
   virtualRow: VirtualItem
   virtualizer: Virtualizer<HTMLDivElement, Element>

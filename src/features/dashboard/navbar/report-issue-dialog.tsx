@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { Paperclip, X } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useEffect, useState } from 'react'
@@ -29,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
+import { CloseIcon, FileIcon } from '@/ui/primitives/icons'
 import { Textarea } from '@/ui/primitives/textarea'
 import FileDropZone from './file-drop-zone'
 
@@ -181,7 +181,7 @@ export default function ContactSupportDialog({
     )
 
     contactSupportMutation.mutate({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       description,
       files: filePayloads.length > 0 ? filePayloads : undefined,
     })
@@ -240,7 +240,7 @@ export default function ContactSupportDialog({
                   key={`${file.name}-${i}`}
                   className="flex items-center gap-2 text-sm text-fg-secondary"
                 >
-                  <Paperclip className="size-3.5 shrink-0 text-fg-tertiary" />
+                  <FileIcon className="shrink-0 text-fg-tertiary" />
                   <span className="truncate flex-1">{file.name}</span>
                   <span className="shrink-0 text-xs text-fg-tertiary">
                     {(file.size / 1024).toFixed(0)}KB
@@ -251,7 +251,7 @@ export default function ContactSupportDialog({
                     disabled={isSubmitting}
                     className="shrink-0 text-fg-tertiary hover:text-fg transition-colors"
                   >
-                    <X className="size-3.5" />
+                    <CloseIcon />
                   </button>
                 </div>
               ))}
@@ -260,7 +260,7 @@ export default function ContactSupportDialog({
             <DialogFooter className="mt-2">
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => handleOpenChange(false)}
                 disabled={isSubmitting}
               >
@@ -269,7 +269,7 @@ export default function ContactSupportDialog({
               <Button
                 type="submit"
                 disabled={isSubmitting || !form.formState.isValid}
-                loading={isSubmitting}
+                loading={isSubmitting ? 'Sending...' : undefined}
               >
                 Send
               </Button>

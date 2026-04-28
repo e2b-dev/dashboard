@@ -1,15 +1,15 @@
 import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale/en-US'
+import type { BuildLogModel } from '@/core/modules/builds/models'
 import {
   LogLevelBadge,
   LogMessage,
 } from '@/features/dashboard/common/log-cells'
 import { formatDurationCompact } from '@/lib/utils/formatting'
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 
-export const LogLevel = ({ level }: { level: BuildLogDTO['level'] }) => {
+export const LogLevel = ({ level }: { level: BuildLogModel['level'] }) => {
   return <LogLevelBadge level={level} />
 }
 
@@ -40,7 +40,7 @@ export const Timestamp = ({
 }
 
 interface MessageProps {
-  message: BuildLogDTO['message']
+  message: BuildLogModel['message']
 }
 
 export const Message = ({ message }: MessageProps) => {

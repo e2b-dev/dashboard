@@ -1,14 +1,13 @@
 import { cookies } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { infra } from '@/lib/clients/api'
-import { l } from '@/lib/clients/logger/logger'
-import { supabaseAdmin } from '@/lib/clients/supabase/admin'
-import { createClient } from '@/lib/clients/supabase/server'
-import { SandboxIdSchema } from '@/lib/schemas/api'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { infra } from '@/core/shared/clients/api'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { setTeamCookies } from '@/lib/utils/cookies'
 
 export const dynamic = 'force-dynamic'
@@ -159,17 +158,16 @@ export async function GET(
     }
 
     const accessToken = sessionResponse.session.access_token
-    const { data: userTeamRows, error: teamQueryError } = await supabaseAdmin
-      .from('users_teams')
-      .select('teams!inner(id, slug)')
-      .eq('user_id', userId)
+    const teamsResult = await createUserTeamsRepository({
+      accessToken,
+    }).listUserTeams()
 
-    if (teamQueryError || !userTeamRows || userTeamRows.length === 0) {
+    if (!teamsResult.ok || teamsResult.data.length === 0) {
       l.warn({
         key: 'inspect_sandbox:teams_fetch_error',
         user_id: userId,
         sandbox_id: sandboxId,
-        error: teamQueryError,
+        error: !teamsResult.ok ? teamsResult.error : undefined,
       })
 
       return redirectToDashboardWithWarning(
@@ -182,9 +180,9 @@ export async function GET(
       )
     }
 
-    const userTeams: UserTeam[] = userTeamRows.map((row) => ({
-      id: row.teams.id,
-      slug: row.teams.slug,
+    const userTeams: UserTeam[] = teamsResult.data.map((team) => ({
+      id: team.id,
+      slug: team.slug,
     }))
 
     const cookieStore = await cookies()
@@ -231,7 +229,7 @@ export async function GET(
 
     return NextResponse.redirect(redirectUrl)
   } catch (error) {
-    const serializedError = serializeError(error)
+    const serializedError = serializeErrorForLog(error)
     const errorMessage =
       typeof serializedError === 'object' &&
       serializedError !== null &&

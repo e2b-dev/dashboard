@@ -11,12 +11,12 @@ import {
   getTimeoutMsFromUserMessage,
   USER_MESSAGES,
 } from '@/configs/user-messages'
+import { signUpAction } from '@/core/server/actions/auth-actions'
+import { signUpSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { useTurnstile } from '@/features/auth/use-turnstile'
-import { signUpSchema } from '@/server/auth/auth.types'
-import { signUpAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -181,7 +181,7 @@ export default function SignUp() {
 
           <Button
             type="submit"
-            loading={isExecuting}
+            loading={isExecuting ? 'Signing up...' : undefined}
             disabled={CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken}
           >
             Sign up

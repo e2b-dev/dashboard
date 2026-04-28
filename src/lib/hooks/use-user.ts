@@ -2,7 +2,7 @@
 
 import type { User } from '@supabase/supabase-js'
 import useSWR from 'swr'
-import { supabase } from '../clients/supabase/client'
+import { supabase } from '@/core/shared/clients/supabase/client'
 
 interface UseUserProps {
   initialData?: User

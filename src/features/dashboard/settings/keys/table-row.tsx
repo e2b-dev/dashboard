@@ -1,10 +1,11 @@
 'use client'
 
-import { MoreHorizontal } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { API_KEYS_LAST_USED_FIRST_COLLECTION_DATE } from '@/configs/versioning'
+import type { TeamAPIKey } from '@/core/modules/keys/models'
+import { deleteApiKeyAction } from '@/core/server/actions/key-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -12,10 +13,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { exponentialSmoothing } from '@/lib/utils'
-import { deleteApiKeyAction } from '@/server/keys/key-actions'
-import type { TeamAPIKey } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
-import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +22,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
+import { IndicatorDotsIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 
 interface TableRowProps {
@@ -63,7 +63,7 @@ export default function ApiKeyTableRow({
 
   const deleteKey = () => {
     executeDeleteKey({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       apiKeyId: apiKey.id,
     })
   }
@@ -93,7 +93,7 @@ export default function ApiKeyTableRow({
         onConfirm={deleteKey}
         confirmProps={{
           disabled: isDeleting,
-          loading: isDeleting,
+          loading: isDeleting ? 'Deleting...' : undefined,
         }}
       />
 
@@ -123,7 +123,7 @@ export default function ApiKeyTableRow({
         <TableCell className="text-right">
           <DropdownMenu onOpenChange={setDropDownOpen}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-xs" asChild>
+              <IconButton asChild>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -135,9 +135,9 @@ export default function ApiKeyTableRow({
                     ease: exponentialSmoothing(5),
                   }}
                 >
-                  <MoreHorizontal className="size-4" />
+                  <IndicatorDotsIcon />
                 </motion.button>
-              </Button>
+              </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuGroup>
@@ -148,7 +148,7 @@ export default function ApiKeyTableRow({
                   onClick={() => setIsDeleteDialogOpen(true)}
                   disabled={isDeleting}
                 >
-                  X Delete
+                  Delete
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>

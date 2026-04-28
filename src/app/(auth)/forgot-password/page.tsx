@@ -9,9 +9,9 @@ import {
   getTimeoutMsFromUserMessage,
   USER_MESSAGES,
 } from '@/configs/user-messages'
+import { forgotPasswordAction } from '@/core/server/actions/auth-actions'
+import { forgotPasswordSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
-import { forgotPasswordSchema } from '@/server/auth/auth.types'
-import { forgotPasswordAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
@@ -103,7 +103,7 @@ export default function ForgotPassword() {
           placeholder="you@example.com"
           required
         />
-        <Button type="submit" loading={isExecuting}>
+        <Button type="submit" loading={isExecuting ? 'Sending...' : undefined}>
           Reset Password
         </Button>
       </form>

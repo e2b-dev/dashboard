@@ -142,6 +142,24 @@ export function formatCompactDate(timestamp: number): string {
   return format(date, 'yyyy MMM d, h:mm:ss a zzz')
 }
 
+const DATE_STRUCTURES = ['MMM d', 'MMM d, yyyy'] as const
+
+type DateStructure = (typeof DATE_STRUCTURES)[number]
+
+/**
+ * Returns a formatted date string
+ * @param date - Date to format
+ * @param dateStructure - Supported date format structure
+ * @returns Formatted date string (e.g., "Apr 8, 2026") or null for invalid dates
+ */
+export const formatDate = (
+  date: Date,
+  dateStructure: DateStructure
+): string | null => {
+  if (!isValid(date)) return null
+  return format(date, dateStructure)
+}
+
 export function formatDay(timestamp: number): string {
   if (isThisYear(timestamp)) {
     return new Intl.DateTimeFormat('en-US', {
@@ -408,6 +426,29 @@ export function formatCPUCores(
 }
 
 /**
+ * Returns the singular or plural word for a count
+ * @param count - Number used to determine singular vs plural form
+ * @param singular - Singular form of the word
+ * @param plural - Optional plural form override (defaults to an inferred plural form)
+ * @returns Singular or plural word (e.g., "member" or "members")
+ */
+export const pluralize = (
+  count: number,
+  singular: string,
+  plural?: string
+): string => {
+  if (count === 1) return singular
+  if (plural) return plural
+  if (/[sxz]$/i.test(singular) || /(ch|sh)$/i.test(singular)) {
+    return `${singular}es`
+  }
+  if (/[^aeiou]y$/i.test(singular)) {
+    return `${singular.slice(0, -1)}ies`
+  }
+  return `${singular}s`
+}
+
+/**
  * Format a number for chart axis labels with smart abbreviation
  * Uses whole numbers when possible, abbreviated for large numbers
  * @param value - Number to format
@@ -450,7 +491,7 @@ export function tryParseDatetime(input: string): Date | null {
 
   // Try parsing as timestamp first (for performance with numeric inputs)
   const timestamp = Number(input)
-  if (!isNaN(timestamp)) {
+  if (!Number.isNaN(timestamp)) {
     // if timestamp is less than 10 digits, multiply by 1000 to get milliseconds
     const date = new Date(
       timestamp < 10000000000 ? timestamp * 1000 : timestamp

@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BuildLogDTO } from '@/server/api/models/builds.models'
+import type { BuildLogModel } from '@/core/modules/builds/models'
 import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,
@@ -15,7 +15,7 @@ import type { LogLevelFilter } from './logs-filter-params'
 const EMPTY_INIT_FORWARD_LOOKBACK_MS = 5_000
 
 interface BuildLogsParams {
-  teamIdOrSlug: string
+  teamSlug: string
   templateId: string
   buildId: string
 }
@@ -23,7 +23,7 @@ interface BuildLogsParams {
 type TRPCClient = ReturnType<typeof useTRPCClient>
 
 interface BuildLogsState {
-  logs: BuildLogDTO[]
+  logs: BuildLogModel[]
   hasMoreBackwards: boolean
   isLoadingBackwards: boolean
   isLoadingForwards: boolean
@@ -95,7 +95,7 @@ export const createBuildLogsStore = () =>
         const paramsChanged =
           state._params?.buildId !== params.buildId ||
           state._params?.templateId !== params.templateId ||
-          state._params?.teamIdOrSlug !== params.teamIdOrSlug
+          state._params?.teamSlug !== params.teamSlug
         const levelChanged = state.level !== level
 
         if (paramsChanged || levelChanged || !state.isInitialized) {
@@ -118,7 +118,7 @@ export const createBuildLogsStore = () =>
 
           const result =
             await trpcClient.builds.buildLogsBackwardsReversed.query({
-              teamIdOrSlug: params.teamIdOrSlug,
+              teamSlug: params.teamSlug,
               templateId: params.templateId,
               buildId: params.buildId,
               level: level ?? undefined,
@@ -193,7 +193,7 @@ export const createBuildLogsStore = () =>
 
           const result =
             await state._trpcClient.builds.buildLogsBackwardsReversed.query({
-              teamIdOrSlug: state._params.teamIdOrSlug,
+              teamSlug: state._params.teamSlug,
               templateId: state._params.templateId,
               buildId: state._params.buildId,
               level: state.level ?? undefined,
@@ -253,7 +253,7 @@ export const createBuildLogsStore = () =>
           const seenAtCursor = state.forwardSeenAtCursor
 
           const result = await state._trpcClient.builds.buildLogsForward.query({
-            teamIdOrSlug: state._params.teamIdOrSlug,
+            teamSlug: state._params.teamSlug,
             templateId: state._params.templateId,
             buildId: state._params.buildId,
             level: state.level ?? undefined,

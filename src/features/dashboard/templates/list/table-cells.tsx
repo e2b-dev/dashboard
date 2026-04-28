@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
-import { Check, Copy, Lock, LockOpen, MoreVertical } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
-import type { DefaultTemplate, Template } from '@/types/api.types'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
 import HelpTooltip from '@/ui/help-tooltip'
@@ -30,6 +29,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
+import {
+  CheckIcon,
+  CopyIcon,
+  IndicatorDotsIcon,
+  PrivateIcon,
+  UnlockIcon,
+} from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader_d'
 import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
@@ -50,8 +57,7 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -75,13 +81,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
           (old) => {
             if (!old?.templates) return old
@@ -108,7 +114,7 @@ export function ActionsCell({
       onSettled: () => {
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -133,13 +139,13 @@ export function ActionsCell({
 
         await queryClient.cancelQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
 
         queryClient.setQueryData(
           trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
 
           (old) => {
@@ -166,7 +172,7 @@ export function ActionsCell({
 
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplates.queryKey({
-            teamIdOrSlug,
+            teamSlug,
           }),
         })
       },
@@ -178,7 +184,7 @@ export function ActionsCell({
 
   const togglePublish = () => {
     updateTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
       public: !template.public,
     })
@@ -186,7 +192,7 @@ export function ActionsCell({
 
   const deleteTemplate = () => {
     deleteTemplateMutation.mutate({
-      teamIdOrSlug: team.slug ?? team.id,
+      teamSlug: team.slug,
       templateId: template.templateID,
     })
   }
@@ -218,24 +224,18 @@ export function ActionsCell({
         onConfirm={() => deleteTemplate()}
         confirmProps={{
           disabled: isDeleting,
-          loading: isDeleting,
+          loading: isDeleting ? 'Deleting...' : undefined,
         }}
       />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-fg-tertiary size-5"
+          <IconButton
+            className="size-5"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
           >
-            {isUpdating ? (
-              <Loader className="size-4" />
-            ) : (
-              <MoreVertical className="size-4" />
-            )}
-          </Button>
+            {isUpdating ? <Loader className="size-4" /> : <IndicatorDotsIcon />}
+          </IconButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuGroup>
@@ -246,12 +246,12 @@ export function ActionsCell({
             >
               {template.public ? (
                 <>
-                  <Lock className="!size-3" />
+                  <PrivateIcon className="!size-3" />
                   Set Internal
                 </>
               ) : (
                 <>
-                  <LockOpen className="!size-3" />
+                  <UnlockIcon className="!size-3" />
                   Set Public
                 </>
               )}
@@ -351,9 +351,9 @@ export function TemplateNameCell({
           aria-hidden="true"
         >
           {wasCopied ? (
-            <Check className="size-3 text-icon" />
+            <CheckIcon className="size-3 text-icon" />
           ) : (
-            <Copy className="size-3 text-icon-secondary" />
+            <CopyIcon className="size-3 text-icon-secondary" />
           )}
         </div>
       )}
@@ -451,7 +451,7 @@ export function VisibilityCell({
       size="sm"
       className={cn('uppercase bg-fill', !isPublic && 'pl-[3]')}
     >
-      {!isPublic && <Lock className="size-3 text-fg-tertiary" />}
+      {!isPublic && <PrivateIcon className="size-3 text-fg-tertiary" />}
       {isPublic ? 'Public' : 'Internal'}
     </Badge>
   )

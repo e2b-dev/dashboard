@@ -3,8 +3,7 @@
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils/ui'
-import { killSandboxAction } from '@/server/sandboxes/sandbox-actions'
+import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
@@ -40,7 +39,7 @@ export default function KillButton({ className }: KillButtonProps) {
     if (!canKill || !sandboxInfo?.sandboxID) return
 
     execute({
-      teamIdOrSlug: team.id,
+      teamSlug: team.slug,
       sandboxId: sandboxInfo.sandboxID,
     })
   }
@@ -53,19 +52,14 @@ export default function KillButton({ className }: KillButtonProps) {
       description="Are you sure you want to kill this sandbox? The sandbox state will be lost and cannot be recovered."
       confirm="Kill Sandbox"
       trigger={
-        <Button
-          variant="ghost"
-          size="slate"
-          className={cn('text-accent-error-highlight', className)}
-          disabled={!canKill}
-        >
-          <TrashIcon className="size-3.5" />
+        <Button variant="error" className={className} disabled={!canKill}>
+          <TrashIcon />
           Kill
         </Button>
       }
       confirmProps={{
         disabled: isExecuting,
-        loading: isExecuting,
+        loading: isExecuting ? 'Killing...' : undefined,
       }}
       onConfirm={handleKill}
     />

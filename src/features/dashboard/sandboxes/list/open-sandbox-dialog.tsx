@@ -4,8 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { type FormEvent, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { SandboxIdSchema } from '@/lib/schemas/api'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
@@ -26,8 +26,7 @@ type LookupState = 'idle' | 'not-found' | 'error'
 export function OpenSandboxDialog() {
   'use no memo'
 
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
 
   const router = useRouter()
   const trpc = useTRPC()
@@ -72,13 +71,13 @@ export function OpenSandboxDialog() {
     try {
       await queryClient.fetchQuery(
         trpc.sandbox.details.queryOptions(
-          { teamIdOrSlug, sandboxId },
+          { teamSlug, sandboxId },
           {
             retry: false,
           }
         )
       )
-      router.push(PROTECTED_URLS.SANDBOX(teamIdOrSlug, sandboxId))
+      router.push(PROTECTED_URLS.SANDBOX(teamSlug, sandboxId))
       setOpen(false)
       resetState()
     } catch (error) {
@@ -91,7 +90,7 @@ export function OpenSandboxDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="md">Inspect a Sandbox</Button>
+        <Button>Inspect a Sandbox</Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-[500px] max-h-[calc(100svh-2rem)] overflow-y-auto">
@@ -147,8 +146,8 @@ export function OpenSandboxDialog() {
           <DialogFooter>
             <Button
               type="submit"
-              variant="outline"
-              loading={isChecking}
+              variant="secondary"
+              loading={isChecking ? 'Checking...' : undefined}
               className="w-full sm:w-auto"
             >
               Open Details

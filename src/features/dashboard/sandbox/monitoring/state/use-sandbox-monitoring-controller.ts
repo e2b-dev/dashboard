@@ -3,10 +3,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import type { SandboxMetric } from '@/core/modules/sandboxes/models'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSandboxContext } from '@/features/dashboard/sandbox/context'
 import { getMsUntilNextAlignedInterval } from '@/lib/hooks/use-aligned-refetch-interval'
-import type { SandboxMetric } from '@/server/api/models/sandboxes.models'
 import { useTRPCClient } from '@/trpc/client'
 import {
   SANDBOX_LIFECYCLE_EVENT_KILLED,
@@ -213,29 +213,29 @@ export function useSandboxMonitoringController(sandboxId: string) {
     () =>
       [
         'sandboxMonitoringMetrics',
-        team?.id ?? '',
+        team?.slug ?? '',
         sandboxId,
         fetchTimeframe.start,
         fetchTimeframe.end,
       ] as const,
-    [sandboxId, fetchTimeframe.end, fetchTimeframe.start, team?.id]
+    [sandboxId, fetchTimeframe.end, fetchTimeframe.start, team?.slug]
   )
 
   const metricsQuery = useQuery<SandboxMetric[]>({
     queryKey,
-    enabled: Boolean(team?.id),
+    enabled: Boolean(team?.slug),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: !isLifecycleSettled,
     refetchOnReconnect: false,
     staleTime: SANDBOX_MONITORING_LIVE_POLLING_MS,
     refetchInterval: shouldPoll ? SANDBOX_MONITORING_LIVE_POLLING_MS : false,
     queryFn: async () => {
-      if (!team?.id) {
+      if (!team?.slug) {
         return []
       }
 
       return trpcClient.sandbox.resourceMetrics.query({
-        teamIdOrSlug: team.id,
+        teamSlug: team.slug,
         sandboxId,
         startMs: fetchTimeframe.start,
         endMs: fetchTimeframe.end,

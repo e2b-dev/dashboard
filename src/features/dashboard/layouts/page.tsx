@@ -1,0 +1,13 @@
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
+
+interface PageProps {
+  children: ReactNode
+  className?: string
+}
+
+export const Page = ({ children, className }: PageProps) => (
+  <div className={cn('mx-auto w-full max-w-[900px] p-3 md:p-0', className)}>
+    {children}
+  </div>
+)

@@ -10,7 +10,7 @@ vi.mock('server-only', () => ({}))
 vi.mock('server-cli-only', () => ({}))
 
 // default mocks
-vi.mock('@/lib/clients/logger', () => ({
+vi.mock('@/core/shared/clients/logger', () => ({
   l: {
     error: console.error,
     info: console.info,

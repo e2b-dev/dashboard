@@ -7,6 +7,7 @@ import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -14,7 +15,6 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { getUserProviders } from '@/lib/utils/auth'
-import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -159,7 +159,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
               Has to be a valid e-mail address.
             </p>
             <Button
-              loading={isPending}
+              loading={isPending ? 'Saving...' : undefined}
               disabled={form.watch('email') === user?.email}
               type="submit"
               onClick={form.handleSubmit((values) =>

@@ -7,10 +7,10 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { AUTH_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { signInAction } from '@/core/server/actions/auth-actions'
+import { signInSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
-import { signInSchema } from '@/server/auth/auth.types'
-import { signInAction } from '@/server/auth/auth-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -149,7 +149,10 @@ export default function Login() {
 
           <input type="hidden" {...form.register('returnTo')} />
 
-          <Button type="submit" loading={isExecuting}>
+          <Button
+            type="submit"
+            loading={isExecuting ? 'Signing in...' : undefined}
+          >
             Sign in
           </Button>
         </form>

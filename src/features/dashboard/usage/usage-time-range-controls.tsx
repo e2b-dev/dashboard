@@ -1,12 +1,12 @@
 'use client'
 
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import CopyButton from '@/ui/copy-button'
 import { Button } from '@/ui/primitives/button'
+import { ChevronLeftIcon, ChevronRightIcon } from '@/ui/primitives/icons'
 import {
   Popover,
   PopoverContent,
@@ -134,26 +134,23 @@ export function UsageTimeRangeControls({
   return (
     <div className={cn('flex items-end', className)}>
       <Button
-        size="sm"
-        variant="outline"
+        variant="secondary"
         onClick={handlePreviousRange}
         className="border-r-0 px-2"
         title="Move back by one-quarter of the range"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeftIcon className="h-4 w-4" />
       </Button>
       <CopyButton
         value={rangeCopyValue}
-        size="sm"
-        variant="outline"
+        variant="secondary"
         title="Copy ISO 8601 time interval"
         className="border-r-0"
       />
       <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
         <PopoverTrigger asChild>
           <Button
-            size="sm"
-            variant="outline"
+            variant="secondary"
             className={cn('prose-label font-sans', 'border-r-0')}
           >
             {rangeLabel}
@@ -187,13 +184,12 @@ export function UsageTimeRangeControls({
         </PopoverContent>
       </Popover>
       <Button
-        size="sm"
-        variant="outline"
+        variant="secondary"
         onClick={handleNextRange}
         className="px-2"
         title="Move forward by one-quarter of the range"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRightIcon className="h-4 w-4" />
       </Button>
     </div>
   )

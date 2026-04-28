@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { SandboxLogDTO } from '@/server/api/models/sandboxes.models'
+import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import type { useTRPCClient } from '@/trpc/client'
 import {
   countLeadingAtTimestamp,
@@ -13,14 +13,14 @@ import {
 import type { LogLevelFilter } from './logs-filter-params'
 
 interface SandboxLogsParams {
-  teamIdOrSlug: string
+  teamSlug: string
   sandboxId: string
 }
 
 type TRPCClient = ReturnType<typeof useTRPCClient>
 
 interface SandboxLogsState {
-  logs: SandboxLogDTO[]
+  logs: SandboxLogModel[]
   hasMoreBackwards: boolean
   isLoadingBackwards: boolean
   isLoadingForwards: boolean
@@ -102,7 +102,7 @@ export const createSandboxLogsStore = () =>
         // reset if params changed
         const paramsChanged =
           state._params?.sandboxId !== params.sandboxId ||
-          state._params?.teamIdOrSlug !== params.teamIdOrSlug
+          state._params?.teamSlug !== params.teamSlug
         const filterChanged = state.level !== level || state.search !== search
 
         if (paramsChanged || filterChanged || !state.isInitialized) {
@@ -126,7 +126,7 @@ export const createSandboxLogsStore = () =>
           const initCursor = Date.now()
 
           const result = await trpcClient.sandbox.logsBackwardsReversed.query({
-            teamIdOrSlug: params.teamIdOrSlug,
+            teamSlug: params.teamSlug,
             sandboxId: params.sandboxId,
             cursor: initCursor,
             level: level ?? undefined,
@@ -208,7 +208,7 @@ export const createSandboxLogsStore = () =>
 
           const result =
             await state._trpcClient.sandbox.logsBackwardsReversed.query({
-              teamIdOrSlug: state._params.teamIdOrSlug,
+              teamSlug: state._params.teamSlug,
               sandboxId: state._params.sandboxId,
               cursor,
               level: state.level ?? undefined,
@@ -268,7 +268,7 @@ export const createSandboxLogsStore = () =>
           const seenAtCursor = state.forwardSeenAtCursor
 
           const result = await state._trpcClient.sandbox.logsForward.query({
-            teamIdOrSlug: state._params.teamIdOrSlug,
+            teamSlug: state._params.teamSlug,
             sandboxId: state._params.sandboxId,
             cursor,
             level: state.level ?? undefined,

@@ -4,13 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useRouter } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { createTeamAction } from '@/core/server/actions/team-actions'
+import { CreateTeamSchema } from '@/core/server/functions/team/types'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { createTeamAction } from '@/server/team/team-actions'
-import { CreateTeamSchema } from '@/server/team/types'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
+import { Loader } from '@/ui/primitives/loader'
 
 interface CreateTeamDialogProps {
   open: boolean
@@ -112,21 +113,30 @@ export function CreateTeamDialog({
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleDialogChange(false)}
-                disabled={isExecuting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isExecuting}
-                loading={isExecuting}
-              >
-                Create Team
-              </Button>
+              {isExecuting ? (
+                <div className="flex items-center md:justify-end justify-center py-2 gap-2 w-full">
+                  <Loader variant="slash" size="sm" />
+                  <span>Creating Team...</span>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleDialogChange(false)}
+                    disabled={isExecuting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isExecuting}
+                    variant="primary"
+                  >
+                    Create Team
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </form>
         </Form>

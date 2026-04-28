@@ -17,12 +17,12 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableEmptyState,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
 import { useInvoices } from './hooks'
-import { TableEmptyRowBorder } from './table-empty-row-border'
 
 const COLUMN_WIDTHS = {
   date: 120,
@@ -48,34 +48,19 @@ interface InvoicesEmptyProps {
 
 function InvoicesEmpty({ error }: InvoicesEmptyProps) {
   return (
-    <div className="w-full gap-2 relative flex flex-col justify-center items-center">
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div
-          key={index}
-          className="h-11 w-full border border-bg-highlight relative flex items-center gap-2 justify-center overflow-hidden"
-        >
-          <TableEmptyRowBorder className="absolute bottom-0 left-0 rotate-180 opacity-99" />
-          <TableEmptyRowBorder className="absolute bottom-0 right-0 opacity-99" />
-
-          {index === 1 && (
-            <>
-              <InvoiceIcon
-                className={cn('size-4', error && 'text-accent-error-highlight')}
-              />
-
-              <p
-                className={cn(
-                  'prose-body-highlight',
-                  error && 'text-accent-error-highlight'
-                )}
-              >
-                {error ? error : 'No invoices yet'}
-              </p>
-            </>
-          )}
-        </div>
-      ))}
-    </div>
+    <TableEmptyState colSpan={4}>
+      <InvoiceIcon
+        className={cn('size-4', error && 'text-accent-error-highlight')}
+      />
+      <p
+        className={cn(
+          'prose-body-highlight',
+          error && 'text-accent-error-highlight'
+        )}
+      >
+        {error ? error : 'No invoices yet'}
+      </p>
+    </TableEmptyState>
   )
 }
 
@@ -146,13 +131,7 @@ export default function BillingInvoicesTable() {
             </TableRow>
           )}
 
-          {showEmpty && (
-            <TableRow>
-              <TableCell colSpan={4} className="p-0">
-                <InvoicesEmpty error={error?.message} />
-              </TableCell>
-            </TableRow>
-          )}
+          {showEmpty && <InvoicesEmpty error={error?.message} />}
 
           {hasData &&
             invoices.map((invoice) => (
@@ -174,10 +153,10 @@ export default function BillingInvoicesTable() {
                   {formatCurrency(invoice.cost)}
                 </TableCell>
                 <TableCell className="text-end py-0">
-                  <Button variant="ghost" size="slate" asChild>
+                  <Button variant="tertiary" size="none" asChild>
                     <Link href={invoice.url} target="_blank">
                       View
-                      <ExternalLinkIcon className="size-3 text-fg-tertiary" />
+                      <ExternalLinkIcon />
                     </Link>
                   </Button>
                 </TableCell>

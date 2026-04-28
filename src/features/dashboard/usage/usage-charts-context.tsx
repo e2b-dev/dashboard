@@ -9,8 +9,8 @@ import {
   useMemo,
   useState,
 } from 'react'
+import type { UsageResponse } from '@/core/modules/billing/models'
 import { fillTimeSeriesWithEmptyPoints } from '@/lib/utils/time-series'
-import type { UsageResponse } from '@/types/billing.types'
 import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {
   calculateTotals,

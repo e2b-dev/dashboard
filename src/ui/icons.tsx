@@ -1,27 +1,26 @@
-import type { LucideIcon } from 'lucide-react'
-import { TerminalIcon } from 'lucide-react'
-import type { HTMLAttributes } from 'react'
-import type { IconBaseProps } from 'react-icons/lib'
+import { type HTMLAttributes } from 'react'
+import { IconBaseProps } from 'react-icons/lib'
 import { cn } from '@/lib/utils'
+import { type Icon, TerminalCustomIcon } from '@/ui/primitives/icons'
 
 export function IconContainer({
   icon: Icon,
   ...props
 }: HTMLAttributes<HTMLDivElement> & {
-  icon?: LucideIcon
+  icon?: Icon
 }): React.ReactElement<unknown> {
   return (
     <div
       {...props}
       className={cn(
-        '[a[data-active=true]_&]:text-fg from-bg to-bg-1 [a[data-active=true]_&]:from-accent-main-highlight/60 [a[data-active=true]_&]:to-accent-main-highlight   border bg-gradient-to-b p-2',
+        '[a[data-active=true]_&]:text-fg from-bg to-bg-1 [a[data-active=true]_&]:from-accent-main-highlight/60 [a[data-active=true]_&]:to-accent-main-highlight border bg-linear-to-b p-2',
         props.className
       )}
     >
       {Icon ? (
         <Icon className="h-4 w-4" />
       ) : (
-        <TerminalIcon className="h-4 w-4" />
+        <TerminalCustomIcon className="h-4 w-4" />
       )}
     </div>
   )

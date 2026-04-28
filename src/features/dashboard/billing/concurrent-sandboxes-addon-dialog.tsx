@@ -7,14 +7,9 @@ import {
   useStripe,
 } from '@stripe/react-stripe-js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  AlertCircle,
-  ArrowRight,
-  CircleDollarSign,
-  CreditCard,
-} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
@@ -27,7 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { SandboxIcon } from '@/ui/primitives/icons'
+import {
+  AlertIcon,
+  ArrowRightIcon,
+  CardIcon,
+  CreditsIcon,
+  SandboxIcon,
+} from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../context'
 import {
@@ -59,8 +60,7 @@ function DialogContent_Inner({
 }: Omit<ConcurrentSandboxAddOnPurchaseDialogProps, 'open'>) {
   const { team } = useDashboard()
   const { toast } = useToast()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/billing/plan'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing/plan'>()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [showPaymentForm, setShowPaymentForm] = useState(false)
@@ -89,20 +89,21 @@ function DialogContent_Inner({
     if (!team) return
     setClientSecret(clientSecret)
     setShowPaymentForm(true)
-    customerSessionMutation.mutate({ teamIdOrSlug })
+    customerSessionMutation.mutate({ teamSlug })
   }
 
   const itemsQueryKey = trpc.billing.getItems.queryOptions({
-    teamIdOrSlug,
+    teamSlug,
   }).queryKey
-  const teamLimitsQueryKey = trpc.billing.getTeamLimits.queryOptions({
-    teamIdOrSlug,
-  }).queryKey
+  const teamListQueryKey = trpc.teams.list.queryOptions(
+    undefined,
+    DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
+  ).queryKey
 
   const { confirmPayment, isConfirming } = usePaymentConfirmation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: itemsQueryKey })
-      queryClient.invalidateQueries({ queryKey: teamLimitsQueryKey })
+      queryClient.invalidateQueries({ queryKey: teamListQueryKey })
       onOpenChange(false)
     },
     onFallbackToPaymentElement: handleSwitchToPaymentElement,
@@ -135,7 +136,7 @@ function DialogContent_Inner({
   const handlePurchase = () => {
     if (!team) return
 
-    confirmOrderMutation.mutate({ teamIdOrSlug, orderId })
+    confirmOrderMutation.mutate({ teamSlug, orderId })
   }
 
   const limitIncreaseText = currentConcurrentSandboxesLimit ? (
@@ -189,15 +190,13 @@ function DialogContent_Inner({
 
         {!showPaymentForm && !isProcessing ? (
           <Button
-            variant="default"
-            size="lg"
             className="w-full justify-center"
             onClick={handlePurchase}
-            loading={isProcessing}
+            loading={isProcessing ? 'Processing...' : undefined}
             disabled={isProcessing}
           >
             Increase Concurrency Limit
-            <ArrowRight className="size-4" />
+            <ArrowRightIcon className="size-4" />
           </Button>
         ) : !showPaymentForm ? (
           <LoadingState message={ADDON_PURCHASE_MESSAGES.loading.processing} />
@@ -227,7 +226,7 @@ function PaymentAuthFailedAlert() {
       variant="warning"
       className="animate-in fade-in slide-in-from-top-2 duration-300"
     >
-      <AlertCircle className="size-4" />
+      <AlertIcon className="size-4" />
       <AlertDescription className="prose-label">
         Payment authentication failed in the last attempt. Please select a new
         payment method or enter the same card details again to retry.
@@ -264,14 +263,14 @@ function AddonFeaturesList({
       </li>
 
       <li className="flex items-start gap-2 text-left">
-        <CircleDollarSign className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+        <CreditsIcon className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
         <p className="prose-body text-fg">
           Raises current subscription by <b>${monthlyPriceCents / 100}</b>/month
         </p>
       </li>
 
       <li className="flex items-start gap-2 text-left">
-        <CreditCard className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
+        <CardIcon className="text-icon-tertiary shrink-0 size-4 translate-y-0.5" />
         <p className="prose-body text-fg">
           Pay <b>${(amountDueCents / 100).toFixed(2)}</b> now for the remaining
           time of the month
@@ -377,14 +376,12 @@ function PaymentElementForm({
       {!isProcessing ? (
         <Button
           type="submit"
-          variant="default"
-          size="lg"
           className="w-full justify-center mt-6"
-          loading={isProcessing}
+          loading={isProcessing ? 'Processing...' : undefined}
           disabled={!stripe || isProcessing}
         >
           Increase Concurrency Limit
-          <ArrowRight className="size-4" />
+          <ArrowRightIcon className="size-4" />
         </Button>
       ) : (
         <LoadingState message={ADDON_PURCHASE_MESSAGES.loading.processing} />

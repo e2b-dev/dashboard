@@ -4,13 +4,13 @@ import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useMemo } from 'react'
 import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import type {
+  SandboxDetailsModel,
+  SandboxEventModel,
+} from '@/core/modules/sandboxes/models'
 import { useAlignedRefetchInterval } from '@/lib/hooks/use-aligned-refetch-interval'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
-import type {
-  SandboxDetailsDTO,
-  SandboxEventDTO,
-} from '@/server/api/models/sandboxes.models'
 import { useTRPC } from '@/trpc/client'
 import { SANDBOX_LIFECYCLE_EVENT_KILLED } from './monitoring/utils/constants'
 
@@ -18,11 +18,11 @@ export interface SandboxLifecycleState {
   createdAt: string | null
   pausedAt: string | null
   endedAt: string | null
-  events: SandboxEventDTO[]
+  events: SandboxEventModel[]
 }
 
 interface SandboxContextValue {
-  sandboxInfo?: SandboxDetailsDTO
+  sandboxInfo?: SandboxDetailsModel
   sandboxLifecycle: SandboxLifecycleState | null
   isRunning: boolean
   isSandboxNotFound: boolean
@@ -46,7 +46,7 @@ interface SandboxProviderProps {
 }
 
 function buildSandboxLifecycle(
-  sandboxInfo: SandboxDetailsDTO | undefined
+  sandboxInfo: SandboxDetailsModel | undefined
 ): SandboxLifecycleState | null {
   if (!sandboxInfo) {
     return null
@@ -68,8 +68,8 @@ function buildSandboxLifecycle(
 }
 
 export function SandboxProvider({ children }: SandboxProviderProps) {
-  const { teamIdOrSlug, sandboxId } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/sandboxes/[sandboxId]'>()
+  const { teamSlug, sandboxId } =
+    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
 
   const trpc = useTRPC()
   const getAlignedRefetchInterval = useAlignedRefetchInterval({
@@ -84,11 +84,13 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
     refetch,
   } = useQuery(
     trpc.sandbox.details.queryOptions(
-      { teamIdOrSlug, sandboxId },
+      { teamSlug, sandboxId },
       {
         retry: false,
         refetchInterval: (query) => {
-          const sandboxInfo = query.state.data as SandboxDetailsDTO | undefined
+          const sandboxInfo = query.state.data as
+            | SandboxDetailsModel
+            | undefined
           const state = sandboxInfo?.state
 
           // Keep polling when killed but the killed lifecycle event hasn't

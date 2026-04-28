@@ -37,7 +37,7 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 
 export default function DashboardSidebarContent() {
   const { team } = useDashboard()
-  const selectedTeamIdentifier = team.slug ?? team.id
+  const selectedTeamSlug = team.slug
 
   const pathname = usePathname()
   const isMobile = useIsMobile()
@@ -64,13 +64,13 @@ export default function DashboardSidebarContent() {
           <SidebarMenu>
             {links.map((item) => {
               const href = item.href({
-                teamIdOrSlug: selectedTeamIdentifier ?? undefined,
+                teamSlug: selectedTeamSlug,
               })
 
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
-                    variant={isActive(item) ? 'active' : 'default'}
+                    isActive={isActive(item)}
                     asChild
                     tooltip={item.label}
                   >
@@ -86,7 +86,7 @@ export default function DashboardSidebarContent() {
                     >
                       <item.icon
                         className={cn(
-                          'group-data-[collapsible=icon]:size-5 transition-[size,color]',
+                          'transition-[size,color]',
                           SIDEBAR_TRANSITION_CLASSNAMES,
                           isActive(item) && 'text-accent-main-highlight'
                         )}

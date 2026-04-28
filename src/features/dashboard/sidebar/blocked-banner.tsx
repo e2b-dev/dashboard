@@ -1,11 +1,11 @@
 'use client'
 
-import { AlertOctagonIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { cn, exponentialSmoothing } from '@/lib/utils'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 
@@ -20,9 +20,10 @@ export default function TeamBlockageAlert({
   const router = useRouter()
 
   const isBillingLimit = useMemo(
-    () => team.blocked_reason?.toLowerCase().includes('billing limit'),
-    [team.blocked_reason]
+    () => team.blockedReason?.toLowerCase().includes('billing limit'),
+    [team.blockedReason]
   )
+
   const handleClick = () => {
     if (isBillingLimit) {
       router.push(PROTECTED_URLS.LIMITS(team.slug))
@@ -34,17 +35,17 @@ export default function TeamBlockageAlert({
 
   return (
     <AnimatePresence mode="wait">
-      {team.is_blocked && (
+      {team.isBlocked && (
         <SidebarMenuItem className={cn(className)}>
           <SidebarMenuButton
             variant="error"
             tooltip={{
-              children: team.blocked_reason ?? 'Team is blocked',
+              children: team.blockedReason ?? 'Team is blocked',
               className:
                 'bg-accent-error-bg text-accent-error-highlight border-accent-error-bg',
             }}
             onClick={handleClick}
-            className={cn('h-12 bg-accent-error-bg', {
+            className={cn('h-9 bg-accent-error-bg', {
               'cursor-default': !handleClick,
             })}
             asChild
@@ -55,14 +56,14 @@ export default function TeamBlockageAlert({
               exit={{ opacity: 0, filter: 'blur(8px)' }}
               transition={{ duration: 0.4, ease: exponentialSmoothing(4) }}
             >
-              <AlertOctagonIcon className="size-4 group-data-[collapsible=icon]:!size-5 transition-[size]" />
+              <WarningIcon className="size-4 group-data-[collapsible=icon]:size-5! transition-[size]" />
               <div className="flex flex-col gap-0 overflow-hidden">
-                <span className="prose-headline-small uppercase">
+                <span className="prose-body-highlight uppercase">
                   Team is Blocked
                 </span>
-                {team.blocked_reason && (
+                {team.blockedReason && (
                   <span className="text-accent-error-highlight/80 ml-0.25 truncate text-xs">
-                    {team.blocked_reason}
+                    {team.blockedReason}
                   </span>
                 )}
               </div>

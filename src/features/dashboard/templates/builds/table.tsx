@@ -9,12 +9,12 @@ import {
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type {
+  ListedBuildModel,
+  RunningBuildStatusModel,
+} from '@/core/modules/builds/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
-import type {
-  ListedBuildDTO,
-  RunningBuildStatusDTO,
-} from '@/server/api/models/builds.models'
 import { useTRPC } from '@/trpc/client'
 import { ArrowDownIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -57,8 +57,7 @@ const BuildsTable = () => {
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const { statuses, buildIdOrTemplate } = useFilters()
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
@@ -76,7 +75,7 @@ const BuildsTable = () => {
     error: buildsError,
   } = useInfiniteQuery(
     trpc.builds.list.infiniteQueryOptions(
-      { teamIdOrSlug, statuses, buildIdOrTemplate },
+      { teamSlug, statuses, buildIdOrTemplate },
       {
         getNextPageParam: (page) => page.nextCursor ?? undefined,
         placeholderData: keepPreviousData,
@@ -110,7 +109,7 @@ const BuildsTable = () => {
 
   const { data: runningStatusesData } = useQuery(
     trpc.builds.runningStatuses.queryOptions(
-      { teamIdOrSlug, buildIds: runningBuildIds },
+      { teamSlug, buildIds: runningBuildIds },
       {
         enabled: runningBuildIds.length > 0,
         refetchInterval: (query) => {
@@ -133,7 +132,7 @@ const BuildsTable = () => {
 
   // Handlers
   const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
-    teamIdOrSlug,
+    teamSlug,
     statuses,
     buildIdOrTemplate,
   }).queryKey
@@ -238,7 +237,7 @@ const BuildsTable = () => {
                       onClick={() => {
                         router.push(
                           PROTECTED_URLS.TEMPLATE_BUILD(
-                            teamIdOrSlug,
+                            teamSlug,
                             build.templateId,
                             build.id
                           )
@@ -334,9 +333,9 @@ function useFilterChangeTracking(
 }
 
 function mergeBuildsWithLiveStatuses(
-  builds: ListedBuildDTO[],
-  runningStatusesData: RunningBuildStatusDTO[] | undefined
-): ListedBuildDTO[] {
+  builds: ListedBuildModel[],
+  runningStatusesData: RunningBuildStatusModel[] | undefined
+): ListedBuildModel[] {
   if (!runningStatusesData || runningStatusesData.length === 0) return builds
 
   const statusMap = new Map(runningStatusesData.map((s) => [s.id, s]))

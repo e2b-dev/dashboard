@@ -1,4 +1,3 @@
-import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -23,22 +22,19 @@ export function Template({
   className?: string
 }) {
   const router = useRouter()
-  const { teamIdOrSlug } =
-    useRouteParams<'/dashboard/[teamIdOrSlug]/templates'>()
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
       variant="link"
-      className={cn(
-        'text-fg-secondary h-auto p-0 gap-1 font-sans prose-body normal-case max-w-full underline underline-offset-2 hover:text-accent-main-highlight',
-        className
-      )}
+      size="none"
+      className={cn('max-w-full', className)}
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
 
         useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamIdOrSlug))
+        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
       }}
     >
       <p className="truncate">{template}</p>
@@ -89,9 +85,7 @@ export function RanFor({
       className="whitespace-nowrap text-fg-secondary group/time"
     >
       In {formatDurationCompact(duration)}{' '}
-      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
-        · {formattedTimestamp}
-      </span>
+      <span className="text-fg-tertiary">· {formattedTimestamp}</span>
     </CopyButtonInline>
   )
 }
@@ -107,9 +101,7 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
       className="whitespace-nowrap text-fg-secondary group/time"
     >
       {formatTimeAgoCompact(elapsed)}{' '}
-      <span className="text-fg-tertiary group-hover/time:text-current transition-colors">
-        · {formattedTimestamp}
-      </span>
+      <span className="text-fg-tertiary">· {formattedTimestamp}</span>
     </CopyButtonInline>
   )
 }

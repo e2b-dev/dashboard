@@ -1,13 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type {
+  SandboxEventModel,
+  SandboxMetric,
+} from '@/core/modules/sandboxes/models'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
-import type {
-  SandboxEventDTO,
-  SandboxMetric,
-} from '@/server/api/models/sandboxes.models'
 import { CpuIcon, MemoryIcon, StorageIcon } from '@/ui/primitives/icons'
 import { Separator } from '@/ui/primitives/separator'
 import { useSandboxMonitoringController } from '../state/use-sandbox-monitoring-controller'
@@ -43,14 +43,14 @@ interface RenderedMonitoringSnapshot {
   timeframe: { start: number; end: number }
   fetchTimeframe: { start: number; end: number }
   metrics: SandboxMetric[]
-  lifecycleEvents: SandboxEventDTO[]
+  lifecycleEvents: SandboxEventModel[]
 }
 
 function createRenderedMonitoringSnapshot(
   timeframe: { start: number; end: number },
   fetchTimeframe: { start: number; end: number },
   metrics: SandboxMetric[],
-  lifecycleEvents: SandboxEventDTO[]
+  lifecycleEvents: SandboxEventModel[]
 ): RenderedMonitoringSnapshot {
   return {
     timeframe: {
@@ -71,7 +71,7 @@ function isSameRenderedMonitoringSnapshot(
   timeframe: { start: number; end: number },
   fetchTimeframe: { start: number; end: number },
   metrics: SandboxMetric[],
-  lifecycleEvents: SandboxEventDTO[]
+  lifecycleEvents: SandboxEventModel[]
 ): boolean {
   return Boolean(
     snapshot &&

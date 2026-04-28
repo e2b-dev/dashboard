@@ -1,23 +1,26 @@
 'use client'
 
-import { ArrowLeft, ArrowUp, Home, RefreshCw } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { serializeError } from 'serialize-error'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+import {
+  ArrowLeftIcon,
+  ArrowUpIcon,
+  HomeIcon,
+  RefreshIcon,
+} from '@/ui/primitives/icons'
 import { useSandboxContext } from '../context'
 import SandboxInspectEmptyFrame from './empty'
 
 export default function SandboxInspectNotFound() {
   const router = useRouter()
   const { isRunning } = useSandboxContext()
-  const { trackInteraction } = useSandboxInspectAnalytics()
 
-  const { teamIdOrSlug } = useParams()
+  const { teamSlug } = useParams()
 
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
   const [isPending, startTransition] = useTransition()
@@ -34,7 +37,7 @@ export default function SandboxInspectNotFound() {
       l.error(
         {
           key: 'sandbox_inspect_not_found:save_root_path_failed',
-          error: serializeError(error),
+          error: serializeErrorForLog(error),
         },
         `${error instanceof Error ? error.message : 'Failed to save root path'}`
       )
@@ -66,26 +69,26 @@ export default function SandboxInspectNotFound() {
     <>
       <div className="flex w-full justify-between gap-4">
         <Button
-          variant="outline"
+          variant="secondary"
           className="flex-1 gap-2"
           onClick={() => setRootPath('')}
           disabled={isPending && pendingPath === ''}
         >
-          <Home className="text-fg-tertiary h-4 w-4" />
+          <HomeIcon className="text-fg-tertiary h-4 w-4" />
           Reset
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           className="flex-1 gap-2"
           onClick={() => setRootPath('/')}
           disabled={isPending && pendingPath === '/'}
         >
-          <ArrowUp className="text-fg-tertiary h-4 w-4" />
+          <ArrowUpIcon className="text-fg-tertiary h-4 w-4" />
           To Root
         </Button>
       </div>
       <Button
-        variant="outline"
+        variant="secondary"
         onClick={() =>
           resetTransition(async () => {
             router.refresh()
@@ -94,7 +97,7 @@ export default function SandboxInspectNotFound() {
         className="w-full gap-2"
         disabled={isResetPending}
       >
-        <RefreshCw
+        <RefreshIcon
           className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
             'animate-spin': isResetPending,
           })}
@@ -104,13 +107,11 @@ export default function SandboxInspectNotFound() {
     </>
   ) : (
     <Button
-      variant="outline"
-      onClick={() =>
-        router.push(PROTECTED_URLS.SANDBOXES(teamIdOrSlug as string))
-      }
+      variant="secondary"
+      onClick={() => router.push(PROTECTED_URLS.SANDBOXES(teamSlug as string))}
       className="w-full gap-2"
     >
-      <ArrowLeft className="text-fg-tertiary h-4 w-4" />
+      <ArrowLeftIcon className="text-fg-tertiary h-4 w-4" />
       Back to Sandboxes
     </Button>
   )

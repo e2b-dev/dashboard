@@ -1,10 +1,9 @@
 import type { NextRequest } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { BASE_URL } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {
   getRewriteForPath,
   rewriteContentPagesHtml,
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   } catch (error) {
     l.error({
       key: 'url_rewrite:unexpected_error',
-      error: serializeError(error),
+      error: serializeErrorForLog(error),
     })
 
     return new Response(

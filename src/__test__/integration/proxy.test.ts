@@ -15,10 +15,11 @@ vi.mock('@supabase/ssr', () => ({
 }))
 
 // mock logger to avoid noise in tests
-vi.mock('@/lib/clients/logger/logger', () => ({
+vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: {
     error: vi.fn(),
   },
+  serializeErrorForLog: vi.fn((error) => error),
 }))
 
 // mock next/server to track redirects and responses

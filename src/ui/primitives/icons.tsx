@@ -1,13 +1,15 @@
 import type React from 'react'
 import { cn } from '@/lib/utils/index'
 
-const DEFAULT_CLASS_NAMES = 'size-6'
+const DEFAULT_CLASS_NAMES = 'size-4'
 
-interface IconProps extends React.SVGProps<SVGSVGElement> {
+export interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string
   height?: number
   width?: number
 }
+
+export type Icon = React.ComponentType<IconProps>
 
 export const SandboxIcon = ({ className, ...props }: IconProps) => (
   <svg
@@ -1035,6 +1037,46 @@ export const AlertIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const BugIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4 8.66667V6V5.33333H12V6V8.66667M4 8.66667V10C4 12.2091 5.79086 14 8 14C10.2091 14 12 12.2091 12 10V8.66667M4 8.66667H2M12 8.66667H14M2.16667 5.33333L3.66667 5.87879M4 11.3333L2.16667 12M13.8333 5.33333L12.3333 5.87879M12 11.3333L13.8333 12M8 8.66667V13.3333M5.33333 4.66667C5.33333 3.19391 6.52724 2 8 2C9.47273 2 10.6667 3.19391 10.6667 4.66667"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+    />
+  </svg>
+)
+
+export const FeedbackIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2.00098 2.66665L14.001 2.66663V12.0238L10.0099 12.0238L7.99814 13.6905L6.00985 12.0238H2.00098V2.66665Z"
+      stroke="currentColor"
+      stroke-width="1.33333"
+    />
+    <path
+      d="M4.41699 7.33333C4.41699 7.65547 4.67816 7.91667 5.00033 7.91667C5.32249 7.91667 5.58366 7.65547 5.58366 7.33333C5.58366 7.0112 5.32249 6.75 5.00033 6.75C4.67816 6.75 4.41699 7.0112 4.41699 7.33333ZM7.41699 7.33333C7.41699 7.65547 7.67819 7.91667 8.00033 7.91667C8.32246 7.91667 8.58366 7.65547 8.58366 7.33333C8.58366 7.0112 8.32246 6.75 8.00033 6.75C7.67819 6.75 7.41699 7.0112 7.41699 7.33333ZM10.417 7.33333C10.417 7.65547 10.6782 7.91667 11.0003 7.91667C11.3225 7.91667 11.5837 7.65547 11.5837 7.33333C11.5837 7.0112 11.3225 6.75 11.0003 6.75C10.6782 6.75 10.417 7.0112 10.417 7.33333Z"
+      fill="currentColor"
+      stroke="currentColor"
+      stroke-width="0.5"
+      stroke-linecap="square"
+    />
+  </svg>
+)
+
 export const CodeChevronIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}
@@ -1159,6 +1201,36 @@ export const PrivateIcon = ({ className, ...props }: IconProps) => (
     <path
       d="M3.33317 6.66671V6.00004H2.6665V6.66671H3.33317ZM12.6665 6.66671H13.3332V6.00004H12.6665V6.66671ZM12.6665 14V14.6667H13.3332V14H12.6665ZM3.33317 14H2.6665V14.6667H3.33317V14ZM9.99984 6.66671C9.99984 7.03491 10.2983 7.33337 10.6665 7.33337C11.0347 7.33337 11.3332 7.03491 11.3332 6.66671H9.99984ZM4.6665 6.66671C4.6665 7.03491 4.96498 7.33337 5.33317 7.33337C5.70136 7.33337 5.99984 7.03491 5.99984 6.66671H4.6665ZM8.6665 9.33337V8.66671H7.33317V9.33337H8.6665ZM7.33317 11.3334V12H8.6665V11.3334H7.33317ZM3.33317 7.33337H12.6665V6.00004H3.33317V7.33337ZM11.9998 6.66671V14H13.3332V6.66671H11.9998ZM12.6665 13.3334H3.33317V14.6667H12.6665V13.3334ZM3.99984 14V6.66671H2.6665V14H3.99984ZM9.99984 4.66671V6.66671H11.3332V4.66671H9.99984ZM5.99984 6.66671V4.66671H4.6665V6.66671H5.99984ZM7.99984 2.66671C9.10444 2.66671 9.99984 3.56214 9.99984 4.66671H11.3332C11.3332 2.82576 9.84077 1.33337 7.99984 1.33337V2.66671ZM7.99984 1.33337C6.15889 1.33337 4.6665 2.82576 4.6665 4.66671H5.99984C5.99984 3.56214 6.89524 2.66671 7.99984 2.66671V1.33337ZM7.33317 9.33337V11.3334H8.6665V9.33337H7.33317Z"
       fill="currentColor"
+    />
+  </svg>
+)
+
+export const UnlockIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M3.3335 6.66663H12.6668V14H3.3335V6.66663Z"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+    />
+    <path
+      d="M5.3335 6.33333V4.66667C5.3335 3.19391 6.5274 2 8.00016 2C9.4729 2 10.6668 3.19391 10.6668 4.66667"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M8 9.33337V11.3334"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+      stroke-linejoin="round"
     />
   </svg>
 )
@@ -1390,6 +1462,555 @@ export const ArrowDownIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const ArrowRightIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M9.3335 4L13.3335 8L9.3335 12"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+    />
+    <path
+      d="M12.6665 8H2.6665"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+    />
+  </svg>
+)
+
+export const ArrowLeftIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M6.6665 4L2.6665 8L6.6665 12"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+    />
+    <path
+      d="M3.3335 8H13.3335"
+      stroke="currentColor"
+      stroke-width="1.33333"
+      stroke-linecap="square"
+    />
+  </svg>
+)
+
+export const ArrowUpIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M12 5V20"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M6 10L12 4L18 10"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const HomeIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M20 20V9L12 2.5L4 9V20H10V14H14V20H20Z"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+  </svg>
+)
+
+export const MoonIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M19.5069 14.8744C19.0169 14.957 18.5138 15.0001 18.001 15.0001C13.0304 15.0001 9.00098 10.9707 9.00098 6.00011C9.00098 5.48735 9.04402 4.98421 9.12668 4.49427C6.11019 5.65119 3.96875 8.57464 3.96875 11.9982C3.96875 16.4354 7.56576 20.0324 12.0029 20.0324C15.4265 20.0324 18.35 17.8909 19.5069 14.8744ZM20.006 12.7087C19.3708 12.8983 18.6978 13.0001 18.001 13.0001C14.135 13.0001 11.001 9.8661 11.001 6.00011C11.001 5.30331 11.1028 4.63028 11.2924 3.9951C11.4622 3.42611 11.7024 2.88749 12.0029 2.38935C12.0897 2.24538 12.1816 2.10478 12.2783 1.96782C12.1868 1.96535 12.095 1.96411 12.0029 1.96411C11.261 1.96411 10.538 2.04462 9.84201 2.19737C5.33892 3.18569 1.96875 7.1984 1.96875 11.9982C1.96875 17.5399 6.46119 22.0324 12.0029 22.0324C16.8028 22.0324 20.8155 18.6622 21.8038 14.159C21.9565 13.4631 22.037 12.74 22.037 11.9982C22.037 11.9061 22.0358 11.8142 22.0333 11.7227C21.8963 11.8194 21.7557 11.9113 21.6117 11.9982C21.1136 12.2987 20.575 12.5389 20.006 12.7087Z"
+      fill="currentColor"
+    />
+    <path
+      d="M16.3344 5.33333L17.501 3L18.6677 5.33333L21.001 6.5L18.6677 7.66666L17.501 10L16.3344 7.66666L14.001 6.5L16.3344 5.33333Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
+export const SunIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M15.5355 8.46447C17.4882 10.4171 17.4882 13.5829 15.5355 15.5355C13.5829 17.4882 10.4171 17.4882 8.46447 15.5355C6.51184 13.5829 6.51184 10.4171 8.46447 8.46447C10.4171 6.51184 13.5829 6.51184 15.5355 8.46447Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M12 3V2M12 22V21M18.3598 5.64005L19.0698 4.93005M4.93016 19.07L5.64016 18.36M21 12H22M2 12H3M18.3598 18.36L19.0698 19.07M4.93016 4.93005L5.64016 5.64005"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const SystemIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4 4H20V16H4V4Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M2 16H22V20H2V16Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const CalendarIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4 5H20V20H4V5Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M4 10H20"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8 5V3"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M16 5V3"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+export const CloudIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M7 19C4.23858 19 2 16.7614 2 14C2 11.4673 3.88316 9.37436 6.32568 9.04508C7.13649 6.69118 9.37075 5 12 5C15.3137 5 18 7.68629 18 11C20.2091 11 22 12.7909 22 15C22 17.2091 20.2091 19 18 19H7Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
+export const LinkIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M7 11H6V13H7V11ZM17 13H18V11H17V13ZM22 7H23V6H22V7ZM22 17V18H23V17H22ZM16 16H15V18H16V16ZM16 6H15V8H16V6ZM2 7V6H1V7H2ZM2 17H1V18H2V17ZM8 18H9V16H8V18ZM8 8H9V6H8V8ZM7 13H17V11H7V13ZM21 7V17H23V7H21ZM22 16H16V18H22V16ZM16 8H22V6H16V8ZM1 7V17H3V7H1ZM2 18H8V16H2V18ZM8 6H2V8H8V6Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
+export const SelectIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M8 9L12 5L16 9"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M8 15L12 19L16 15"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const SuccessIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M8 12.875L10.625 15.5L15 9"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const EyeIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 12C6.82745 2.66672 17.1725 2.66661 22 11.9999C17.1725 21.3332 6.82745 21.3333 2 12Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+export const EyeOffIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M10.7422 5.08575C14.9364 4.51209 19.3188 6.81681 21.9997 11.9999C21.4902 12.985 20.9192 13.8661 20.2997 14.6433"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M3 3L21 21"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M6.27513 6.8938C5.46987 7.46536 4.70438 8.16628 3.99669 8.99656C3.26216 9.85832 2.58989 10.8595 2 11.9999C4.80095 17.4153 9.45939 19.6885 13.8198 18.8197C14.9097 18.6026 15.981 18.1891 17 17.5794"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M10.3408 9.50002C11.5061 8.72478 13.0939 8.851 14.1215 9.87868C15.1312 10.8884 15.2707 12.4387 14.5401 13.5978"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M4.5 9.5L13.3978 18.3978"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const DownloadIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M20 15V20H4V15M12 4V13.5M8.5 11L12 14.5L15.5 11"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const FolderIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M3 4V19H21V7H12L10 4H3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
+export const FolderOpenIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M3 9V4H10L12 6H21V9" stroke="currentColor" strokeWidth="2" />
+    <path
+      d="M1.5 12H22.5L21 19H3L1.5 12Z"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+  </svg>
+)
+
+export const FolderUpIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M16 19H21V7H12L10 4H3V19H8"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M12 19V14"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M14.5 15.5L12 13L9.5 15.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const FileIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M5 3H13L19 9V21H5V3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M13 4V9H18"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const SpinnerIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn('animate-spin', DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+      stroke="currentColor"
+      strokeOpacity="0.3"
+      strokeWidth="2"
+    />
+    <path
+      d="M21 12C21 16.9706 16.9706 21 12 21"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+  </svg>
+)
+
+export const TerminalCustomIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4 4H20V20H4V4Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M7.5 8L9.25 9.75L7.5 11.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const SortIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M3 8L7 4L11 8"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M13 16L17 20L21 16"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M7 5V20"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+    <path
+      d="M17 4V19"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const SortAscIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 12 12"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2.5 6L6 2.5L9.5 6M6 3.08333L6 9.5"
+      stroke="currentColor"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const SortDescIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 12 12"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M9.5 6L6 9.5L2.5 6M6 8.91667V2.5"
+      stroke="currentColor"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
 export const InvoiceIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}
@@ -1403,6 +2024,69 @@ export const InvoiceIcon = ({ className, ...props }: IconProps) => (
       stroke="currentColor"
       strokeLinecap="square"
       strokeWidth="1.33333"
+    />
+  </svg>
+)
+
+export const DashboardIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4 4H10V10H4V4Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M14 4H20V20H14V4Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M4 14H10V20H4V14Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
+export const ShieldXIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M14 13.5L12 11.5M12 11.5L10 9.5M12 11.5L14 9.5M12 11.5L10 13.5M12 3L20 5.75V11.9123C20 16.8848 16 19 12 21.1579C8 19 4 16.8848 4 11.9123V5.75L12 3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+    />
+  </svg>
+)
+
+export const UploadIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M20 14.75V20H4V14.75M12 15.25V5M16.5 8.5L12 4L7.49999 8.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
     />
   </svg>
 )

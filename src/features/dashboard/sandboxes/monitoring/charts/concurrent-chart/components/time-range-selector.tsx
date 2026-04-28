@@ -70,10 +70,10 @@ export function TimeRangeSelector({
         onValueChange={handleTimePickerChange}
       >
         <Button
-          variant="ghost"
-          size="slate"
+          variant="tertiary"
+          size="none"
           className={cn(
-            'text-fg-tertiary hover:text-fg-secondary py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0 prose-label',
+            'text-fg-tertiary hover:text-fg-secondary py-0.5 max-md:text-[11px] max-md:px-1.5 shrink-0 prose-label uppercase',
             {
               'text-fg prose-label-highlight': currentRange === 'custom',
             }
@@ -86,10 +86,10 @@ export function TimeRangeSelector({
       {CHART_RANGE_MAP_KEYS.filter((key) => key !== 'custom').map((key) => (
         <Button
           key={key}
-          variant="ghost"
-          size="slate"
+          variant="tertiary"
+          size="none"
           className={cn(
-            'text-fg-tertiary hover:text-fg-secondary py-0.5 max-md:text-[11px] max-md:px-1.5 flex-shrink-0 prose-label',
+            'text-fg-tertiary hover:text-fg-secondary py-0.5 max-md:text-[11px] max-md:px-1.5 shrink-0 prose-label uppercase',
             {
               'text-fg prose-label-highlight': currentRange === key,
             }

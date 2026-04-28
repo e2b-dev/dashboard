@@ -1,6 +1,5 @@
 'use client'
 
-import { ListFilter } from 'lucide-react'
 import * as React from 'react'
 import { useDebounceValue } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
@@ -18,6 +17,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { FilterIcon } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
@@ -84,8 +84,7 @@ const ResourcesFilter = () => {
             />
             {localValues.cpu > 0 && (
               <Button
-                variant="error"
-                size="sm"
+                variant="secondary"
                 onClick={handleClearCpu}
                 className="h-9 text-xs"
               >
@@ -112,12 +111,7 @@ const ResourcesFilter = () => {
               className="w-full"
             />
             {localValues.memory > 0 && (
-              <Button
-                variant="error"
-                size="sm"
-                onClick={handleClearMemory}
-                className="h-9 text-xs"
-              >
+              <Button variant="secondary" onClick={handleClearMemory}>
                 Clear
               </Button>
             )}
@@ -160,8 +154,8 @@ const TemplatesTableFilters = React.forwardRef<
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="md" className="normal-case gap-2">
-            <ListFilter className="text-fg-tertiary size-4" /> Filter{' '}
+          <Button variant="secondary" className="normal-case gap-2">
+            <FilterIcon className="text-fg-tertiary size-4" /> Filters{' '}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

@@ -1,12 +1,11 @@
 import Sandbox from 'e2b'
 import { type NextRequest, NextResponse } from 'next/server'
-import { serializeError } from 'serialize-error'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/lib/clients/logger/logger'
-import { createClient } from '@/lib/clients/supabase/server'
-import { getDefaultTeam } from '@/server/auth/get-default-team'
-import { getSessionInsecure } from '@/server/auth/get-session'
+import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { createClient } from '@/core/shared/clients/supabase/server'
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -35,17 +34,21 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    const defaultTeam = await getDefaultTeam(data.user.id)
+    const team = await resolveUserTeam(data.user.id, session.access_token)
+
+    if (!team) {
+      return NextResponse.redirect(new URL(req.url).origin)
+    }
 
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token, defaultTeam.id),
+        ...SUPABASE_AUTH_HEADERS(session.access_token, team.id),
       },
     })
 
     const filesystemUrl = PROTECTED_URLS.SANDBOX_FILESYSTEM(
-      defaultTeam.slug,
+      team.slug,
       sbx.sandboxId
     )
 
@@ -54,7 +57,7 @@ export const GET = async (req: NextRequest) => {
     l.warn(
       {
         key: 'sbx_new:unexpected_error',
-        error: serializeError(error),
+        error: serializeErrorForLog(error),
       },
       `sbx_new: unexpected error`
     )

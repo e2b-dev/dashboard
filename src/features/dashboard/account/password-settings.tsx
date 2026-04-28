@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -13,7 +14,6 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { getUserProviders } from '@/lib/utils/auth'
-import { updateUserAction } from '@/server/user/user-actions'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -200,7 +200,7 @@ export function PasswordSettings({
             </p>
             <Button
               type="submit"
-              loading={isPending}
+              loading={isPending ? 'Updating...' : undefined}
               onClick={form.handleSubmit(onSubmit)}
               disabled={isPending || !form.formState.isValid}
             >
