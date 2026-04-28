@@ -10,9 +10,9 @@ import { useTRPC } from '@/trpc/client'
 import { ADDON_PURCHASE_MESSAGES } from './constants'
 import { extractAddonData, extractTierData } from './utils'
 
-const stripePublishableKey =
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ''
-const stripePromise = loadStripe(stripePublishableKey)
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+)
 
 /**
  * Provides themed appearance configuration for Stripe Payment Element
