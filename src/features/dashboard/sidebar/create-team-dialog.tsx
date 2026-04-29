@@ -73,7 +73,6 @@ export const CreateTeamDialog = ({
         if (!team.slug) return
 
         router.push(PROTECTED_URLS.SANDBOXES(team.slug))
-        router.refresh()
       },
     })
   )
