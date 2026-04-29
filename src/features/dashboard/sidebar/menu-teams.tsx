@@ -72,7 +72,10 @@ export default function DashboardSidebarMenuTeams() {
               value={team.id}
               className="h-9 [&_svg]:size-5"
             >
-              <TeamAvatar team={team} className="size-6 shrink-0 border-none" />
+              <TeamAvatar
+                team={team}
+                classNames={{ root: 'size-6 shrink-0 border-none' }}
+              />
               <span className="flex-1 truncate font-sans prose-body-highlight">
                 {getTeamDisplayName(team)}
               </span>

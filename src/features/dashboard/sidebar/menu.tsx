@@ -42,14 +42,16 @@ export default function DashboardSidebarMenu() {
             <SidebarMenuButton variant="outline" size="switcher">
               <TeamAvatar
                 team={team}
-                className={cn(
-                  'size-8 shrink-0 transition-all duration-100 ease-in-out',
-                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
-                  {
-                    'drop-shadow-sm filter': team.profilePictureUrl,
-                  }
-                )}
-                imageClassName="group-data-[collapsible=icon]:size-full"
+                classNames={{
+                  root: cn(
+                    'size-8 shrink-0 transition-all duration-100 ease-in-out',
+                    'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
+                    {
+                      'drop-shadow-sm filter': team.profilePictureUrl,
+                    }
+                  ),
+                  image: 'group-data-[collapsible=icon]:size-full',
+                }}
               />
               <div className="grid flex-1 text-left  leading-tight">
                 <span className="text-fg-tertiary truncate prose-label">

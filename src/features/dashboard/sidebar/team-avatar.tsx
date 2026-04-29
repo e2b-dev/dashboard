@@ -4,18 +4,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 
 interface TeamAvatarProps {
   team: TeamModel
-  className?: string
-  imageClassName?: string
+  classNames?: {
+    root?: string
+    image?: string
+  }
 }
 
-export const TeamAvatar = ({
-  team,
-  className,
-  imageClassName,
-}: TeamAvatarProps) => {
+export const TeamAvatar = ({ team, classNames }: TeamAvatarProps) => {
   if (!team.profilePictureUrl) {
     return (
-      <Avatar className={cn('size-9', className)}>
+      <Avatar className={cn('size-9', classNames?.root)}>
         <AvatarFallback className="bg-bg-hover border-0 text-fg-tertiary">
           {team.name?.charAt(0).toUpperCase() || '?'}
         </AvatarFallback>
@@ -24,10 +22,10 @@ export const TeamAvatar = ({
   }
 
   return (
-    <Avatar className={className}>
+    <Avatar className={classNames?.root}>
       <AvatarImage
         src={team.profilePictureUrl}
-        className={cn('object-cover object-center', imageClassName)}
+        className={cn('object-cover object-center', classNames?.image)}
       />
     </Avatar>
   )
