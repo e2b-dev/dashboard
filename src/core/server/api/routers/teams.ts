@@ -42,12 +42,6 @@ const teamsRepositoryProcedure = protectedTeamProcedure.use(
   }))
 )
 
-const authedTeamsRepositoryProcedure = protectedProcedure.use(
-  withAuthedRequestRepository(createTeamsRepository, (teamsRepository) => ({
-    teamsRepository,
-  }))
-)
-
 const getStorageFilePath = (folderPath: string, fileName: string) =>
   `${folderPath}/${fileName}`
 
@@ -61,10 +55,10 @@ export const teamsRouter = createTRPCRouter({
 
     return teamsResult.data
   }),
-  create: authedTeamsRepositoryProcedure
+  create: userTeamsRepositoryProcedure
     .input(CreateTeamSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.teamsRepository.createTeam(input.name)
+      const result = await ctx.userTeamsRepository.createTeam(input.name)
 
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
 
