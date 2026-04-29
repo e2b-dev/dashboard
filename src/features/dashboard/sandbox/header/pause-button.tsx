@@ -54,12 +54,11 @@ export default function PauseButton({ className }: PauseButtonProps) {
 
   return (
     <Button
-      variant="ghost"
-      size="slate"
+      variant="secondary"
       className={cn(className)}
       disabled={!canPause || isExecuting}
       onClick={handlePause}
-      loading={isExecuting}
+      loading={isExecuting ? 'Pausing...' : undefined}
     >
       <PausedIcon className="size-3.5" />
       Pause

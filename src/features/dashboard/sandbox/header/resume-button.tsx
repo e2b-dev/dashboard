@@ -54,12 +54,11 @@ export default function ResumeButton({ className }: ResumeButtonProps) {
 
   return (
     <Button
-      variant="ghost"
-      size="slate"
+      variant="secondary"
       className={cn('text-accent-positive-highlight', className)}
       disabled={!canResume || isExecuting}
       onClick={handleResume}
-      loading={isExecuting}
+      loading={isExecuting ? 'Resuming...' : undefined}
     >
       <PlayIcon className="size-3.5" />
       Resume
