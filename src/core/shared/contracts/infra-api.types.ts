@@ -759,6 +759,8 @@ export interface paths {
             allowOut?: string[]
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[]
+            /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+            allow_internet_access?: boolean
           }
         }
       }
@@ -2344,6 +2346,11 @@ export interface components {
        * @description Total memory in bytes
        */
       memTotal: number
+      /**
+       * Format: int64
+       * @description Cached memory (page cache) in bytes
+       */
+      memCache: number
       /**
        * Format: int64
        * @description Disk used in bytes

@@ -46,12 +46,7 @@ export default function EndedAt() {
       <p>
         {prefix}, {timeStr}
       </p>
-      <CopyButton
-        value={endedAt}
-        variant="ghost"
-        size="slate"
-        className="text-fg-secondary size-3.5"
-      />
+      <CopyButton value={endedAt} className="text-fg-secondary" />
     </div>
   )
 }

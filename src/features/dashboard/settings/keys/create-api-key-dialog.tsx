@@ -164,10 +164,12 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                         </FormControl>
                         <Button
                           type="submit"
-                          variant={canSubmit ? 'default' : 'muted'}
+                          variant={canSubmit ? 'primary' : 'secondary'}
                           className="h-9 shrink-0 gap-1 px-3 font-sans normal-case"
                           disabled={!canSubmit || createMutation.isPending}
-                          loading={createMutation.isPending}
+                          loading={
+                            createMutation.isPending ? 'Creating' : undefined
+                          }
                         >
                           <AddIcon className="size-4" aria-hidden />
                           Create
@@ -197,7 +199,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                 />
                 <Button
                   type="button"
-                  variant="default"
+                  variant="primary"
                   className="h-9 shrink-0 gap-1.5 px-3 font-sans normal-case active:translate-y-0"
                   onClick={() => {
                     void copyReveal(createdKey)
@@ -234,8 +236,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                   <DialogClose asChild>
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="slate"
+                      variant="tertiary"
                       className="text-fg-tertiary hover:text-fg shrink-0 font-sans text-sm font-medium normal-case"
                     >
                       Close

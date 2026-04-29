@@ -33,10 +33,10 @@ export function JsonPopover({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
-          size="slate"
+          variant="quaternary"
+          size="none"
           className={cn(
-            'h-full w-full cursor-pointer justify-start truncate p-0 font-sans whitespace-nowrap',
+            'cursor-pointer justify-start truncate font-sans whitespace-nowrap',
             className
           )}
           onClick={(e) => {

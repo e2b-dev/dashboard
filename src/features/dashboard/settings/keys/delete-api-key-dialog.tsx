@@ -91,8 +91,7 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
             <DialogClose asChild>
               <Button
                 type="button"
-                variant="ghost"
-                size="slate"
+                variant="tertiary"
                 disabled={deleteMutation.isPending}
                 className="text-fg-tertiary font-sans normal-case hover:text-fg-tertiary focus:text-fg-tertiary"
               >
@@ -102,8 +101,7 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
             <Button
               type="button"
               variant="error"
-              size="md"
-              loading={deleteMutation.isPending}
+              loading={deleteMutation.isPending ? 'Deleting' : undefined}
               disabled={deleteMutation.isPending}
               className="gap-2 font-sans normal-case"
               onClick={() => {

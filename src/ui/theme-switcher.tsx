@@ -1,9 +1,7 @@
 'use client'
 
-import { Laptop, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import useIsMounted from '@/lib/hooks/use-is-mounted'
-import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +9,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { IconButton } from '@/ui/primitives/icon-button'
+import { MoonIcon, SunIcon, SystemIcon } from '@/ui/primitives/icons'
 
 interface ThemeSwitcherProps {
   className?: string
@@ -24,18 +24,16 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
     return null
   }
 
-  const ICON_SIZE = 16
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={className} asChild>
-        <Button variant="ghost" size={'iconSm'}>
+        <IconButton>
           {resolvedTheme === 'light' ? (
-            <Sun key="light" size={ICON_SIZE} className={'text-fg-tertiary'} />
+            <SunIcon key="light" />
           ) : (
-            <Moon key="dark" size={ICON_SIZE} className={'text-fg-tertiary'} />
+            <MoonIcon key="dark" />
           )}
-        </Button>
+        </IconButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-[130px]" align="start">
         <DropdownMenuRadioGroup
@@ -46,21 +44,21 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
             className="flex items-center gap-2"
             value="light"
           >
-            <Sun className="text-fg-tertiary size-3.5" />
+            <SunIcon className="text-fg-tertiary" />
             <span>Light</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem
             className="flex items-center gap-2"
             value="dark"
           >
-            <Moon className="text-fg-tertiary size-3.5" />
+            <MoonIcon className="text-fg-tertiary" />
             <span>Dark</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem
             className="flex items-center gap-2"
             value="system"
           >
-            <Laptop className="text-fg-tertiary size-3.5" />
+            <SystemIcon className="text-fg-tertiary" />
             <span>System</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

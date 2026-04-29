@@ -1,6 +1,5 @@
 'use client'
 
-import { Book, Github, LifeBuoy, MessageSquarePlus } from 'lucide-react'
 import Link from 'next/link'
 import {
   INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
@@ -8,7 +7,13 @@ import {
 } from '@/configs/flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
-import ExternalIcon from '@/ui/external-icon'
+import {
+  BugIcon,
+  DocsIcon,
+  ExternalLinkIcon,
+  FeedbackIcon,
+  GithubIcon,
+} from '@/ui/primitives/icons'
 import {
   SIDEBAR_TRANSITION_CLASSNAMES,
   SidebarFooter,
@@ -19,7 +24,6 @@ import {
 } from '@/ui/primitives/sidebar'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import ContactSupportDialog from '../navbar/report-issue-dialog'
-import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
   return (
@@ -27,7 +31,6 @@ export default function DashboardSidebarFooter() {
       <SidebarFooter>
         <SidebarGroup className="!p-0">
           <SidebarMenu>
-            <TeamBlockageAlert className="mb-2" />
             <SidebarMenuItem key="github">
               <SidebarMenuButton asChild tooltip="GitHub">
                 <Link
@@ -35,28 +38,18 @@ export default function DashboardSidebarFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Github
-                    className={cn(
-                      'size-4 group-data-[collapsible=icon]:!size-5',
-                      SIDEBAR_TRANSITION_CLASSNAMES
-                    )}
-                  />
+                  <GithubIcon />
                   GitHub
-                  <ExternalIcon className="ml-auto size-4" />
+                  <ExternalLinkIcon className="ml-auto !size-4 text-fg-tertiary" />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem key="docs">
               <SidebarMenuButton asChild tooltip="Documentation">
                 <Link href="/docs" target="_blank" rel="noopener noreferrer">
-                  <Book
-                    className={cn(
-                      'size-4 group-data-[collapsible=icon]:!size-5',
-                      SIDEBAR_TRANSITION_CLASSNAMES
-                    )}
-                  />
+                  <DocsIcon />
                   Documentation
-                  <ExternalIcon className="ml-auto size-4" />
+                  <ExternalLinkIcon className="ml-auto !size-4 text-fg-tertiary" />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -84,13 +77,12 @@ export default function DashboardSidebarFooter() {
                 trigger={
                   <SidebarMenuButton
                     tooltip="Feedback"
-                    variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
+                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-[35px]! group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
-                    <MessageSquarePlus className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    <FeedbackIcon className="hidden group-data-[collapsible=icon]:block" />
                     Feedback
                   </SidebarMenuButton>
                 }
@@ -109,13 +101,12 @@ export default function DashboardSidebarFooter() {
                 trigger={
                   <SidebarMenuButton
                     tooltip="Support"
-                    variant="ghost"
                     className={cn(
-                      'hover:bg-bg-hover transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:min-h-protected-statusbar group-data-[collapsible=icon]:justify-start',
+                      'transition-all h-full w-full justify-center group-data-[collapsible=icon]:h-[35px]! group-data-[collapsible=icon]:justify-start',
                       SIDEBAR_TRANSITION_CLASSNAMES
                     )}
                   >
-                    <LifeBuoy className="hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:!size-5" />
+                    <BugIcon className="hidden group-data-[collapsible=icon]:block" />
                     Support
                   </SidebarMenuButton>
                 }

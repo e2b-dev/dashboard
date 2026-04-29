@@ -1,10 +1,10 @@
-import { AlertTriangle } from 'lucide-react'
 import { Suspense } from 'react'
 import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { getTeamMetricsMax } from '@/core/server/functions/sandboxes/get-team-metrics-max'
 import { getNowMemo } from '@/lib/utils/server'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
+import { WarningIcon } from '@/ui/primitives/icons'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import {
   ConcurrentSandboxesClient,
@@ -38,7 +38,7 @@ function BaseErrorTooltip({ children }: { children: React.ReactNode }) {
     <ErrorTooltip
       trigger={
         <span className="inline-flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-accent-error-highlight" />
+          <WarningIcon className="h-4 w-4 text-accent-error-highlight" />
           <span className="prose-body-highlight text-accent-error-highlight">
             Failed
           </span>

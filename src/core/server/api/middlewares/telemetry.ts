@@ -18,6 +18,7 @@ import {
 } from '@/core/server/adapters/errors'
 import { t } from '@/core/server/trpc/init'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { withRequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'
 import { getMeter } from '@/core/shared/clients/meter'
 import { getTracer } from '@/core/shared/clients/tracer'
 
@@ -114,14 +115,30 @@ export const startTelemetryMiddleware = t.middleware(
     }
 
     // execute within span context and pass telemetry state through
-    return context.with(trace.setSpan(context.active(), span), async () => {
-      return next({
-        ctx: {
-          ...ctx,
-          telemetry: telemetryState,
-        },
-      })
-    })
+    const requestObservability =
+      ctx.requestObservability ??
+      ({
+        request_path: '/api/trpc',
+        transport: 'trpc',
+        handler_name: procedurePath,
+      } as const)
+
+    return withRequestObservabilityContext(
+      {
+        ...requestObservability,
+        transport: 'trpc',
+        handler_name: procedurePath,
+      },
+      () =>
+        context.with(trace.setSpan(context.active(), span), async () => {
+          return next({
+            ctx: {
+              ...ctx,
+              telemetry: telemetryState,
+            },
+          })
+        })
+    )
   }
 )
 

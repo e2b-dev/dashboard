@@ -219,7 +219,7 @@ export function TimeRangePicker({
           type="submit"
           disabled={!form.formState.isDirty || form.formState.isSubmitting}
           className="w-fit self-end mt-auto"
-          variant="outline"
+          variant="secondary"
         >
           Apply
         </Button>

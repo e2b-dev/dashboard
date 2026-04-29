@@ -20,7 +20,7 @@ import { formatDate } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
@@ -158,12 +158,7 @@ const NameCell = ({
             {name ?? email}
           </span>
           {isCurrentUser ? (
-            <Badge
-              className="shrink-0 uppercase"
-              size="sm"
-              typography="regular"
-              variant="default"
-            >
+            <Badge className="shrink-0 uppercase" size="sm" variant="default">
               You
             </Badge>
           ) : null}
@@ -266,15 +261,9 @@ const AddedCell = ({
           setOpen={setRemoveDialogOpen}
           teamName={teamName}
           trigger={
-            <Button
-              aria-label={`Remove ${memberName ?? memberEmail}`}
-              className="text-fg-tertiary hover:text-fg"
-              size="iconSm"
-              type="button"
-              variant="ghost"
-            >
-              <TrashIcon className="size-4" />
-            </Button>
+            <IconButton aria-label={`Remove ${memberName ?? memberEmail}`}>
+              <TrashIcon />
+            </IconButton>
           }
         />
       ) : null}

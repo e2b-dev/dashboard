@@ -1,6 +1,5 @@
 'use client'
 
-import { AlertTriangle, ArrowUpRight, ChevronLeft } from 'lucide-react'
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { useEffect } from 'react'
@@ -18,6 +17,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
+import {
+  ChevronLeftIcon,
+  ExternalLinkIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 
 interface SandboxInspectIncompatibleProps {
   templateNameOrId?: string
@@ -55,7 +59,7 @@ export default function SandboxInspectIncompatible({
         <Card className="bg-bg flex h-full min-h-160 w-full max-w-150 flex-col justify-between border p-7">
           <CardHeader className="px-0 pt-0 pb-7">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-accent-warning-highlight h-5 w-5" />
+              <WarningIcon className="text-accent-warning-highlight h-5 w-5" />
               <CardTitle>Incompatible template</CardTitle>
             </div>
             <CardDescription className="text-fg-secondary">
@@ -76,10 +80,7 @@ export default function SandboxInspectIncompatible({
                   </CodeBlock>
                   <div className="text-fg-secondary -ml-4 inline-block">
                     The folder should contain an{' '}
-                    <Badge className={codeClassNames} variant="code">
-                      e2b.toml
-                    </Badge>{' '}
-                    file.
+                    <Badge className={codeClassNames}>e2b.toml</Badge> file.
                   </div>
                 </li>
 
@@ -87,9 +88,7 @@ export default function SandboxInspectIncompatible({
                   <p className="prose-body-highlight">Rebuild the template</p>
                   <div className="text-fg-secondary -ml-4 inline-block leading-6">
                     Use{' '}
-                    <Badge className={codeClassNames} variant="code">
-                      e2b template build
-                    </Badge>{' '}
+                    <Badge className={codeClassNames}>e2b template build</Badge>{' '}
                     along with custom{' '}
                     <Link
                       className="text-fg underline"
@@ -99,9 +98,7 @@ export default function SandboxInspectIncompatible({
                       start commands
                     </Link>{' '}
                     and any other arguments to rebuild. For example:
-                    <Badge className={codeClassNames} variant="code">
-                      -c "start.sh"
-                    </Badge>
+                    <Badge className={codeClassNames}>-c "start.sh"</Badge>
                   </div>
                 </li>
 
@@ -120,25 +117,23 @@ export default function SandboxInspectIncompatible({
           </CardContent>
           <CardFooter className="pt-auto justify-between border-none px-0 pb-0 max-md:flex-col max-md:gap-4">
             <Button
-              variant="ghost"
-              size="slate"
+              variant="quaternary"
               className="text-fg-tertiary hover:text-fg font-sans normal-case max-md:w-full max-md:justify-start"
               asChild
             >
               <Link href={PROTECTED_URLS.SANDBOXES_LIST(teamSlug)}>
-                <ChevronLeft className="size-5" />
+                <ChevronLeftIcon className="size-5" />
                 Back to sandboxes
               </Link>
             </Button>
             <Button
-              size="lg"
-              variant="outline"
+              variant="secondary"
               className="pr-3 font-sans normal-case max-md:w-full"
               asChild
             >
               <Link href={HELP_URLS.BUILD_TEMPLATE} target="_blank">
                 Documentation{' '}
-                <ArrowUpRight className="text-fill-highlight size-5 stroke-[1px]!" />
+                <ExternalLinkIcon className="text-fill-highlight size-5 stroke-[1px]!" />
               </Link>
             </Button>
           </CardFooter>

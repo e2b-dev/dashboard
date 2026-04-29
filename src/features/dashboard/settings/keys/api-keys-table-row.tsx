@@ -86,8 +86,8 @@ const ApiKeyIdBadge = ({ id }: ApiKeyIdBadgeProps) => {
       <span>{displayId}</span>
       <Button
         type="button"
-        variant="ghost"
-        size="slate"
+        variant="quaternary"
+        size="none"
         className="text-fg-tertiary hover:text-fg h-3 w-3 shrink-0 active:translate-y-0"
         aria-label="Copy full API key ID"
         onClick={handleCopy}
@@ -161,8 +161,8 @@ const ApiKeyAddedCell = ({
           )}
           <Button
             type="button"
-            variant="ghost"
-            size="slate"
+            variant="quaternary"
+            size="none"
             className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
             aria-label={`Delete ${keyName ?? 'API key'}`}
             onClick={onDelete}

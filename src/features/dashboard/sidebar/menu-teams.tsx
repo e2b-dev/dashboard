@@ -61,19 +61,24 @@ export default function DashboardSidebarMenuTeams() {
   return (
     <DropdownMenuRadioGroup value={selectedTeam?.id}>
       {user?.email && (
-        <DropdownMenuLabel className="mb-2">{user.email}</DropdownMenuLabel>
+        <DropdownMenuLabel className="mt-2 mb-2 pb-0 px-2 font-sans prose-label">
+          {user.email}
+        </DropdownMenuLabel>
       )}
       {teams.length > 0 ? (
         teams.map((team) => (
           <Link href={getNextUrl(team)} passHref key={team.id}>
-            <DropdownMenuRadioItem value={team.id}>
-              <Avatar className="size-5 shrink-0 border-none">
+            <DropdownMenuRadioItem
+              value={team.id}
+              className="h-9 [&_svg]:size-5"
+            >
+              <Avatar className="size-6 shrink-0 border-none">
                 <AvatarImage src={team.profilePictureUrl || undefined} />
-                <AvatarFallback className="group-focus:text-accent-main-highlight text-fg-tertiary text-xs">
+                <AvatarFallback className="bg-white/10 text-fg-secondary text-xs">
                   {team.name?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <span className="flex-1 truncate font-sans prose-label-highlight">
+              <span className="flex-1 truncate font-sans prose-body-highlight">
                 {getTeamDisplayName(team)}
               </span>
             </DropdownMenuRadioItem>

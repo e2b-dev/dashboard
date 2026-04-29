@@ -2,13 +2,17 @@ import type { Session, User } from '@supabase/supabase-js'
 import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
 import { flattenError, ZodError } from 'zod'
+import type { RequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'
 
 /**
  * TRPC Context Factory
  *
  * Factory function that creates a TRPC context. If a session exists, we are trying resolve the correct user data.
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
+export const createTRPCContext = async (opts: {
+  headers: Headers
+  requestObservability?: RequestObservabilityContext
+}) => {
   return {
     ...opts,
     session: undefined as Session | undefined,

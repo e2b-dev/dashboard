@@ -44,15 +44,10 @@ export const AlertPopover: FC<AlertPopoverProps> = ({
           {children && <div>{children}</div>}
 
           <div className="flex items-center gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={onCancel}>
+            <Button variant="quaternary" onClick={onCancel}>
               {cancel}
             </Button>
-            <Button
-              variant="error"
-              size="sm"
-              onClick={onConfirm}
-              {...confirmProps}
-            >
+            <Button variant="error" onClick={onConfirm} {...confirmProps}>
               {confirm}
             </Button>
           </div>

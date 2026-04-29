@@ -1,7 +1,6 @@
 'use client'
 
 import type { CellContext } from '@tanstack/react-table'
-import { ArrowUpRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -10,6 +9,7 @@ import { useTemplateTableStore } from '@/features/dashboard/templates/list/store
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
+import { ExternalLinkIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
@@ -120,11 +120,11 @@ export function TemplateCell({
 
   return (
     <Button
-      variant="link"
-      className="text-fg prose-table h-auto max-w-full justify-start overflow-hidden p-0 font-sans normal-case"
-      onClick={(event) => {
-        event.stopPropagation()
-        event.preventDefault()
+      variant="link-table"
+      size="none"
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
 
         if (!templateId) {
           return
@@ -135,7 +135,7 @@ export function TemplateCell({
       }}
     >
       <span className="min-w-0 truncate">{templateIdentifier}</span>
-      <ArrowUpRight className="size-3 shrink-0" />
+      <ExternalLinkIcon className="size-3 shrink-0" />
     </Button>
   )
 }

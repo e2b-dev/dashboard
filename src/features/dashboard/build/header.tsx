@@ -30,7 +30,7 @@ export default function BuildHeader({
         <DetailsItem label="ID">
           <CopyButtonInline
             value={buildId}
-            className="font-mono prose-table-numeric text-fg-secondary"
+            className="font-mono prose-body-numeric text-fg-secondary"
           >
             {buildId}
           </CopyButtonInline>
@@ -125,8 +125,6 @@ function StatusBanner({ status, statusMessage }: StatusBannerProps) {
           <CopyButton
             value={statusMessage}
             className="absolute top-2 right-2"
-            variant="ghost"
-            size="slate"
           />
         </>
       )}

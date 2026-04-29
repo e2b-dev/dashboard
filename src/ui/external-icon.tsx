@@ -1,5 +1,5 @@
-import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChevronRightIcon } from './primitives/icons'
 
 interface ExternalIconProps {
   className?: string
@@ -7,7 +7,7 @@ interface ExternalIconProps {
 
 export default function ExternalIcon({ className }: ExternalIconProps) {
   return (
-    <ChevronRight
+    <ChevronRightIcon
       className={cn(
         'text-accent-main-highlight size-4 -translate-y-1 -rotate-45',
         className
