@@ -93,11 +93,8 @@ const ApiKeyIdBadge = ({ id }: ApiKeyIdBadgeProps) => {
   }
 
   return (
-    <Badge
-      className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric"
-      size="sm"
-    >
-      <span>{displayId}</span>
+    <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
+      <span className="tracking-wider">{displayId}</span>
       <Button
         type="button"
         variant="quaternary"
