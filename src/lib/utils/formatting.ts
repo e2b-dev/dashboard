@@ -146,8 +146,10 @@ export const formatRelativeAgo = (date: Date): string => {
   const weeks = Math.floor(days / 7)
   if (weeks < 5) return `${weeks}w ago`
 
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
+  if (days < 365) {
+    const months = Math.floor(days / 30)
+    return `${months}mo ago`
+  }
 
   const years = Math.floor(days / 365)
   return `${years}y ago`
