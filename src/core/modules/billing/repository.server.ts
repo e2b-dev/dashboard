@@ -163,7 +163,11 @@ export function createBillingRepository(
         return err(repoErrorFromHttp(res.status, await parseText(res)))
       }
 
-      return ok((await res.json()) as BillingLimit)
+      const data = (await res.json()) as Partial<BillingLimit>
+      return ok({
+        limit_amount_gte: data.limit_amount_gte ?? null,
+        alert_amount_gte: data.alert_amount_gte ?? null,
+      })
     },
     async setLimit(key, value) {
       const res = await fetch(
