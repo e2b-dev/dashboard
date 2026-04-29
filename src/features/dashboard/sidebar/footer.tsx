@@ -24,7 +24,6 @@ import {
 } from '@/ui/primitives/sidebar'
 import DashboardSurveyPopover from '../navbar/dashboard-survey-popover'
 import ContactSupportDialog from '../navbar/report-issue-dialog'
-import TeamBlockageAlert from './blocked-banner'
 
 export default function DashboardSidebarFooter() {
   return (
@@ -32,7 +31,6 @@ export default function DashboardSidebarFooter() {
       <SidebarFooter>
         <SidebarGroup className="!p-0">
           <SidebarMenu>
-            <TeamBlockageAlert className="mb-2" />
             <SidebarMenuItem key="github">
               <SidebarMenuButton asChild tooltip="GitHub">
                 <Link

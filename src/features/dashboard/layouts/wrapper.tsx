@@ -11,7 +11,7 @@ export function DefaultDashboardLayout({
 }) {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="container mx-auto p-0 md:p-8 2xl:p-24 h-min w-full">
+      <div className="container mx-auto h-min w-full p-0 md:p-10 2xl:p-24">
         <CatchErrorBoundary
           classNames={{
             wrapper: 'h-full w-full',

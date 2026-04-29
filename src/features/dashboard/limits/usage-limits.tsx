@@ -5,15 +5,17 @@ import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import AlertCard from './alert-card'
-import LimitCard from './limit-card'
+import { useDashboard } from '../context'
+import { UsageAlertSection } from './usage-alert-section'
+import { UsageLimitSection } from './usage-limit-section'
 
 interface UsageLimitsProps {
   className?: string
 }
 
-export default function UsageLimits({ className }: UsageLimitsProps) {
+export const UsageLimits = ({ className }: UsageLimitsProps) => {
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/limits'>()
+  const { team } = useDashboard()
   const trpc = useTRPC()
 
   const { data: limits, isLoading } = useQuery({
@@ -21,25 +23,43 @@ export default function UsageLimits({ className }: UsageLimitsProps) {
     throwOnError: true,
   })
 
-  if (isLoading || !limits) {
-    return (
-      <div className={cn('flex flex-col lg:flex-row', className)}>
-        <div className="flex-1 border-r p-6">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-        <div className="flex-1 p-6">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className={cn('flex flex-col lg:flex-row', className)}>
-      <LimitCard value={limits.limit_amount_gte} className="flex-1 border-r" />
-      <AlertCard value={limits.alert_amount_gte} className="flex-1" />
+    <div
+      className={cn(
+        'mx-auto flex w-full max-w-[600px] flex-col gap-10',
+        className
+      )}
+    >
+      {isLoading || !limits ? (
+        <>
+          <LimitsSectionSkeleton />
+          <LimitsSectionSkeleton />
+        </>
+      ) : (
+        <>
+          <UsageLimitSection
+            email={team.email}
+            teamSlug={teamSlug}
+            value={limits.limit_amount_gte}
+          />
+          <UsageAlertSection
+            email={team.email}
+            teamSlug={teamSlug}
+            value={limits.alert_amount_gte}
+          />
+        </>
+      )}
     </div>
   )
 }
+
+const LimitsSectionSkeleton = () => (
+  <div className="flex flex-col gap-4">
+    <Skeleton className="h-4 w-20" />
+    <Skeleton className="h-[72px] w-full" />
+    <div className="flex flex-col gap-2">
+      <Skeleton className="h-5 w-full max-w-[430px]" />
+      <Skeleton className="h-5 w-full max-w-[470px]" />
+    </div>
+  </div>
+)
