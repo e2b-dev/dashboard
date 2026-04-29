@@ -7,6 +7,7 @@ import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { UserAvatar } from '@/features/dashboard/shared'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Badge } from '@/ui/primitives/badge'
@@ -20,6 +21,19 @@ import {
 } from '@/ui/primitives/tooltip'
 import { getApiKeyIdBadgeLabel, getLastUsedLabel } from './api-keys-utils'
 import { DeleteApiKeyDialog } from './delete-api-key-dialog'
+
+interface ApiKeysTableCellProps {
+  children: React.ReactNode
+  className?: string
+}
+
+const ApiKeysTableCell = ({ children, className }: ApiKeysTableCellProps) => (
+  <TableCell
+    className={cn('py-3 text-left [tr:first-child>&]:pt-1.5', className)}
+  >
+    {children}
+  </TableCell>
+)
 
 interface ApiKeysTableRowProps {
   apiKey: TeamAPIKey
@@ -48,7 +62,7 @@ interface ApiKeyAddedCellProps {
 }
 
 const ApiKeyNameCell = ({ name }: ApiKeyNameCellProps) => (
-  <TableCell className="py-2 text-left">
+  <ApiKeysTableCell>
     <div className="flex min-w-0 items-center gap-3">
       <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
         <KeyIcon aria-hidden className="text-fg-tertiary size-4" />
@@ -60,7 +74,7 @@ const ApiKeyNameCell = ({ name }: ApiKeyNameCellProps) => (
         {name ?? 'Untitled key'}
       </span>
     </div>
-  </TableCell>
+  </ApiKeysTableCell>
 )
 
 const ApiKeyIdBadge = ({ id }: ApiKeyIdBadgeProps) => {
@@ -106,7 +120,7 @@ const ApiKeyLastUsedCell = ({
   lastUsedAt,
   lastUsedLabel,
 }: ApiKeyLastUsedCellProps) => (
-  <TableCell className="py-2 text-left text-sm text-fg-tertiary">
+  <ApiKeysTableCell className="text-sm text-fg-tertiary">
     {lastUsedAt ? (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -119,7 +133,7 @@ const ApiKeyLastUsedCell = ({
     ) : (
       lastUsedLabel
     )}
-  </TableCell>
+  </ApiKeysTableCell>
 )
 
 const ApiKeyAddedCell = ({
@@ -132,7 +146,7 @@ const ApiKeyAddedCell = ({
   const createdByEmail = createdBy?.email?.trim() || 'Unknown user'
 
   return (
-    <TableCell className="pl-3 pr-0 py-2 text-left text-sm text-fg-tertiary">
+    <ApiKeysTableCell className="pl-3 pr-0 text-sm text-fg-tertiary">
       <div className="flex items-center gap-6 justify-between">
         <span className="block w-[92px] shrink-0 whitespace-nowrap">
           {addedDate}
@@ -171,7 +185,7 @@ const ApiKeyAddedCell = ({
           </Button>
         </div>
       </div>
-    </TableCell>
+    </ApiKeysTableCell>
   )
 }
 
@@ -194,11 +208,11 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
         teamSlug={teamSlug}
         apiKey={apiKey}
       />
-      <TableRow className="h-12">
+      <TableRow>
         <ApiKeyNameCell name={apiKey.name} />
-        <TableCell className="py-2 text-left">
+        <ApiKeysTableCell>
           <ApiKeyIdBadge id={apiKey.id} />
-        </TableCell>
+        </ApiKeysTableCell>
         <ApiKeyLastUsedCell
           lastUsedAt={lastUsedAt}
           lastUsedLabel={lastUsedLabel}

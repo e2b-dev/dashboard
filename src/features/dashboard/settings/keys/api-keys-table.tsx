@@ -1,6 +1,6 @@
 'use client'
 
-import type { FC } from 'react'
+import type { FC, ReactNode } from 'react'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { cn } from '@/lib/utils'
 import { KeyIcon } from '@/ui/primitives/icons'
@@ -13,6 +13,12 @@ import {
   TableRow,
 } from '@/ui/primitives/table'
 import { ApiKeysTableRow } from './api-keys-table-row'
+
+const ApiKeysTableHead = ({ children }: { children: ReactNode }) => (
+  <TableHead className="h-auto pt-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
+    {children}
+  </TableHead>
+)
 
 interface ApiKeysTableProps {
   apiKeys: TeamAPIKey[]
@@ -38,22 +44,21 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
         <col className="w-[180px] lg:w-[24%]" />
       </colgroup>
       <TableHeader className="border-b-0">
-        <TableRow className="border-stroke/80 hover:bg-transparent">
-          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
-            LABEL
-          </TableHead>
-          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
-            ID
-          </TableHead>
-          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
-            LAST USED
-          </TableHead>
-          <TableHead className="h-auto py-0 align-top text-fg-tertiary font-sans! normal-case!">
-            ADDED
-          </TableHead>
+        <TableRow className="hover:bg-transparent">
+          <ApiKeysTableHead>LABEL</ApiKeysTableHead>
+          <ApiKeysTableHead>ID</ApiKeysTableHead>
+          <ApiKeysTableHead>LAST USED</ApiKeysTableHead>
+          <ApiKeysTableHead>ADDED</ApiKeysTableHead>
         </TableRow>
       </TableHeader>
-      <TableBody className="[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80">
+      <TableBody
+        className={cn(
+          apiKeys.length > 0 && [
+            '[&_tr]:border-stroke',
+            '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke',
+          ]
+        )}
+      >
         {apiKeys.length === 0 ? (
           <TableEmptyState colSpan={4}>
             <KeyIcon
