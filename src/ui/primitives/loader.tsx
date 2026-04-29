@@ -1,132 +1,48 @@
-'use client'
+import type { HTMLAttributes, Ref } from 'react'
+import { cn } from '@/lib/utils'
+import styles from './loader.module.css'
 
-import * as React from 'react'
-import styled, { css } from 'styled-components'
+type LoaderVariant = 'slash' | 'square' | 'dots'
+type LoaderSize = 'sm' | 'md' | 'lg' | 'xl'
 
-interface LoaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'slash' | 'square' | 'dots'
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+interface LoaderProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: LoaderVariant
+  size?: LoaderSize
+  ref?: Ref<HTMLDivElement>
 }
 
-interface StyledLoaderProps {
-  $variant: string
-  $size: string
+const variantClassMap: Record<LoaderVariant, string | undefined> = {
+  slash: styles.variantSlash,
+  square: styles.variantSquare,
+  dots: styles.variantDots,
 }
 
-const StyledLoader = styled.div<StyledLoaderProps>`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
+const sizeClassMap: Record<LoaderSize, string | undefined> = {
+  sm: styles.sizeSm,
+  md: styles.sizeMd,
+  lg: styles.sizeLg,
+  xl: styles.sizeXl,
+}
 
-  ${({ $size }: StyledLoaderProps) => {
-    switch ($size) {
-      case 'sm':
-        return css`
-          font-size: 0.875rem;
-        `
-      case 'lg':
-        return css`
-          font-size: 1.125rem;
-        `
-      case 'xl':
-        return css`
-          font-size: 1.5rem;
-        `
-      default:
-        return css`
-          font-size: 1rem;
-        `
-    }
-  }}
-
-  .loader-content::before {
-    ${({ $variant }: StyledLoaderProps) => {
-      switch ($variant) {
-        case 'slash':
-          return css`
-            content: '|';
-            animation: slashAnimation 0.4s linear infinite;
-          `
-        case 'dots':
-          return css`
-            content: '.';
-            animation: dotsAnimation 0.6s step-end infinite;
-          `
-        default:
-          return css`
-            content: '◰';
-            animation: squareAnimation 0.4s linear infinite;
-          `
-      }
-    }}
-  }
-`
-
-const Loader = React.forwardRef<HTMLDivElement, LoaderProps>(
-  ({ className, variant = 'slash', size = 'md', ...props }, ref) => {
-    return (
-      <>
-        <style jsx global>{`
-          @keyframes slashAnimation {
-            0% {
-              content: '|';
-            }
-            25% {
-              content: '/';
-            }
-            50% {
-              content: '-';
-            }
-            75% {
-              content: '\\';
-            }
-            100% {
-              content: '|';
-            }
-          }
-          @keyframes squareAnimation {
-            0% {
-              content: '◰';
-            }
-            25% {
-              content: '◳';
-            }
-            50% {
-              content: '◲';
-            }
-            75% {
-              content: '◱';
-            }
-            100% {
-              content: '◰';
-            }
-          }
-          @keyframes dotsAnimation {
-            0% {
-              content: '.';
-            }
-            33% {
-              content: '..';
-            }
-            66% {
-              content: '...';
-            }
-          }
-        `}</style>
-        <StyledLoader
-          ref={ref}
-          $variant={variant}
-          $size={size}
-          className={className}
-          {...props}
-        >
-          <span className="loader-content" />
-        </StyledLoader>
-      </>
-    )
-  }
+const Loader = ({
+  className,
+  variant = 'slash',
+  size = 'md',
+  ref,
+  ...props
+}: LoaderProps) => (
+  <div
+    ref={ref}
+    className={cn(
+      styles.loader,
+      variantClassMap[variant],
+      sizeClassMap[size],
+      className
+    )}
+    {...props}
+  >
+    <span className={styles.content} />
+  </div>
 )
-Loader.displayName = 'Loader'
 
 export { Loader }
