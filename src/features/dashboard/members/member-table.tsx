@@ -13,10 +13,7 @@ interface MemberTableProps {
   className?: string
 }
 
-export const MemberTable: FC<MemberTableProps> = ({
-  children,
-  className,
-}) => (
+export const MemberTable: FC<MemberTableProps> = ({ children, className }) => (
   <Table className={cn('w-full table-fixed', className)}>
     <colgroup>
       <col className="w-[220px] lg:w-auto" />
