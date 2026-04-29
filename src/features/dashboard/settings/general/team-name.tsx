@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { USER_MESSAGES } from '@/configs/user-messages'
+import { TEAM_NAME_MAX_LENGTH } from '@/core/modules/teams/schemas'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
@@ -164,6 +165,7 @@ export const TeamName = (): ReactElement => {
             value={name}
             onChange={handleNameChange}
             readOnly={!isEditing}
+            maxLength={TEAM_NAME_MAX_LENGTH}
             className="h-8 w-full appearance-none bg-transparent p-0 text-[32px] leading-8 font-semibold tracking-[-0.32px] text-fg caret-accent-main-highlight outline-none"
             style={{
               fontSize: `${fontSize}px`,

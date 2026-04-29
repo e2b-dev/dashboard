@@ -1,11 +1,15 @@
 import { z } from 'zod'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
+const TEAM_NAME_MAX_LENGTH = 32
+
 const TeamNameSchema = z
   .string()
   .trim()
   .min(1, { message: 'Team name cannot be empty' })
-  .max(32, { message: 'Team name cannot be longer than 32 characters' })
+  .max(TEAM_NAME_MAX_LENGTH, {
+    message: `Team name cannot be longer than ${TEAM_NAME_MAX_LENGTH} characters`,
+  })
   .regex(/^[a-zA-Z0-9]+(?:[ _.-][a-zA-Z0-9]+)*$/, {
     message:
       'Names can only contain letters and numbers, separated by spaces, underscores, hyphens, or dots',
@@ -32,6 +36,7 @@ export {
   AddTeamMemberSchema,
   CreateTeamSchema,
   RemoveTeamMemberSchema,
+  TEAM_NAME_MAX_LENGTH,
   TeamNameSchema,
   TeamSlugSchema,
   UpdateTeamNameSchema,
