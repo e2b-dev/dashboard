@@ -28,7 +28,7 @@ const fromUrlValue = (
   return parsed.success ? parsed.data : null
 }
 
-const useSandboxEventFilters = () => {
+export const useSandboxEventFilters = () => {
   const [filters, setFilters] = useQueryStates(sandboxEventsFilterParams, {
     shallow: true,
   })
@@ -60,5 +60,3 @@ const useSandboxEventFilters = () => {
     type,
   }
 }
-
-export default useSandboxEventFilters

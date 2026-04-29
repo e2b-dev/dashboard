@@ -5,7 +5,7 @@ import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useSandboxContext } from '../context'
 import { EventTypeFilter } from './event-type-filter'
 import { SandboxEventsTable } from './table'
-import useSandboxEventFilters from './use-sandbox-event-filters'
+import { useSandboxEventFilters } from './use-sandbox-event-filters'
 
 export const SandboxEventsView = () => {
   const { sandboxLifecycle, isSandboxInfoLoading } = useSandboxContext()
