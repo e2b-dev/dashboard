@@ -2,7 +2,7 @@
 
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Badge } from '@/ui/primitives/badge'
-import { IconButton } from '@/ui/primitives/icon-button'
+import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
 
 /** Builds the visible uppercase ID badge label; e.g. "e2b_c28e178eecf2" -> "E2B_...ECF2". */
@@ -26,23 +26,18 @@ export const IdBadge = ({ id }: IdBadgeProps) => {
   }
 
   return (
-    <Badge
-      className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric"
-      size="sm"
-    >
-      <span>{displayId}</span>
-      <IconButton
+    <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
+      <span className="tracking-wider">{displayId}</span>
+      <Button
         type="button"
-        className="active:translate-y-0"
+        variant="quaternary"
+        size="none"
+        className="text-fg-tertiary hover:text-fg h-3.5 w-3.5 shrink-0 active:translate-y-0 [&_svg]:size-3.5"
         aria-label="Copy full ID"
         onClick={handleCopy}
       >
-        {wasCopied ? (
-          <CheckIcon className="size-3" />
-        ) : (
-          <CopyIcon className="size-3" />
-        )}
-      </IconButton>
+        {wasCopied ? <CheckIcon /> : <CopyIcon />}
+      </Button>
     </Badge>
   )
 }
