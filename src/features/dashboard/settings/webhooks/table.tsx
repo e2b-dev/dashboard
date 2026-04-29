@@ -14,14 +14,12 @@ import type { Webhook } from './types'
 interface WebhooksTableProps {
   webhooks: Webhook[]
   totalWebhookCount: number
-  hasError: boolean
   className?: string
 }
 
 const WebhooksTable = ({
   webhooks,
   totalWebhookCount,
-  hasError,
   className,
 }: WebhooksTableProps) => {
   const hasNoWebhooks = totalWebhookCount === 0
@@ -59,17 +57,7 @@ const WebhooksTable = ({
             '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80'
         )}
       >
-        {hasError ? (
-          <TableEmptyState colSpan={4}>
-            <WebhookIcon
-              aria-hidden
-              className="text-accent-error-highlight size-4 shrink-0"
-            />
-            <p className="text-accent-error-highlight prose-body-highlight">
-              Failed to get webhooks. Try again or contact support.
-            </p>
-          </TableEmptyState>
-        ) : webhooks.length === 0 ? (
+        {webhooks.length === 0 ? (
           <TableEmptyState colSpan={4}>
             <WebhookIcon
               aria-hidden

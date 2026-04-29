@@ -1,9 +1,10 @@
 'use client'
 
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import type { Webhook } from '@/features/dashboard/settings/webhooks/types'
 import { cn } from '@/lib/utils'
 import { pluralize } from '@/lib/utils/formatting'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { AddIcon, SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
@@ -11,8 +12,7 @@ import WebhookAddEditDialog from './add-edit-dialog'
 import WebhooksTable from './table'
 
 interface WebhooksPageContentProps {
-  webhooks: Webhook[]
-  hasError: boolean
+  teamSlug: string
   className?: string
 }
 
@@ -71,13 +71,19 @@ const WebhooksTotalLabel = ({
 }
 
 export const WebhooksPageContent = ({
-  webhooks,
-  hasError,
+  teamSlug,
   className,
 }: WebhooksPageContentProps) => {
+  const trpc = useTRPC()
   const [query, setQuery] = useState('')
   const normalizedQuery = query.trim().toLowerCase()
   const hasActiveSearch = normalizedQuery.length > 0
+
+  const { data } = useSuspenseQuery(
+    trpc.webhooks.list.queryOptions({ teamSlug })
+  )
+
+  const webhooks = data.webhooks
 
   const filteredWebhooks = useMemo(() => {
     if (!normalizedQuery) return webhooks
@@ -124,7 +130,6 @@ export const WebhooksPageContent = ({
 
       <div className="bg-bg w-full overflow-x-auto">
         <WebhooksTable
-          hasError={hasError}
           totalWebhookCount={webhooks.length}
           webhooks={filteredWebhooks}
         />

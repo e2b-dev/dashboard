@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
-import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
+import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
@@ -28,7 +28,7 @@ import {
 
 type WebhookAddEditDialogStepsProps = {
   currentStep: number
-  form: UseFormReturn<UpsertWebhookSchemaType>
+  form: UseFormReturn<UpsertWebhookInput>
   isLoading: boolean
   selectedEvents: string[]
   exampleEventType: WebhookEvent

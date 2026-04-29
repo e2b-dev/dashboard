@@ -1,16 +1,20 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { updateWebhookSecretAction } from '@/core/server/actions/webhooks-actions'
-import { UpdateWebhookSecretSchema } from '@/core/server/functions/webhooks/schema'
+import { useForm } from 'react-hook-form'
+import {
+  type UpdateWebhookSecretInput,
+  UpdateWebhookSecretInputSchema,
+} from '@/core/server/functions/webhooks/schema'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -44,55 +48,60 @@ export default function WebhookEditSecretDialog({
   'use no memo'
 
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 
   const webhookName = webhook.name
 
-  const {
-    form,
-    resetFormAndAction,
-    handleSubmitWithAction,
-    action: { isPending: isLoading },
-  } = useHookFormAction(
-    updateWebhookSecretAction,
-    zodResolver(UpdateWebhookSecretSchema),
-    {
-      formProps: {
-        mode: 'onChange',
-        defaultValues: {
-          teamSlug: team.slug,
-          webhookId: webhook.id,
-          signatureSecret: '',
-        },
+  const listQueryKey = trpc.webhooks.list.queryOptions({
+    teamSlug: team.slug,
+  }).queryKey
+
+  const form = useForm<UpdateWebhookSecretInput>({
+    resolver: zodResolver(UpdateWebhookSecretInputSchema),
+    mode: 'onChange',
+    defaultValues: {
+      webhookId: webhook.id,
+      signatureSecret: '',
+    },
+  })
+
+  const updateSecretMutation = useMutation(
+    trpc.webhooks.updateSecret.mutationOptions({
+      onSuccess: () => {
+        toast(defaultSuccessToast('Webhook secret rotated successfully'))
+        void queryClient.invalidateQueries({ queryKey: listQueryKey })
+        handleDialogChange(false)
       },
-      actionProps: {
-        onSuccess: () => {
-          toast(defaultSuccessToast('Webhook secret rotated successfully'))
-          handleDialogChange(false)
-        },
-        onError: ({ error }) => {
-          toast(
-            defaultErrorToast(
-              error.serverError || 'Failed to rotate webhook secret'
-            )
-          )
-        },
+      onError: (err) => {
+        toast(
+          defaultErrorToast(err.message || 'Failed to rotate webhook secret')
+        )
       },
-    }
+    })
   )
+
+  const isLoading = updateSecretMutation.isPending
 
   const handleDialogChange = (value: boolean) => {
     setOpen(value)
 
     if (value) return
 
-    resetFormAndAction()
+    form.reset()
+    updateSecretMutation.reset()
   }
 
-  // watch field to trigger reactive updates
+  const handleSubmit = form.handleSubmit((values) => {
+    updateSecretMutation.mutate({
+      ...values,
+      teamSlug: team.slug,
+    })
+  })
+
   const signatureSecret = form.watch('signatureSecret')
 
-  // use form state for validation - sync with zod schema
   const { errors } = form.formState
   const isSecretValid =
     !errors.signatureSecret && signatureSecret && signatureSecret.length >= 32
@@ -135,9 +144,7 @@ export default function WebhookEditSecretDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmitWithAction} className="min-w-0">
-            {/* Hidden fields */}
-            <input type="hidden" {...form.register('teamSlug')} />
+          <form onSubmit={handleSubmit} className="min-w-0">
             <input type="hidden" {...form.register('webhookId')} />
 
             <div className="flex flex-col gap-4 pb-6 min-w-0">

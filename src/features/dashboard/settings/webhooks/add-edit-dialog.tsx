@@ -1,15 +1,19 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { upsertWebhookAction } from '@/core/server/actions/webhooks-actions'
-import { UpsertWebhookSchema } from '@/core/server/functions/webhooks/schema'
+import { useForm } from 'react-hook-form'
+import {
+  type UpsertWebhookInput,
+  UpsertWebhookInputSchema,
+} from '@/core/server/functions/webhooks/schema'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -47,6 +51,8 @@ export default function WebhookAddEditDialog({
   'use no memo'
 
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [lastSelectedEvent, setLastSelectedEvent] =
@@ -56,37 +62,29 @@ export default function WebhookAddEditDialog({
   const isEditMode = mode === 'edit'
   const totalSteps = isEditMode ? 1 : 2
 
-  const {
-    form,
-    resetFormAndAction,
-    handleSubmitWithAction,
-    action: { isPending: isLoading },
-  } = useHookFormAction(upsertWebhookAction, zodResolver(UpsertWebhookSchema), {
-    formProps: {
-      mode: 'onChange',
-      disabled: !team.slug,
-      defaultValues: {
-        teamSlug: team.slug,
-        webhookId: isEditMode ? webhook?.id : undefined,
-        mode,
-        name: webhook?.name || '',
-        url: webhook?.url || '',
-        events: webhook?.events || [],
-        // only include signatureSecret in add mode
-        ...(isEditMode ? {} : { signatureSecret: '' }),
-      },
-      values: {
-        teamSlug: team.slug,
-        webhookId: isEditMode ? webhook?.id : undefined,
-        mode,
-        name: webhook?.name || '',
-        url: webhook?.url || '',
-        events: webhook?.events || [],
-        // only include signatureSecret in add mode
-        ...(isEditMode ? {} : { signatureSecret: '' }),
-      },
-    },
-    actionProps: {
+  const listQueryKey = trpc.webhooks.list.queryOptions({
+    teamSlug: team.slug,
+  }).queryKey
+
+  const defaultValues: UpsertWebhookInput = {
+    webhookId: isEditMode ? webhook?.id : undefined,
+    mode,
+    name: webhook?.name || '',
+    url: webhook?.url || '',
+    events: webhook?.events || [],
+    ...(isEditMode ? {} : { signatureSecret: '' }),
+  }
+
+  const form = useForm<UpsertWebhookInput>({
+    resolver: zodResolver(UpsertWebhookInputSchema),
+    mode: 'onChange',
+    disabled: !team.slug,
+    defaultValues,
+    values: defaultValues,
+  })
+
+  const upsertMutation = useMutation(
+    trpc.webhooks.upsert.mutationOptions({
       onSuccess: () => {
         toast(
           defaultSuccessToast(
@@ -95,20 +93,23 @@ export default function WebhookAddEditDialog({
               : 'Webhook created successfully'
           )
         )
+        void queryClient.invalidateQueries({ queryKey: listQueryKey })
         handleDialogChange(false)
       },
-      onError: ({ error }) => {
+      onError: (err) => {
         toast(
           defaultErrorToast(
-            error.serverError ||
+            err.message ||
               (isEditMode
                 ? 'Failed to update webhook'
                 : 'Failed to create webhook')
           )
         )
       },
-    },
-  })
+    })
+  )
+
+  const isLoading = upsertMutation.isPending
 
   const handleDialogChange = (value: boolean) => {
     setOpen(value)
@@ -117,10 +118,17 @@ export default function WebhookAddEditDialog({
 
     setCurrentStep(1)
     setHasCopied(false)
-    resetFormAndAction()
+    form.reset()
+    upsertMutation.reset()
   }
 
-  // watch fields to trigger reactive updates
+  const handleSubmit = form.handleSubmit((values) => {
+    upsertMutation.mutate({
+      ...values,
+      teamSlug: team.slug,
+    })
+  })
+
   const name = form.watch('name')
   const url = form.watch('url')
   const selectedEvents = form.watch('events') || []
@@ -195,7 +203,6 @@ export default function WebhookAddEditDialog({
           <DialogTitle>
             {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
           </DialogTitle>
-          {/* Step Counter - only show in add mode */}
           {!isEditMode && (
             <div className="flex items-center gap-2">
               <span className="text-fg-tertiary prose-label uppercase">
@@ -207,12 +214,10 @@ export default function WebhookAddEditDialog({
 
         <Form {...form}>
           <form
-            onSubmit={handleSubmitWithAction}
+            onSubmit={handleSubmit}
             className="flex flex-1 flex-col justify-between gap-4 min-w-0 min-h-0"
           >
-            {/* Hidden fields */}
             <input type="hidden" {...form.register('mode')} />
-            <input type="hidden" {...form.register('teamSlug')} />
 
             <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <WebhookAddEditDialogSteps
@@ -238,49 +243,44 @@ export default function WebhookAddEditDialog({
                     {isEditMode ? 'Saving Changes...' : 'Adding Webhook...'}
                   </span>
                 </div>
+              ) : isEditMode ? (
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!isStep1Valid}
+                >
+                  <CheckIcon className="size-4" />
+                  Confirm
+                </Button>
+              ) : currentStep === 1 ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleNext}
+                  disabled={!isStep1Valid}
+                  className="w-full"
+                >
+                  Next
+                </Button>
               ) : (
                 <>
-                  {/* Edit mode: show submit button directly */}
-                  {isEditMode ? (
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={!isStep1Valid}
-                    >
-                      <CheckIcon className="size-4" />
-                      Confirm
-                    </Button>
-                  ) : currentStep === 1 ? (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={handleNext}
-                      disabled={!isStep1Valid}
-                      className="w-full"
-                    >
-                      Next
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        type="button"
-                        variant="tertiary"
-                        onClick={handleBack}
-                        className="w-full"
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant={hasCopied ? 'primary' : 'secondary'}
-                        className="w-full"
-                        disabled={!isStep2Valid}
-                      >
-                        <AddIcon />
-                        Add
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    onClick={handleBack}
+                    className="w-full"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant={hasCopied ? 'primary' : 'secondary'}
+                    className="w-full"
+                    disabled={!isStep2Valid}
+                  >
+                    <AddIcon />
+                    Add
+                  </Button>
                 </>
               )}
             </DialogFooter>
