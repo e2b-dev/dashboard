@@ -21,7 +21,7 @@ export default function DashboardLayoutFooter({
       : config.title.map((segment) => segment.label).join('/')
 
   return (
-    <footer className="flex h-protected-footer min-h-protected-footer shrink-0 items-center justify-between gap-2 border-t bg-bg px-3 md:px-6">
+    <footer className="flex h-protected-footer min-h-protected-footer shrink-0 items-center gap-2 border-t bg-bg px-3 md:px-6">
       <span className="min-w-0 flex-1 truncate pr-2 font-mono text-xs text-fg-tertiary uppercase md:pr-4 md:prose-label">
         {'>_'}
         {user.email ?? 'ANONYMOUS@UNKNOWN.COM'}
@@ -30,7 +30,9 @@ export default function DashboardLayoutFooter({
 
       <TeamBlockedIndicator />
 
-      {statusBanner}
+      {statusBanner ? (
+        <div className="flex flex-1 justify-end">{statusBanner}</div>
+      ) : null}
     </footer>
   )
 }
