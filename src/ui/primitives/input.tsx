@@ -18,6 +18,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
           'focus:[border-bottom:1px_solid_var(--accent-main-highlight)] focus:outline-none',
           'hover:bg-bg-hover focus:bg-bg-hover',
+          'read-only:hover:bg-bg read-only:focus:bg-bg',
+          'read-only:focus:[border-bottom:1px_solid_var(--color-stroke)]',
           'disabled:cursor-not-allowed disabled:opacity-50',
 
           'file:border-0 file:bg-transparent',
