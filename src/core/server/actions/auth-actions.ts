@@ -4,9 +4,9 @@ import { createHash } from 'node:crypto'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
-import { KV_KEYS } from '@/configs/keys'
 import { z } from 'zod'
 import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
+import { KV_KEYS } from '@/configs/keys'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
@@ -361,7 +361,9 @@ export const resendSignupVerificationAction = actionClient
     const requesterUserAgent = headerStore.get('user-agent') ?? 'unknown-agent'
 
     const emailHash = hashCooldownPart(normalizedEmail)
-    const requesterHash = hashCooldownPart(`${requesterIp}:${requesterUserAgent}`)
+    const requesterHash = hashCooldownPart(
+      `${requesterIp}:${requesterUserAgent}`
+    )
     const cooldownKey = KV_KEYS.AUTH_RESEND_SIGNUP_VERIFICATION_COOLDOWN(
       emailHash,
       requesterHash

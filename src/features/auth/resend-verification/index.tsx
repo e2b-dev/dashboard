@@ -45,7 +45,9 @@ export function ResendVerificationForm({
     {
       actionProps: {
         onSuccess: () => {
-          setMessage({ success: USER_MESSAGES.signUpVerificationResend.message })
+          setMessage({
+            success: USER_MESSAGES.signUpVerificationResend.message,
+          })
           startCooldown()
         },
         onError: ({ error }) => {
@@ -86,7 +88,9 @@ export function ResendVerificationForm({
   }, [message])
 
   return (
-    <div className={['mt-4 flex flex-col', className].filter(Boolean).join(' ')}>
+    <div
+      className={['mt-4 flex flex-col', className].filter(Boolean).join(' ')}
+    >
       <p className="text-fg-secondary leading-6">
         Didn&apos;t get the verification email?
       </p>
