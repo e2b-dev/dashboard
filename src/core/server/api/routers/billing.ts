@@ -137,4 +137,11 @@ export const billingRouter = createTRPCRouter({
       return result.data
     }
   ),
+  createVerificationPayment: billingRepositoryProcedure.mutation(
+    async ({ ctx }) => {
+      const result = await ctx.billingRepository.createVerificationPayment()
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }
+  ),
 })

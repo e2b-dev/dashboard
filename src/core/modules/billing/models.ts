@@ -55,6 +55,10 @@ export interface AddOnOrderConfirmResponse {
   client_secret: string
 }
 
+export interface VerificationPaymentResponse {
+  client_secret: string
+}
+
 export interface PaymentMethodsCustomerSession {
   client_secret: string
 }

@@ -29,7 +29,7 @@ import { useDashboard } from '../context'
 
 const TEAM_UNBLOCK_POLL_ATTEMPTS = 15
 const TEAM_UNBLOCK_POLL_INTERVAL_MS = 2000
-const PAYMENT_METHOD_LOADING_MESSAGE = 'Loading payment method...'
+const VERIFICATION_PAYMENT_LOADING_MESSAGE = 'Loading verification payment...'
 
 // Waits before retrying team status polling; 2000 -> resolves after 2 seconds.
 const wait = (ms: number) =>
@@ -37,37 +37,37 @@ const wait = (ms: number) =>
     window.setTimeout(resolve, ms)
   })
 
-interface MissingPaymentMethodDialogProps {
+interface VerificationRequiredDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export const MissingPaymentMethodDialog = ({
+export const VerificationRequiredDialog = ({
   open,
   onOpenChange,
-}: MissingPaymentMethodDialogProps) => {
+}: VerificationRequiredDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <MissingPaymentMethodDialogContent onOpenChange={onOpenChange} />
+        <VerificationRequiredDialogContent onOpenChange={onOpenChange} />
       </DialogContent>
     </Dialog>
   )
 }
 
-const MissingPaymentMethodDialogContent = ({
+const VerificationRequiredDialogContent = ({
   onOpenChange,
-}: Pick<MissingPaymentMethodDialogProps, 'onOpenChange'>) => {
+}: Pick<VerificationRequiredDialogProps, 'onOpenChange'>) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
 
-  const paymentMethodsSessionMutation = useMutation(
-    trpc.billing.createPaymentMethodsSession.mutationOptions({
+  const verificationPaymentMutation = useMutation(
+    trpc.billing.createVerificationPayment.mutationOptions({
       onError: (error) => {
         toast(
           defaultErrorToast(
-            error.message || 'Failed to load payment method form.'
+            error.message || 'Failed to load verification payment form.'
           )
         )
         onOpenChange(false)
@@ -76,27 +76,26 @@ const MissingPaymentMethodDialogContent = ({
   )
 
   useEffect(() => {
-    paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
-  }, [paymentMethodsSessionMutation.mutate, team.slug])
+    verificationPaymentMutation.mutate({ teamSlug: team.slug })
+  }, [team.slug, verificationPaymentMutation.mutate])
 
-  const session = paymentMethodsSessionMutation.data
+  const verificationPayment = verificationPaymentMutation.data
 
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add payment method</DialogTitle>
+        <DialogTitle>Verify account</DialogTitle>
         <DialogDescription>
-          This team is blocked because there is no payment method on file. Add a
-          card to continue using E2B.
+          This team requires payment verification. Make a $5 card payment to
+          verify your account and continue using E2B.
         </DialogDescription>
       </DialogHeader>
 
-      {paymentMethodsSessionMutation.isPending ? (
-        <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
-      ) : session ? (
-        <PaymentMethodsSetupElements
-          customerSessionClientSecret={session.client_secret}
-          setupIntentClientSecret={session.setup_intent_client_secret}
+      {verificationPaymentMutation.isPending ? (
+        <LoadingState message={VERIFICATION_PAYMENT_LOADING_MESSAGE} />
+      ) : verificationPayment ? (
+        <VerificationPaymentElements
+          clientSecret={verificationPayment.client_secret}
           onOpenChange={onOpenChange}
         />
       ) : null}
@@ -113,38 +112,35 @@ const LoadingState = ({ message }: { message: string }) => {
   )
 }
 
-interface PaymentMethodsSetupElementsProps {
-  customerSessionClientSecret: string
-  setupIntentClientSecret: string
+interface VerificationPaymentElementsProps {
+  clientSecret: string
   onOpenChange: (open: boolean) => void
 }
 
-const PaymentMethodsSetupElements = ({
-  customerSessionClientSecret,
-  setupIntentClientSecret,
+const VerificationPaymentElements = ({
+  clientSecret,
   onOpenChange,
-}: PaymentMethodsSetupElementsProps) => {
+}: VerificationPaymentElementsProps) => {
   const appearance = usePaymentElementAppearance()
 
   return (
     <Elements
-      key={setupIntentClientSecret}
+      key={clientSecret}
       stripe={stripePromise}
       options={{
-        clientSecret: setupIntentClientSecret,
-        customerSessionClientSecret,
+        clientSecret,
         appearance,
         loader: 'never',
       }}
     >
-      <PaymentMethodsSetupForm onOpenChange={onOpenChange} />
+      <VerificationPaymentForm onOpenChange={onOpenChange} />
     </Elements>
   )
 }
 
-const PaymentMethodsSetupForm = ({
+const VerificationPaymentForm = ({
   onOpenChange,
-}: Pick<PaymentMethodsSetupElementsProps, 'onOpenChange'>) => {
+}: Pick<VerificationPaymentElementsProps, 'onOpenChange'>) => {
   const stripe = useStripe()
   const elements = useElements()
   const trpc = useTRPC()
@@ -152,7 +148,7 @@ const PaymentMethodsSetupForm = ({
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const { team } = useDashboard()
-  const [isSaving, setIsSaving] = useState(false)
+  const [isPaying, setIsPaying] = useState(false)
   const [isCheckingTeamStatus, setIsCheckingTeamStatus] = useState(false)
   const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)
 
@@ -195,9 +191,9 @@ const PaymentMethodsSetupForm = ({
       return
     }
 
-    setIsSaving(true)
+    setIsPaying(true)
 
-    const { error } = await stripe.confirmSetup({
+    const { error } = await stripe.confirmPayment({
       elements,
       redirect: 'if_required',
       confirmParams: {
@@ -208,16 +204,18 @@ const PaymentMethodsSetupForm = ({
     if (error) {
       toast(
         defaultErrorToast(
-          error.message ?? 'Failed to save payment method. Please try again.'
+          error.message ??
+            'Failed to process verification payment. Please try again.'
         )
       )
-      setIsSaving(false)
+      setIsPaying(false)
       return
     }
 
     toast({
-      title: 'Payment method added',
-      description: 'We are checking whether your team has been unblocked.',
+      title: 'Verification payment submitted',
+      description:
+        'We are checking whether your team has been verified and unblocked.',
     })
 
     setIsCheckingTeamStatus(true)
@@ -227,34 +225,35 @@ const PaymentMethodsSetupForm = ({
     if (!isTeamUnblocked) {
       toast(
         defaultErrorToast(
-          'Payment method saved, but your team is still blocked. Please wait a moment and try again.'
+          'Verification payment submitted, but your team is still blocked. Please wait a moment and try again.'
         )
       )
-      setIsSaving(false)
+      setIsPaying(false)
       return
     }
 
-    setIsSaving(false)
+    setIsPaying(false)
     router.refresh()
     onOpenChange(false)
   }
 
-  const isProcessing = isSaving || isCheckingTeamStatus
+  const isProcessing = isPaying || isCheckingTeamStatus
   const paymentSubmitLoadingLabel = isCheckingTeamStatus
     ? 'Checking team status...'
-    : 'Saving...'
+    : 'Processing...'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <Alert variant="warning">
         <CardIcon className="size-4" />
         <AlertDescription className="prose-label">
-          Your payment method will be saved to your team billing account.
+          A $5 card payment will be charged and added back to your team as
+          credits.
         </AlertDescription>
       </Alert>
 
       {!isPaymentElementReady && (
-        <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
+        <LoadingState message={VERIFICATION_PAYMENT_LOADING_MESSAGE} />
       )}
 
       <PaymentElement
@@ -287,7 +286,7 @@ const PaymentMethodsSetupForm = ({
         }
         loading={isProcessing ? paymentSubmitLoadingLabel : undefined}
       >
-        Save payment method
+        Pay $5 and verify
         <ArrowRightIcon className="size-4" />
       </Button>
     </form>

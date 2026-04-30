@@ -12,6 +12,7 @@ import type {
   PaymentMethodsSession,
   TeamItems,
   UsageResponse,
+  VerificationPaymentResponse,
 } from '@/core/modules/billing/models'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
@@ -38,6 +39,7 @@ export interface BillingRepository {
   confirmOrder(orderId: string): Promise<RepoResult<AddOnOrderConfirmResponse>>
   getCustomerSession(): Promise<RepoResult<PaymentMethodsCustomerSession>>
   createPaymentMethodsSession(): Promise<RepoResult<PaymentMethodsSession>>
+  createVerificationPayment(): Promise<RepoResult<VerificationPaymentResponse>>
 }
 
 async function parseText(response: Response): Promise<string> {
@@ -47,6 +49,10 @@ async function parseText(response: Response): Promise<string> {
 const PaymentMethodsSessionResponseSchema = z.object({
   client_secret: z.string().min(1),
   setup_intent_client_secret: z.string().min(1),
+})
+
+const VerificationPaymentResponseSchema = z.object({
+  client_secret: z.string().min(1),
 })
 
 export function createBillingRepository(
@@ -296,6 +302,34 @@ export function createBillingRepository(
       if (!parseResult.success) {
         return err(
           repoErrorFromHttp(500, 'Invalid payment methods session response')
+        )
+      }
+
+      return ok(parseResult.data)
+    },
+    async createVerificationPayment() {
+      const res = await fetch(
+        `${deps.billingApiUrl}/teams/${scope.teamId}/verification-payment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.ok) {
+        return err(repoErrorFromHttp(res.status, await parseText(res)))
+      }
+
+      const parseResult = VerificationPaymentResponseSchema.safeParse(
+        await res.json()
+      )
+
+      if (!parseResult.success) {
+        return err(
+          repoErrorFromHttp(500, 'Invalid verification payment response')
         )
       }
 
