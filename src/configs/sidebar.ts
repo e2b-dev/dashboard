@@ -4,6 +4,7 @@ import {
   CardIcon,
   GaugeIcon,
   KeyIcon,
+  PersonIcon,
   PersonsIcon,
   SandboxIcon,
   SettingsIcon,
@@ -77,6 +78,15 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     icon: PersonsIcon,
     group: 'team',
     activeMatch: `/dashboard/*/members`,
+  },
+
+  // Agents
+  {
+    label: 'Agents',
+    href: (args) => PROTECTED_URLS.AGENTS(args.teamSlug ?? ''),
+    icon: PersonIcon,
+    group: 'agents',
+    activeMatch: `/dashboard/*/agents/**`,
   },
 
   // Billing

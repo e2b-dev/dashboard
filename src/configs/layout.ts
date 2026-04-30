@@ -28,6 +28,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Sandboxes',
     type: 'custom',
   }),
+  '/dashboard/*/agents': () => ({
+    title: 'Agents',
+    type: 'default',
+  }),
   '/dashboard/*/sandboxes/*/*': (pathname) => {
     const parts = pathname.split('/')
     const teamSlug = parts[2]!
