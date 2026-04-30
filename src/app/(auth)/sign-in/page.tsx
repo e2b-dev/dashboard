@@ -11,6 +11,7 @@ import { signInAction } from '@/core/server/actions/auth-actions'
 import { signInSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
+import { ResendVerificationForm } from '@/features/auth/resend-verification'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -58,6 +59,18 @@ export default function Login() {
   })
 
   const returnTo = searchParams.get('returnTo') || undefined
+  const decodedQueryError = decodeURIComponent(searchParams.get('error') || '')
+  const hasUnconfirmedEmailMessage =
+    !!message &&
+    'success' in message &&
+    message.success === USER_MESSAGES.signInEmailNotConfirmed.message
+  const hasVerificationLinkError =
+    decodedQueryError.toLowerCase().includes('verification link') ||
+    decodedQueryError.toLowerCase().includes('email link has expired')
+  const shouldShowResendVerification =
+    hasUnconfirmedEmailMessage || hasVerificationLinkError
+  const resendInitialEmail =
+    form.watch('email') || searchParams.get('email') || ''
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -167,6 +180,12 @@ export default function Login() {
       </p>
 
       {message && <AuthFormMessage className="mt-4" message={message} />}
+      {shouldShowResendVerification && (
+        <ResendVerificationForm
+          initialEmail={resendInitialEmail}
+          returnTo={returnTo}
+        />
+      )}
     </div>
   )
 }

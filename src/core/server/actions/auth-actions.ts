@@ -1,8 +1,10 @@
 'use server'
 
+import { createHash } from 'node:crypto'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
+import { KV_KEYS } from '@/configs/keys'
 import { z } from 'zod'
 import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
@@ -11,6 +13,7 @@ import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import {
   forgotPasswordSchema,
+  resendSignupVerificationSchema,
   signInSchema,
   signUpSchema,
 } from '@/core/server/functions/auth/auth.types'
@@ -18,6 +21,7 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
+import { kv } from '@/core/shared/clients/kv'
 import { l } from '@/core/shared/clients/logger/logger'
 import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import { createClient } from '@/core/shared/clients/supabase/server'
@@ -63,6 +67,15 @@ async function checkAuthProviderHealth(): Promise<boolean> {
 
 const AUTH_PROVIDER_ERROR_MESSAGE =
   'Our authentication provider is experiencing issues. Please try again later.'
+const RESEND_SIGNUP_VERIFICATION_COOLDOWN_SECONDS = 60
+const RESEND_SIGNUP_VERIFICATION_HASH_PREFIX_LENGTH = 24
+
+function hashCooldownPart(value: string): string {
+  return createHash('sha256')
+    .update(value)
+    .digest('hex')
+    .slice(0, RESEND_SIGNUP_VERIFICATION_HASH_PREFIX_LENGTH)
+}
 
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
@@ -328,6 +341,95 @@ export const forgotPasswordAction = actionClient
       }
 
       throw error
+    }
+  })
+
+export const resendSignupVerificationAction = actionClient
+  .schema(resendSignupVerificationSchema)
+  .metadata({ actionName: 'resendSignupVerification' })
+  .action(async ({ parsedInput: { email, returnTo = '' } }) => {
+    const headerStore = await headers()
+    const origin = headerStore.get('origin')
+
+    if (!origin) {
+      throw new Error('Origin not found')
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const requesterIp =
+      headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown-ip'
+    const requesterUserAgent = headerStore.get('user-agent') ?? 'unknown-agent'
+
+    const emailHash = hashCooldownPart(normalizedEmail)
+    const requesterHash = hashCooldownPart(`${requesterIp}:${requesterUserAgent}`)
+    const cooldownKey = KV_KEYS.AUTH_RESEND_SIGNUP_VERIFICATION_COOLDOWN(
+      emailHash,
+      requesterHash
+    )
+
+    try {
+      const cooldownKeyExists = await kv.get<boolean>(cooldownKey)
+
+      if (cooldownKeyExists) {
+        return
+      }
+
+      await kv.set(cooldownKey, true, {
+        ex: RESEND_SIGNUP_VERIFICATION_COOLDOWN_SECONDS,
+      })
+    } catch (kvError) {
+      l.warn(
+        {
+          key: 'resend_signup_verification_action:kv_error',
+          error: kvError,
+          context: {
+            email_hash: emailHash,
+            requester_hash: requesterHash,
+          },
+        },
+        'failed to access resend verification cooldown key'
+      )
+    }
+
+    const callbackUrl = `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`
+
+    try {
+      const supabase = await createClient()
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: normalizedEmail,
+        options: {
+          emailRedirectTo: callbackUrl,
+        },
+      })
+
+      if (error) {
+        l.warn(
+          {
+            key: 'resend_signup_verification_action:supabase_error',
+            error,
+            context: {
+              email_hash: emailHash,
+              requester_hash: requesterHash,
+              has_return_to: returnTo.length > 0,
+            },
+          },
+          `failed to resend signup verification email: ${error.message}`
+        )
+      }
+    } catch (error) {
+      l.warn(
+        {
+          key: 'resend_signup_verification_action:unexpected_error',
+          error,
+          context: {
+            email_hash: emailHash,
+            requester_hash: requesterHash,
+            has_return_to: returnTo.length > 0,
+          },
+        },
+        'unexpected error while resending signup verification email'
+      )
     }
   })
 

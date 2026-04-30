@@ -15,6 +15,7 @@ import { signUpAction } from '@/core/server/actions/auth-actions'
 import { signUpSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
+import { ResendVerificationForm } from '@/features/auth/resend-verification'
 import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { useTurnstile } from '@/features/auth/use-turnstile'
 import { Button } from '@/ui/primitives/button'
@@ -68,6 +69,12 @@ export default function SignUp() {
 
   const turnstile = useTurnstile(form)
   turnstileResetRef.current = turnstile.reset
+  const shouldShowResendVerification =
+    !!message &&
+    'success' in message &&
+    message.success === USER_MESSAGES.signUpVerification.message
+  const resendInitialEmail =
+    form.watch('email') || searchParams.get('email') || ''
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -209,6 +216,12 @@ export default function SignUp() {
       </p>
 
       {message && <AuthFormMessage className="mt-4" message={message} />}
+      {shouldShowResendVerification && (
+        <ResendVerificationForm
+          initialEmail={resendInitialEmail}
+          returnTo={returnTo}
+        />
+      )}
     </div>
   )
 }
