@@ -11,7 +11,8 @@ import { signInAction } from '@/core/server/actions/auth-actions'
 import { signInSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
-import { ResendVerificationForm } from '@/features/auth/resend-verification'
+import { RecoveryView } from '@/features/auth/recovery-view'
+import { buildSignInHrefWithEmail } from '@/features/auth/recovery-view/utils'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -71,6 +72,7 @@ export default function Login() {
     hasUnconfirmedEmailMessage || hasVerificationLinkError
   const resendInitialEmail =
     form.watch('email') || searchParams.get('email') || ''
+  const backToSignInHref = buildSignInHrefWithEmail(resendInitialEmail)
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -95,6 +97,18 @@ export default function Login() {
     if (email) params.set('email', email)
     if (returnTo) params.set('returnTo', returnTo)
     window.location.href = `${AUTH_URLS.FORGOT_PASSWORD}?${params.toString()}`
+  }
+
+  if (shouldShowResendVerification) {
+    return (
+      <RecoveryView
+        title="Verify your e-mail"
+        message={message}
+        initialEmail={resendInitialEmail}
+        returnTo={returnTo}
+        backToSignInHref={backToSignInHref}
+      />
+    )
   }
 
   return (
@@ -180,12 +194,6 @@ export default function Login() {
       </p>
 
       {message && <AuthFormMessage className="mt-4" message={message} />}
-      {shouldShowResendVerification && (
-        <ResendVerificationForm
-          initialEmail={resendInitialEmail}
-          returnTo={returnTo}
-        />
-      )}
     </div>
   )
 }

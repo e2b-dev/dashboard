@@ -3,16 +3,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useEffect, useState } from 'react'
-import {
-  getTimeoutMsFromUserMessage,
-  USER_MESSAGES,
-} from '@/configs/user-messages'
+import { USER_MESSAGES } from '@/configs/user-messages'
 import { resendSignupVerificationAction } from '@/core/server/actions/auth-actions'
 import { resendSignupVerificationSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { Button } from '@/ui/primitives/button'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
+import { Separator } from '@/ui/primitives/separator'
 import {
   RESEND_VERIFICATION_BUTTON_LABEL,
   RESEND_VERIFICATION_COOLDOWN_SECONDS,
@@ -24,12 +22,14 @@ type ResendVerificationProps = {
   initialEmail?: string
   returnTo?: string
   className?: string
+  showDivider?: boolean
 }
 
 export function ResendVerificationForm({
   initialEmail,
   returnTo,
   className,
+  showDivider = true,
 }: ResendVerificationProps) {
   const [message, setMessage] = useState<AuthMessage | undefined>()
   const { isCoolingDown, secondsLeft, startCooldown } =
@@ -69,28 +69,15 @@ export function ResendVerificationForm({
     form.setValue('returnTo', returnTo)
   }, [returnTo, form])
 
-  useEffect(() => {
-    if (
-      message &&
-      (('success' in message && message.success) ||
-        ('error' in message && message.error))
-    ) {
-      const content =
-        'success' in message
-          ? message.success || ''
-          : 'error' in message
-            ? message.error || ''
-            : ''
-      const timeoutMs = getTimeoutMsFromUserMessage(content) || 5000
-      const timeout = setTimeout(() => setMessage(undefined), timeoutMs)
-      return () => clearTimeout(timeout)
-    }
-  }, [message])
-
   return (
     <div
       className={['mt-4 flex flex-col', className].filter(Boolean).join(' ')}
     >
+      {showDivider && (
+        <div className="-mx-6 mb-6">
+          <Separator />
+        </div>
+      )}
       <p className="text-fg-secondary leading-6">
         Didn&apos;t get the verification email?
       </p>
