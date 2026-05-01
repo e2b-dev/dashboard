@@ -177,6 +177,21 @@ function normalizeVisibleTerminalOutput(output: string) {
   return lines.join('\n')
 }
 
+function buildVisibleTerminalOutput(output: string, inputDraft: string) {
+  const normalizedOutput = normalizeVisibleTerminalOutput(output)
+  if (!inputDraft) return normalizedOutput
+
+  const lines = normalizedOutput.split('\n')
+  const lastLineIndex = lines.findLastIndex((line) => line.length > 0)
+
+  if (lastLineIndex >= 0) {
+    lines[lastLineIndex] = `${lines[lastLineIndex]}${inputDraft}`
+    return lines.join('\n')
+  }
+
+  return inputDraft
+}
+
 function normalizePath(path: string) {
   const absolutePath = path.startsWith('/') ? path : `${DEFAULT_CWD}/${path}`
   const parts: string[] = []
@@ -270,6 +285,8 @@ export default function DashboardTerminal() {
   const inputDraftRef = useRef('')
   const optimisticInputRef = useRef('')
   const cwdRef = useRef(DEFAULT_CWD)
+  const commandHistoryRef = useRef<string[]>([])
+  const commandHistoryIndexRef = useRef<number | null>(null)
   const inputQueueRef = useRef(Promise.resolve())
   const resizeStartRef = useRef<{
     pointerY: number
@@ -324,6 +341,7 @@ export default function DashboardTerminal() {
     pendingAnsiRef.current = ''
     optimisticInputRef.current = ''
     cwdRef.current = DEFAULT_CWD
+    commandHistoryIndexRef.current = null
     inputQueueRef.current = Promise.resolve()
     setStatus('starting')
     setSandboxId(undefined)
@@ -529,9 +547,39 @@ export default function DashboardTerminal() {
           updateInputDraft((current) => current.slice(0, -1))
         } else if (event.key === 'Tab') {
           completeInputDraft()
+        } else if (event.key === 'ArrowUp') {
+          const history = commandHistoryRef.current
+          if (history.length > 0) {
+            const nextIndex =
+              commandHistoryIndexRef.current === null
+                ? history.length - 1
+                : Math.max(commandHistoryIndexRef.current - 1, 0)
+            commandHistoryIndexRef.current = nextIndex
+            updateInputDraft(history[nextIndex] ?? '')
+          }
+        } else if (event.key === 'ArrowDown') {
+          const history = commandHistoryRef.current
+          if (history.length > 0 && commandHistoryIndexRef.current !== null) {
+            const nextIndex = commandHistoryIndexRef.current + 1
+            if (nextIndex >= history.length) {
+              commandHistoryIndexRef.current = null
+              updateInputDraft('')
+            } else {
+              commandHistoryIndexRef.current = nextIndex
+              updateInputDraft(history[nextIndex] ?? '')
+            }
+          }
         } else if (event.key === 'Enter') {
           const draft = inputDraftRef.current
           if (draft) {
+            const command = draft.trim()
+            if (command && commandHistoryRef.current.at(-1) !== command) {
+              commandHistoryRef.current = [
+                ...commandHistoryRef.current.slice(-49),
+                command,
+              ]
+            }
+            commandHistoryIndexRef.current = null
             setOutput((current) => {
               const submittedInput = `${
                 shouldPrefixInputDraft(current) ? '$ ' : ''
@@ -624,10 +672,7 @@ export default function DashboardTerminal() {
     }
   }, [isOpen, status])
 
-  const normalizedOutput = normalizeVisibleTerminalOutput(output)
-  const visibleOutput = `${normalizedOutput}${
-    inputDraft && shouldPrefixInputDraft(normalizedOutput) ? '$ ' : ''
-  }${inputDraft}`
+  const visibleOutput = buildVisibleTerminalOutput(output, inputDraft)
 
   const terminalPanel =
     isOpen && portalRoot
