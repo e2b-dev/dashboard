@@ -119,7 +119,7 @@ export const TeamAvatar = (): ReactElement => {
     removeProfilePictureMutation.mutate({ teamSlug: team.slug })
 
   return (
-    <div className="flex shrink-0 flex-col gap-2">
+    <div className="flex shrink-0 w-36 flex-col gap-2">
       {hasPhoto ? (
         <Avatar className="size-36">
           <AvatarImage
