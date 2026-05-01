@@ -4,11 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type ReactElement, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import type { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import {
   TEAM_NAME_MAX_LENGTH,
-  TeamNameSchema,
+  UpdateTeamNameSchema,
 } from '@/core/modules/teams/schemas'
 import { useDashboard } from '@/features/dashboard/context'
 import {
@@ -30,9 +30,7 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { CheckIcon, EditIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 
-const TeamNameFormSchema = z.object({
-  name: TeamNameSchema,
-})
+const TeamNameFormSchema = UpdateTeamNameSchema.pick({ name: true })
 
 type TeamNameFormValues = z.infer<typeof TeamNameFormSchema>
 
@@ -51,7 +49,6 @@ export const TeamName = (): ReactElement => {
   })
   const name = form.watch('name')
   const trimmedName = name.trim()
-  const isSaveDisabled = !trimmedName || trimmedName === team.name
 
   const updateNameMutation = useMutation(
     trpc.teams.updateName.mutationOptions({
@@ -71,9 +68,11 @@ export const TeamName = (): ReactElement => {
       },
     })
   )
+  const isSaveDisabled =
+    updateNameMutation.isPending || !trimmedName || trimmedName === team.name
 
   const handleSubmit = ({ name }: TeamNameFormValues): void => {
-    if (updateNameMutation.isPending || isSaveDisabled) return
+    if (isSaveDisabled) return
     updateNameMutation.mutate({ teamSlug: team.slug, name })
   }
 
@@ -139,7 +138,7 @@ export const TeamName = (): ReactElement => {
                   aria-label="Save team name"
                   type="submit"
                   variant="secondary"
-                  disabled={updateNameMutation.isPending || isSaveDisabled}
+                  disabled={isSaveDisabled}
                 >
                   {updateNameMutation.isPending ? (
                     <Loader variant="slash" size="sm" />
