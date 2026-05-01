@@ -57,6 +57,12 @@ const TERMINAL_THEME = {
   selectionBackground: '#ffffff40',
 }
 
+interface DashboardTerminalProps {
+  autoStart?: boolean
+  initialCommand?: string
+  variant?: 'button' | 'embedded'
+}
+
 function getElementSize(element: Element | null) {
   if (!element) return undefined
 
@@ -130,9 +136,14 @@ function calculateTerminalSize(
   }
 }
 
-export default function DashboardTerminal() {
+export default function DashboardTerminal({
+  autoStart = false,
+  initialCommand = '',
+  variant = 'button',
+}: DashboardTerminalProps) {
   const { team } = useDashboard()
-  const [isOpen, setIsOpen] = useState(false)
+  const isEmbedded = variant === 'embedded'
+  const [isOpen, setIsOpen] = useState(isEmbedded)
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [sandboxId, setSandboxId] = useState<string>()
   const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT)
@@ -148,6 +159,7 @@ export default function DashboardTerminal() {
   const decoderRef = useRef(new TextDecoder())
   const pendingCommandsRef = useRef<string[]>([])
   const inputQueueRef = useRef(Promise.resolve())
+  const didAutoStartRef = useRef(false)
   const resizeStartRef = useRef<{
     pointerY: number
     panelHeight: number
@@ -411,6 +423,13 @@ export default function DashboardTerminal() {
   }, [])
 
   useEffect(() => {
+    if (!autoStart || didAutoStartRef.current) return
+
+    didAutoStartRef.current = true
+    queueTerminalCommand(initialCommand)
+  })
+
+  useEffect(() => {
     const container = terminalContainerRef.current
     if (!isOpen || !container) return
 
@@ -504,25 +523,28 @@ export default function DashboardTerminal() {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="secondary"
-        size="none"
-        className="size-8"
-        aria-label="Open terminal"
-        title="Open terminal"
-        onClick={openTerminal}
-      >
-        {status === 'starting' ? (
-          <SpinnerIcon className="size-4" />
-        ) : (
-          <TerminalCustomIcon className="size-4" />
-        )}
-      </Button>
+      {isEmbedded ? null : (
+        <Button
+          type="button"
+          variant="secondary"
+          size="none"
+          className="size-8"
+          aria-label="Open terminal"
+          title="Open terminal"
+          onClick={openTerminal}
+        >
+          {status === 'starting' ? (
+            <SpinnerIcon className="size-4" />
+          ) : (
+            <TerminalCustomIcon className="size-4" />
+          )}
+        </Button>
+      )}
 
       <DashboardTerminalPanel
         isOpen={isOpen}
         portalRoot={portalRoot}
+        variant={isEmbedded ? 'embedded' : 'fixed'}
         panelHeight={panelHeight}
         sandboxId={sandboxId}
         status={status}
