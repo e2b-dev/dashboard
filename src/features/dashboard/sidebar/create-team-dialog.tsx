@@ -11,7 +11,6 @@ import {
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { getTRPCValidationMessages } from '@/lib/utils/trpc-errors'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -55,12 +54,6 @@ export const CreateTeamDialog = ({
   const createTeamMutation = useMutation(
     trpc.teams.create.mutationOptions({
       onError: async (error) => {
-        const validationMessages = getTRPCValidationMessages(error)
-        if (validationMessages.length > 0) {
-          toast(defaultErrorToast(validationMessages[0]))
-          return
-        }
-
         toast(defaultErrorToast(error.message || 'Failed to create team'))
       },
       onSuccess: async (team) => {
