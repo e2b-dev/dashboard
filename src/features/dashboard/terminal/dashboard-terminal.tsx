@@ -1,14 +1,13 @@
 'use client'
 
-import Sandbox, { type CommandHandle, FileType } from 'e2b'
+import { Terminal as XTerm } from '@xterm/xterm'
+import Sandbox, { type CommandHandle } from 'e2b'
 import {
-  type ClipboardEvent,
-  type KeyboardEvent,
   type PointerEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
-  type WheelEvent,
 } from 'react'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { supabase } from '@/core/shared/clients/supabase/client'
@@ -20,24 +19,12 @@ import {
   DEFAULT_CWD,
   DEFAULT_PANEL_HEIGHT,
   DEFAULT_ROWS,
-  ESC,
   MAX_PANEL_HEIGHT_RATIO,
   MIN_PANEL_HEIGHT,
   TERMINAL_SANDBOX_TIMEOUT_MS,
 } from './constants'
 import DashboardTerminalPanel from './dashboard-terminal-panel'
 import { DASHBOARD_TERMINAL_COMMAND_EVENT } from './events'
-
-export { openDashboardTerminal } from './events'
-
-import { isClipboardShortcut, isPasteShortcut } from './keyboard'
-import {
-  appendTerminalOutput,
-  buildVisibleTerminalOutput,
-  sanitizeTerminalOutput,
-  shouldPrefixInputDraft,
-} from './output'
-import { commonPrefix, resolvePath } from './paths'
 import {
   clearStoredTerminalSession,
   readStoredTerminalSession,
@@ -49,6 +36,73 @@ import type {
   TerminalStatus,
 } from './types'
 
+export { openDashboardTerminal } from './events'
+
+const INITIAL_TERMINAL_TEXT =
+  'Open a terminal to start a persistent E2B sandbox.\r\n'
+const MIN_TERMINAL_COLS = 40
+const MIN_TERMINAL_ROWS = 8
+const TERMINAL_PADDING_PX = 24
+const DEFAULT_CELL_WIDTH_PX = 8
+const DEFAULT_CELL_HEIGHT_PX = 20
+const TERMINAL_THEME = {
+  background: '#000000',
+  cursor: '#ffffff',
+  foreground: '#ffffff',
+  selectionBackground: '#ffffff40',
+}
+
+function getElementSize(element: Element | null) {
+  if (!element) return undefined
+
+  const rect = element.getBoundingClientRect()
+  if (!rect.width || !rect.height) return undefined
+
+  return rect
+}
+
+function getMeasuredCellSize(terminal: XTerm | null) {
+  const rowElement = terminal?.element?.querySelector('.xterm-rows > div')
+  const rowSize = getElementSize(rowElement ?? null)
+  const rowTextLength = rowElement?.textContent?.length ?? 0
+
+  if (!rowSize || rowTextLength <= 0) return undefined
+
+  return {
+    width: rowSize.width / rowTextLength,
+    height: rowSize.height,
+  }
+}
+
+function calculateTerminalSize(
+  container: HTMLDivElement | null,
+  terminal: XTerm | null
+) {
+  if (!container) {
+    return { cols: DEFAULT_COLS, rows: DEFAULT_ROWS }
+  }
+
+  const measuredCellSize = getMeasuredCellSize(terminal)
+  const availableWidth = container.clientWidth - TERMINAL_PADDING_PX
+  const availableHeight = container.clientHeight - TERMINAL_PADDING_PX
+  const cellWidth = Math.max(
+    measuredCellSize?.width ?? DEFAULT_CELL_WIDTH_PX,
+    DEFAULT_CELL_WIDTH_PX
+  )
+  const cellHeight = Math.max(
+    measuredCellSize?.height ?? DEFAULT_CELL_HEIGHT_PX,
+    DEFAULT_CELL_HEIGHT_PX
+  )
+
+  return {
+    cols: Math.max(MIN_TERMINAL_COLS, Math.floor(availableWidth / cellWidth)),
+    rows: Math.max(
+      MIN_TERMINAL_ROWS,
+      Math.floor(availableHeight / cellHeight) - 1
+    ),
+  }
+}
+
 export default function DashboardTerminal() {
   const { team } = useDashboard()
   const [isOpen, setIsOpen] = useState(false)
@@ -56,23 +110,15 @@ export default function DashboardTerminal() {
   const [sandboxId, setSandboxId] = useState<string>()
   const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT)
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
-  const [inputDraft, setInputDraft] = useState('')
-  const [output, setOutput] = useState(
-    'Open a terminal to start a persistent E2B sandbox.\n'
-  )
 
   const sandboxRef = useRef<Sandbox | null>(null)
-  const terminalRef = useRef<CommandHandle | null>(null)
+  const ptyRef = useRef<CommandHandle | null>(null)
   const pidRef = useRef<number | undefined>(undefined)
-  const outputRef = useRef<HTMLPreElement | null>(null)
-  const inputCaptureRef = useRef<HTMLTextAreaElement | null>(null)
+  const xtermRef = useRef<XTerm | null>(null)
+  const terminalContainerRef = useRef<HTMLDivElement | null>(null)
+  const terminalTranscriptRef = useRef(INITIAL_TERMINAL_TEXT)
+  const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
   const decoderRef = useRef(new TextDecoder())
-  const pendingAnsiRef = useRef('')
-  const inputDraftRef = useRef('')
-  const optimisticInputRef = useRef('')
-  const cwdRef = useRef(DEFAULT_CWD)
-  const commandHistoryRef = useRef<string[]>([])
-  const commandHistoryIndexRef = useRef<number | null>(null)
   const pendingCommandsRef = useRef<string[]>([])
   const inputQueueRef = useRef(Promise.resolve())
   const resizeStartRef = useRef<{
@@ -80,70 +126,69 @@ export default function DashboardTerminal() {
     panelHeight: number
   } | null>(null)
 
-  const updateInputDraft = (value: string | ((current: string) => string)) => {
-    setInputDraft((current) => {
-      const next = typeof value === 'function' ? value(current) : value
-      inputDraftRef.current = next
-      return next
-    })
-  }
+  const resizeTerminal = useCallback(() => {
+    const nextSize = calculateTerminalSize(
+      terminalContainerRef.current,
+      xtermRef.current
+    )
+    terminalSizeRef.current = nextSize
+    xtermRef.current?.resize(nextSize.cols, nextSize.rows)
 
-  const appendOutput = (chunk: string) => {
-    let visibleChunk = appendTerminalOutput('', chunk)
-    const optimisticInput = optimisticInputRef.current
-    const draft = inputDraftRef.current
-
-    if (optimisticInput && visibleChunk.startsWith(optimisticInput)) {
-      visibleChunk = visibleChunk.slice(optimisticInput.length)
-      optimisticInputRef.current = ''
+    if (sandboxRef.current && pidRef.current) {
+      void sandboxRef.current.pty.resize(pidRef.current, nextSize)
     }
 
-    if (draft && !draft.includes('\n') && draft.includes(visibleChunk)) {
-      return
-    }
+    return nextSize
+  }, [])
 
-    setOutput((current) => {
-      const next = appendTerminalOutput(current, visibleChunk)
-      return next
+  const appendOutput = useCallback((chunk: string | Uint8Array) => {
+    const text =
+      typeof chunk === 'string'
+        ? chunk
+        : decoderRef.current.decode(chunk, { stream: true })
+
+    terminalTranscriptRef.current += text
+    xtermRef.current?.write(chunk, () => {
+      xtermRef.current?.scrollToBottom()
     })
-  }
+  }, [])
 
   const disconnectTerminal = async () => {
-    const terminal = terminalRef.current
-    terminalRef.current = null
-    if (!terminal) return
+    const pty = ptyRef.current
+    ptyRef.current = null
+    if (!pty) return
 
     try {
-      await terminal.disconnect()
+      await pty.disconnect()
     } catch {
       // Best-effort cleanup. The sandbox is intentionally left alive to pause.
     }
   }
 
-  const sendInputToPty = (value: string, terminalPid = pidRef.current) => {
-    if (!value || !sandboxRef.current || !terminalPid) return
+  const sendInputToPty = useCallback(
+    (value: string | Uint8Array, terminalPid = pidRef.current) => {
+      if (!value || !sandboxRef.current || !terminalPid) return
 
-    const sandbox = sandboxRef.current
-    inputQueueRef.current = inputQueueRef.current
-      .catch(() => undefined)
-      .then(() =>
-        sandbox.pty.sendInput(terminalPid, new TextEncoder().encode(value))
-      )
-  }
+      const sandbox = sandboxRef.current
+      const data =
+        typeof value === 'string' ? new TextEncoder().encode(value) : value
 
-  const runCommand = (command: string, terminalPid?: number) => {
-    const normalizedCommand = command.trim()
-    if (!normalizedCommand) return
+      inputQueueRef.current = inputQueueRef.current
+        .catch(() => undefined)
+        .then(() => sandbox.pty.sendInput(terminalPid, data))
+    },
+    []
+  )
 
-    setOutput((current) => {
-      const submittedInput = `${
-        shouldPrefixInputDraft(current) ? '$ ' : ''
-      }${normalizedCommand}\n`
-      optimisticInputRef.current = submittedInput
-      return appendTerminalOutput(current, submittedInput)
-    })
-    sendInputToPty(`${normalizedCommand}\r`, terminalPid)
-  }
+  const runCommand = useCallback(
+    (command: string, terminalPid?: number) => {
+      const normalizedCommand = command.trim()
+      if (!normalizedCommand) return
+
+      sendInputToPty(`${normalizedCommand}\r`, terminalPid)
+    },
+    [sendInputToPty]
+  )
 
   const startTerminal = async (options: StartTerminalOptions = {}) => {
     if (status === 'starting') return
@@ -151,15 +196,13 @@ export default function DashboardTerminal() {
     await disconnectTerminal()
     sandboxRef.current = null
     pidRef.current = undefined
-    pendingAnsiRef.current = ''
-    optimisticInputRef.current = ''
-    cwdRef.current = DEFAULT_CWD
-    commandHistoryIndexRef.current = null
+    decoderRef.current = new TextDecoder()
     inputQueueRef.current = Promise.resolve()
+    terminalTranscriptRef.current = ''
+    xtermRef.current?.reset()
     setStatus('starting')
     setSandboxId(undefined)
-    updateInputDraft('')
-    setOutput('Opening terminal...\n')
+    appendOutput('Opening terminal...\r\n')
 
     try {
       const { data } = await supabase.auth.getSession()
@@ -176,7 +219,7 @@ export default function DashboardTerminal() {
 
       if (storedTerminalSession) {
         appendOutput(
-          `Reconnecting to terminal sandbox ${storedTerminalSession.sandboxId}...\n`
+          `Reconnecting to terminal sandbox ${storedTerminalSession.sandboxId}...\r\n`
         )
 
         try {
@@ -189,8 +232,8 @@ export default function DashboardTerminal() {
           })
         } catch {
           clearStoredTerminalSession(userId)
-          appendOutput('Stored terminal sandbox is unavailable.\n')
-          appendOutput('Starting persistent E2B sandbox...\n')
+          appendOutput('Stored terminal sandbox is unavailable.\r\n')
+          appendOutput('Starting persistent E2B sandbox...\r\n')
           sandbox = await Sandbox.create('base', {
             domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
             timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
@@ -208,6 +251,7 @@ export default function DashboardTerminal() {
           })
         }
       } else {
+        appendOutput('Starting persistent E2B sandbox...\r\n')
         sandbox = await Sandbox.create('base', {
           domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
           timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
@@ -229,38 +273,38 @@ export default function DashboardTerminal() {
 
       sandboxRef.current = sandbox
       setSandboxId(sandbox.sandboxId)
-      appendOutput(`Sandbox ${sandbox.sandboxId} is running.\n`)
+      appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
 
-      appendOutput('Opening PTY...\n')
-      const terminal = await sandbox.pty.create({
-        cols: DEFAULT_COLS,
-        rows: DEFAULT_ROWS,
+      appendOutput('Opening PTY...\r\n')
+      const terminalSize = resizeTerminal()
+      const pty = await sandbox.pty.create({
+        cols: terminalSize.cols,
+        rows: terminalSize.rows,
         timeoutMs: 0,
         cwd: DEFAULT_CWD,
         onData: (data) => {
-          appendOutput(
-            sanitizeTerminalOutput(data, decoderRef.current, pendingAnsiRef)
-          )
+          appendOutput(data)
         },
       })
 
-      terminalRef.current = terminal
-      pidRef.current = terminal.pid
+      ptyRef.current = pty
+      pidRef.current = pty.pid
       setStatus('ready')
       writeStoredTerminalSession(userId, { sandboxId: sandbox.sandboxId })
-      appendOutput(`PTY ${terminal.pid} attached.\n`)
+      appendOutput(`PTY ${pty.pid} attached.\r\n`)
+      xtermRef.current?.focus()
 
       const pendingCommands = pendingCommandsRef.current
       pendingCommandsRef.current = []
       for (const command of pendingCommands) {
-        runCommand(command, terminal.pid)
+        runCommand(command, pty.pid)
       }
     } catch (error) {
       setStatus('error')
       appendOutput(
-        `\nFailed to start terminal: ${
+        `\r\nFailed to start terminal: ${
           error instanceof Error ? error.message : 'Unknown error'
-        }\n`
+        }\r\n`
       )
     }
   }
@@ -268,7 +312,7 @@ export default function DashboardTerminal() {
   const openTerminal = () => {
     setIsOpen(true)
     if (status === 'idle' || status === 'error') {
-      startTerminal()
+      void startTerminal()
     }
   }
 
@@ -291,243 +335,17 @@ export default function DashboardTerminal() {
     }
 
     if (status === 'idle' || status === 'error' || options.forceNewSandbox) {
-      startTerminal(options)
+      void startTerminal(options)
     }
   }
 
-  const sendInput = (value: string) => {
-    if (status !== 'ready') return
-    sendInputToPty(value)
-  }
-
-  const getSelectedTerminalText = () => {
-    const selection = window.getSelection()
-    const terminalOutput = outputRef.current
-
-    if (!selection || selection.isCollapsed || !terminalOutput) return ''
-
-    const { anchorNode, focusNode } = selection
-    if (
-      (!anchorNode || !terminalOutput.contains(anchorNode)) &&
-      (!focusNode || !terminalOutput.contains(focusNode))
-    ) {
-      return ''
-    }
-
-    return selection.toString()
-  }
-
-  const copyTerminalText = async (text = getSelectedTerminalText()) => {
-    const value = text || visibleOutput
+  const copyTerminalText = async () => {
+    const value =
+      xtermRef.current?.getSelection() || terminalTranscriptRef.current
     if (!value) return
 
     await navigator.clipboard.writeText(value)
-    inputCaptureRef.current?.focus()
-  }
-
-  const pasteTerminalText = (text: string) => {
-    const normalizedText = text.replace(/\r\n?/g, '\n')
-    updateInputDraft((current) => `${current}${normalizedText}`)
-  }
-
-  const pasteFromClipboard = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      if (text) {
-        pasteTerminalText(text)
-      }
-    } catch {
-      // The browser may block clipboard reads; native paste still uses onPaste.
-    }
-  }
-
-  const completeInputDraft = async () => {
-    const sandbox = sandboxRef.current
-    const draft = inputDraftRef.current
-    if (!sandbox || !draft) return
-
-    const tokenStart = Math.max(
-      draft.lastIndexOf(' ') + 1,
-      draft.lastIndexOf('\t') + 1
-    )
-    const token = draft.slice(tokenStart)
-    const slashIndex = token.lastIndexOf('/')
-    const rawDirectory = slashIndex === -1 ? '' : token.slice(0, slashIndex + 1)
-    const filePrefix = slashIndex === -1 ? token : token.slice(slashIndex + 1)
-    const directoryPath = resolvePath(rawDirectory || '.', cwdRef.current)
-
-    try {
-      const entries = await sandbox.files.list(directoryPath)
-      const matches = entries
-        .filter((entry) => {
-          const name = entry.path.split('/').pop() ?? ''
-          return name.startsWith(filePrefix)
-        })
-        .map((entry) => {
-          const name = entry.path.split('/').pop() ?? ''
-          return {
-            name,
-            suffix: entry.type === FileType.DIR ? '/' : ' ',
-          }
-        })
-
-      if (matches.length === 0) return
-
-      if (matches.length === 1) {
-        const match = matches[0]
-        if (!match) return
-
-        updateInputDraft(
-          `${draft.slice(0, tokenStart)}${rawDirectory}${match.name}${
-            match.suffix
-          }`
-        )
-        return
-      }
-
-      const prefix = commonPrefix(matches.map((match) => match.name))
-      if (prefix.length > filePrefix.length) {
-        updateInputDraft(
-          `${draft.slice(0, tokenStart)}${rawDirectory}${prefix}`
-        )
-      }
-    } catch {
-      // Ignore completion failures; Tab should not disrupt terminal input.
-    }
-  }
-
-  const handleTerminalKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (status !== 'ready') return
-
-    if (isPasteShortcut(event)) {
-      event.preventDefault()
-      void pasteFromClipboard()
-      return
-    }
-
-    if (isClipboardShortcut(event)) {
-      const selectedText = getSelectedTerminalText()
-
-      if (selectedText) {
-        event.preventDefault()
-        void copyTerminalText(selectedText)
-        return
-      }
-
-      if (event.metaKey) {
-        return
-      }
-    }
-
-    if (event.metaKey || event.altKey) return
-
-    const keyMap: Record<string, string> = {
-      Enter: '\r',
-      Backspace: '\u007f',
-      Tab: '\t',
-      ArrowUp: `${ESC}[A`,
-      ArrowDown: `${ESC}[B`,
-      ArrowRight: `${ESC}[C`,
-      ArrowLeft: `${ESC}[D`,
-      Home: `${ESC}[H`,
-      End: `${ESC}[F`,
-      Delete: `${ESC}[3~`,
-    }
-
-    const controlKey =
-      event.ctrlKey && event.key.length === 1
-        ? String.fromCharCode(event.key.toUpperCase().charCodeAt(0) - 64)
-        : undefined
-    const sequence = controlKey ?? keyMap[event.key] ?? event.key
-
-    if (sequence.length === 1 || keyMap[event.key] || controlKey) {
-      event.preventDefault()
-      if (!controlKey) {
-        if (event.key === 'Backspace') {
-          updateInputDraft((current) => current.slice(0, -1))
-        } else if (event.key === 'Tab') {
-          completeInputDraft()
-        } else if (event.key === 'ArrowUp') {
-          const history = commandHistoryRef.current
-          if (history.length > 0) {
-            const nextIndex =
-              commandHistoryIndexRef.current === null
-                ? history.length - 1
-                : Math.max(commandHistoryIndexRef.current - 1, 0)
-            commandHistoryIndexRef.current = nextIndex
-            updateInputDraft(history[nextIndex] ?? '')
-          }
-        } else if (event.key === 'ArrowDown') {
-          const history = commandHistoryRef.current
-          if (history.length > 0 && commandHistoryIndexRef.current !== null) {
-            const nextIndex = commandHistoryIndexRef.current + 1
-            if (nextIndex >= history.length) {
-              commandHistoryIndexRef.current = null
-              updateInputDraft('')
-            } else {
-              commandHistoryIndexRef.current = nextIndex
-              updateInputDraft(history[nextIndex] ?? '')
-            }
-          }
-        } else if (event.key === 'Enter') {
-          const draft = inputDraftRef.current
-          if (draft) {
-            const command = draft.trim()
-            if (command && commandHistoryRef.current.at(-1) !== command) {
-              commandHistoryRef.current = [
-                ...commandHistoryRef.current.slice(-49),
-                command,
-              ]
-            }
-            commandHistoryIndexRef.current = null
-            setOutput((current) => {
-              const submittedInput = `${
-                shouldPrefixInputDraft(current) ? '$ ' : ''
-              }${draft}\n`
-              optimisticInputRef.current = submittedInput
-              return appendTerminalOutput(current, submittedInput)
-            })
-            sendInput(`${draft}\r`)
-            const cdMatch = draft.trim().match(/^cd(?:\s+(.+))?$/)
-            if (cdMatch) {
-              cwdRef.current = resolvePath(
-                cdMatch[1] ?? DEFAULT_CWD,
-                cwdRef.current
-              )
-            }
-          }
-          updateInputDraft('')
-        } else if (event.key.length === 1) {
-          updateInputDraft((current) => `${current}${event.key}`)
-        } else {
-          sendInput(sequence)
-        }
-      } else {
-        sendInput(sequence)
-      }
-    }
-  }
-
-  const handleTerminalPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
-    event.preventDefault()
-
-    const text = event.clipboardData.getData('text')
-    if (text) {
-      pasteTerminalText(text)
-    }
-  }
-
-  const focusTerminalInput = () => {
-    if (!getSelectedTerminalText()) {
-      inputCaptureRef.current?.focus()
-    }
-  }
-
-  const handleTerminalWheel = (event: WheelEvent<HTMLTextAreaElement>) => {
-    outputRef.current?.scrollBy({
-      top: event.deltaY,
-      left: event.deltaX,
-    })
+    xtermRef.current?.focus()
   }
 
   const resizePanel = (pointerY: number) => {
@@ -557,24 +375,77 @@ export default function DashboardTerminal() {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
     resizeStartRef.current = null
+    resizeTerminal()
   }
-
-  useEffect(() => {
-    outputRef.current?.scrollTo({
-      top: outputRef.current.scrollHeight,
-      behavior: 'smooth',
-    })
-  })
 
   useEffect(() => {
     setPortalRoot(document.body)
   }, [])
 
   useEffect(() => {
-    if (isOpen && status === 'ready') {
-      inputCaptureRef.current?.focus()
+    const container = terminalContainerRef.current
+    if (!isOpen || !container) return
+
+    const terminal = new XTerm({
+      cols: terminalSizeRef.current.cols,
+      rows: terminalSizeRef.current.rows,
+      cursorBlink: true,
+      cursorStyle: 'block',
+      fontFamily:
+        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      fontSize: 13,
+      lineHeight: 1.54,
+      scrollback: 10_000,
+      theme: TERMINAL_THEME,
+    })
+
+    xtermRef.current = terminal
+    terminal.open(container)
+    terminal.write(terminalTranscriptRef.current)
+    const dataSubscription = terminal.onData((data) => {
+      sendInputToPty(data)
+    })
+
+    requestAnimationFrame(() => {
+      resizeTerminal()
+      terminal.focus()
+    })
+
+    return () => {
+      dataSubscription.dispose()
+      terminal.dispose()
+      if (xtermRef.current === terminal) {
+        xtermRef.current = null
+      }
     }
-  }, [isOpen, status])
+  }, [isOpen, resizeTerminal, sendInputToPty])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const container = terminalContainerRef.current
+    const resizeObserver =
+      container && typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            resizeTerminal()
+          })
+        : null
+
+    if (container) {
+      resizeObserver?.observe(container)
+    }
+
+    const handleWindowResize = () => {
+      resizeTerminal()
+    }
+
+    window.addEventListener('resize', handleWindowResize)
+
+    return () => {
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', handleWindowResize)
+    }
+  }, [isOpen, resizeTerminal])
 
   useEffect(() => {
     const handleTerminalCommand = (event: Event) => {
@@ -598,8 +469,6 @@ export default function DashboardTerminal() {
       )
     }
   })
-
-  const visibleOutput = buildVisibleTerminalOutput(output, inputDraft)
 
   return (
     <>
@@ -625,18 +494,13 @@ export default function DashboardTerminal() {
         panelHeight={panelHeight}
         sandboxId={sandboxId}
         status={status}
-        visibleOutput={visibleOutput}
-        outputRef={outputRef}
-        inputCaptureRef={inputCaptureRef}
+        terminalContainerRef={terminalContainerRef}
         onResizeStart={startResize}
         onResizeMove={resizePanel}
         onResizeStop={stopResize}
-        onFocusTerminalInput={focusTerminalInput}
-        onTerminalKeyDown={handleTerminalKeyDown}
-        onTerminalPaste={handleTerminalPaste}
-        onTerminalWheel={handleTerminalWheel}
+        onFocusTerminal={() => xtermRef.current?.focus()}
         onCopyTerminalText={() => void copyTerminalText()}
-        onStartTerminal={startTerminal}
+        onStartTerminal={(options) => void startTerminal(options)}
         onClose={() => setIsOpen(false)}
       />
     </>

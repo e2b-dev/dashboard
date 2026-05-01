@@ -1,12 +1,5 @@
-import type {
-  ClipboardEvent,
-  KeyboardEvent,
-  PointerEvent,
-  RefObject,
-  WheelEvent,
-} from 'react'
+import type { PointerEvent, RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
   CloseIcon,
@@ -22,16 +15,11 @@ interface DashboardTerminalPanelProps {
   panelHeight: number
   sandboxId?: string
   status: TerminalStatus
-  visibleOutput: string
-  outputRef: RefObject<HTMLPreElement | null>
-  inputCaptureRef: RefObject<HTMLTextAreaElement | null>
+  terminalContainerRef: RefObject<HTMLDivElement | null>
   onResizeStart: (event: PointerEvent<HTMLButtonElement>) => void
   onResizeMove: (pointerY: number) => void
   onResizeStop: (event: PointerEvent<HTMLButtonElement>) => void
-  onFocusTerminalInput: () => void
-  onTerminalKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void
-  onTerminalPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void
-  onTerminalWheel: (event: WheelEvent<HTMLTextAreaElement>) => void
+  onFocusTerminal: () => void
   onCopyTerminalText: () => void
   onStartTerminal: (options?: StartTerminalOptions) => void
   onClose: () => void
@@ -43,16 +31,11 @@ export default function DashboardTerminalPanel({
   panelHeight,
   sandboxId,
   status,
-  visibleOutput,
-  outputRef,
-  inputCaptureRef,
+  terminalContainerRef,
   onResizeStart,
   onResizeMove,
   onResizeStop,
-  onFocusTerminalInput,
-  onTerminalKeyDown,
-  onTerminalPaste,
-  onTerminalWheel,
+  onFocusTerminal,
   onCopyTerminalText,
   onStartTerminal,
   onClose,
@@ -129,34 +112,13 @@ export default function DashboardTerminalPanel({
         </div>
       </header>
 
-      <label
-        className="relative flex h-[calc(100%-2.5rem)] min-h-0 cursor-text flex-col bg-black"
-        onMouseUp={onFocusTerminalInput}
-      >
-        <pre
-          ref={outputRef}
-          className={cn(
-            'min-h-0 flex-1 overflow-auto border-0 bg-black p-3 font-mono text-[13px] leading-5 text-white outline-none',
-            'select-text whitespace-pre-wrap break-words selection:bg-white/25'
-          )}
-        >
-          {visibleOutput}
-        </pre>
-        <textarea
-          ref={inputCaptureRef}
-          aria-label="Terminal input"
-          autoCapitalize="off"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          value=""
-          onChange={() => undefined}
-          onKeyDown={onTerminalKeyDown}
-          onPaste={onTerminalPaste}
-          onWheel={onTerminalWheel}
-          className="absolute bottom-0 left-0 h-8 w-full resize-none border-0 bg-transparent p-0 text-transparent caret-transparent opacity-0 outline-none"
-        />
-      </label>
+      <div
+        ref={terminalContainerRef}
+        role="application"
+        aria-label="Terminal"
+        className="h-[calc(100%-2.5rem)] min-h-0 cursor-text overflow-hidden bg-black p-3"
+        onMouseDown={onFocusTerminal}
+      />
     </section>,
     portalRoot
   )
