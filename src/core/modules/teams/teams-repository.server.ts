@@ -21,9 +21,6 @@ export type TeamsRequestScope = RequestScope & {
 }
 
 export interface TeamsRepository {
-  createTeam(
-    name: string
-  ): Promise<RepoResult<DashboardComponents['schemas']['TeamResolveResponse']>>
   listTeamMembers(): Promise<RepoResult<TeamMember[]>>
   updateTeamName(
     name: string
@@ -31,7 +28,7 @@ export interface TeamsRepository {
   addTeamMember(email: string): Promise<RepoResult<void>>
   removeTeamMember(userId: string): Promise<RepoResult<void>>
   updateTeamProfilePictureUrl(
-    profilePictureUrl: string
+    profilePictureUrl: string | null
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
 }
 
@@ -73,39 +70,6 @@ export function createTeamsRepository(
   }
 ): TeamsRepository {
   return {
-    async createTeam(
-      name
-    ): Promise<
-      RepoResult<DashboardComponents['schemas']['TeamResolveResponse']>
-    > {
-      const { data, error, response } = await deps.apiClient.POST('/teams', {
-        headers: deps.authHeaders(scope.accessToken),
-        body: { name },
-      })
-
-      if (!response.ok || error || !data) {
-        if (response.status === 400) {
-          return err(
-            createRepoError({
-              code: 'validation',
-              status: response.status,
-              message: error?.message ?? 'Failed to create team',
-              cause: error,
-            })
-          )
-        }
-
-        return err(
-          repoErrorFromHttp(
-            response.status,
-            error?.message ?? 'Failed to create team',
-            error
-          )
-        )
-      }
-
-      return ok(data)
-    },
     async listTeamMembers(): Promise<RepoResult<TeamMember[]>> {
       const teamId = requireTeamId(scope)
       if (!teamId.ok) {

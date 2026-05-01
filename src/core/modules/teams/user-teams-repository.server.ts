@@ -2,8 +2,9 @@ import 'server-only'
 
 import { secondsInMinute } from 'date-fns/constants'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import { api } from '@/core/shared/clients/api'
-import { repoErrorFromHttp } from '@/core/shared/errors'
+import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 import type { ResolvedTeam, TeamModel } from './models'
@@ -17,6 +18,9 @@ export type UserTeamsRequestScope = RequestScope
 
 export interface UserTeamsRepository {
   listUserTeams(): Promise<RepoResult<TeamModel[]>>
+  createTeam(
+    name: string
+  ): Promise<RepoResult<DashboardComponents['schemas']['TeamResolveResponse']>>
   resolveTeamBySlug(
     slug: string,
     next?: { tags?: string[] }
@@ -52,11 +56,40 @@ export function createUserTeamsRepository(
     async listUserTeams(): Promise<RepoResult<TeamModel[]>> {
       const teamsResult = await listApiUserTeams()
 
-      if (!teamsResult.ok) {
-        return teamsResult
+      return teamsResult
+    },
+    async createTeam(
+      name
+    ): Promise<
+      RepoResult<DashboardComponents['schemas']['TeamResolveResponse']>
+    > {
+      const { data, error, response } = await deps.apiClient.POST('/teams', {
+        headers: deps.authHeaders(scope.accessToken),
+        body: { name },
+      })
+
+      if (!response.ok || error || !data) {
+        if (response.status === 400) {
+          return err(
+            createRepoError({
+              code: 'validation',
+              status: response.status,
+              message: error?.message ?? 'Failed to create team',
+              cause: error,
+            })
+          )
+        }
+
+        return err(
+          repoErrorFromHttp(
+            response.status,
+            error?.message ?? 'Failed to create team',
+            error
+          )
+        )
       }
 
-      return ok(teamsResult.data)
+      return ok(data)
     },
     async resolveTeamBySlug(
       slug: string,

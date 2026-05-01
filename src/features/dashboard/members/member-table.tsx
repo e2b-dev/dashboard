@@ -1,32 +1,19 @@
-'use client'
-
-import type { FC } from 'react'
-import type { TeamMember } from '@/core/modules/teams/models'
+import type { FC, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import {
   Table,
   TableBody,
-  TableEmptyState,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import { getAddedByMember } from './member-table.utils'
-import { MemberTableRow } from './member-table-row'
 
 interface MemberTableProps {
-  allMembers: TeamMember[]
-  members: TeamMember[]
-  totalMemberCount: number
+  children: ReactNode
   className?: string
 }
 
-const MemberTable: FC<MemberTableProps> = ({
-  allMembers,
-  members,
-  totalMemberCount,
-  className,
-}) => (
+export const MemberTable: FC<MemberTableProps> = ({ children, className }) => (
   <Table className={cn('w-full table-fixed', className)}>
     <colgroup>
       <col className="w-[220px] lg:w-auto" />
@@ -46,29 +33,6 @@ const MemberTable: FC<MemberTableProps> = ({
         </TableHead>
       </TableRow>
     </TableHeader>
-    <TableBody>
-      {members.length === 0 ? (
-        <TableEmptyState colSpan={3}>
-          <p className="prose-body-highlight text-fg-tertiary">
-            {totalMemberCount === 0
-              ? 'No team members found.'
-              : 'No members match your search.'}
-          </p>
-        </TableEmptyState>
-      ) : (
-        members.map((member) => (
-          <MemberTableRow
-            addedByMember={getAddedByMember(
-              allMembers,
-              member.relation.added_by
-            )}
-            key={member.info.id}
-            member={member}
-          />
-        ))
-      )}
-    </TableBody>
+    <TableBody>{children}</TableBody>
   </Table>
 )
-
-export default MemberTable
