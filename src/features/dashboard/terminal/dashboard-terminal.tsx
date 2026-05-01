@@ -1,6 +1,6 @@
 'use client'
 
-import Sandbox, { type CommandHandle } from 'e2b'
+import Sandbox, { type CommandHandle, FileType } from 'e2b'
 import Link from 'next/link'
 import {
   type ClipboardEvent,
@@ -33,6 +33,7 @@ const DEFAULT_PANEL_HEIGHT = 260
 const MIN_PANEL_HEIGHT = 160
 const MAX_PANEL_HEIGHT_RATIO = 0.72
 const TERMINAL_SESSION_STORAGE_PREFIX = 'dashboard-terminal-session'
+const DEFAULT_CWD = '/home/user'
 const ESC = String.fromCharCode(27)
 const BEL = String.fromCharCode(7)
 const ANSI_ESCAPE_PATTERN = new RegExp(
@@ -179,6 +180,43 @@ function normalizeVisibleTerminalOutput(output: string) {
   return lines.join('\n')
 }
 
+function normalizePath(path: string) {
+  const absolutePath = path.startsWith('/') ? path : `${DEFAULT_CWD}/${path}`
+  const parts: string[] = []
+
+  for (const part of absolutePath.split('/')) {
+    if (!part || part === '.') continue
+    if (part === '..') {
+      parts.pop()
+      continue
+    }
+    parts.push(part)
+  }
+
+  return `/${parts.join('/')}`
+}
+
+function resolvePath(path: string, cwd: string) {
+  if (!path || path === '~') return DEFAULT_CWD
+  if (path.startsWith('~/'))
+    return normalizePath(`${DEFAULT_CWD}/${path.slice(2)}`)
+  if (path.startsWith('/')) return normalizePath(path)
+  return normalizePath(`${cwd}/${path}`)
+}
+
+function commonPrefix(values: string[]) {
+  if (values.length === 0) return ''
+
+  let prefix = values[0] ?? ''
+  for (const value of values.slice(1)) {
+    while (!value.startsWith(prefix)) {
+      prefix = prefix.slice(0, -1)
+    }
+  }
+
+  return prefix
+}
+
 function getTerminalSessionStorageKey(userId: string) {
   return `${TERMINAL_SESSION_STORAGE_PREFIX}:${userId}`
 }
@@ -234,6 +272,7 @@ export default function DashboardTerminal() {
   const pendingAnsiRef = useRef('')
   const inputDraftRef = useRef('')
   const optimisticInputRef = useRef('')
+  const cwdRef = useRef(DEFAULT_CWD)
   const inputQueueRef = useRef(Promise.resolve())
   const resizeStartRef = useRef<{
     pointerY: number
@@ -287,6 +326,7 @@ export default function DashboardTerminal() {
     sandboxRef.current = null
     pendingAnsiRef.current = ''
     optimisticInputRef.current = ''
+    cwdRef.current = DEFAULT_CWD
     inputQueueRef.current = Promise.resolve()
     setStatus('starting')
     setSandboxId(undefined)
@@ -367,7 +407,7 @@ export default function DashboardTerminal() {
         cols: DEFAULT_COLS,
         rows: DEFAULT_ROWS,
         timeoutMs: 0,
-        cwd: '/home/user',
+        cwd: DEFAULT_CWD,
         onData: (data) => {
           appendOutput(
             sanitizeTerminalOutput(data, decoderRef.current, pendingAnsiRef)
@@ -406,6 +446,61 @@ export default function DashboardTerminal() {
       .then(() => sandbox.pty.sendInput(pid, new TextEncoder().encode(value)))
   }
 
+  const completeInputDraft = async () => {
+    const sandbox = sandboxRef.current
+    const draft = inputDraftRef.current
+    if (!sandbox || !draft) return
+
+    const tokenStart = Math.max(
+      draft.lastIndexOf(' ') + 1,
+      draft.lastIndexOf('\t') + 1
+    )
+    const token = draft.slice(tokenStart)
+    const slashIndex = token.lastIndexOf('/')
+    const rawDirectory = slashIndex === -1 ? '' : token.slice(0, slashIndex + 1)
+    const filePrefix = slashIndex === -1 ? token : token.slice(slashIndex + 1)
+    const directoryPath = resolvePath(rawDirectory || '.', cwdRef.current)
+
+    try {
+      const entries = await sandbox.files.list(directoryPath)
+      const matches = entries
+        .filter((entry) => {
+          const name = entry.path.split('/').pop() ?? ''
+          return name.startsWith(filePrefix)
+        })
+        .map((entry) => {
+          const name = entry.path.split('/').pop() ?? ''
+          return {
+            name,
+            suffix: entry.type === FileType.DIR ? '/' : ' ',
+          }
+        })
+
+      if (matches.length === 0) return
+
+      if (matches.length === 1) {
+        const match = matches[0]
+        if (!match) return
+
+        updateInputDraft(
+          `${draft.slice(0, tokenStart)}${rawDirectory}${match.name}${
+            match.suffix
+          }`
+        )
+        return
+      }
+
+      const prefix = commonPrefix(matches.map((match) => match.name))
+      if (prefix.length > filePrefix.length) {
+        updateInputDraft(
+          `${draft.slice(0, tokenStart)}${rawDirectory}${prefix}`
+        )
+      }
+    } catch {
+      // Ignore completion failures; Tab should not disrupt terminal input.
+    }
+  }
+
   const handleTerminalKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (status !== 'ready') return
 
@@ -435,6 +530,8 @@ export default function DashboardTerminal() {
       if (!controlKey) {
         if (event.key === 'Backspace') {
           updateInputDraft((current) => current.slice(0, -1))
+        } else if (event.key === 'Tab') {
+          completeInputDraft()
         } else if (event.key === 'Enter') {
           const draft = inputDraftRef.current
           if (draft) {
@@ -446,6 +543,13 @@ export default function DashboardTerminal() {
               return appendTerminalOutput(current, submittedInput)
             })
             sendInput(`${draft}\r`)
+            const cdMatch = draft.trim().match(/^cd(?:\s+(.+))?$/)
+            if (cdMatch) {
+              cwdRef.current = resolvePath(
+                cdMatch[1] ?? DEFAULT_CWD,
+                cwdRef.current
+              )
+            }
           }
           updateInputDraft('')
         } else if (event.key.length === 1) {
