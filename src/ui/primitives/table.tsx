@@ -1,6 +1,8 @@
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
+import { Loader } from './loader'
+import { Skeleton } from './skeleton'
 import { TableEmptyRowBorder } from './table-empty-row-border'
 
 const Table = React.forwardRef<
@@ -135,6 +137,13 @@ interface TableEmptyStateProps {
   className?: string
 }
 
+interface TableLoadingStateProps {
+  colSpan: number
+  label: string
+  rowCount?: number
+  className?: string
+}
+
 const EMPTY_STATE_ROWS = Array.from({ length: 3 })
 
 const TableEmptyState = ({
@@ -169,6 +178,42 @@ const TableEmptyState = ({
   </TableRow>
 )
 
+const TableLoadingState = ({
+  colSpan,
+  label,
+  rowCount = 3,
+  className,
+}: TableLoadingStateProps) => (
+  <TableRow>
+    <TableCell className="p-0" colSpan={colSpan}>
+      <div
+        className={cn(
+          'w-full gap-2 relative flex flex-col justify-center items-center',
+          className
+        )}
+      >
+        {Array.from({ length: rowCount }).map((_, index) => (
+          <div
+            key={index}
+            className="h-11 w-full border border-bg-highlight relative flex items-center gap-4 justify-center overflow-hidden"
+          >
+            <Skeleton className="absolute inset-0" />
+
+            {index === Math.floor(rowCount / 2) ? (
+              <>
+                <Loader variant="slash" className="z-10" />
+                <span className="prose-body-highlight z-10">
+                  {label} <Loader variant="dots" className="z-10" />
+                </span>
+              </>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </TableCell>
+  </TableRow>
+)
+
 export {
   Table,
   TableBody,
@@ -178,5 +223,6 @@ export {
   TableFooter,
   TableHead,
   TableHeader,
+  TableLoadingState,
   TableRow,
 }

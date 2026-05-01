@@ -6,7 +6,6 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { signOutAction } from '@/core/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +24,7 @@ import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
 import DashboardSidebarMenuTeams from './menu-teams'
+import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
@@ -40,23 +40,19 @@ export default function DashboardSidebarMenu() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton variant="outline" size="switcher">
-              <Avatar
-                className={cn(
-                  'size-8 shrink-0 transition-all duration-100 ease-in-out',
-                  'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
-                  {
-                    'drop-shadow-sm filter': team.profilePictureUrl,
-                  }
-                )}
-              >
-                <AvatarImage
-                  src={team.profilePictureUrl || undefined}
-                  className="group-data-[collapsible=icon]:size-full object-cover object-center"
-                />
-                <AvatarFallback className="bg-bg-hover border-0">
-                  {team.name?.charAt(0).toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
+              <TeamAvatar
+                team={team}
+                classNames={{
+                  root: cn(
+                    'size-8 shrink-0 transition-all duration-100 ease-in-out',
+                    'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
+                    {
+                      'drop-shadow-sm filter': team.profilePictureUrl,
+                    }
+                  ),
+                  image: 'group-data-[collapsible=icon]:size-full',
+                }}
+              />
               <div className="grid flex-1 text-left  leading-tight">
                 <span className="text-fg-tertiary truncate prose-label">
                   TEAM
@@ -65,7 +61,7 @@ export default function DashboardSidebarMenu() {
                   {getTeamDisplayName(team)}
                 </span>
               </div>
-              <UnpackIcon className="text-fg-tertiary ml-auto !size-4" />
+              <UnpackIcon className="text-fg-tertiary ml-auto size-4!" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
