@@ -43,8 +43,13 @@ const INITIAL_TERMINAL_TEXT =
 const MIN_TERMINAL_COLS = 40
 const MIN_TERMINAL_ROWS = 8
 const TERMINAL_PADDING_PX = 24
+const TERMINAL_SCROLLBAR_GUTTER_PX = 12
 const DEFAULT_CELL_WIDTH_PX = 8
 const DEFAULT_CELL_HEIGHT_PX = 20
+const MIN_CELL_WIDTH_PX = 4
+const MAX_CELL_WIDTH_PX = 16
+const MIN_CELL_HEIGHT_PX = 8
+const MAX_CELL_HEIGHT_PX = 40
 const TERMINAL_THEME = {
   background: '#000000',
   cursor: '#ffffff',
@@ -62,15 +67,31 @@ function getElementSize(element: Element | null) {
 }
 
 function getMeasuredCellSize(terminal: XTerm | null) {
+  const measureElement = terminal?.element?.querySelector(
+    '.xterm-char-measure-element'
+  )
   const rowElement = terminal?.element?.querySelector('.xterm-rows > div')
+  const measuredCharSize = getElementSize(measureElement ?? null)
   const rowSize = getElementSize(rowElement ?? null)
-  const rowTextLength = rowElement?.textContent?.length ?? 0
 
-  if (!rowSize || rowTextLength <= 0) return undefined
+  if (!measuredCharSize && !rowSize) return undefined
+
+  const measuredWidth = measuredCharSize?.width
+  const measuredHeight = rowSize?.height ?? measuredCharSize?.height
 
   return {
-    width: rowSize.width / rowTextLength,
-    height: rowSize.height,
+    width:
+      measuredWidth &&
+      measuredWidth >= MIN_CELL_WIDTH_PX &&
+      measuredWidth <= MAX_CELL_WIDTH_PX
+        ? measuredWidth
+        : undefined,
+    height:
+      measuredHeight &&
+      measuredHeight >= MIN_CELL_HEIGHT_PX &&
+      measuredHeight <= MAX_CELL_HEIGHT_PX
+        ? measuredHeight
+        : undefined,
   }
 }
 
@@ -83,15 +104,21 @@ function calculateTerminalSize(
   }
 
   const measuredCellSize = getMeasuredCellSize(terminal)
-  const availableWidth = container.clientWidth - TERMINAL_PADDING_PX
-  const availableHeight = container.clientHeight - TERMINAL_PADDING_PX
+  const containerRect = container.getBoundingClientRect()
+  const containerWidth =
+    container.clientWidth || containerRect.width || window.innerWidth
+  const containerHeight =
+    container.clientHeight || containerRect.height || DEFAULT_PANEL_HEIGHT
+  const availableWidth =
+    containerWidth - TERMINAL_PADDING_PX - TERMINAL_SCROLLBAR_GUTTER_PX
+  const availableHeight = containerHeight - TERMINAL_PADDING_PX
   const cellWidth = Math.max(
     measuredCellSize?.width ?? DEFAULT_CELL_WIDTH_PX,
-    DEFAULT_CELL_WIDTH_PX
+    1
   )
   const cellHeight = Math.max(
     measuredCellSize?.height ?? DEFAULT_CELL_HEIGHT_PX,
-    DEFAULT_CELL_HEIGHT_PX
+    1
   )
 
   return {
@@ -289,6 +316,7 @@ export default function DashboardTerminal() {
 
       ptyRef.current = pty
       pidRef.current = pty.pid
+      resizeTerminal()
       setStatus('ready')
       writeStoredTerminalSession(userId, { sandboxId: sandbox.sandboxId })
       appendOutput(`PTY ${pty.pid} attached.\r\n`)
@@ -410,8 +438,12 @@ export default function DashboardTerminal() {
       resizeTerminal()
       terminal.focus()
     })
+    const resizeTimer = window.setTimeout(() => {
+      resizeTerminal()
+    }, 100)
 
     return () => {
+      window.clearTimeout(resizeTimer)
       dataSubscription.dispose()
       terminal.dispose()
       if (xtermRef.current === terminal) {
