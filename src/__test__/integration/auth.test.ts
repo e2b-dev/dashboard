@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import {
   forgotPasswordAction,
+  resendSignupVerificationAction,
   signInAction,
   signInWithOAuthAction,
   signOutAction,
@@ -18,6 +19,11 @@ const { validateEmail, shouldWarnAboutAlternateEmail } = vi.hoisted(() => ({
 
 const { verifyTurnstileToken } = vi.hoisted(() => ({
   verifyTurnstileToken: vi.fn(),
+}))
+
+const { kvGetMock, kvSetMock } = vi.hoisted(() => ({
+  kvGetMock: vi.fn(),
+  kvSetMock: vi.fn(),
 }))
 
 // Mock console.error to prevent output during tests
@@ -36,6 +42,7 @@ const mockSupabaseClient = {
   auth: {
     signInWithPassword: vi.fn(),
     signUp: vi.fn(),
+    resend: vi.fn(),
     resetPasswordForEmail: vi.fn(),
     updateUser: vi.fn(),
     signInWithOAuth: vi.fn(),
@@ -86,6 +93,13 @@ vi.mock('@/lib/captcha/turnstile', () => ({
   verifyTurnstileToken,
 }))
 
+vi.mock('@/core/shared/clients/kv', () => ({
+  kv: {
+    get: kvGetMock,
+    set: kvSetMock,
+  },
+}))
+
 describe('Auth Actions - Integration Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -96,6 +110,8 @@ describe('Auth Actions - Integration Tests', () => {
     })
     global.fetch = fetchMock as unknown as typeof fetch
     verifyTurnstileToken.mockResolvedValue(true)
+    kvGetMock.mockResolvedValue(null)
+    kvSetMock.mockResolvedValue('OK')
   })
 
   afterEach(() => {
@@ -381,6 +397,79 @@ describe('Auth Actions - Integration Tests', () => {
       expect(result).toBeDefined()
       expect(result).toHaveProperty('user')
     }) */
+  })
+
+  describe('Resend Signup Verification Flow', () => {
+    it('should resend signup verification with callback returnTo', async () => {
+      mockSupabaseClient.auth.resend.mockResolvedValue({
+        data: {},
+        error: null,
+      })
+
+      const result = await resendSignupVerificationAction({
+        email: 'NewUser@Example.com',
+        returnTo: '/dashboard/team-123/sandboxes',
+      })
+
+      expect(result).toBeDefined()
+      expect(result).not.toHaveProperty('serverError')
+      expect(result).not.toHaveProperty('validationErrors')
+      expect(mockSupabaseClient.auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'newuser@example.com',
+        options: {
+          emailRedirectTo:
+            'https://app.e2b.dev/api/auth/callback?returnTo=%2Fdashboard%2Fteam-123%2Fsandboxes',
+        },
+      })
+      expect(kvGetMock).toHaveBeenCalledTimes(1)
+      expect(kvSetMock).toHaveBeenCalledWith(
+        expect.stringContaining('auth:resend-signup-verification:'),
+        true,
+        {
+          ex: 60,
+        }
+      )
+    })
+
+    it('should short-circuit resend when cooldown key exists', async () => {
+      kvGetMock.mockResolvedValue(true)
+
+      const result = await resendSignupVerificationAction({
+        email: 'user@example.com',
+      })
+
+      expect(result).toBeDefined()
+      expect(result).not.toHaveProperty('serverError')
+      expect(result).not.toHaveProperty('validationErrors')
+      expect(mockSupabaseClient.auth.resend).not.toHaveBeenCalled()
+      expect(kvSetMock).not.toHaveBeenCalled()
+    })
+
+    it('should not fail when provider returns resend error', async () => {
+      mockSupabaseClient.auth.resend.mockResolvedValue({
+        data: {},
+        error: { message: 'security purposes' },
+      })
+
+      const result = await resendSignupVerificationAction({
+        email: 'user@example.com',
+      })
+
+      expect(result).toBeDefined()
+      expect(result).not.toHaveProperty('serverError')
+      expect(result).not.toHaveProperty('validationErrors')
+      expect(kvSetMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('should return validation errors when email is invalid', async () => {
+      const result = await resendSignupVerificationAction({
+        email: 'invalid-email',
+      })
+
+      expect(result).toBeDefined()
+      expect(result).toHaveProperty('validationErrors')
+    })
   })
 
   describe('OAuth Authentication', () => {

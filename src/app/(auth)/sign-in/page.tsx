@@ -11,6 +11,8 @@ import { signInAction } from '@/core/server/actions/auth-actions'
 import { signInSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
+import { RecoveryView } from '@/features/auth/recovery-view'
+import { buildSignInHrefWithEmail } from '@/features/auth/recovery-view/utils'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -58,6 +60,19 @@ export default function Login() {
   })
 
   const returnTo = searchParams.get('returnTo') || undefined
+  const decodedQueryError = decodeURIComponent(searchParams.get('error') || '')
+  const hasUnconfirmedEmailMessage =
+    !!message &&
+    'success' in message &&
+    message.success === USER_MESSAGES.signInEmailNotConfirmed.message
+  const hasVerificationLinkError =
+    decodedQueryError.toLowerCase().includes('verification link') ||
+    decodedQueryError.toLowerCase().includes('email link has expired')
+  const shouldShowResendVerification =
+    hasUnconfirmedEmailMessage || hasVerificationLinkError
+  const resendInitialEmail =
+    form.watch('email') || searchParams.get('email') || ''
+  const backToSignInHref = buildSignInHrefWithEmail(resendInitialEmail)
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -82,6 +97,18 @@ export default function Login() {
     if (email) params.set('email', email)
     if (returnTo) params.set('returnTo', returnTo)
     window.location.href = `${AUTH_URLS.FORGOT_PASSWORD}?${params.toString()}`
+  }
+
+  if (shouldShowResendVerification) {
+    return (
+      <RecoveryView
+        title="Verify your e-mail"
+        message={message}
+        initialEmail={resendInitialEmail}
+        returnTo={returnTo}
+        backToSignInHref={backToSignInHref}
+      />
+    )
   }
 
   return (

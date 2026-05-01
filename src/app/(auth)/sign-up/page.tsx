@@ -15,6 +15,8 @@ import { signUpAction } from '@/core/server/actions/auth-actions'
 import { signUpSchema } from '@/core/server/functions/auth/auth.types'
 import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
+import { RecoveryView } from '@/features/auth/recovery-view'
+import { buildSignInHrefWithEmail } from '@/features/auth/recovery-view/utils'
 import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { useTurnstile } from '@/features/auth/use-turnstile'
 import { Button } from '@/ui/primitives/button'
@@ -33,6 +35,7 @@ export default function SignUp() {
   'use no memo'
 
   const searchParams = useSearchParams()
+  const initialSuccess = decodeURIComponent(searchParams.get('success') || '')
   const [message, setMessage] = useState<AuthMessage | undefined>(() => {
     const error = searchParams.get('error')
     const success = searchParams.get('success')
@@ -41,6 +44,9 @@ export default function SignUp() {
 
     return undefined
   })
+  const [showResendVerification, setShowResendVerification] = useState(
+    initialSuccess === USER_MESSAGES.signUpVerification.message
+  )
 
   const turnstileResetRef = useRef<() => void>(() => {})
 
@@ -55,6 +61,7 @@ export default function SignUp() {
       onSuccess: () => {
         turnstileResetRef.current()
         setMessage({ success: USER_MESSAGES.signUpVerification.message })
+        setShowResendVerification(true)
       },
       onError: ({ error }) => {
         turnstileResetRef.current()
@@ -68,6 +75,9 @@ export default function SignUp() {
 
   const turnstile = useTurnstile(form)
   turnstileResetRef.current = turnstile.reset
+  const resendInitialEmail =
+    form.watch('email') || searchParams.get('email') || ''
+  const backToSignInHref = buildSignInHrefWithEmail(resendInitialEmail)
 
   useEffect(() => {
     form.setValue('returnTo', returnTo)
@@ -85,6 +95,10 @@ export default function SignUp() {
   }, [searchParams, form])
 
   useEffect(() => {
+    if (showResendVerification) {
+      return
+    }
+
     if (message && 'success' in message && message.success) {
       const timer = setTimeout(
         () => setMessage(undefined),
@@ -92,7 +106,19 @@ export default function SignUp() {
       )
       return () => clearTimeout(timer)
     }
-  }, [message])
+  }, [message, showResendVerification])
+
+  if (showResendVerification) {
+    return (
+      <RecoveryView
+        title="Verify your e-mail"
+        message={message}
+        initialEmail={resendInitialEmail}
+        returnTo={returnTo}
+        backToSignInHref={backToSignInHref}
+      />
+    )
+  }
 
   return (
     <div className="flex w-full flex-col">

@@ -10,6 +10,11 @@ export const USER_MESSAGES = {
     message: 'Check your e-mail for a verification link.',
     timeoutMs: 30000,
   },
+  signUpVerificationResend: {
+    message:
+      'If an account exists and is awaiting confirmation, we sent a new verification link.',
+    timeoutMs: 30000,
+  },
   passwordReset: {
     message: 'Check your e-mail for a reset link.',
     timeoutMs: 30000,

@@ -36,3 +36,9 @@ export const forgotPasswordSchema = z.object({
   email: emailSchema,
   callbackUrl: z.string().optional(),
 })
+
+export const resendSignupVerificationSchema = z.object({
+  email: emailSchema,
+  returnTo: relativeUrlSchema.optional(),
+  captchaToken: z.string().optional(),
+})
