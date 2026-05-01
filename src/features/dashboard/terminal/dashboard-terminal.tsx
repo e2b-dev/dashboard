@@ -10,265 +10,50 @@ import {
   useState,
   type WheelEvent,
 } from 'react'
-import { createPortal } from 'react-dom'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { supabase } from '@/core/shared/clients/supabase/client'
-import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
-import {
-  CloseIcon,
-  RefreshIcon,
-  SpinnerIcon,
-  TerminalCustomIcon,
-} from '@/ui/primitives/icons'
+import { SpinnerIcon, TerminalCustomIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../context'
+import {
+  DEFAULT_COLS,
+  DEFAULT_CWD,
+  DEFAULT_PANEL_HEIGHT,
+  DEFAULT_ROWS,
+  ESC,
+  MAX_PANEL_HEIGHT_RATIO,
+  MIN_PANEL_HEIGHT,
+  TERMINAL_SANDBOX_TIMEOUT_MS,
+} from './constants'
+import DashboardTerminalPanel from './dashboard-terminal-panel'
+import { DASHBOARD_TERMINAL_COMMAND_EVENT } from './events'
 
-const TERMINAL_SANDBOX_TIMEOUT_MS = 30 * 60 * 1000
-const DEFAULT_COLS = 100
-const DEFAULT_ROWS = 28
-const DEFAULT_PANEL_HEIGHT = 260
-const MIN_PANEL_HEIGHT = 160
-const MAX_PANEL_HEIGHT_RATIO = 0.72
-const TERMINAL_SESSION_STORAGE_PREFIX = 'dashboard-terminal-session'
-const DEFAULT_CWD = '/home/user'
-const ESC = String.fromCharCode(27)
-const BEL = String.fromCharCode(7)
-const ANSI_ESCAPE_PATTERN = new RegExp(
-  `${ESC}(?:[@-Z\\\\-_]|\\[[0-?]*[ -/]*[@-~]|\\][^${BEL}]*(?:${BEL}|${ESC}\\\\)|P[^${ESC}]*(?:${ESC}\\\\)|\\^[^${ESC}]*(?:${ESC}\\\\)|_[^${ESC}]*(?:${ESC}\\\\))`,
-  'g'
-)
-const ANSI_8BIT_CSI_PATTERN = new RegExp(
-  `${String.fromCharCode(155)}[0-?]*[ -/]*[@-~]`,
-  'g'
-)
+export { openDashboardTerminal } from './events'
 
-type TerminalStatus = 'idle' | 'starting' | 'ready' | 'error'
-type StoredTerminalSession = {
-  sandboxId: string
-}
-
-function extractPendingAnsiSequence(text: string) {
-  const lastEscIndex = text.lastIndexOf(ESC)
-
-  if (lastEscIndex === -1) {
-    return { pending: '', text }
-  }
-
-  const tail = text.slice(lastEscIndex)
-
-  if (tail === ESC) {
-    return { pending: tail, text: text.slice(0, lastEscIndex) }
-  }
-
-  if (
-    tail.startsWith(`${ESC}]`) &&
-    !tail.includes(BEL) &&
-    !tail.includes(`${ESC}\\`)
-  ) {
-    return { pending: tail, text: text.slice(0, lastEscIndex) }
-  }
-
-  if (
-    tail.startsWith(`${ESC}[`) &&
-    !new RegExp(`^${ESC}\\[[0-?]*[ -/]*[@-~]$`).test(tail)
-  ) {
-    return { pending: tail, text: text.slice(0, lastEscIndex) }
-  }
-
-  return { pending: '', text }
-}
-
-function sanitizeTerminalOutput(
-  data: Uint8Array,
-  decoder: TextDecoder,
-  pendingAnsiRef: { current: string }
-) {
-  const decoded =
-    pendingAnsiRef.current + decoder.decode(data, { stream: true })
-  const result = extractPendingAnsiSequence(decoded)
-  pendingAnsiRef.current = result.pending
-
-  return result.text
-    .replace(ANSI_ESCAPE_PATTERN, '')
-    .replace(ANSI_8BIT_CSI_PATTERN, '')
-}
-
-function appendTerminalOutput(current: string, chunk: string) {
-  let next = current
-
-  for (let index = 0; index < chunk.length; index += 1) {
-    const char = chunk[index]
-    if (char === undefined) continue
-
-    const code = char.charCodeAt(0)
-
-    if (char === '\r') {
-      if (chunk[index + 1] === '\n') {
-        next += '\n'
-        index += 1
-      }
-      continue
-    }
-
-    if (char === '\n' || char === '\t' || code >= 32) {
-      if (code !== 127) {
-        next += char
-      }
-      continue
-    }
-
-    if (code === 8) {
-      next = next.slice(0, -1)
-    }
-  }
-
-  return stripTerminalTitleFragments(next)
-}
-
-function stripTerminalTitleFragments(output: string) {
-  const promptPattern = /user@[A-Za-z0-9_.-]+:/g
-
-  return output
-    .split('\n')
-    .map((line) => {
-      if (!line.startsWith('0;')) {
-        const promptMatch = /user@[A-Za-z0-9_.-]+:/.exec(line)
-        if (promptMatch?.index && promptMatch.index > 0) {
-          return line.slice(promptMatch.index)
-        }
-
-        return line
-      }
-
-      const promptMatches = [...line.matchAll(promptPattern)]
-      if (promptMatches.length < 2) {
-        return line
-      }
-
-      const promptMatch = promptMatches.at(-1)
-
-      if (!promptMatch || promptMatch.index === undefined) {
-        return line
-      }
-
-      return line.slice(promptMatch.index)
-    })
-    .join('\n')
-}
-
-function shouldPrefixInputDraft(output: string) {
-  return !/[#$] $/.test(output)
-}
-
-function normalizeVisibleTerminalOutput(output: string) {
-  const lines = output.split('\n')
-  const lastLineIndex = lines.findLastIndex((line) => line.length > 0)
-  const lastLine = lines[lastLineIndex]
-
-  if (
-    lastLineIndex >= 0 &&
-    lastLine &&
-    /^user@[A-Za-z0-9_.-]+:/.test(lastLine) &&
-    !/[#$]/.test(lastLine)
-  ) {
-    lines[lastLineIndex] = `${lastLine}$ `
-  }
-
-  return lines.join('\n')
-}
-
-function buildVisibleTerminalOutput(output: string, inputDraft: string) {
-  const normalizedOutput = normalizeVisibleTerminalOutput(output)
-  if (!inputDraft) return normalizedOutput
-
-  const lines = normalizedOutput.split('\n')
-  const lastLineIndex = lines.findLastIndex((line) => line.length > 0)
-
-  if (lastLineIndex >= 0) {
-    lines[lastLineIndex] = `${lines[lastLineIndex]}${inputDraft}`
-    return lines.join('\n')
-  }
-
-  return inputDraft
-}
-
-function normalizePath(path: string) {
-  const absolutePath = path.startsWith('/') ? path : `${DEFAULT_CWD}/${path}`
-  const parts: string[] = []
-
-  for (const part of absolutePath.split('/')) {
-    if (!part || part === '.') continue
-    if (part === '..') {
-      parts.pop()
-      continue
-    }
-    parts.push(part)
-  }
-
-  return `/${parts.join('/')}`
-}
-
-function resolvePath(path: string, cwd: string) {
-  if (!path || path === '~') return DEFAULT_CWD
-  if (path.startsWith('~/'))
-    return normalizePath(`${DEFAULT_CWD}/${path.slice(2)}`)
-  if (path.startsWith('/')) return normalizePath(path)
-  return normalizePath(`${cwd}/${path}`)
-}
-
-function commonPrefix(values: string[]) {
-  if (values.length === 0) return ''
-
-  let prefix = values[0] ?? ''
-  for (const value of values.slice(1)) {
-    while (!value.startsWith(prefix)) {
-      prefix = prefix.slice(0, -1)
-    }
-  }
-
-  return prefix
-}
-
-function getTerminalSessionStorageKey(userId: string) {
-  return `${TERMINAL_SESSION_STORAGE_PREFIX}:${userId}`
-}
-
-function readStoredTerminalSession(userId: string) {
-  try {
-    const value = window.localStorage.getItem(
-      getTerminalSessionStorageKey(userId)
-    )
-    if (!value) return null
-
-    const session = JSON.parse(value) as StoredTerminalSession
-    if (!session.sandboxId) return null
-
-    return session
-  } catch {
-    return null
-  }
-}
-
-function writeStoredTerminalSession(
-  userId: string,
-  session: StoredTerminalSession
-) {
-  window.localStorage.setItem(
-    getTerminalSessionStorageKey(userId),
-    JSON.stringify(session)
-  )
-}
-
-function clearStoredTerminalSession(userId: string) {
-  window.localStorage.removeItem(getTerminalSessionStorageKey(userId))
-}
+import { isClipboardShortcut, isPasteShortcut } from './keyboard'
+import {
+  appendTerminalOutput,
+  buildVisibleTerminalOutput,
+  sanitizeTerminalOutput,
+  shouldPrefixInputDraft,
+} from './output'
+import { commonPrefix, resolvePath } from './paths'
+import {
+  clearStoredTerminalSession,
+  readStoredTerminalSession,
+  writeStoredTerminalSession,
+} from './storage'
+import type {
+  DashboardTerminalCommandDetail,
+  StartTerminalOptions,
+  TerminalStatus,
+} from './types'
 
 export default function DashboardTerminal() {
   const { team } = useDashboard()
   const [isOpen, setIsOpen] = useState(false)
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [sandboxId, setSandboxId] = useState<string>()
-  const [pid, setPid] = useState<number>()
   const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT)
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
   const [inputDraft, setInputDraft] = useState('')
@@ -278,6 +63,7 @@ export default function DashboardTerminal() {
 
   const sandboxRef = useRef<Sandbox | null>(null)
   const terminalRef = useRef<CommandHandle | null>(null)
+  const pidRef = useRef<number | undefined>(undefined)
   const outputRef = useRef<HTMLPreElement | null>(null)
   const inputCaptureRef = useRef<HTMLTextAreaElement | null>(null)
   const decoderRef = useRef(new TextDecoder())
@@ -287,6 +73,7 @@ export default function DashboardTerminal() {
   const cwdRef = useRef(DEFAULT_CWD)
   const commandHistoryRef = useRef<string[]>([])
   const commandHistoryIndexRef = useRef<number | null>(null)
+  const pendingCommandsRef = useRef<string[]>([])
   const inputQueueRef = useRef(Promise.resolve())
   const resizeStartRef = useRef<{
     pointerY: number
@@ -333,11 +120,37 @@ export default function DashboardTerminal() {
     }
   }
 
-  const startTerminal = async () => {
+  const sendInputToPty = (value: string, terminalPid = pidRef.current) => {
+    if (!value || !sandboxRef.current || !terminalPid) return
+
+    const sandbox = sandboxRef.current
+    inputQueueRef.current = inputQueueRef.current
+      .catch(() => undefined)
+      .then(() =>
+        sandbox.pty.sendInput(terminalPid, new TextEncoder().encode(value))
+      )
+  }
+
+  const runCommand = (command: string, terminalPid?: number) => {
+    const normalizedCommand = command.trim()
+    if (!normalizedCommand) return
+
+    setOutput((current) => {
+      const submittedInput = `${
+        shouldPrefixInputDraft(current) ? '$ ' : ''
+      }${normalizedCommand}\n`
+      optimisticInputRef.current = submittedInput
+      return appendTerminalOutput(current, submittedInput)
+    })
+    sendInputToPty(`${normalizedCommand}\r`, terminalPid)
+  }
+
+  const startTerminal = async (options: StartTerminalOptions = {}) => {
     if (status === 'starting') return
 
     await disconnectTerminal()
     sandboxRef.current = null
+    pidRef.current = undefined
     pendingAnsiRef.current = ''
     optimisticInputRef.current = ''
     cwdRef.current = DEFAULT_CWD
@@ -345,7 +158,6 @@ export default function DashboardTerminal() {
     inputQueueRef.current = Promise.resolve()
     setStatus('starting')
     setSandboxId(undefined)
-    setPid(undefined)
     updateInputDraft('')
     setOutput('Opening terminal...\n')
 
@@ -357,7 +169,9 @@ export default function DashboardTerminal() {
       }
 
       const userId = data.session.user.id
-      const storedTerminalSession = readStoredTerminalSession(userId)
+      const storedTerminalSession = options.forceNewSandbox
+        ? null
+        : readStoredTerminalSession(userId)
       let sandbox: Sandbox
 
       if (storedTerminalSession) {
@@ -431,10 +245,16 @@ export default function DashboardTerminal() {
       })
 
       terminalRef.current = terminal
-      setPid(terminal.pid)
+      pidRef.current = terminal.pid
       setStatus('ready')
       writeStoredTerminalSession(userId, { sandboxId: sandbox.sandboxId })
       appendOutput(`PTY ${terminal.pid} attached.\n`)
+
+      const pendingCommands = pendingCommandsRef.current
+      pendingCommandsRef.current = []
+      for (const command of pendingCommands) {
+        runCommand(command, terminal.pid)
+      }
     } catch (error) {
       setStatus('error')
       appendOutput(
@@ -452,13 +272,73 @@ export default function DashboardTerminal() {
     }
   }
 
-  const sendInput = (value: string) => {
-    if (!value || !sandboxRef.current || !pid || status !== 'ready') return
+  const queueTerminalCommand = (
+    command: string,
+    options: StartTerminalOptions = {}
+  ) => {
+    setIsOpen(true)
+    if (command.trim()) {
+      pendingCommandsRef.current = [...pendingCommandsRef.current, command]
+    }
 
-    const sandbox = sandboxRef.current
-    inputQueueRef.current = inputQueueRef.current
-      .catch(() => undefined)
-      .then(() => sandbox.pty.sendInput(pid, new TextEncoder().encode(value)))
+    if (status === 'ready' && !options.forceNewSandbox) {
+      const pendingCommands = pendingCommandsRef.current
+      pendingCommandsRef.current = []
+      for (const pendingCommand of pendingCommands) {
+        runCommand(pendingCommand)
+      }
+      return
+    }
+
+    if (status === 'idle' || status === 'error' || options.forceNewSandbox) {
+      startTerminal(options)
+    }
+  }
+
+  const sendInput = (value: string) => {
+    if (status !== 'ready') return
+    sendInputToPty(value)
+  }
+
+  const getSelectedTerminalText = () => {
+    const selection = window.getSelection()
+    const terminalOutput = outputRef.current
+
+    if (!selection || selection.isCollapsed || !terminalOutput) return ''
+
+    const { anchorNode, focusNode } = selection
+    if (
+      (!anchorNode || !terminalOutput.contains(anchorNode)) &&
+      (!focusNode || !terminalOutput.contains(focusNode))
+    ) {
+      return ''
+    }
+
+    return selection.toString()
+  }
+
+  const copyTerminalText = async (text = getSelectedTerminalText()) => {
+    const value = text || visibleOutput
+    if (!value) return
+
+    await navigator.clipboard.writeText(value)
+    inputCaptureRef.current?.focus()
+  }
+
+  const pasteTerminalText = (text: string) => {
+    const normalizedText = text.replace(/\r\n?/g, '\n')
+    updateInputDraft((current) => `${current}${normalizedText}`)
+  }
+
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text) {
+        pasteTerminalText(text)
+      }
+    } catch {
+      // The browser may block clipboard reads; native paste still uses onPaste.
+    }
   }
 
   const completeInputDraft = async () => {
@@ -518,6 +398,26 @@ export default function DashboardTerminal() {
 
   const handleTerminalKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (status !== 'ready') return
+
+    if (isPasteShortcut(event)) {
+      event.preventDefault()
+      void pasteFromClipboard()
+      return
+    }
+
+    if (isClipboardShortcut(event)) {
+      const selectedText = getSelectedTerminalText()
+
+      if (selectedText) {
+        event.preventDefault()
+        void copyTerminalText(selectedText)
+        return
+      }
+
+      if (event.metaKey) {
+        return
+      }
+    }
 
     if (event.metaKey || event.altKey) return
 
@@ -613,9 +513,13 @@ export default function DashboardTerminal() {
 
     const text = event.clipboardData.getData('text')
     if (text) {
-      updateInputDraft(
-        text.includes('\n') ? '' : (current) => `${current}${text}`
-      )
+      pasteTerminalText(text)
+    }
+  }
+
+  const focusTerminalInput = () => {
+    if (!getSelectedTerminalText()) {
+      inputCaptureRef.current?.focus()
     }
   }
 
@@ -672,97 +576,30 @@ export default function DashboardTerminal() {
     }
   }, [isOpen, status])
 
+  useEffect(() => {
+    const handleTerminalCommand = (event: Event) => {
+      const detail = (event as CustomEvent<DashboardTerminalCommandDetail>)
+        .detail
+
+      queueTerminalCommand(detail?.command ?? '', {
+        forceNewSandbox: detail?.forceNewSandbox,
+      })
+    }
+
+    window.addEventListener(
+      DASHBOARD_TERMINAL_COMMAND_EVENT,
+      handleTerminalCommand
+    )
+
+    return () => {
+      window.removeEventListener(
+        DASHBOARD_TERMINAL_COMMAND_EVENT,
+        handleTerminalCommand
+      )
+    }
+  })
+
   const visibleOutput = buildVisibleTerminalOutput(output, inputDraft)
-
-  const terminalPanel =
-    isOpen && portalRoot
-      ? createPortal(
-          <section
-            className="fixed right-0 bottom-0 left-0 z-[2147483647] border-t bg-bg-1 shadow-2xl"
-            style={{ height: panelHeight }}
-          >
-            <button
-              type="button"
-              aria-label="Resize terminal"
-              title="Resize terminal"
-              className="absolute -top-2 left-0 h-4 w-full cursor-ns-resize touch-none"
-              onPointerDown={startResize}
-              onPointerMove={(event) => resizePanel(event.clientY)}
-              onPointerUp={stopResize}
-              onPointerCancel={stopResize}
-            >
-              <span className="bg-border absolute top-1/2 left-1/2 h-1 w-16 -translate-x-1/2 -translate-y-1/2" />
-            </button>
-
-            <header className="flex h-10 items-center justify-between border-b px-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <TerminalCustomIcon className="text-icon-tertiary size-4" />
-                <span className="prose-label-highlight shrink-0 uppercase">
-                  Terminal
-                </span>
-                {sandboxId ? (
-                  <span className="text-fg-tertiary truncate font-mono text-xs">
-                    {sandboxId}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="quaternary"
-                  size="none"
-                  className="size-7"
-                  aria-label="Start new terminal sandbox"
-                  title="Start new terminal sandbox"
-                  disabled={status === 'starting'}
-                  onClick={startTerminal}
-                >
-                  <RefreshIcon className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="quaternary"
-                  size="none"
-                  className="size-7"
-                  aria-label="Close terminal"
-                  title="Close terminal"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <CloseIcon className="size-4" />
-                </Button>
-              </div>
-            </header>
-
-            <label className="relative flex h-[calc(100%-2.5rem)] min-h-0 cursor-text flex-col bg-black">
-              <pre
-                ref={outputRef}
-                className={cn(
-                  'min-h-0 flex-1 overflow-auto border-0 bg-black p-3 font-mono text-[13px] leading-5 text-white outline-none',
-                  'whitespace-pre-wrap break-words selection:bg-white/25'
-                )}
-              >
-                {visibleOutput}
-              </pre>
-              <textarea
-                ref={inputCaptureRef}
-                aria-label="Terminal input"
-                autoCapitalize="off"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                value=""
-                onChange={() => undefined}
-                onKeyDown={handleTerminalKeyDown}
-                onPaste={handleTerminalPaste}
-                onWheel={handleTerminalWheel}
-                className="absolute inset-0 resize-none border-0 bg-transparent p-0 text-transparent caret-transparent opacity-0 outline-none"
-              />
-            </label>
-          </section>,
-          portalRoot
-        )
-      : null
 
   return (
     <>
@@ -782,7 +619,26 @@ export default function DashboardTerminal() {
         )}
       </Button>
 
-      {terminalPanel}
+      <DashboardTerminalPanel
+        isOpen={isOpen}
+        portalRoot={portalRoot}
+        panelHeight={panelHeight}
+        sandboxId={sandboxId}
+        status={status}
+        visibleOutput={visibleOutput}
+        outputRef={outputRef}
+        inputCaptureRef={inputCaptureRef}
+        onResizeStart={startResize}
+        onResizeMove={resizePanel}
+        onResizeStop={stopResize}
+        onFocusTerminalInput={focusTerminalInput}
+        onTerminalKeyDown={handleTerminalKeyDown}
+        onTerminalPaste={handleTerminalPaste}
+        onTerminalWheel={handleTerminalWheel}
+        onCopyTerminalText={() => void copyTerminalText()}
+        onStartTerminal={startTerminal}
+        onClose={() => setIsOpen(false)}
+      />
     </>
   )
 }
