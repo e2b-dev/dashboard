@@ -4,11 +4,11 @@ import { useDashboard } from '@/features/dashboard/context'
 import { formatDate } from '@/lib/utils/formatting'
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center justify-between">
-    <span className="text-fg-tertiary text-xs leading-[17px] font-normal uppercase">
+  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <span className="text-fg-tertiary shrink-0 text-xs leading-[17px] font-normal uppercase">
       {label}
     </span>
-    <span className="text-fg-secondary font-mono text-base leading-5 font-semibold tracking-[-0.16px] uppercase">
+    <span className="text-fg-secondary font-mono text-base leading-5 font-semibold tracking-[-0.16px] uppercase [overflow-wrap:anywhere]">
       {value}
     </span>
   </div>
