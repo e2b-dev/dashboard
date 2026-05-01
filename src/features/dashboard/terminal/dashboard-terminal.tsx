@@ -1,7 +1,6 @@
 'use client'
 
 import Sandbox, { type CommandHandle, FileType } from 'e2b'
-import Link from 'next/link'
 import {
   type ClipboardEvent,
   type KeyboardEvent,
@@ -13,13 +12,11 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { PROTECTED_URLS } from '@/configs/urls'
 import { supabase } from '@/core/shared/clients/supabase/client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
   CloseIcon,
-  NewTabIcon,
   RefreshIcon,
   SpinnerIcon,
   TerminalCustomIcon,
@@ -666,25 +663,6 @@ export default function DashboardTerminal() {
               </div>
 
               <div className="flex items-center gap-1">
-                {sandboxId ? (
-                  <Button
-                    asChild
-                    variant="quaternary"
-                    size="none"
-                    className="size-7"
-                    aria-label="Open sandbox filesystem"
-                    title="Open sandbox filesystem"
-                  >
-                    <Link
-                      href={PROTECTED_URLS.SANDBOX_FILESYSTEM(
-                        team.slug,
-                        sandboxId
-                      )}
-                    >
-                      <NewTabIcon className="size-4" />
-                    </Link>
-                  </Button>
-                ) : null}
                 <Button
                   type="button"
                   variant="quaternary"
