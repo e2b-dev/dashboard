@@ -3,6 +3,8 @@ import { fileTypeFromBuffer } from 'file-type'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
+import { createKeysRepository } from '@/core/modules/keys/repository.server'
+import { CreateApiKeySchema } from '@/core/modules/keys/schemas'
 import {
   AddTeamMemberSchema,
   CreateTeamSchema,
@@ -42,6 +44,12 @@ const teamsRepositoryProcedure = protectedTeamProcedure.use(
   }))
 )
 
+const keysRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(createKeysRepository, (keysRepository) => ({
+    keysRepository,
+  }))
+)
+
 const getStorageFilePath = (folderPath: string, fileName: string) =>
   `${folderPath}/${fileName}`
 
@@ -55,6 +63,67 @@ export const teamsRouter = createTRPCRouter({
 
     return teamsResult.data
   }),
+
+  listApiKeys: keysRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.keysRepository.listTeamApiKeys()
+
+    if (!result.ok) {
+      throwTRPCErrorFromRepoError(result.error)
+    }
+
+    return { apiKeys: result.data }
+  }),
+
+  createApiKey: keysRepositoryProcedure
+    .input(CreateApiKeySchema)
+    .mutation(async ({ ctx, input }) => {
+      const { name } = input
+
+      const result = await ctx.keysRepository.createApiKey(name)
+
+      if (!result.ok) {
+        l.error({
+          key: 'create_api_key_trpc:error',
+          message: result.error.message,
+          error: result.error,
+          team_id: ctx.teamId,
+          user_id: ctx.session.user.id,
+          context: { name },
+        })
+
+        throwTRPCErrorFromRepoError(result.error)
+      }
+
+      return { createdApiKey: result.data }
+    }),
+
+  deleteApiKey: keysRepositoryProcedure
+    .input(
+      z.object({
+        apiKeyId: z.uuid(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { apiKeyId } = input
+
+      const result = await ctx.keysRepository.deleteApiKey(apiKeyId)
+
+      if (!result.ok) {
+        l.error({
+          key: 'delete_api_key_trpc:error',
+          message: result.error.message,
+          error: result.error,
+          team_id: ctx.teamId,
+          user_id: ctx.session.user.id,
+          context: { apiKeyId },
+        })
+
+        throwTRPCErrorFromRepoError(result.error)
+      }
+
+      return undefined
+    }),
+
   create: userTeamsRepositoryProcedure
     .input(CreateTeamSchema)
     .mutation(async ({ ctx, input }) => {
