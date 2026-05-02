@@ -10,6 +10,7 @@ import {
   TableEmptyState,
   TableHead,
   TableHeader,
+  TableLoadingState,
   TableRow,
 } from '@/ui/primitives/table'
 import { ApiKeysTableRow } from './api-keys-table-row'
@@ -24,6 +25,7 @@ interface ApiKeysTableProps {
   apiKeys: TeamAPIKey[]
   teamSlug: string
   totalKeyCount: number
+  isLoading?: boolean
   className?: string
 }
 
@@ -31,6 +33,7 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
   apiKeys,
   teamSlug,
   totalKeyCount,
+  isLoading = false,
   className,
 }) => {
   const hasNoKeys = totalKeyCount === 0
@@ -59,7 +62,9 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
           ]
         )}
       >
-        {apiKeys.length === 0 ? (
+        {isLoading ? (
+          <TableLoadingState colSpan={4} label="Loading API keys" />
+        ) : apiKeys.length === 0 ? (
           <TableEmptyState colSpan={4}>
             <KeyIcon
               aria-hidden

@@ -9,7 +9,7 @@ import { useTRPC } from '@/trpc/client'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
-import { Loader } from '@/ui/primitives/loader'
+import { Skeleton } from '@/ui/primitives/skeleton'
 import { ApiKeysTable } from './api-keys-table'
 import { matchesApiKeySearch } from './api-keys-utils'
 import { CreateApiKeyDialog } from './create-api-key-dialog'
@@ -55,13 +55,17 @@ interface ApiKeysTotalLabelProps {
   totalCount: number
   filteredCount: number
   hasActiveSearch: boolean
+  isLoading: boolean
 }
 
 const ApiKeysTotalLabel = ({
   totalCount,
   filteredCount,
   hasActiveSearch,
+  isLoading,
 }: ApiKeysTotalLabelProps) => {
+  if (isLoading) return <Skeleton className="h-4 w-24 border-0" />
+
   if (totalCount === 0) return null
 
   const label = hasActiveSearch
@@ -95,14 +99,6 @@ export const ApiKeysPageContent = ({
     return sortedKeys.filter((k) => matchesApiKeySearch(k, query))
   }, [sortedKeys, query])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader variant="square" size="lg" />
-      </div>
-    )
-  }
-
   if (isError) {
     return (
       <ErrorIndicator
@@ -132,6 +128,7 @@ export const ApiKeysPageContent = ({
         <ApiKeysTotalLabel
           filteredCount={filtered.length}
           hasActiveSearch={hasActiveSearch}
+          isLoading={isLoading}
           totalCount={apiKeys.length}
         />
       </div>
@@ -139,6 +136,7 @@ export const ApiKeysPageContent = ({
       <div className="bg-bg w-full overflow-x-auto">
         <ApiKeysTable
           apiKeys={filtered}
+          isLoading={isLoading}
           teamSlug={teamSlug}
           totalKeyCount={apiKeys.length}
         />
