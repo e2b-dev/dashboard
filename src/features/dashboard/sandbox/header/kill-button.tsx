@@ -4,7 +4,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
-import { AlertPopover } from '@/ui/alert-popover'
+import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
@@ -45,7 +45,7 @@ export default function KillButton({ className }: KillButtonProps) {
   }
 
   return (
-    <AlertPopover
+    <AlertDialog
       open={open}
       onOpenChange={setOpen}
       title="Kill Sandbox"
@@ -62,7 +62,6 @@ export default function KillButton({ className }: KillButtonProps) {
         loading: isExecuting ? 'Killing...' : undefined,
       }}
       onConfirm={handleKill}
-      onCancel={() => setOpen(false)}
     />
   )
 }
