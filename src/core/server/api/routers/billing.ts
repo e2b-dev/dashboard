@@ -2,7 +2,6 @@ import { TRPCError } from '@trpc/server'
 import { headers } from 'next/headers'
 import { z } from 'zod'
 import { createBillingRepository } from '@/core/modules/billing/repository.server'
-import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
@@ -23,12 +22,6 @@ const billingRepositoryProcedure = protectedTeamProcedure.use(
       billingRepository,
     })
   )
-)
-
-const billingAndTeamsRepositoryProcedure = billingRepositoryProcedure.use(
-  withTeamAuthedRequestRepository(createTeamsRepository, (teamsRepository) => ({
-    teamsRepository,
-  }))
 )
 
 export const billingRouter = createTRPCRouter({
@@ -136,4 +129,19 @@ export const billingRouter = createTRPCRouter({
     if (!result.ok) throwTRPCErrorFromRepoError(result.error)
     return result.data
   }),
+
+  createPaymentMethodsSession: billingRepositoryProcedure.mutation(
+    async ({ ctx }) => {
+      const result = await ctx.billingRepository.createPaymentMethodsSession()
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }
+  ),
+  createVerificationPayment: billingRepositoryProcedure.mutation(
+    async ({ ctx }) => {
+      const result = await ctx.billingRepository.createVerificationPayment()
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }
+  ),
 })
