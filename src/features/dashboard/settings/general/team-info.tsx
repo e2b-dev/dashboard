@@ -22,6 +22,7 @@ export const TeamInfo = () => {
     <div className="flex flex-col gap-1.5">
       <InfoRow label="created" value={createdAt} />
       <InfoRow label="primary email" value={team.email} />
+      <InfoRow label="team id" value={team.id} />
     </div>
   )
 }
