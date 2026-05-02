@@ -5,7 +5,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { usePostHog } from 'posthog-js/react'
 import { type FC, type ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import type { z } from 'zod'
+import { CreateApiKeySchema } from '@/core/modules/keys/schemas'
 import { useDashboard } from '@/features/dashboard/context'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
@@ -37,15 +38,7 @@ import {
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 
-const formSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name cannot be empty')
-    .max(50, 'Name cannot be longer than 50 characters')
-    .trim(),
-})
-
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof CreateApiKeySchema>
 
 interface CreateApiKeyDialogProps {
   children?: ReactNode
@@ -72,7 +65,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
   }).queryKey
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(CreateApiKeySchema),
     defaultValues: {
       name: '',
     },

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
+import { CreateApiKeySchema } from '@/core/modules/keys/schemas'
 import {
   AddTeamMemberSchema,
   CreateTeamSchema,
@@ -74,15 +75,7 @@ export const teamsRouter = createTRPCRouter({
   }),
 
   createApiKey: keysRepositoryProcedure
-    .input(
-      z.object({
-        name: z
-          .string({ error: 'Name is required' })
-          .min(1, 'Name cannot be empty')
-          .max(50, 'Name cannot be longer than 50 characters')
-          .trim(),
-      })
-    )
+    .input(CreateApiKeySchema)
     .mutation(async ({ ctx, input }) => {
       const { name } = input
 
