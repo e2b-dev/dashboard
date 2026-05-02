@@ -9,7 +9,7 @@ import { useTRPC } from '@/trpc/client'
 import { ErrorIndicator } from '@/ui/error-indicator'
 import { SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
-import { Loader } from '@/ui/primitives/loader_d'
+import { Loader } from '@/ui/primitives/loader'
 import { ApiKeysTable } from './api-keys-table'
 import { matchesApiKeySearch } from './api-keys-utils'
 import { CreateApiKeyDialog } from './create-api-key-dialog'
@@ -98,7 +98,7 @@ export const ApiKeysPageContent = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader />
+        <Loader variant="square" size="lg" />
       </div>
     )
   }

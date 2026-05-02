@@ -8,7 +8,7 @@ import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
-import { Loader } from '@/ui/primitives/loader_d'
+import { Loader } from '@/ui/primitives/loader'
 
 interface UserAccessTokenProps {
   className?: string
@@ -57,7 +57,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           disabled={isPending}
         >
           {isPending ? (
-            <Loader />
+            <Loader variant="square" size="lg" />
           ) : token ? (
             isVisible ? (
               <EyeOffIcon />

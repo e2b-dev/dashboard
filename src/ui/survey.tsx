@@ -9,7 +9,6 @@ import {
   PiSmileyMehFill,
   PiSmileySadFill,
 } from 'react-icons/pi'
-import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
   CardContent,
@@ -18,7 +17,7 @@ import {
   CardTitle,
 } from '@/ui/primitives/card'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { Loader } from '@/ui/primitives/loader_d'
+import { Loader } from '@/ui/primitives/loader'
 import { Textarea } from '@/ui/primitives/textarea'
 import { PiSmileyStarEyesFill } from './icons'
 
@@ -149,7 +148,7 @@ export function SurveyContent({
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader />
+        <Loader variant="square" size="lg" />
       </div>
     )
   }
