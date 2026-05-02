@@ -2,7 +2,6 @@
 
 import { usePostHog } from 'posthog-js/react'
 import type { MouseEvent } from 'react'
-import { useState } from 'react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { UserAvatar } from '@/features/dashboard/shared'
@@ -21,19 +20,18 @@ import {
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
 import { getApiKeyIdBadgeLabel, getLastUsedLabel } from './api-keys-utils'
-import { DeleteApiKeyDialog } from './delete-api-key-dialog'
 
 const tableCellClassName = 'py-3 text-left [tr:first-child>&]:pt-1.5'
 
 interface ApiKeysTableRowProps {
   apiKey: TeamAPIKey
+  onDelete: () => void
 }
 
-export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
+export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
   const posthog = usePostHog()
   const { toast } = useToast()
   const [wasCopied, copy] = useClipboard()
-  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const addedDate = apiKey.createdAt
     ? (formatDate(new Date(apiKey.createdAt), 'MMM d, yyyy') ?? '—')
@@ -55,13 +53,7 @@ export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
   }
 
   return (
-    <>
-      <DeleteApiKeyDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        apiKey={apiKey}
-      />
-      <TableRow>
+    <TableRow>
         <TableCell className={tableCellClassName}>
           <div className="flex min-w-0 items-center gap-3">
             <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
@@ -150,7 +142,7 @@ export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
                 size="none"
                 className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
                 aria-label={`Delete ${apiKey.name ?? 'API key'}`}
-                onClick={() => setDeleteOpen(true)}
+                onClick={onDelete}
               >
                 <TrashIcon className="size-4" />
               </Button>
@@ -158,6 +150,5 @@ export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
           </div>
         </TableCell>
       </TableRow>
-    </>
   )
 }

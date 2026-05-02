@@ -23,15 +23,13 @@ import {
 import { TrashIcon } from '@/ui/primitives/icons'
 
 interface DeleteApiKeyDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  apiKey: TeamAPIKey
+  apiKey: TeamAPIKey | null
+  onClose: () => void
 }
 
 export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
-  open,
-  onOpenChange,
   apiKey,
+  onClose,
 }) => {
   const { team } = useDashboard()
   const { toast } = useToast()
@@ -46,15 +44,17 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
     trpc.teams.deleteApiKey.mutationOptions({
       onSuccess: () => {
         toast(defaultSuccessToast('API key has been deleted.'))
-        onOpenChange(false)
+        onClose()
         void queryClient.invalidateQueries({ queryKey: listQueryKey })
       },
       onError: (err) => {
         toast(defaultErrorToast(err.message || 'Failed to delete API key.'))
-        onOpenChange(false)
+        onClose()
       },
     })
   )
+
+  if (!apiKey) return null
 
   const keyLabel = apiKey.name.trim() ? apiKey.name : 'Untitled'
   const lastUsedAt = apiKey.lastUsed
@@ -63,7 +63,7 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
     : null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={apiKey !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent hideClose className="gap-0 sm:max-w-[520px]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
           <DialogHeader className="min-w-0 flex-1 text-left">
