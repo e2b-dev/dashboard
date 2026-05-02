@@ -6,13 +6,13 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { SandboxMetric } from '@/core/modules/sandboxes/models'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSandboxContext } from '@/features/dashboard/sandbox/context'
+import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import { getMsUntilNextAlignedInterval } from '@/lib/hooks/use-aligned-refetch-interval'
 import { useTRPCClient } from '@/trpc/client'
 import {
   SANDBOX_LIFECYCLE_EVENT_KILLED,
   SANDBOX_MONITORING_DEFAULT_PRESET_ID,
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
-  SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS,
   SANDBOX_MONITORING_LIVE_POLLING_MS,
   SANDBOX_MONITORING_OVERFETCH_MIN_MS,
   SANDBOX_MONITORING_OVERFETCH_RATIO,
@@ -256,11 +256,15 @@ export function useSandboxMonitoringController(sandboxId: string) {
     return latest
   }, [metricsQuery.data])
 
+  const liveMetricThresholdMs = useMemo(
+    () => calculateStepForDuration(fetchTimeframe.end - fetchTimeframe.start),
+    [fetchTimeframe.end, fetchTimeframe.start]
+  )
+
   const isLive =
     shouldPoll &&
     latestMetricTimestampMs !== null &&
-    Date.now() - latestMetricTimestampMs <=
-      SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS
+    Date.now() - latestMetricTimestampMs <= liveMetricThresholdMs
 
   return {
     lifecycleBounds,
