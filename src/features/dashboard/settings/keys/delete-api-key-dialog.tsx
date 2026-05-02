@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { FC } from 'react'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
+import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -24,22 +25,21 @@ import { TrashIcon } from '@/ui/primitives/icons'
 interface DeleteApiKeyDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  teamSlug: string
   apiKey: TeamAPIKey
 }
 
 export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
   open,
   onOpenChange,
-  teamSlug,
   apiKey,
 }) => {
+  const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
   const listQueryKey = trpc.teams.listApiKeys.queryOptions({
-    teamSlug,
+    teamSlug: team.slug,
   }).queryKey
 
   const deleteMutation = useMutation(
@@ -105,7 +105,10 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
               disabled={deleteMutation.isPending}
               className="gap-2 font-sans normal-case"
               onClick={() => {
-                deleteMutation.mutate({ teamSlug, apiKeyId: apiKey.id })
+                deleteMutation.mutate({
+                  teamSlug: team.slug,
+                  apiKeyId: apiKey.id,
+                })
               }}
             >
               <TrashIcon className="size-4" aria-hidden />

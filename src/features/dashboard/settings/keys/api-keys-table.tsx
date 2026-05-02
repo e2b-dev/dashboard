@@ -23,7 +23,6 @@ const ApiKeysTableHead = ({ children }: { children: ReactNode }) => (
 
 interface ApiKeysTableProps {
   apiKeys: TeamAPIKey[]
-  teamSlug: string
   totalKeyCount: number
   isLoading?: boolean
   className?: string
@@ -31,7 +30,6 @@ interface ApiKeysTableProps {
 
 export const ApiKeysTable: FC<ApiKeysTableProps> = ({
   apiKeys,
-  teamSlug,
   totalKeyCount,
   isLoading = false,
   className,
@@ -77,11 +75,7 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
           </TableEmptyState>
         ) : (
           apiKeys.map((apiKey) => (
-            <ApiKeysTableRow
-              key={apiKey.id}
-              apiKey={apiKey}
-              teamSlug={teamSlug}
-            />
+            <ApiKeysTableRow key={apiKey.id} apiKey={apiKey} />
           ))
         )}
       </TableBody>

@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
-import { cn } from '@/lib/utils'
+import { useDashboard } from '@/features/dashboard/context'
 import { pluralize } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { ErrorIndicator } from '@/ui/error-indicator'
@@ -13,11 +13,6 @@ import { Skeleton } from '@/ui/primitives/skeleton'
 import { ApiKeysTable } from './api-keys-table'
 import { matchesApiKeySearch } from './api-keys-utils'
 import { CreateApiKeyDialog } from './create-api-key-dialog'
-
-interface ApiKeysPageContentProps {
-  teamSlug: string
-  className?: string
-}
 
 interface ApiKeysSearchFieldProps {
   value: string
@@ -75,16 +70,14 @@ const ApiKeysTotalLabel = ({
   return <p className="shrink-0 lg:text-right">{label}</p>
 }
 
-export const ApiKeysPageContent = ({
-  teamSlug,
-  className,
-}: ApiKeysPageContentProps) => {
+export const ApiKeysPageContent = () => {
+  const { team } = useDashboard()
   const trpc = useTRPC()
   const [query, setQuery] = useState('')
   const hasActiveSearch = query.trim().length > 0
 
   const { data, isLoading, isError, error } = useQuery(
-    trpc.teams.listApiKeys.queryOptions({ teamSlug })
+    trpc.teams.listApiKeys.queryOptions({ teamSlug: team.slug })
   )
 
   const apiKeys = data?.apiKeys ?? []
@@ -110,14 +103,14 @@ export const ApiKeysPageContent = ({
   }
 
   return (
-    <div className={cn('flex w-full flex-col gap-6', className)}>
+    <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <ApiKeysSearchField
           count={apiKeys.length}
           onChange={setQuery}
           value={query}
         />
-        <CreateApiKeyDialog teamSlug={teamSlug} />
+        <CreateApiKeyDialog />
       </div>
 
       <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-start lg:justify-between">
@@ -137,7 +130,6 @@ export const ApiKeysPageContent = ({
         <ApiKeysTable
           apiKeys={filtered}
           isLoading={isLoading}
-          teamSlug={teamSlug}
           totalKeyCount={apiKeys.length}
         />
       </div>

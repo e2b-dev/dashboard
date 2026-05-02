@@ -6,6 +6,7 @@ import { usePostHog } from 'posthog-js/react'
 import { type FC, type ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useDashboard } from '@/features/dashboard/context'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -47,16 +48,15 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface CreateApiKeyDialogProps {
-  teamSlug: string
   children?: ReactNode
 }
 
 export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
-  teamSlug,
   children,
 }) => {
   'use no memo'
 
+  const { team } = useDashboard()
   const [open, setOpen] = useState(false)
   const [createdKey, setCreatedKey] = useState<string | null>(null)
   const [createdName, setCreatedName] = useState<string | null>(null)
@@ -68,7 +68,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
   const [copiedReveal, copyReveal] = useClipboard()
 
   const listQueryKey = trpc.teams.listApiKeys.queryOptions({
-    teamSlug,
+    teamSlug: team.slug,
   }).queryKey
 
   const form = useForm<FormValues>({
@@ -136,7 +136,10 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit((values) => {
-                  createMutation.mutate({ teamSlug, name: values.name })
+                  createMutation.mutate({
+                    teamSlug: team.slug,
+                    name: values.name,
+                  })
                 })}
               >
                 <FormField

@@ -37,7 +37,6 @@ const ApiKeysTableCell = ({ children, className }: ApiKeysTableCellProps) => (
 
 interface ApiKeysTableRowProps {
   apiKey: TeamAPIKey
-  teamSlug: string
 }
 
 interface ApiKeyNameCellProps {
@@ -186,7 +185,7 @@ const ApiKeyAddedCell = ({
   )
 }
 
-export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
+export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const addedDate = apiKey.createdAt
@@ -202,7 +201,6 @@ export const ApiKeysTableRow = ({ apiKey, teamSlug }: ApiKeysTableRowProps) => {
       <DeleteApiKeyDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        teamSlug={teamSlug}
         apiKey={apiKey}
       />
       <TableRow>

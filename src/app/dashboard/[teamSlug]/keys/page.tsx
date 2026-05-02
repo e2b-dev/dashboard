@@ -16,7 +16,7 @@ export default async function KeysPage({ params }: KeysPageProps) {
   return (
     <HydrateClient>
       <Page>
-        <ApiKeysPageContent teamSlug={teamSlug} />
+        <ApiKeysPageContent />
       </Page>
     </HydrateClient>
   )
