@@ -1,14 +1,14 @@
 'use client'
 
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { deleteWebhookAction } from '@/core/server/actions/webhooks-actions'
 import { useDashboard } from '@/features/dashboard/context'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { TrashIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
@@ -27,26 +27,32 @@ export default function WebhookDeleteDialog({
 }: WebhookDeleteDialogProps) {
   const { team } = useDashboard()
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [confirmationUrl, setConfirmationUrl] = useState('')
 
   const isUrlMatch = confirmationUrl === webhook.url
 
-  const { execute: executeDeleteWebhook, isExecuting: isDeleting } = useAction(
-    deleteWebhookAction,
-    {
+  const listQueryKey = trpc.webhooks.list.queryOptions({
+    teamSlug: team.slug,
+  }).queryKey
+
+  const deleteMutation = useMutation(
+    trpc.webhooks.delete.mutationOptions({
       onSuccess: () => {
         toast(defaultSuccessToast('Webhook deleted successfully'))
+        void queryClient.invalidateQueries({ queryKey: listQueryKey })
         setOpen(false)
         setConfirmationUrl('')
       },
-      onError: ({ error }) => {
-        toast(
-          defaultErrorToast(error.serverError || 'Failed to delete webhook')
-        )
+      onError: (err) => {
+        toast(defaultErrorToast(err.message || 'Failed to delete webhook'))
       },
-    }
+    })
   )
+
+  const isDeleting = deleteMutation.isPending
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value)
@@ -82,7 +88,7 @@ export default function WebhookDeleteDialog({
         disabled: isDeleting || !isUrlMatch,
       }}
       onConfirm={() => {
-        executeDeleteWebhook({
+        deleteMutation.mutate({
           teamSlug: team.slug,
           webhookId: webhook.id,
         })

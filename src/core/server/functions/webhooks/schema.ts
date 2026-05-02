@@ -1,15 +1,13 @@
 import { z } from 'zod'
-import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 const WebhookUrlSchema = z.httpUrl('Must be a valid URL').trim()
 const WebhookSecretSchema = z
   .string()
-  .min(32, 'Secret must be at least 32 characters')
   .trim()
+  .min(32, 'Secret must be at least 32 characters')
 
-export const UpsertWebhookSchema = z
+export const UpsertWebhookInputSchema = z
   .object({
-    teamSlug: TeamSlugSchema,
     mode: z.enum(['add', 'edit']),
     webhookId: z.uuid().optional(),
     name: z.string().min(1, 'Name is required').trim(),
@@ -20,7 +18,6 @@ export const UpsertWebhookSchema = z
   })
   .refine(
     (data) => {
-      // require signatureSecret only when mode is 'add'
       if (data.mode === 'add') {
         return !!data.signatureSecret
       }
@@ -32,19 +29,17 @@ export const UpsertWebhookSchema = z
     }
   )
 
-export const DeleteWebhookSchema = z.object({
-  teamSlug: TeamSlugSchema,
+export const DeleteWebhookInputSchema = z.object({
   webhookId: z.uuid(),
 })
 
-export const UpdateWebhookSecretSchema = z.object({
-  teamSlug: TeamSlugSchema,
+export const UpdateWebhookSecretInputSchema = z.object({
   webhookId: z.uuid(),
   signatureSecret: WebhookSecretSchema,
 })
 
-export type UpsertWebhookSchemaType = z.input<typeof UpsertWebhookSchema>
-export type DeleteWebhookSchemaType = z.input<typeof DeleteWebhookSchema>
-export type UpdateWebhookSecretSchemaType = z.input<
-  typeof UpdateWebhookSecretSchema
+export type UpsertWebhookInput = z.input<typeof UpsertWebhookInputSchema>
+export type DeleteWebhookInput = z.input<typeof DeleteWebhookInputSchema>
+export type UpdateWebhookSecretInput = z.input<
+  typeof UpdateWebhookSecretInputSchema
 >
