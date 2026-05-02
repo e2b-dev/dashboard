@@ -1,6 +1,7 @@
 'use client'
 
 import { usePostHog } from 'posthog-js/react'
+import type { MouseEvent } from 'react'
 import { useState } from 'react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
@@ -22,170 +23,16 @@ import {
 import { getApiKeyIdBadgeLabel, getLastUsedLabel } from './api-keys-utils'
 import { DeleteApiKeyDialog } from './delete-api-key-dialog'
 
-interface ApiKeysTableCellProps {
-  children: React.ReactNode
-  className?: string
-}
-
-const ApiKeysTableCell = ({ children, className }: ApiKeysTableCellProps) => (
-  <TableCell
-    className={cn('py-3 text-left [tr:first-child>&]:pt-1.5', className)}
-  >
-    {children}
-  </TableCell>
-)
+const tableCellClassName = 'py-3 text-left [tr:first-child>&]:pt-1.5'
 
 interface ApiKeysTableRowProps {
   apiKey: TeamAPIKey
 }
 
-interface ApiKeyNameCellProps {
-  name: string | null
-}
-
-interface ApiKeyIdBadgeProps {
-  id: string
-}
-
-interface ApiKeyLastUsedCellProps {
-  lastUsedAt?: string | null
-  lastUsedLabel: string
-}
-
-interface ApiKeyAddedCellProps {
-  addedDate: string
-  createdBy?: TeamAPIKey['createdBy'] | null
-  isCliKey: boolean
-  keyName: string | null
-  onDelete: () => void
-}
-
-const ApiKeyNameCell = ({ name }: ApiKeyNameCellProps) => (
-  <ApiKeysTableCell>
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
-        <KeyIcon aria-hidden className="text-fg-tertiary size-4" />
-      </div>
-      <span
-        className="text-fg min-w-0 truncate text-sm font-medium"
-        title={name ?? 'Untitled key'}
-      >
-        {name ?? 'Untitled key'}
-      </span>
-    </div>
-  </ApiKeysTableCell>
-)
-
-const ApiKeyIdBadge = ({ id }: ApiKeyIdBadgeProps) => {
+export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
   const posthog = usePostHog()
   const { toast } = useToast()
   const [wasCopied, copy] = useClipboard()
-  const displayId = getApiKeyIdBadgeLabel(id)
-
-  const handleCopy = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-    event.stopPropagation()
-
-    await copy(id)
-    posthog.capture('copied API key id')
-    toast(defaultSuccessToast('ID copied to clipboard'))
-  }
-
-  return (
-    <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
-      <span className="tracking-wider">{displayId}</span>
-      <Button
-        type="button"
-        variant="quaternary"
-        size="none"
-        className="text-fg-tertiary hover:text-fg h-3 w-3 shrink-0 active:translate-y-0"
-        aria-label="Copy full API key ID"
-        onClick={handleCopy}
-      >
-        {wasCopied ? (
-          <CheckIcon className="size-3" />
-        ) : (
-          <CopyIcon className="size-3" />
-        )}
-      </Button>
-    </Badge>
-  )
-}
-
-const ApiKeyLastUsedCell = ({
-  lastUsedAt,
-  lastUsedLabel,
-}: ApiKeyLastUsedCellProps) => (
-  <ApiKeysTableCell className="text-sm text-fg-tertiary">
-    {lastUsedAt ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="cursor-default">{lastUsedLabel}</span>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="font-mono text-xs">
-          {formatUTCTimestamp(new Date(lastUsedAt))}
-        </TooltipContent>
-      </Tooltip>
-    ) : (
-      lastUsedLabel
-    )}
-  </ApiKeysTableCell>
-)
-
-const ApiKeyAddedCell = ({
-  addedDate,
-  createdBy,
-  isCliKey,
-  keyName,
-  onDelete,
-}: ApiKeyAddedCellProps) => {
-  const createdByEmail = createdBy?.email?.trim() || 'Unknown user'
-
-  return (
-    <ApiKeysTableCell className="pl-3 pr-0 text-sm text-fg-tertiary">
-      <div className="flex items-center gap-6 justify-between">
-        <span className="block w-[92px] shrink-0 whitespace-nowrap">
-          {addedDate}
-        </span>
-        <div className="flex items-center gap-6">
-          {isCliKey ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
-                  <E2BLogo className="size-5" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top">Added through E2B CLI</TooltipContent>
-            </Tooltip>
-          ) : createdBy ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="cursor-default shrink-0">
-                  <UserAvatar email={createdByEmail} />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top">{createdByEmail}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="size-5 shrink-0" aria-hidden />
-          )}
-          <Button
-            type="button"
-            variant="quaternary"
-            size="none"
-            className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
-            aria-label={`Delete ${keyName ?? 'API key'}`}
-            onClick={onDelete}
-          >
-            <TrashIcon className="size-4" />
-          </Button>
-        </div>
-      </div>
-    </ApiKeysTableCell>
-  )
-}
-
-export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const addedDate = apiKey.createdAt
@@ -195,6 +42,17 @@ export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
   const lastUsedAt = apiKey.lastUsed
   const lastUsedLabel = getLastUsedLabel(apiKey)
   const isCliKey = apiKey.name === CLI_GENERATED_KEY_NAME
+  const displayId = getApiKeyIdBadgeLabel(apiKey.id)
+  const createdByEmail = apiKey.createdBy?.email?.trim() || 'Unknown user'
+
+  const handleCopy = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    await copy(apiKey.id)
+    posthog.capture('copied API key id')
+    toast(defaultSuccessToast('ID copied to clipboard'))
+  }
 
   return (
     <>
@@ -204,21 +62,101 @@ export const ApiKeysTableRow = ({ apiKey }: ApiKeysTableRowProps) => {
         apiKey={apiKey}
       />
       <TableRow>
-        <ApiKeyNameCell name={apiKey.name} />
-        <ApiKeysTableCell>
-          <ApiKeyIdBadge id={apiKey.id} />
-        </ApiKeysTableCell>
-        <ApiKeyLastUsedCell
-          lastUsedAt={lastUsedAt}
-          lastUsedLabel={lastUsedLabel}
-        />
-        <ApiKeyAddedCell
-          addedDate={addedDate}
-          createdBy={apiKey.createdBy}
-          isCliKey={isCliKey}
-          keyName={apiKey.name}
-          onDelete={() => setDeleteOpen(true)}
-        />
+        <TableCell className={tableCellClassName}>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
+              <KeyIcon aria-hidden className="text-fg-tertiary size-4" />
+            </div>
+            <span
+              className="text-fg min-w-0 truncate text-sm font-medium"
+              title={apiKey.name ?? 'Untitled key'}
+            >
+              {apiKey.name ?? 'Untitled key'}
+            </span>
+          </div>
+        </TableCell>
+        <TableCell className={tableCellClassName}>
+          <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
+            <span className="tracking-wider">{displayId}</span>
+            <Button
+              type="button"
+              variant="quaternary"
+              size="none"
+              className="text-fg-tertiary hover:text-fg h-3 w-3 shrink-0 active:translate-y-0"
+              aria-label="Copy full API key ID"
+              onClick={handleCopy}
+            >
+              {wasCopied ? (
+                <CheckIcon className="size-3" />
+              ) : (
+                <CopyIcon className="size-3" />
+              )}
+            </Button>
+          </Badge>
+        </TableCell>
+        <TableCell
+          className={cn(tableCellClassName, 'text-sm text-fg-tertiary')}
+        >
+          {lastUsedAt ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="cursor-default">{lastUsedLabel}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="font-mono text-xs">
+                {formatUTCTimestamp(new Date(lastUsedAt))}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            lastUsedLabel
+          )}
+        </TableCell>
+        <TableCell
+          className={cn(
+            tableCellClassName,
+            'pl-3 pr-0 text-sm text-fg-tertiary'
+          )}
+        >
+          <div className="flex items-center gap-6 justify-between">
+            <span className="block w-[92px] shrink-0 whitespace-nowrap">
+              {addedDate}
+            </span>
+            <div className="flex items-center gap-6">
+              {isCliKey ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
+                      <E2BLogo className="size-5" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    Added through E2B CLI
+                  </TooltipContent>
+                </Tooltip>
+              ) : apiKey.createdBy ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-default shrink-0">
+                      <UserAvatar email={createdByEmail} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{createdByEmail}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <span className="size-5 shrink-0" aria-hidden />
+              )}
+              <Button
+                type="button"
+                variant="quaternary"
+                size="none"
+                className="text-fg-tertiary hover:text-fg shrink-0 active:translate-y-0"
+                aria-label={`Delete ${apiKey.name ?? 'API key'}`}
+                onClick={() => setDeleteOpen(true)}
+              >
+                <TrashIcon className="size-4" />
+              </Button>
+            </div>
+          </div>
+        </TableCell>
       </TableRow>
     </>
   )
