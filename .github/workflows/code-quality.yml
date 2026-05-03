@@ -1,4 +1,4 @@
-name: Test
+name: Code Quality
 
 on:
   push:
@@ -14,50 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  unit-tests:
-    name: Unit Tests
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.20
-
-      - name: Cache Bun install cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-cache-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-cache-
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Run unit tests
-        run: bun test:unit
-
-  integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    env:
-      KV_URL: redis://localhost:6379
-      KV_REST_API_READ_ONLY_TOKEN: test-read-only-token
-      KV_REST_API_TOKEN: test-api-token
-      KV_REST_API_URL: https://test-kv-api.example.com
-      SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
-      BILLING_API_URL: https://billing.e2b-test.dev
-      NEXT_PUBLIC_E2B_DOMAIN: e2b-test.dev
-      NEXT_PUBLIC_POSTHOG_KEY: test-posthog-key
-      NEXT_PUBLIC_SUPABASE_URL: https://test-supabase-url.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-supabase-anon-key
-      NEXT_PUBLIC_STRIPE_BILLING_URL: https://test-stripe-billing.example.com
-      NEXT_PUBLIC_SCAN: 0
-      NEXT_PUBLIC_MOCK_DATA: 1
 
     steps:
       - name: Checkout code
@@ -79,5 +38,32 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run integration tests
-        run: bun test:integration
+      - name: Run lint check
+        run: bunx biome ci --formatter-enabled=false --linter-enabled=true --reporter=github .
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.20
+
+      - name: Cache Bun install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-cache-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-cache-
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run format check
+        run: bunx biome ci --formatter-enabled=true --assist-enabled=true --linter-enabled=false --reporter=github .

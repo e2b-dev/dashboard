@@ -5,6 +5,10 @@ on:
     - cron: "18 15 * * *"
   workflow_dispatch:
 
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
 permissions:
   contents: write
   pull-requests: write
@@ -45,7 +49,16 @@ jobs:
         if: steps.check-spec-changes.outputs.has_changes == 'true'
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.2.0"
+          bun-version: "1.2.20"
+
+      - name: Cache Bun install cache
+        if: steps.check-spec-changes.outputs.has_changes == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-cache-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-cache-
 
       - name: Install dependencies
         if: steps.check-spec-changes.outputs.has_changes == 'true'

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LANDING_PAGE_DOMAIN } from '@/configs/rewrites'
-import { DOCUMENTATION_DOMAIN } from '../../../next.config.mjs'
+import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 vi.mock('@/configs/flags', () => ({
   ALLOW_SEO_INDEXING: true,
