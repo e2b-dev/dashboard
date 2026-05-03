@@ -1,4 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["stubs/**/*.ts"]
+  "entry": ["stubs/**/*.ts"],
+  "rules": {
+    "exports": "warn",
+    "types": "warn",
+    "nsExports": "warn",
+    "nsTypes": "warn",
+    "enumMembers": "warn",
+    "namespaceMembers": "warn",
+    "duplicates": "warn"
+  }
 }

@@ -45,7 +45,7 @@
     "e2e:test": "bun run e2e:test:pr",
     "e2e:headed": "PLAYWRIGHT_MODE=dev bun scripts:check-playwright-env && PLAYWRIGHT_MODE=dev playwright test --headed",
     "knip": "knip",
-    "knip:ci": "knip --include files,dependencies,unlisted,unresolved,binaries --reporter github-actions",
+    "knip:ci": "knip --include files,dependencies,unlisted,unresolved,binaries,exports,types,nsExports,nsTypes,enumMembers,namespaceMembers,duplicates --reporter github-actions",
     "test:watch": "bun scripts:check-all-env && vitest",
     "test:ui": "bun scripts:check-all-env && vitest --ui",
     "test:ui:integration": "bun scripts:check-app-env && vitest --ui tests/integration/"
