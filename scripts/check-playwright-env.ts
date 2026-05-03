@@ -19,7 +19,9 @@ if (
   process.env.GITHUB_ACTIONS === 'true' &&
   !process.env.VERCEL_AUTOMATION_BYPASS_SECRET
 ) {
-  console.error('❌ Missing VERCEL_AUTOMATION_BYPASS_SECRET for CI preview runs')
+  console.error(
+    '❌ Missing VERCEL_AUTOMATION_BYPASS_SECRET for CI preview runs'
+  )
   process.exit(1)
 }
 
