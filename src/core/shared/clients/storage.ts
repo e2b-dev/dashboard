@@ -1,6 +1,9 @@
-import type { FileObject } from '@supabase/storage-js'
 import { STORAGE_BUCKET_NAME } from '@/configs/storage'
 import { supabaseAdmin } from './supabase/admin'
+
+type StorageFileObject = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof supabaseAdmin.storage.from>['list']>>['data']
+>[number]
 
 export async function uploadFile(
   fileBuffer: Buffer,
@@ -26,7 +29,7 @@ export async function uploadFile(
   return urlData.publicUrl
 }
 
-export async function getFiles(folderPath: string): Promise<FileObject[]> {
+export async function getFiles(folderPath: string): Promise<StorageFileObject[]> {
   const { data, error } = await supabaseAdmin.storage
     .from(STORAGE_BUCKET_NAME)
     .list(folderPath, {
