@@ -67,11 +67,6 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 })
 
-export const testEnvSchema = z.object({
-  TEST_USER_EMAIL: z.email(),
-  TEST_USER_PASSWORD: z.string().min(8),
-})
-
 const merged = serverSchema.extend(clientSchema.shape)
 
 export type Env = z.infer<typeof merged>

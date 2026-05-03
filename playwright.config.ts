@@ -16,7 +16,7 @@ const sharedUse = {
 }
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './tests/preview',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,

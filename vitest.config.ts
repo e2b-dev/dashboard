@@ -9,7 +9,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
     },
-    setupFiles: ['./src/__test__/setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
   },
 
   resolve: {

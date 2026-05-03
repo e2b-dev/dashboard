@@ -66,4 +66,4 @@ jobs:
         run: bun install
 
       - name: Run format check
-        run: bunx biome ci --formatter-enabled=true --linter-enabled=false --reporter=github .
+        run: bunx biome ci --formatter-enabled=true --assist-enabled=true --linter-enabled=false --reporter=github .
