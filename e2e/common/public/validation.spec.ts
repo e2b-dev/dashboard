@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-test('base url is valid for current mode', async ({}, testInfo) => {
+test('base url is valid for current mode', async ({ page }, testInfo) => {
+  void page
   const resolvedBaseURL = testInfo.project.use.baseURL
   const expectedBaseURL =
     process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
