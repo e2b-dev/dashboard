@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test'
 
-test('base url is valid for current mode', async () => {
-  const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
-  const parsedBaseURL = new URL(baseURL)
+test('base url is valid for current mode', async ({}, testInfo) => {
+  const resolvedBaseURL = testInfo.project.use.baseURL
+  const expectedBaseURL =
+    process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 
-  expect(baseURL).toBeTruthy()
+  expect(resolvedBaseURL).toBeTruthy()
+  expect(resolvedBaseURL).toBe(expectedBaseURL)
+
+  const parsedBaseURL = new URL(resolvedBaseURL as string)
 
   if (
     parsedBaseURL.hostname === 'localhost' ||
