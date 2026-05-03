@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { proxy } from '@/proxy'
-import { DOCUMENTATION_DOMAIN } from '../../../next.config.mjs'
+import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // mock supabase auth
 vi.mock('@supabase/ssr', () => ({
