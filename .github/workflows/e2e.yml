@@ -1,4 +1,4 @@
-name: Playwright Preview E2E
+name: E2E
 
 on:
   deployment_status:
@@ -12,8 +12,8 @@ permissions:
   deployments: read
 
 jobs:
-  e2e-preview:
-    name: Playwright Preview E2E
+  e2e:
+    name: Playwright E2E
     runs-on: ubuntu-latest
     if: >
       github.event.deployment_status.state == 'success' &&
@@ -34,12 +34,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.20
 
+      - name: Cache Bun install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-cache-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-cache-
+
       - name: Install dependencies
         run: bun install
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Ensure preview URL is available
         run: |
@@ -49,6 +66,7 @@ jobs:
           fi
 
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: bun run e2e:install-browsers
 
       - name: Run Playwright E2E
