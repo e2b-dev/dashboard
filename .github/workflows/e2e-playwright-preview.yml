@@ -19,6 +19,7 @@ jobs:
       group: preview-e2e-${{ github.event.deployment.ref || github.event.deployment.sha || github.run_id }}
       cancel-in-progress: true
     env:
+      PLAYWRIGHT_MODE: pr
       PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
       TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
       TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
@@ -47,7 +48,7 @@ jobs:
         run: bun run e2e:install-browsers
 
       - name: Run Playwright E2E
-        run: bun run e2e:test
+        run: bun run e2e:test:pr
 
       - name: Upload Playwright artifacts
         if: always()

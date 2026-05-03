@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.PREVIEW_URL
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
 
 export default defineConfig({

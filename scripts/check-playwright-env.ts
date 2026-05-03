@@ -1,20 +1,42 @@
 import { z } from 'zod'
 
-const playwrightEnvSchema = z.object({
+const mode = process.env.PLAYWRIGHT_MODE === 'pr' ? 'pr' : 'dev'
+
+const devSchema = z.object({
+  PLAYWRIGHT_BASE_URL: z.url().optional(),
+  TEST_USER_EMAIL: z.email().optional(),
+  TEST_USER_PASSWORD: z.string().min(8).optional(),
+})
+
+const prSchema = z.object({
   PLAYWRIGHT_BASE_URL: z.url(),
   TEST_USER_EMAIL: z.email(),
   TEST_USER_PASSWORD: z.string().min(8),
 })
 
-const parsed = playwrightEnvSchema.safeParse(process.env)
+const schema = mode === 'pr' ? prSchema : devSchema
+const parsed = schema.safeParse(process.env)
 
 if (!parsed.success) {
-  console.error('❌ Playwright environment is not properly configured')
+  console.error(`❌ Playwright ${mode} environment is not properly configured`)
   console.error(z.prettifyError(parsed.error))
   process.exit(1)
 }
 
+if (mode === 'dev') {
+  const localBaseURL =
+    process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
+  const localBaseURLParsed = z.url().safeParse(localBaseURL)
+
+  if (!localBaseURLParsed.success) {
+    console.error('❌ Invalid PLAYWRIGHT_BASE_URL for development mode')
+    console.error(z.prettifyError(localBaseURLParsed.error))
+    process.exit(1)
+  }
+}
+
 if (
+  mode === 'pr' &&
   process.env.CI === 'true' &&
   process.env.GITHUB_ACTIONS === 'true' &&
   !process.env.VERCEL_AUTOMATION_BYPASS_SECRET
@@ -25,4 +47,4 @@ if (
   process.exit(1)
 }
 
-console.log('✅ Playwright environment is properly configured')
+console.log(`✅ Playwright ${mode} environment is properly configured`)
