@@ -23,18 +23,6 @@ if (!parsed.success) {
   process.exit(1)
 }
 
-if (mode === 'dev') {
-  const localBaseURL =
-    process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
-  const localBaseURLParsed = z.url().safeParse(localBaseURL)
-
-  if (!localBaseURLParsed.success) {
-    console.error('❌ Invalid PLAYWRIGHT_BASE_URL for development mode')
-    console.error(z.prettifyError(localBaseURLParsed.error))
-    process.exit(1)
-  }
-}
-
 if (
   mode === 'pr' &&
   process.env.CI === 'true' &&

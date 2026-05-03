@@ -97,10 +97,12 @@ jobs:
     if: >
       github.event_name == 'deployment_status' &&
       github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment != 'Production' &&
-      github.event.deployment.environment != 'production'
+      (
+        contains(github.event.deployment.environment, 'Preview') ||
+        contains(github.event.deployment.environment, 'preview')
+      )
     concurrency:
-      group: preview-e2e-${{ github.event.deployment.ref || github.event.deployment.sha || github.run_id }}
+      group: preview-e2e-${{ github.event.deployment.environment || 'unknown' }}-${{ github.event.deployment.id || github.event.deployment.sha || github.run_id }}
       cancel-in-progress: true
     env:
       PLAYWRIGHT_MODE: pr
@@ -112,6 +114,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

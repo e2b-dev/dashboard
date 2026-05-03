@@ -40,10 +40,10 @@
     "test:integration": "bun scripts:check-app-env && vitest run tests/integration/",
     "test:unit": "vitest run tests/unit/",
     "e2e:install-browsers": "playwright install chromium --with-deps",
-    "e2e:test:dev": "PLAYWRIGHT_MODE=dev bun scripts:check-playwright-env && playwright test",
-    "e2e:test:pr": "PLAYWRIGHT_MODE=pr bun scripts:check-playwright-env && playwright test",
+    "e2e:test:dev": "PLAYWRIGHT_MODE=dev bun scripts:check-playwright-env && PLAYWRIGHT_MODE=dev playwright test",
+    "e2e:test:pr": "PLAYWRIGHT_MODE=pr bun scripts:check-playwright-env && PLAYWRIGHT_MODE=pr playwright test",
     "e2e:test": "bun run e2e:test:pr",
-    "e2e:headed": "PLAYWRIGHT_MODE=dev bun scripts:check-playwright-env && playwright test --headed",
+    "e2e:headed": "PLAYWRIGHT_MODE=dev bun scripts:check-playwright-env && PLAYWRIGHT_MODE=dev playwright test --headed",
     "test:watch": "bun scripts:check-all-env && vitest",
     "test:ui": "bun scripts:check-all-env && vitest --ui",
     "test:ui:integration": "bun scripts:check-app-env && vitest --ui tests/integration/"
