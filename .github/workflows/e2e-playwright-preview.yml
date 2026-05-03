@@ -3,6 +3,10 @@ name: Playwright Preview E2E
 on:
   deployment_status:
 
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
 permissions:
   contents: read
   deployments: read

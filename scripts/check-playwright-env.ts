@@ -4,8 +4,8 @@ const mode = process.env.PLAYWRIGHT_MODE === 'pr' ? 'pr' : 'dev'
 
 const devSchema = z.object({
   PLAYWRIGHT_BASE_URL: z.url().optional(),
-  TEST_USER_EMAIL: z.email().optional(),
-  TEST_USER_PASSWORD: z.string().min(8).optional(),
+  TEST_USER_EMAIL: z.email(),
+  TEST_USER_PASSWORD: z.string().min(8),
 })
 
 const prSchema = z.object({

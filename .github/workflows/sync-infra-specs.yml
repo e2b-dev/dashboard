@@ -5,6 +5,10 @@ on:
     - cron: "18 15 * * *"
   workflow_dispatch:
 
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
 permissions:
   contents: write
   pull-requests: write

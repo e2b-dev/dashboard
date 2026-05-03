@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
 permissions:
   contents: read
 
