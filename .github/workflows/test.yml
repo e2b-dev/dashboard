@@ -102,7 +102,7 @@ jobs:
         contains(github.event.deployment.environment, 'preview')
       )
     concurrency:
-      group: preview-e2e-${{ github.event.deployment.environment || 'unknown' }}-${{ github.event.deployment.id || github.event.deployment.sha || github.run_id }}
+      group: preview-e2e-${{ github.event.deployment.environment || 'unknown' }}
       cancel-in-progress: true
     env:
       PLAYWRIGHT_MODE: pr
