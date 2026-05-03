@@ -43,7 +43,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: unit
+    needs: unit-tests
     env:
       KV_URL: redis://localhost:6379
       KV_REST_API_READ_ONLY_TOKEN: test-read-only-token
