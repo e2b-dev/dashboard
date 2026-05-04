@@ -29,6 +29,7 @@ import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
 import { WEBHOOK_EVENTS, type WebhookEvent } from './constants'
+import { FinishWebhookSetupDialog } from './finish-webhook-setup-dialog'
 import type { Webhook } from './types'
 
 type WebhookAddEditDialogProps =
@@ -58,6 +59,7 @@ export default function WebhookAddEditDialog({
   const [lastSelectedEvent, setLastSelectedEvent] =
     useState<WebhookEvent | null>(null)
   const [hasCopied, setHasCopied] = useState(false)
+  const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
 
   const isEditMode = mode === 'edit'
   const totalSteps = isEditMode ? 1 : 2
@@ -94,6 +96,13 @@ export default function WebhookAddEditDialog({
           )
         )
         void queryClient.invalidateQueries({ queryKey: listQueryKey })
+
+        if (!isEditMode) {
+          handleDialogChange(false)
+          setFinishSetupDialogOpen(true)
+          return
+        }
+
         handleDialogChange(false)
       },
       onError: (err) => {
@@ -195,98 +204,104 @@ export default function WebhookAddEditDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <>
+      <Dialog open={open} onOpenChange={handleDialogChange}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="flex flex-col gap-4 px-6 pt-5 pb-6 h-[685px] max-h-[calc(100svh-2rem)] overflow-hidden">
-        <DialogHeader className="gap-0.5">
-          <DialogTitle>
-            {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
-          </DialogTitle>
-          {!isEditMode && (
-            <div className="flex items-center gap-2">
-              <span className="text-fg-tertiary prose-label uppercase">
-                Step {currentStep} / {totalSteps}
-              </span>
-            </div>
-          )}
-        </DialogHeader>
+        <DialogContent className="flex flex-col gap-4 px-6 pt-5 pb-6 h-[685px] max-h-[calc(100svh-2rem)] overflow-hidden">
+          <DialogHeader className="gap-0.5">
+            <DialogTitle>
+              {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
+            </DialogTitle>
+            {!isEditMode && (
+              <div className="flex items-center gap-2">
+                <span className="text-fg-tertiary prose-label uppercase">
+                  Step {currentStep} / {totalSteps}
+                </span>
+              </div>
+            )}
+          </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-1 flex-col justify-between gap-4 min-w-0 min-h-0"
-          >
-            <input type="hidden" {...form.register('mode')} />
+          <Form {...form}>
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-1 flex-col justify-between gap-4 min-w-0 min-h-0"
+            >
+              <input type="hidden" {...form.register('mode')} />
 
-            <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <WebhookAddEditDialogSteps
-                currentStep={currentStep}
-                form={form}
-                isLoading={isLoading}
-                selectedEvents={selectedEvents}
-                exampleEventType={exampleEventType}
-                allEventsSelected={allEventsSelected}
-                handleAllToggle={handleAllToggle}
-                handleEventToggle={handleEventToggle}
-                mode={mode}
-                hasCopied={hasCopied}
-                onCopied={() => setHasCopied(true)}
-              />
-            </div>
+              <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <WebhookAddEditDialogSteps
+                  currentStep={currentStep}
+                  form={form}
+                  isLoading={isLoading}
+                  selectedEvents={selectedEvents}
+                  exampleEventType={exampleEventType}
+                  allEventsSelected={allEventsSelected}
+                  handleAllToggle={handleAllToggle}
+                  handleEventToggle={handleEventToggle}
+                  mode={mode}
+                  hasCopied={hasCopied}
+                  onCopied={() => setHasCopied(true)}
+                />
+              </div>
 
-            <DialogFooter>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-2 gap-2 w-full">
-                  <Loader variant="slash" size="sm" />
-                  <span className="prose-body text-fg-secondary">
-                    {isEditMode ? 'Saving Changes...' : 'Adding Webhook...'}
-                  </span>
-                </div>
-              ) : isEditMode ? (
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={!isStep1Valid}
-                >
-                  <CheckIcon className="size-4" />
-                  Confirm
-                </Button>
-              ) : currentStep === 1 ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={handleNext}
-                  disabled={!isStep1Valid}
-                  className="w-full"
-                >
-                  Next
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="tertiary"
-                    onClick={handleBack}
-                    className="w-full"
-                  >
-                    Back
-                  </Button>
+              <DialogFooter>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-2 gap-2 w-full">
+                    <Loader variant="slash" size="sm" />
+                    <span className="prose-body text-fg-secondary">
+                      {isEditMode ? 'Saving Changes...' : 'Adding Webhook...'}
+                    </span>
+                  </div>
+                ) : isEditMode ? (
                   <Button
                     type="submit"
-                    variant={hasCopied ? 'primary' : 'secondary'}
                     className="w-full"
-                    disabled={!isStep2Valid}
+                    disabled={!isStep1Valid}
                   >
-                    <AddIcon />
-                    Add
+                    <CheckIcon className="size-4" />
+                    Confirm
                   </Button>
-                </>
-              )}
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                ) : currentStep === 1 ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={handleNext}
+                    disabled={!isStep1Valid}
+                    className="w-full"
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="tertiary"
+                      onClick={handleBack}
+                      className="w-full"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant={hasCopied ? 'primary' : 'secondary'}
+                      className="w-full"
+                      disabled={!isStep2Valid}
+                    >
+                      <AddIcon />
+                      Add
+                    </Button>
+                  </>
+                )}
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <FinishWebhookSetupDialog
+        open={finishSetupDialogOpen}
+        onOpenChange={setFinishSetupDialogOpen}
+      />
+    </>
   )
 }
