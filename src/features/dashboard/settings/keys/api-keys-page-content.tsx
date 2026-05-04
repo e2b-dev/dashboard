@@ -1,6 +1,6 @@
 'use client'
 
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { Suspense, useMemo, useState } from 'react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import { useDashboard } from '@/features/dashboard/context'
@@ -28,8 +28,12 @@ interface ApiKeysSearchFieldProps {
 }
 
 const ApiKeysSearchField = ({ value, onChange }: ApiKeysSearchFieldProps) => {
-  const { data } = useApiKeysQuery()
-  const count = data.apiKeys.length
+  const { team } = useDashboard()
+  const trpc = useTRPC()
+  const { data } = useQuery(
+    trpc.teams.listApiKeys.queryOptions({ teamSlug: team.slug })
+  )
+  const count = data?.apiKeys.length
   const placeholder =
     count === 0 ? 'Add an API key to start searching' : 'Search by title or ID'
 
@@ -46,6 +50,7 @@ const ApiKeysSearchField = ({ value, onChange }: ApiKeysSearchFieldProps) => {
         placeholder={placeholder}
         type="search"
         value={value}
+        disabled={data === undefined}
       />
     </div>
   )
@@ -96,16 +101,7 @@ export const ApiKeysPageContent = () => {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <CatchErrorBoundary
-          hideFrame
-          classNames={{
-            wrapper: 'w-full md:w-[280px] md:max-w-none md:shrink-0',
-          }}
-        >
-          <Suspense fallback={<Skeleton className="h-9 w-full" />}>
-            <ApiKeysSearchField onChange={setQuery} value={query} />
-          </Suspense>
-        </CatchErrorBoundary>
+        <ApiKeysSearchField onChange={setQuery} value={query} />
         <CreateApiKeyDialog />
       </div>
 
