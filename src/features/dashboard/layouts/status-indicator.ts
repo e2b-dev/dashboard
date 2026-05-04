@@ -27,11 +27,6 @@ export function getStatusPageUrl() {
 }
 
 export function getStatusPageSummaryUrl(statusPageUrl: string) {
-  const configuredSummaryUrl =
-    process.env.NEXT_PUBLIC_STATUS_PAGE_SUMMARY_URL?.trim()
-
-  if (configuredSummaryUrl) return configuredSummaryUrl
-
   return `${statusPageUrl}/api/v2/summary.json`
 }
 
