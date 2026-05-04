@@ -84,6 +84,21 @@ describe('status-indicator', () => {
     ).toBe('degraded')
   })
 
+  it('should report maintenance for under maintenance components', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        status: {
+          indicator: 'none',
+        },
+        components: [
+          {
+            status: 'under_maintenance',
+          },
+        ],
+      })
+    ).toBe('maintenance')
+  })
+
   it('should prioritize degraded components over maintenance indicator', () => {
     expect(
       getStatusPageStateFromSummary({
