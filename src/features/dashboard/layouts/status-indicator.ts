@@ -49,19 +49,32 @@ function hasMaintenanceInProgress(
   maintenances: IncidentIOStatusPageSummaryResponse['scheduled_maintenances']
 ) {
   return maintenances?.some(
-    (maintenance) => maintenance.status === 'maintenance_in_progress'
+    (maintenance) =>
+      maintenance.status === 'in_progress' ||
+      maintenance.status === 'maintenance_in_progress'
   )
 }
 
 export function getStatusPageStateFromSummary(
   data: IncidentIOStatusPageSummaryResponse
 ): AggregateState {
-  if (hasMaintenanceInProgress(data.scheduled_maintenances))
+  const indicatorState = stateFromIndicator(data.status?.indicator)
+  const componentState = getWorstComponentState(data.components)
+
+  if (indicatorState === 'downtime' || componentState === 'downtime')
+    return 'downtime'
+
+  if (indicatorState === 'degraded' || componentState === 'degraded')
+    return 'degraded'
+
+  if (
+    indicatorState === 'maintenance' ||
+    componentState === 'maintenance' ||
+    hasMaintenanceInProgress(data.scheduled_maintenances)
+  )
     return 'maintenance'
 
-  return (
-    stateFromIndicator(data.status?.indicator) ??
-    getWorstComponentState(data.components) ??
-    'unknown'
-  )
+  if (indicatorState === 'operational') return 'operational'
+
+  return 'unknown'
 }

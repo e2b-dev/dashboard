@@ -17,11 +17,38 @@ describe('status-indicator', () => {
       getStatusPageStateFromSummary({
         scheduled_maintenances: [
           {
+            status: 'in_progress',
+          },
+        ],
+      })
+    ).toBe('maintenance')
+  })
+
+  it('should support incident.io maintenance status naming', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        scheduled_maintenances: [
+          {
             status: 'maintenance_in_progress',
           },
         ],
       })
     ).toBe('maintenance')
+  })
+
+  it('should prioritize critical indicator over maintenance', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        status: {
+          indicator: 'critical',
+        },
+        scheduled_maintenances: [
+          {
+            status: 'in_progress',
+          },
+        ],
+      })
+    ).toBe('downtime')
   })
 
   it('should report downtime for critical summary indicator', () => {
