@@ -51,7 +51,7 @@ describe('status-indicator', () => {
     ).toBe('downtime')
   })
 
-  it('should report downtime for major outage components', () => {
+  it('should report downtime for full outage components', () => {
     expect(
       getStatusPageStateFromSummary({
         status: {
@@ -61,6 +61,21 @@ describe('status-indicator', () => {
           {
             status: 'degraded_performance',
           },
+          {
+            status: 'full_outage',
+          },
+        ],
+      })
+    ).toBe('downtime')
+  })
+
+  it('should support major outage as a Statuspage compatibility alias', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        status: {
+          indicator: 'none',
+        },
+        components: [
           {
             status: 'major_outage',
           },
