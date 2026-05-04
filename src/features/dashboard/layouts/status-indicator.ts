@@ -47,11 +47,13 @@ function getWorstComponentState(
 
 function hasMaintenanceInProgress(
   maintenances: IncidentIOStatusPageSummaryResponse['scheduled_maintenances']
-) {
-  return maintenances?.some(
-    (maintenance) =>
-      maintenance.status === 'in_progress' ||
-      maintenance.status === 'maintenance_in_progress'
+): boolean {
+  return (
+    maintenances?.some(
+      (maintenance) =>
+        maintenance.status === 'in_progress' ||
+        maintenance.status === 'maintenance_in_progress'
+    ) ?? false
   )
 }
 

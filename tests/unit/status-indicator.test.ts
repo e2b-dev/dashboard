@@ -51,6 +51,54 @@ describe('status-indicator', () => {
     ).toBe('downtime')
   })
 
+  it('should report downtime for major outage components', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        status: {
+          indicator: 'none',
+        },
+        components: [
+          {
+            status: 'degraded_performance',
+          },
+          {
+            status: 'major_outage',
+          },
+        ],
+      })
+    ).toBe('downtime')
+  })
+
+  it('should report degraded for partial outage components', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        status: {
+          indicator: 'none',
+        },
+        components: [
+          {
+            status: 'partial_outage',
+          },
+        ],
+      })
+    ).toBe('degraded')
+  })
+
+  it('should prioritize degraded components over maintenance indicator', () => {
+    expect(
+      getStatusPageStateFromSummary({
+        status: {
+          indicator: 'maintenance',
+        },
+        components: [
+          {
+            status: 'degraded_performance',
+          },
+        ],
+      })
+    ).toBe('degraded')
+  })
+
   it('should report downtime for critical summary indicator', () => {
     expect(
       getStatusPageStateFromSummary({
