@@ -21,28 +21,62 @@ export const STATUS_PAGE_LINK_URL = 'https://status.e2b.dev'
 const INCIDENT_IO_STATUS_PAGE_URL = 'https://statuspage.incident.io/e2b-service'
 export const STATUS_PAGE_SUMMARY_URL = `${INCIDENT_IO_STATUS_PAGE_URL}/api/v2/summary.json`
 
-function stateFromIndicator(indicator: string | undefined) {
-  if (indicator === 'none') return 'operational'
-  if (indicator === 'minor') return 'degraded'
-  if (indicator === 'major') return 'degraded'
-  if (indicator === 'critical') return 'downtime'
-  if (indicator === 'maintenance') return 'maintenance'
+const STATUS_PRIORITY: Record<AggregateState, number> = {
+  unknown: 0,
+  operational: 1,
+  maintenance: 2,
+  degraded: 3,
+  downtime: 4,
+}
 
-  return undefined
+const INDICATOR_STATE: Record<string, AggregateState> = {
+  none: 'operational',
+  minor: 'degraded',
+  major: 'degraded',
+  critical: 'downtime',
+  maintenance: 'maintenance',
+}
+
+const COMPONENT_STATE: Record<string, AggregateState> = {
+  operational: 'operational',
+  under_maintenance: 'maintenance',
+  degraded_performance: 'degraded',
+  partial_outage: 'degraded',
+  full_outage: 'downtime',
+  major_outage: 'downtime',
+}
+
+const MAINTENANCE_IN_PROGRESS_STATUSES = new Set([
+  'in_progress',
+  'maintenance_in_progress',
+])
+
+function stateFromValue(
+  value: string | undefined,
+  stateMap: Record<string, AggregateState>
+) {
+  return value ? stateMap[value] : undefined
+}
+
+function highestPriorityState(
+  states: Array<AggregateState | undefined>
+): AggregateState | undefined {
+  return states.reduce<AggregateState | undefined>((highest, state) => {
+    if (!state) return highest
+    if (!highest) return state
+
+    return STATUS_PRIORITY[state] > STATUS_PRIORITY[highest] ? state : highest
+  }, undefined)
 }
 
 function getWorstComponentState(
   components: IncidentIOStatusPageSummaryResponse['components']
 ): AggregateState | undefined {
-  const componentStatuses =
-    components?.map((component) => component.status) ?? []
-
-  if (componentStatuses.includes('major_outage')) return 'downtime'
-  if (componentStatuses.includes('partial_outage')) return 'degraded'
-  if (componentStatuses.includes('degraded_performance')) return 'degraded'
-  if (componentStatuses.includes('under_maintenance')) return 'maintenance'
-
-  return undefined
+  return highestPriorityState(
+    components?.map((component) =>
+      stateFromValue(component.status, COMPONENT_STATE)
+    ) ?? []
+  )
 }
 
 function hasMaintenanceInProgress(
@@ -51,8 +85,8 @@ function hasMaintenanceInProgress(
   return (
     maintenances?.some(
       (maintenance) =>
-        maintenance.status === 'in_progress' ||
-        maintenance.status === 'maintenance_in_progress'
+        !!maintenance.status &&
+        MAINTENANCE_IN_PROGRESS_STATUSES.has(maintenance.status)
     ) ?? false
   )
 }
@@ -60,23 +94,14 @@ function hasMaintenanceInProgress(
 export function getStatusPageStateFromSummary(
   data: IncidentIOStatusPageSummaryResponse
 ): AggregateState {
-  const indicatorState = stateFromIndicator(data.status?.indicator)
+  const indicatorState = stateFromValue(data.status?.indicator, INDICATOR_STATE)
   const componentState = getWorstComponentState(data.components)
+  const maintenanceState = hasMaintenanceInProgress(data.scheduled_maintenances)
+    ? 'maintenance'
+    : undefined
 
-  if (indicatorState === 'downtime' || componentState === 'downtime')
-    return 'downtime'
-
-  if (indicatorState === 'degraded' || componentState === 'degraded')
-    return 'degraded'
-
-  if (
-    indicatorState === 'maintenance' ||
-    componentState === 'maintenance' ||
-    hasMaintenanceInProgress(data.scheduled_maintenances)
+  return (
+    highestPriorityState([indicatorState, componentState, maintenanceState]) ??
+    'unknown'
   )
-    return 'maintenance'
-
-  if (indicatorState === 'operational') return 'operational'
-
-  return 'unknown'
 }
