@@ -8,6 +8,9 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/.playwright
 
 # next.js
 /.next/
@@ -39,7 +42,7 @@ next-env.d.ts
 
 # AI agents and related files
 CLAUDE.md
-.cursor
+.cursor/
 .agent
 
 
