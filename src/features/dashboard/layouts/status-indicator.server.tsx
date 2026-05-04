@@ -4,39 +4,23 @@ import { cacheLife } from 'next/cache'
 import Link from 'next/link'
 import { l } from '@/core/shared/clients/logger/logger'
 import { LiveDot } from '@/ui/live'
+import {
+  type AggregateState,
+  getStatusPageStateFromWidget,
+  getStatusPageUrl,
+  getStatusPageWidgetUrl,
+  type IncidentIOWidgetResponse,
+} from './status-indicator'
 
-const STATUS_PAGE_URL = 'https://status.e2b.dev'
-const STATUS_PAGE_INDEX_URL = `${STATUS_PAGE_URL}/index.json`
+export const STATUS_PAGE_URL = getStatusPageUrl()
+const STATUS_PAGE_WIDGET_URL = getStatusPageWidgetUrl(STATUS_PAGE_URL)
 const STATUS_PAGE_FETCH_TIMEOUT_MS = 5_000
 const STATUS_PAGE_CACHE_SECONDS = 300
-
-type AggregateState =
-  | 'operational'
-  | 'degraded'
-  | 'downtime'
-  | 'maintenance'
-  | 'unknown'
-
-interface StatusPageIndexResponse {
-  data?: {
-    attributes?: {
-      aggregate_state?: string
-    }
-  }
-}
 
 interface StatusUI {
   label: string
   dotCircleClassName: string
   dotClassName: string
-}
-
-function toAggregateState(value: string | undefined): AggregateState {
-  if (value === 'operational') return 'operational'
-  if (value === 'degraded') return 'degraded'
-  if (value === 'downtime') return 'downtime'
-  if (value === 'maintenance') return 'maintenance'
-  return 'unknown'
 }
 
 function getStatusUI(state: AggregateState): StatusUI {
@@ -83,7 +67,7 @@ async function getStatusPageState(): Promise<AggregateState> {
   })
 
   try {
-    const response = await fetch(STATUS_PAGE_INDEX_URL, {
+    const response = await fetch(STATUS_PAGE_WIDGET_URL, {
       cache: 'force-cache',
       next: { revalidate: STATUS_PAGE_CACHE_SECONDS },
       signal: AbortSignal.timeout(STATUS_PAGE_FETCH_TIMEOUT_MS),
@@ -101,8 +85,8 @@ async function getStatusPageState(): Promise<AggregateState> {
       return 'unknown'
     }
 
-    const data = (await response.json()) as StatusPageIndexResponse
-    return toAggregateState(data.data?.attributes?.aggregate_state)
+    const data = (await response.json()) as IncidentIOWidgetResponse
+    return getStatusPageStateFromWidget(data)
   } catch {
     return 'unknown'
   }
