@@ -4,12 +4,17 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'node',
-    exclude: ['**/node_modules/**', '**/dist/**', '.next/**'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '.next/**',
+      'tests/preview/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
     },
-    setupFiles: ['./src/__test__/setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
   },
 
   resolve: {
