@@ -26,7 +26,7 @@ export const IdBadge = ({ id }: IdBadgeProps) => {
   }
 
   return (
-    <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
+    <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 align-middle prose-label-numeric">
       <span className="tracking-wider">{displayId}</span>
       <Button
         type="button"

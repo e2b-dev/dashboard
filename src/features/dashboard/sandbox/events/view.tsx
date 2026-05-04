@@ -28,11 +28,8 @@ export const SandboxEventsView = () => {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 md:gap-6 md:p-6">
-      <div className="flex w-full min-h-0 flex-wrap items-center gap-3">
-        <EventTypeFilter type={type} onTypeChange={setType} />
-      </div>
-
+    <div className="flex min-h-0 flex-1 flex-col sm:gap-3 overflow-hidden p-3 md:p-6">
+      <EventTypeFilter type={type} onTypeChange={setType} />
       <SandboxEventsTable
         events={events}
         isTimestampDescending={order === 'desc'}

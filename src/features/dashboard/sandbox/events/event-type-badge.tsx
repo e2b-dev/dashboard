@@ -7,7 +7,7 @@ export const SandboxEventTypeBadge = ({ type }: { type: string }) => {
 
   if (!parsed.success) {
     return (
-      <Badge variant="default" size="sm" className="uppercase">
+      <Badge variant="default" size="sm" className="align-middle uppercase">
         {type}
       </Badge>
     )
@@ -16,7 +16,7 @@ export const SandboxEventTypeBadge = ({ type }: { type: string }) => {
   const { icon: IconComponent, label } = SANDBOX_EVENT_TYPE_MAP[parsed.data]
 
   return (
-    <Badge variant="default" size="sm" className="uppercase">
+    <Badge variant="default" size="sm" className="align-middle uppercase">
       <IconComponent />
       {label}
     </Badge>
