@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
-import WebhookTableRow from './table-row'
+import { WebhookTableRow } from './table-row'
 import type { Webhook } from './types'
 
 interface WebhooksTableProps {
@@ -30,10 +30,10 @@ const WebhooksTable = ({
   return (
     <Table className={cn('w-full table-fixed', className)}>
       <colgroup>
-        <col className="min-w-[260px] lg:w-[30%]" />
-        <col className="min-w-[240px] lg:w-[50%]" />
-        <col className="w-[120px] lg:w-[15%]" />
-        <col className="w-[52px] lg:w-[5%]" />
+        <col />
+        <col className="w-[264px]" />
+        <col className="w-[136px]" />
+        <col className="w-10" />
       </colgroup>
       <TableHeader className="border-b-0">
         <TableRow className="border-stroke/80 hover:bg-transparent">
@@ -69,13 +69,8 @@ const WebhooksTable = ({
             <p className="prose-body-highlight text-fg">{emptyMessage}</p>
           </TableEmptyState>
         ) : (
-          webhooks.map((webhook, index) => (
-            <WebhookTableRow
-              key={webhook.id}
-              className="h-12"
-              index={index}
-              webhook={webhook}
-            />
+          webhooks.map((webhook) => (
+            <WebhookTableRow key={webhook.id} webhook={webhook} />
           ))
         )}
       </TableBody>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
 import {
   DropdownMenu,
@@ -18,24 +19,71 @@ import {
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
+import { useDashboard } from '../../context'
+import { TeamAvatar } from '../../sidebar/team-avatar'
 import WebhookAddEditDialog from './add-edit-dialog'
+import { WEBHOOK_EVENT_LABELS, WEBHOOK_EVENTS } from './constants'
 import WebhookDeleteDialog from './delete-dialog'
 import WebhookEditSecretDialog from './edit-secret-dialog'
 import type { Webhook } from './types'
 
-interface WebhookTableRowProps {
+type WebhookRowProps = {
   webhook: Webhook
-  index: number
   className?: string
 }
 
-export default function WebhookTableRow({
-  webhook,
-  index,
-  className,
-}: WebhookTableRowProps) {
-  const [hoveredRowIndex, setHoveredRowIndex] = useState(-1)
+type WebhookRowActionsProps = {
+  webhook: Webhook
+}
+
+const getWebhookEventLabel = (event: string): string => {
+  const matchedEvent = WEBHOOK_EVENTS.find(
+    (webhookEvent) => webhookEvent === event
+  )
+  if (!matchedEvent) return event
+  return WEBHOOK_EVENT_LABELS[matchedEvent]
+}
+
+const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
   const [dropDownOpen, setDropDownOpen] = useState(false)
+
+  return (
+    <DropdownMenu open={dropDownOpen} onOpenChange={setDropDownOpen}>
+      <DropdownMenuTrigger asChild>
+        <IconButton aria-label={`Open actions for ${webhook.name}`}>
+          <IndicatorDotsIcon />
+        </IconButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuGroup>
+          <WebhookAddEditDialog mode="edit" webhook={webhook}>
+            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+              <EditIcon className="size-4 text-fg-tertiary" /> Edit
+            </DropdownMenuItem>
+          </WebhookAddEditDialog>
+          <WebhookEditSecretDialog webhook={webhook}>
+            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+              <PrivateIcon className="size-4 text-fg-tertiary" /> Rotate Secret
+            </DropdownMenuItem>
+          </WebhookEditSecretDialog>
+          <WebhookDeleteDialog webhook={webhook}>
+            <DropdownMenuItem
+              inset
+              variant="error"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <TrashIcon className="size-4" />
+              Delete
+            </DropdownMenuItem>
+          </WebhookDeleteDialog>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
+  const { team } = useDashboard()
 
   const createdAt = webhook.createdAt
     ? new Date(webhook.createdAt).toLocaleDateString('en-US', {
@@ -46,90 +94,51 @@ export default function WebhookTableRow({
     : '-'
 
   return (
-    <TableRow
-      key={`${webhook.id}-${index}`}
-      onMouseEnter={() => setHoveredRowIndex(index)}
-      onMouseLeave={() => setHoveredRowIndex(-1)}
-      className={className}
-    >
-      {/* Name & URL Column */}
-      <TableCell className="text-left w-[30%] max-w-0">
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Icon Container */}
-          <div className="border-stroke-default border flex items-center justify-center size-8 shrink-0">
+    <TableRow className={cn('h-11 bg-bg hover:bg-transparent', className)}>
+      <TableCell className="h-11 max-w-0 p-0 pr-12 align-middle">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
             <WebhookIcon className="size-4 text-fg-secondary" />
           </div>
 
-          {/* Name & URL */}
-          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-            <div className="text-fg-primary text-sm font-medium truncate">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
+            <p className="truncate text-left text-fg prose-body">
               {webhook.name}
-            </div>
-            <div className="text-fg-tertiary font-mono text-xs truncate uppercase">
+            </p>
+            <p className="truncate font-mono text-[12px] leading-[17px] text-fg-tertiary uppercase">
               {webhook.url}
-            </div>
+            </p>
           </div>
         </div>
       </TableCell>
 
-      {/* Events Column */}
-      <TableCell className="text-left w-[50%] max-w-0">
-        <div className="relative overflow-hidden h-full">
-          <div className="flex gap-1 whitespace-nowrap overflow-x-hidden">
-            {webhook.events.map((event) => (
-              <Badge
-                key={event}
-                variant="default"
-                className="uppercase text-xs"
-              >
-                {event}
-              </Badge>
-            ))}
-          </div>
-          {/* Fade out gradient overlay */}
-          <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-bg to-transparent pointer-events-none" />
+      <TableCell className="h-11 w-[216px] max-w-[216px] p-0 pr-12 align-middle">
+        <div className="flex w-[216px] items-center gap-1 overflow-hidden">
+          {webhook.events.map((event) => (
+            <Badge key={event} variant="default" className="px-1">
+              {getWebhookEventLabel(event)}
+            </Badge>
+          ))}
         </div>
       </TableCell>
 
-      {/* Added Column */}
-      <TableCell className="text-right w-[15%]">
-        <span className="text-fg-tertiary text-sm">{createdAt}</span>
+      <TableCell className="h-11 w-[136px] p-0 align-middle">
+        <div className="flex items-center justify-end gap-6">
+          <p className="w-[92px] text-left text-fg-tertiary prose-body">
+            {createdAt}
+          </p>
+          <TeamAvatar
+            team={team}
+            classNames={{
+              root: 'size-5 shrink-0 border border-white/10',
+              image: 'size-full',
+            }}
+          />
+        </div>
       </TableCell>
 
-      {/* Actions Column */}
-      <TableCell className="text-right w-[5%]">
-        <DropdownMenu onOpenChange={setDropDownOpen}>
-          <DropdownMenuTrigger asChild>
-            <IconButton>
-              <IndicatorDotsIcon />
-            </IconButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuGroup>
-              <WebhookAddEditDialog mode="edit" webhook={webhook}>
-                <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  <EditIcon className="size-4 text-fg-tertiary" /> Edit
-                </DropdownMenuItem>
-              </WebhookAddEditDialog>
-              <WebhookEditSecretDialog webhook={webhook}>
-                <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-                  <PrivateIcon className="size-4 text-fg-tertiary" /> Rotate
-                  Secret
-                </DropdownMenuItem>
-              </WebhookEditSecretDialog>
-              <WebhookDeleteDialog webhook={webhook}>
-                <DropdownMenuItem
-                  inset
-                  variant="error"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <TrashIcon className="size-4" />
-                  Delete
-                </DropdownMenuItem>
-              </WebhookDeleteDialog>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <TableCell className="h-11 w-10 p-0 pl-6 text-right align-middle">
+        <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>
   )
