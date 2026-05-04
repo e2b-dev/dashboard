@@ -357,6 +357,7 @@ export function WebhookAddEditDialogSteps({
                       <Input
                         placeholder="Enter your custom secret"
                         disabled={isLoading}
+                        maxLength={32}
                         className="min-w-0"
                         {...field}
                         ref={(el) => {
