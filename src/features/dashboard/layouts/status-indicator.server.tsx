@@ -13,7 +13,7 @@ import {
 } from './status-indicator'
 
 const STATUS_PAGE_FETCH_TIMEOUT_MS = 5_000
-const STATUS_PAGE_CACHE_SECONDS = 300
+const STATUS_PAGE_CACHE_SECONDS = 30
 
 interface StatusUI {
   label: string
