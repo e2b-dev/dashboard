@@ -36,6 +36,9 @@ type WebhookRowActionsProps = {
   webhook: Webhook
 }
 
+const rowCellClassName = 'h-11 p-0 align-middle'
+const actionIconClassName = 'size-4 text-fg-tertiary'
+
 const getWebhookEventLabel = (event: string): string => {
   const matchedEvent = WEBHOOK_EVENTS.find(
     (webhookEvent) => webhookEvent === event
@@ -58,12 +61,12 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
         <DropdownMenuGroup>
           <WebhookAddEditDialog mode="edit" webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-              <EditIcon className="size-4 text-fg-tertiary" /> Edit
+              <EditIcon className={actionIconClassName} /> Edit
             </DropdownMenuItem>
           </WebhookAddEditDialog>
           <WebhookEditSecretDialog webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-              <PrivateIcon className="size-4 text-fg-tertiary" /> Rotate Secret
+              <PrivateIcon className={actionIconClassName} /> Rotate Secret
             </DropdownMenuItem>
           </WebhookEditSecretDialog>
           <WebhookDeleteDialog webhook={webhook}>
@@ -95,7 +98,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
 
   return (
     <TableRow className={cn('h-11 bg-bg hover:bg-transparent', className)}>
-      <TableCell className="h-11 max-w-0 p-0 pr-12 align-middle">
+      <TableCell className={cn(rowCellClassName, 'max-w-0 pr-12')}>
         <div className="flex min-w-0 items-center gap-3">
           <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
             <WebhookIcon className="size-4 text-fg-secondary" />
@@ -112,7 +115,9 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className="h-11 w-[216px] max-w-[216px] p-0 pr-12 align-middle">
+      <TableCell
+        className={cn(rowCellClassName, 'w-[216px] max-w-[216px] pr-12')}
+      >
         <div className="flex w-[216px] items-center gap-1 overflow-hidden">
           {webhook.events.map((event) => (
             <Badge key={event} variant="default" className="px-1">
@@ -122,7 +127,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className="h-11 w-[136px] p-0 align-middle">
+      <TableCell className={cn(rowCellClassName, 'w-[136px]')}>
         <div className="flex items-center justify-end gap-6">
           <p className="w-[92px] text-left text-fg-tertiary prose-body">
             {createdAt}
@@ -137,7 +142,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className="h-11 w-10 p-0 pl-6 text-right align-middle">
+      <TableCell className={cn(rowCellClassName, 'w-10 pl-6 text-right')}>
         <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>

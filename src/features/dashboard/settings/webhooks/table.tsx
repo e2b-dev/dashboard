@@ -17,6 +17,9 @@ interface WebhooksTableProps {
   className?: string
 }
 
+const headerCellClassName =
+  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] font-normal text-fg-tertiary uppercase'
+
 const WebhooksTable = ({
   webhooks,
   totalWebhookCount,
@@ -36,17 +39,15 @@ const WebhooksTable = ({
         <col className="w-10" />
       </colgroup>
       <TableHeader className="border-b-0">
-        <TableRow className="border-stroke/80 hover:bg-transparent">
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
-            Name & URL
+        <TableRow className="h-[25px] border-0 hover:bg-transparent">
+          <TableHead className={headerCellClassName}>NAME & URL</TableHead>
+          <TableHead className={cn(headerCellClassName, 'pr-12')}>
+            EVENTS
           </TableHead>
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
-            Events
+          <TableHead className={cn(headerCellClassName, 'text-left')}>
+            ADDED
           </TableHead>
-          <TableHead className="h-auto py-0 pb-2 align-top text-right text-fg-tertiary font-sans! normal-case!">
-            Added
-          </TableHead>
-          <TableHead className="h-auto py-0 pb-2 align-top text-fg-tertiary font-sans! normal-case!">
+          <TableHead className={headerCellClassName}>
             <span className="sr-only">Actions</span>
           </TableHead>
         </TableRow>
