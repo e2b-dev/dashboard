@@ -6,14 +6,14 @@ import { l } from '@/core/shared/clients/logger/logger'
 import { LiveDot } from '@/ui/live'
 import {
   type AggregateState,
-  getStatusPageStateFromWidget,
+  getStatusPageStateFromSummary,
+  getStatusPageSummaryUrl,
   getStatusPageUrl,
-  getStatusPageWidgetUrl,
-  type IncidentIOWidgetResponse,
+  type IncidentIOStatusPageSummaryResponse,
 } from './status-indicator'
 
 export const STATUS_PAGE_URL = getStatusPageUrl()
-const STATUS_PAGE_WIDGET_URL = getStatusPageWidgetUrl(STATUS_PAGE_URL)
+const STATUS_PAGE_SUMMARY_URL = getStatusPageSummaryUrl(STATUS_PAGE_URL)
 const STATUS_PAGE_FETCH_TIMEOUT_MS = 5_000
 const STATUS_PAGE_CACHE_SECONDS = 300
 
@@ -67,7 +67,7 @@ async function getStatusPageState(): Promise<AggregateState> {
   })
 
   try {
-    const response = await fetch(STATUS_PAGE_WIDGET_URL, {
+    const response = await fetch(STATUS_PAGE_SUMMARY_URL, {
       cache: 'force-cache',
       next: { revalidate: STATUS_PAGE_CACHE_SECONDS },
       signal: AbortSignal.timeout(STATUS_PAGE_FETCH_TIMEOUT_MS),
@@ -85,8 +85,8 @@ async function getStatusPageState(): Promise<AggregateState> {
       return 'unknown'
     }
 
-    const data = (await response.json()) as IncidentIOWidgetResponse
-    return getStatusPageStateFromWidget(data)
+    const data = (await response.json()) as IncidentIOStatusPageSummaryResponse
+    return getStatusPageStateFromSummary(data)
   } catch {
     return 'unknown'
   }
