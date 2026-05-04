@@ -17,18 +17,9 @@ export interface IncidentIOStatusPageSummaryResponse {
   }>
 }
 
-export function getStatusPageUrl() {
-  return (
-    process.env.NEXT_PUBLIC_STATUS_PAGE_URL ??
-    'https://statuspage.incident.io/e2b-service'
-  )
-    .trim()
-    .replace(/\/+$/, '')
-}
-
-export function getStatusPageSummaryUrl(statusPageUrl: string) {
-  return `${statusPageUrl}/api/v2/summary.json`
-}
+export const STATUS_PAGE_LINK_URL = 'https://status.e2b.dev'
+const INCIDENT_IO_STATUS_PAGE_URL = 'https://statuspage.incident.io/e2b-service'
+export const STATUS_PAGE_SUMMARY_URL = `${INCIDENT_IO_STATUS_PAGE_URL}/api/v2/summary.json`
 
 function stateFromIndicator(indicator: string | undefined) {
   if (indicator === 'none') return 'operational'

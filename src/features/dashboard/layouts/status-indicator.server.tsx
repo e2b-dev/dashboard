@@ -7,13 +7,11 @@ import { LiveDot } from '@/ui/live'
 import {
   type AggregateState,
   getStatusPageStateFromSummary,
-  getStatusPageSummaryUrl,
-  getStatusPageUrl,
   type IncidentIOStatusPageSummaryResponse,
+  STATUS_PAGE_LINK_URL,
+  STATUS_PAGE_SUMMARY_URL,
 } from './status-indicator'
 
-export const STATUS_PAGE_URL = getStatusPageUrl()
-const STATUS_PAGE_SUMMARY_URL = getStatusPageSummaryUrl(STATUS_PAGE_URL)
 const STATUS_PAGE_FETCH_TIMEOUT_MS = 5_000
 const STATUS_PAGE_CACHE_SECONDS = 300
 
@@ -98,7 +96,7 @@ export default async function DashboardStatusBadgeServer() {
 
   return (
     <Link
-      href={STATUS_PAGE_URL}
+      href={STATUS_PAGE_LINK_URL}
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex h-5 shrink-0 items-center gap-1.5"
