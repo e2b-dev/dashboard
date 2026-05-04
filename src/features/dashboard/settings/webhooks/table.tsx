@@ -18,7 +18,7 @@ interface WebhooksTableProps {
 }
 
 const headerCellClassName =
-  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] font-normal text-fg-tertiary uppercase'
+  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
 
 const WebhooksTable = ({
   webhooks,
@@ -39,14 +39,10 @@ const WebhooksTable = ({
         <col className="w-10" />
       </colgroup>
       <TableHeader className="border-b-0">
-        <TableRow className="h-[25px] border-0 hover:bg-transparent">
+        <TableRow className="border-0">
           <TableHead className={headerCellClassName}>NAME & URL</TableHead>
-          <TableHead className={cn(headerCellClassName, 'pr-12')}>
-            EVENTS
-          </TableHead>
-          <TableHead className={cn(headerCellClassName, 'text-left')}>
-            ADDED
-          </TableHead>
+          <TableHead className={cn(headerCellClassName)}>EVENTS</TableHead>
+          <TableHead className={cn(headerCellClassName)}>ADDED</TableHead>
           <TableHead className={headerCellClassName}>
             <span className="sr-only">Actions</span>
           </TableHead>
