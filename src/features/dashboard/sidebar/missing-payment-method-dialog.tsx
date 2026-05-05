@@ -227,12 +227,19 @@ const PaymentMethodsSetupForm = ({
     if (!isTeamUnblocked) {
       toast(
         defaultErrorToast(
-          'Payment method saved, but your team is still blocked. Please wait a moment and try again.'
+          'Payment method added, but your team is still blocked. Please wait a moment and try again.'
         )
       )
       setIsSaving(false)
       return
     }
+
+    toast({
+      variant: 'success',
+      title: 'Team unblocked',
+      description:
+        'Your payment method was added and your team has been unblocked.',
+    })
 
     setIsSaving(false)
     router.refresh()

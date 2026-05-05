@@ -84,10 +84,10 @@ const VerificationRequiredDialogContent = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Verify account</DialogTitle>
+        <DialogTitle>Verify team</DialogTitle>
         <DialogDescription>
-          This team requires payment verification. Make a $5 card payment to
-          verify your account and continue using E2B.
+          This team is blocked because verification is required. Make a $5
+          payment to verify and continue using E2B.
         </DialogDescription>
       </DialogHeader>
 
@@ -231,6 +231,12 @@ const VerificationPaymentForm = ({
       setIsPaying(false)
       return
     }
+
+    toast({
+      variant: 'success',
+      title: 'Team unblocked',
+      description: 'Your team has been verified and unblocked.',
+    })
 
     setIsPaying(false)
     router.refresh()
