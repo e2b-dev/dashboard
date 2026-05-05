@@ -100,20 +100,12 @@ export const SandboxEventsTable = ({
             )
           })
         ) : (
-          <EventsEmptyState />
+          <TableEmptyState colSpan={3}>
+            <HistoryIcon className="size-5" />
+            No events found
+          </TableEmptyState>
         )}
       </TableBody>
     </Table>
-  )
-}
-
-const EventsEmptyState = () => {
-  return (
-    <TableEmptyState colSpan={3}>
-      <div className="flex items-center gap-2">
-        <HistoryIcon className="size-5" />
-        <p className="prose-body-highlight text-fg-tertiary">No events found</p>
-      </div>
-    </TableEmptyState>
   )
 }
