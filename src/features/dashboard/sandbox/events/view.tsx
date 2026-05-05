@@ -16,6 +16,7 @@ export const SandboxEventsView = () => {
     const filteredEvents = type
       ? lifecycleEvents.filter((event) => event.type === type)
       : lifecycleEvents
+    // Sandbox lifecycle events are derived in ascending timestamp order.
     const orderedEvents = orderAsc
       ? filteredEvents
       : [...filteredEvents].reverse()
