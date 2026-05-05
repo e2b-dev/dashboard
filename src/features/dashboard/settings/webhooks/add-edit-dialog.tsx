@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { useState } from 'react'
+import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { upsertWebhookAction } from '@/core/server/actions/webhooks-actions'
 import { UpsertWebhookSchema } from '@/core/server/functions/webhooks/schema'
 import {
@@ -24,7 +25,6 @@ import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
 import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
-import { WEBHOOK_EVENTS } from './constants'
 import type { Webhook } from './types'
 
 type WebhookAddEditDialogProps =
@@ -123,8 +123,10 @@ export default function WebhookAddEditDialog({
   const signatureSecret = form.watch('signatureSecret')
 
   const allEventsSelected =
-    selectedEvents.length === WEBHOOK_EVENTS.length &&
-    WEBHOOK_EVENTS.every((event) => selectedEvents.includes(event))
+    selectedEvents.length === SandboxLifecycleEventTypeSchema.options.length &&
+    SandboxLifecycleEventTypeSchema.options.every((event) =>
+      selectedEvents.includes(event)
+    )
 
   const { errors } = form.formState
 
@@ -143,7 +145,7 @@ export default function WebhookAddEditDialog({
     if (allEventsSelected) {
       form.setValue('events', [])
     } else {
-      form.setValue('events', [...WEBHOOK_EVENTS])
+      form.setValue('events', [...SandboxLifecycleEventTypeSchema.options])
     }
   }
 
