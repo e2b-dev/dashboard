@@ -8,7 +8,8 @@ import {
 } from '@stripe/react-stripe-js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { type FormEvent, useEffect, useState } from 'react'
+import { parseAsString, useQueryStates } from 'nuqs'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
@@ -30,6 +31,11 @@ import { useDashboard } from '../context'
 const TEAM_UNBLOCK_POLL_ATTEMPTS = 15
 const TEAM_UNBLOCK_POLL_INTERVAL_MS = 2000
 const PAYMENT_METHOD_LOADING_MESSAGE = 'Loading payment method...'
+const stripeSetupIntentParams = {
+  setup_intent: parseAsString,
+  setup_intent_client_secret: parseAsString,
+  redirect_status: parseAsString,
+}
 
 // Waits before retrying team status polling; 2000 -> resolves after 2 seconds.
 const wait = (ms: number) =>
@@ -61,6 +67,15 @@ const MissingPaymentMethodDialogContent = ({
   const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
+  const router = useRouter()
+  const hasHandledSetupIntent = useRef(false)
+  const [setupIntentParams, setSetupIntentParams] = useQueryStates(
+    stripeSetupIntentParams,
+    {
+      history: 'replace',
+      shallow: true,
+    }
+  )
 
   const paymentMethodsSessionMutation = useMutation(
     trpc.billing.createPaymentMethodsSession.mutationOptions({
@@ -76,8 +91,95 @@ const MissingPaymentMethodDialogContent = ({
   )
 
   useEffect(() => {
-    paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
-  }, [paymentMethodsSessionMutation.mutate, team.slug])
+    const setupIntentClientSecret =
+      setupIntentParams.setup_intent_client_secret
+
+    const createPaymentMethodsSession = () => {
+      paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
+    }
+
+    if (hasHandledSetupIntent.current) return
+
+    if (!setupIntentClientSecret) {
+      createPaymentMethodsSession()
+      return
+    }
+
+    hasHandledSetupIntent.current = true
+    setSetupIntentParams({
+      setup_intent: null,
+      setup_intent_client_secret: null,
+      redirect_status: null,
+    })
+
+    const checkSetupIntent = async () => {
+      const stripe = await stripePromise
+
+      if (!stripe) {
+        toast(defaultErrorToast('Failed to load Stripe.'))
+        createPaymentMethodsSession()
+        return
+      }
+
+      const { setupIntent, error } = await stripe.retrieveSetupIntent(
+        setupIntentClientSecret
+      )
+
+      if (error) {
+        toast(
+          defaultErrorToast(
+            error.message ?? 'Failed to check payment method status.'
+          )
+        )
+        createPaymentMethodsSession()
+        return
+      }
+
+      if (setupIntent.status === 'succeeded') {
+        toast({
+          variant: 'success',
+          title: 'Payment method added',
+          description: 'Your payment method was added successfully.',
+        })
+        router.refresh()
+        onOpenChange(false)
+        return
+      }
+
+      if (setupIntent.status === 'processing') {
+        toast({
+          title: 'Payment method processing',
+          description:
+            'Your bank is still processing this payment method. Please check again in a moment.',
+        })
+        router.refresh()
+        onOpenChange(false)
+        return
+      }
+
+      if (setupIntent.status === 'requires_payment_method')
+        toast(
+          defaultErrorToast(
+            'Payment method setup was not completed. Please try again.'
+          )
+        )
+
+      createPaymentMethodsSession()
+    }
+
+    checkSetupIntent().catch(() => {
+      toast(defaultErrorToast('Failed to check payment method status.'))
+      createPaymentMethodsSession()
+    })
+  }, [
+    paymentMethodsSessionMutation.mutate,
+    router,
+    setupIntentParams.setup_intent_client_secret,
+    setSetupIntentParams,
+    team.slug,
+    toast,
+    onOpenChange,
+  ])
 
   const session = paymentMethodsSessionMutation.data
 
