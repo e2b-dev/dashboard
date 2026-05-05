@@ -8,8 +8,10 @@ import {
 } from '@stripe/react-stripe-js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { type FormEvent, useEffect, useState } from 'react'
+import { parseAsString, useQueryStates } from 'nuqs'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
+import type { VerificationPaymentResponse } from '@/core/modules/billing/models'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
@@ -30,12 +32,56 @@ import { useDashboard } from '../context'
 const TEAM_UNBLOCK_POLL_ATTEMPTS = 15
 const TEAM_UNBLOCK_POLL_INTERVAL_MS = 2000
 const VERIFICATION_PAYMENT_LOADING_MESSAGE = 'Loading verification payment...'
+const stripePaymentIntentParams = {
+  payment_intent: parseAsString,
+  payment_intent_client_secret: parseAsString,
+  redirect_status: parseAsString,
+}
 
 // Waits before retrying team status polling; 2000 -> resolves after 2 seconds.
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms)
   })
+
+const useTeamUnblockPolling = () => {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const { team } = useDashboard()
+
+  const teamListQueryOptions = trpc.teams.list.queryOptions(
+    undefined,
+    DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
+  )
+  const teamListQueryKey = teamListQueryOptions.queryKey
+
+  const pollUntilTeamUnblocked = async () => {
+    for (let attempt = 0; attempt < TEAM_UNBLOCK_POLL_ATTEMPTS; attempt += 1) {
+      await queryClient.invalidateQueries({ queryKey: teamListQueryKey })
+
+      const teams = await queryClient.fetchQuery({
+        ...teamListQueryOptions,
+        staleTime: 0,
+      })
+      const activeTeam = teams.find(
+        (candidate: TeamModel) =>
+          candidate.id === team.id || candidate.slug === team.slug
+      )
+
+      if (activeTeam && !activeTeam.isBlocked) {
+        await queryClient.invalidateQueries({ queryKey: teamListQueryKey })
+        return true
+      }
+
+      if (attempt < TEAM_UNBLOCK_POLL_ATTEMPTS - 1)
+        await wait(TEAM_UNBLOCK_POLL_INTERVAL_MS)
+    }
+
+    return false
+  }
+
+  return pollUntilTeamUnblocked
+}
 
 interface VerificationRequiredDialogProps {
   open: boolean
@@ -49,18 +95,36 @@ export const VerificationRequiredDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <VerificationRequiredDialogContent onOpenChange={onOpenChange} />
+        <VerificationRequiredDialogContent
+          open={open}
+          onOpenChange={onOpenChange}
+        />
       </DialogContent>
     </Dialog>
   )
 }
 
 const VerificationRequiredDialogContent = ({
+  open,
   onOpenChange,
-}: Pick<VerificationRequiredDialogProps, 'onOpenChange'>) => {
+}: VerificationRequiredDialogProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
+  const router = useRouter()
+  const hasHandledPaymentIntent = useRef(false)
+  const pollUntilTeamUnblocked = useTeamUnblockPolling()
+  const [verificationPayment, setVerificationPayment] =
+    useState<VerificationPaymentResponse | null>(null)
+  const [isLoadingVerificationPayment, setIsLoadingVerificationPayment] =
+    useState(false)
+  const [paymentIntentParams, setPaymentIntentParams] = useQueryStates(
+    stripePaymentIntentParams,
+    {
+      history: 'replace',
+      shallow: true,
+    }
+  )
 
   const verificationPaymentMutation = useMutation(
     trpc.billing.createVerificationPayment.mutationOptions({
@@ -75,11 +139,147 @@ const VerificationRequiredDialogContent = ({
     })
   )
 
-  useEffect(() => {
-    verificationPaymentMutation.mutate({ teamSlug: team.slug })
-  }, [team.slug, verificationPaymentMutation.mutate])
+  const createVerificationPayment = useCallback(async () => {
+    setIsLoadingVerificationPayment(true)
 
-  const verificationPayment = verificationPaymentMutation.data
+    try {
+      const payment = await verificationPaymentMutation.mutateAsync({
+        teamSlug: team.slug,
+      })
+      setVerificationPayment(payment)
+    } catch {
+      // The mutation onError handler owns the user-facing toast and close.
+    } finally {
+      setIsLoadingVerificationPayment(false)
+    }
+  }, [verificationPaymentMutation.mutateAsync, team.slug])
+
+  useEffect(() => {
+    if (open) return
+
+    hasHandledPaymentIntent.current = false
+    setVerificationPayment(null)
+    setIsLoadingVerificationPayment(false)
+    verificationPaymentMutation.reset()
+  }, [open, verificationPaymentMutation.reset])
+
+  useEffect(() => {
+    if (!open) return
+
+    const paymentIntentClientSecret =
+      paymentIntentParams.payment_intent_client_secret
+
+    if (hasHandledPaymentIntent.current) return
+    hasHandledPaymentIntent.current = true
+
+    if (!paymentIntentClientSecret) {
+      void createVerificationPayment()
+      return
+    }
+
+    setPaymentIntentParams({
+      payment_intent: null,
+      payment_intent_client_secret: null,
+      redirect_status: null,
+    })
+
+    const checkPaymentIntent = async () => {
+      const stripe = await stripePromise
+
+      if (!stripe) {
+        toast(defaultErrorToast('Failed to load Stripe.'))
+        await createVerificationPayment()
+        return
+      }
+
+      const { paymentIntent, error } = await stripe.retrievePaymentIntent(
+        paymentIntentClientSecret
+      )
+
+      if (error) {
+        toast(
+          defaultErrorToast(
+            error.message ?? 'Failed to check verification payment status.'
+          )
+        )
+        await createVerificationPayment()
+        return
+      }
+
+      if (paymentIntent.status === 'succeeded') {
+        toast({
+          title: 'Verification payment submitted',
+          description:
+            'We are checking whether your team has been verified and unblocked.',
+        })
+
+        try {
+          const isTeamUnblocked = await pollUntilTeamUnblocked()
+
+          if (!isTeamUnblocked) {
+            toast(
+              defaultErrorToast(
+                'Verification payment submitted, but your team is still blocked. Please wait a moment and try again.'
+              )
+            )
+            router.refresh()
+            onOpenChange(false)
+            return
+          }
+
+          toast({
+            variant: 'success',
+            title: 'Team unblocked',
+            description: 'Your team has been verified and unblocked.',
+          })
+        } catch {
+          toast(
+            defaultErrorToast(
+              'Verification payment submitted, but we could not check your team status. Please refresh or try again in a moment.'
+            )
+          )
+        }
+
+        router.refresh()
+        onOpenChange(false)
+        return
+      }
+
+      if (paymentIntent.status === 'processing') {
+        toast({
+          title: 'Verification payment processing',
+          description:
+            'Your bank is still processing this payment. Please check again in a moment.',
+        })
+        router.refresh()
+        onOpenChange(false)
+        return
+      }
+
+      if (paymentIntent.status === 'requires_payment_method')
+        toast(
+          defaultErrorToast(
+            'Verification payment was not completed. Please try again.'
+          )
+        )
+
+      await createVerificationPayment()
+    }
+
+    checkPaymentIntent().catch(() => {
+      toast(defaultErrorToast('Failed to check verification payment status.'))
+      void createVerificationPayment()
+    })
+  }, [
+    createVerificationPayment,
+    open,
+    paymentIntentParams.payment_intent_client_secret,
+    setPaymentIntentParams,
+    toast,
+    pollUntilTeamUnblocked,
+    router,
+    onOpenChange,
+  ])
 
   return (
     <>
@@ -91,7 +291,7 @@ const VerificationRequiredDialogContent = ({
         </DialogDescription>
       </DialogHeader>
 
-      {verificationPaymentMutation.isPending ? (
+      {isLoadingVerificationPayment ? (
         <LoadingState message={VERIFICATION_PAYMENT_LOADING_MESSAGE} />
       ) : verificationPayment ? (
         <VerificationPaymentElements
@@ -143,45 +343,12 @@ const VerificationPaymentForm = ({
 }: Pick<VerificationPaymentElementsProps, 'onOpenChange'>) => {
   const stripe = useStripe()
   const elements = useElements()
-  const trpc = useTRPC()
   const router = useRouter()
-  const queryClient = useQueryClient()
   const { toast } = useToast()
-  const { team } = useDashboard()
   const [isPaying, setIsPaying] = useState(false)
   const [isCheckingTeamStatus, setIsCheckingTeamStatus] = useState(false)
   const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)
-
-  const teamListQueryOptions = trpc.teams.list.queryOptions(
-    undefined,
-    DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
-  )
-  const teamListQueryKey = teamListQueryOptions.queryKey
-
-  const pollUntilTeamUnblocked = async () => {
-    for (let attempt = 0; attempt < TEAM_UNBLOCK_POLL_ATTEMPTS; attempt += 1) {
-      await queryClient.invalidateQueries({ queryKey: teamListQueryKey })
-
-      const teams = await queryClient.fetchQuery({
-        ...teamListQueryOptions,
-        staleTime: 0,
-      })
-      const activeTeam = teams.find(
-        (candidate: TeamModel) =>
-          candidate.id === team.id || candidate.slug === team.slug
-      )
-
-      if (activeTeam && !activeTeam.isBlocked) {
-        await queryClient.invalidateQueries({ queryKey: teamListQueryKey })
-        return true
-      }
-
-      if (attempt < TEAM_UNBLOCK_POLL_ATTEMPTS - 1)
-        await wait(TEAM_UNBLOCK_POLL_INTERVAL_MS)
-    }
-
-    return false
-  }
+  const pollUntilTeamUnblocked = useTeamUnblockPolling()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
