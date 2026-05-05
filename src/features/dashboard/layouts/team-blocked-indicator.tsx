@@ -25,7 +25,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (reason === BLOCKED_REASONS.missingPayment) {
+    if (reason.includes(BLOCKED_REASONS.missingPayment)) {
       return {
         text: 'Missing payment method.',
         cta: 'Add payment method.',
@@ -33,7 +33,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (reason === BLOCKED_REASONS.verification) {
+    if (reason.includes(BLOCKED_REASONS.verification)) {
       return {
         text: 'Verification required.',
         cta: 'Complete verification.',
@@ -56,10 +56,9 @@ export default function TeamBlockedIndicator() {
   const message = useBlockedMessage(team.slug, team.blockedReason)
   const reason = team.blockedReason?.toLowerCase() ?? ''
   const blockedReasonDialog: BlockedReasonDialog =
-    reason === BLOCKED_REASONS.missingPayment ||
-    reason === BLOCKED_REASONS.verification
-      ? reason
-      : null
+    Object.values(BLOCKED_REASONS).find((blockedReason) =>
+      reason.includes(blockedReason)
+    ) ?? null
 
   useEffect(() => {
     setOpenDialog(blockedReasonDialog)
