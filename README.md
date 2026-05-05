@@ -156,11 +156,15 @@ src/
 ├── styles/       # Global styles and Tailwind config
 └── types/        # TypeScript type definitions
 └── server/       # Server only logic & actions
-└── __test__/     # Test files and utilities
+tests/
+├── unit/         # Vitest unit tests
+├── integration/  # Vitest integration tests
+├── development/  # Vitest development helper tests
+└── preview/      # Playwright preview/user-flow tests
 ```
 
 ### Testing
-We use a comprehensive testing strategy with integration tests and plans for E2E tests. For detailed information about our testing approach, environment setup, and best practices, see the [Testing README](src/__test__/README.md).
+We use a layered testing strategy with Vitest and Playwright. For details on test types, commands, and conventions, see the [Testing README](tests/README.md).
 
 ### Environment Variables
 See [`src/lib/env.ts`](./src/lib/env.ts) for all required environment variables and their validation schemas.

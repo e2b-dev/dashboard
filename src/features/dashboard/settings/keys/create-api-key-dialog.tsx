@@ -1,23 +1,23 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useParams } from 'next/navigation'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { usePostHog } from 'posthog-js/react'
 import { type FC, type ReactNode, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { createApiKeyAction } from '@/core/server/actions/key-actions'
+import type { z } from 'zod'
+import { CreateApiKeySchema } from '@/core/modules/keys/schemas'
+import { useDashboard } from '@/features/dashboard/context'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import CopyButton from '@/ui/copy-button'
-import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
+import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -29,142 +29,221 @@ import {
   FormItem,
   FormMessage,
 } from '@/ui/primitives/form'
+import {
+  AddIcon,
+  CheckIcon,
+  CopyIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 
-const formSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name cannot be empty')
-    .max(50, 'Name cannot be longer than 50 characters')
-    .trim(),
-})
-
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof CreateApiKeySchema>
 
 interface CreateApiKeyDialogProps {
   children?: ReactNode
 }
 
-const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({ children }) => {
+export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
+  children,
+}) => {
   'use no memo'
 
-  const { teamSlug } = useParams() as { teamSlug: string }
-
+  const { team } = useDashboard()
   const [open, setOpen] = useState(false)
-  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null)
+  const [createdKey, setCreatedKey] = useState<string | null>(null)
+  const [createdName, setCreatedName] = useState<string | null>(null)
+
   const posthog = usePostHog()
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const [copiedReveal, copyReveal] = useClipboard()
+
+  const listQueryKey = trpc.teams.listApiKeys.queryOptions({
+    teamSlug: team.slug,
+  }).queryKey
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(CreateApiKeySchema),
     defaultValues: {
       name: '',
     },
   })
 
-  const { execute: createApiKey, isPending } = useAction(createApiKeyAction, {
-    onSuccess: ({ data }) => {
-      if (data?.createdApiKey) {
-        setCreatedApiKey(data.createdApiKey.key)
-        form.reset()
-      }
-    },
-    onError: ({ error }) => {
-      toast(defaultErrorToast(error.serverError || 'Failed to create API key.'))
-    },
-  })
+  const nameDraft = form.watch('name')
+  const canSubmit = nameDraft.trim().length > 0
+
+  const createMutation = useMutation(
+    trpc.teams.createApiKey.mutationOptions({
+      onSuccess: (data) => {
+        if (data.createdApiKey?.key) {
+          setCreatedKey(data.createdApiKey.key)
+          setCreatedName(data.createdApiKey.name ?? '')
+          form.reset()
+        }
+        void queryClient.invalidateQueries({ queryKey: listQueryKey })
+      },
+      onError: (err) => {
+        toast(defaultErrorToast(err.message || 'Failed to create API key.'))
+      },
+    })
+  )
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value)
     if (!value) {
       form.reset()
-      setCreatedApiKey(null)
+      setCreatedKey(null)
+      setCreatedName(null)
     }
   }
 
+  const successTitle =
+    createdName != null && createdName.length > 0
+      ? `${createdName.toUpperCase()} KEY CREATED`
+      : 'API KEY CREATED'
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>New API Key</DialogTitle>
-          <DialogDescription>
-            Create a new API key for your team.
-          </DialogDescription>
-        </DialogHeader>
-
-        {!createdApiKey ? (
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit((values) =>
-                createApiKey({ teamSlug, name: values.name })
-              )}
-              className="flex flex-col gap-6"
-            >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label htmlFor={field.name}>Name</Label>
-                    <FormControl>
-                      <Input
-                        id={field.name}
-                        placeholder="e.g. development-key"
-                        autoComplete="off"
-                        data-1p-ignore
-                        data-form-type="other"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  loading={isPending ? 'Creating Key...' : undefined}
-                >
-                  Create Key
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+      <DialogTrigger asChild>
+        {children ?? (
+          <Button
+            type="button"
+            className="h-9 w-full shrink-0 gap-2 font-sans normal-case md:w-auto md:self-start"
+          >
+            <AddIcon className="size-4" aria-hidden />
+            Create a key
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent>
+        {!createdKey ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Create new key</DialogTitle>
+              <DialogDescription className="sr-only">
+                Enter a name and create a new API key for this team.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit((values) => {
+                  createMutation.mutate({
+                    teamSlug: team.slug,
+                    name: values.name,
+                  })
+                })}
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label className="sr-only" htmlFor={field.name}>
+                        Key name
+                      </Label>
+                      <div className="flex items-stretch gap-1 py-1">
+                        <FormControl>
+                          <Input
+                            id={field.name}
+                            className={cn(
+                              'h-9 min-h-9 flex-1 rounded-none border-stroke bg-bg font-sans text-sm normal-case',
+                              'placeholder:text-fg-tertiary'
+                            )}
+                            placeholder="Enter key name"
+                            autoComplete="off"
+                            data-1p-ignore
+                            data-form-type="other"
+                            {...field}
+                          />
+                        </FormControl>
+                        <Button
+                          type="submit"
+                          variant={canSubmit ? 'primary' : 'secondary'}
+                          className="h-9 shrink-0 gap-1 px-3 font-sans normal-case"
+                          disabled={!canSubmit || createMutation.isPending}
+                          loading={
+                            createMutation.isPending ? 'Creating' : undefined
+                          }
+                        >
+                          <AddIcon className="size-4" aria-hidden />
+                          Create
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          </>
         ) : (
           <>
-            <div className="animate-in fade-in slide-in-from-right-5 flex flex-col gap-3 duration-200">
-              <Label>Your API Key</Label>
-              <div className="flex items-center gap-2">
-                <Input readOnly value={createdApiKey} className="font-mono" />
-                <CopyButton
-                  value={createdApiKey}
-                  onCopy={() => {
+            <DialogHeader>
+              <DialogTitle>{successTitle}</DialogTitle>
+              <DialogDescription className="sr-only">
+                Your new API key is shown once. Copy it before closing.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-1">
+                <Input
+                  readOnly
+                  value={createdKey}
+                  className="border-stroke h-9 min-h-0 flex-1 rounded-none border font-mono text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="h-9 shrink-0 gap-1.5 px-3 font-sans normal-case active:translate-y-0"
+                  onClick={() => {
+                    void copyReveal(createdKey)
                     posthog.capture('copied API key')
                   }}
-                />
+                >
+                  <span
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center"
+                    aria-hidden
+                  >
+                    {copiedReveal ? (
+                      <CheckIcon className="size-5" />
+                    ) : (
+                      <CopyIcon className="size-4" />
+                    )}
+                  </span>
+                  Copy
+                </Button>
               </div>
-              <Alert variant="warning" className="mt-4">
-                <AlertTitle>Important</AlertTitle>
-                <AlertDescription>
-                  Make sure to copy your API Key now.
-                  <br /> You won't be able to see it again!
-                </AlertDescription>
-              </Alert>
+              <div className="flex flex-col gap-1.5">
+                <div className="bg-accent-warning-bg/90 flex w-fit items-center gap-0.5 py-0.5 pr-1.5 pl-0.5">
+                  <WarningIcon
+                    className="text-accent-warning-highlight size-3 shrink-0"
+                    aria-hidden
+                  />
+                  <span className="text-accent-warning-highlight prose-label uppercase">
+                    Important
+                  </span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <p className="text-fg prose-body min-w-0 flex-1">
+                    Copy the key now. You won&apos;t be able to view it again.
+                  </p>
+                  <DialogClose asChild>
+                    <Button
+                      type="button"
+                      variant="tertiary"
+                      className="text-fg-tertiary hover:text-fg shrink-0 font-sans text-sm font-medium normal-case"
+                    >
+                      Close
+                    </Button>
+                  </DialogClose>
+                </div>
+              </div>
             </div>
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="tertiary">Close</Button>
-              </DialogClose>
-            </DialogFooter>
           </>
         )}
       </DialogContent>
     </Dialog>
   )
 }
-
-export default CreateApiKeyDialog

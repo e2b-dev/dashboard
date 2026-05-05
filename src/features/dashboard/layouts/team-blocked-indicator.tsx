@@ -8,6 +8,16 @@ import { BlockIcon } from '@/ui/primitives/icons'
 import { MissingPaymentMethodDialog } from '../sidebar/missing-payment-method-dialog'
 import { VerificationRequiredDialog } from '../sidebar/verification-required-dialog'
 
+// Detects missing payment method block reasons; "Payment method missing" -> true.
+const isMissingPaymentMethodReason = (reason: string | null) => {
+  const formattedReason = reason?.toLowerCase() ?? ''
+
+  return (
+    formattedReason.includes('payment method missing') ||
+    formattedReason.includes('missing payment method')
+  )
+}
+
 function useBlockedMessage(slug: string, blockedReason: string | null) {
   return useMemo(() => {
     const reason = blockedReason?.toLowerCase() ?? ''
@@ -20,7 +30,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (reason.includes('missing payment method')) {
+    if (isMissingPaymentMethodReason(blockedReason)) {
       return {
         text: 'Missing payment method.',
         cta: 'Add payment method.',
@@ -57,7 +67,9 @@ export default function TeamBlockedIndicator() {
 
   const message = useBlockedMessage(team.slug, team.blockedReason)
   const reason = team.blockedReason?.toLowerCase() ?? ''
-  const isMissingPaymentMethod = reason.includes('missing payment method')
+  const isMissingPaymentMethod = isMissingPaymentMethodReason(
+    team.blockedReason
+  )
   const isVerificationRequired = reason.includes('verification required')
 
   useEffect(() => {

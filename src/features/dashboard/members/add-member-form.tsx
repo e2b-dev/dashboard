@@ -1,16 +1,16 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { addTeamMemberAction } from '@/core/server/actions/team-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
+import { AddIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { useDashboard } from '../context'
 
@@ -38,6 +39,8 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
   'use no memo'
 
   const { team } = useDashboard()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
   const form = useForm<AddMemberForm>({
@@ -48,21 +51,26 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
     },
   })
 
-  const { execute, isExecuting } = useAction(addTeamMemberAction, {
-    onSuccess: () => {
-      toast(defaultSuccessToast('The member has been added to the team.'))
-      form.reset()
-      onSuccess?.()
-    },
-    onError: ({ error }) => {
-      toast(defaultErrorToast(error.serverError || 'An error occurred.'))
-    },
-  })
+  const addMemberMutation = useMutation(
+    trpc.teams.addMember.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
+        })
+        toast(defaultSuccessToast('The member has been added to the team.'))
+        form.reset()
+        onSuccess?.()
+      },
+      onError: (error) => {
+        toast(defaultErrorToast(error.message || 'An error occurred.'))
+      },
+    })
+  )
 
   const onSubmit = (data: AddMemberForm) => {
     if (!team) return
 
-    execute({
+    addMemberMutation.mutate({
       teamSlug: team.slug,
       email: data.email,
     })
@@ -72,31 +80,36 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('flex gap-1', className)}
+        className={cn('flex items-start gap-1 py-1', className)}
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="relative flex-1">
-              <FormLabel className="">E-mail</FormLabel>
-              <div className="flex items-center gap-1">
-                <FormControl>
-                  <Input placeholder="member@acme.com" {...field} />
-                </FormControl>
-                <Button
-                  loading={isExecuting ? 'Adding...' : undefined}
-                  type="submit"
-                  disabled={!form.formState.isValid}
-                  variant="secondary"
-                >
-                  Add Member
-                </Button>
-              </div>
+            <FormItem className="flex-1">
+              <FormLabel className="sr-only">Email</FormLabel>
+              <FormControl>
+                <Input
+                  className="h-9 font-sans"
+                  aria-label="Email"
+                  placeholder="Enter email"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <Button
+          className="normal-case font-sans"
+          loading={addMemberMutation.isPending ? 'Adding...' : undefined}
+          type="submit"
+          disabled={!form.formState.isValid || addMemberMutation.isPending}
+          variant="primary"
+        >
+          <AddIcon aria-hidden className="size-4 shrink-0" />
+          Add
+        </Button>
       </form>
     </Form>
   )
