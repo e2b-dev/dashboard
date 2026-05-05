@@ -42,7 +42,13 @@ export const EventTypeFilter = ({
               return
             }
 
-            onTypeChange(SandboxLifecycleEventTypeSchema.parse(value))
+            const parsed = SandboxLifecycleEventTypeSchema.safeParse(value)
+            if (!parsed.success) {
+              onTypeChange(null)
+              return
+            }
+
+            onTypeChange(parsed.data)
           }}
         >
           <DropdownMenuRadioItem value={ALL_EVENT_TYPES_VALUE}>
