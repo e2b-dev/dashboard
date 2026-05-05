@@ -16,17 +16,6 @@ import {
 } from '@/ui/primitives/table'
 import { SandboxEventTypeBadge } from './event-type-badge'
 
-const EVENT_COLUMN_WIDTHS = {
-  timestamp: 148 + 16,
-  id: 92 + 16,
-} as const
-
-const colStyle = (width: number) => ({
-  width,
-  minWidth: width,
-  maxWidth: width,
-})
-
 interface SandboxEventsTableProps {
   events: SandboxEventModel[]
   isTimestampDescending: boolean
@@ -41,8 +30,8 @@ export const SandboxEventsTable = ({
   return (
     <Table className="min-w-[360px] table-fixed">
       <colgroup>
-        <col style={colStyle(EVENT_COLUMN_WIDTHS.timestamp)} />
-        <col style={colStyle(EVENT_COLUMN_WIDTHS.id)} />
+        <col className="w-[164px]" />
+        <col className="w-[108px]" />
         <col />
       </colgroup>
       <TableHeader className="bg-bg sticky top-0 z-10">
