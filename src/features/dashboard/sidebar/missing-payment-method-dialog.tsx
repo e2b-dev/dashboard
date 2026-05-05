@@ -221,29 +221,38 @@ const PaymentMethodsSetupForm = ({
     })
 
     setIsCheckingTeamStatus(true)
-    const isTeamUnblocked = await pollUntilTeamUnblocked()
-    setIsCheckingTeamStatus(false)
 
-    if (!isTeamUnblocked) {
+    try {
+      const isTeamUnblocked = await pollUntilTeamUnblocked()
+
+      if (!isTeamUnblocked) {
+        toast(
+          defaultErrorToast(
+            'Payment method added, but your team is still blocked. Please wait a moment and try again.'
+          )
+        )
+        return
+      }
+
+      toast({
+        variant: 'success',
+        title: 'Team unblocked',
+        description:
+          'Your payment method was added and your team has been unblocked.',
+      })
+
+      router.refresh()
+      onOpenChange(false)
+    } catch {
       toast(
         defaultErrorToast(
-          'Payment method added, but your team is still blocked. Please wait a moment and try again.'
+          'Payment method added, but we could not check your team status. Please refresh or try again in a moment.'
         )
       )
+    } finally {
+      setIsCheckingTeamStatus(false)
       setIsSaving(false)
-      return
     }
-
-    toast({
-      variant: 'success',
-      title: 'Team unblocked',
-      description:
-        'Your payment method was added and your team has been unblocked.',
-    })
-
-    setIsSaving(false)
-    router.refresh()
-    onOpenChange(false)
   }
 
   const isProcessing = isSaving || isCheckingTeamStatus

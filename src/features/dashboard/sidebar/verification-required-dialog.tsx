@@ -219,28 +219,37 @@ const VerificationPaymentForm = ({
     })
 
     setIsCheckingTeamStatus(true)
-    const isTeamUnblocked = await pollUntilTeamUnblocked()
-    setIsCheckingTeamStatus(false)
 
-    if (!isTeamUnblocked) {
+    try {
+      const isTeamUnblocked = await pollUntilTeamUnblocked()
+
+      if (!isTeamUnblocked) {
+        toast(
+          defaultErrorToast(
+            'Verification payment submitted, but your team is still blocked. Please wait a moment and try again.'
+          )
+        )
+        return
+      }
+
+      toast({
+        variant: 'success',
+        title: 'Team unblocked',
+        description: 'Your team has been verified and unblocked.',
+      })
+
+      router.refresh()
+      onOpenChange(false)
+    } catch {
       toast(
         defaultErrorToast(
-          'Verification payment submitted, but your team is still blocked. Please wait a moment and try again.'
+          'Verification payment submitted, but we could not check your team status. Please refresh or try again in a moment.'
         )
       )
+    } finally {
+      setIsCheckingTeamStatus(false)
       setIsPaying(false)
-      return
     }
-
-    toast({
-      variant: 'success',
-      title: 'Team unblocked',
-      description: 'Your team has been verified and unblocked.',
-    })
-
-    setIsPaying(false)
-    router.refresh()
-    onOpenChange(false)
   }
 
   const isProcessing = isPaying || isCheckingTeamStatus
