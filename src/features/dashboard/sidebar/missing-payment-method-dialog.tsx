@@ -91,8 +91,7 @@ const MissingPaymentMethodDialogContent = ({
   )
 
   useEffect(() => {
-    const setupIntentClientSecret =
-      setupIntentParams.setup_intent_client_secret
+    const setupIntentClientSecret = setupIntentParams.setup_intent_client_secret
 
     const createPaymentMethodsSession = () => {
       paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
