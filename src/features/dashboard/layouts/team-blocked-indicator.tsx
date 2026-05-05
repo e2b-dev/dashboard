@@ -3,20 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import { useDashboard } from '@/features/dashboard/context'
 import { BlockIcon } from '@/ui/primitives/icons'
 import { MissingPaymentMethodDialog } from '../sidebar/missing-payment-method-dialog'
 import { VerificationRequiredDialog } from '../sidebar/verification-required-dialog'
-
-// Detects missing payment method block reasons; "Payment method missing" -> true.
-const isMissingPaymentMethodReason = (reason: string | null) => {
-  const formattedReason = reason?.toLowerCase() ?? ''
-
-  return (
-    formattedReason.includes('payment method missing') ||
-    formattedReason.includes('missing payment method')
-  )
-}
 
 function useBlockedMessage(slug: string, blockedReason: string | null) {
   return useMemo(() => {
@@ -30,7 +21,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (isMissingPaymentMethodReason(blockedReason)) {
+    if (reason === BLOCKED_REASONS.missingPayment) {
       return {
         text: 'Missing payment method.',
         cta: 'Add payment method.',
@@ -38,7 +29,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (reason.includes('verification required')) {
+    if (reason === BLOCKED_REASONS.verification) {
       return {
         text: 'Verification required.',
         cta: 'Complete verification.',
@@ -67,10 +58,8 @@ export default function TeamBlockedIndicator() {
 
   const message = useBlockedMessage(team.slug, team.blockedReason)
   const reason = team.blockedReason?.toLowerCase() ?? ''
-  const isMissingPaymentMethod = isMissingPaymentMethodReason(
-    team.blockedReason
-  )
-  const isVerificationRequired = reason.includes('verification required')
+  const isMissingPaymentMethod = reason === BLOCKED_REASONS.missingPayment
+  const isVerificationRequired = reason === BLOCKED_REASONS.verification
 
   useEffect(() => {
     if (isMissingPaymentMethod) setIsMissingPaymentMethodDialogOpen(true)
