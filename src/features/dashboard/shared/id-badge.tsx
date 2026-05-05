@@ -1,5 +1,6 @@
 'use client'
 
+import type { MouseEvent } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -13,16 +14,24 @@ const getIdBadgeLabel = (id: string): string => {
 
 interface IdBadgeProps {
   id: string
+  copyAriaLabel?: string
+  onCopied?: () => void
 }
 
-export const IdBadge = ({ id }: IdBadgeProps) => {
+export const IdBadge = ({
+  id,
+  copyAriaLabel = 'Copy full ID',
+  onCopied,
+}: IdBadgeProps) => {
   const [wasCopied, copy] = useClipboard()
   const displayId = getIdBadgeLabel(id)
 
-  const handleCopy = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleCopy = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
-    void copy(id)
+
+    await copy(id)
+    onCopied?.()
   }
 
   return (
@@ -33,7 +42,7 @@ export const IdBadge = ({ id }: IdBadgeProps) => {
         variant="quaternary"
         size="none"
         className="text-fg-tertiary hover:text-fg h-3.5 w-3.5 shrink-0 active:translate-y-0 [&_svg]:size-3.5"
-        aria-label="Copy full ID"
+        aria-label={copyAriaLabel}
         onClick={handleCopy}
       >
         {wasCopied ? <CheckIcon /> : <CopyIcon />}

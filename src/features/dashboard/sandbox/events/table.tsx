@@ -1,7 +1,7 @@
 'use client'
 
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
-import { IdBadge } from '@/features/dashboard/settings/keys/id-badge'
+import { IdBadge } from '@/features/dashboard/shared'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { ArrowDownIcon, HistoryIcon } from '@/ui/primitives/icons'
