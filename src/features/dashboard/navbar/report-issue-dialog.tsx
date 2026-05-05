@@ -4,10 +4,17 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import {
+  DEFAULT_SUPPORT_TEMPLATE_ID,
+  getSupportTemplate,
+  SUPPORT_TEMPLATE_IDS,
+  SUPPORT_TEMPLATES,
+  type SupportTemplateId,
+} from '@/core/modules/support/templates'
 import { useDashboard } from '@/features/dashboard/context'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
@@ -29,6 +36,13 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { CloseIcon, FileIcon } from '@/ui/primitives/icons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/ui/primitives/select'
 import { Textarea } from '@/ui/primitives/textarea'
 import FileDropZone from './file-drop-zone'
 
@@ -41,6 +55,7 @@ const ACCEPTED_FILE_TYPES =
 
 const supportFormSchema = z.object({
   description: z.string().min(1, 'Please describe how we can help'),
+  templateId: z.enum(SUPPORT_TEMPLATE_IDS),
 })
 
 type SupportFormValues = z.infer<typeof supportFormSchema>
@@ -75,6 +90,7 @@ export default function ContactSupportDialog({
   const [isOpen, setIsOpen] = useState(false)
   const [wasSubmitted, setWasSubmitted] = useState(false)
   const [files, setFiles] = useState<File[]>([])
+  const lastPrefillRef = useRef<string>('')
 
   // Auto-open dialog when ?support=true is in the URL
   useEffect(() => {
@@ -93,17 +109,19 @@ export default function ContactSupportDialog({
     resolver: zodResolver(supportFormSchema),
     defaultValues: {
       description: '',
+      templateId: DEFAULT_SUPPORT_TEMPLATE_ID,
     },
   })
 
   const contactSupportMutation = useMutation(
     trpc.support.contactSupport.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: (data, variables) => {
         posthog.capture('support_request_submitted', {
           thread_id: data?.threadId,
           team_id: team.id,
           tier: team.tier,
           attachment_count: files.length,
+          template_id: variables.templateId ?? DEFAULT_SUPPORT_TEMPLATE_ID,
         })
         setWasSubmitted(true)
         toast.success(
@@ -126,7 +144,24 @@ export default function ContactSupportDialog({
   const resetForm = useCallback(() => {
     form.reset()
     setFiles([])
+    lastPrefillRef.current = ''
   }, [form])
+
+  const handleTemplateChange = useCallback(
+    (nextId: SupportTemplateId) => {
+      const nextPrefill = getSupportTemplate(nextId).prefill
+      const current = form.getValues('description')
+      if (current === '' || current === lastPrefillRef.current) {
+        form.setValue('description', nextPrefill, {
+          shouldValidate: true,
+          shouldDirty: nextPrefill.length > 0,
+        })
+      }
+      lastPrefillRef.current = nextPrefill
+      form.setValue('templateId', nextId, { shouldValidate: true })
+    },
+    [form]
+  )
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -184,6 +219,7 @@ export default function ContactSupportDialog({
       teamSlug: team.slug,
       description,
       files: filePayloads.length > 0 ? filePayloads : undefined,
+      templateId: values.templateId,
     })
   }
 
@@ -221,6 +257,38 @@ export default function ContactSupportDialog({
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="templateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs text-fg-secondary">
+                    What's this about? (optional)
+                  </FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) =>
+                      handleTemplateChange(value as SupportTemplateId)
+                    }
+                    disabled={isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {SUPPORT_TEMPLATES.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )}
             />

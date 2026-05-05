@@ -38,6 +38,7 @@ export interface SupportRepository {
     customerEmail: string
     accountOwnerEmail: string
     customerTier: string
+    titleOverride?: string
   }): Promise<RepoResult<{ threadId: string }>>
 }
 
@@ -170,6 +171,7 @@ export function createSupportRepository(
         customerEmail,
         accountOwnerEmail,
         customerTier,
+        titleOverride,
       } = input
 
       const client = deps.createPlainClient()
@@ -224,7 +226,7 @@ export function createSupportRepository(
         }
       }
 
-      const title = `Support Request [${teamName}]`
+      const title = `${titleOverride ?? 'Support Request'} [${teamName}]`
       const threadText = formatThreadText({
         description,
         teamId,
