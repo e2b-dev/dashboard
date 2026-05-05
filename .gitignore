@@ -45,6 +45,8 @@ CLAUDE.md
 .cursor/
 .agent
 
+# Cursor IDE
+.cursor/
 
 # tooling
 /template
