@@ -98,13 +98,13 @@ const MissingPaymentMethodDialogContent = ({
     }
 
     if (hasHandledSetupIntent.current) return
+    hasHandledSetupIntent.current = true
 
     if (!setupIntentClientSecret) {
       createPaymentMethodsSession()
       return
     }
 
-    hasHandledSetupIntent.current = true
     setSetupIntentParams({
       setup_intent: null,
       setup_intent_client_secret: null,
