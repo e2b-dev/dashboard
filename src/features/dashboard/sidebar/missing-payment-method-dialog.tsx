@@ -9,8 +9,9 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
+import type { PaymentMethodsSession } from '@/core/modules/billing/models'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
@@ -55,20 +56,28 @@ export const MissingPaymentMethodDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <MissingPaymentMethodDialogContent onOpenChange={onOpenChange} />
+        <MissingPaymentMethodDialogContent
+          open={open}
+          onOpenChange={onOpenChange}
+        />
       </DialogContent>
     </Dialog>
   )
 }
 
 const MissingPaymentMethodDialogContent = ({
+  open,
   onOpenChange,
-}: Pick<MissingPaymentMethodDialogProps, 'onOpenChange'>) => {
+}: MissingPaymentMethodDialogProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
   const router = useRouter()
   const hasHandledSetupIntent = useRef(false)
+  const [paymentMethodsSession, setPaymentMethodsSession] =
+    useState<PaymentMethodsSession | null>(null)
+  const [isLoadingPaymentMethodsSession, setIsLoadingPaymentMethodsSession] =
+    useState(false)
   const [setupIntentParams, setSetupIntentParams] = useQueryStates(
     stripeSetupIntentParams,
     {
@@ -90,18 +99,40 @@ const MissingPaymentMethodDialogContent = ({
     })
   )
 
-  useEffect(() => {
-    const setupIntentClientSecret = setupIntentParams.setup_intent_client_secret
+  const createPaymentMethodsSession = useCallback(async () => {
+    setIsLoadingPaymentMethodsSession(true)
 
-    const createPaymentMethodsSession = () => {
-      paymentMethodsSessionMutation.mutate({ teamSlug: team.slug })
+    try {
+      const session = await paymentMethodsSessionMutation.mutateAsync({
+        teamSlug: team.slug,
+      })
+      setPaymentMethodsSession(session)
+    } catch {
+      // The mutation onError handler owns the user-facing toast and close.
+    } finally {
+      setIsLoadingPaymentMethodsSession(false)
     }
+  }, [paymentMethodsSessionMutation.mutateAsync, team.slug])
+
+  useEffect(() => {
+    if (open) return
+
+    hasHandledSetupIntent.current = false
+    setPaymentMethodsSession(null)
+    setIsLoadingPaymentMethodsSession(false)
+    paymentMethodsSessionMutation.reset()
+  }, [open, paymentMethodsSessionMutation.reset])
+
+  useEffect(() => {
+    if (!open) return
+
+    const setupIntentClientSecret = setupIntentParams.setup_intent_client_secret
 
     if (hasHandledSetupIntent.current) return
     hasHandledSetupIntent.current = true
 
     if (!setupIntentClientSecret) {
-      createPaymentMethodsSession()
+      void createPaymentMethodsSession()
       return
     }
 
@@ -116,7 +147,7 @@ const MissingPaymentMethodDialogContent = ({
 
       if (!stripe) {
         toast(defaultErrorToast('Failed to load Stripe.'))
-        createPaymentMethodsSession()
+        await createPaymentMethodsSession()
         return
       }
 
@@ -130,7 +161,7 @@ const MissingPaymentMethodDialogContent = ({
             error.message ?? 'Failed to check payment method status.'
           )
         )
-        createPaymentMethodsSession()
+        await createPaymentMethodsSession()
         return
       }
 
@@ -163,24 +194,22 @@ const MissingPaymentMethodDialogContent = ({
           )
         )
 
-      createPaymentMethodsSession()
+      await createPaymentMethodsSession()
     }
 
     checkSetupIntent().catch(() => {
       toast(defaultErrorToast('Failed to check payment method status.'))
-      createPaymentMethodsSession()
+      void createPaymentMethodsSession()
     })
   }, [
-    paymentMethodsSessionMutation.mutate,
+    createPaymentMethodsSession,
+    open,
     router,
     setupIntentParams.setup_intent_client_secret,
     setSetupIntentParams,
-    team.slug,
     toast,
     onOpenChange,
   ])
-
-  const session = paymentMethodsSessionMutation.data
 
   return (
     <>
@@ -192,12 +221,14 @@ const MissingPaymentMethodDialogContent = ({
         </DialogDescription>
       </DialogHeader>
 
-      {paymentMethodsSessionMutation.isPending ? (
+      {isLoadingPaymentMethodsSession ? (
         <LoadingState message={PAYMENT_METHOD_LOADING_MESSAGE} />
-      ) : session ? (
+      ) : paymentMethodsSession ? (
         <PaymentMethodsSetupElements
-          customerSessionClientSecret={session.client_secret}
-          setupIntentClientSecret={session.setup_intent_client_secret}
+          customerSessionClientSecret={paymentMethodsSession.client_secret}
+          setupIntentClientSecret={
+            paymentMethodsSession.setup_intent_client_secret
+          }
           onOpenChange={onOpenChange}
         />
       ) : null}
