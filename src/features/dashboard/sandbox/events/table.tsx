@@ -4,6 +4,7 @@ import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import { IdBadge } from '@/features/dashboard/shared'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
+import { Button } from '@/ui/primitives/button'
 import { ArrowDownIcon, HistoryIcon } from '@/ui/primitives/icons'
 import {
   Table,
@@ -37,18 +38,20 @@ export const SandboxEventsTable = ({
       <TableHeader className="bg-bg sticky top-0 z-10">
         <TableRow>
           <TableHead className="px-0 h-min text-fg" data-state="selected">
-            <button
+            <Button
               type="button"
-              className="inline-flex items-center gap-1"
+              variant="quaternary"
+              size="none"
+              className="prose-label-highlight text-fg uppercase [&_svg]:size-3 [&_svg]:text-fg"
               onClick={onToggleTimestampSort}
             >
-              TIMESTAMP
+              Timestamp
               <ArrowDownIcon
                 className={
                   isTimestampDescending ? 'size-3' : 'size-3 rotate-180'
                 }
               />
-            </button>
+            </Button>
           </TableHead>
           <TableHead className="px-0">ID</TableHead>
           <TableHead className="px-0">Event</TableHead>
