@@ -9,6 +9,10 @@ import { BlockIcon } from '@/ui/primitives/icons'
 import { MissingPaymentMethodDialog } from '../sidebar/missing-payment-method-dialog'
 import { VerificationRequiredDialog } from '../sidebar/verification-required-dialog'
 
+type BlockedReasonDialog =
+  | (typeof BLOCKED_REASONS)[keyof typeof BLOCKED_REASONS]
+  | null
+
 function useBlockedMessage(slug: string, blockedReason: string | null) {
   return useMemo(() => {
     const reason = blockedReason?.toLowerCase() ?? ''
@@ -47,32 +51,22 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
 
 export default function TeamBlockedIndicator() {
   const { team } = useDashboard()
-  const [
-    isMissingPaymentMethodDialogOpen,
-    setIsMissingPaymentMethodDialogOpen,
-  ] = useState(false)
-  const [
-    isVerificationRequiredDialogOpen,
-    setIsVerificationRequiredDialogOpen,
-  ] = useState(false)
+  const [openDialog, setOpenDialog] = useState<BlockedReasonDialog>(null)
 
   const message = useBlockedMessage(team.slug, team.blockedReason)
   const reason = team.blockedReason?.toLowerCase() ?? ''
-  const isMissingPaymentMethod = reason === BLOCKED_REASONS.missingPayment
-  const isVerificationRequired = reason === BLOCKED_REASONS.verification
+  const blockedReasonDialog: BlockedReasonDialog =
+    reason === BLOCKED_REASONS.missingPayment ||
+    reason === BLOCKED_REASONS.verification
+      ? reason
+      : null
 
   useEffect(() => {
-    if (isMissingPaymentMethod) setIsMissingPaymentMethodDialogOpen(true)
-    if (isVerificationRequired) setIsVerificationRequiredDialogOpen(true)
-  }, [isMissingPaymentMethod, isVerificationRequired])
+    setOpenDialog(blockedReasonDialog)
+  }, [blockedReasonDialog])
 
   const handleDialogAction = () => {
-    if (isMissingPaymentMethod) {
-      setIsMissingPaymentMethodDialogOpen(true)
-      return
-    }
-
-    if (isVerificationRequired) setIsVerificationRequiredDialogOpen(true)
+    setOpenDialog(blockedReasonDialog)
   }
 
   if (!team.isBlocked) return null
@@ -104,12 +98,16 @@ export default function TeamBlockedIndicator() {
         </span>
       </div>
       <MissingPaymentMethodDialog
-        open={isMissingPaymentMethodDialogOpen}
-        onOpenChange={setIsMissingPaymentMethodDialogOpen}
+        open={openDialog === BLOCKED_REASONS.missingPayment}
+        onOpenChange={(open) => {
+          setOpenDialog(open ? BLOCKED_REASONS.missingPayment : null)
+        }}
       />
       <VerificationRequiredDialog
-        open={isVerificationRequiredDialogOpen}
-        onOpenChange={setIsVerificationRequiredDialogOpen}
+        open={openDialog === BLOCKED_REASONS.verification}
+        onOpenChange={(open) => {
+          setOpenDialog(open ? BLOCKED_REASONS.verification : null)
+        }}
       />
     </>
   )
