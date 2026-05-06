@@ -6,6 +6,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSessionStorage } from '@/lib/hooks/use-session-storage'
+import { Button } from '@/ui/primitives/button'
 import { BlockIcon } from '@/ui/primitives/icons'
 import {
   MissingPaymentMethodDialog,
@@ -116,13 +117,15 @@ export default function TeamBlockedIndicator() {
                   {message.cta}
                 </Link>
               ) : (
-                <button
+                <Button
+                  className="text-accent-error-highlight underline hover:text-accent-error-highlight text-xs! font-normal!"
                   type="button"
-                  className="cursor-pointer underline"
+                  variant="quaternary"
+                  size="none"
                   onClick={handleDialogAction}
                 >
                   {message.cta}
-                </button>
+                </Button>
               )}
             </>
           )}
