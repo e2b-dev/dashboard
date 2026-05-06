@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { PaymentMethodsSession } from '@/core/modules/billing/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
@@ -99,14 +99,6 @@ const MissingPaymentMethodDialogContent = ({
       setIsLoadingPaymentMethodsSession(false)
     }
   }, [paymentMethodsSessionMutation.mutateAsync, team.slug])
-
-  useEffect(() => {
-    if (open) return
-
-    setPaymentMethodsSession(null)
-    setIsLoadingPaymentMethodsSession(false)
-    paymentMethodsSessionMutation.reset()
-  }, [open, paymentMethodsSessionMutation.reset])
 
   useStripeReturnHandler({
     open,

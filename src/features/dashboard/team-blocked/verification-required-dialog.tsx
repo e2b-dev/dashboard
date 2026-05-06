@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { VerificationPaymentResponse } from '@/core/modules/billing/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
@@ -102,14 +102,6 @@ const VerificationRequiredDialogContent = ({
       setIsLoadingVerificationPayment(false)
     }
   }, [verificationPaymentMutation.mutateAsync, team.slug])
-
-  useEffect(() => {
-    if (open) return
-
-    setVerificationPayment(null)
-    setIsLoadingVerificationPayment(false)
-    verificationPaymentMutation.reset()
-  }, [open, verificationPaymentMutation.reset])
 
   useStripeReturnHandler({
     open,
