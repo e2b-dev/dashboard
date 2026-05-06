@@ -6,8 +6,10 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import { BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import { useDashboard } from '@/features/dashboard/context'
 import { BlockIcon } from '@/ui/primitives/icons'
-import { MissingPaymentMethodDialog } from '../sidebar/missing-payment-method-dialog'
-import { VerificationRequiredDialog } from '../sidebar/verification-required-dialog'
+import {
+  MissingPaymentMethodDialog,
+  VerificationRequiredDialog,
+} from '../team-blocked'
 
 type BlockedReasonDialog =
   | (typeof BLOCKED_REASONS)[keyof typeof BLOCKED_REASONS]
