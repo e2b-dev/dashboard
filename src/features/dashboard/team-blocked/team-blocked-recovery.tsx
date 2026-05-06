@@ -345,7 +345,7 @@ export const StripePaymentElementForm = ({
 interface TeamBlockedRecoveryPaymentElementProps {
   clientSecret: string
   customerSessionClientSecret?: string
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
   confirmPayment: (params: {
     stripe: Stripe
     elements: StripeElements
@@ -370,7 +370,7 @@ interface TeamBlockedRecoveryPaymentElementProps {
 export const TeamBlockedRecoveryPaymentElement = ({
   clientSecret,
   customerSessionClientSecret,
-  onOpenChange,
+  onClose,
   confirmPayment,
   alert,
   loadingMessage,
@@ -416,8 +416,8 @@ export const TeamBlockedRecoveryPaymentElement = ({
       }
 
       toast(successToast)
-      onOpenChange(false)
       onSuccess?.()
+      onClose()
       router.refresh()
     } catch {
       toast(defaultErrorToast(errorMessages.statusCheck))
@@ -443,7 +443,7 @@ export const TeamBlockedRecoveryPaymentElement = ({
         onSubmit={handleSubmit}
         onLoadError={(error) => {
           toast(defaultErrorToast(error.message ?? errorMessages.load))
-          onOpenChange(false)
+          onClose()
         }}
       />
     </StripePaymentElementWrapper>

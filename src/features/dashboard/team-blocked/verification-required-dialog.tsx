@@ -41,28 +41,41 @@ const stripePaymentIntentParams = {
 interface VerificationRequiredDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onDismiss: () => void
 }
 
 export const VerificationRequiredDialog = ({
   open,
   onOpenChange,
+  onDismiss,
 }: VerificationRequiredDialogProps) => {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) return onDismiss()
+
+    onOpenChange(nextOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <VerificationRequiredDialogContent
           open={open}
-          onOpenChange={onOpenChange}
+          onClose={() => onOpenChange(false)}
         />
       </DialogContent>
     </Dialog>
   )
 }
 
+interface VerificationRequiredDialogContentProps {
+  open: boolean
+  onClose: () => void
+}
+
 const VerificationRequiredDialogContent = ({
   open,
-  onOpenChange,
-}: VerificationRequiredDialogProps) => {
+  onClose,
+}: VerificationRequiredDialogContentProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const posthog = usePostHog()
@@ -93,7 +106,7 @@ const VerificationRequiredDialogContent = ({
             error.message || 'Failed to load verification payment form.'
           )
         )
-        onOpenChange(false)
+        onClose()
       },
     })
   )
@@ -150,7 +163,7 @@ const VerificationRequiredDialogContent = ({
             )
           )
           router.refresh()
-          onOpenChange(false)
+          onClose()
           return
         }
 
@@ -160,8 +173,8 @@ const VerificationRequiredDialogContent = ({
           description: 'Your team has been verified and unblocked.',
         })
         posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
-        onOpenChange(false)
         removeDismissedDialog()
+        onClose()
         router.refresh()
         return
       } catch {
@@ -173,7 +186,7 @@ const VerificationRequiredDialogContent = ({
       }
 
       router.refresh()
-      onOpenChange(false)
+      onClose()
     },
     onProcessing: () => {
       toast({
@@ -182,7 +195,7 @@ const VerificationRequiredDialogContent = ({
           'Your bank is still processing this payment. Please check again in a moment.',
       })
       router.refresh()
-      onOpenChange(false)
+      onClose()
     },
     requiresPaymentMethodMessage:
       'Verification payment was not completed. Please try again.',
@@ -209,7 +222,7 @@ const VerificationRequiredDialogContent = ({
       ) : verificationPayment ? (
         <TeamBlockedRecoveryPaymentElement
           clientSecret={verificationPayment.client_secret}
-          onOpenChange={onOpenChange}
+          onClose={onClose}
           confirmPayment={({ stripe, elements, returnUrl }) =>
             stripe.confirmPayment({
               elements,

@@ -39,28 +39,41 @@ const stripeSetupIntentParams = {
 interface MissingPaymentMethodDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onDismiss: () => void
 }
 
 export const MissingPaymentMethodDialog = ({
   open,
   onOpenChange,
+  onDismiss,
 }: MissingPaymentMethodDialogProps) => {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) return onDismiss()
+
+    onOpenChange(nextOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <MissingPaymentMethodDialogContent
           open={open}
-          onOpenChange={onOpenChange}
+          onClose={() => onOpenChange(false)}
         />
       </DialogContent>
     </Dialog>
   )
 }
 
+interface MissingPaymentMethodDialogContentProps {
+  open: boolean
+  onClose: () => void
+}
+
 const MissingPaymentMethodDialogContent = ({
   open,
-  onOpenChange,
-}: MissingPaymentMethodDialogProps) => {
+  onClose,
+}: MissingPaymentMethodDialogContentProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const posthog = usePostHog()
@@ -90,7 +103,7 @@ const MissingPaymentMethodDialogContent = ({
             error.message || 'Failed to load payment method form.'
           )
         )
-        onOpenChange(false)
+        onClose()
       },
     })
   )
@@ -137,8 +150,8 @@ const MissingPaymentMethodDialogContent = ({
         description: 'Your payment method was added successfully.',
       })
       posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
-      onOpenChange(false)
       removeDismissedDialog()
+      onClose()
       router.refresh()
     },
     onProcessing: () => {
@@ -148,7 +161,7 @@ const MissingPaymentMethodDialogContent = ({
           'Your bank is still processing this payment method. Please check again in a moment.',
       })
       router.refresh()
-      onOpenChange(false)
+      onClose()
     },
     requiresPaymentMethodMessage:
       'Payment method setup was not completed. Please try again.',
@@ -172,7 +185,7 @@ const MissingPaymentMethodDialogContent = ({
         <TeamBlockedRecoveryPaymentElement
           clientSecret={paymentMethodsSession.setup_intent_client_secret}
           customerSessionClientSecret={paymentMethodsSession.client_secret}
-          onOpenChange={onOpenChange}
+          onClose={onClose}
           confirmPayment={({ stripe, elements, returnUrl }) =>
             stripe.confirmSetup({
               elements,

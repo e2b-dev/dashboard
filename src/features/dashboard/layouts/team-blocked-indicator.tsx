@@ -133,13 +133,12 @@ const TeamBlockedDialogController = ({
   }
 
   const handleDialogOpenChange = (open: boolean, dialog: TeamBlockedReason) => {
-    if (!open) {
-      setHasDismissedDialog(true)
-      setOpenDialog(null)
-      return
-    }
+    setOpenDialog(open ? dialog : null)
+  }
 
-    setOpenDialog(dialog)
+  const handleDialogDismiss = () => {
+    setHasDismissedDialog(true)
+    setOpenDialog(null)
   }
 
   return (
@@ -153,12 +152,14 @@ const TeamBlockedDialogController = ({
         onOpenChange={(open) => {
           handleDialogOpenChange(open, TEAM_BLOCKED_REASONS.missingPayment)
         }}
+        onDismiss={handleDialogDismiss}
       />
       <VerificationRequiredDialog
         open={openDialog === TEAM_BLOCKED_REASONS.verification}
         onOpenChange={(open) => {
           handleDialogOpenChange(open, TEAM_BLOCKED_REASONS.verification)
         }}
+        onDismiss={handleDialogDismiss}
       />
     </>
   )
