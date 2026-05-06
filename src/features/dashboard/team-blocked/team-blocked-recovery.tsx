@@ -416,9 +416,9 @@ export const TeamBlockedRecoveryPaymentElement = ({
       }
 
       toast(successToast)
-      router.refresh()
       onOpenChange(false)
       onSuccess?.()
+      router.refresh()
     } catch {
       toast(defaultErrorToast(errorMessages.statusCheck))
     } finally {

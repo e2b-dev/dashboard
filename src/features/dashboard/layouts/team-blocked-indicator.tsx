@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import { useSessionStorage } from 'usehooks-ts'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import type { TeamBlockedReason } from '@/core/modules/teams/models'
 import { useDashboard } from '@/features/dashboard/context'
-import { useSessionStorage } from '@/lib/hooks/use-session-storage'
 import { Button } from '@/ui/primitives/button'
 import { BlockIcon } from '@/ui/primitives/icons'
 import {
@@ -15,7 +15,55 @@ import {
 } from '../team-blocked'
 import { getBlockedDialogStorageKey } from '../team-blocked/team-blocked-dialog-storage'
 
-function useBlockedMessage(slug: string, blockedReason: string | null) {
+interface BlockedMessage {
+  text: string
+  cta: string | null
+  href: string | null
+}
+
+interface TeamBlockedIndicatorContentProps {
+  message: BlockedMessage
+  onDialogAction?: () => void
+}
+
+const TeamBlockedIndicatorContent = ({
+  message,
+  onDialogAction,
+}: TeamBlockedIndicatorContentProps) => {
+  return (
+    <div className="inline-flex shrink-0 items-center gap-1.5 text-accent-error-highlight max-md:max-w-[50%]">
+      <BlockIcon className="size-4 shrink-0" />
+      <span className="truncate text-xs uppercase md:prose-label">
+        {message.text}
+        {message.cta && (
+          <>
+            {' '}
+            {message.href ? (
+              <Link href={message.href} className="underline">
+                {message.cta}
+              </Link>
+            ) : onDialogAction ? (
+              <Button
+                className="text-accent-error-highlight underline hover:text-accent-error-highlight text-xs! font-normal!"
+                type="button"
+                variant="quaternary"
+                size="none"
+                onClick={onDialogAction}
+              >
+                {message.cta}
+              </Button>
+            ) : null}
+          </>
+        )}
+      </span>
+    </div>
+  )
+}
+
+const useBlockedMessage = (
+  slug: string,
+  blockedReason: string | null
+): BlockedMessage => {
   return useMemo(() => {
     const reason = blockedReason?.toLowerCase() ?? ''
 
@@ -51,37 +99,34 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
   }, [slug, blockedReason])
 }
 
-export default function TeamBlockedIndicator() {
+interface TeamBlockedDialogControllerProps {
+  blockedReasonDialog: TeamBlockedReason
+  message: BlockedMessage
+}
+
+const TeamBlockedDialogController = ({
+  blockedReasonDialog,
+  message,
+}: TeamBlockedDialogControllerProps) => {
   const { team } = useDashboard()
   const [openDialog, setOpenDialog] = useState<TeamBlockedReason | null>(null)
-
-  const message = useBlockedMessage(team.slug, team.blockedReason)
-  const reason = team.blockedReason?.toLowerCase() ?? ''
-  const blockedReasonDialog: TeamBlockedReason | null =
-    Object.values(TEAM_BLOCKED_REASONS).find((blockedReason) =>
-      reason.includes(blockedReason)
-    ) ?? null
   const dismissedStorageKey = getBlockedDialogStorageKey(
     team.slug,
     blockedReasonDialog
   )
-  const dismissedStorage = useSessionStorage(dismissedStorageKey)
+  const [hasDismissedDialog, setHasDismissedDialog] = useSessionStorage(
+    dismissedStorageKey,
+    false
+  )
 
   useEffect(() => {
-    if (!blockedReasonDialog || !dismissedStorageKey) {
-      setOpenDialog(null)
-      return
-    }
-
-    const hasDismissedDialog = dismissedStorage.getValue() === 'true'
-
     if (hasDismissedDialog) {
       setOpenDialog(null)
       return
     }
 
     setOpenDialog(blockedReasonDialog)
-  }, [blockedReasonDialog, dismissedStorageKey, dismissedStorage])
+  }, [blockedReasonDialog, hasDismissedDialog])
 
   const handleDialogAction = () => {
     setOpenDialog(blockedReasonDialog)
@@ -89,7 +134,7 @@ export default function TeamBlockedIndicator() {
 
   const handleDialogOpenChange = (open: boolean, dialog: TeamBlockedReason) => {
     if (!open) {
-      dismissedStorage.setValue('true')
+      setHasDismissedDialog(true)
       setOpenDialog(null)
       return
     }
@@ -97,36 +142,12 @@ export default function TeamBlockedIndicator() {
     setOpenDialog(dialog)
   }
 
-  if (!team.isBlocked) return null
-
   return (
     <>
-      <div className="inline-flex shrink-0 items-center gap-1.5 text-accent-error-highlight max-md:max-w-[50%]">
-        <BlockIcon className="size-4 shrink-0" />
-        <span className="truncate text-xs uppercase md:prose-label">
-          {message.text}
-          {message.cta && (
-            <>
-              {' '}
-              {message.href ? (
-                <Link href={message.href} className="underline">
-                  {message.cta}
-                </Link>
-              ) : (
-                <Button
-                  className="text-accent-error-highlight underline hover:text-accent-error-highlight text-xs! font-normal!"
-                  type="button"
-                  variant="quaternary"
-                  size="none"
-                  onClick={handleDialogAction}
-                >
-                  {message.cta}
-                </Button>
-              )}
-            </>
-          )}
-        </span>
-      </div>
+      <TeamBlockedIndicatorContent
+        message={message}
+        onDialogAction={handleDialogAction}
+      />
       <MissingPaymentMethodDialog
         open={openDialog === TEAM_BLOCKED_REASONS.missingPayment}
         onOpenChange={(open) => {
@@ -140,5 +161,27 @@ export default function TeamBlockedIndicator() {
         }}
       />
     </>
+  )
+}
+
+export default function TeamBlockedIndicator() {
+  const { team } = useDashboard()
+  const message = useBlockedMessage(team.slug, team.blockedReason)
+  const reason = team.blockedReason?.toLowerCase() ?? ''
+  const blockedReasonDialog: TeamBlockedReason | null =
+    Object.values(TEAM_BLOCKED_REASONS).find((blockedReason) =>
+      reason.includes(blockedReason)
+    ) ?? null
+
+  if (!team.isBlocked) return null
+
+  if (!blockedReasonDialog)
+    return <TeamBlockedIndicatorContent message={message} />
+
+  return (
+    <TeamBlockedDialogController
+      blockedReasonDialog={blockedReasonDialog}
+      message={message}
+    />
   )
 }

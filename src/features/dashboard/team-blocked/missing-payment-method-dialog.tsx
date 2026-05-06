@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
+import { useSessionStorage } from 'usehooks-ts'
 import type { PaymentMethodsSession } from '@/core/modules/billing/models'
 import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
-import { useSessionStorage } from '@/lib/hooks/use-session-storage'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
@@ -66,8 +66,9 @@ const MissingPaymentMethodDialogContent = ({
   const posthog = usePostHog()
   const trpc = useTRPC()
   const router = useRouter()
-  const dismissedStorage = useSessionStorage(
-    getBlockedDialogStorageKey(team.slug, TEAM_BLOCKED_REASONS.missingPayment)
+  const [, , removeDismissedDialog] = useSessionStorage(
+    getBlockedDialogStorageKey(team.slug, TEAM_BLOCKED_REASONS.missingPayment),
+    false
   )
   const [paymentMethodsSession, setPaymentMethodsSession] =
     useState<PaymentMethodsSession | null>(null)
@@ -136,9 +137,9 @@ const MissingPaymentMethodDialogContent = ({
         description: 'Your payment method was added successfully.',
       })
       posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
-      router.refresh()
       onOpenChange(false)
-      dismissedStorage.removeValue()
+      removeDismissedDialog()
+      router.refresh()
     },
     onProcessing: () => {
       toast({
@@ -205,7 +206,7 @@ const MissingPaymentMethodDialogContent = ({
           }}
           onSuccess={() => {
             posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
-            dismissedStorage.removeValue()
+            removeDismissedDialog()
           }}
           errorMessages={{
             ready: 'Payment form is still loading.',

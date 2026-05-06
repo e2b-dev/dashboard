@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
+import { useSessionStorage } from 'usehooks-ts'
 import type { VerificationPaymentResponse } from '@/core/modules/billing/models'
 import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
-import { useSessionStorage } from '@/lib/hooks/use-session-storage'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
@@ -69,8 +69,9 @@ const VerificationRequiredDialogContent = ({
   const trpc = useTRPC()
   const router = useRouter()
   const pollUntilTeamUnblocked = useTeamUnblockPolling()
-  const dismissedStorage = useSessionStorage(
-    getBlockedDialogStorageKey(team.slug, TEAM_BLOCKED_REASONS.verification)
+  const [, , removeDismissedDialog] = useSessionStorage(
+    getBlockedDialogStorageKey(team.slug, TEAM_BLOCKED_REASONS.verification),
+    false
   )
   const [verificationPayment, setVerificationPayment] =
     useState<VerificationPaymentResponse | null>(null)
@@ -159,9 +160,9 @@ const VerificationRequiredDialogContent = ({
           description: 'Your team has been verified and unblocked.',
         })
         posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
-        router.refresh()
         onOpenChange(false)
-        dismissedStorage.removeValue()
+        removeDismissedDialog()
+        router.refresh()
         return
       } catch {
         toast(
@@ -242,7 +243,7 @@ const VerificationRequiredDialogContent = ({
           }}
           onSuccess={() => {
             posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
-            dismissedStorage.removeValue()
+            removeDismissedDialog()
           }}
           errorMessages={{
             ready: 'Payment form is still loading.',
