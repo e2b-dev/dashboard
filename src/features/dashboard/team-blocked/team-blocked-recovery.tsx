@@ -111,6 +111,8 @@ interface StripeReturnHandlerOptions {
   fallbackErrorMessage: string
 }
 
+type StripeReturnHandlerState = 'idle' | 'checking' | 'handled'
+
 export const useStripeReturnHandler = ({
   open,
   clientSecret,
@@ -124,22 +126,28 @@ export const useStripeReturnHandler = ({
   fallbackErrorMessage,
 }: StripeReturnHandlerOptions) => {
   const { toast } = useToast()
-  const hasHandledStripeReturn = useRef(false)
+  const stripeReturnHandlerState = useRef<StripeReturnHandlerState>('idle')
 
   useEffect(() => {
     if (open) return
 
-    hasHandledStripeReturn.current = false
+    stripeReturnHandlerState.current = 'idle'
   }, [open])
 
   useEffect(() => {
     if (!open) return
-    if (hasHandledStripeReturn.current) return
+    if (stripeReturnHandlerState.current !== 'idle') return
 
-    hasHandledStripeReturn.current = true
+    stripeReturnHandlerState.current = 'checking'
 
     if (!clientSecret) {
-      void createPaymentSession()
+      createPaymentSession()
+        .then(() => {
+          stripeReturnHandlerState.current = 'handled'
+        })
+        .catch(() => {
+          stripeReturnHandlerState.current = 'idle'
+        })
       return
     }
 
@@ -178,10 +186,20 @@ export const useStripeReturnHandler = ({
       await createPaymentSession()
     }
 
-    checkStripeReturn().catch(() => {
-      toast(defaultErrorToast(fallbackErrorMessage))
-      void createPaymentSession()
-    })
+    checkStripeReturn()
+      .then(() => {
+        stripeReturnHandlerState.current = 'handled'
+      })
+      .catch(() => {
+        toast(defaultErrorToast(fallbackErrorMessage))
+        createPaymentSession()
+          .then(() => {
+            stripeReturnHandlerState.current = 'handled'
+          })
+          .catch(() => {
+            stripeReturnHandlerState.current = 'idle'
+          })
+      })
   }, [
     clearReturnParams,
     clientSecret,
