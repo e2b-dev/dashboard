@@ -8,7 +8,7 @@ const WebhookSecretSchema = z
 
 export const UpsertWebhookInputSchema = z
   .object({
-    mode: z.enum(['add', 'edit']),
+    mode: z.enum(['create', 'update']),
     webhookId: z.uuid().optional(),
     name: z.string().min(1, 'Name is required').trim(),
     url: WebhookUrlSchema,
@@ -18,7 +18,7 @@ export const UpsertWebhookInputSchema = z
   })
   .refine(
     (data) => {
-      if (data.mode === 'add') {
+      if (data.mode === 'create') {
         return !!data.signatureSecret
       }
       return true

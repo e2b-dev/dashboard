@@ -15,7 +15,7 @@ type WebhooksRepositoryDeps = {
 export type WebhooksScope = TeamRequestScope
 
 export interface UpsertWebhookInput {
-  mode: 'create' | 'edit'
+  mode: 'create' | 'update'
   webhookId?: string
   name: string
   url: string
@@ -69,7 +69,7 @@ export function createWebhooksRepository(
     },
     async upsertWebhook(input) {
       const response =
-        input.mode === 'edit'
+        input.mode === 'update'
           ? await deps.infraClient.PATCH('/events/webhooks/{webhookID}', {
               headers: {
                 ...deps.authHeaders(scope.accessToken, scope.teamId),

@@ -26,7 +26,7 @@ import {
   type WebhookEvent,
 } from './constants'
 
-type WebhookAddEditDialogStepsProps = {
+type UpsertWebhookDialogStepsProps = {
   currentStep: number
   form: UseFormReturn<UpsertWebhookInput>
   isLoading: boolean
@@ -35,7 +35,7 @@ type WebhookAddEditDialogStepsProps = {
   allEventsSelected: boolean
   handleAllToggle: () => void
   handleEventToggle: (event: string) => void
-  mode: 'add' | 'edit'
+  mode: 'create' | 'update'
   hasCopied: boolean
   onCopied: () => void
 }
@@ -75,7 +75,7 @@ const WebhookExamplePayload = ({ eventType }: { eventType: WebhookEvent }) => (
   </div>
 )
 
-export function WebhookAddEditDialogSteps({
+export function UpsertWebhookDialogSteps({
   currentStep,
   form,
   isLoading,
@@ -87,7 +87,7 @@ export function WebhookAddEditDialogSteps({
   mode,
   hasCopied,
   onCopied,
-}: WebhookAddEditDialogStepsProps) {
+}: UpsertWebhookDialogStepsProps) {
   const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
     'pre-generated'
   )
@@ -111,10 +111,10 @@ export function WebhookAddEditDialogSteps({
     return () => window.clearTimeout(id)
   }, [secretType])
 
-  // sync secret with form state and validation - only in 'add' mode
-  // in 'edit' mode, we should never touch the signature secret
+  // sync secret with form state and validation - only in create mode
+  // in update mode, we should never touch the signature secret
   useEffect(() => {
-    if (mode !== 'add') return
+    if (mode !== 'create') return
 
     if (secretType === 'pre-generated') {
       // set pre-generated secret and trigger validation to clear any errors

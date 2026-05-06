@@ -21,11 +21,11 @@ import {
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../../context'
 import { TeamAvatar } from '../../sidebar/team-avatar'
-import WebhookAddEditDialog from './add-edit-dialog'
 import { WEBHOOK_EVENT_LABELS, WEBHOOK_EVENTS } from './constants'
 import WebhookDeleteDialog from './delete-dialog'
 import WebhookEditSecretDialog from './edit-secret-dialog'
 import type { Webhook } from './types'
+import { UpsertWebhookDialog } from './upsert-webhook-dialog'
 
 type WebhookRowProps = {
   webhook: Webhook
@@ -60,11 +60,11 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuGroup>
-          <WebhookAddEditDialog mode="edit" webhook={webhook}>
+          <UpsertWebhookDialog mode="update" webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
               <EditIcon className={actionIconClassName} /> Edit
             </DropdownMenuItem>
-          </WebhookAddEditDialog>
+          </UpsertWebhookDialog>
           <WebhookEditSecretDialog webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
               <PrivateIcon className={actionIconClassName} /> Rotate Secret

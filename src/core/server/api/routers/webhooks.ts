@@ -46,7 +46,7 @@ export const webhooksRouter = createTRPCRouter({
         input
 
       const result = await ctx.webhooksRepository.upsertWebhook({
-        mode: mode === 'add' ? 'create' : 'edit',
+        mode,
         webhookId: webhookId ?? undefined,
         name,
         url,
@@ -59,7 +59,7 @@ export const webhooksRouter = createTRPCRouter({
         l.error(
           {
             key:
-              mode === 'edit'
+              mode === 'update'
                 ? 'update_webhook_trpc:error'
                 : 'create_webhook_trpc:error',
             status: result.error.status,
@@ -68,7 +68,7 @@ export const webhooksRouter = createTRPCRouter({
             user_id: ctx.session.user.id,
             context: { mode, name, url, events },
           },
-          `Failed to ${mode === 'edit' ? 'update' : 'create'} webhook: ${result.error.status}: ${result.error.message}`
+          `Failed to ${mode} webhook: ${result.error.status}: ${result.error.message}`
         )
 
         throwTRPCErrorFromRepoError(result.error)

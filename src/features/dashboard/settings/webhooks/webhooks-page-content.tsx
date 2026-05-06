@@ -8,8 +8,8 @@ import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { AddIcon, SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
-import WebhookAddEditDialog from './add-edit-dialog'
 import WebhooksTable from './table'
+import { UpsertWebhookDialog } from './upsert-webhook-dialog'
 
 interface WebhooksPageContentProps {
   teamSlug: string
@@ -104,7 +104,7 @@ export const WebhooksPageContent = ({
           value={query}
         />
 
-        <WebhookAddEditDialog mode="add">
+        <UpsertWebhookDialog mode="create">
           <Button
             className="w-full font-sans normal-case prose-body-highlight md:w-auto md:self-start"
             type="button"
@@ -113,7 +113,7 @@ export const WebhooksPageContent = ({
             <AddIcon aria-hidden className="size-4" />
             Add a webhook
           </Button>
-        </WebhookAddEditDialog>
+        </UpsertWebhookDialog>
       </div>
 
       <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-start lg:justify-between">

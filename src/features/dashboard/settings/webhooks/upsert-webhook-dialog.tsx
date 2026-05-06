@@ -27,28 +27,28 @@ import { Form } from '@/ui/primitives/form'
 import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
-import { WebhookAddEditDialogSteps } from './add-edit-dialog-steps'
 import { WEBHOOK_EVENTS, type WebhookEvent } from './constants'
 import { FinishWebhookSetupDialog } from './finish-webhook-setup-dialog'
 import type { Webhook } from './types'
+import { UpsertWebhookDialogSteps } from './upsert-webhook-dialog-steps'
 
-type WebhookAddEditDialogProps =
+type UpsertWebhookDialogProps =
   | {
       children: React.ReactNode
-      mode: 'add'
+      mode: 'create'
       webhook?: undefined
     }
   | {
       children: React.ReactNode
-      mode: 'edit'
+      mode: 'update'
       webhook: Webhook
     }
 
-export default function WebhookAddEditDialog({
+export function UpsertWebhookDialog({
   children: trigger,
   mode,
   webhook,
-}: WebhookAddEditDialogProps) {
+}: UpsertWebhookDialogProps) {
   'use no memo'
 
   const { team } = useDashboard()
@@ -61,20 +61,20 @@ export default function WebhookAddEditDialog({
   const [hasCopied, setHasCopied] = useState(false)
   const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
 
-  const isEditMode = mode === 'edit'
-  const totalSteps = isEditMode ? 1 : 2
+  const isUpdateMode = mode === 'update'
+  const totalSteps = isUpdateMode ? 1 : 2
 
   const listQueryKey = trpc.webhooks.list.queryOptions({
     teamSlug: team.slug,
   }).queryKey
 
   const defaultValues: UpsertWebhookInput = {
-    webhookId: isEditMode ? webhook?.id : undefined,
+    webhookId: isUpdateMode ? webhook?.id : undefined,
     mode,
     name: webhook?.name || '',
     url: webhook?.url || '',
     events: webhook?.events || [],
-    ...(isEditMode ? {} : { signatureSecret: '' }),
+    ...(isUpdateMode ? {} : { signatureSecret: '' }),
   }
 
   const form = useForm<UpsertWebhookInput>({
@@ -90,14 +90,14 @@ export default function WebhookAddEditDialog({
       onSuccess: () => {
         toast(
           defaultSuccessToast(
-            isEditMode
+            isUpdateMode
               ? 'Webhook updated successfully'
               : 'Webhook created successfully'
           )
         )
         void queryClient.invalidateQueries({ queryKey: listQueryKey })
 
-        if (!isEditMode) {
+        if (!isUpdateMode) {
           handleDialogChange(false)
           setFinishSetupDialogOpen(true)
           return
@@ -109,7 +109,7 @@ export default function WebhookAddEditDialog({
         toast(
           defaultErrorToast(
             err.message ||
-              (isEditMode
+              (isUpdateMode
                 ? 'Failed to update webhook'
                 : 'Failed to create webhook')
           )
@@ -211,9 +211,9 @@ export default function WebhookAddEditDialog({
         <DialogContent className="flex flex-col gap-4 px-6 pt-5 pb-6 h-[685px] max-h-[calc(100svh-2rem)] overflow-hidden">
           <DialogHeader className="gap-0.5">
             <DialogTitle>
-              {isEditMode ? 'Edit Webhook' : 'Add Webhook'}
+              {isUpdateMode ? 'Edit Webhook' : 'Add Webhook'}
             </DialogTitle>
-            {!isEditMode && (
+            {!isUpdateMode && (
               <div className="flex items-center gap-2">
                 <span className="text-fg-tertiary prose-label uppercase">
                   Step {currentStep} / {totalSteps}
@@ -230,7 +230,7 @@ export default function WebhookAddEditDialog({
               <input type="hidden" {...form.register('mode')} />
 
               <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <WebhookAddEditDialogSteps
+                <UpsertWebhookDialogSteps
                   currentStep={currentStep}
                   form={form}
                   isLoading={isLoading}
@@ -250,10 +250,10 @@ export default function WebhookAddEditDialog({
                   <div className="flex items-center justify-center py-2 gap-2 w-full">
                     <Loader variant="slash" size="sm" />
                     <span className="prose-body text-fg-secondary">
-                      {isEditMode ? 'Saving Changes...' : 'Adding Webhook...'}
+                      {isUpdateMode ? 'Saving Changes...' : 'Adding Webhook...'}
                     </span>
                   </div>
-                ) : isEditMode ? (
+                ) : isUpdateMode ? (
                   <Button
                     type="submit"
                     className="w-full"
