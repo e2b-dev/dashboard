@@ -339,6 +339,7 @@ interface TeamBlockedRecoveryPaymentElementProps {
   processingLabel: string
   submittedToast: ToastInput
   successToast: ToastInput
+  onSuccess?: () => void
   errorMessages: {
     ready: string
     confirm: string
@@ -359,6 +360,7 @@ export const TeamBlockedRecoveryPaymentElement = ({
   processingLabel,
   submittedToast,
   successToast,
+  onSuccess,
   errorMessages,
 }: TeamBlockedRecoveryPaymentElementProps) => {
   const router = useRouter()
@@ -396,6 +398,7 @@ export const TeamBlockedRecoveryPaymentElement = ({
       }
 
       toast(successToast)
+      onSuccess?.()
       router.refresh()
       onOpenChange(false)
     } catch {

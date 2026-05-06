@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
+import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
 import type { VerificationPaymentResponse } from '@/core/modules/billing/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
@@ -26,6 +27,7 @@ import {
 } from './team-blocked-recovery'
 
 const VERIFICATION_PAYMENT_LOADING_MESSAGE = 'Loading verification payment...'
+const VERIFICATION_PAYMENT_SUBMITTED_EVENT = 'verification_payment_submitted'
 
 const stripePaymentIntentParams = {
   payment_intent: parseAsString,
@@ -60,6 +62,7 @@ const VerificationRequiredDialogContent = ({
 }: VerificationRequiredDialogProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
+  const posthog = usePostHog()
   const trpc = useTRPC()
   const router = useRouter()
   const pollUntilTeamUnblocked = useTeamUnblockPolling()
@@ -149,6 +152,7 @@ const VerificationRequiredDialogContent = ({
           title: 'Team unblocked',
           description: 'Your team has been verified and unblocked.',
         })
+        posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
       } catch {
         toast(
           defaultErrorToast(
@@ -225,6 +229,9 @@ const VerificationRequiredDialogContent = ({
             variant: 'success',
             title: 'Team unblocked',
             description: 'Your team has been verified and unblocked.',
+          }}
+          onSuccess={() => {
+            posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
           }}
           errorMessages={{
             ready: 'Payment form is still loading.',

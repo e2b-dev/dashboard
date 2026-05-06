@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { parseAsString, useQueryStates } from 'nuqs'
+import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
 import type { PaymentMethodsSession } from '@/core/modules/billing/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
@@ -24,6 +25,7 @@ import {
 } from './team-blocked-recovery'
 
 const PAYMENT_METHOD_LOADING_MESSAGE = 'Loading payment method...'
+const PAYMENT_METHOD_ADDED_EVENT = 'payment_method_added'
 
 const stripeSetupIntentParams = {
   setup_intent: parseAsString,
@@ -58,6 +60,7 @@ const MissingPaymentMethodDialogContent = ({
 }: MissingPaymentMethodDialogProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
+  const posthog = usePostHog()
   const trpc = useTRPC()
   const router = useRouter()
   const [paymentMethodsSession, setPaymentMethodsSession] =
@@ -126,6 +129,7 @@ const MissingPaymentMethodDialogContent = ({
         title: 'Payment method added',
         description: 'Your payment method was added successfully.',
       })
+      posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
       router.refresh()
       onOpenChange(false)
     },
@@ -191,6 +195,9 @@ const MissingPaymentMethodDialogContent = ({
             title: 'Team unblocked',
             description:
               'Your payment method was added and your team has been unblocked.',
+          }}
+          onSuccess={() => {
+            posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
           }}
           errorMessages={{
             ready: 'Payment form is still loading.',
