@@ -1,6 +1,6 @@
-const BLOCKED_REASONS = {
+const TEAM_BLOCKED_REASONS = {
   missingPayment: 'missing payment method',
   verification: 'verification required',
 } as const
 
-export { BLOCKED_REASONS }
+export { TEAM_BLOCKED_REASONS }

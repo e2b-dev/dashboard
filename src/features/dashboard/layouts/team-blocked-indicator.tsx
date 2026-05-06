@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { BLOCKED_REASONS } from '@/core/modules/teams/constants'
+import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
+import type { TeamBlockedReason } from '@/core/modules/teams/models'
 import { useDashboard } from '@/features/dashboard/context'
 import { useSessionStorage } from '@/lib/hooks/use-session-storage'
 import { Button } from '@/ui/primitives/button'
@@ -12,10 +13,7 @@ import {
   MissingPaymentMethodDialog,
   VerificationRequiredDialog,
 } from '../team-blocked'
-
-type BlockedReasonDialog =
-  | (typeof BLOCKED_REASONS)[keyof typeof BLOCKED_REASONS]
-  | null
+import { getBlockedDialogStorageKey } from '../team-blocked/team-blocked-dialog-storage'
 
 function useBlockedMessage(slug: string, blockedReason: string | null) {
   return useMemo(() => {
@@ -29,7 +27,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (reason.includes(BLOCKED_REASONS.missingPayment)) {
+    if (reason.includes(TEAM_BLOCKED_REASONS.missingPayment)) {
       return {
         text: 'Missing payment method.',
         cta: 'Add payment method.',
@@ -37,7 +35,7 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
       }
     }
 
-    if (reason.includes(BLOCKED_REASONS.verification)) {
+    if (reason.includes(TEAM_BLOCKED_REASONS.verification)) {
       return {
         text: 'Verification required.',
         cta: 'Complete verification.',
@@ -55,17 +53,18 @@ function useBlockedMessage(slug: string, blockedReason: string | null) {
 
 export default function TeamBlockedIndicator() {
   const { team } = useDashboard()
-  const [openDialog, setOpenDialog] = useState<BlockedReasonDialog>(null)
+  const [openDialog, setOpenDialog] = useState<TeamBlockedReason | null>(null)
 
   const message = useBlockedMessage(team.slug, team.blockedReason)
   const reason = team.blockedReason?.toLowerCase() ?? ''
-  const blockedReasonDialog: BlockedReasonDialog =
-    Object.values(BLOCKED_REASONS).find((blockedReason) =>
+  const blockedReasonDialog: TeamBlockedReason | null =
+    Object.values(TEAM_BLOCKED_REASONS).find((blockedReason) =>
       reason.includes(blockedReason)
     ) ?? null
-  const dismissedStorageKey = blockedReasonDialog
-    ? `team-blocked-dialog-dismissed:${team.slug}:${blockedReasonDialog}`
-    : null
+  const dismissedStorageKey = getBlockedDialogStorageKey(
+    team.slug,
+    blockedReasonDialog
+  )
   const dismissedStorage = useSessionStorage(dismissedStorageKey)
 
   useEffect(() => {
@@ -90,7 +89,7 @@ export default function TeamBlockedIndicator() {
 
   const handleDialogOpenChange = (
     open: boolean,
-    dialog: Exclude<BlockedReasonDialog, null>
+    dialog: TeamBlockedReason
   ) => {
     if (!open) {
       dismissedStorage.setValue('true')
@@ -132,15 +131,15 @@ export default function TeamBlockedIndicator() {
         </span>
       </div>
       <MissingPaymentMethodDialog
-        open={openDialog === BLOCKED_REASONS.missingPayment}
+        open={openDialog === TEAM_BLOCKED_REASONS.missingPayment}
         onOpenChange={(open) => {
-          handleDialogOpenChange(open, BLOCKED_REASONS.missingPayment)
+          handleDialogOpenChange(open, TEAM_BLOCKED_REASONS.missingPayment)
         }}
       />
       <VerificationRequiredDialog
-        open={openDialog === BLOCKED_REASONS.verification}
+        open={openDialog === TEAM_BLOCKED_REASONS.verification}
         onOpenChange={(open) => {
-          handleDialogOpenChange(open, BLOCKED_REASONS.verification)
+          handleDialogOpenChange(open, TEAM_BLOCKED_REASONS.verification)
         }}
       />
     </>

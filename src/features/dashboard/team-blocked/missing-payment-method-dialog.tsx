@@ -6,6 +6,8 @@ import { parseAsString, useQueryStates } from 'nuqs'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
 import type { PaymentMethodsSession } from '@/core/modules/billing/models'
+import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
+import { useSessionStorage } from '@/lib/hooks/use-session-storage'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
@@ -18,6 +20,7 @@ import {
 } from '@/ui/primitives/dialog'
 import { CardIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../context'
+import { getBlockedDialogStorageKey } from './team-blocked-dialog-storage'
 import {
   LoadingState,
   TeamBlockedRecoveryPaymentElement,
@@ -63,6 +66,9 @@ const MissingPaymentMethodDialogContent = ({
   const posthog = usePostHog()
   const trpc = useTRPC()
   const router = useRouter()
+  const dismissedStorage = useSessionStorage(
+    getBlockedDialogStorageKey(team.slug, TEAM_BLOCKED_REASONS.missingPayment)
+  )
   const [paymentMethodsSession, setPaymentMethodsSession] =
     useState<PaymentMethodsSession | null>(null)
   const [isLoadingPaymentMethodsSession, setIsLoadingPaymentMethodsSession] =
@@ -132,6 +138,7 @@ const MissingPaymentMethodDialogContent = ({
       posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
       router.refresh()
       onOpenChange(false)
+      dismissedStorage.removeValue()
     },
     onProcessing: () => {
       toast({
@@ -198,6 +205,7 @@ const MissingPaymentMethodDialogContent = ({
           }}
           onSuccess={() => {
             posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
+            dismissedStorage.removeValue()
           }}
           errorMessages={{
             ready: 'Payment form is still loading.',
