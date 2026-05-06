@@ -57,6 +57,7 @@ export interface AddOnOrderConfirmResponse {
 
 export interface VerificationPaymentResponse {
   client_secret: string
+  amount_due_cents: number
 }
 
 export interface PaymentMethodsCustomerSession {

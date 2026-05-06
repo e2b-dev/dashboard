@@ -6,6 +6,7 @@ import { parseAsString, useQueryStates } from 'nuqs'
 import { useCallback, useEffect, useState } from 'react'
 import type { VerificationPaymentResponse } from '@/core/modules/billing/models'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { formatCurrency } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
 import {
@@ -25,6 +26,7 @@ import {
 } from './team-blocked-recovery'
 
 const VERIFICATION_PAYMENT_LOADING_MESSAGE = 'Loading verification payment...'
+
 const stripePaymentIntentParams = {
   payment_intent: parseAsString,
   payment_intent_client_secret: parseAsString,
@@ -121,9 +123,8 @@ const VerificationRequiredDialogContent = ({
     },
     createPaymentSession: createVerificationPayment,
     retrieveStatus: async (stripe, clientSecret) => {
-      const { paymentIntent, error } = await stripe.retrievePaymentIntent(
-        clientSecret
-      )
+      const { paymentIntent, error } =
+        await stripe.retrievePaymentIntent(clientSecret)
 
       return {
         status: paymentIntent?.status,
@@ -182,13 +183,17 @@ const VerificationRequiredDialogContent = ({
     fallbackErrorMessage: 'Failed to check verification payment status.',
   })
 
+  const paymentAmountLabel = verificationPayment
+    ? formatCurrency(verificationPayment.amount_due_cents / 100)
+    : null
+
   return (
     <>
       <DialogHeader>
         <DialogTitle>Verify team</DialogTitle>
         <DialogDescription>
-          This team is blocked because verification is required. Make a $5
-          payment to verify and continue using E2B.
+          This team is blocked because verification is required. Make a
+          verification payment to continue using E2B.
         </DialogDescription>
       </DialogHeader>
 
@@ -211,13 +216,13 @@ const VerificationRequiredDialogContent = ({
             <Alert variant="warning">
               <CardIcon className="size-4" />
               <AlertDescription className="prose-label">
-                A $5 card payment will be charged and added back to your team as
-                credits.
+                A {paymentAmountLabel} card payment will be charged and added
+                back to your team as credits.
               </AlertDescription>
             </Alert>
           }
           loadingMessage={VERIFICATION_PAYMENT_LOADING_MESSAGE}
-          submitLabel="Pay $5 and verify"
+          submitLabel={`Pay ${paymentAmountLabel} and verify`}
           processingLabel="Processing..."
           submittedToast={{
             title: 'Verification payment submitted',

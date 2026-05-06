@@ -53,6 +53,7 @@ const PaymentMethodsSessionResponseSchema = z.object({
 
 const VerificationPaymentResponseSchema = z.object({
   client_secret: z.string().min(1),
+  amount_due_cents: z.number().int().positive(),
 })
 
 export function createBillingRepository(
