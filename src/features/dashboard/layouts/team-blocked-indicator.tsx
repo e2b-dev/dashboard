@@ -87,10 +87,7 @@ export default function TeamBlockedIndicator() {
     setOpenDialog(blockedReasonDialog)
   }
 
-  const handleDialogOpenChange = (
-    open: boolean,
-    dialog: TeamBlockedReason
-  ) => {
+  const handleDialogOpenChange = (open: boolean, dialog: TeamBlockedReason) => {
     if (!open) {
       dismissedStorage.setValue('true')
       setOpenDialog(null)
