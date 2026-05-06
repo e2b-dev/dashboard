@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import { useDashboard } from '@/features/dashboard/context'
+import { useSessionStorage } from '@/lib/hooks/use-session-storage'
 import { BlockIcon } from '@/ui/primitives/icons'
 import {
   MissingPaymentMethodDialog,
@@ -61,13 +62,42 @@ export default function TeamBlockedIndicator() {
     Object.values(BLOCKED_REASONS).find((blockedReason) =>
       reason.includes(blockedReason)
     ) ?? null
+  const dismissedStorageKey = blockedReasonDialog
+    ? `team-blocked-dialog-dismissed:${team.slug}:${blockedReasonDialog}`
+    : null
+  const dismissedStorage = useSessionStorage(dismissedStorageKey)
 
   useEffect(() => {
+    if (!blockedReasonDialog || !dismissedStorageKey) {
+      setOpenDialog(null)
+      return
+    }
+
+    const hasDismissedDialog = dismissedStorage.getValue() === 'true'
+
+    if (hasDismissedDialog) {
+      setOpenDialog(null)
+      return
+    }
+
     setOpenDialog(blockedReasonDialog)
-  }, [blockedReasonDialog])
+  }, [blockedReasonDialog, dismissedStorageKey, dismissedStorage])
 
   const handleDialogAction = () => {
     setOpenDialog(blockedReasonDialog)
+  }
+
+  const handleDialogOpenChange = (
+    open: boolean,
+    dialog: Exclude<BlockedReasonDialog, null>
+  ) => {
+    if (!open) {
+      dismissedStorage.setValue('true')
+      setOpenDialog(null)
+      return
+    }
+
+    setOpenDialog(dialog)
   }
 
   if (!team.isBlocked) return null
@@ -101,13 +131,13 @@ export default function TeamBlockedIndicator() {
       <MissingPaymentMethodDialog
         open={openDialog === BLOCKED_REASONS.missingPayment}
         onOpenChange={(open) => {
-          setOpenDialog(open ? BLOCKED_REASONS.missingPayment : null)
+          handleDialogOpenChange(open, BLOCKED_REASONS.missingPayment)
         }}
       />
       <VerificationRequiredDialog
         open={openDialog === BLOCKED_REASONS.verification}
         onOpenChange={(open) => {
-          setOpenDialog(open ? BLOCKED_REASONS.verification : null)
+          handleDialogOpenChange(open, BLOCKED_REASONS.verification)
         }}
       />
     </>
