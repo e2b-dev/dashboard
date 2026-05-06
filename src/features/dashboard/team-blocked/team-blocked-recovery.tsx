@@ -22,8 +22,8 @@ import { Loader } from '@/ui/primitives/loader'
 import { stripePromise, usePaymentElementAppearance } from '../billing/hooks'
 import { useDashboard } from '../context'
 
-const TEAM_UNBLOCK_POLL_ATTEMPTS = 15
-const TEAM_UNBLOCK_POLL_INTERVAL_MS = 2000
+const TEAM_UNBLOCK_POLL_ATTEMPTS = 30
+const TEAM_UNBLOCK_POLL_INTERVAL_MS = 1000
 
 type ToastInput = Parameters<ReturnType<typeof useToast>['toast']>[0]
 
@@ -43,7 +43,7 @@ export const LoadingState = ({ message, className }: LoadingStateProps) => {
   )
 }
 
-// Waits before retrying team status polling; 2000 -> resolves after 2 seconds.
+// Waits before retrying team status polling; 1000 -> resolves after 1 second.
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms)
