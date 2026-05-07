@@ -3,7 +3,6 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Loader } from '@/ui/primitives/loader'
 import { TableBody, TableCell, TableRow } from '@/ui/primitives/table'
 
-// Style for an absolutely-positioned virtualized row; e.g. translateY(120px) at 26px height
 export const getVirtualizedRowStyle = (
   virtualRow: VirtualItem,
   height: number
