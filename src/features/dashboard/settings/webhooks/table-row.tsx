@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
+import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +15,8 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
+  CheckIcon,
+  CopyIcon,
   EditIcon,
   IndicatorDotsIcon,
   PrivateIcon,
@@ -34,6 +39,62 @@ type WebhookRowProps = {
 
 type WebhookRowActionsProps = {
   webhook: Webhook
+}
+
+type WebhookNameAndUrlProps = {
+  name: string
+  url: string
+}
+
+type UrlIconState = 'copied' | 'hovered' | 'idle'
+
+const urlIconMap: Record<UrlIconState, typeof WebhookIcon> = {
+  copied: CheckIcon,
+  hovered: CopyIcon,
+  idle: WebhookIcon,
+}
+
+const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
+  const [wasCopied, copy] = useClipboard(1500)
+  const [isUrlHovered, setIsUrlHovered] = useState(false)
+  const iconState: UrlIconState = wasCopied
+    ? 'copied'
+    : isUrlHovered
+      ? 'hovered'
+      : 'idle'
+  const UrlIcon = urlIconMap[iconState]
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    await copy(url)
+    toast(defaultSuccessToast('Webhook URL copied'))
+  }
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="border-stroke flex size-8 shrink-0 items-center justify-center border"
+      >
+        <UrlIcon className="size-4 text-fg-secondary" />
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
+        <p className="truncate text-left text-fg prose-body">{name}</p>
+        <Button
+          variant="quaternary"
+          size="none"
+          onClick={handleCopy}
+          onMouseEnter={() => setIsUrlHovered(true)}
+          onMouseLeave={() => setIsUrlHovered(false)}
+          aria-label={`Copy webhook URL ${url}`}
+          className="w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
+        >
+          <span className="truncate">{url}</span>
+        </Button>
+      </div>
+    </>
+  )
 }
 
 const rowCellClassName = 'h-[50px] p-0 align-top'
@@ -101,18 +162,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
     <TableRow className={cn('h-[50px] bg-bg hover:bg-transparent', className)}>
       <TableCell className={cn(rowCellClassName, 'max-w-0 pr-12')}>
         <div className={cn(rowContentClassName, 'min-w-0 gap-3')}>
-          <div className="border-stroke flex size-8 shrink-0 items-center justify-center border">
-            <WebhookIcon className="size-4 text-fg-secondary" />
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
-            <p className="truncate text-left text-fg prose-body">
-              {webhook.name}
-            </p>
-            <p className="truncate font-mono text-[12px] leading-[17px] text-fg-tertiary uppercase">
-              {webhook.url}
-            </p>
-          </div>
+          <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
         </div>
       </TableCell>
 
