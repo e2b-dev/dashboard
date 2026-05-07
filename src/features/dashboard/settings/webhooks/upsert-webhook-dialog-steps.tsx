@@ -38,7 +38,7 @@ type UpsertWebhookDialogStepsProps = {
   exampleEventType: SandboxLifecycleEventType
   allEventsSelected: boolean
   handleAllToggle: () => void
-  handleEventToggle: (event: string) => void
+  handleEventToggle: (event: SandboxLifecycleEventType) => void
   mode: 'create' | 'update'
   secretType: SecretType
   onSecretTypeChange: (value: SecretType) => void
@@ -365,7 +365,7 @@ export function UpsertWebhookDialogSteps({
                       <Input
                         placeholder="Enter your custom secret"
                         disabled={isLoading}
-                        maxLength={32}
+                        minLength={32}
                         className="min-w-0"
                         {...field}
                         ref={(el) => {

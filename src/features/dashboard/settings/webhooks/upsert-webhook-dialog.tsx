@@ -82,7 +82,9 @@ export function UpsertWebhookDialog({
     mode,
     name: webhook?.name || '',
     url: webhook?.url || '',
-    events: webhook?.events || [],
+    events:
+      SandboxLifecycleEventTypeSchema.array().safeParse(webhook?.events).data ??
+      [],
     ...(isUpdateMode ? {} : { signatureSecret: '' }),
   }
 
@@ -199,19 +201,16 @@ export function UpsertWebhookDialog({
     }
   }
 
-  const handleEventToggle = (event: string) => {
+  const handleEventToggle = (event: SandboxLifecycleEventType) => {
     const currentEvents = form.getValues('events') || []
     if (currentEvents.includes(event)) {
       form.setValue(
         'events',
-        currentEvents.filter((eventName: string) => eventName !== event)
+        currentEvents.filter((eventName) => eventName !== event)
       )
     } else {
       form.setValue('events', [...currentEvents, event])
-      const matched = SandboxLifecycleEventTypeSchema.options.find(
-        (e) => e === event
-      )
-      if (matched) setLastSelectedEvent(matched)
+      setLastSelectedEvent(event)
     }
   }
 
