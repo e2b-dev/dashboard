@@ -40,7 +40,6 @@ import { UpsertWebhookDialog } from './upsert-webhook-dialog'
 
 type WebhookRowProps = {
   webhook: Webhook
-  className?: string
 }
 
 type WebhookRowActionsProps = {
@@ -169,28 +168,24 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
               <EditIcon className={actionIconClassName} /> Edit
             </DropdownMenuItem>
           </UpsertWebhookDialog>
-          <WebhookEditSecretDialog webhook={webhook}>
-            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-              <PrivateIcon className={actionIconClassName} /> Rotate Secret
-            </DropdownMenuItem>
-          </WebhookEditSecretDialog>
           <WebhookDeleteDialog webhook={webhook}>
-            <DropdownMenuItem
-              inset
-              variant="error"
-              onSelect={(e) => e.preventDefault()}
-            >
-              <TrashIcon className="size-4" />
+            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+              <TrashIcon className={actionIconClassName} />
               Delete
             </DropdownMenuItem>
           </WebhookDeleteDialog>
+          <WebhookEditSecretDialog webhook={webhook}>
+            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+              <PrivateIcon className={actionIconClassName} /> Edit secret
+            </DropdownMenuItem>
+          </WebhookEditSecretDialog>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
+export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
 
   const createdAt = webhook.createdAt
