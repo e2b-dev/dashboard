@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,11 @@ import {
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/primitives/tooltip'
 import { useDashboard } from '../../context'
 import { UserAvatar } from '../../shared'
 import { WEBHOOK_EVENT_LABELS, WEBHOOK_EVENTS } from './constants'
@@ -109,6 +114,42 @@ const getWebhookEventLabel = (event: string): string => {
   return WEBHOOK_EVENT_LABELS[matchedEvent]
 }
 
+type WebhookEventBadgesProps = {
+  events: readonly string[]
+}
+
+const WebhookEventBadges = ({ events }: WebhookEventBadgesProps) => {
+  const isAllEvents = events.length === WEBHOOK_EVENTS.length
+
+  if (isAllEvents) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge className="cursor-pointer">ALL ({events.length})</Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="flex flex-wrap items-center gap-1 prose-label uppercase">
+            {WEBHOOK_EVENTS.map((event, index) => (
+              <Fragment key={event}>
+                {index > 0 && (
+                  <span aria-hidden="true" className="text-fg-tertiary">
+                    ·
+                  </span>
+                )}
+                <span className="text-fg">{WEBHOOK_EVENT_LABELS[event]}</span>
+              </Fragment>
+            ))}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return events.map((event) => (
+    <Badge key={event}>{getWebhookEventLabel(event)}</Badge>
+  ))
+}
+
 const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
   const [dropDownOpen, setDropDownOpen] = useState(false)
 
@@ -172,11 +213,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
         <div
           className={cn(rowContentClassName, 'w-[216px] gap-1 overflow-hidden')}
         >
-          {webhook.events.map((event) => (
-            <Badge key={event} variant="default" className="px-1">
-              {getWebhookEventLabel(event)}
-            </Badge>
-          ))}
+          <WebhookEventBadges events={webhook.events} />
         </div>
       </TableCell>
 
