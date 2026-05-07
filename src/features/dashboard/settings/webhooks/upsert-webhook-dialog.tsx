@@ -31,6 +31,7 @@ import { Form } from '@/ui/primitives/form'
 import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
+import { DiscardWebhookChangesDialog } from './discard-webhook-changes-dialog'
 import { FinishWebhookSetupDialog } from './finish-webhook-setup-dialog'
 import type { Webhook } from './types'
 import { UpsertWebhookDialogSteps } from './upsert-webhook-dialog-steps'
@@ -63,6 +64,7 @@ export function UpsertWebhookDialog({
     useState<SandboxLifecycleEventType | null>(null)
   const [hasCopied, setHasCopied] = useState(false)
   const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false)
 
   const isUpdateMode = mode === 'update'
   const totalSteps = isUpdateMode ? 1 : 2
@@ -100,13 +102,12 @@ export function UpsertWebhookDialog({
         )
         void queryClient.invalidateQueries({ queryKey: listQueryKey })
 
-        if (!isUpdateMode) {
-          handleDialogChange(false)
-          setFinishSetupDialogOpen(true)
-          return
-        }
+        setOpen(false)
+        resetDialogState()
 
-        handleDialogChange(false)
+        if (!isUpdateMode) {
+          setFinishSetupDialogOpen(true)
+        }
       },
       onError: (err) => {
         toast(
@@ -123,15 +124,27 @@ export function UpsertWebhookDialog({
 
   const isLoading = upsertMutation.isPending
 
-  const handleDialogChange = (value: boolean) => {
-    setOpen(value)
-
-    if (value) return
-
+  const resetDialogState = () => {
     setCurrentStep(1)
     setHasCopied(false)
     form.reset()
     upsertMutation.reset()
+  }
+
+  const handleDialogChange = (value: boolean) => {
+    if (!value && hasChanges && !upsertMutation.isPending) {
+      setDiscardConfirmOpen(true)
+      return
+    }
+
+    setOpen(value)
+    if (!value) resetDialogState()
+  }
+
+  const handleConfirmDiscard = () => {
+    setDiscardConfirmOpen(false)
+    setOpen(false)
+    resetDialogState()
   }
 
   const handleSubmit = form.handleSubmit((values) => {
@@ -151,6 +164,14 @@ export function UpsertWebhookDialog({
     SandboxLifecycleEventTypeSchema.options.every((event) =>
       selectedEvents.includes(event)
     )
+
+  const hasChanges = isUpdateMode
+    ? name !== webhook.name ||
+      url !== webhook.url ||
+      selectedEvents.length !== webhook.events.length ||
+      [...selectedEvents].sort().join('|') !==
+        [...webhook.events].sort().join('|')
+    : true
 
   const { errors } = form.formState
 
@@ -265,7 +286,7 @@ export function UpsertWebhookDialog({
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={!isStep1Valid}
+                    disabled={!isStep1Valid || !hasChanges}
                   >
                     <CheckIcon className="size-4" />
                     Confirm
@@ -309,6 +330,11 @@ export function UpsertWebhookDialog({
       <FinishWebhookSetupDialog
         open={finishSetupDialogOpen}
         onOpenChange={setFinishSetupDialogOpen}
+      />
+      <DiscardWebhookChangesDialog
+        open={discardConfirmOpen}
+        onOpenChange={setDiscardConfirmOpen}
+        onDiscard={handleConfirmDiscard}
       />
     </>
   )
