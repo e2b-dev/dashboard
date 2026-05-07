@@ -19,6 +19,7 @@ import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -52,8 +53,6 @@ export const EditSecretDialog = ({
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 
-  const webhookName = webhook.name
-
   const listQueryKey = trpc.webhooks.list.queryOptions({
     teamSlug: team.slug,
   }).queryKey
@@ -70,13 +69,13 @@ export const EditSecretDialog = ({
   const updateSecretMutation = useMutation(
     trpc.webhooks.updateSecret.mutationOptions({
       onSuccess: () => {
-        toast(defaultSuccessToast('Webhook secret rotated successfully'))
+        toast(defaultSuccessToast('Webhook secret edited successfully'))
         void queryClient.invalidateQueries({ queryKey: listQueryKey })
         handleDialogChange(false)
       },
       onError: (err) => {
         toast(
-          defaultErrorToast(err.message || 'Failed to rotate webhook secret')
+          defaultErrorToast(err.message || 'Failed to edit webhook secret')
         )
       },
     })
@@ -86,9 +85,7 @@ export const EditSecretDialog = ({
 
   const handleDialogChange = (value: boolean) => {
     setOpen(value)
-
     if (value) return
-
     form.reset()
     updateSecretMutation.reset()
   }
@@ -109,85 +106,69 @@ export const EditSecretDialog = ({
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            Rotate Secret for {webhookName ? `"${webhookName}"` : 'Webhook'}
-          </DialogTitle>
-          <div className="flex flex-col gap-3 pt-2">
-            <p className="text-fg-tertiary prose-body">
-              <strong className="text-fg-secondary">Important:</strong> E2B
-              sends only one signature secret at a time. Once you change it, the
-              old secret immediately stops working.
-            </p>
-            <div className="flex flex-col gap-2">
-              <p className="text-fg-secondary prose-body font-medium">
-                To rotate safely without downtime:
-              </p>
-              <ol className="text-fg-tertiary prose-body list-decimal list-inside space-y-1 pl-1">
-                <li>Generate a new custom secret</li>
-                <li>
-                  Update your endpoint to accept{' '}
-                  <strong className="text-fg">both</strong> current and new
-                  custom secrets
-                </li>
-                <li>Deploy your changes</li>
-                <li>
-                  Then roll confirm your new custom secret here — E2B will start
-                  using the new secret
-                </li>
-                <li>Remove old secret validation from your code later</li>
-              </ol>
-            </div>
-          </div>
+        <DialogHeader className="gap-2">
+          <DialogTitle>Edit '{webhook.name}' secret</DialogTitle>
+          <DialogDescription className="text-fg-tertiary">
+            Replacing the secret will deactivate the current one. Make sure to
+            update any systems using it.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="min-w-0">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 min-w-0">
             <input type="hidden" {...form.register('webhookId')} />
 
-            <div className="flex flex-col gap-4 pb-6 min-w-0">
-              <FormField
-                control={form.control}
-                name="signatureSecret"
-                render={({ field }) => (
-                  <FormItem className="min-w-0">
-                    <FormControl>
-                      <Input
-                        placeholder="Enter new secret"
-                        disabled={isLoading}
-                        className="min-w-0"
-                        autoComplete="off"
-                        {...field}
-                      />
-                    </FormControl>
+            <FormField
+              control={form.control}
+              name="signatureSecret"
+              render={({ field }) => (
+                <FormItem className="min-w-0 gap-2">
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      className="min-w-0"
+                      autoComplete="off"
+                      autoFocus
+                      clearable
+                      onClear={() =>
+                        form.setValue('signatureSecret', '', {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+                  {errors.signatureSecret ? (
+                    <FormMessage />
+                  ) : (
                     <p className="text-fg-tertiary prose-body">
                       {'> 32 characters'}
                     </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  )}
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-2 gap-2 w-full">
-                  <Loader variant="slash" size="sm" />
-                  <span>Rotating Secret...</span>
-                </div>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={!isSecretValid}
-                  className="w-full"
-                  variant="secondary"
-                >
-                  <CheckIcon className="size-4" />
-                  Confirm
-                </Button>
-              )}
+              <Button
+                type="submit"
+                disabled={!isSecretValid || isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader variant="slash" size="sm" />
+                    <span>Updating secret...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon className="size-4" />
+                    Confirm
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

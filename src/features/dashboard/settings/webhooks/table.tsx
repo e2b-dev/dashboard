@@ -28,7 +28,7 @@ export const WebhooksTable = ({
   const hasNoWebhooks = totalWebhookCount === 0
   const emptyMessage = hasNoWebhooks
     ? 'No webhooks added yet'
-    : 'No webhooks match your search.'
+    : 'No webhooks match your search'
 
   return (
     <Table className={cn('w-full table-fixed', className)}>

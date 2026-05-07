@@ -96,7 +96,7 @@ export function UpsertWebhookDialog({
         toast(
           defaultSuccessToast(
             isUpdateMode
-              ? 'Webhook updated successfully'
+              ? 'Webhook edited successfully'
               : 'Webhook created successfully'
           )
         )
@@ -114,7 +114,7 @@ export function UpsertWebhookDialog({
           defaultErrorToast(
             err.message ||
               (isUpdateMode
-                ? 'Failed to update webhook'
+                ? 'Failed to edit webhook'
                 : 'Failed to create webhook')
           )
         )
