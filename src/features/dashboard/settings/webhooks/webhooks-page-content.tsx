@@ -8,7 +8,7 @@ import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import { AddIcon, SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
-import WebhooksTable from './table'
+import { WebhooksTable } from './table'
 import { UpsertWebhookDialog } from './upsert-webhook-dialog'
 
 interface WebhooksPageContentProps {

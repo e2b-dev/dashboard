@@ -33,8 +33,8 @@ import {
 import { useDashboard } from '../../context'
 import { UserAvatar } from '../../shared'
 import { WEBHOOK_EVENT_LABELS } from './constants'
-import WebhookDeleteDialog from './delete-dialog'
-import WebhookEditSecretDialog from './edit-secret-dialog'
+import { DeleteWebhookDialog } from './delete-webhook-dialog'
+import { EditSecretDialog } from './edit-secret-dialog'
 import type { Webhook } from './types'
 import { UpsertWebhookDialog } from './upsert-webhook-dialog'
 
@@ -168,17 +168,17 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
               <EditIcon className={actionIconClassName} /> Edit
             </DropdownMenuItem>
           </UpsertWebhookDialog>
-          <WebhookDeleteDialog webhook={webhook}>
+          <DeleteWebhookDialog webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
               <TrashIcon className={actionIconClassName} />
               Delete
             </DropdownMenuItem>
-          </WebhookDeleteDialog>
-          <WebhookEditSecretDialog webhook={webhook}>
+          </DeleteWebhookDialog>
+          <EditSecretDialog webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
               <PrivateIcon className={actionIconClassName} /> Edit secret
             </DropdownMenuItem>
-          </WebhookEditSecretDialog>
+          </EditSecretDialog>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

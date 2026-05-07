@@ -36,15 +36,15 @@ import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import type { Webhook } from './types'
 
-interface WebhookEditSecretDialogProps {
+interface EditSecretDialogProps {
   children: React.ReactNode
   webhook: Webhook
 }
 
-export default function WebhookEditSecretDialog({
+export const EditSecretDialog = ({
   children: trigger,
   webhook,
-}: WebhookEditSecretDialogProps) {
+}: EditSecretDialogProps) => {
   'use no memo'
 
   const { team } = useDashboard()
