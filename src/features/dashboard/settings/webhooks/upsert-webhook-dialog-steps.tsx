@@ -367,6 +367,8 @@ export function UpsertWebhookDialogSteps({
                         disabled={isLoading}
                         minLength={32}
                         className="min-w-0"
+                        clearable
+                        onClear={() => field.onChange('')}
                         {...field}
                         ref={(el) => {
                           field.ref(el)
