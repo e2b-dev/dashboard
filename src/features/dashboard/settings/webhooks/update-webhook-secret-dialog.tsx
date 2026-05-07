@@ -37,15 +37,15 @@ import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import type { Webhook } from './types'
 
-interface EditSecretDialogProps {
+interface UpdateWebhookSecretDialogProps {
   children: React.ReactNode
   webhook: Webhook
 }
 
-export const EditSecretDialog = ({
+export const UpdateWebhookSecretDialog = ({
   children: trigger,
   webhook,
-}: EditSecretDialogProps) => {
+}: UpdateWebhookSecretDialogProps) => {
   'use no memo'
 
   const { team } = useDashboard()
@@ -74,9 +74,7 @@ export const EditSecretDialog = ({
         handleDialogChange(false)
       },
       onError: (err) => {
-        toast(
-          defaultErrorToast(err.message || 'Failed to edit webhook secret')
-        )
+        toast(defaultErrorToast(err.message || 'Failed to edit webhook secret'))
       },
     })
   )

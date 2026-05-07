@@ -132,12 +132,7 @@ export function UpsertWebhookDialog({
   }
 
   const handleDialogChange = (value: boolean) => {
-    if (
-      !value &&
-      isUpdateMode &&
-      hasChanges &&
-      !upsertMutation.isPending
-    ) {
+    if (!value && isUpdateMode && hasChanges && !upsertMutation.isPending) {
       setDiscardConfirmOpen(true)
       return
     }
