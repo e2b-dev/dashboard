@@ -9,7 +9,7 @@ import type {
   CustomerPortalResponse,
   Invoice,
   PaymentMethodsCustomerSession,
-  PaymentMethodsSession,
+  PaymentMethodsSetupSession,
   TeamItems,
   UsageResponse,
   VerificationPaymentResponse,
@@ -38,7 +38,7 @@ export interface BillingRepository {
   createOrder(itemId: string): Promise<RepoResult<AddOnOrderCreateResponse>>
   confirmOrder(orderId: string): Promise<RepoResult<AddOnOrderConfirmResponse>>
   getCustomerSession(): Promise<RepoResult<PaymentMethodsCustomerSession>>
-  createPaymentMethodsSession(): Promise<RepoResult<PaymentMethodsSession>>
+  createPaymentMethodsSession(): Promise<RepoResult<PaymentMethodsSetupSession>>
   createVerificationPayment(): Promise<RepoResult<VerificationPaymentResponse>>
 }
 

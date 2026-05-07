@@ -6,7 +6,7 @@ import { parseAsString, useQueryStates } from 'nuqs'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
 import { useSessionStorage } from 'usehooks-ts'
-import type { PaymentMethodsSession } from '@/core/modules/billing/models'
+import type { PaymentMethodsSetupSession } from '@/core/modules/billing/models'
 import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
@@ -84,7 +84,7 @@ const MissingPaymentMethodDialogContent = ({
     false
   )
   const [paymentMethodsSession, setPaymentMethodsSession] =
-    useState<PaymentMethodsSession | null>(null)
+    useState<PaymentMethodsSetupSession | null>(null)
   const [isLoadingPaymentMethodsSession, setIsLoadingPaymentMethodsSession] =
     useState(false)
   const [setupIntentParams, setSetupIntentParams] = useQueryStates(

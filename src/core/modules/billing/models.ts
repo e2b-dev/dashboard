@@ -66,6 +66,10 @@ export interface PaymentMethodsCustomerSession {
 
 export interface PaymentMethodsSession {
   client_secret: string
+  setup_intent_client_secret?: string
+}
+
+export interface PaymentMethodsSetupSession extends PaymentMethodsSession {
   setup_intent_client_secret: string
 }
 
