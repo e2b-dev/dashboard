@@ -1,8 +1,9 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import { z } from 'zod'
 import {
   type SandboxLifecycleEventType,
   SandboxLifecycleEventTypeSchema,
@@ -25,6 +26,10 @@ import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import { WEBHOOK_DOCS_URL, WEBHOOK_EVENT_LABELS } from './constants'
 
+const SecretTypeSchema = z.enum(['pre-generated', 'custom'])
+
+export type SecretType = z.infer<typeof SecretTypeSchema>
+
 type UpsertWebhookDialogStepsProps = {
   currentStep: number
   form: UseFormReturn<UpsertWebhookInput>
@@ -35,6 +40,8 @@ type UpsertWebhookDialogStepsProps = {
   handleAllToggle: () => void
   handleEventToggle: (event: string) => void
   mode: 'create' | 'update'
+  secretType: SecretType
+  onSecretTypeChange: (value: SecretType) => void
   hasCopied: boolean
   onCopied: () => void
 }
@@ -88,13 +95,11 @@ export function UpsertWebhookDialogSteps({
   handleAllToggle,
   handleEventToggle,
   mode,
+  secretType,
+  onSecretTypeChange,
   hasCopied,
   onCopied,
 }: UpsertWebhookDialogStepsProps) {
-  const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
-    'pre-generated'
-  )
-
   const preGeneratedSecret = useMemo(() => {
     const chars =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -103,7 +108,7 @@ export function UpsertWebhookDialogSteps({
     return Array.from(array, (byte) => chars[byte % chars.length]).join('')
   }, [])
 
-  const [copied, copy] = useClipboard(150)
+  const [copied, copy] = useClipboard()
 
   const customSecretInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -135,10 +140,9 @@ export function UpsertWebhookDialogSteps({
     }
   }, [mode, secretType, preGeneratedSecret, form])
 
-  const handleCopy = async () => {
-    await copy(preGeneratedSecret)
-    setTimeout(onCopied, 150)
-  }
+  useEffect(() => {
+    if (copied) onCopied()
+  }, [copied, onCopied])
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -283,9 +287,10 @@ export function UpsertWebhookDialogSteps({
           {/* Tabs */}
           <Tabs
             value={secretType}
-            onValueChange={(v) =>
-              setSecretType(v as 'pre-generated' | 'custom')
-            }
+            onValueChange={(v) => {
+              const parsed = SecretTypeSchema.safeParse(v)
+              if (parsed.success) onSecretTypeChange(parsed.data)
+            }}
             className="min-h-0 w-full flex-1 h-full"
           >
             <TabsList className="w-full justify-start px-0">
@@ -322,7 +327,7 @@ export function UpsertWebhookDialogSteps({
                       <Button
                         type="button"
                         variant={hasCopied ? 'secondary' : 'primary'}
-                        onClick={handleCopy}
+                        onClick={() => void copy(preGeneratedSecret)}
                         disabled={isLoading}
                         className="shrink-0 relative"
                       >

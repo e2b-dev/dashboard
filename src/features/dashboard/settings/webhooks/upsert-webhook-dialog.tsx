@@ -34,7 +34,10 @@ import { useDashboard } from '../../context'
 import { DiscardWebhookChangesDialog } from './discard-webhook-changes-dialog'
 import { FinishWebhookSetupDialog } from './finish-webhook-setup-dialog'
 import type { Webhook } from './types'
-import { UpsertWebhookDialogSteps } from './upsert-webhook-dialog-steps'
+import {
+  type SecretType,
+  UpsertWebhookDialogSteps,
+} from './upsert-webhook-dialog-steps'
 
 type UpsertWebhookDialogProps =
   | {
@@ -63,6 +66,7 @@ export function UpsertWebhookDialog({
   const [lastSelectedEvent, setLastSelectedEvent] =
     useState<SandboxLifecycleEventType | null>(null)
   const [hasCopied, setHasCopied] = useState(false)
+  const [secretType, setSecretType] = useState<SecretType>('pre-generated')
   const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false)
 
@@ -127,6 +131,7 @@ export function UpsertWebhookDialog({
   const resetDialogState = () => {
     setCurrentStep(1)
     setHasCopied(false)
+    setSecretType('pre-generated')
     form.reset()
     upsertMutation.reset()
   }
@@ -269,6 +274,8 @@ export function UpsertWebhookDialog({
                   handleAllToggle={handleAllToggle}
                   handleEventToggle={handleEventToggle}
                   mode={mode}
+                  secretType={secretType}
+                  onSecretTypeChange={setSecretType}
                   hasCopied={hasCopied}
                   onCopied={() => setHasCopied(true)}
                 />
@@ -313,7 +320,15 @@ export function UpsertWebhookDialog({
                     </Button>
                     <Button
                       type="submit"
-                      variant={hasCopied ? 'primary' : 'secondary'}
+                      variant={
+                        (
+                          secretType === 'custom'
+                            ? isStep2Valid
+                            : hasCopied
+                        )
+                          ? 'primary'
+                          : 'secondary'
+                      }
                       className="w-full"
                       disabled={!isStep2Valid}
                     >

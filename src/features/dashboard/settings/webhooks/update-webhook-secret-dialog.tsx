@@ -158,7 +158,7 @@ export const UpdateWebhookSecretDialog = ({
                 {isLoading ? (
                   <>
                     <Loader variant="slash" size="sm" />
-                    <span>Updating secret...</span>
+                    <span>Editing secret...</span>
                   </>
                 ) : (
                   <>
