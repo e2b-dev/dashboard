@@ -3,6 +3,10 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import {
+  type SandboxLifecycleEventType,
+  SandboxLifecycleEventTypeSchema,
+} from '@/core/modules/sandboxes/lifecycle-event-types'
 import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button } from '@/ui/primitives/button'
@@ -19,19 +23,14 @@ import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-import {
-  WEBHOOK_DOCS_URL,
-  WEBHOOK_EVENT_LABELS,
-  WEBHOOK_EVENTS,
-  type WebhookEvent,
-} from './constants'
+import { WEBHOOK_DOCS_URL, WEBHOOK_EVENT_LABELS } from './constants'
 
 type UpsertWebhookDialogStepsProps = {
   currentStep: number
   form: UseFormReturn<UpsertWebhookInput>
   isLoading: boolean
   selectedEvents: string[]
-  exampleEventType: WebhookEvent
+  exampleEventType: SandboxLifecycleEventType
   allEventsSelected: boolean
   handleAllToggle: () => void
   handleEventToggle: (event: string) => void
@@ -40,7 +39,11 @@ type UpsertWebhookDialogStepsProps = {
   onCopied: () => void
 }
 
-const WebhookExamplePayload = ({ eventType }: { eventType: WebhookEvent }) => (
+const WebhookExamplePayload = ({
+  eventType,
+}: {
+  eventType: SandboxLifecycleEventType
+}) => (
   <div className="bg-bg border border-stroke flex w-full items-center px-4 py-2.5 font-mono text-[13px] leading-5 text-fg-secondary whitespace-pre-wrap">
     <div className="flex-1 min-w-px">
       <div>{'{'}</div>
@@ -222,7 +225,7 @@ export function UpsertWebhookDialogSteps({
                     <Separator className="w-4" />
 
                     {/* Individual event checkboxes */}
-                    {WEBHOOK_EVENTS.map((event) => (
+                    {SandboxLifecycleEventTypeSchema.options.map((event) => (
                       <div key={event} className="flex items-center gap-2">
                         <Checkbox
                           id={`event-${event}`}

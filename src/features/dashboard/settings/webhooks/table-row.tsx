@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useState } from 'react'
+import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -31,7 +32,7 @@ import {
 } from '@/ui/primitives/tooltip'
 import { useDashboard } from '../../context'
 import { UserAvatar } from '../../shared'
-import { WEBHOOK_EVENT_LABELS, WEBHOOK_EVENTS } from './constants'
+import { WEBHOOK_EVENT_LABELS } from './constants'
 import WebhookDeleteDialog from './delete-dialog'
 import WebhookEditSecretDialog from './edit-secret-dialog'
 import type { Webhook } from './types'
@@ -107,7 +108,7 @@ const rowContentClassName = 'flex h-11 items-center'
 const actionIconClassName = 'size-4 text-fg-tertiary'
 
 const getWebhookEventLabel = (event: string): string => {
-  const matchedEvent = WEBHOOK_EVENTS.find(
+  const matchedEvent = SandboxLifecycleEventTypeSchema.options.find(
     (webhookEvent) => webhookEvent === event
   )
   if (!matchedEvent) return event
@@ -119,7 +120,8 @@ type WebhookEventBadgesProps = {
 }
 
 const WebhookEventBadges = ({ events }: WebhookEventBadgesProps) => {
-  const isAllEvents = events.length === WEBHOOK_EVENTS.length
+  const isAllEvents =
+    events.length === SandboxLifecycleEventTypeSchema.options.length
 
   if (isAllEvents) {
     return (
@@ -129,7 +131,7 @@ const WebhookEventBadges = ({ events }: WebhookEventBadgesProps) => {
         </TooltipTrigger>
         <TooltipContent>
           <div className="flex flex-wrap items-center gap-1 prose-label uppercase">
-            {WEBHOOK_EVENTS.map((event, index) => (
+            {SandboxLifecycleEventTypeSchema.options.map((event, index) => (
               <Fragment key={event}>
                 {index > 0 && (
                   <span aria-hidden="true" className="text-fg-tertiary">

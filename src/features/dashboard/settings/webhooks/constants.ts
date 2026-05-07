@@ -1,14 +1,6 @@
-export const WEBHOOK_EVENTS = [
-  'sandbox.lifecycle.created',
-  'sandbox.lifecycle.paused',
-  'sandbox.lifecycle.resumed',
-  'sandbox.lifecycle.updated',
-  'sandbox.lifecycle.killed',
-] as const
+import type { SandboxLifecycleEventType } from '@/core/modules/sandboxes/lifecycle-event-types'
 
-export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number]
-
-export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
+export const WEBHOOK_EVENT_LABELS: Record<SandboxLifecycleEventType, string> = {
   'sandbox.lifecycle.created': 'CREATE',
   'sandbox.lifecycle.paused': 'PAUSE',
   'sandbox.lifecycle.resumed': 'RESUME',

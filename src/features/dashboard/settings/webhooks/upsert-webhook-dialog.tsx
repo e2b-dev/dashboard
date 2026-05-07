@@ -5,6 +5,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import {
+  type SandboxLifecycleEventType,
+  SandboxLifecycleEventTypeSchema,
+} from '@/core/modules/sandboxes/lifecycle-event-types'
+import {
   type UpsertWebhookInput,
   UpsertWebhookInputSchema,
 } from '@/core/server/functions/webhooks/schema'
@@ -27,7 +31,6 @@ import { Form } from '@/ui/primitives/form'
 import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
-import { WEBHOOK_EVENTS, type WebhookEvent } from './constants'
 import { FinishWebhookSetupDialog } from './finish-webhook-setup-dialog'
 import type { Webhook } from './types'
 import { UpsertWebhookDialogSteps } from './upsert-webhook-dialog-steps'
@@ -57,7 +60,7 @@ export function UpsertWebhookDialog({
   const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [lastSelectedEvent, setLastSelectedEvent] =
-    useState<WebhookEvent | null>(null)
+    useState<SandboxLifecycleEventType | null>(null)
   const [hasCopied, setHasCopied] = useState(false)
   const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
 
@@ -144,8 +147,10 @@ export function UpsertWebhookDialog({
   const signatureSecret = form.watch('signatureSecret')
 
   const allEventsSelected =
-    selectedEvents.length === WEBHOOK_EVENTS.length &&
-    WEBHOOK_EVENTS.every((event) => selectedEvents.includes(event))
+    selectedEvents.length === SandboxLifecycleEventTypeSchema.options.length &&
+    SandboxLifecycleEventTypeSchema.options.every((event) =>
+      selectedEvents.includes(event)
+    )
 
   const { errors } = form.formState
 
@@ -164,7 +169,7 @@ export function UpsertWebhookDialog({
     if (allEventsSelected) {
       form.setValue('events', [])
     } else {
-      form.setValue('events', [...WEBHOOK_EVENTS])
+      form.setValue('events', [...SandboxLifecycleEventTypeSchema.options])
     }
   }
 
@@ -177,16 +182,19 @@ export function UpsertWebhookDialog({
       )
     } else {
       form.setValue('events', [...currentEvents, event])
-      const matched = WEBHOOK_EVENTS.find((e) => e === event)
+      const matched = SandboxLifecycleEventTypeSchema.options.find(
+        (e) => e === event
+      )
       if (matched) setLastSelectedEvent(matched)
     }
   }
 
-  const exampleEventType: WebhookEvent =
+  const exampleEventType: SandboxLifecycleEventType =
     lastSelectedEvent && selectedEvents.includes(lastSelectedEvent)
       ? lastSelectedEvent
-      : (WEBHOOK_EVENTS.find((event) => selectedEvents.includes(event)) ??
-        WEBHOOK_EVENTS[0])
+      : (SandboxLifecycleEventTypeSchema.options.find((event) =>
+          selectedEvents.includes(event)
+        ) ?? 'sandbox.lifecycle.created')
 
   const handleNext = async () => {
     if (currentStep === 1) {
