@@ -34,7 +34,11 @@ export const DiscardWebhookChangesDialog = ({
         </DialogDescription>
       </DialogHeader>
       <DialogFooter className="shrink-0 gap-5 sm:gap-5">
-        <Button variant="quaternary" onClick={() => onOpenChange(false)}>
+        <Button
+          variant="quaternary"
+          size="none"
+          onClick={() => onOpenChange(false)}
+        >
           Stay
         </Button>
         <Button variant="primary" onClick={onDiscard}>
