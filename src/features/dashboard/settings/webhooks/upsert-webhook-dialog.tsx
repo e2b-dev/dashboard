@@ -82,9 +82,12 @@ export function UpsertWebhookDialog({
     mode,
     name: webhook?.name || '',
     url: webhook?.url || '',
+    enabled: webhook?.enabled ?? true,
     events:
-      SandboxLifecycleEventTypeSchema.array().safeParse(webhook?.events).data ??
-      [],
+      webhook?.events?.filter(
+        (event): event is SandboxLifecycleEventType =>
+          SandboxLifecycleEventTypeSchema.safeParse(event).success
+      ) ?? [],
     ...(isUpdateMode ? {} : { signatureSecret: '' }),
   }
 
