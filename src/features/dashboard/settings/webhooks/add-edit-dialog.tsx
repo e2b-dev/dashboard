@@ -234,39 +234,34 @@ export default function WebhookAddEditDialog({
                       <CheckIcon className="size-4" />
                       Confirm
                     </Button>
+                  ) : currentStep === 1 ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleNext}
+                      disabled={!isStep1Valid}
+                      className="w-full"
+                    >
+                      Next
+                    </Button>
                   ) : (
-                    /* Add mode: show next/back navigation */
                     <>
-                      {currentStep === 1 ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={handleNext}
-                          disabled={!isStep1Valid}
-                          className="w-full"
-                        >
-                          Next
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={handleBack}
-                            className="w-full"
-                          >
-                            Back
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={!isStep2Valid}
-                          >
-                            <AddIcon />
-                            Add
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleBack}
+                        className="w-full"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={!isStep2Valid}
+                      >
+                        <AddIcon />
+                        Add
+                      </Button>
                     </>
                   )}
                 </>
