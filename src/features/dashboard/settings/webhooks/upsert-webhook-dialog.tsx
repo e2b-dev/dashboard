@@ -321,11 +321,7 @@ export function UpsertWebhookDialog({
                     <Button
                       type="submit"
                       variant={
-                        (
-                          secretType === 'custom'
-                            ? isStep2Valid
-                            : hasCopied
-                        )
+                        (secretType === 'custom' ? isStep2Valid : hasCopied)
                           ? 'primary'
                           : 'secondary'
                       }
