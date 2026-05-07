@@ -1,6 +1,16 @@
 'use client'
 
+import {
+  useVirtualizer,
+  type VirtualItem,
+  type Virtualizer,
+} from '@tanstack/react-virtual'
+import { useMemo } from 'react'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
+import {
+  VirtualizedTableLoaderBody,
+  VirtualizedTableRow,
+} from '@/features/dashboard/common/virtualized-table-ui'
 import { IdBadge } from '@/features/dashboard/shared'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
@@ -17,27 +27,34 @@ import {
 } from '@/ui/primitives/table'
 import { SandboxEventTypeBadge } from './event-type-badge'
 
+const ROW_HEIGHT_PX = 32
+const VIRTUAL_OVERSCAN = 16
+
 interface SandboxEventsTableProps {
   events: SandboxEventModel[]
+  isLoading: boolean
+  scrollContainer: HTMLDivElement | null
   isTimestampDescending: boolean
   onToggleTimestampSort: () => void
 }
 
 export const SandboxEventsTable = ({
   events,
+  isLoading,
+  scrollContainer,
   isTimestampDescending,
   onToggleTimestampSort,
 }: SandboxEventsTableProps) => {
+  'use no memo'
+
   return (
-    <Table className="min-w-[360px] table-fixed">
-      <colgroup>
-        <col className="w-[164px]" />
-        <col className="w-[108px]" />
-        <col />
-      </colgroup>
-      <TableHeader className="bg-bg sticky top-0 z-10">
-        <TableRow>
-          <TableHead className="px-0 h-min text-fg" data-state="selected">
+    <Table className="grid min-w-[360px]">
+      <TableHeader className="grid sticky top-0 z-1 bg-bg">
+        <TableRow className="flex min-w-full">
+          <TableHead
+            className="flex w-[164px] px-0 h-min pb-3 pr-4 text-fg"
+            data-state="selected"
+          >
             <Button
               type="button"
               variant="quaternary"
@@ -53,59 +70,130 @@ export const SandboxEventsTable = ({
               />
             </Button>
           </TableHead>
-          <TableHead className="px-0">ID</TableHead>
-          <TableHead className="px-0">Event</TableHead>
+          <TableHead className="flex w-[108px] px-0 h-min pb-3 pr-4">
+            ID
+          </TableHead>
+          <TableHead className="flex flex-1 px-0 h-min pb-3">Event</TableHead>
         </TableRow>
       </TableHeader>
 
-      <TableBody>
-        {events.length > 0 ? (
-          events.map((event) => {
-            const formattedTimestamp = formatLocalLogStyleTimestamp(
-              event.timestamp,
-              {
-                includeCentiseconds: true,
-              }
-            )
-
-            return (
-              <TableRow key={event.id} className="h-8">
-                <TableCell className="px-0 py-0 pr-4">
-                  {formattedTimestamp ? (
-                    <CopyButtonInline
-                      value={formattedTimestamp.iso}
-                      className="inline-flex h-[18px] items-center font-mono leading-none group prose-table-numeric truncate"
-                    >
-                      <span className="text-fg-tertiary">
-                        {formattedTimestamp.datePart}
-                      </span>{' '}
-                      <span>
-                        {formattedTimestamp.timePart}.
-                        {formattedTimestamp.subsecondPart}
-                      </span>
-                    </CopyButtonInline>
-                  ) : (
-                    <div className="inline-flex h-[18px] items-center whitespace-nowrap font-mono leading-none prose-table-numeric">
-                      --
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="px-0 py-0">
-                  <IdBadge id={event.id} />
-                </TableCell>
-                <TableCell className="px-0 py-0">
-                  <SandboxEventTypeBadge type={event.type} />
-                </TableCell>
-              </TableRow>
-            )
-          })
-        ) : (
+      {isLoading ? (
+        <VirtualizedTableLoaderBody />
+      ) : events.length > 0 ? (
+        <VirtualizedEventsBody
+          key={`${events.length}-${scrollContainer ? 'ready' : 'pending'}`}
+          events={events}
+          scrollContainer={scrollContainer}
+        />
+      ) : (
+        <TableBody>
           <TableEmptyState colSpan={3}>
             <HistoryIcon className="size-5" />
             No events found
           </TableEmptyState>
-        )}
-      </TableBody>
+        </TableBody>
+      )}
     </Table>
+  )
+}
+
+interface VirtualizedEventsBodyProps {
+  events: SandboxEventModel[]
+  scrollContainer: HTMLDivElement | null
+}
+
+const VirtualizedEventsBody = ({
+  events,
+  scrollContainer,
+}: VirtualizedEventsBodyProps) => {
+  'use no memo'
+
+  const initialRect = useMemo(() => {
+    if (!scrollContainer) return undefined
+
+    return {
+      height: scrollContainer.clientHeight,
+      width: scrollContainer.clientWidth,
+    }
+  }, [scrollContainer])
+
+  const virtualizer = useVirtualizer({
+    count: events.length,
+    estimateSize: () => ROW_HEIGHT_PX,
+    getScrollElement: () => scrollContainer,
+    initialRect,
+    overscan: VIRTUAL_OVERSCAN,
+    paddingStart: 8,
+  })
+
+  return (
+    <TableBody
+      className="grid relative min-w-full [&_tr:last-child]:border-b-0 [&_tr]:border-b-0"
+      style={{ height: `${virtualizer.getTotalSize()}px` }}
+    >
+      {virtualizer.getVirtualItems().map((virtualRow) => {
+        const event = events[virtualRow.index]
+        if (!event) return null
+
+        return (
+          <SandboxEventRow
+            key={virtualRow.key}
+            event={event}
+            virtualRow={virtualRow}
+            virtualizer={virtualizer}
+          />
+        )
+      })}
+    </TableBody>
+  )
+}
+
+interface SandboxEventRowProps {
+  event: SandboxEventModel
+  virtualRow: VirtualItem
+  virtualizer: Virtualizer<HTMLDivElement, Element>
+}
+
+const SandboxEventRow = ({
+  event,
+  virtualRow,
+  virtualizer,
+}: SandboxEventRowProps) => {
+  const formattedTimestamp = formatLocalLogStyleTimestamp(event.timestamp, {
+    includeCentiseconds: true,
+  })
+
+  return (
+    <VirtualizedTableRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+    >
+      <TableCell className="flex w-[164px] px-0 py-0 pr-4">
+        {formattedTimestamp ? (
+          <CopyButtonInline
+            value={formattedTimestamp.iso}
+            className="inline-flex h-[18px] items-center font-mono leading-none group prose-table-numeric truncate"
+          >
+            <span className="text-fg-tertiary">
+              {formattedTimestamp.datePart}
+            </span>{' '}
+            <span>
+              {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+            </span>
+          </CopyButtonInline>
+        ) : (
+          <div className="inline-flex h-[18px] items-center whitespace-nowrap font-mono leading-none prose-table-numeric">
+            --
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="flex w-[108px] px-0 py-0">
+        <IdBadge id={event.id} />
+      </TableCell>
+      <TableCell className="flex flex-1 px-0 py-0">
+        <SandboxEventTypeBadge type={event.type} />
+      </TableCell>
+    </VirtualizedTableRow>
   )
 }

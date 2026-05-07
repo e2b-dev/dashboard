@@ -1,15 +1,19 @@
 'use client'
 
-import { useMemo } from 'react'
-import LoadingLayout from '@/features/dashboard/loading-layout'
+import { useMemo, useState } from 'react'
 import { useSandboxContext } from '../context'
 import { EventTypeFilter } from './event-type-filter'
 import { SandboxEventsTable } from './table'
 import { useSandboxEventFilters } from './use-sandbox-event-filters'
 
 export const SandboxEventsView = () => {
+  'use no memo'
+
   const { sandboxLifecycle, isSandboxInfoLoading } = useSandboxContext()
   const { order, orderAsc, setOrder, setType, type } = useSandboxEventFilters()
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null
+  )
 
   const events = useMemo(() => {
     const lifecycleEvents = sandboxLifecycle?.events ?? []
@@ -24,20 +28,20 @@ export const SandboxEventsView = () => {
     return orderedEvents
   }, [orderAsc, sandboxLifecycle?.events, type])
 
-  if (isSandboxInfoLoading && !sandboxLifecycle) {
-    return <LoadingLayout />
-  }
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col sm:gap-3 overflow-hidden p-3 md:p-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 md:gap-6 overflow-hidden p-3 md:p-6">
       <EventTypeFilter type={type} onTypeChange={setType} />
-      <SandboxEventsTable
-        events={events}
-        isTimestampDescending={order === 'desc'}
-        onToggleTimestampSort={() =>
-          setOrder(order === 'desc' ? 'asc' : 'desc')
-        }
-      />
+      <div ref={setScrollContainer} className="min-h-0 flex-1 overflow-auto">
+        <SandboxEventsTable
+          events={events}
+          isLoading={isSandboxInfoLoading && !sandboxLifecycle}
+          scrollContainer={scrollContainer}
+          isTimestampDescending={order === 'desc'}
+          onToggleTimestampSort={() =>
+            setOrder(order === 'desc' ? 'asc' : 'desc')
+          }
+        />
+      </div>
     </div>
   )
 }
