@@ -77,7 +77,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
   }
 
   return (
-    <>
+    <div className={cn(rowContentClassName, 'min-w-0 gap-3')}>
       <div
         aria-hidden="true"
         className="border-stroke flex size-8 shrink-0 items-center justify-center border"
@@ -99,12 +99,12 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
           <span className="truncate">{url}</span>
         </Button>
       </div>
-    </>
+    </div>
   )
 }
 
-const rowCellClassName = 'h-[50px] p-0 align-top'
-const rowContentClassName = 'flex h-11 items-center'
+const rowCellClassName = 'p-0 py-1.5 align-middle'
+const rowContentClassName = 'flex items-center'
 const actionIconClassName = 'size-4 text-fg-tertiary'
 
 const getWebhookEventLabel = (event: string): string => {
@@ -202,19 +202,13 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
     : '-'
 
   return (
-    <TableRow className={cn('h-[50px] bg-bg hover:bg-transparent', className)}>
-      <TableCell className={cn(rowCellClassName, 'max-w-0 pr-12')}>
-        <div className={cn(rowContentClassName, 'min-w-0 gap-3')}>
-          <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
-        </div>
+    <TableRow>
+      <TableCell className={cn(rowCellClassName, 'max-w-0')}>
+        <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
       </TableCell>
 
-      <TableCell
-        className={cn(rowCellClassName, 'w-[216px] max-w-[216px] pr-12')}
-      >
-        <div
-          className={cn(rowContentClassName, 'w-[216px] gap-1 overflow-hidden')}
-        >
+      <TableCell className={cn(rowCellClassName, 'w-[216px]')}>
+        <div className="flex items-center gap-1">
           <WebhookEventBadges events={webhook.events} />
         </div>
       </TableCell>
@@ -229,9 +223,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
       </TableCell>
 
       <TableCell className={cn(rowCellClassName, 'w-10 pl-6 text-right')}>
-        <div className={cn(rowContentClassName, 'justify-end')}>
-          <WebhookRowActions webhook={webhook} />
-        </div>
+        <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>
   )

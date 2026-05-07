@@ -18,7 +18,7 @@ interface WebhooksTableProps {
 }
 
 const headerCellClassName =
-  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
+  'h-[17px] p-0 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
 
 const WebhooksTable = ({
   webhooks,
@@ -50,8 +50,10 @@ const WebhooksTable = ({
       </TableHeader>
       <TableBody
         className={cn(
-          webhooks.length > 0 &&
-            '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke/80'
+          webhooks.length > 0 && [
+            '[&_tr]:border-stroke',
+            '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke',
+          ]
         )}
       >
         {webhooks.length === 0 ? (
