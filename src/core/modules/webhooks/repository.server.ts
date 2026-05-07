@@ -68,34 +68,68 @@ export function createWebhooksRepository(
       return ok(response.data ?? [])
     },
     async upsertWebhook(input) {
-      const response =
-        input.mode === 'update'
-          ? await deps.infraClient.PATCH('/events/webhooks/{webhookID}', {
-              headers: {
-                ...deps.authHeaders(scope.accessToken, scope.teamId),
-              },
-              params: {
-                path: { webhookID: input.webhookId ?? '' },
-              },
-              body: {
-                name: input.name,
-                url: input.url,
-                events: input.events,
-                enabled: input.enabled,
-              },
-            })
-          : await deps.infraClient.POST('/events/webhooks', {
-              headers: {
-                ...deps.authHeaders(scope.accessToken, scope.teamId),
-              },
-              body: {
-                name: input.name,
-                url: input.url,
-                events: input.events,
-                enabled: input.enabled,
-                signatureSecret: input.signatureSecret ?? '',
-              },
-            })
+      if (input.mode === 'update') {
+        if (!input.webhookId) {
+          return err(
+            repoErrorFromHttp(
+              400,
+              'webhookId is required when updating a webhook'
+            )
+          )
+        }
+
+        const response = await deps.infraClient.PATCH(
+          '/events/webhooks/{webhookID}',
+          {
+            headers: {
+              ...deps.authHeaders(scope.accessToken, scope.teamId),
+            },
+            params: {
+              path: { webhookID: input.webhookId },
+            },
+            body: {
+              name: input.name,
+              url: input.url,
+              events: input.events,
+              enabled: input.enabled,
+            },
+          }
+        )
+
+        if (!response.response.ok || response.error) {
+          return err(
+            repoErrorFromHttp(
+              response.response.status,
+              response.error?.message ?? 'Failed to upsert webhook',
+              response.error
+            )
+          )
+        }
+
+        return ok(undefined)
+      }
+
+      if (!input.signatureSecret) {
+        return err(
+          repoErrorFromHttp(
+            400,
+            'signatureSecret is required when creating a webhook'
+          )
+        )
+      }
+
+      const response = await deps.infraClient.POST('/events/webhooks', {
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+        body: {
+          name: input.name,
+          url: input.url,
+          events: input.events,
+          enabled: input.enabled,
+          signatureSecret: input.signatureSecret,
+        },
+      })
 
       if (!response.response.ok || response.error) {
         return err(

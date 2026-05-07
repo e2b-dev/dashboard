@@ -76,7 +76,7 @@ export const DeleteWebhookDialog = ({
           <DialogDescription>
             You will no longer receive events at
             <br />
-            {webhook.url}
+            <span className="break-all">{webhook.url}</span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="shrink-0 gap-5 sm:gap-5">

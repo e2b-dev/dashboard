@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 
 const WebhookUrlSchema = z.httpUrl('Must be a valid URL').trim()
 const WebhookSecretSchema = z
@@ -12,22 +13,28 @@ export const UpsertWebhookInputSchema = z
     webhookId: z.uuid().optional(),
     name: z.string().min(1, 'Name is required').trim(),
     url: WebhookUrlSchema,
-    events: z.array(z.string().min(1, 'At least one event is required')),
+    events: z
+      .array(SandboxLifecycleEventTypeSchema)
+      .min(1, 'At least one event is required'),
     signatureSecret: WebhookSecretSchema.optional(),
     enabled: z.boolean().optional().default(true),
   })
-  .refine(
-    (data) => {
-      if (data.mode === 'create') {
-        return !!data.signatureSecret
-      }
-      return true
-    },
-    {
-      message: 'Secret is required when creating a webhook',
-      path: ['signatureSecret'],
+  .superRefine((data, ctx) => {
+    if (data.mode === 'create' && !data.signatureSecret) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Secret is required when creating a webhook',
+        path: ['signatureSecret'],
+      })
     }
-  )
+    if (data.mode === 'update' && !data.webhookId) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'webhookId is required when updating a webhook',
+        path: ['webhookId'],
+      })
+    }
+  })
 
 export const DeleteWebhookInputSchema = z.object({
   webhookId: z.uuid(),
