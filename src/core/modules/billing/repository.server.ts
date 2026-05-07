@@ -264,7 +264,7 @@ export function createBillingRepository(
     },
     async getCustomerSession() {
       const res = await fetch(
-        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods/customer-session`,
+        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods-session`,
         {
           method: 'POST',
           headers: {
