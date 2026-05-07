@@ -1,11 +1,8 @@
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import { INCLUDE_ARGUS } from '@/configs/flags'
 import { Page } from '@/features/dashboard/layouts/page'
-import LoadingLayout from '@/features/dashboard/loading-layout'
 import { WebhooksPageContent } from '@/features/dashboard/settings/webhooks/webhooks-page-content'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
-import { CatchErrorBoundary } from '@/ui/error'
 
 interface WebhooksPageProps {
   params: Promise<{
@@ -25,11 +22,7 @@ export default async function WebhooksPage({ params }: WebhooksPageProps) {
   return (
     <HydrateClient>
       <Page>
-        <CatchErrorBoundary>
-          <Suspense fallback={<LoadingLayout />}>
-            <WebhooksPageContent teamSlug={teamSlug} />
-          </Suspense>
-        </CatchErrorBoundary>
+        <WebhooksPageContent />
       </Page>
     </HydrateClient>
   )

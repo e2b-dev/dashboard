@@ -6,6 +6,7 @@ import {
   TableEmptyState,
   TableHead,
   TableHeader,
+  TableLoadingState,
   TableRow,
 } from '@/ui/primitives/table'
 import { WebhookTableRow } from './table-row'
@@ -14,6 +15,7 @@ import type { Webhook } from './types'
 interface WebhooksTableProps {
   webhooks: Webhook[]
   totalWebhookCount: number
+  isLoading?: boolean
   className?: string
 }
 
@@ -23,6 +25,7 @@ const headerCellClassName =
 export const WebhooksTable = ({
   webhooks,
   totalWebhookCount,
+  isLoading = false,
   className,
 }: WebhooksTableProps) => {
   const hasNoWebhooks = totalWebhookCount === 0
@@ -56,7 +59,9 @@ export const WebhooksTable = ({
           ]
         )}
       >
-        {webhooks.length === 0 ? (
+        {isLoading ? (
+          <TableLoadingState colSpan={4} label="Loading webhooks" />
+        ) : webhooks.length === 0 ? (
           <TableEmptyState colSpan={4}>
             <WebhookIcon
               aria-hidden
