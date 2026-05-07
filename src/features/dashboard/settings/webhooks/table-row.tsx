@@ -20,7 +20,7 @@ import {
 } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../../context'
-import { TeamAvatar } from '../../sidebar/team-avatar'
+import { UserAvatar } from '../../shared'
 import { WEBHOOK_EVENT_LABELS, WEBHOOK_EVENTS } from './constants'
 import WebhookDeleteDialog from './delete-dialog'
 import WebhookEditSecretDialog from './edit-secret-dialog'
@@ -135,13 +135,7 @@ export const WebhookTableRow = ({ webhook, className }: WebhookRowProps) => {
           <p className="w-[92px] text-left text-fg-tertiary prose-body">
             {createdAt}
           </p>
-          <TeamAvatar
-            team={team}
-            classNames={{
-              root: 'size-5 shrink-0 border border-white/10',
-              image: 'size-full',
-            }}
-          />
+          <UserAvatar label={team.name} />
         </div>
       </TableCell>
 
