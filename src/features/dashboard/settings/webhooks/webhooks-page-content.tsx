@@ -127,7 +127,6 @@ export const WebhooksPageContent = ({
         <Suspense
           fallback={
             <WebhooksSearchFieldShell
-              disabled
               onChange={setQuery}
               placeholder="Search by name, URL, or event"
               value={query}
