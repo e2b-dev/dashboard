@@ -44,7 +44,7 @@ const TeamBlockedIndicatorContent = ({
               </Link>
             ) : onDialogAction ? (
               <Button
-                className="text-accent-error-highlight underline hover:text-accent-error-highlight text-xs! font-normal!"
+                className="text-accent-error-highlight underline hover:text-accent-error-highlight uppercase text-xs! font-normal! md:prose-label!"
                 type="button"
                 variant="quaternary"
                 size="none"
