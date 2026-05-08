@@ -2,11 +2,11 @@
 
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
+  Children,
+  isValidElement,
   memo,
   type ReactElement,
   type ReactNode,
-  useCallback,
-  useMemo,
 } from 'react'
 import { cn } from '@/lib/utils'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
@@ -17,12 +17,10 @@ type DashboardTabElement = ReactElement<DashboardTabProps, typeof DashboardTab>
 export interface DashboardTabsProps {
   layoutKey: string
   type: 'query' | 'path'
-  children: Array<DashboardTabElement> | DashboardTabElement
+  children: ReactNode
   className?: string
   headerAccessory?: ReactNode
 }
-
-// COMPONENT
 
 function DashboardTabsComponent({
   layoutKey,
@@ -34,61 +32,32 @@ function DashboardTabsComponent({
   const searchParams = useSearchParams()
   const pathname = usePathname()
 
-  const tabChildren = useMemo(
-    () => (Array.isArray(children) ? children : [children]),
-    [children]
-  )
-
-  const tabs = useMemo(() => {
-    return tabChildren.map((child) => ({
+  const tabs = Children.toArray(children)
+    .filter(isDashboardTabElement)
+    .map((child) => ({
       id: child.props.id,
       label: child.props.label,
       icon: child.props.icon,
+      content: child,
     }))
-  }, [tabChildren])
 
-  const basePath = useMemo(() => {
-    if (type === 'query') return pathname
-    return inferBasePathForPathTabs(pathname, tabs)
-  }, [type, pathname, tabs])
+  if (tabs.length === 0) {
+    return null
+  }
 
-  const hrefForId = useCallback(
-    (id: string) => {
-      return type === 'query' ? `${basePath}?tab=${id}` : `${basePath}/${id}`
-    },
-    [type, basePath]
-  )
+  const defaultTabId = tabs[0].id
+  const tabIds = new Set(tabs.map((tab) => tab.id))
+  const requestedTabId =
+    type === 'query' ? searchParams.get('tab') : pathname.split('/').pop()
+  const activeTabId =
+    requestedTabId && tabIds.has(requestedTabId) ? requestedTabId : defaultTabId
+  const basePath =
+    type === 'query' ? pathname : trimActiveTabSegment(pathname, tabIds)
 
-  const activeTabId = useMemo(() => {
-    const defaultTabId = tabs[0]?.id
-    if (!defaultTabId) {
-      return undefined
-    }
+  const activeTab =
+    tabs.find((tab) => tab.id === activeTabId)?.content ?? tabs[0].content
 
-    const requestedTabId =
-      type === 'query'
-        ? searchParams.get('tab') || defaultTabId
-        : tabs.find((tab) => pathname.endsWith(tab.id))?.id || defaultTabId
-
-    return tabs.some((tab) => tab.id === requestedTabId)
-      ? requestedTabId
-      : defaultTabId
-  }, [type, tabs, searchParams, pathname])
-
-  const tabsWithHrefs = useMemo(
-    () => tabs.map((tab) => ({ ...tab, href: hrefForId(tab.id) })),
-    [tabs, hrefForId]
-  )
-
-  const activeTab = useMemo(
-    () =>
-      tabChildren.find((child) => child.props.id === activeTabId) ||
-      tabChildren[0] ||
-      null,
-    [tabChildren, activeTabId]
-  )
-
-  const tabTriggers = tabsWithHrefs.map((tab) => (
+  const tabTriggers = tabs.map((tab) => (
     <TabsTrigger
       key={tab.id}
       layoutkey={layoutKey}
@@ -96,7 +65,9 @@ function DashboardTabsComponent({
       className="w-fit flex-none"
       asChild
     >
-      <HoverPrefetchLink href={tab.href}>
+      <HoverPrefetchLink
+        href={getTabHref(tab.id, type, basePath, searchParams)}
+      >
         {tab.icon}
         {tab.label}
       </HoverPrefetchLink>
@@ -149,21 +120,42 @@ export function DashboardTab(props: DashboardTabProps) {
   )
 }
 
-// HELPERS
+function isDashboardTabElement(child: ReactNode): child is DashboardTabElement {
+  if (!isValidElement(child)) {
+    return false
+  }
 
-/**
- * Infers the base path for path-based tabs by checking if the current
- * pathname ends with a tab ID. If it does, removes that segment to get the base.
- */
-function inferBasePathForPathTabs(
-  pathname: string,
-  tabs: Array<{ id: string }>
-): string {
+  const props = child.props as Partial<DashboardTabProps> | null
+
+  return Boolean(
+    props && typeof props.id === 'string' && typeof props.label === 'string'
+  )
+}
+
+function trimActiveTabSegment(pathname: string, tabIds: Set<string>): string {
   const pathSegments = pathname.split('/')
-  const lastSegment = pathSegments[pathSegments.length - 1]
+  const lastSegment = pathSegments[pathSegments.length - 1] ?? ''
+  if (!tabIds.has(lastSegment)) {
+    return pathname
+  }
 
-  // if last segment is a tab id, remove it to get base path
-  const isTabSegment = tabs.some((tab) => tab.id === lastSegment)
+  const basePath = pathSegments.slice(0, -1).join('/')
+  return basePath || '/'
+}
 
-  return isTabSegment ? pathSegments.slice(0, -1).join('/') : pathname
+function getTabHref(
+  id: string,
+  type: DashboardTabsProps['type'],
+  basePath: string,
+  searchParams: ReturnType<typeof useSearchParams>
+): string {
+  if (type === 'path') {
+    return `${basePath}/${id}`
+  }
+
+  const nextSearchParams = new URLSearchParams(searchParams.toString())
+  nextSearchParams.set('tab', id)
+  const query = nextSearchParams.toString()
+
+  return query ? `${basePath}?${query}` : basePath
 }
