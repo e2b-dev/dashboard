@@ -6,7 +6,7 @@ import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
 
-export const TAB_URL_MAP: Record<string, (teamSlug: string) => string> = {
+const TAB_URL_MAP: Record<string, (teamSlug: string) => string> = {
   sandboxes: (teamSlug) => PROTECTED_URLS.SANDBOXES(teamSlug),
   templates: (teamSlug) => PROTECTED_URLS.TEMPLATES(teamSlug),
   usage: (teamSlug) => PROTECTED_URLS.USAGE(teamSlug),
