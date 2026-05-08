@@ -9,7 +9,10 @@ interface DashboardRouteErrorProps {
   reset: () => void
 }
 
-export function DashboardRouteError({ error, reset }: DashboardRouteErrorProps) {
+export function DashboardRouteError({
+  error,
+  reset,
+}: DashboardRouteErrorProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
