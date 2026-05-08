@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef } from 'react'
 import ErrorBoundary from '@/ui/error'
 
@@ -13,6 +13,7 @@ export function DashboardRouteError({
   error,
   reset,
 }: DashboardRouteErrorProps) {
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -34,7 +35,10 @@ export function DashboardRouteError({
     <ErrorBoundary
       description="Sorry, something went wrong with this page."
       error={error}
-      onRetry={reset}
+      onRetry={() => {
+        router.refresh()
+        reset()
+      }}
     />
   )
 }
