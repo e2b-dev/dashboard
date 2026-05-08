@@ -14,6 +14,7 @@ import {
 import { IdBadge } from '@/features/dashboard/shared'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
+import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
 import { ArrowDownIcon, HistoryIcon } from '@/ui/primitives/icons'
 import {
@@ -48,7 +49,7 @@ export const SandboxEventsTable = ({
   'use no memo'
 
   return (
-    <Table className="grid min-w-[360px]">
+    <Table className="grid min-w-[560px]">
       <TableHeader className="grid sticky top-0 z-1 bg-bg">
         <TableRow className="flex min-w-full">
           <TableHead
@@ -70,10 +71,15 @@ export const SandboxEventsTable = ({
               />
             </Button>
           </TableHead>
-          <TableHead className="flex w-[108px] px-0 h-min pb-3 pr-4">
+          <TableHead className="flex w-[140px] px-0 h-min pb-3 pr-4">
             ID
           </TableHead>
-          <TableHead className="flex flex-1 px-0 h-min pb-3">Event</TableHead>
+          <TableHead className="flex w-[112px] px-0 h-min pb-3">
+            Event
+          </TableHead>
+          <TableHead className="flex flex-1 min-w-0 px-0 h-min pb-3">
+            Data
+          </TableHead>
         </TableRow>
       </TableHeader>
 
@@ -87,7 +93,7 @@ export const SandboxEventsTable = ({
         />
       ) : (
         <TableBody>
-          <TableEmptyState colSpan={3}>
+          <TableEmptyState colSpan={4}>
             <HistoryIcon className="size-5" />
             No events found
           </TableEmptyState>
@@ -162,6 +168,10 @@ const SandboxEventRow = ({
   const formattedTimestamp = formatLocalLogStyleTimestamp(event.timestamp, {
     includeCentiseconds: true,
   })
+  const eventDataValue = useMemo(
+    () => JSON.stringify(event.eventData ?? {}),
+    [event.eventData]
+  )
 
   return (
     <VirtualizedTableRow
@@ -169,7 +179,7 @@ const SandboxEventRow = ({
       virtualizer={virtualizer}
       height={ROW_HEIGHT_PX}
     >
-      <TableCell className="flex w-[164px] px-0 py-0 pr-4">
+      <TableCell className="flex w-[164px] items-center px-0 py-0 pr-4">
         {formattedTimestamp ? (
           <CopyButtonInline
             value={formattedTimestamp.iso}
@@ -188,11 +198,25 @@ const SandboxEventRow = ({
           </div>
         )}
       </TableCell>
-      <TableCell className="flex w-[108px] px-0 py-0">
+      <TableCell className="flex w-[140px] items-center px-0 py-0 pr-4">
         <IdBadge id={event.id} />
       </TableCell>
-      <TableCell className="flex flex-1 px-0 py-0">
+      <TableCell className="flex w-[112px] items-center px-0 py-0 pr-4">
         <SandboxEventTypeBadge type={event.type} />
+      </TableCell>
+      <TableCell className="flex flex-1 min-w-0 items-center overflow-hidden px-0 py-0">
+        {!event.eventData || eventDataValue.trim() === '{}' ? (
+          <span className="text-fg-tertiary block w-full max-w-[220px] truncate">
+            n/a
+          </span>
+        ) : (
+          <JsonPopover
+            className="text-fg-tertiary hover:text-fg hover:underline min-w-0 w-full max-w-[220px] normal-case"
+            json={event.eventData}
+          >
+            <span className="block w-full truncate">{eventDataValue}</span>
+          </JsonPopover>
+        )}
       </TableCell>
     </VirtualizedTableRow>
   )
