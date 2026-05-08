@@ -2,12 +2,8 @@ import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
 import { ListIcon, TrendIcon } from '@/ui/primitives/icons'
 
 export default function SandboxesLayout({
-  list,
-  monitoring,
-}: LayoutProps<'/dashboard/[teamSlug]/sandboxes'> & {
-  list: React.ReactNode
-  monitoring: React.ReactNode
-}) {
+  children,
+}: LayoutProps<'/dashboard/[teamSlug]/sandboxes'>) {
   return (
     <DashboardTabs
       type="query"
@@ -19,14 +15,14 @@ export default function SandboxesLayout({
         label="Monitoring"
         icon={<TrendIcon className="size-4" />}
       >
-        {monitoring}
+        {children}
       </DashboardTab>
       <DashboardTab
         id="list"
         label="List"
         icon={<ListIcon className="size-4" />}
       >
-        {list}
+        {children}
       </DashboardTab>
     </DashboardTabs>
   )

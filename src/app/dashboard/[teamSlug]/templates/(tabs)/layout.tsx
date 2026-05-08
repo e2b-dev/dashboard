@@ -2,12 +2,8 @@ import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
 import { BuildIcon, ListIcon } from '@/ui/primitives/icons'
 
 export default function TemplatesLayout({
-  list,
-  builds,
-}: LayoutProps<'/dashboard/[teamSlug]/templates'> & {
-  list: React.ReactNode
-  builds: React.ReactNode
-}) {
+  children,
+}: LayoutProps<'/dashboard/[teamSlug]/templates'>) {
   return (
     <DashboardTabs
       type="query"
@@ -19,14 +15,14 @@ export default function TemplatesLayout({
         label="List"
         icon={<ListIcon className="size-4" />}
       >
-        {list}
+        {children}
       </DashboardTab>
       <DashboardTab
         id="builds"
         label="Builds"
         icon={<BuildIcon className="size-4" />}
       >
-        {builds}
+        {children}
       </DashboardTab>
     </DashboardTabs>
   )

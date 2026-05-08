@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
   memo,
@@ -10,6 +9,7 @@ import {
   useMemo,
 } from 'react'
 import { cn } from '@/lib/utils'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 
 type DashboardTabElement = ReactElement<DashboardTabProps, typeof DashboardTab>
@@ -34,14 +34,18 @@ function DashboardTabsComponent({
   const searchParams = useSearchParams()
   const pathname = usePathname()
 
+  const tabChildren = useMemo(
+    () => (Array.isArray(children) ? children : [children]),
+    [children]
+  )
+
   const tabs = useMemo(() => {
-    const tabChildren = Array.isArray(children) ? children : [children]
     return tabChildren.map((child) => ({
       id: child.props.id,
       label: child.props.label,
       icon: child.props.icon,
     }))
-  }, [children])
+  }, [tabChildren])
 
   const basePath = useMemo(() => {
     if (type === 'query') return pathname
@@ -56,16 +60,32 @@ function DashboardTabsComponent({
   )
 
   const activeTabId = useMemo(() => {
-    if (type === 'query') {
-      const defaultTabId = tabs[0]?.id
-      return searchParams.get('tab') || defaultTabId
+    const defaultTabId = tabs[0]?.id
+    if (!defaultTabId) {
+      return undefined
     }
-    return tabs.find((tab) => pathname.endsWith(tab.id))?.id || tabs[0]?.id
+
+    const requestedTabId =
+      type === 'query'
+        ? searchParams.get('tab') || defaultTabId
+        : tabs.find((tab) => pathname.endsWith(tab.id))?.id || defaultTabId
+
+    return tabs.some((tab) => tab.id === requestedTabId)
+      ? requestedTabId
+      : defaultTabId
   }, [type, tabs, searchParams, pathname])
 
   const tabsWithHrefs = useMemo(
     () => tabs.map((tab) => ({ ...tab, href: hrefForId(tab.id) })),
     [tabs, hrefForId]
+  )
+
+  const activeTab = useMemo(
+    () =>
+      tabChildren.find((child) => child.props.id === activeTabId) ||
+      tabChildren[0] ||
+      null,
+    [tabChildren, activeTabId]
   )
 
   const tabTriggers = tabsWithHrefs.map((tab) => (
@@ -76,10 +96,10 @@ function DashboardTabsComponent({
       className="w-fit flex-none"
       asChild
     >
-      <Link href={tab.href} prefetch>
+      <HoverPrefetchLink href={tab.href}>
         {tab.icon}
         {tab.label}
-      </Link>
+      </HoverPrefetchLink>
     </TabsTrigger>
   ))
 
@@ -103,7 +123,7 @@ function DashboardTabsComponent({
         </TabsList>
       )}
 
-      {children}
+      {activeTab}
     </Tabs>
   )
 }
