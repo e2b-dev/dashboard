@@ -66,7 +66,7 @@ export const webhooksRouter = createTRPCRouter({
             error: result.error,
             team_id: ctx.teamId,
             user_id: ctx.session.user.id,
-            context: { mode, name, url, events },
+            context: { mode, name, events },
           },
           `Failed to ${mode} webhook: ${result.error.status}: ${result.error.message}`
         )
