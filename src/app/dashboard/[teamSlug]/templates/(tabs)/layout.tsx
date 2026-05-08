@@ -1,29 +1,33 @@
-import { DashboardTab, DashboardTabs } from '@/ui/dashboard-tabs'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { DashboardTabsList } from '@/ui/dashboard-tabs'
 import { BuildIcon, ListIcon } from '@/ui/primitives/icons'
 
-export default function TemplatesLayout({
+export default async function TemplatesTabsLayout({
   children,
+  params,
 }: LayoutProps<'/dashboard/[teamSlug]/templates'>) {
+  const { teamSlug } = await params
+
   return (
-    <DashboardTabs
-      type="query"
-      layoutKey="tabs-indicator-templates"
-      className="pt-2 flex-1 md:pt-3"
-    >
-      <DashboardTab
-        id="list"
-        label="List"
-        icon={<ListIcon className="size-4" />}
-      >
-        {children}
-      </DashboardTab>
-      <DashboardTab
-        id="builds"
-        label="Builds"
-        icon={<BuildIcon className="size-4" />}
-      >
-        {children}
-      </DashboardTab>
-    </DashboardTabs>
+    <div className="pt-2 flex-1 md:pt-3 min-h-0 h-full flex flex-col">
+      <DashboardTabsList
+        layoutKey="tabs-indicator-templates"
+        tabs={[
+          {
+            id: 'list',
+            label: 'List',
+            href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
+            icon: <ListIcon className="size-4" />,
+          },
+          {
+            id: 'builds',
+            label: 'Builds',
+            href: PROTECTED_URLS.TEMPLATES_BUILDS(teamSlug),
+            icon: <BuildIcon className="size-4" />,
+          },
+        ]}
+      />
+      {children}
+    </div>
   )
 }

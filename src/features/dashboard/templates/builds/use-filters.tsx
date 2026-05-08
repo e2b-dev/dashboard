@@ -3,8 +3,8 @@
 import { useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
+import { INITIAL_BUILD_STATUSES } from '@/core/modules/builds/constants'
 import type { BuildStatus } from '@/core/modules/builds/models'
-import { INITIAL_BUILD_STATUSES } from './constants'
 import { templateBuildsFilterParams } from './filter-params'
 
 export default function useFilters() {
