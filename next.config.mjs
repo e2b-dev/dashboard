@@ -1,5 +1,20 @@
 // NOTE: related to src/configs/rewrites.ts
+import path from 'node:path'
+
 export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
+
+const browserStub = (file) => path.resolve(process.cwd(), 'stubs', file)
+
+const browserNodeModuleStubs = {
+  crypto: browserStub('crypto.ts'),
+  fs: browserStub('fs.ts'),
+  'fs/promises': browserStub('fs-promises.ts'),
+  path: browserStub('path.ts'),
+  'node:crypto': browserStub('crypto.ts'),
+  'node:fs': browserStub('fs.ts'),
+  'node:fs/promises': browserStub('fs-promises.ts'),
+  'node:path': browserStub('path.ts'),
+}
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -15,13 +30,31 @@ const config = {
   },
   turbopack: {
     resolveAlias: {
-      // Stub Node.js modules for browser builds
-      // e2b package bundles these packages. when dealing with browser chunks,
-      // we need to stub these packages for builds.
+      crypto: { browser: './stubs/crypto.ts' },
       fs: { browser: './stubs/fs.ts' },
+      'fs/promises': { browser: './stubs/fs-promises.ts' },
+      path: { browser: './stubs/path.ts' },
+      'node:crypto': { browser: './stubs/crypto.ts' },
       'node:fs': { browser: './stubs/fs.ts' },
       'node:fs/promises': { browser: './stubs/fs-promises.ts' },
+      'node:path': { browser: './stubs/path.ts' },
     },
+  },
+  webpack: (webpackConfig, { isServer, webpack }) => {
+    if (!isServer) {
+      webpackConfig.resolve.alias = {
+        ...webpackConfig.resolve.alias,
+        ...browserNodeModuleStubs,
+      }
+
+      webpackConfig.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource) => {
+          resource.request = resource.request.replace(/^node:/, '')
+        })
+      )
+    }
+
+    return webpackConfig
   },
   logging: {
     fetches: {

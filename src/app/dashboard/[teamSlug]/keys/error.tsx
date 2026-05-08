@@ -2,7 +2,7 @@
 
 import { DashboardRouteError } from '@/features/dashboard/shared/route-error'
 
-export default function DashboardError({
+export default function KeysPageError({
   error,
   reset,
 }: {

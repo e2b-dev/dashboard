@@ -74,7 +74,8 @@ vi.mock('@/lib/utils/cookies', () => ({
 }))
 
 // import the route after mocks are set up
-import { GET, TAB_URL_MAP } from '@/app/dashboard/route'
+import { GET } from '@/app/dashboard/route'
+import { TAB_URL_MAP } from '@/configs/dashboard-tab-url-map'
 
 describe('Dashboard Route - Team Resolution Integration Tests', () => {
   beforeEach(() => {
