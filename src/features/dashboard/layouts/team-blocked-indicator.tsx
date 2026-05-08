@@ -174,6 +174,16 @@ export default function TeamBlockedIndicator() {
       reason.includes(blockedReason)
     ) ?? null
 
+  useEffect(() => {
+    if (team.isBlocked) return
+    if (typeof window === 'undefined') return
+
+    for (const blockedReason of Object.values(TEAM_BLOCKED_REASONS)) {
+      const key = getBlockedDialogStorageKey(team.slug, blockedReason)
+      if (key) window.sessionStorage.removeItem(key)
+    }
+  }, [team.isBlocked, team.slug])
+
   if (!team.isBlocked) return null
 
   if (!blockedReasonDialog)
