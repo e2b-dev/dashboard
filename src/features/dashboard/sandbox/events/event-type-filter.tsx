@@ -7,59 +7,72 @@ import {
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { SandboxEventTypeBadge } from './event-type-badge'
 import { SANDBOX_EVENT_TYPE_MAP } from './event-type-map'
 
-const ALL_EVENT_TYPES_VALUE = 'all'
+const getTriggerLabel = (selected: SandboxLifecycleEventType[]) => {
+  if (selected.length === SandboxLifecycleEventTypeSchema.options.length)
+    return 'All'
+  if (selected.length === 0) return 'None'
+  const [first] = selected
+  if (selected.length === 1 && first) return SANDBOX_EVENT_TYPE_MAP[first].label
+  return `${selected.length}/${SandboxLifecycleEventTypeSchema.options.length}`
+}
 
 interface EventTypeFilterProps {
-  type: SandboxLifecycleEventType | null
-  onTypeChange: (type: SandboxLifecycleEventType | null) => void
+  types: SandboxLifecycleEventType[]
+  onTypesChange: (types: SandboxLifecycleEventType[]) => void
 }
 
 export const EventTypeFilter = ({
-  type,
-  onTypeChange,
+  types,
+  onTypesChange,
 }: EventTypeFilterProps) => {
+  const isAllSelected =
+    types.length === SandboxLifecycleEventTypeSchema.options.length
+
+  const toggleType = (type: SandboxLifecycleEventType) => {
+    const next = types.includes(type)
+      ? types.filter((t) => t !== type)
+      : [...types, type]
+    onTypesChange(next)
+  }
+
+  const toggleAll = (checked: boolean) => {
+    onTypesChange(checked ? [...SandboxLifecycleEventTypeSchema.options] : [])
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" className="font-sans w-min normal-case">
-          Events · {type ? SANDBOX_EVENT_TYPE_MAP[type].label : 'All'}
+          Events · {getTriggerLabel(types)}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuRadioGroup
-          value={type ?? ALL_EVENT_TYPES_VALUE}
-          onValueChange={(value) => {
-            if (value === ALL_EVENT_TYPES_VALUE) {
-              onTypeChange(null)
-              return
-            }
-
-            const parsed = SandboxLifecycleEventTypeSchema.safeParse(value)
-            if (!parsed.success) {
-              onTypeChange(null)
-              return
-            }
-
-            onTypeChange(parsed.data)
-          }}
+        <DropdownMenuCheckboxItem
+          checked={isAllSelected}
+          onCheckedChange={toggleAll}
+          onSelect={(e) => e.preventDefault()}
         >
-          <DropdownMenuRadioItem value={ALL_EVENT_TYPES_VALUE}>
-            All events
-          </DropdownMenuRadioItem>
-          {SandboxLifecycleEventTypeSchema.options.map((type) => (
-            <DropdownMenuRadioItem key={type} value={type}>
-              <SandboxEventTypeBadge type={type} />
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+          All events
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        {SandboxLifecycleEventTypeSchema.options.map((type) => (
+          <DropdownMenuCheckboxItem
+            key={type}
+            checked={types.includes(type)}
+            onCheckedChange={() => toggleType(type)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            <SandboxEventTypeBadge type={type} />
+          </DropdownMenuCheckboxItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )
