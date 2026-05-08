@@ -41,11 +41,12 @@ function DashboardTabsComponent({
       content: child,
     }))
 
-  if (tabs.length === 0) {
+  const firstTab = tabs[0]
+  if (!firstTab) {
     return null
   }
 
-  const defaultTabId = tabs[0].id
+  const defaultTabId = firstTab.id
   const tabIds = new Set(tabs.map((tab) => tab.id))
   const requestedTabId =
     type === 'query' ? searchParams.get('tab') : pathname.split('/').pop()
@@ -55,7 +56,7 @@ function DashboardTabsComponent({
     type === 'query' ? pathname : trimActiveTabSegment(pathname, tabIds)
 
   const activeTab =
-    tabs.find((tab) => tab.id === activeTabId)?.content ?? tabs[0].content
+    tabs.find((tab) => tab.id === activeTabId)?.content ?? firstTab.content
 
   const tabTriggers = tabs.map((tab) => (
     <TabsTrigger
