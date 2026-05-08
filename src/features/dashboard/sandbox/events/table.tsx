@@ -53,7 +53,7 @@ export const SandboxEventsTable = ({
       <TableHeader className="grid sticky top-0 z-1 bg-bg">
         <TableRow className="flex min-w-full">
           <TableHead
-            className="flex w-[164px] px-0 h-min pb-3 pr-4 text-fg"
+            className="flex w-[174px] px-0 h-min pb-3 pr-4 text-fg"
             data-state="selected"
           >
             <Button
@@ -71,15 +71,13 @@ export const SandboxEventsTable = ({
               />
             </Button>
           </TableHead>
-          <TableHead className="flex w-[140px] px-0 h-min pb-3 pr-4">
+          <TableHead className="flex w-[120px] px-0 h-min pb-3 pr-4">
             ID
           </TableHead>
           <TableHead className="flex w-[112px] px-0 h-min pb-3">
             Event
           </TableHead>
-          <TableHead className="flex flex-1 min-w-0 px-0 h-min pb-3">
-            Data
-          </TableHead>
+          <TableHead className="flex flex-1 px-0 h-min pb-3">Data</TableHead>
         </TableRow>
       </TableHeader>
 
@@ -179,7 +177,7 @@ const SandboxEventRow = ({
       virtualizer={virtualizer}
       height={ROW_HEIGHT_PX}
     >
-      <TableCell className="flex w-[164px] items-center px-0 py-0 pr-4">
+      <TableCell className="flex w-[174px] items-center px-0 py-0 pr-4">
         {formattedTimestamp ? (
           <CopyButtonInline
             value={formattedTimestamp.iso}
@@ -198,7 +196,7 @@ const SandboxEventRow = ({
           </div>
         )}
       </TableCell>
-      <TableCell className="flex w-[140px] items-center px-0 py-0 pr-4">
+      <TableCell className="flex w-[120px] items-center px-0 py-0 pr-4">
         <IdBadge id={event.id} />
       </TableCell>
       <TableCell className="flex w-[112px] items-center px-0 py-0 pr-4">
@@ -211,10 +209,12 @@ const SandboxEventRow = ({
           </span>
         ) : (
           <JsonPopover
-            className="text-fg-tertiary hover:text-fg hover:underline min-w-0 w-full max-w-[220px] normal-case"
+            className="text-fg-tertiary hover:text-fg hover:underline justify-start text-left min-w-0 w-full max-w-[220px] normal-case"
             json={event.eventData}
           >
-            <span className="block w-full truncate">{eventDataValue}</span>
+            <span className="block w-full truncate text-left">
+              {eventDataValue}
+            </span>
           </JsonPopover>
         )}
       </TableCell>

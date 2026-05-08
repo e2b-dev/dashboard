@@ -1,8 +1,4 @@
-import {
-  createParser,
-  parseAsArrayOf,
-  parseAsStringEnum,
-} from 'nuqs/server'
+import { createParser, parseAsArrayOf, parseAsStringEnum } from 'nuqs/server'
 import {
   SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX,
   type SandboxLifecycleEventType,
