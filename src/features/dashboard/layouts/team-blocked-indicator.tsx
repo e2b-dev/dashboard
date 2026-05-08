@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useSessionStorage } from 'usehooks-ts'
-import { PROTECTED_URLS } from '@/configs/urls'
 import { TEAM_BLOCKED_REASONS } from '@/core/modules/teams/constants'
 import type { TeamBlockedReason } from '@/core/modules/teams/models'
 import { useDashboard } from '@/features/dashboard/context'
@@ -14,12 +13,10 @@ import {
   VerificationRequiredDialog,
 } from '../team-blocked'
 import { getBlockedDialogStorageKey } from '../team-blocked/team-blocked-dialog-storage'
-
-interface BlockedMessage {
-  text: string
-  cta: string | null
-  href: string | null
-}
+import {
+  type BlockedMessage,
+  getBlockedMessage,
+} from '../team-blocked/team-blocked-message'
 
 interface TeamBlockedIndicatorContentProps {
   message: BlockedMessage
@@ -64,39 +61,10 @@ const useBlockedMessage = (
   slug: string,
   blockedReason: string | null
 ): BlockedMessage => {
-  return useMemo(() => {
-    const reason = blockedReason?.toLowerCase() ?? ''
-
-    if (reason.includes('billing limit')) {
-      return {
-        text: 'Billing limit reached.',
-        cta: 'Update limit.',
-        href: PROTECTED_URLS.LIMITS(slug),
-      }
-    }
-
-    if (reason.includes(TEAM_BLOCKED_REASONS.missingPayment)) {
-      return {
-        text: 'Missing payment method.',
-        cta: 'Add payment method.',
-        href: null,
-      }
-    }
-
-    if (reason.includes(TEAM_BLOCKED_REASONS.verification)) {
-      return {
-        text: 'Verification required.',
-        cta: 'Complete verification.',
-        href: null,
-      }
-    }
-
-    return {
-      text: blockedReason ?? 'Team suspended.',
-      cta: null,
-      href: null,
-    }
-  }, [slug, blockedReason])
+  return useMemo(
+    () => getBlockedMessage(slug, blockedReason),
+    [slug, blockedReason]
+  )
 }
 
 interface TeamBlockedDialogControllerProps {
