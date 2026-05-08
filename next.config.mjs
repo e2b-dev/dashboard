@@ -8,6 +8,7 @@ const browserStub = (file) => path.resolve(process.cwd(), 'stubs', file)
 const browserNodeModuleStubs = {
   crypto: browserStub('crypto.ts'),
   fs: browserStub('fs.ts'),
+  'fs/promises': browserStub('fs-promises.ts'),
   path: browserStub('path.ts'),
   'node:crypto': browserStub('crypto.ts'),
   'node:fs': browserStub('fs.ts'),
@@ -31,6 +32,7 @@ const config = {
     resolveAlias: {
       crypto: { browser: './stubs/crypto.ts' },
       fs: { browser: './stubs/fs.ts' },
+      'fs/promises': { browser: './stubs/fs-promises.ts' },
       path: { browser: './stubs/path.ts' },
       'node:crypto': { browser: './stubs/crypto.ts' },
       'node:fs': { browser: './stubs/fs.ts' },
