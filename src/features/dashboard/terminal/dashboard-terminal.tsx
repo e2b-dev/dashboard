@@ -23,6 +23,7 @@ import {
   MIN_PANEL_HEIGHT,
   TERMINAL_SANDBOX_TIMEOUT_MS,
 } from './constants'
+import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import DashboardTerminalPanel from './dashboard-terminal-panel'
 import { DASHBOARD_TERMINAL_COMMAND_EVENT } from './events'
 import {
@@ -30,8 +31,10 @@ import {
   readStoredTerminalSession,
   writeStoredTerminalSession,
 } from './storage'
+import { normalizeTerminalTemplate } from './template'
 import type {
   DashboardTerminalCommandDetail,
+  PendingTerminalLaunch,
   StartTerminalOptions,
   TerminalStatus,
 } from './types'
@@ -60,6 +63,7 @@ const TERMINAL_THEME = {
 interface DashboardTerminalProps {
   autoStart?: boolean
   initialCommand?: string
+  initialTemplate?: string
   variant?: 'button' | 'embedded'
 }
 
@@ -139,6 +143,7 @@ function calculateTerminalSize(
 export default function DashboardTerminal({
   autoStart = false,
   initialCommand = '',
+  initialTemplate,
   variant = 'button',
 }: DashboardTerminalProps) {
   const { team } = useDashboard()
@@ -146,8 +151,13 @@ export default function DashboardTerminal({
   const [isOpen, setIsOpen] = useState(isEmbedded)
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [sandboxId, setSandboxId] = useState<string>()
+  const [template, setTemplate] = useState(
+    normalizeTerminalTemplate(initialTemplate) ?? 'base'
+  )
   const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT)
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+  const [pendingLaunch, setPendingLaunch] =
+    useState<PendingTerminalLaunch | null>(null)
 
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
@@ -232,6 +242,7 @@ export default function DashboardTerminal({
   const startTerminal = async (options: StartTerminalOptions = {}) => {
     if (status === 'starting') return
 
+    const nextTemplate = normalizeTerminalTemplate(options.template) ?? template
     await disconnectTerminal()
     sandboxRef.current = null
     pidRef.current = undefined
@@ -241,6 +252,7 @@ export default function DashboardTerminal({
     xtermRef.current?.reset()
     setStatus('starting')
     setSandboxId(undefined)
+    setTemplate(nextTemplate)
     appendOutput('Opening terminal...\r\n')
 
     try {
@@ -256,7 +268,10 @@ export default function DashboardTerminal({
         : readStoredTerminalSession(userId)
       let sandbox: Sandbox
 
-      if (storedTerminalSession) {
+      if (
+        storedTerminalSession &&
+        storedTerminalSession.template === nextTemplate
+      ) {
         appendOutput(
           `Reconnecting to terminal sandbox ${storedTerminalSession.sandboxId}...\r\n`
         )
@@ -272,8 +287,8 @@ export default function DashboardTerminal({
         } catch {
           clearStoredTerminalSession(userId)
           appendOutput('Stored terminal sandbox is unavailable.\r\n')
-          appendOutput('Starting persistent E2B sandbox...\r\n')
-          sandbox = await Sandbox.create('base', {
+          appendOutput(`Starting ${nextTemplate} terminal sandbox...\r\n`)
+          sandbox = await Sandbox.create(nextTemplate, {
             domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
             timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
             lifecycle: {
@@ -282,6 +297,7 @@ export default function DashboardTerminal({
             },
             metadata: {
               source: 'dashboard-terminal',
+              template: nextTemplate,
               userId,
             },
             headers: {
@@ -290,8 +306,8 @@ export default function DashboardTerminal({
           })
         }
       } else {
-        appendOutput('Starting persistent E2B sandbox...\r\n')
-        sandbox = await Sandbox.create('base', {
+        appendOutput(`Starting ${nextTemplate} terminal sandbox...\r\n`)
+        sandbox = await Sandbox.create(nextTemplate, {
           domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
           timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
           lifecycle: {
@@ -300,6 +316,7 @@ export default function DashboardTerminal({
           },
           metadata: {
             source: 'dashboard-terminal',
+            template: nextTemplate,
             userId,
           },
           headers: {
@@ -308,7 +325,10 @@ export default function DashboardTerminal({
         })
       }
 
-      writeStoredTerminalSession(userId, { sandboxId: sandbox.sandboxId })
+      writeStoredTerminalSession(userId, {
+        sandboxId: sandbox.sandboxId,
+        template: nextTemplate,
+      })
 
       sandboxRef.current = sandbox
       setSandboxId(sandbox.sandboxId)
@@ -330,7 +350,10 @@ export default function DashboardTerminal({
       pidRef.current = pty.pid
       resizeTerminal()
       setStatus('ready')
-      writeStoredTerminalSession(userId, { sandboxId: sandbox.sandboxId })
+      writeStoredTerminalSession(userId, {
+        sandboxId: sandbox.sandboxId,
+        template: nextTemplate,
+      })
       appendOutput(`PTY ${pty.pid} attached.\r\n`)
       xtermRef.current?.focus()
 
@@ -360,23 +383,48 @@ export default function DashboardTerminal({
     command: string,
     options: StartTerminalOptions = {}
   ) => {
-    setIsOpen(true)
-    if (command.trim()) {
-      pendingCommandsRef.current = [...pendingCommandsRef.current, command]
+    const nextTemplate = normalizeTerminalTemplate(options.template)
+
+    if (!nextTemplate) {
+      setIsOpen(true)
+      setStatus('error')
+      appendOutput('Invalid terminal template.\r\n')
+      return
     }
 
-    if (status === 'ready' && !options.forceNewSandbox) {
-      const pendingCommands = pendingCommandsRef.current
-      pendingCommandsRef.current = []
-      for (const pendingCommand of pendingCommands) {
-        runCommand(pendingCommand)
-      }
+    setIsOpen(true)
+    if (command.trim()) {
+      setPendingLaunch({
+        command: command.trim(),
+        template: nextTemplate,
+      })
       return
     }
 
     if (status === 'idle' || status === 'error' || options.forceNewSandbox) {
-      void startTerminal(options)
+      void startTerminal({
+        ...options,
+        template: nextTemplate,
+      })
     }
+  }
+
+  const confirmPendingLaunch = () => {
+    if (!pendingLaunch) return
+
+    const { command, template: launchTemplate } = pendingLaunch
+    setPendingLaunch(null)
+
+    if (status === 'ready' && template === launchTemplate) {
+      runCommand(command)
+      return
+    }
+
+    pendingCommandsRef.current = [command]
+    void startTerminal({
+      forceNewSandbox: template !== launchTemplate,
+      template: launchTemplate,
+    })
   }
 
   const copyTerminalText = async () => {
@@ -426,7 +474,9 @@ export default function DashboardTerminal({
     if (!autoStart || didAutoStartRef.current) return
 
     didAutoStartRef.current = true
-    queueTerminalCommand(initialCommand)
+    queueTerminalCommand(initialCommand, {
+      template: initialTemplate,
+    })
   })
 
   useEffect(() => {
@@ -505,6 +555,7 @@ export default function DashboardTerminal({
 
       queueTerminalCommand(detail?.command ?? '', {
         forceNewSandbox: detail?.forceNewSandbox,
+        template: detail?.template,
       })
     }
 
@@ -547,6 +598,7 @@ export default function DashboardTerminal({
         variant={isEmbedded ? 'embedded' : 'fixed'}
         panelHeight={panelHeight}
         sandboxId={sandboxId}
+        template={template}
         status={status}
         terminalContainerRef={terminalContainerRef}
         onResizeStart={startResize}
@@ -556,6 +608,12 @@ export default function DashboardTerminal({
         onCopyTerminalText={() => void copyTerminalText()}
         onStartTerminal={(options) => void startTerminal(options)}
         onClose={() => setIsOpen(false)}
+      />
+
+      <DashboardTerminalCommandDialog
+        launch={pendingLaunch}
+        onCancel={() => setPendingLaunch(null)}
+        onConfirm={confirmPendingLaunch}
       />
     </>
   )

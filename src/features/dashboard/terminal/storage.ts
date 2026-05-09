@@ -15,7 +15,10 @@ export function readStoredTerminalSession(userId: string) {
     const session = JSON.parse(value) as StoredTerminalSession
     if (!session.sandboxId) return null
 
-    return session
+    return {
+      sandboxId: session.sandboxId,
+      template: session.template ?? 'base',
+    }
   } catch {
     return null
   }

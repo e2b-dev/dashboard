@@ -15,6 +15,7 @@ interface DashboardTerminalPanelProps {
   variant?: 'fixed' | 'embedded'
   panelHeight: number
   sandboxId?: string
+  template: string
   status: TerminalStatus
   terminalContainerRef: RefObject<HTMLDivElement | null>
   onResizeStart: (event: PointerEvent<HTMLButtonElement>) => void
@@ -32,6 +33,7 @@ export default function DashboardTerminalPanel({
   variant = 'fixed',
   panelHeight,
   sandboxId,
+  template,
   status,
   terminalContainerRef,
   onResizeStart,
@@ -73,6 +75,9 @@ export default function DashboardTerminalPanel({
           <TerminalCustomIcon className="text-icon-tertiary size-4" />
           <span className="prose-label-highlight shrink-0 uppercase">
             Terminal
+          </span>
+          <span className="text-fg-tertiary shrink-0 font-mono text-xs">
+            {template}
           </span>
           {sandboxId ? (
             <span className="text-fg-tertiary truncate font-mono text-xs">
