@@ -140,6 +140,21 @@ export function usePaymentElementAppearance() {
       '.AccordionButton--selected:hover': {
         backgroundColor: isDark ? '#1f1f1f' : '#f2f2f2',
       },
+      '.CheckboxInput': {
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #424242' : '1px solid #707070',
+        boxShadow: 'none',
+      },
+      '.CheckboxInput:hover': {
+        border: isDark ? '1px solid #848484' : '1px solid #333333',
+      },
+      '.CheckboxInput--checked': {
+        backgroundColor: isDark ? '#ff8800' : '#e56f00',
+        border: isDark ? '1px solid #ff8800' : '1px solid #e56f00',
+      },
+      '.CheckboxLabel': {
+        color: isDark ? '#e6e6e6' : '#333333',
+      },
       '.Spinner': {
         color: isDark ? '#ff8800' : '#e56f00', // accent-main-highlight
         borderColor: isDark

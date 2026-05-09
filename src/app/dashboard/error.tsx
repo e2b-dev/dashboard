@@ -1,16 +1,13 @@
 'use client'
 
-import ErrorBoundary from '@/ui/error'
+import { DashboardRouteError } from '@/features/dashboard/shared/route-error'
 
 export default function DashboardError({
   error,
+  reset,
 }: {
   error: Error & { digest?: string }
+  reset: () => void
 }) {
-  return (
-    <ErrorBoundary
-      description="Sorry, something went wrong with the application."
-      error={error}
-    />
-  )
+  return <DashboardRouteError error={error} reset={reset} />
 }

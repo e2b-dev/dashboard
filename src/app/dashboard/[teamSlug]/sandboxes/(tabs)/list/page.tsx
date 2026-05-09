@@ -3,9 +3,9 @@ import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
-export default async function ListPage({
+export default async function SandboxesListPage({
   params,
-}: PageProps<'/dashboard/[teamSlug]/sandboxes'>) {
+}: PageProps<'/dashboard/[teamSlug]/sandboxes/list'>) {
   const { teamSlug } = await params
 
   prefetch(
