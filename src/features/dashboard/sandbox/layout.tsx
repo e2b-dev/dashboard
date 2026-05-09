@@ -4,7 +4,12 @@ import { notFound } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { DashboardTabsList } from '@/ui/dashboard-tabs'
-import { HistoryIcon, ListIcon, StorageIcon, TrendIcon } from '@/ui/primitives/icons'
+import {
+  HistoryIcon,
+  ListIcon,
+  StorageIcon,
+  TrendIcon,
+} from '@/ui/primitives/icons'
 import { useSandboxContext } from './context'
 
 interface SandboxLayoutProps {
