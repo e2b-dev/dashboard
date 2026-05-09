@@ -137,13 +137,15 @@ npm run dev
 ### Project Structure
 ```
 src/
-├── app/          # Next.js app router pages
-├── features/     # Feature-specific components
-├── ui/           # Reusable UI components
-├── lib/          # Utility functions and shared logic
+├── app/          # Next.js App Router pages and layouts
+├── configs/      # Global constants, feature flags, and URL maps
+├── core/         # Server-side logic: actions, adapters, modules, and shared clients
+├── features/     # Domain-specific components (auth, dashboard, billing, etc.)
+├── lib/          # Utility functions, hooks, and shared helpers
 ├── styles/       # Global styles and Tailwind config
-└── types/        # TypeScript type definitions
-└── server/       # Server only logic & actions
+├── trpc/         # tRPC client and server setup
+├── types/        # TypeScript type definitions
+└── ui/           # Reusable UI primitives and Shadcn components
 tests/
 ├── unit/         # Vitest unit tests
 ├── integration/  # Vitest integration tests
