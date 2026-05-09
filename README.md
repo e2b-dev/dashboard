@@ -1,6 +1,3 @@
-<!-- <p align="center">
-  <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
-</p> -->
 ![Dashboard Preview Dark](/readme-assets/dashboard-preview-dark.png#gh-dark-mode-only)
 ![Dashboard Preview Light](/readme-assets/dashboard-preview-light.png#gh-light-mode-only)
 
@@ -103,18 +100,11 @@ This project requires a Redis-compatible key-value store. You'll need to:
    {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
    ```
 
-#### c. Database Setup
-1. Apply the database migrations manually:
-   - Navigate to the `/migrations` folder in the project
-   - Execute each SQL migration file in sequential order against your Supabase database
-   - You can run these migrations using the Supabase SQL Editor or a PostgreSQL client
-   - Make sure to apply migrations in the correct order based on their timestamp prefixes
-
-#### d. Supabase Storage Setup
+#### c. Supabase Storage Setup
 1. Go to Storage > Buckets
 2. Create a new **public** bucket named `profile-pictures`
 
-#### e. Start the development server
+#### d. Start the development server
 ```bash
 # Using Bun (recommended)
 bun run dev
@@ -138,8 +128,6 @@ bun run lint       # Run Biome linter
 bun run lint:fix   # Auto-fix Biome lint issues
 bun run format     # Format + organize imports with Biome
 bun run check      # Run full Biome check (lint + format + imports)
-SUPABASE_PROJECT_ID=your-project-id bun run db:types   # Generate DB types
-bun run db:migration # Create migration
 
 # All commands work with npm as well:
 npm run dev
