@@ -1,6 +1,6 @@
 'use client'
 
-import { openDashboardTerminal } from '@/features/dashboard/terminal/dashboard-terminal'
+import { openDashboardTerminal } from '@/features/dashboard/terminal/events'
 import { CpuIcon, TerminalCustomIcon } from '@/ui/primitives/icons'
 import type { AgentLauncher } from './agent-launchers'
 

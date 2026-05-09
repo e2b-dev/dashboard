@@ -49,7 +49,7 @@ export default async function TerminalEmbedPage({
   const { data, error } = await getUserByToken(session?.access_token)
 
   if (error || !data.user || !session) {
-    return <TerminalEmbedSignIn command={command} />
+    return <TerminalEmbedSignIn command={command} template={terminalTemplate} />
   }
 
   const teamsRepository = createUserTeamsRepository({
@@ -154,13 +154,26 @@ async function isTerminalTemplateAvailable({
   }
 }
 
-function TerminalEmbedSignIn({ command }: { command: string }) {
+function TerminalEmbedSignIn({
+  command,
+  template,
+}: {
+  command: string
+  template: string
+}) {
+  const returnToParams = new URLSearchParams()
+
+  if (template) {
+    returnToParams.set('template', template)
+  }
+
+  if (command) {
+    returnToParams.set('command', command)
+  }
+
+  const returnToQuery = returnToParams.toString()
   const returnTo = `/dashboard/terminal/embed${
-    command
-      ? `?${new URLSearchParams({
-          command,
-        }).toString()}`
-      : ''
+    returnToQuery ? `?${returnToQuery}` : ''
   }`
   const signInHref = `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({
     returnTo,

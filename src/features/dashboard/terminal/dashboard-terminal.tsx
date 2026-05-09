@@ -1,7 +1,8 @@
 'use client'
 
 import { Terminal as XTerm } from '@xterm/xterm'
-import Sandbox, { type CommandHandle } from 'e2b'
+import type Sandbox from 'e2b'
+import type { CommandHandle } from 'e2b'
 import {
   type PointerEvent,
   useCallback,
@@ -9,8 +10,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { supabase } from '@/core/shared/clients/supabase/client'
 import { Button } from '@/ui/primitives/button'
 import { SpinnerIcon, TerminalCustomIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../context'
@@ -21,17 +20,13 @@ import {
   DEFAULT_ROWS,
   MAX_PANEL_HEIGHT_RATIO,
   MIN_PANEL_HEIGHT,
-  TERMINAL_SANDBOX_TIMEOUT_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import DashboardTerminalPanel from './dashboard-terminal-panel'
 import { DASHBOARD_TERMINAL_COMMAND_EVENT } from './events'
-import {
-  clearStoredTerminalSession,
-  readStoredTerminalSession,
-  writeStoredTerminalSession,
-} from './storage'
+import { openTerminalSandbox } from './sandbox-session'
 import { normalizeTerminalTemplate } from './template'
+import { calculateTerminalSize } from './terminal-size'
 import type {
   DashboardTerminalCommandDetail,
   PendingTerminalLaunch,
@@ -39,20 +34,8 @@ import type {
   TerminalStatus,
 } from './types'
 
-export { openDashboardTerminal } from './events'
-
 const INITIAL_TERMINAL_TEXT =
   'Open a terminal to start a persistent E2B sandbox.\r\n'
-const MIN_TERMINAL_COLS = 40
-const MIN_TERMINAL_ROWS = 8
-const TERMINAL_PADDING_PX = 24
-const TERMINAL_SCROLLBAR_GUTTER_PX = 44
-const DEFAULT_CELL_WIDTH_PX = 8
-const DEFAULT_CELL_HEIGHT_PX = 20
-const MIN_CELL_WIDTH_PX = 4
-const MAX_CELL_WIDTH_PX = 16
-const MIN_CELL_HEIGHT_PX = 8
-const MAX_CELL_HEIGHT_PX = 40
 const TERMINAL_THEME = {
   background: '#000000',
   cursor: '#ffffff',
@@ -65,79 +48,6 @@ interface DashboardTerminalProps {
   initialCommand?: string
   initialTemplate?: string
   variant?: 'button' | 'embedded'
-}
-
-function getElementSize(element: Element | null) {
-  if (!element) return undefined
-
-  const rect = element.getBoundingClientRect()
-  if (!rect.width || !rect.height) return undefined
-
-  return rect
-}
-
-function getMeasuredCellSize(terminal: XTerm | null) {
-  const measureElement = terminal?.element?.querySelector(
-    '.xterm-char-measure-element'
-  )
-  const rowElement = terminal?.element?.querySelector('.xterm-rows > div')
-  const measuredCharSize = getElementSize(measureElement ?? null)
-  const rowSize = getElementSize(rowElement ?? null)
-
-  if (!measuredCharSize && !rowSize) return undefined
-
-  const measuredWidth = measuredCharSize?.width
-  const measuredHeight = rowSize?.height ?? measuredCharSize?.height
-
-  return {
-    width:
-      measuredWidth &&
-      measuredWidth >= MIN_CELL_WIDTH_PX &&
-      measuredWidth <= MAX_CELL_WIDTH_PX
-        ? measuredWidth
-        : undefined,
-    height:
-      measuredHeight &&
-      measuredHeight >= MIN_CELL_HEIGHT_PX &&
-      measuredHeight <= MAX_CELL_HEIGHT_PX
-        ? measuredHeight
-        : undefined,
-  }
-}
-
-function calculateTerminalSize(
-  container: HTMLDivElement | null,
-  terminal: XTerm | null
-) {
-  if (!container) {
-    return { cols: DEFAULT_COLS, rows: DEFAULT_ROWS }
-  }
-
-  const measuredCellSize = getMeasuredCellSize(terminal)
-  const containerRect = container.getBoundingClientRect()
-  const containerWidth =
-    container.clientWidth || containerRect.width || window.innerWidth
-  const containerHeight =
-    container.clientHeight || containerRect.height || DEFAULT_PANEL_HEIGHT
-  const availableWidth =
-    containerWidth - TERMINAL_PADDING_PX - TERMINAL_SCROLLBAR_GUTTER_PX
-  const availableHeight = containerHeight - TERMINAL_PADDING_PX
-  const cellWidth = Math.max(
-    measuredCellSize?.width ?? DEFAULT_CELL_WIDTH_PX,
-    1
-  )
-  const cellHeight = Math.max(
-    measuredCellSize?.height ?? DEFAULT_CELL_HEIGHT_PX,
-    1
-  )
-
-  return {
-    cols: Math.max(MIN_TERMINAL_COLS, Math.floor(availableWidth / cellWidth)),
-    rows: Math.max(
-      MIN_TERMINAL_ROWS,
-      Math.floor(availableHeight / cellHeight) - 1
-    ),
-  }
 }
 
 export default function DashboardTerminal({
@@ -256,77 +166,10 @@ export default function DashboardTerminal({
     appendOutput('Opening terminal...\r\n')
 
     try {
-      const { data } = await supabase.auth.getSession()
-
-      if (!data.session) {
-        throw new Error('You need to sign in before opening a terminal.')
-      }
-
-      const userId = data.session.user.id
-      const storedTerminalSession = options.forceNewSandbox
-        ? null
-        : readStoredTerminalSession(userId)
-      let sandbox: Sandbox
-
-      if (
-        storedTerminalSession &&
-        storedTerminalSession.template === nextTemplate
-      ) {
-        appendOutput(
-          `Reconnecting to terminal sandbox ${storedTerminalSession.sandboxId}...\r\n`
-        )
-
-        try {
-          sandbox = await Sandbox.connect(storedTerminalSession.sandboxId, {
-            domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-            timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-            headers: {
-              ...SUPABASE_AUTH_HEADERS(data.session.access_token, team.id),
-            },
-          })
-        } catch {
-          clearStoredTerminalSession(userId)
-          appendOutput('Stored terminal sandbox is unavailable.\r\n')
-          appendOutput(`Starting ${nextTemplate} terminal sandbox...\r\n`)
-          sandbox = await Sandbox.create(nextTemplate, {
-            domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-            timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-            lifecycle: {
-              onTimeout: 'pause',
-              autoResume: true,
-            },
-            metadata: {
-              source: 'dashboard-terminal',
-              template: nextTemplate,
-              userId,
-            },
-            headers: {
-              ...SUPABASE_AUTH_HEADERS(data.session.access_token, team.id),
-            },
-          })
-        }
-      } else {
-        appendOutput(`Starting ${nextTemplate} terminal sandbox...\r\n`)
-        sandbox = await Sandbox.create(nextTemplate, {
-          domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-          timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-          lifecycle: {
-            onTimeout: 'pause',
-            autoResume: true,
-          },
-          metadata: {
-            source: 'dashboard-terminal',
-            template: nextTemplate,
-            userId,
-          },
-          headers: {
-            ...SUPABASE_AUTH_HEADERS(data.session.access_token, team.id),
-          },
-        })
-      }
-
-      writeStoredTerminalSession(userId, {
-        sandboxId: sandbox.sandboxId,
+      const { sandbox } = await openTerminalSandbox({
+        forceNewSandbox: options.forceNewSandbox,
+        onStatus: appendOutput,
+        teamId: team.id,
         template: nextTemplate,
       })
 
@@ -350,10 +193,6 @@ export default function DashboardTerminal({
       pidRef.current = pty.pid
       resizeTerminal()
       setStatus('ready')
-      writeStoredTerminalSession(userId, {
-        sandboxId: sandbox.sandboxId,
-        template: nextTemplate,
-      })
       appendOutput(`PTY ${pty.pid} attached.\r\n`)
       xtermRef.current?.focus()
 
