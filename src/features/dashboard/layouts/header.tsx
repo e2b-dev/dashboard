@@ -20,6 +20,8 @@ export default function DashboardLayoutHeader({
   className,
   children,
 }: DashboardLayoutHeaderProps) {
+  const includeInAppTerminal =
+    process.env.NEXT_PUBLIC_INCLUDE_IN_APP_TERMINAL === '1'
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
   const copyableValue = config.copyValue ?? null
@@ -56,7 +58,7 @@ export default function DashboardLayoutHeader({
         </div>
 
         <ClientOnly className="flex items-center gap-2 pl-2 pr-2">
-          <DashboardTerminal />
+          {includeInAppTerminal ? <DashboardTerminal /> : null}
           <ThemeSwitcher />
         </ClientOnly>
 

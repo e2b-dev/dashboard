@@ -3,6 +3,8 @@ export const VERBOSE = process.env.NEXT_PUBLIC_VERBOSE === '1'
 export const ENABLE_USER_BOOTSTRAP = process.env.ENABLE_USER_BOOTSTRAP === '1'
 export const INCLUDE_BILLING = process.env.NEXT_PUBLIC_INCLUDE_BILLING === '1'
 export const INCLUDE_ARGUS = process.env.NEXT_PUBLIC_INCLUDE_ARGUS === '1'
+export const INCLUDE_IN_APP_TERMINAL =
+  process.env.NEXT_PUBLIC_INCLUDE_IN_APP_TERMINAL === '1'
 export const INCLUDE_STATUS_INDICATOR =
   process.env.NEXT_PUBLIC_INCLUDE_STATUS_INDICATOR === '1'
 export const USE_MOCK_DATA =

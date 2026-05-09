@@ -12,7 +12,11 @@ import {
   UsageIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
-import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
+import {
+  INCLUDE_ARGUS,
+  INCLUDE_BILLING,
+  INCLUDE_IN_APP_TERMINAL,
+} from './flags'
 import { PROTECTED_URLS } from './urls'
 
 type SidebarNavArgs = {
@@ -81,13 +85,18 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   },
 
   // Agents
-  {
-    label: 'Agents',
-    href: (args) => PROTECTED_URLS.AGENTS(args.teamSlug ?? ''),
-    icon: PersonIcon,
-    group: 'agents',
-    activeMatch: `/dashboard/*/agents/**`,
-  },
+  ...(INCLUDE_IN_APP_TERMINAL
+    ? [
+        {
+          label: 'Agents',
+          href: (args: SidebarNavArgs) =>
+            PROTECTED_URLS.AGENTS(args.teamSlug ?? ''),
+          icon: PersonIcon,
+          group: 'agents',
+          activeMatch: `/dashboard/*/agents/**`,
+        },
+      ]
+    : []),
 
   // Billing
   ...(INCLUDE_BILLING
