@@ -26,6 +26,12 @@ const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   )
 )
 
+type SandboxMetricsRangeInput = {
+  sandboxId: z.infer<typeof SandboxIdSchema>
+  startMs: number
+  endMs: number
+}
+
 export const sandboxRouter = createTRPCRouter({
   // QUERIES
 
@@ -168,11 +174,14 @@ export const sandboxRouter = createTRPCRouter({
           startMs: z.number().int().positive(),
           endMs: z.number().int().positive(),
         })
-        .refine(({ startMs, endMs }) => startMs < endMs, {
-          message: 'startMs must be before endMs',
-        })
         .refine(
-          ({ startMs, endMs }) => {
+          ({ startMs, endMs }: SandboxMetricsRangeInput) => startMs < endMs,
+          {
+            message: 'startMs must be before endMs',
+          }
+        )
+        .refine(
+          ({ startMs, endMs }: SandboxMetricsRangeInput) => {
             const now = Date.now()
             return (
               startMs >= now - SANDBOX_MONITORING_METRICS_RETENTION_MS &&
