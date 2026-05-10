@@ -199,6 +199,29 @@ describe('Proxy Integration Tests', () => {
       expect(NextResponse.next).toHaveBeenCalled()
     })
 
+    it('allows unauthenticated users to access the terminal launcher with a trailing slash', async () => {
+      vi.mocked(createServerClient).mockImplementation(
+        () =>
+          ({
+            auth: {
+              getUser: vi.fn().mockResolvedValue({
+                data: { user: null },
+                error: { message: 'Not authenticated' },
+              }),
+            },
+          }) as unknown as ReturnType<typeof createServerClient>
+      )
+
+      const request = createMockRequest({
+        path: '/dashboard/terminal/',
+      })
+
+      await proxy(request)
+
+      expect(NextResponse.redirect).not.toHaveBeenCalled()
+      expect(NextResponse.next).toHaveBeenCalled()
+    })
+
     it('allows unauthenticated users to access public pages', async () => {
       vi.mocked(createServerClient).mockImplementation(
         () =>

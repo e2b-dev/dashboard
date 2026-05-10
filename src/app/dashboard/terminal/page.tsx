@@ -51,7 +51,6 @@ export default async function TerminalPage({
   if (error || !data.user || !session) {
     return (
       <TerminalSignIn
-        command={command}
         sandboxId={terminalSandboxId}
         template={terminalTemplate}
       />
@@ -239,11 +238,9 @@ async function isTerminalTemplateAvailable({
 }
 
 function TerminalSignIn({
-  command,
   sandboxId,
   template,
 }: {
-  command: string
   sandboxId?: string
   template: string
 }) {
@@ -251,10 +248,6 @@ function TerminalSignIn({
 
   if (template) {
     returnToParams.set('template', template)
-  }
-
-  if (command) {
-    returnToParams.set('command', command)
   }
 
   if (sandboxId) {

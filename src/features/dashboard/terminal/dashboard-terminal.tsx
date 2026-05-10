@@ -4,7 +4,12 @@ import { Terminal as XTerm } from '@xterm/xterm'
 import type Sandbox from 'e2b'
 import type { CommandHandle } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEFAULT_COLS, DEFAULT_CWD, DEFAULT_ROWS } from './constants'
+import {
+  DEFAULT_COLS,
+  DEFAULT_CWD,
+  DEFAULT_ROWS,
+  MAX_TERMINAL_TRANSCRIPT_CHARS,
+} from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
 import {
@@ -86,7 +91,9 @@ export default function DashboardTerminal({
         ? chunk
         : decoderRef.current.decode(chunk, { stream: true })
 
-    terminalTranscriptRef.current += text
+    terminalTranscriptRef.current = (
+      terminalTranscriptRef.current + text
+    ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
     xtermRef.current?.write(chunk, () => {
       xtermRef.current?.scrollToBottom()
     })
@@ -351,8 +358,13 @@ export default function DashboardTerminal({
       xtermRef.current?.getSelection() || terminalTranscriptRef.current
     if (!value) return
 
-    await navigator.clipboard.writeText(value)
-    xtermRef.current?.focus()
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      appendOutput('\r\nCould not copy terminal output to clipboard.\r\n')
+    } finally {
+      xtermRef.current?.focus()
+    }
   }
 
   useEffect(() => {

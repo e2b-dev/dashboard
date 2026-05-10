@@ -16,7 +16,9 @@ export function isDashboardRoute(pathname: string): boolean {
 }
 
 function isDashboardTerminalRoute(pathname: string): boolean {
-  return pathname === '/dashboard/terminal'
+  return (
+    pathname === '/dashboard/terminal' || pathname === '/dashboard/terminal/'
+  )
 }
 
 export function buildRedirectUrl(path: string, request: NextRequest): URL {

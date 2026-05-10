@@ -123,6 +123,24 @@ describe('dashboard terminal helpers', () => {
       )
       expect(readStoredTerminalSession('user-123')).toBeNull()
 
+      window.localStorage.setItem(
+        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        JSON.stringify({ sandboxId: 123, template: 'base' })
+      )
+      expect(readStoredTerminalSession('user-123')).toBeNull()
+
+      window.localStorage.setItem(
+        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        JSON.stringify({ sandboxId: 'sandbox-123', template: 123 })
+      )
+      expect(readStoredTerminalSession('user-123')).toBeNull()
+
+      window.localStorage.setItem(
+        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        JSON.stringify({ sandboxId: 'sandbox-123', template: '../base' })
+      )
+      expect(readStoredTerminalSession('user-123')).toBeNull()
+
       clearStoredTerminalSession('user-123')
       expect(readStoredTerminalSession('user-123')).toBeNull()
     })
