@@ -7,7 +7,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { DEFAULT_COLS, DEFAULT_CWD, DEFAULT_ROWS } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
-import { normalizeTerminalTemplate } from './template'
+import {
+  normalizeTerminalTemplate,
+  resolveTerminalTemplateOverride,
+} from './template'
 import TerminalPanel from './terminal-panel'
 import { calculateTerminalSize } from './terminal-size'
 import type {
@@ -157,14 +160,23 @@ export default function DashboardTerminal({
   const startTerminal = useCallback(
     async (options: StartTerminalOptions = {}) => {
       if (isStartingRef.current) return
+      const nextTemplate = resolveTerminalTemplateOverride(
+        options.template,
+        template
+      )
+
+      if (!nextTemplate) {
+        setStatus('error')
+        appendOutput('Invalid terminal template.\r\n')
+        return
+      }
+
       isStartingRef.current = true
       const startGeneration = startGenerationRef.current + 1
       startGenerationRef.current = startGeneration
       const isCurrentStart = () =>
         startGenerationRef.current === startGeneration
 
-      const nextTemplate =
-        normalizeTerminalTemplate(options.template) ?? template
       await disconnectTerminal()
       sandboxRef.current = null
       pidRef.current = undefined
@@ -259,8 +271,10 @@ export default function DashboardTerminal({
 
   const queueTerminalCommand = useCallback(
     (command: string, options: StartTerminalOptions = {}) => {
-      const nextTemplate =
-        normalizeTerminalTemplate(options.template) ?? template
+      const nextTemplate = resolveTerminalTemplateOverride(
+        options.template,
+        template
+      )
 
       if (!nextTemplate) {
         setStatus('error')

@@ -7,7 +7,10 @@ import {
   readStoredTerminalSession,
   writeStoredTerminalSession,
 } from '@/features/dashboard/terminal/storage'
-import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
+import {
+  normalizeTerminalTemplate,
+  resolveTerminalTemplateOverride,
+} from '@/features/dashboard/terminal/template'
 import { calculateTerminalSize } from '@/features/dashboard/terminal/terminal-size'
 
 const { mockCreateSandbox, mockConnectSandbox, mockGetSession } = vi.hoisted(
@@ -85,6 +88,19 @@ describe('dashboard terminal helpers', () => {
       )
       expect(normalizeTerminalTemplate('../base')).toBeNull()
       expect(normalizeTerminalTemplate('base; echo nope')).toBeNull()
+    })
+  })
+
+  describe('resolveTerminalTemplateOverride', () => {
+    it('preserves the current template when no override is provided', () => {
+      expect(resolveTerminalTemplateOverride(undefined, 'python')).toBe(
+        'python'
+      )
+    })
+
+    it('normalizes explicit overrides', () => {
+      expect(resolveTerminalTemplateOverride('  ', 'python')).toBe('base')
+      expect(resolveTerminalTemplateOverride('../base', 'python')).toBeNull()
     })
   })
 

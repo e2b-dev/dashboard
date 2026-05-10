@@ -14,3 +14,12 @@ export function normalizeTerminalTemplate(template?: string) {
 
   return value
 }
+
+export function resolveTerminalTemplateOverride(
+  template: string | undefined,
+  fallback: string
+) {
+  if (template === undefined) return fallback
+
+  return normalizeTerminalTemplate(template)
+}
