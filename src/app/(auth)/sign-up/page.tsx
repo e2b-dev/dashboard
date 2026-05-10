@@ -72,9 +72,6 @@ export default function SignUp() {
   useEffect(() => {
     form.setValue('returnTo', returnTo)
   }, [returnTo, form])
-  const signInHref = returnTo
-    ? `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({ returnTo }).toString()}`
-    : AUTH_URLS.SIGN_IN
 
   // Handle email prefill
   useEffect(() => {
@@ -194,7 +191,7 @@ export default function SignUp() {
 
       <p className="text-fg-secondary mt-3 leading-6">
         Already have an account?{' '}
-        <Link className="text-fg  underline" href={signInHref}>
+        <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
           Sign in
         </Link>
         .
