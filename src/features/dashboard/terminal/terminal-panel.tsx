@@ -54,7 +54,7 @@ export default function TerminalPanel({
             onMouseDown={(event) => event.preventDefault()}
             onClick={onCopyTerminalText}
           >
-            <CopyIcon className="size-4" />
+            <CopyIcon />
           </IconButton>
           <IconButton
             type="button"
@@ -65,7 +65,7 @@ export default function TerminalPanel({
             disabled={status === 'starting'}
             onClick={() => onStartTerminal({ forceNewSandbox: true })}
           >
-            <RefreshIcon className="size-4" />
+            <RefreshIcon />
           </IconButton>
         </div>
       </header>
