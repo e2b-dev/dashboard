@@ -11,6 +11,7 @@ import {
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  sandboxId?: string
   teamId: string
   template: string
 }
@@ -18,6 +19,7 @@ interface OpenTerminalSandboxOptions {
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  sandboxId,
   teamId,
   template,
 }: OpenTerminalSandboxOptions) {
@@ -29,6 +31,16 @@ export async function openTerminalSandbox({
 
   const userId = data.session.user.id
   const headers = SUPABASE_AUTH_HEADERS(data.session.access_token, teamId)
+
+  if (sandboxId) {
+    onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
+    const sandbox = await connectTerminalSandbox(sandboxId, headers)
+
+    return {
+      sandbox,
+    }
+  }
+
   const storedTerminalSession = forceNewSandbox
     ? null
     : readStoredTerminalSession(userId)
@@ -41,13 +53,10 @@ export async function openTerminalSandbox({
     )
 
     try {
-      sandbox = await Sandbox.connect(storedTerminalSession.sandboxId, {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-        headers: {
-          ...headers,
-        },
-      })
+      sandbox = await connectTerminalSandbox(
+        storedTerminalSession.sandboxId,
+        headers
+      )
     } catch {
       clearStoredTerminalSession(userId)
       onStatus('Stored terminal sandbox is unavailable.\r\n')
@@ -69,6 +78,19 @@ export async function openTerminalSandbox({
   }
 }
 
+function connectTerminalSandbox(
+  sandboxId: string,
+  headers: Record<string, string>
+) {
+  return Sandbox.connect(sandboxId, {
+    domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+    timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+    headers: {
+      ...headers,
+    },
+  })
+}
+
 function createTerminalSandbox({
   headers,
   template,
@@ -78,6 +100,8 @@ function createTerminalSandbox({
   template: string
   userId: string
 }) {
+  // The browser SDK sends the signed-in user's Supabase token so E2B can
+  // authorize sandbox ownership without a dashboard proxy endpoint.
   return Sandbox.create(template, {
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,

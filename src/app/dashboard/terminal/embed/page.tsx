@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import type { Metadata } from 'next/types'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
+import type { TeamModel } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import {
   createDefaultTemplatesRepository,
@@ -9,7 +11,8 @@ import {
 import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
-import { DashboardContextProvider } from '@/features/dashboard/context'
+import { infra } from '@/core/shared/clients/api'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 import { Button } from '@/ui/primitives/button'
@@ -22,6 +25,7 @@ export const metadata: Metadata = {
 interface TerminalEmbedPageProps {
   searchParams: Promise<{
     command?: string
+    sandboxId?: string
     template?: string
   }>
 }
@@ -29,8 +33,9 @@ interface TerminalEmbedPageProps {
 export default async function TerminalEmbedPage({
   searchParams,
 }: TerminalEmbedPageProps) {
-  const { command = '', template } = await searchParams
+  const { command = '', sandboxId, template } = await searchParams
   const terminalTemplate = normalizeTerminalTemplate(template)
+  const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
 
   if (!terminalTemplate) {
     return (
@@ -38,36 +43,55 @@ export default async function TerminalEmbedPage({
     )
   }
 
+  if (terminalSandboxId === null) {
+    return (
+      <TerminalEmbedUnavailable message="The terminal sandbox ID is invalid." />
+    )
+  }
+
   const session = await getSessionInsecure()
   const { data, error } = await getUserByToken(session?.access_token)
 
   if (error || !data.user || !session) {
-    return <TerminalEmbedSignIn command={command} template={terminalTemplate} />
+    return (
+      <TerminalEmbedSignIn
+        command={command}
+        sandboxId={terminalSandboxId}
+        template={terminalTemplate}
+      />
+    )
   }
 
   const teamsRepository = createUserTeamsRepository({
     accessToken: session.access_token,
   })
   const teamsResult = await teamsRepository.listUserTeams()
-  const resolvedTeam = await resolveUserTeam(data.user.id, session.access_token)
 
-  if (!teamsResult.ok || !resolvedTeam) {
+  if (!teamsResult.ok) {
     return <TerminalEmbedUnavailable />
   }
 
-  const team = teamsResult.data.find(
-    (candidate) => candidate.id === resolvedTeam.id
-  )
+  const resolvedTeam = await resolveUserTeam(data.user.id, session.access_token)
+  const team = terminalSandboxId
+    ? await resolveTerminalSandboxTeam({
+        accessToken: session.access_token,
+        preferredTeamId: resolvedTeam?.id,
+        sandboxId: terminalSandboxId,
+        teams: teamsResult.data,
+      })
+    : teamsResult.data.find((candidate) => candidate.id === resolvedTeam?.id)
 
   if (!team) {
     return <TerminalEmbedUnavailable />
   }
 
-  const templateAvailable = await isTerminalTemplateAvailable({
-    accessToken: session.access_token,
-    teamId: team.id,
-    template: terminalTemplate,
-  })
+  const templateAvailable = terminalSandboxId
+    ? { ok: true as const, available: true }
+    : await isTerminalTemplateAvailable({
+        accessToken: session.access_token,
+        teamId: team.id,
+        template: terminalTemplate,
+      })
 
   if (!templateAvailable.ok) {
     return (
@@ -84,21 +108,92 @@ export default async function TerminalEmbedPage({
   }
 
   return (
-    <DashboardContextProvider
-      initialTeam={team}
-      initialTeams={teamsResult.data}
-      initialUser={data.user}
-    >
-      <main className="h-dvh min-h-[360px] bg-bg p-3">
-        <DashboardTerminal
-          autoStart
-          initialCommand={command}
-          initialTemplate={terminalTemplate}
-          variant="embedded"
-        />
-      </main>
-    </DashboardContextProvider>
+    <main className="h-dvh min-h-[360px] bg-bg p-3">
+      <DashboardTerminal
+        autoStart
+        initialCommand={command}
+        initialSandboxId={terminalSandboxId}
+        initialTemplate={terminalTemplate}
+        teamId={team.id}
+      />
+    </main>
   )
+}
+
+function normalizeTerminalSandboxId(sandboxId?: string) {
+  const value = sandboxId?.trim()
+  if (!value) return undefined
+
+  const parsedSandboxId = SandboxIdSchema.safeParse(value)
+  return parsedSandboxId.success ? parsedSandboxId.data : null
+}
+
+async function resolveTerminalSandboxTeam({
+  accessToken,
+  preferredTeamId,
+  sandboxId,
+  teams,
+}: {
+  accessToken: string
+  preferredTeamId?: string
+  sandboxId: string
+  teams: TeamModel[]
+}) {
+  if (preferredTeamId) {
+    const preferredTeam = teams.find((team) => team.id === preferredTeamId)
+    if (
+      preferredTeam &&
+      (await hasSandboxInTeam({
+        accessToken,
+        sandboxId,
+        teamId: preferredTeam.id,
+      }))
+    ) {
+      return preferredTeam
+    }
+  }
+
+  const candidateTeams = teams.filter((team) => team.id !== preferredTeamId)
+  const teamMatches = await Promise.all(
+    candidateTeams.map(async (team) => ({
+      team,
+      ownsSandbox: await hasSandboxInTeam({
+        accessToken,
+        sandboxId,
+        teamId: team.id,
+      }),
+    }))
+  )
+
+  return teamMatches.find((match) => match.ownsSandbox)?.team ?? null
+}
+
+async function hasSandboxInTeam({
+  accessToken,
+  sandboxId,
+  teamId,
+}: {
+  accessToken: string
+  sandboxId: string
+  teamId: string
+}) {
+  try {
+    const result = await infra.GET('/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      headers: {
+        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+      },
+      cache: 'no-store',
+    })
+
+    return result.response.ok && Boolean(result.data)
+  } catch {
+    return false
+  }
 }
 
 async function isTerminalTemplateAvailable({
@@ -149,9 +244,11 @@ async function isTerminalTemplateAvailable({
 
 function TerminalEmbedSignIn({
   command,
+  sandboxId,
   template,
 }: {
   command: string
+  sandboxId?: string
   template: string
 }) {
   const returnToParams = new URLSearchParams()
@@ -162,6 +259,10 @@ function TerminalEmbedSignIn({
 
   if (command) {
     returnToParams.set('command', command)
+  }
+
+  if (sandboxId) {
+    returnToParams.set('sandboxId', sandboxId)
   }
 
   const returnToQuery = returnToParams.toString()

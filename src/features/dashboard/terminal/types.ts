@@ -7,16 +7,12 @@ export type StoredTerminalSession = {
 
 export type StartTerminalOptions = {
   forceNewSandbox?: boolean
-  template?: string
-}
-
-export type DashboardTerminalCommandDetail = {
-  command: string
-  forceNewSandbox?: boolean
+  sandboxId?: string
   template?: string
 }
 
 export type PendingTerminalLaunch = {
   command: string
+  sandboxId?: string
   template: string
 }
