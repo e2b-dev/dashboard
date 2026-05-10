@@ -1,7 +1,7 @@
 ![Dashboard Preview Dark](/readme-assets/dashboard-preview-dark.png#gh-dark-mode-only)
 ![Dashboard Preview Light](/readme-assets/dashboard-preview-light.png#gh-light-mode-only)
 
-# E2B Dashboard
+# Dashboard
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/1092455714431180995?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.com/channels/1092455714431180995)
@@ -14,13 +14,12 @@
 - 🤝 [Contributing Guide](CONTRIBUTING.md)
 
 ## Overview
-Our Dashboard is a modern, feature-rich web application built to manage and monitor E2B services. Built with Next.js 15 and React 19, it provides a seamless user experience for managing sandboxes, API keys, and usage analytics.
+Our Dashboard is a modern, feature-rich web application built to manage and monitor E2B services. Built with Next.js 16 and React 19, it provides a seamless user experience for managing sandboxes, API keys, and usage analytics.
 
 ## Features
-- **Modern Stack**: Built with Next.js 15, React 19, and TypeScript
+- **Modern Stack**: Built with Next.js 16, React 19, and TypeScript
 - **Real-time Analytics**: Monitor your sandbox usage and performance
 - **Authentication**: Secure authentication powered by Supabase
-- **Documentation**: Integrated MDX documentation support
 - **Type Safety**: Full TypeScript support throughout the codebase
 
 ## Getting Started
@@ -28,12 +27,10 @@ Our Dashboard is a modern, feature-rich web application built to manage and moni
 > **Self-hosting Note**: If you're planning to self-host this dashboard, you'll likely want to self-host our infrastructure first. Please refer to our [infrastructure repository](https://github.com/e2b-dev/infra) for guidance on setting up the E2B platform on your own infrastructure.
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20.9+
 - Git
 - Vercel account
 - Supabase account
-- PostHog account (optional for analytics)
-- Plain account (optional for customer support)
 
 ### Local Development Setup
 
