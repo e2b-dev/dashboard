@@ -9,7 +9,6 @@ import ClientOnly from '@/ui/client-only'
 import CopyButton from '@/ui/copy-button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
 import { ThemeSwitcher } from '@/ui/theme-switcher'
-import DashboardTerminal from '../terminal/dashboard-terminal'
 
 interface DashboardLayoutHeaderProps {
   className?: string
@@ -56,7 +55,6 @@ export default function DashboardLayoutHeader({
         </div>
 
         <ClientOnly className="flex items-center gap-2 pl-2 pr-2">
-          <DashboardTerminal />
           <ThemeSwitcher />
         </ClientOnly>
 
