@@ -1,6 +1,5 @@
 import '@/app/fonts'
 import '@/styles/globals.css'
-import '@xterm/xterm/css/xterm.css'
 
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'

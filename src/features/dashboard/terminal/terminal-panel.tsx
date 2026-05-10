@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   CopyIcon,
   RefreshIcon,
@@ -45,10 +45,9 @@ export default function TerminalPanel({
         </div>
 
         <div className="flex items-center gap-1">
-          <Button
+          <IconButton
             type="button"
-            variant="quaternary"
-            size="none"
+            variant="tertiary"
             className="size-7"
             aria-label="Copy terminal output"
             title="Copy terminal output"
@@ -56,11 +55,10 @@ export default function TerminalPanel({
             onClick={onCopyTerminalText}
           >
             <CopyIcon className="size-4" />
-          </Button>
-          <Button
+          </IconButton>
+          <IconButton
             type="button"
-            variant="quaternary"
-            size="none"
+            variant="tertiary"
             className="size-7"
             aria-label="Start new terminal sandbox"
             title="Start new terminal sandbox"
@@ -68,7 +66,7 @@ export default function TerminalPanel({
             onClick={() => onStartTerminal({ forceNewSandbox: true })}
           >
             <RefreshIcon className="size-4" />
-          </Button>
+          </IconButton>
         </div>
       </header>
 
