@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow',
 }
 
-interface TerminalEmbedPageProps {
+interface TerminalSessionPageProps {
   searchParams: Promise<{
     command?: string
     sandboxId?: string
@@ -30,22 +30,22 @@ interface TerminalEmbedPageProps {
   }>
 }
 
-export default async function TerminalEmbedPage({
+export default async function TerminalSessionPage({
   searchParams,
-}: TerminalEmbedPageProps) {
+}: TerminalSessionPageProps) {
   const { command = '', sandboxId, template } = await searchParams
   const terminalTemplate = normalizeTerminalTemplate(template)
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
 
   if (!terminalTemplate) {
     return (
-      <TerminalEmbedUnavailable message="The terminal template is invalid." />
+      <TerminalSessionUnavailable message="The terminal template is invalid." />
     )
   }
 
   if (terminalSandboxId === null) {
     return (
-      <TerminalEmbedUnavailable message="The terminal sandbox ID is invalid." />
+      <TerminalSessionUnavailable message="The terminal sandbox ID is invalid." />
     )
   }
 
@@ -54,7 +54,7 @@ export default async function TerminalEmbedPage({
 
   if (error || !data.user || !session) {
     return (
-      <TerminalEmbedSignIn
+      <TerminalSessionSignIn
         command={command}
         sandboxId={terminalSandboxId}
         template={terminalTemplate}
@@ -68,7 +68,7 @@ export default async function TerminalEmbedPage({
   const teamsResult = await teamsRepository.listUserTeams()
 
   if (!teamsResult.ok) {
-    return <TerminalEmbedUnavailable />
+    return <TerminalSessionUnavailable />
   }
 
   const resolvedTeam = await resolveUserTeam(data.user.id, session.access_token)
@@ -82,7 +82,7 @@ export default async function TerminalEmbedPage({
     : teamsResult.data.find((candidate) => candidate.id === resolvedTeam?.id)
 
   if (!team) {
-    return <TerminalEmbedUnavailable />
+    return <TerminalSessionUnavailable />
   }
 
   const templateAvailable = terminalSandboxId
@@ -95,13 +95,13 @@ export default async function TerminalEmbedPage({
 
   if (!templateAvailable.ok) {
     return (
-      <TerminalEmbedUnavailable message="We could not verify the terminal template for this account." />
+      <TerminalSessionUnavailable message="We could not verify the terminal template for this account." />
     )
   }
 
   if (!templateAvailable.available) {
     return (
-      <TerminalEmbedUnavailable
+      <TerminalSessionUnavailable
         message={`Template "${terminalTemplate}" is not available for this account.`}
       />
     )
@@ -242,7 +242,7 @@ async function isTerminalTemplateAvailable({
   }
 }
 
-function TerminalEmbedSignIn({
+function TerminalSessionSignIn({
   command,
   sandboxId,
   template,
@@ -266,7 +266,7 @@ function TerminalEmbedSignIn({
   }
 
   const returnToQuery = returnToParams.toString()
-  const returnTo = `/dashboard/terminal/embed${
+  const returnTo = `/dashboard/terminal/session${
     returnToQuery ? `?${returnToQuery}` : ''
   }`
   const signInHref = `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({
@@ -292,7 +292,7 @@ function TerminalEmbedSignIn({
   )
 }
 
-function TerminalEmbedUnavailable({
+function TerminalSessionUnavailable({
   message = 'We could not resolve a dashboard team for this account.',
 }: {
   message?: string
