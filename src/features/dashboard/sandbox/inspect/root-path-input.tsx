@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import { ArrowRightIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
-import { Loader } from '@/ui/primitives/loader_d'
+import { Loader } from '@/ui/primitives/loader'
 
 interface RootPathInputProps {
   className?: string
@@ -81,7 +81,8 @@ export default function RootPathInput({
         disabled={isPending || !isDirty}
         type="submit"
       >
-        Go {isPending ? <Loader /> : <ArrowRightIcon />}
+        Go{' '}
+        {isPending ? <Loader variant="square" size="lg" /> : <ArrowRightIcon />}
       </Button>
     </form>
   )

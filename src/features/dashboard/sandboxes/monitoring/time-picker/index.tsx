@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'motion/react'
 import { memo, type ReactNode, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { tryParseDatetime } from '@/lib/utils/formatting'

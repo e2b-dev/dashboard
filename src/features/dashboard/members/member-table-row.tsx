@@ -1,21 +1,22 @@
 'use client'
 
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import type { IconType } from 'react-icons'
 import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { FiMail } from 'react-icons/fi'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type { TeamMember } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
-import { removeTeamMemberAction } from '@/core/server/actions/team-actions'
-import type { TeamMember } from '@/core/server/functions/team/types'
+import { UserAvatar } from '@/features/dashboard/shared'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { formatDate } from '@/lib/utils/formatting'
+import { useTRPC } from '@/trpc/client'
 import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
@@ -62,33 +63,42 @@ function toMemberProvider(provider: string): MemberProvider | null {
 export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const { toast } = useToast()
   const router = useRouter()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { team, user } = useDashboard()
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
-  const { execute: removeMember, isExecuting: isRemoving } = useAction(
-    removeTeamMemberAction,
-    {
-      onSuccess: ({ input }) => {
+  const removeMemberMutation = useMutation(
+    trpc.teams.removeMember.mutationOptions({
+      onSuccess: async (_, input) => {
         if (input.userId === user?.id) {
+          await queryClient.invalidateQueries({
+            queryKey: trpc.teams.list.queryKey(),
+          })
+
           router.push(PROTECTED_URLS.DASHBOARD)
+
           toast(defaultSuccessToast('You have left the team.'))
         } else {
+          await queryClient.invalidateQueries({
+            queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
+          })
           toast(
             defaultSuccessToast('The member has been removed from the team.')
           )
         }
       },
-      onError: ({ error }) => {
-        toast(defaultErrorToast(error.serverError || 'Unknown error.'))
+      onError: (error) => {
+        toast(defaultErrorToast(error.message || 'Unknown error.'))
       },
       onSettled: () => {
         setRemoveDialogOpen(false)
       },
-    }
+    })
   )
 
   const handleRemoveMember = (userId: string) => {
-    removeMember({ teamSlug: team.slug, userId })
+    removeMemberMutation.mutate({ teamSlug: team.slug, userId })
   }
 
   const providers =
@@ -116,7 +126,7 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
         addedByMember={addedByMember}
         addedBySystem={addedBySystem}
         dateStr={dateStr}
-        isRemoving={isRemoving}
+        isRemoving={removeMemberMutation.isPending}
         memberEmail={member.info.email}
         memberName={member.info.name}
         onRemove={() => handleRemoveMember(member.info.id)}
@@ -245,15 +255,10 @@ const AddedCell = ({
           <E2BLogo className="text-fg-tertiary size-5" />
         </div>
       ) : (
-        <Avatar className="border-stroke size-5 shrink-0 border">
-          <AvatarImage
-            referrerPolicy="no-referrer"
-            src={addedByMember?.info.avatar_url}
-          />
-          <AvatarFallback className="bg-bg text-[10px] font-bold uppercase">
-            {addedByMember?.info.email?.charAt(0).toUpperCase() ?? '?'}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          url={addedByMember?.info.avatar_url}
+          email={addedByMember?.info.email}
+        />
       )}
       {showRemove ? (
         <RemoveMemberDialog

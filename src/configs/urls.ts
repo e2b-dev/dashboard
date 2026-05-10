@@ -22,11 +22,10 @@ export const PROTECTED_URLS = {
   MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
 
   SANDBOXES: (teamSlug: string) =>
-    `/dashboard/${teamSlug}/sandboxes?tab=monitoring`,
+    `/dashboard/${teamSlug}/sandboxes/monitoring`,
   SANDBOXES_MONITORING: (teamSlug: string) =>
-    `/dashboard/${teamSlug}/sandboxes?tab=monitoring`,
-  SANDBOXES_LIST: (teamSlug: string) =>
-    `/dashboard/${teamSlug}/sandboxes?tab=list`,
+    `/dashboard/${teamSlug}/sandboxes/monitoring`,
+  SANDBOXES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/sandboxes/list`,
 
   AGENTS: (teamSlug: string) => `/dashboard/${teamSlug}/agents`,
 
@@ -41,11 +40,10 @@ export const PROTECTED_URLS = {
 
   WEBHOOKS: (teamSlug: string) => `/dashboard/${teamSlug}/webhooks`,
 
-  TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates`,
-  TEMPLATES_LIST: (teamSlug: string) =>
-    `/dashboard/${teamSlug}/templates?tab=list`,
+  TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
+  TEMPLATES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_BUILDS: (teamSlug: string) =>
-    `/dashboard/${teamSlug}/templates?tab=builds`,
+    `/dashboard/${teamSlug}/templates/builds`,
   TEMPLATE_BUILD: (teamSlug: string, templateId: string, buildId: string) =>
     `/dashboard/${teamSlug}/templates/${templateId}/builds/${buildId}`,
 

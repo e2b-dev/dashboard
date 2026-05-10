@@ -12,11 +12,13 @@ export default function ErrorBoundary({
   description,
   className,
   hideFrame = false,
+  onRetry,
 }: {
   error: Error & { digest?: string }
   description?: string
   className?: string
   hideFrame?: boolean
+  onRetry?: () => void
 }) {
   useEffect(() => {
     l.error(
@@ -40,6 +42,7 @@ export default function ErrorBoundary({
           description={description}
           message={error.message}
           className="border-none"
+          onRetry={onRetry}
         />
       ) : (
         <Frame>
@@ -47,6 +50,7 @@ export default function ErrorBoundary({
             description={description}
             message={error.message}
             className="border-none"
+            onRetry={onRetry}
           />
         </Frame>
       )}

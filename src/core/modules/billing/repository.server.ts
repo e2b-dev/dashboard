@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { z } from 'zod'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type {
   AddOnOrderConfirmResponse,
@@ -8,8 +9,10 @@ import type {
   CustomerPortalResponse,
   Invoice,
   PaymentMethodsCustomerSession,
+  PaymentMethodsSetupSession,
   TeamItems,
   UsageResponse,
+  VerificationPaymentResponse,
 } from '@/core/modules/billing/models'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
@@ -35,11 +38,23 @@ export interface BillingRepository {
   createOrder(itemId: string): Promise<RepoResult<AddOnOrderCreateResponse>>
   confirmOrder(orderId: string): Promise<RepoResult<AddOnOrderConfirmResponse>>
   getCustomerSession(): Promise<RepoResult<PaymentMethodsCustomerSession>>
+  createPaymentMethodsSession(): Promise<RepoResult<PaymentMethodsSetupSession>>
+  createVerificationPayment(): Promise<RepoResult<VerificationPaymentResponse>>
 }
 
 async function parseText(response: Response): Promise<string> {
   return (await response.text()) || 'Request failed'
 }
+
+const PaymentMethodsSessionResponseSchema = z.object({
+  client_secret: z.string().min(1),
+  setup_intent_client_secret: z.string().min(1),
+})
+
+const VerificationPaymentResponseSchema = z.object({
+  client_secret: z.string().min(1),
+  amount_due_cents: z.number().int().positive(),
+})
 
 export function createBillingRepository(
   scope: BillingScope,
@@ -249,7 +264,7 @@ export function createBillingRepository(
     },
     async getCustomerSession() {
       const res = await fetch(
-        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods/customer-session`,
+        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods-session`,
         {
           method: 'POST',
           headers: {
@@ -264,6 +279,62 @@ export function createBillingRepository(
       }
 
       return ok((await res.json()) as PaymentMethodsCustomerSession)
+    },
+    async createPaymentMethodsSession() {
+      const res = await fetch(
+        `${deps.billingApiUrl}/teams/${scope.teamId}/payment-methods-session?include_setup_intent=true`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.ok) {
+        return err(repoErrorFromHttp(res.status, await parseText(res)))
+      }
+
+      const parseResult = PaymentMethodsSessionResponseSchema.safeParse(
+        await res.json()
+      )
+
+      if (!parseResult.success) {
+        return err(
+          repoErrorFromHttp(500, 'Invalid payment methods session response')
+        )
+      }
+
+      return ok(parseResult.data)
+    },
+    async createVerificationPayment() {
+      const res = await fetch(
+        `${deps.billingApiUrl}/teams/${scope.teamId}/verification-payment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.ok) {
+        return err(repoErrorFromHttp(res.status, await parseText(res)))
+      }
+
+      const parseResult = VerificationPaymentResponseSchema.safeParse(
+        await res.json()
+      )
+
+      if (!parseResult.success) {
+        return err(
+          repoErrorFromHttp(500, 'Invalid verification payment response')
+        )
+      }
+
+      return ok(parseResult.data)
     },
   }
 }

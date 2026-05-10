@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 import ShikiHighlighter, { type Language } from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'

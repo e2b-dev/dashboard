@@ -1,11 +1,11 @@
 import { TRPCClientError, type TRPCClientErrorLike } from '@trpc/client'
 import type { TRPCAppRouter } from '@/core/server/api/routers'
 
-export function isNotFoundError(
+const isNotFoundError = (
   error: unknown
 ): error is
   | TRPCClientErrorLike<TRPCAppRouter>
-  | TRPCClientError<TRPCAppRouter> {
+  | TRPCClientError<TRPCAppRouter> => {
   if (error instanceof TRPCClientError) {
     return error.data?.code === 'NOT_FOUND'
   }
@@ -24,3 +24,5 @@ export function isNotFoundError(
     trpcLikeError.shape?.data?.code === 'NOT_FOUND'
   )
 }
+
+export { isNotFoundError }

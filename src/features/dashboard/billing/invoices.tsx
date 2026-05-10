@@ -11,8 +11,6 @@ import {
   InvoiceIcon,
 } from '@/ui/primitives/icons'
 import { Label } from '@/ui/primitives/label'
-import { Loader } from '@/ui/primitives/loader'
-import { Skeleton } from '@/ui/primitives/skeleton'
 import {
   Table,
   TableBody,
@@ -20,6 +18,7 @@ import {
   TableEmptyState,
   TableHead,
   TableHeader,
+  TableLoadingState,
   TableRow,
 } from '@/ui/primitives/table'
 import { useInvoices } from './hooks'
@@ -50,41 +49,15 @@ function InvoicesEmpty({ error }: InvoicesEmptyProps) {
   return (
     <TableEmptyState colSpan={4}>
       <InvoiceIcon
-        className={cn('size-4', error && 'text-accent-error-highlight')}
-      />
-      <p
         className={cn(
-          'prose-body-highlight',
+          'size-4 shrink-0',
           error && 'text-accent-error-highlight'
         )}
-      >
+      />
+      <span className={cn(error && 'text-accent-error-highlight')}>
         {error ? error : 'No invoices yet'}
-      </p>
+      </span>
     </TableEmptyState>
-  )
-}
-
-function InvoicesLoading() {
-  return (
-    <div className="w-full gap-2 relative flex flex-col justify-center items-center">
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div
-          key={index}
-          className="h-11 w-full border border-bg-highlight relative flex items-center gap-4 justify-center overflow-hidden"
-        >
-          <Skeleton className="absolute inset-0" />
-
-          {index === 1 && (
-            <>
-              <Loader variant="slash" className="z-10" />
-              <span className="prose-body-highlight z-10">
-                Loading invoices <Loader variant="dots" className="z-10" />
-              </span>
-            </>
-          )}
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -124,13 +97,8 @@ export default function BillingInvoicesTable() {
         </TableHeader>
         <TableBody>
           {showLoader && (
-            <TableRow>
-              <TableCell colSpan={4} className="p-0">
-                <InvoicesLoading />
-              </TableCell>
-            </TableRow>
+            <TableLoadingState colSpan={4} label="Loading invoices" />
           )}
-
           {showEmpty && <InvoicesEmpty error={error?.message} />}
 
           {hasData &&
