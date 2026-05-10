@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow',
 }
 
-interface TerminalSessionPageProps {
+interface TerminalPageProps {
   searchParams: Promise<{
     command?: string
     sandboxId?: string
@@ -30,23 +30,19 @@ interface TerminalSessionPageProps {
   }>
 }
 
-export default async function TerminalSessionPage({
+export default async function TerminalPage({
   searchParams,
-}: TerminalSessionPageProps) {
+}: TerminalPageProps) {
   const { command = '', sandboxId, template } = await searchParams
   const terminalTemplate = normalizeTerminalTemplate(template)
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
 
   if (!terminalTemplate) {
-    return (
-      <TerminalSessionUnavailable message="The terminal template is invalid." />
-    )
+    return <TerminalUnavailable message="The terminal template is invalid." />
   }
 
   if (terminalSandboxId === null) {
-    return (
-      <TerminalSessionUnavailable message="The terminal sandbox ID is invalid." />
-    )
+    return <TerminalUnavailable message="The terminal sandbox ID is invalid." />
   }
 
   const session = await getSessionInsecure()
@@ -54,7 +50,7 @@ export default async function TerminalSessionPage({
 
   if (error || !data.user || !session) {
     return (
-      <TerminalSessionSignIn
+      <TerminalSignIn
         command={command}
         sandboxId={terminalSandboxId}
         template={terminalTemplate}
@@ -68,7 +64,7 @@ export default async function TerminalSessionPage({
   const teamsResult = await teamsRepository.listUserTeams()
 
   if (!teamsResult.ok) {
-    return <TerminalSessionUnavailable />
+    return <TerminalUnavailable />
   }
 
   const resolvedTeam = await resolveUserTeam(data.user.id, session.access_token)
@@ -82,7 +78,7 @@ export default async function TerminalSessionPage({
     : teamsResult.data.find((candidate) => candidate.id === resolvedTeam?.id)
 
   if (!team) {
-    return <TerminalSessionUnavailable />
+    return <TerminalUnavailable />
   }
 
   const templateAvailable = terminalSandboxId
@@ -95,13 +91,13 @@ export default async function TerminalSessionPage({
 
   if (!templateAvailable.ok) {
     return (
-      <TerminalSessionUnavailable message="We could not verify the terminal template for this account." />
+      <TerminalUnavailable message="We could not verify the terminal template for this account." />
     )
   }
 
   if (!templateAvailable.available) {
     return (
-      <TerminalSessionUnavailable
+      <TerminalUnavailable
         message={`Template "${terminalTemplate}" is not available for this account.`}
       />
     )
@@ -242,7 +238,7 @@ async function isTerminalTemplateAvailable({
   }
 }
 
-function TerminalSessionSignIn({
+function TerminalSignIn({
   command,
   sandboxId,
   template,
@@ -266,7 +262,7 @@ function TerminalSessionSignIn({
   }
 
   const returnToQuery = returnToParams.toString()
-  const returnTo = `/dashboard/terminal/session${
+  const returnTo = `/dashboard/terminal${
     returnToQuery ? `?${returnToQuery}` : ''
   }`
   const signInHref = `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({
@@ -292,7 +288,7 @@ function TerminalSessionSignIn({
   )
 }
 
-function TerminalSessionUnavailable({
+function TerminalUnavailable({
   message = 'We could not resolve a dashboard team for this account.',
 }: {
   message?: string

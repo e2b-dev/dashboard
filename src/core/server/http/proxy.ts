@@ -15,8 +15,8 @@ export function isDashboardRoute(pathname: string): boolean {
   return pathname.startsWith(PROTECTED_URLS.DASHBOARD)
 }
 
-function isDashboardTerminalSessionRoute(pathname: string): boolean {
-  return pathname === '/dashboard/terminal/session'
+function isDashboardTerminalRoute(pathname: string): boolean {
+  return pathname === '/dashboard/terminal'
 }
 
 export function buildRedirectUrl(path: string, request: NextRequest): URL {
@@ -29,7 +29,7 @@ export function getAuthRedirect(
 ): NextResponse | null {
   if (
     isDashboardRoute(request.nextUrl.pathname) &&
-    !isDashboardTerminalSessionRoute(request.nextUrl.pathname) &&
+    !isDashboardTerminalRoute(request.nextUrl.pathname) &&
     !isAuthenticated
   ) {
     return NextResponse.redirect(buildRedirectUrl(AUTH_URLS.SIGN_IN, request))
