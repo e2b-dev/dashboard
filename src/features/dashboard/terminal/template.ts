@@ -1,5 +1,5 @@
 const DEFAULT_TEMPLATE = 'base'
-const TEMPLATE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/
+const TEMPLATE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,127}$/
 
 export function normalizeTerminalTemplate(template?: string) {
   const value = template?.trim()

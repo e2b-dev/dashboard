@@ -86,8 +86,11 @@ describe('dashboard terminal helpers', () => {
       expect(normalizeTerminalTemplate(' python_3.12-dev ')).toBe(
         'python_3.12-dev'
       )
-      expect(normalizeTerminalTemplate('../base')).toBeNull()
+      expect(normalizeTerminalTemplate('team-slug/python:default')).toBe(
+        'team-slug/python:default'
+      )
       expect(normalizeTerminalTemplate('base; echo nope')).toBeNull()
+      expect(normalizeTerminalTemplate('../base')).toBeNull()
     })
   })
 
@@ -143,6 +146,23 @@ describe('dashboard terminal helpers', () => {
 
       clearStoredTerminalSession('user-123')
       expect(readStoredTerminalSession('user-123')).toBeNull()
+    })
+
+    it('treats storage writes and removals as best-effort', () => {
+      vi.mocked(window.localStorage.setItem).mockImplementationOnce(() => {
+        throw new Error('Quota exceeded')
+      })
+      vi.mocked(window.localStorage.removeItem).mockImplementationOnce(() => {
+        throw new Error('Storage blocked')
+      })
+
+      expect(() =>
+        writeStoredTerminalSession('user-123', {
+          sandboxId: 'sandbox-123',
+          template: 'base',
+        })
+      ).not.toThrow()
+      expect(() => clearStoredTerminalSession('user-123')).not.toThrow()
     })
   })
 

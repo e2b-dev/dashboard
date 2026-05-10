@@ -40,12 +40,20 @@ export function writeStoredTerminalSession(
   userId: string,
   session: StoredTerminalSession
 ) {
-  window.localStorage.setItem(
-    getTerminalSessionStorageKey(userId),
-    JSON.stringify(session)
-  )
+  try {
+    window.localStorage.setItem(
+      getTerminalSessionStorageKey(userId),
+      JSON.stringify(session)
+    )
+  } catch {
+    // Terminal launch should still succeed if browser storage is unavailable.
+  }
 }
 
 export function clearStoredTerminalSession(userId: string) {
-  window.localStorage.removeItem(getTerminalSessionStorageKey(userId))
+  try {
+    window.localStorage.removeItem(getTerminalSessionStorageKey(userId))
+  } catch {
+    // Best-effort cleanup for unavailable or blocked browser storage.
+  }
 }
