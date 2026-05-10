@@ -83,6 +83,9 @@ export default function Login() {
     if (returnTo) params.set('returnTo', returnTo)
     window.location.href = `${AUTH_URLS.FORGOT_PASSWORD}?${params.toString()}`
   }
+  const signUpHref = returnTo
+    ? `${AUTH_URLS.SIGN_UP}?${new URLSearchParams({ returnTo }).toString()}`
+    : AUTH_URLS.SIGN_UP
 
   return (
     <div className="flex w-full flex-col">
@@ -160,7 +163,7 @@ export default function Login() {
 
       <p className="text-fg-secondary mt-3 leading-6">
         Don&apos;t have an account?{' '}
-        <Link className="text-fg  underline" href={AUTH_URLS.SIGN_UP}>
+        <Link className="text-fg  underline" href={signUpHref}>
           Sign up
         </Link>
         .
