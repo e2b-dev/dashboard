@@ -44,10 +44,16 @@ jobs:
   format:
     name: Format
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -65,8 +71,15 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run format check
-        run: bunx biome ci --formatter-enabled=true --assist-enabled=true --linter-enabled=false --reporter=github .
+      - name: Run formatter
+        run: bun run format
+
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: apply biome formatting"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
 
   knip:
     name: Knip
