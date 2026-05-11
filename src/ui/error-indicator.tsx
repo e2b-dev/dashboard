@@ -20,6 +20,7 @@ interface ErrorIndicatorProps {
   message?: string
   className?: string
   children?: React.ReactNode
+  onRetry?: () => void
 }
 
 export function ErrorIndicator({
@@ -28,6 +29,7 @@ export function ErrorIndicator({
   message,
   className,
   children,
+  onRetry,
 }: ErrorIndicatorProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -51,7 +53,16 @@ export function ErrorIndicator({
       <CardFooter className="px-auto flex flex-col gap-4 py-4">
         <Button
           variant="secondary"
-          onClick={() => startTransition(() => router.refresh())}
+          onClick={() =>
+            startTransition(() => {
+              if (onRetry) {
+                onRetry()
+                return
+              }
+
+              router.refresh()
+            })
+          }
           className="w-full max-w-md gap-1"
         >
           <RefreshIcon

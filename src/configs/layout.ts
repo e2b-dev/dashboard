@@ -28,6 +28,14 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Sandboxes',
     type: 'custom',
   }),
+  '/dashboard/*/sandboxes/monitoring': () => ({
+    title: 'Sandboxes',
+    type: 'custom',
+  }),
+  '/dashboard/*/sandboxes/list': () => ({
+    title: 'Sandboxes',
+    type: 'custom',
+  }),
   '/dashboard/*/sandboxes/*/*': (pathname) => {
     const parts = pathname.split('/')
     const teamSlug = parts[2]!
@@ -49,6 +57,14 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     }
   },
   '/dashboard/*/templates': () => ({
+    title: 'Templates',
+    type: 'custom',
+  }),
+  '/dashboard/*/templates/list': () => ({
+    title: 'Templates',
+    type: 'custom',
+  }),
+  '/dashboard/*/templates/builds': () => ({
     title: 'Templates',
     type: 'custom',
   }),

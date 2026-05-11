@@ -55,8 +55,22 @@ export interface AddOnOrderConfirmResponse {
   client_secret: string
 }
 
+export interface VerificationPaymentResponse {
+  client_secret: string
+  amount_due_cents: number
+}
+
 export interface PaymentMethodsCustomerSession {
   client_secret: string
+}
+
+export interface PaymentMethodsSession {
+  client_secret: string
+  setup_intent_client_secret?: string
+}
+
+export interface PaymentMethodsSetupSession extends PaymentMethodsSession {
+  setup_intent_client_secret: string
 }
 
 export interface TierLimits {
