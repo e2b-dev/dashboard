@@ -742,7 +742,7 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting both fields clears all egress rules. */
+    /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it. */
     put: {
       parameters: {
         query?: never
@@ -759,6 +759,10 @@ export interface paths {
             allowOut?: string[]
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[]
+            /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+            rules?: {
+              [key: string]: components['schemas']['SandboxNetworkRule'][]
+            }
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean
           }
@@ -2256,6 +2260,21 @@ export interface components {
       denyOut?: string[]
       /** @description Specify host mask which will be used for all sandbox requests */
       maskRequestHost?: string
+      /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic. */
+      rules?: {
+        [key: string]: components['schemas']['SandboxNetworkRule'][]
+      }
+    }
+    /** @description Transform rule applied to egress requests matching a domain pattern. */
+    SandboxNetworkRule: {
+      transform?: components['schemas']['SandboxNetworkTransform']
+    }
+    /** @description Transformations applied to matching egress requests before forwarding. */
+    SandboxNetworkTransform: {
+      /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API. */
+      headers?: {
+        [key: string]: string
+      }
     }
     /**
      * @description Auto-resume enabled flag for paused sandboxes. Default false.
