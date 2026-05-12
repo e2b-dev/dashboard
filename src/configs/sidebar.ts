@@ -1,8 +1,8 @@
-import { JSX } from 'react'
 import {
   AccountSettingsIcon,
   CardIcon,
   GaugeIcon,
+  type Icon,
   KeyIcon,
   PersonsIcon,
   SandboxIcon,
@@ -21,8 +21,7 @@ type SidebarNavArgs = {
 export type SidebarNavItem = {
   label: string
   href: (args: SidebarNavArgs) => string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: (...args: any[]) => JSX.Element
+  icon: Icon
   group?: string
   activeMatch?: string
 }
@@ -51,7 +50,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
           href: (args: SidebarNavArgs) =>
             PROTECTED_URLS.WEBHOOKS(args.teamSlug!),
           icon: WebhookIcon,
-          activeMatch: `/dashboard/*/webhooks`,
+          activeMatch: `/dashboard/*/webhooks/**`,
         },
       ]
     : []),

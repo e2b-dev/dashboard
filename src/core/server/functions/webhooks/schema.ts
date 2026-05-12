@@ -45,8 +45,44 @@ export const UpdateWebhookSecretInputSchema = z.object({
   signatureSecret: WebhookSecretSchema,
 })
 
+const DeliveryStatusFilterSchema = z.enum(['all', 'success', 'failed'])
+
+export const GetWebhookInputSchema = z.object({
+  webhookId: z.uuid(),
+})
+
+export const ListWebhookDeliveriesInputSchema = z.object({
+  webhookId: z.uuid(),
+  limit: z.number().int().min(1).max(100).optional().default(25),
+  offset: z.number().int().min(0).optional().default(0),
+  orderAsc: z.boolean().optional().default(false),
+  deliveryStatus: DeliveryStatusFilterSchema.optional().default('all'),
+  eventType: z.string().trim().min(1).optional(),
+})
+
+export const GetWebhookDeliveryInputSchema = z.object({
+  webhookId: z.uuid(),
+  deliveryId: z.uuid(),
+})
+
+export const GetWebhookDeliveryStatsInputSchema = z.object({
+  webhookId: z.uuid(),
+  start: z.iso.datetime().optional(),
+  end: z.iso.datetime().optional(),
+})
+
 export type UpsertWebhookInput = z.input<typeof UpsertWebhookInputSchema>
 export type DeleteWebhookInput = z.input<typeof DeleteWebhookInputSchema>
 export type UpdateWebhookSecretInput = z.input<
   typeof UpdateWebhookSecretInputSchema
+>
+export type GetWebhookInput = z.input<typeof GetWebhookInputSchema>
+export type ListWebhookDeliveriesInput = z.input<
+  typeof ListWebhookDeliveriesInputSchema
+>
+export type GetWebhookDeliveryInput = z.input<
+  typeof GetWebhookDeliveryInputSchema
+>
+export type GetWebhookDeliveryStatsInput = z.input<
+  typeof GetWebhookDeliveryStatsInputSchema
 >

@@ -95,6 +95,27 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Webhooks',
     type: 'default',
   }),
+  '/dashboard/*/webhooks/*/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamSlug = parts[2]!
+    const webhookId = parts[4]!
+    const webhookIdSliced = `${webhookId.slice(0, 6)}...${webhookId.slice(-6)}`
+
+    return {
+      title: [
+        {
+          label: 'Webhooks',
+          href: PROTECTED_URLS.WEBHOOKS(teamSlug),
+        },
+        { label: `Webhook ${webhookIdSliced}` },
+      ],
+      type: 'custom',
+      copyValue: webhookId,
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
+    }
+  },
 
   // team
   '/dashboard/*/general': () => ({

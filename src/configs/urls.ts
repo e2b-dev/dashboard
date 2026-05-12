@@ -37,6 +37,12 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/filesystem`,
 
   WEBHOOKS: (teamSlug: string) => `/dashboard/${teamSlug}/webhooks`,
+  WEBHOOK: (teamSlug: string, webhookId: string) =>
+    `/dashboard/${teamSlug}/webhooks/${webhookId}/overview`,
+  WEBHOOK_OVERVIEW: (teamSlug: string, webhookId: string) =>
+    `/dashboard/${teamSlug}/webhooks/${webhookId}/overview`,
+  WEBHOOK_DELIVERIES: (teamSlug: string, webhookId: string) =>
+    `/dashboard/${teamSlug}/webhooks/${webhookId}/deliveries`,
 
   TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
@@ -69,6 +75,7 @@ export const RESOLVER_URLS = {
 export const TEAM_SPECIFIC_RESOURCE_SEGMENTS: readonly string[] = [
   'sandboxes',
   'templates',
+  'webhooks',
 ]
 
 export const HELP_URLS = {

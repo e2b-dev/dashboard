@@ -1,6 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Fragment, useState } from 'react'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
@@ -187,6 +189,7 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
 
 export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
+  const router = useRouter()
 
   const createdAt = webhook.createdAt
     ? new Date(webhook.createdAt).toLocaleDateString('en-US', {
@@ -196,8 +199,28 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
       })
     : '-'
 
+  const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)
+
+  const openWebhook = () => {
+    router.push(webhookHref)
+  }
+
+  const handleRowKeyDown = (
+    event: React.KeyboardEvent<HTMLTableRowElement>
+  ) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+
+    event.preventDefault()
+    openWebhook()
+  }
+
   return (
-    <TableRow>
+    <TableRow
+      className="cursor-pointer hover:bg-bg-hover"
+      onClick={openWebhook}
+      onKeyDown={handleRowKeyDown}
+      tabIndex={0}
+    >
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
         <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
       </TableCell>
@@ -217,7 +240,10 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className={cn(rowCellClassName, 'w-10 pl-6 text-right')}>
+      <TableCell
+        className={cn(rowCellClassName, 'w-10 pl-6 text-right')}
+        onClick={(event) => event.stopPropagation()}
+      >
         <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>

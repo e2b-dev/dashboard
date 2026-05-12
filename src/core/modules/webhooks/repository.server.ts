@@ -24,10 +24,42 @@ export interface UpsertWebhookInput {
   enabled: boolean
 }
 
+export interface ListWebhookDeliveriesInput {
+  webhookId: string
+  limit: number
+  offset: number
+  orderAsc: boolean
+  deliveryStatus?: 'success' | 'failed'
+  eventType?: string
+}
+
+export interface GetWebhookDeliveryInput {
+  webhookId: string
+  deliveryId: string
+}
+
+export interface GetWebhookDeliveryStatsInput {
+  webhookId: string
+  start?: string
+  end?: string
+}
+
 export interface WebhooksRepository {
   listWebhooks(): Promise<
     RepoResult<ArgusComponents['schemas']['WebhookDetail'][]>
   >
+  getWebhook(
+    webhookId: string
+  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDetail']>>
+  listWebhookDeliveries(
+    input: ListWebhookDeliveriesInput
+  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDeliveryEvent'][]>>
+  getWebhookDelivery(
+    input: GetWebhookDeliveryInput
+  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDelivery']>>
+  getWebhookDeliveryStats(
+    input: GetWebhookDeliveryStatsInput
+  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDeliveryStats']>>
   upsertWebhook(input: UpsertWebhookInput): Promise<RepoResult<void>>
   deleteWebhook(webhookId: string): Promise<RepoResult<void>>
   updateWebhookSecret(
@@ -66,6 +98,124 @@ export function createWebhooksRepository(
       }
 
       return ok(response.data ?? [])
+    },
+    async getWebhook(webhookId) {
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: { webhookID: webhookId },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to get webhook',
+            response.error
+          )
+        )
+      }
+
+      return ok(response.data)
+    },
+    async listWebhookDeliveries(input) {
+      const deliveryStatus = input.deliveryStatus
+        ? [input.deliveryStatus]
+        : undefined
+      const eventType = input.eventType ? [input.eventType] : undefined
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}/deliveries',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: { webhookID: input.webhookId },
+            query: {
+              limit: input.limit,
+              offset: input.offset,
+              orderAsc: input.orderAsc,
+              deliveryStatus,
+              eventType,
+            },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to list webhook deliveries',
+            response.error
+          )
+        )
+      }
+
+      return ok(response.data ?? [])
+    },
+    async getWebhookDelivery(input) {
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}/deliveries/{deliveryID}',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: {
+              webhookID: input.webhookId,
+              deliveryID: input.deliveryId,
+            },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to get webhook delivery',
+            response.error
+          )
+        )
+      }
+
+      return ok(response.data)
+    },
+    async getWebhookDeliveryStats(input) {
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}/stats',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: { webhookID: input.webhookId },
+            query: {
+              start: input.start,
+              end: input.end,
+            },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to get webhook delivery stats',
+            response.error
+          )
+        )
+      }
+
+      return ok(response.data)
     },
     async upsertWebhook(input) {
       if (input.mode === 'update') {
