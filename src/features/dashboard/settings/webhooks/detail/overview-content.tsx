@@ -1,7 +1,7 @@
 'use client'
 
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import { useTRPC } from '@/trpc/client'
 import {
@@ -17,15 +17,17 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/ui/primitives/chart'
+import { WebhookRangeSelector } from './range-selector'
 import {
   getWebhookStatsRange,
-  WebhookRangeSelector,
   type WebhookStatsRange,
-} from './range-selector'
+  type WebhookStatsRangeBounds,
+} from './stats-range'
 
 type WebhookOverviewContentProps = {
   teamSlug: string
   webhookId: string
+  initialRangeBounds: WebhookStatsRangeBounds
 }
 
 type MetricCardProps = {
@@ -84,10 +86,12 @@ const EmptyChartState = ({ label }: { label: string }) => (
 export const WebhookOverviewContent = ({
   teamSlug,
   webhookId,
+  initialRangeBounds,
 }: WebhookOverviewContentProps) => {
   const [range, setRange] = useState<WebhookStatsRange>('24h')
+  const [rangeBounds, setRangeBounds] =
+    useState<WebhookStatsRangeBounds>(initialRangeBounds)
   const trpc = useTRPC()
-  const rangeBounds = useMemo(() => getWebhookStatsRange(range), [range])
   const { data } = useSuspenseQuery(
     trpc.webhooks.getDeliveryStats.queryOptions({
       teamSlug,
@@ -102,6 +106,10 @@ export const WebhookOverviewContent = ({
       ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
       : '0%'
   const hasBuckets = stats.buckets.length > 0
+  const handleRangeChange = (nextRange: WebhookStatsRange) => {
+    setRange(nextRange)
+    setRangeBounds(getWebhookStatsRange(nextRange))
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-3 md:p-6">
@@ -112,7 +120,7 @@ export const WebhookOverviewContent = ({
             Delivery health and latency for this webhook.
           </p>
         </div>
-        <WebhookRangeSelector value={range} onChange={setRange} />
+        <WebhookRangeSelector value={range} onChange={handleRangeChange} />
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">

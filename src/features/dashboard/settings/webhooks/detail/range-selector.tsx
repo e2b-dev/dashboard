@@ -8,39 +8,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/ui/primitives/select'
-
-export type WebhookStatsRange = '24h' | '7d' | '30d'
+import {
+  WEBHOOK_STATS_RANGE_LABELS,
+  type WebhookStatsRange,
+} from './stats-range'
 
 const WebhookStatsRangeSchema = z.enum(['24h', '7d', '30d'])
-
-export const WEBHOOK_STATS_RANGE_LABELS: Record<WebhookStatsRange, string> = {
-  '24h': 'Last 24 hours',
-  '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
-}
-
-const WEBHOOK_STATS_RANGE_HOURS: Record<WebhookStatsRange, number> = {
-  '24h': 24,
-  '7d': 24 * 7,
-  '30d': 24 * 30,
-}
 
 type WebhookRangeSelectorProps = {
   value: WebhookStatsRange
   onChange: (value: WebhookStatsRange) => void
-}
-
-// Builds ISO stats bounds from a range, e.g. "24h" -> { start: "...", end: "..." }.
-export const getWebhookStatsRange = (range: WebhookStatsRange) => {
-  const end = new Date()
-  const start = new Date(
-    end.getTime() - WEBHOOK_STATS_RANGE_HOURS[range] * 60 * 60 * 1000
-  )
-
-  return {
-    start: start.toISOString(),
-    end: end.toISOString(),
-  }
 }
 
 export const WebhookRangeSelector = ({
