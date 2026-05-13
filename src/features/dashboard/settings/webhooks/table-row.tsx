@@ -1,13 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
@@ -27,15 +25,10 @@ import {
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/ui/primitives/tooltip'
 import { useDashboard } from '../../context'
 import { UserAvatar } from '../../shared'
-import { WEBHOOK_EVENT_LABELS } from './constants'
 import { DeleteWebhookDialog } from './delete-webhook-dialog'
+import { WebhookEventBadges } from './event-badges'
 import type { Webhook } from './types'
 import { UpdateWebhookSecretDialog } from './update-webhook-secret-dialog'
 import { UpsertWebhookDialog } from './upsert-webhook-dialog'
@@ -115,51 +108,6 @@ const WebhookNameAndUrl = ({ href, name, url }: WebhookNameAndUrlProps) => {
 const rowCellClassName = 'p-0 py-1.5 align-middle [tr:first-child>&]:pt-0'
 const rowContentClassName = 'flex items-center'
 const actionIconClassName = 'size-4 text-fg-tertiary'
-
-const getWebhookEventLabel = (event: string): string => {
-  const matchedEvent = SandboxLifecycleEventTypeSchema.options.find(
-    (webhookEvent) => webhookEvent === event
-  )
-  if (!matchedEvent) return event
-  return WEBHOOK_EVENT_LABELS[matchedEvent]
-}
-
-type WebhookEventBadgesProps = {
-  events: readonly string[]
-}
-
-const WebhookEventBadges = ({ events }: WebhookEventBadgesProps) => {
-  const isAllEvents =
-    events.length === SandboxLifecycleEventTypeSchema.options.length
-
-  if (isAllEvents) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge className="cursor-pointer">ALL ({events.length})</Badge>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="flex flex-wrap items-center gap-1 prose-label uppercase">
-            {SandboxLifecycleEventTypeSchema.options.map((event, index) => (
-              <Fragment key={event}>
-                {index > 0 && (
-                  <span aria-hidden="true" className="text-fg-tertiary">
-                    ·
-                  </span>
-                )}
-                <span className="text-fg">{WEBHOOK_EVENT_LABELS[event]}</span>
-              </Fragment>
-            ))}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    )
-  }
-
-  return events.map((event) => (
-    <Badge key={event}>{getWebhookEventLabel(event)}</Badge>
-  ))
-}
 
 const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
   const [dropDownOpen, setDropDownOpen] = useState(false)

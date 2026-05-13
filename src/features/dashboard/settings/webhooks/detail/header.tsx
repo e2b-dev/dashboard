@@ -1,15 +1,14 @@
 'use client'
 
 import { useSuspenseQuery } from '@tanstack/react-query'
-import Link from 'next/link'
-import { PROTECTED_URLS } from '@/configs/urls'
-import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
-import { WEBHOOK_EVENT_LABELS } from '@/features/dashboard/settings/webhooks/constants'
+import { WebhookEventBadges } from '@/features/dashboard/settings/webhooks/event-badges'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { ArrowLeftIcon, WebhookIcon } from '@/ui/primitives/icons'
-import { WebhookStatusBadge } from './status-badge'
+import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
+import { DetailsItem, DetailsRow } from '../../../layouts/details-row'
 
 type WebhookDetailHeaderProps = {
   teamSlug: string
@@ -17,7 +16,7 @@ type WebhookDetailHeaderProps = {
 }
 
 const formatDate = (value?: string) => {
-  if (!value) return 'Unknown'
+  if (!value) return '-'
 
   return new Date(value).toLocaleDateString('en-US', {
     month: 'short',
@@ -26,11 +25,36 @@ const formatDate = (value?: string) => {
   })
 }
 
-const getEventLabel = (event: string) => {
-  const parsed = SandboxLifecycleEventTypeSchema.safeParse(event)
-  if (parsed.success) return WEBHOOK_EVENT_LABELS[parsed.data]
+const getWebhookIdBadgeLabel = (id: string) =>
+  `${id.slice(0, 6)}...${id.slice(-6)}`
 
-  return event
+const WebhookIdBadge = ({ id }: { id: string }) => {
+  const [wasCopied, copy] = useClipboard(1500)
+
+  const handleCopy = async () => {
+    await copy(id)
+    toast(defaultSuccessToast('Webhook ID copied'))
+  }
+
+  return (
+    <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
+      <span className="tracking-wider">{getWebhookIdBadgeLabel(id)}</span>
+      <Button
+        type="button"
+        variant="quaternary"
+        size="none"
+        className="text-fg-tertiary hover:text-fg h-3 w-3 shrink-0 active:translate-y-0"
+        aria-label="Copy full webhook ID"
+        onClick={handleCopy}
+      >
+        {wasCopied ? (
+          <CheckIcon className="size-3" />
+        ) : (
+          <CopyIcon className="size-3" />
+        )}
+      </Button>
+    </Badge>
+  )
 }
 
 export const WebhookDetailHeader = ({
@@ -44,58 +68,20 @@ export const WebhookDetailHeader = ({
   const { webhook } = data
 
   return (
-    <header className="border-stroke bg-bg flex flex-col gap-4 border-b px-3 py-4 md:px-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 flex-col gap-3">
-          <Button variant="quaternary" size="none" asChild>
-            <Link
-              className="w-fit gap-1 text-fg-tertiary"
-              href={PROTECTED_URLS.WEBHOOKS(teamSlug)}
-            >
-              <ArrowLeftIcon className="size-3.5" />
-              Back to webhooks
-            </Link>
-          </Button>
-
-          <div className="flex min-w-0 items-center gap-3">
-            <div
-              aria-hidden="true"
-              className="border-stroke flex size-9 shrink-0 items-center justify-center border"
-            >
-              <WebhookIcon className="size-4 text-fg-secondary" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-fg prose-headline-small">
-                  {webhook.name}
-                </h1>
-                <WebhookStatusBadge enabled={webhook.enabled} />
-              </div>
-              <p className="truncate font-mono uppercase text-fg-tertiary prose-label-numeric">
-                {webhook.url}
-              </p>
-            </div>
+    <header className="bg-bg relative z-30 w-full p-3 md:p-6">
+      <DetailsRow>
+        <DetailsItem label="ID">
+          <WebhookIdBadge id={webhook.id} />
+        </DetailsItem>
+        <DetailsItem label="Created">
+          <p>{formatDate(webhook.createdAt)}</p>
+        </DetailsItem>
+        <DetailsItem label="Events">
+          <div className="flex flex-wrap items-center gap-1">
+            <WebhookEventBadges events={webhook.events} />
           </div>
-        </div>
-
-        <div className="grid gap-1 text-left md:text-right">
-          <p className="font-mono uppercase text-fg-tertiary prose-label">
-            Webhook ID
-          </p>
-          <p className="font-mono text-fg-secondary prose-label-numeric">
-            {webhook.id}
-          </p>
-          <p className="pt-1 text-fg-tertiary prose-body">
-            Created {formatDate(webhook.createdAt)}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1">
-        {webhook.events.map((event) => (
-          <Badge key={event}>{getEventLabel(event)}</Badge>
-        ))}
-      </div>
+        </DetailsItem>
+      </DetailsRow>
     </header>
   )
 }
