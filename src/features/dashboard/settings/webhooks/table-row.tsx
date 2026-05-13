@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Fragment, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
@@ -49,6 +49,7 @@ type WebhookRowActionsProps = {
 }
 
 type WebhookNameAndUrlProps = {
+  href: string
   name: string
   url: string
 }
@@ -61,7 +62,7 @@ const urlIconMap: Record<UrlIconState, typeof WebhookIcon> = {
   idle: WebhookIcon,
 }
 
-const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
+const WebhookNameAndUrl = ({ href, name, url }: WebhookNameAndUrlProps) => {
   const [wasCopied, copy] = useClipboard(1500)
   const [isUrlHovered, setIsUrlHovered] = useState(false)
   const iconState: UrlIconState = wasCopied
@@ -87,7 +88,14 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
-        <p className="truncate text-left text-fg prose-body">{name}</p>
+        <Button variant="quaternary" size="none" asChild>
+          <Link
+            href={href}
+            className="w-fit max-w-full truncate text-left text-fg prose-body hover:underline"
+          >
+            {name}
+          </Link>
+        </Button>
         <Button
           variant="quaternary"
           size="none"
@@ -189,7 +197,6 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
 
 export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
-  const router = useRouter()
 
   const createdAt = webhook.createdAt
     ? new Date(webhook.createdAt).toLocaleDateString('en-US', {
@@ -201,28 +208,14 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
 
   const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)
 
-  const openWebhook = () => {
-    router.push(webhookHref)
-  }
-
-  const handleRowKeyDown = (
-    event: React.KeyboardEvent<HTMLTableRowElement>
-  ) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return
-
-    event.preventDefault()
-    openWebhook()
-  }
-
   return (
-    <TableRow
-      className="cursor-pointer hover:bg-bg-hover"
-      onClick={openWebhook}
-      onKeyDown={handleRowKeyDown}
-      tabIndex={0}
-    >
+    <TableRow>
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
-        <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
+        <WebhookNameAndUrl
+          href={webhookHref}
+          name={webhook.name}
+          url={webhook.url}
+        />
       </TableCell>
 
       <TableCell className={cn(rowCellClassName, 'w-[216px]')}>
@@ -240,10 +233,7 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell
-        className={cn(rowCellClassName, 'w-10 pl-6 text-right')}
-        onClick={(event) => event.stopPropagation()}
-      >
+      <TableCell className={cn(rowCellClassName, 'w-10 pl-6 text-right')}>
         <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>
