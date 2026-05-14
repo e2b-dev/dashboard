@@ -16,8 +16,9 @@ export default function RanFor() {
   const lastResumedAt = useMemo(() => {
     if (!events) return null
     for (let i = events.length - 1; i >= 0; i--) {
-      if (events[i].type === SANDBOX_LIFECYCLE_EVENT_RESUMED) {
-        return events[i].timestamp
+      const event = events[i]
+      if (event && event.type === SANDBOX_LIFECYCLE_EVENT_RESUMED) {
+        return event.timestamp
       }
     }
     return null
