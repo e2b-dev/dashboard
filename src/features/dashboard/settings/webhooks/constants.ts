@@ -9,19 +9,20 @@ export const WEBHOOK_EVENTS = [
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number]
 
 export const WEBHOOK_EXAMPLE_PAYLOAD = `{
-  "version": "v1",
   "id": "<UUID>",
+  "version": "v2",
   "type": "sandbox.lifecycle.created",
-  "eventData": null,
-  "sandboxBuildId": "<UUID>",
-  "sandboxExecutionId": "<UUID>",
-  "sandboxId": "<SANDBOX_ID>",
-  "sandboxTeamId": "<UUID>",
-  "sandboxTemplateId": "<TEMPLATE_ID>",
-  "timestamp": "<ISO_8601_TIMESTAMP>"
+  "timestamp": "<ISO_8601_TIMESTAMP>",
+  "event_category": "lifecycle",
+  "event_label": "create",
+  "sandbox_id": "<SANDBOX_ID>",
+  "sandbox_execution_id": "<UUID>",
+  "sandbox_template_id": "<TEMPLATE_ID>",
+  "sandbox_build_id": "<UUID>",
+  "sandbox_team_id": "<UUID>"
 }
 
-// Payload structure may vary by event type. 
+// Payload structure may vary by event type.
 // See docs for full schema.`
 
 export const WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL =
