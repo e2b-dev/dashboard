@@ -1,0 +1,144 @@
+import { describe, expect, it } from 'vitest'
+import { summarizeClientInput } from '@/core/server/actions/utils'
+
+describe('summarizeClientInput', () => {
+  it('inlines allowlisted scalar keys verbatim', () => {
+    const out = summarizeClientInput({
+      teamSlug: 'acme',
+      teamId: 't_123',
+      templateId: 'tmpl_456',
+      sandboxId: 'sbx_789',
+      userId: 'user_abc',
+      webhookId: 'wh_xyz',
+      organizationId: 'org_1',
+      page: 2,
+      pageSize: 50,
+      limit: 100,
+      offset: 0,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      mode: 'add',
+      kind: 'standard',
+      type: 'webhook',
+    })
+
+    expect(out).toEqual({
+      teamSlug: 'acme',
+      teamId: 't_123',
+      templateId: 'tmpl_456',
+      sandboxId: 'sbx_789',
+      userId: 'user_abc',
+      webhookId: 'wh_xyz',
+      organizationId: 'org_1',
+      page: 2,
+      pageSize: 50,
+      limit: 100,
+      offset: 0,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      mode: 'add',
+      kind: 'standard',
+      type: 'webhook',
+    })
+  })
+
+  it('summarizes non-allowlisted keys as a type hint, never the raw value', () => {
+    const out = summarizeClientInput({
+      signatureSecret: 'a'.repeat(64),
+      password: 'hunter2',
+      apiToken: 'tok_secret',
+      privateKey: '-----BEGIN PRIVATE KEY-----\n…',
+    })
+
+    expect(out).toEqual({
+      _signatureSecret: 'string(64)',
+      _password: 'string(7)',
+      _apiToken: 'string(10)',
+      _privateKey: `string(${'-----BEGIN PRIVATE KEY-----\n…'.length})`,
+    })
+
+    // Belt and braces: no value should appear in the JSON-serialized output.
+    const serialized = JSON.stringify(out)
+    expect(serialized).not.toContain('hunter2')
+    expect(serialized).not.toContain('tok_secret')
+    expect(serialized).not.toContain('BEGIN PRIVATE KEY')
+    expect(serialized).not.toContain('a'.repeat(64))
+  })
+
+  it('mixes allowlisted and sensitive fields safely', () => {
+    const out = summarizeClientInput({
+      teamSlug: 'acme',
+      webhookId: 'wh_123',
+      signatureSecret: 'super-secret-value',
+    })
+
+    expect(out).toEqual({
+      teamSlug: 'acme',
+      webhookId: 'wh_123',
+      _signatureSecret: 'string(18)',
+    })
+  })
+
+  it('summarizes nested objects as "object" without recursing into values', () => {
+    const out = summarizeClientInput({
+      teamSlug: 'acme',
+      payload: {
+        nested: {
+          secret: 'should-never-appear',
+        },
+      },
+    })
+
+    expect(out).toEqual({
+      teamSlug: 'acme',
+      _payload: 'object',
+    })
+    expect(JSON.stringify(out)).not.toContain('should-never-appear')
+  })
+
+  it('describes arrays with length', () => {
+    const out = summarizeClientInput({
+      sandboxIds: ['a', 'b', 'c', 'd'],
+    })
+
+    expect(out).toEqual({ _sandboxIds: 'array(4)' })
+  })
+
+  it('handles null, undefined, and primitive inputs', () => {
+    expect(summarizeClientInput(null)).toEqual({ _shape: 'null' })
+    expect(summarizeClientInput(undefined)).toEqual({ _shape: 'undefined' })
+    expect(summarizeClientInput('raw-string')).toEqual({
+      _shape: 'string(10)',
+    })
+    expect(summarizeClientInput(42)).toEqual({ _shape: 'number' })
+    expect(summarizeClientInput(true)).toEqual({ _shape: 'boolean' })
+  })
+
+  it('treats top-level array input as a non-object shape', () => {
+    expect(summarizeClientInput(['a', 'b'])).toEqual({ _shape: 'array(2)' })
+  })
+
+  it('describes null and undefined values inside an object', () => {
+    const out = summarizeClientInput({
+      teamSlug: 'acme',
+      maybeNull: null,
+      maybeUndefined: undefined,
+    })
+
+    expect(out).toEqual({
+      teamSlug: 'acme',
+      _maybeNull: 'null',
+      _maybeUndefined: 'undefined',
+    })
+  })
+
+  it('does not inline allowlisted keys when their value is a non-scalar', () => {
+    // teamSlug is allowlisted, but only when scalar — guard against payload
+    // shapes that smuggle objects through allowlisted keys.
+    const out = summarizeClientInput({
+      teamSlug: { evil: 'object' },
+    })
+
+    expect(out).toEqual({ _teamSlug: 'object' })
+  })
+})

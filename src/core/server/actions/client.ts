@@ -25,7 +25,11 @@ import type {
   RequestScope,
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
-import { ActionError, flattenClientInputValue } from './utils'
+import {
+  ActionError,
+  flattenClientInputValue,
+  summarizeClientInput,
+} from './utils'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
@@ -135,7 +139,11 @@ export const actionClient = createSafeActionClient({
   const baseLogPayload = {
     server_function_type: type,
     server_function_name: name,
-    server_function_input: clientInput,
+    // Do NOT log raw clientInput — it's an arbitrary user-supplied payload
+    // and relying on pino redaction as a blocklist is fragile (any new action
+    // with a non-standard sensitive field name would leak by default).
+    // summarizeClientInput keeps an allowlisted, debug-safe shape view.
+    server_function_input_summary: summarizeClientInput(clientInput),
     server_function_duration_ms: duration.toFixed(3),
     request_url: requestObservabilityContext.request_url,
     request_path: requestObservabilityContext.request_path,
