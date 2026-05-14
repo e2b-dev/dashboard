@@ -94,6 +94,10 @@ export default function SignUp() {
     }
   }, [message])
 
+  const signInHref = returnTo
+    ? `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({ returnTo }).toString()}`
+    : AUTH_URLS.SIGN_IN
+
   return (
     <div className="flex w-full flex-col">
       <h1>Sign up</h1>
@@ -191,7 +195,7 @@ export default function SignUp() {
 
       <p className="text-fg-secondary mt-3 leading-6">
         Already have an account?{' '}
-        <Link className="text-fg  underline" href={AUTH_URLS.SIGN_IN}>
+        <Link className="text-fg  underline" href={signInHref}>
           Sign in
         </Link>
         .
