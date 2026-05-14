@@ -628,7 +628,8 @@ export interface operations {
   webhookDeliveriesList: {
     parameters: {
       query?: {
-        offset?: number
+        /** @description Opaque cursor from the X-Next-Cursor response header. */
+        cursor?: string
         limit?: number
         orderAsc?: boolean
         /** @description Filter deliveries by delivery status */
@@ -647,6 +648,8 @@ export interface operations {
       /** @description List of webhook delivery attempts grouped by event. */
       200: {
         headers: {
+          /** @description Cursor to pass to the next list request, omitted when there is no next page. */
+          'X-Next-Cursor'?: string
           [name: string]: unknown
         }
         content: {

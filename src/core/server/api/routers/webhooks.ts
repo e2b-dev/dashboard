@@ -105,7 +105,7 @@ export const webhooksRouter = createTRPCRouter({
       const result = await ctx.webhooksRepository.listWebhookDeliveries({
         webhookId: input.webhookId,
         limit: input.limit,
-        offset: input.offset,
+        cursor: input.cursor,
         orderAsc: input.orderAsc,
         deliveryStatus:
           input.deliveryStatus === 'all' ? undefined : input.deliveryStatus,
@@ -133,11 +133,8 @@ export const webhooksRouter = createTRPCRouter({
       }
 
       return {
-        groups: result.data.map(toDeliveryEventGroup),
-        pagination: {
-          limit: input.limit,
-          offset: input.offset,
-        },
+        groups: result.data.data.map(toDeliveryEventGroup),
+        nextCursor: result.data.nextCursor,
       }
     }),
 

@@ -675,14 +675,12 @@ paths:
           Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/webhookID"
-        - name: offset
+        - name: cursor
           in: query
           required: false
           schema:
-            type: integer
-            format: int32
-            minimum: 0
-            default: 0
+            type: string
+          description: Opaque cursor from the X-Next-Cursor response header.
         - name: limit
           in: query
           required: false
@@ -722,6 +720,11 @@ paths:
       responses:
         "200":
           description: List of webhook delivery attempts grouped by event.
+          headers:
+            X-Next-Cursor:
+              description: Cursor to pass to the next list request, omitted when there is no next page.
+              schema:
+                type: string
           content:
             application/json:
               schema:

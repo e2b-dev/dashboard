@@ -54,7 +54,7 @@ export const GetWebhookInputSchema = z.object({
 export const ListWebhookDeliveriesInputSchema = z.object({
   webhookId: z.uuid(),
   limit: z.number().int().min(1).max(100).optional().default(25),
-  offset: z.number().int().min(0).optional().default(0),
+  cursor: z.string().optional(),
   orderAsc: z.boolean().optional().default(false),
   deliveryStatus: DeliveryStatusFilterSchema.optional().default('all'),
   eventType: z.string().trim().min(1).optional(),

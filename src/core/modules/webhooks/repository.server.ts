@@ -27,10 +27,15 @@ export interface UpsertWebhookInput {
 export interface ListWebhookDeliveriesInput {
   webhookId: string
   limit: number
-  offset: number
+  cursor?: string
   orderAsc: boolean
   deliveryStatus?: 'success' | 'failed'
   eventType?: string
+}
+
+interface ListWebhookDeliveriesResult {
+  data: ArgusComponents['schemas']['WebhookDeliveryEvent'][]
+  nextCursor: string | null
 }
 
 export interface GetWebhookDeliveryInput {
@@ -53,7 +58,7 @@ export interface WebhooksRepository {
   ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDetail']>>
   listWebhookDeliveries(
     input: ListWebhookDeliveriesInput
-  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDeliveryEvent'][]>>
+  ): Promise<RepoResult<ListWebhookDeliveriesResult>>
   getWebhookDelivery(
     input: GetWebhookDeliveryInput
   ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDelivery']>>
@@ -139,7 +144,7 @@ export function createWebhooksRepository(
             path: { webhookID: input.webhookId },
             query: {
               limit: input.limit,
-              offset: input.offset,
+              cursor: input.cursor,
               orderAsc: input.orderAsc,
               deliveryStatus,
               eventType,
@@ -158,7 +163,10 @@ export function createWebhooksRepository(
         )
       }
 
-      return ok(response.data ?? [])
+      return ok({
+        data: response.data ?? [],
+        nextCursor: response.response.headers.get('X-Next-Cursor'),
+      })
     },
     async getWebhookDelivery(input) {
       const response = await deps.infraClient.GET(

@@ -1,6 +1,10 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
@@ -245,26 +249,28 @@ export const WebhookDeliveriesContent = ({
   const [deliveryStatus, setDeliveryStatus] =
     useState<DeliveryStatusFilter>('all')
   const [eventType, setEventType] = useState('')
-  const [offset, setOffset] = useState(0)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const trpc = useTRPC()
   const eventTypeFilter = eventType.trim() || undefined
-  const deliveriesQuery = useQuery(
-    trpc.webhooks.listDeliveries.queryOptions(
+  const deliveriesQuery = useInfiniteQuery(
+    trpc.webhooks.listDeliveries.infiniteQueryOptions(
       {
         teamSlug,
         webhookId,
         limit: 25,
-        offset,
         deliveryStatus,
         eventType: eventTypeFilter,
       },
       {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
         placeholderData: keepPreviousData,
       }
     )
   )
-  const groups = deliveriesQuery.data?.groups ?? []
+  const groups = useMemo(
+    () => deliveriesQuery.data?.pages.flatMap((page) => page.groups) ?? [],
+    [deliveriesQuery.data]
+  )
   const selectedGroup = useMemo(
     () =>
       groups.find((group) => group.eventId === selectedEventId) ?? groups[0],
@@ -284,7 +290,6 @@ export const WebhookDeliveriesContent = ({
     )
   )
   const detailedAttempt = deliveryDetailQuery.data?.delivery ?? selectedAttempt
-  const hasNextPage = groups.length === 25
   const hasActiveFilters = deliveryStatus !== 'all' || Boolean(eventTypeFilter)
 
   return (
@@ -301,7 +306,7 @@ export const WebhookDeliveriesContent = ({
             value={deliveryStatus}
             onChange={(value) => {
               setDeliveryStatus(value)
-              setOffset(0)
+              setSelectedEventId(null)
             }}
           />
           <Input
@@ -310,7 +315,7 @@ export const WebhookDeliveriesContent = ({
             value={eventType}
             onChange={(event) => {
               setEventType(event.target.value)
-              setOffset(0)
+              setSelectedEventId(null)
             }}
           />
         </div>
@@ -416,17 +421,13 @@ export const WebhookDeliveriesContent = ({
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
-            disabled={offset === 0}
-            onClick={() => setOffset(Math.max(offset - 25, 0))}
+            disabled={!deliveriesQuery.hasNextPage}
+            loading={
+              deliveriesQuery.isFetchingNextPage ? 'Loading more' : undefined
+            }
+            onClick={() => deliveriesQuery.fetchNextPage()}
           >
-            Previous
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={!hasNextPage}
-            onClick={() => setOffset(offset + 25)}
-          >
-            Next
+            Load more
           </Button>
         </div>
       </div>
