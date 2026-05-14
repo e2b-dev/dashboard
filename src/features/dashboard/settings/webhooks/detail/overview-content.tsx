@@ -1,7 +1,8 @@
 'use client'
 
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQueryStates } from 'nuqs'
+import { useMemo } from 'react'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import { useTRPC } from '@/trpc/client'
 import {
@@ -20,6 +21,7 @@ import {
 import { WebhookRangeSelector } from './range-selector'
 import {
   getWebhookStatsRange,
+  webhookStatsRangeParams,
   type WebhookStatsRange,
   type WebhookStatsRangeBounds,
 } from './stats-range'
@@ -27,6 +29,7 @@ import {
 type WebhookOverviewContentProps = {
   teamSlug: string
   webhookId: string
+  initialRange: WebhookStatsRange
   initialRangeBounds: WebhookStatsRangeBounds
 }
 
@@ -86,11 +89,22 @@ const EmptyChartState = ({ label }: { label: string }) => (
 export const WebhookOverviewContent = ({
   teamSlug,
   webhookId,
+  initialRange,
   initialRangeBounds,
 }: WebhookOverviewContentProps) => {
-  const [range, setRange] = useState<WebhookStatsRange>('24h')
-  const [rangeBounds, setRangeBounds] =
-    useState<WebhookStatsRangeBounds>(initialRangeBounds)
+  const [rangeParams, setRangeParams] = useQueryStates(
+    webhookStatsRangeParams,
+    {
+      history: 'push',
+      shallow: true,
+    }
+  )
+  const range = rangeParams.range ?? initialRange
+  const rangeBounds = useMemo(
+    () =>
+      range === initialRange ? initialRangeBounds : getWebhookStatsRange(range),
+    [range, initialRange, initialRangeBounds]
+  )
   const trpc = useTRPC()
   const { data } = useSuspenseQuery(
     trpc.webhooks.getDeliveryStats.queryOptions({
@@ -107,8 +121,7 @@ export const WebhookOverviewContent = ({
       : '0%'
   const hasBuckets = stats.buckets.length > 0
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
-    setRange(nextRange)
-    setRangeBounds(getWebhookStatsRange(nextRange))
+    setRangeParams({ range: nextRange })
   }
 
   return (

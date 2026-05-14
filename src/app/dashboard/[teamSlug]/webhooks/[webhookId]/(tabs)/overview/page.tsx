@@ -1,5 +1,9 @@
 import { WebhookOverviewContent } from '@/features/dashboard/settings/webhooks/detail'
-import { getWebhookStatsRange } from '@/features/dashboard/settings/webhooks/detail/stats-range'
+import {
+  DEFAULT_WEBHOOK_STATS_RANGE,
+  getWebhookStatsRange,
+  loadWebhookStatsRangeParams,
+} from '@/features/dashboard/settings/webhooks/detail/stats-range'
 import { prefetch, trpc } from '@/trpc/server'
 
 type WebhookOverviewPageProps = {
@@ -7,19 +11,23 @@ type WebhookOverviewPageProps = {
     teamSlug: string
     webhookId: string
   }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default async function WebhookOverviewPage({
   params,
+  searchParams,
 }: WebhookOverviewPageProps) {
   const { teamSlug, webhookId } = await params
-  const range = getWebhookStatsRange('24h')
+  const { range: rangeParam } = await loadWebhookStatsRangeParams(searchParams)
+  const range = rangeParam ?? DEFAULT_WEBHOOK_STATS_RANGE
+  const rangeBounds = getWebhookStatsRange(range)
 
   prefetch(
     trpc.webhooks.getDeliveryStats.queryOptions({
       teamSlug,
       webhookId,
-      ...range,
+      ...rangeBounds,
     })
   )
 
@@ -27,7 +35,8 @@ export default async function WebhookOverviewPage({
     <WebhookOverviewContent
       teamSlug={teamSlug}
       webhookId={webhookId}
-      initialRangeBounds={range}
+      initialRange={range}
+      initialRangeBounds={rangeBounds}
     />
   )
 }

@@ -1,9 +1,21 @@
+import { createLoader, parseAsStringEnum } from 'nuqs/server'
+
+const WEBHOOK_STATS_RANGE_VALUES = ['24h', '7d'] as const
+
 type WebhookStatsRange = '24h' | '7d'
 
 type WebhookStatsRangeBounds = {
   start: string
   end: string
 }
+
+const DEFAULT_WEBHOOK_STATS_RANGE: WebhookStatsRange = '24h'
+
+const webhookStatsRangeParams = {
+  range: parseAsStringEnum(WEBHOOK_STATS_RANGE_VALUES),
+}
+
+const loadWebhookStatsRangeParams = createLoader(webhookStatsRangeParams)
 
 const WEBHOOK_STATS_RANGE_LABELS: Record<WebhookStatsRange, string> = {
   '24h': 'Last 24 hours',
@@ -31,7 +43,10 @@ const getWebhookStatsRange = (
 }
 
 export {
+  DEFAULT_WEBHOOK_STATS_RANGE,
   getWebhookStatsRange,
+  loadWebhookStatsRangeParams,
+  webhookStatsRangeParams,
   WEBHOOK_STATS_RANGE_LABELS,
   type WebhookStatsRange,
   type WebhookStatsRangeBounds,
