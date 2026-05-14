@@ -1,41 +1,15 @@
 'use client'
 
-import CopyButton from '@/ui/copy-button'
+import { Timestamp } from '@/features/dashboard/shared'
 import { useSandboxContext } from '../context'
 
-export default function StartedAt() {
+const StartedAt = () => {
   const { sandboxLifecycle } = useSandboxContext()
 
   const startedAt = sandboxLifecycle?.createdAt
-  if (!startedAt) {
-    return null
-  }
+  if (!startedAt) return null
 
-  const date = new Date(startedAt)
-  const now = new Date()
-  const isToday = date.toDateString() === now.toDateString()
-  const isYesterday =
-    date.toDateString() ===
-    new Date(now.setDate(now.getDate() - 1)).toDateString()
-
-  const prefix = isToday
-    ? 'Today'
-    : isYesterday
-      ? 'Yesterday'
-      : date.toLocaleDateString()
-
-  const timeStr = date.toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-
-  return (
-    <div className="flex items-center gap-1">
-      <p>
-        {prefix}, {timeStr}
-      </p>
-      <CopyButton value={startedAt} />
-    </div>
-  )
+  return <Timestamp value={startedAt} />
 }
+
+export default StartedAt
