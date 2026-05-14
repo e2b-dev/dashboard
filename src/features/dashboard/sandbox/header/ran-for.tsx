@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSandboxContext } from '../context'
+import { SANDBOX_LIFECYCLE_EVENT_RESUMED } from '../monitoring/utils/constants'
 
 export default function RanFor() {
   const { sandboxInfo, sandboxLifecycle, isRunning } = useSandboxContext()
@@ -10,11 +11,22 @@ export default function RanFor() {
   const startedAt = sandboxLifecycle?.createdAt
   const pausedAt = sandboxLifecycle?.pausedAt
   const endedAt = sandboxLifecycle?.endedAt
+  const events = sandboxLifecycle?.events
 
-  const startDate = useMemo(
-    () => (startedAt ? new Date(startedAt) : null),
-    [startedAt]
-  )
+  const lastResumedAt = useMemo(() => {
+    if (!events) return null
+    for (let i = events.length - 1; i >= 0; i--) {
+      if (events[i].type === SANDBOX_LIFECYCLE_EVENT_RESUMED) {
+        return events[i].timestamp
+      }
+    }
+    return null
+  }, [events])
+
+  const startDate = useMemo(() => {
+    const effectiveStart = lastResumedAt ?? startedAt
+    return effectiveStart ? new Date(effectiveStart) : null
+  }, [lastResumedAt, startedAt])
   const pausedDate = useMemo(
     () => (pausedAt ? new Date(pausedAt) : null),
     [pausedAt]
