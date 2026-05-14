@@ -21,9 +21,9 @@ import {
 import { WebhookRangeSelector } from './range-selector'
 import {
   getWebhookStatsRange,
-  webhookStatsRangeParams,
   type WebhookStatsRange,
   type WebhookStatsRangeBounds,
+  webhookStatsRangeParams,
 } from './stats-range'
 
 type WebhookOverviewContentProps = {

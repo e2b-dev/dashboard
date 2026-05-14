@@ -81,14 +81,13 @@ const WebhookNameAndUrl = ({ href, name, url }: WebhookNameAndUrlProps) => {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
-        <Button variant="quaternary" size="none" asChild>
-          <Link
-            href={href}
-            className="w-fit max-w-full truncate text-left text-fg prose-body hover:underline"
-          >
-            {name}
-          </Link>
-        </Button>
+        <Link
+          href={href}
+          className="text-fg w-fit max-w-full truncate text-sm font-medium hover:underline"
+          title={name}
+        >
+          {name}
+        </Link>
         <Button
           variant="quaternary"
           size="none"
