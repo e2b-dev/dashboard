@@ -7,6 +7,13 @@ loadEnvConfig(projectDir)
 const schema = serverSchema
   .merge(clientSchema)
   .refine(
+    (data) => Boolean(data.KV_REST_API_URL) === Boolean(data.KV_REST_API_TOKEN),
+    {
+      message: 'KV_REST_API_URL and KV_REST_API_TOKEN must be set together',
+      path: ['KV_REST_API_URL'],
+    }
+  )
+  .refine(
     (data) => {
       if (data.NEXT_PUBLIC_INCLUDE_BILLING === '1') {
         return (

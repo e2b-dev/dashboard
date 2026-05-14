@@ -1,5 +1,5 @@
-import { kv } from '@vercel/kv'
 import { KV_KEYS } from '@/configs/keys'
+import { getKvValue, setKvValue } from '@/core/shared/clients/kv'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 /**
@@ -102,15 +102,53 @@ export const shouldWarnAboutAlternateEmail = async (
   validationResult: EmailValidationResponse
 ): Promise<boolean> => {
   if (validationResult.sub_status === 'alternate') {
-    const warnedAlternateEmail = await kv.get(
+    const warnedAlternateEmail = await getKvValue<boolean>(
       KV_KEYS.WARNED_ALTERNATE_EMAIL(validationResult.address)
     )
 
-    if (!warnedAlternateEmail) {
-      await kv.set(
+    if (!warnedAlternateEmail.ok) {
+      l.warn(
+        {
+          key: 'validate_email:alternate_email_kv_unavailable',
+          error:
+            warnedAlternateEmail.reason === 'error'
+              ? serializeErrorForLog(warnedAlternateEmail.error)
+              : undefined,
+          context: {
+            email: validationResult.address,
+            reason: warnedAlternateEmail.reason,
+          },
+        },
+        'Skipping alternate email warning because KV is unavailable'
+      )
+
+      return false
+    }
+
+    if (!warnedAlternateEmail.value) {
+      const setResult = await setKvValue(
         KV_KEYS.WARNED_ALTERNATE_EMAIL(validationResult.address),
         true
       )
+
+      if (!setResult.ok) {
+        l.warn(
+          {
+            key: 'validate_email:alternate_email_kv_set_unavailable',
+            error:
+              setResult.reason === 'error'
+                ? serializeErrorForLog(setResult.error)
+                : undefined,
+            context: {
+              email: validationResult.address,
+              reason: setResult.reason,
+            },
+          },
+          'Skipping alternate email warning because KV could not persist state'
+        )
+
+        return false
+      }
 
       return true
     }

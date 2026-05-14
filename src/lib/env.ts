@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  KV_REST_API_TOKEN: z.string().min(1),
-  KV_REST_API_URL: z.url(),
+  KV_REST_API_TOKEN: z.string().min(1).optional(),
+  KV_REST_API_URL: z.url().optional(),
 
   ENABLE_USER_BOOTSTRAP: z.string().optional(),
   DASHBOARD_API_ADMIN_TOKEN: z.string().min(1).optional(),
