@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import {
   Select,
   SelectContent,
@@ -9,11 +8,10 @@ import {
   SelectValue,
 } from '@/ui/primitives/select'
 import {
-  WEBHOOK_STATS_RANGE_LABELS,
+  isWebhookStatsRange,
+  WEBHOOK_STATS_RANGE_OPTIONS,
   type WebhookStatsRange,
 } from './stats-range'
-
-const WebhookStatsRangeSchema = z.enum(['24h', '7d'])
 
 type WebhookRangeSelectorProps = {
   value: WebhookStatsRange
@@ -25,10 +23,9 @@ export const WebhookRangeSelector = ({
   onChange,
 }: WebhookRangeSelectorProps) => {
   const handleValueChange = (nextValue: string) => {
-    const parsed = WebhookStatsRangeSchema.safeParse(nextValue)
-    if (!parsed.success) return
+    if (!isWebhookStatsRange(nextValue)) return
 
-    onChange(parsed.data)
+    onChange(nextValue)
   }
 
   return (
@@ -37,9 +34,9 @@ export const WebhookRangeSelector = ({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {Object.entries(WEBHOOK_STATS_RANGE_LABELS).map(([range, label]) => (
-          <SelectItem key={range} value={range}>
-            {label}
+        {WEBHOOK_STATS_RANGE_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
           </SelectItem>
         ))}
       </SelectContent>

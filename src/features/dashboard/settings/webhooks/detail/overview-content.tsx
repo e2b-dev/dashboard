@@ -20,10 +20,10 @@ import {
 } from '@/ui/primitives/chart'
 import { WebhookRangeSelector } from './range-selector'
 import {
+  getValidWebhookStatsBounds,
   getWebhookStatsApiBounds,
   getWebhookStatsRange,
   getWebhookStatsRangeFromBounds,
-  normalizeWebhookStatsRangeBounds,
   type WebhookStatsRange,
   type WebhookStatsRangeBounds,
   webhookStatsTimeframeParams,
@@ -102,7 +102,7 @@ export const WebhookOverviewContent = ({
   )
   const rangeBounds = useMemo(
     () =>
-      normalizeWebhookStatsRangeBounds({
+      getValidWebhookStatsBounds({
         start: timeframeParams.start ?? initialRangeBounds.start,
         end: timeframeParams.end ?? initialRangeBounds.end,
       }),

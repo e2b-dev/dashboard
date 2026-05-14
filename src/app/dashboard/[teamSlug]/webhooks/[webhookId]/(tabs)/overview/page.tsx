@@ -1,9 +1,9 @@
 import { WebhookOverviewContent } from '@/features/dashboard/settings/webhooks/detail'
 import {
+  getValidWebhookStatsBounds,
   getWebhookStatsApiBounds,
   getWebhookStatsRange,
   loadWebhookStatsTimeframeParams,
-  normalizeWebhookStatsRangeBounds,
 } from '@/features/dashboard/settings/webhooks/detail/stats-range'
 import { prefetch, trpc } from '@/trpc/server'
 
@@ -21,8 +21,8 @@ export default async function WebhookOverviewPage({
 }: WebhookOverviewPageProps) {
   const { teamSlug, webhookId } = await params
   const timeframeParams = await loadWebhookStatsTimeframeParams(searchParams)
-  const fallbackRangeBounds = getWebhookStatsRange('24h')
-  const rangeBounds = normalizeWebhookStatsRangeBounds({
+  const fallbackRangeBounds = getWebhookStatsRange('this-week')
+  const rangeBounds = getValidWebhookStatsBounds({
     start: timeframeParams.start ?? fallbackRangeBounds.start,
     end: timeframeParams.end ?? fallbackRangeBounds.end,
   })
