@@ -294,31 +294,23 @@ export const WebhookDeliveriesContent = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-3 md:p-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-fg prose-headline-small">Event deliveries</h2>
-          <p className="text-fg-tertiary prose-body">
-            One row per sandbox event, with retry attempts grouped underneath.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <DeliveryStatusSelect
-            value={deliveryStatus}
-            onChange={(value) => {
-              setDeliveryStatus(value)
-              setSelectedEventId(null)
-            }}
-          />
-          <Input
-            className="h-9 md:w-[220px]"
-            placeholder="Filter event type"
-            value={eventType}
-            onChange={(event) => {
-              setEventType(event.target.value)
-              setSelectedEventId(null)
-            }}
-          />
-        </div>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
+        <DeliveryStatusSelect
+          value={deliveryStatus}
+          onChange={(value) => {
+            setDeliveryStatus(value)
+            setSelectedEventId(null)
+          }}
+        />
+        <Input
+          className="h-9 md:w-[220px]"
+          placeholder="Filter event type"
+          value={eventType}
+          onChange={(event) => {
+            setEventType(event.target.value)
+            setSelectedEventId(null)
+          }}
+        />
       </div>
 
       <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
