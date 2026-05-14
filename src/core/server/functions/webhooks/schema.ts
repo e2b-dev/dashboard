@@ -65,11 +65,25 @@ export const GetWebhookDeliveryInputSchema = z.object({
   deliveryId: z.uuid(),
 })
 
-export const GetWebhookDeliveryStatsInputSchema = z.object({
-  webhookId: z.uuid(),
-  start: z.iso.datetime().optional(),
-  end: z.iso.datetime().optional(),
-})
+export const GetWebhookDeliveryStatsInputSchema = z
+  .object({
+    webhookId: z.uuid(),
+    start: z.iso.datetime().optional(),
+    end: z.iso.datetime().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.start || !data.end) return
+
+    const start = new Date(data.start)
+    const end = new Date(data.end)
+    if (end.getTime() - start.getTime() <= 7 * 24 * 60 * 60 * 1000) return
+
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Webhook delivery stats range must be 7 days or less',
+      path: ['start'],
+    })
+  })
 
 export type UpsertWebhookInput = z.input<typeof UpsertWebhookInputSchema>
 export type DeleteWebhookInput = z.input<typeof DeleteWebhookInputSchema>

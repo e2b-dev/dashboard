@@ -1,4 +1,4 @@
-type WebhookStatsRange = '24h' | '7d' | '30d'
+type WebhookStatsRange = '24h' | '7d'
 
 type WebhookStatsRangeBounds = {
   start: string
@@ -8,13 +8,11 @@ type WebhookStatsRangeBounds = {
 const WEBHOOK_STATS_RANGE_LABELS: Record<WebhookStatsRange, string> = {
   '24h': 'Last 24 hours',
   '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
 }
 
 const WEBHOOK_STATS_RANGE_HOURS: Record<WebhookStatsRange, number> = {
   '24h': 24,
   '7d': 24 * 7,
-  '30d': 24 * 30,
 }
 
 // Builds ISO stats bounds from a range, e.g. "24h" -> { start: "...", end: "..." }.

@@ -13,7 +13,7 @@ import {
   type WebhookStatsRange,
 } from './stats-range'
 
-const WebhookStatsRangeSchema = z.enum(['24h', '7d', '30d'])
+const WebhookStatsRangeSchema = z.enum(['24h', '7d'])
 
 type WebhookRangeSelectorProps = {
   value: WebhookStatsRange
