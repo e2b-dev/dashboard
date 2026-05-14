@@ -31,8 +31,7 @@ function paymentStateForTeam(team: TeamModel) {
     return {
       label: 'Payment ready',
       badge: 'positive' as const,
-      description:
-        'Use this team for an existing E2B account that already has billing coverage.',
+      description: 'This team can receive provisioned resources.',
     }
   }
 
@@ -40,8 +39,7 @@ function paymentStateForTeam(team: TeamModel) {
     return {
       label: 'Needs payment',
       badge: 'warning' as const,
-      description:
-        'Use this team to test linking an existing account where Stripe Projects should supply payment credentials.',
+      description: 'This team needs payment setup before resources can run.',
     }
   }
 
@@ -171,8 +169,7 @@ export default async function StripeProjectsLinkPage({
           </h1>
           <p className="text-fg-secondary text-sm leading-6">
             Choose the E2B team Stripe Projects should use when provisioning
-            sandboxes. For local testing, this page covers new E2B teams,
-            existing teams without payment, and existing teams with payment.
+            sandboxes.
           </p>
         </header>
 
@@ -238,8 +235,7 @@ export default async function StripeProjectsLinkPage({
               New E2B team
             </label>
             <p className="text-fg-secondary text-sm leading-5">
-              Enter a team name to create a new E2B team and link Stripe
-              Projects to it. This is the path for a new E2B user after sign-up.
+              Create a team for this Stripe Projects connection.
             </p>
             <Input
               id="newTeamName"
@@ -251,8 +247,7 @@ export default async function StripeProjectsLinkPage({
 
           <div className="flex items-center justify-between gap-4">
             <p className="text-fg-tertiary text-xs leading-5">
-              If a team name is provided, it wins over the selected existing
-              team.
+              Creating a team overrides the selected existing team.
             </p>
             <Button type="submit">Link Stripe Projects</Button>
           </div>

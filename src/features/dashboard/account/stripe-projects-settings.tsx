@@ -8,16 +8,16 @@ import {
 } from '@/ui/primitives/icons'
 
 const rows = [
-  ['Provider account', 'acct_stripe_projects_demo'],
-  ['Linked team', 'Acme Engineering'],
-  ['Default service', 'E2B Sandbox'],
-  ['Credential scope', 'Team provisioning only'],
+  ['Status', 'Not connected'],
+  ['Provider', 'Stripe Projects'],
+  ['Resources', 'Sandboxes'],
+  ['Credentials', 'Issued after approval'],
 ]
 
 const steps = [
-  'Stripe sends an account request to E2B.',
-  'The user signs in and chooses this team.',
-  'E2B returns team-scoped credentials to Stripe.',
+  'Review the Stripe account request.',
+  'Choose the E2B team that owns usage.',
+  'Issue team-scoped credentials to Stripe.',
 ]
 
 export function StripeProjectsSettings() {
@@ -33,24 +33,23 @@ export function StripeProjectsSettings() {
               <h2 className="text-fg text-xl leading-6 font-semibold">
                 Stripe Projects
               </h2>
-              <Badge variant="positive" size="md">
-                Demo
+              <Badge variant="default" size="md">
+                Not connected
               </Badge>
             </div>
             <p className="text-fg-secondary max-w-[620px] text-sm leading-6">
-              Let Stripe Projects provision E2B sandboxes through this team.
-              Users connect Stripe from the dashboard before any team
-              credentials are issued.
+              Let Stripe Projects provision E2B sandboxes through this team once
+              the connection is approved.
             </p>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          <Button variant="secondary" className="w-full sm:w-auto">
+          <Button variant="secondary" className="w-full sm:w-auto" disabled>
             <ExternalLinkIcon className="size-4" />
             Open in Stripe
           </Button>
-          <Button className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto" disabled>
             <LinkIcon className="size-4" />
             Connect
           </Button>
@@ -77,8 +76,7 @@ export function StripeProjectsSettings() {
               Account linking flow
             </h3>
             <p className="text-fg-secondary text-sm leading-6">
-              This is where a team owner would review incoming Stripe account
-              requests and decide which E2B team should back the provider
+              Team owners approve which E2B team backs the Stripe provider
               account.
             </p>
           </div>
@@ -115,9 +113,8 @@ export function StripeProjectsSettings() {
           <div className="border-stroke bg-bg-1 flex gap-2 border p-3">
             <CheckIcon className="text-accent-positive-highlight mt-0.5 size-4 shrink-0" />
             <p className="text-fg-secondary text-sm leading-5">
-              New provider accounts should land here after the redirect. Repeat
-              links can skip this page once a Stripe account is already mapped
-              to a team.
+              New provider accounts land here after the redirect. Existing links
+              can skip approval once the Stripe account is mapped.
             </p>
           </div>
         </div>
