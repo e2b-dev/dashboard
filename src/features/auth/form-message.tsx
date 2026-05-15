@@ -30,25 +30,19 @@ export function AuthFormMessage({
       {'success' in message && (
         <Alert variant="success">
           <SuccessIcon className="h-4 w-4" />
-          <AlertDescription>
-            {decodeURIComponent(message.success!)}
-          </AlertDescription>
+          <AlertDescription>{message.success}</AlertDescription>
         </Alert>
       )}
       {'error' in message && (
         <Alert variant="error">
           <AlertIcon className="h-4 w-4" />
-          <AlertDescription>
-            {decodeURIComponent(message.error!)}
-          </AlertDescription>
+          <AlertDescription>{message.error}</AlertDescription>
         </Alert>
       )}
       {'message' in message && (
         <Alert variant="info">
           <InfoIcon className="h-4 w-4" />
-          <AlertDescription>
-            {decodeURIComponent(message.message!)}
-          </AlertDescription>
+          <AlertDescription>{message.message}</AlertDescription>
         </Alert>
       )}
     </motion.div>
