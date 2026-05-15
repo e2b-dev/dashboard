@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { createClient, redisClient } = vi.hoisted(() => {
+  const handlers: Record<string, (arg?: unknown) => void> = {}
   const client = {
     isReady: false,
-    on: vi.fn(),
+    on: vi.fn((event: string, handler: (arg?: unknown) => void) => {
+      handlers[event] = handler
+      return client
+    }),
+    emit: (event: string, arg?: unknown) => handlers[event]?.(arg),
     connect: vi.fn(),
     ping: vi.fn(),
     get: vi.fn(),
@@ -97,10 +102,53 @@ describe('optional KV client', () => {
     })
     expect(createClient).toHaveBeenCalledWith({
       url: 'redis://localhost:6379',
+      disableOfflineQueue: true,
     })
     expect(redisClient.on).toHaveBeenCalledWith('error', expect.any(Function))
+    expect(redisClient.on).toHaveBeenCalledWith('end', expect.any(Function))
     expect(redisClient.connect).toHaveBeenCalledTimes(1)
     expect(redisClient.ping).toHaveBeenCalledTimes(1)
+  })
+
+  it('fails fast when the client disconnects mid-session', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.ping.mockResolvedValueOnce('PONG')
+    const { pingKv } = await loadKvClient()
+
+    // First ping: healthy
+    await expect(pingKv()).resolves.toMatchObject({ status: 'ok' })
+
+    // Simulate disconnect: isReady flips and the next ping rejects fast
+    // because the singleton was created with disableOfflineQueue: true.
+    redisClient.isReady = false
+    const closedError = new Error('The client is closed')
+    redisClient.ping.mockRejectedValueOnce(closedError)
+
+    await expect(pingKv()).resolves.toEqual({
+      configured: true,
+      available: false,
+      status: 'error',
+      error: closedError,
+    })
+  })
+
+  it('rebuilds the singleton after the client emits end', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.ping.mockResolvedValue('PONG')
+    const { pingKv } = await loadKvClient()
+
+    await pingKv()
+    expect(createClient).toHaveBeenCalledTimes(1)
+    expect(redisClient.connect).toHaveBeenCalledTimes(1)
+
+    // Permanent disconnect — drives the 'end' handler, which should null out
+    // the cached singletons so the next call rebuilds from scratch.
+    redisClient.isReady = false
+    redisClient.emit('end')
+
+    await pingKv()
+    expect(createClient).toHaveBeenCalledTimes(2)
+    expect(redisClient.connect).toHaveBeenCalledTimes(2)
   })
 
   it('reports KV errors when Redis connection fails', async () => {

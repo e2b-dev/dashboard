@@ -49,6 +49,10 @@ function getKvConfigStatus(): KvConfigStatus {
 function createRedisClient() {
   const client = createClient({
     url: process.env.REDIS_URL,
+    // Fail commands fast when the client isn't ready instead of queueing them
+    // behind the auto-reconnect. Preserves the {status: 'error'} envelope on
+    // pingKv() and keeps /api/health snappy during Redis outages.
+    disableOfflineQueue: true,
   })
 
   client.on('error', (error) => {
@@ -59,6 +63,17 @@ function createRedisClient() {
       },
       'Redis client error'
     )
+  })
+
+  // When the socket fully ends (TCP close, retries exhausted, manual close),
+  // drop the cached singletons so the next getRedisClient() call rebuilds the
+  // client instead of returning the stale resolved promise. The identity guard
+  // protects against a late 'end' from a previous client clobbering a fresh one.
+  client.on('end', () => {
+    if (redisClient === client) {
+      redisClient = null
+      redisConnectPromise = null
+    }
   })
 
   return client
