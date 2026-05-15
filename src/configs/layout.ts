@@ -161,6 +161,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Account',
     type: 'default',
   }),
+  '/dashboard/*/stripe-projects/link': () => ({
+    title: 'Link Stripe Projects',
+    type: 'default',
+  }),
 }
 
 /**
