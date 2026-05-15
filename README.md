@@ -90,15 +90,12 @@ cp .env.example .env.local
 #### c. Key-Value Store Setup (Optional)
 Redis/KV is optional for standard dashboard deployments, including local, enterprise, and on-prem environments. The dashboard can boot and run core auth and dashboard workflows without KV configured.
 
-KV is currently used for optional capability checks and for deduplicating ZeroBounce alternate-email warnings. If you need those capabilities, configure a Vercel/Upstash Redis REST-compatible store:
+KV is currently used for optional capability checks and for deduplicating ZeroBounce alternate-email warnings. If you need those capabilities, configure a Redis-compatible store:
    ```
-   KV_REST_API_URL=your_redis_rest_api_url
-   KV_REST_API_TOKEN=your_redis_api_write_token
+   REDIS_URL=redis://localhost:6379
    ```
 
-> **Note**: `@vercel/kv` expects a Redis REST API. A raw Redis server such as `redis://localhost:6379` is not compatible without an Upstash-compatible REST proxy.
-
-> **Health check**: When `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set, `/api/health` will report `503 degraded` if KV is unreachable. Leave both unset to opt out of the KV health check entirely.
+> **Health check**: When `REDIS_URL` is set, `/api/health` will report `503 degraded` if Redis is unreachable. Leave it unset to opt out of the Redis health check entirely.
 
 #### d. Start the development server
 ```bash

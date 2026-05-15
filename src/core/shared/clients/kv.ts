@@ -1,4 +1,6 @@
-import { kv } from '@vercel/kv'
+import 'server-only'
+import { createClient } from 'redis'
+import { l, serializeErrorForLog } from './logger/logger'
 
 export type OptionalKvResult<T> =
   | { ok: true; configured: true; value: T }
@@ -15,19 +17,71 @@ export type KvCapabilityStatus =
   | { configured: true; available: true; status: 'ok' }
   | { configured: true; available: false; status: 'error'; error: unknown }
 
-function getKvConfigStatus() {
-  const hasUrl = Boolean(process.env.KV_REST_API_URL)
-  const hasToken = Boolean(process.env.KV_REST_API_TOKEN)
+type KvConfigStatus = 'not_configured' | 'misconfigured' | 'configured'
+type RedisClient = ReturnType<typeof createClient>
 
-  if (!(hasUrl || hasToken)) {
+let redisClient: RedisClient | null = null
+let redisConnectPromise: Promise<RedisClient> | null = null
+
+function isValidRedisUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url)
+    return parsedUrl.protocol === 'redis:' || parsedUrl.protocol === 'rediss:'
+  } catch {
+    return false
+  }
+}
+
+function getKvConfigStatus(): KvConfigStatus {
+  const redisUrl = process.env.REDIS_URL
+
+  if (!redisUrl) {
     return 'not_configured'
   }
 
-  if (hasUrl && hasToken) {
-    return 'configured'
+  if (!isValidRedisUrl(redisUrl)) {
+    return 'misconfigured'
   }
 
-  return 'misconfigured'
+  return 'configured'
+}
+
+function createRedisClient() {
+  const client = createClient({
+    url: process.env.REDIS_URL,
+  })
+
+  client.on('error', (error) => {
+    l.error(
+      {
+        key: 'redis_client:error',
+        error: serializeErrorForLog(error),
+      },
+      'Redis client error'
+    )
+  })
+
+  return client
+}
+
+async function getRedisClient() {
+  if (redisClient?.isReady) {
+    return redisClient
+  }
+
+  if (!redisClient) {
+    redisClient = createRedisClient()
+  }
+
+  if (!redisConnectPromise) {
+    redisConnectPromise = redisClient.connect().catch((error) => {
+      redisConnectPromise = null
+      redisClient = null
+      throw error
+    })
+  }
+
+  return redisConnectPromise
 }
 
 export function isKvConfigured() {
@@ -42,7 +96,8 @@ export async function pingKv(): Promise<KvCapabilityStatus> {
   }
 
   try {
-    await kv.ping()
+    const redis = await getRedisClient()
+    await redis.ping()
     return { configured: true, available: true, status: 'ok' }
   } catch (error) {
     return { configured: true, available: false, status: 'error', error }
@@ -59,7 +114,14 @@ export async function getKvValue<T>(
   }
 
   try {
-    return { ok: true, configured: true, value: await kv.get<T>(key) }
+    const redis = await getRedisClient()
+    const value = await redis.get(key)
+
+    return {
+      ok: true,
+      configured: true,
+      value: value === null ? null : (JSON.parse(value) as T),
+    }
   } catch (error) {
     return { ok: false, configured: true, reason: 'error', error }
   }
@@ -76,7 +138,12 @@ export async function setKvValue(
   }
 
   try {
-    return { ok: true, configured: true, value: await kv.set(key, value) }
+    const redis = await getRedisClient()
+    return {
+      ok: true,
+      configured: true,
+      value: await redis.set(key, JSON.stringify(value)),
+    }
   } catch (error) {
     return { ok: false, configured: true, reason: 'error', error }
   }
