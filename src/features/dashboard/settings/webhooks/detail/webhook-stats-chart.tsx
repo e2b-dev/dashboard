@@ -203,6 +203,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
       tooltip: {
         trigger: 'item',
         confine: true,
+        transitionDuration: 0,
         backgroundColor: bg,
         borderColor: stroke,
         borderWidth: 1,
