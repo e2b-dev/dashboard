@@ -278,15 +278,14 @@ export const WebhookDeliveriesContent = ({
 
       <div className="min-h-0 flex-1">
         <Card variant="layer" className="min-h-0 overflow-auto">
-          <Table className="min-w-[1860px] table-fixed">
+          <Table className="min-w-[1740px] table-fixed">
             <colgroup>
               <col className="w-[120px]" />
-              <col className="w-[120px]" />
-              <col className="w-[100px]" />
               <col className="w-[130px]" />
-              <col className="w-[120px]" />
-              <col className="w-[110px]" />
-              <col className="w-[120px]" />
+              <col className="w-[100px]" />
+              <col className="w-[150px]" />
+              <col className="w-[100px]" />
+              <col className="w-[100px]" />
               <col className="w-[220px]" />
               <col className="w-[220px]" />
               <col className="w-[150px]" />
@@ -296,12 +295,11 @@ export const WebhookDeliveriesContent = ({
             <TableHeader>
               <TableRow>
                 <TableHead className="first:pl-4">Event</TableHead>
-                <TableHead>ID</TableHead>
+                <TableHead>Sandbox ID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last attempt</TableHead>
                 <TableHead>Attempts</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead>Sandbox ID</TableHead>
                 <TableHead>Request headers</TableHead>
                 <TableHead>Request body</TableHead>
                 <TableHead>Response HTTP</TableHead>
@@ -311,9 +309,9 @@ export const WebhookDeliveriesContent = ({
             </TableHeader>
             <TableBody>
               {isDeliveriesLoading ? (
-                <TableLoadingState colSpan={12} label="Loading deliveries" />
+                <TableLoadingState colSpan={11} label="Loading deliveries" />
               ) : groups.length === 0 ? (
-                <TableEmptyState colSpan={12}>
+                <TableEmptyState colSpan={11}>
                   <WebhookIcon className="size-4" />
                   <p className="prose-body-highlight text-fg">
                     {emptyStateLabel}
@@ -331,7 +329,7 @@ export const WebhookDeliveriesContent = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <IdBadge id={attempt?.eventId ?? group.eventId} />
+                        <IdBadge id={group.sandboxId} />
                       </TableCell>
                       <TableCell>
                         {attempt ? (
@@ -342,7 +340,7 @@ export const WebhookDeliveriesContent = ({
                           '-'
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {attempt ? formatDateTime(attempt.timestamp) : '-'}
                       </TableCell>
                       <TableCell>{group.attemptCount}</TableCell>
@@ -350,9 +348,6 @@ export const WebhookDeliveriesContent = ({
                         {attempt
                           ? `${attempt.durationMs.toLocaleString()}ms`
                           : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <IdBadge id={group.sandboxId} />
                       </TableCell>
                       <TableCell>
                         <DeliveryDetailCell value={attempt?.requestHeaders} />
