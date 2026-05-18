@@ -109,8 +109,7 @@ export const webhooksRouter = createTRPCRouter({
         orderAsc: input.orderAsc,
         start: input.start,
         end: input.end,
-        deliveryStatus:
-          input.deliveryStatus === 'all' ? undefined : input.deliveryStatus,
+        deliveryStatus: input.deliveryStatus,
         eventType: input.eventType,
       })
 

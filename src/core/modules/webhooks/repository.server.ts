@@ -31,8 +31,8 @@ export interface ListWebhookDeliveriesInput {
   orderAsc: boolean
   start?: string
   end?: string
-  deliveryStatus?: 'success' | 'failed'
-  eventType?: string
+  deliveryStatus?: ('success' | 'failed')[]
+  eventType?: string[]
 }
 
 interface ListWebhookDeliveriesResult {
@@ -132,10 +132,6 @@ export function createWebhooksRepository(
       return ok(response.data)
     },
     async listWebhookDeliveries(input) {
-      const deliveryStatus = input.deliveryStatus
-        ? [input.deliveryStatus]
-        : undefined
-      const eventType = input.eventType ? [input.eventType] : undefined
       const response = await deps.infraClient.GET(
         '/events/webhooks/{webhookID}/deliveries',
         {
@@ -150,9 +146,12 @@ export function createWebhooksRepository(
               orderAsc: input.orderAsc,
               start: input.start,
               end: input.end,
-              deliveryStatus,
-              eventType,
+              deliveryStatus: input.deliveryStatus,
+              eventType: input.eventType,
             },
+          },
+          querySerializer: {
+            array: { style: 'form', explode: true },
           },
         }
       )

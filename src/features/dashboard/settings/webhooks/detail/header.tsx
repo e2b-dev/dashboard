@@ -24,7 +24,6 @@ export const WebhookDetailHeader = ({
       teamSlug,
       webhookId,
       limit: 1,
-      deliveryStatus: 'all',
     })
   )
   const { webhook } = data

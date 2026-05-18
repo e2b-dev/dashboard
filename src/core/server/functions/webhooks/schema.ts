@@ -45,7 +45,7 @@ export const UpdateWebhookSecretInputSchema = z.object({
   signatureSecret: WebhookSecretSchema,
 })
 
-const DeliveryStatusFilterSchema = z.enum(['all', 'success', 'failed'])
+const DeliveryStatusSchema = z.enum(['success', 'failed'])
 
 export const GetWebhookInputSchema = z.object({
   webhookId: z.uuid(),
@@ -58,8 +58,8 @@ export const ListWebhookDeliveriesInputSchema = z.object({
   orderAsc: z.boolean().optional().default(false),
   start: z.iso.datetime().optional(),
   end: z.iso.datetime().optional(),
-  deliveryStatus: DeliveryStatusFilterSchema.optional().default('all'),
-  eventType: z.string().trim().min(1).optional(),
+  deliveryStatus: z.array(DeliveryStatusSchema).optional(),
+  eventType: z.array(SandboxLifecycleEventTypeSchema).optional(),
 })
 
 export const GetWebhookDeliveryInputSchema = z.object({

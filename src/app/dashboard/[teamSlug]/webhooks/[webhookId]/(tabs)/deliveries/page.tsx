@@ -18,7 +18,6 @@ export default async function WebhookDeliveriesPage({
       teamSlug,
       webhookId,
       limit: 25,
-      deliveryStatus: 'all',
     })
   )
 
