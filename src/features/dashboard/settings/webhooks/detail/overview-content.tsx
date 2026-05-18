@@ -117,15 +117,15 @@ const getDeliveryBucketSizeMs = ({ start, end }: WebhookStatsRangeBounds) => {
   return 60 * 60 * 1000
 }
 
-// Buckets an ISO timestamp by duration, e.g. "2026-05-13T14:01:52.123Z" + 1h -> "2026-05-13T14:00:00.000Z".
-const getBucketTimestamp = (timestamp: string, bucketSizeMs: number) => {
-  const time = new Date(timestamp).getTime()
-  return new Date(Math.floor(time / bucketSizeMs) * bucketSizeMs).toISOString()
+// Buckets a timestamp by duration, e.g. 14:01:52 + 1h -> 14:00:00.
+const getBucketTimestamp = (timestampMs: number, bucketSizeMs: number) => {
+  return new Date(Math.floor(timestampMs / bucketSizeMs) * bucketSizeMs)
 }
 
 const getDeliveryCountSeriesData = (
   attempts: DeliveryAttempt[],
   bucketSizeMs: number,
+  rangeBounds: WebhookStatsRangeBounds,
   status?: DeliveryAttempt['deliveryStatus']
 ) => {
   const countByBucketTimestamp = new Map<string, number>()
@@ -133,7 +133,10 @@ const getDeliveryCountSeriesData = (
   for (const attempt of attempts) {
     if (status && attempt.deliveryStatus !== status) continue
 
-    const timestamp = getBucketTimestamp(attempt.timestamp, bucketSizeMs)
+    const timestamp = getBucketTimestamp(
+      new Date(attempt.timestamp).getTime(),
+      bucketSizeMs
+    ).toISOString()
 
     countByBucketTimestamp.set(
       timestamp,
@@ -141,11 +144,41 @@ const getDeliveryCountSeriesData = (
     )
   }
 
-  return Array.from(countByBucketTimestamp, ([timestamp, value]) => ({
-    timestamp,
-    value,
-  }))
+  const bucketStart = getBucketTimestamp(rangeBounds.start, bucketSizeMs)
+  const points = []
+
+  for (
+    let timestamp = bucketStart.getTime();
+    timestamp <= rangeBounds.end;
+    timestamp += bucketSizeMs
+  ) {
+    const bucketTimestamp = new Date(timestamp).toISOString()
+    points.push({
+      timestamp: bucketTimestamp,
+      value: countByBucketTimestamp.get(bucketTimestamp) ?? 0,
+    })
+  }
+
+  return points
 }
+
+// Keeps line spikes visible while hiding the zero baseline, e.g. [0, 3, 0, 0] -> [0, 3, 0, null].
+const getFailedDeliveryLineData = (
+  points: ReturnType<typeof getDeliveryCountSeriesData>
+) =>
+  points.map((point, index) => {
+    if (point.value > 0) return point
+
+    const previousPoint = points[index - 1]
+    const nextPoint = points[index + 1]
+    const isNextToFailure =
+      (previousPoint?.value ?? 0) > 0 || (nextPoint?.value ?? 0) > 0
+
+    return {
+      ...point,
+      value: isNextToFailure ? 0 : null,
+    }
+  })
 
 export const WebhookOverviewContent = ({
   teamSlug,
@@ -199,38 +232,35 @@ export const WebhookOverviewContent = ({
     {
       name: 'Total deliveries',
       colorVar: '--accent-info-highlight',
-      data: getDeliveryCountSeriesData(attempts, deliveryBucketSizeMs),
+      z: 1,
+      data: getDeliveryCountSeriesData(
+        attempts,
+        deliveryBucketSizeMs,
+        rangeBounds
+      ),
     },
     {
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
-      data: getDeliveryCountSeriesData(
-        attempts,
-        deliveryBucketSizeMs,
-        'failed'
+      z: 2,
+      data: getFailedDeliveryLineData(
+        getDeliveryCountSeriesData(
+          attempts,
+          deliveryBucketSizeMs,
+          rangeBounds,
+          'failed'
+        )
       ),
     },
   ] satisfies WebhookStatsChartSeries[]
   const latencySeries = [
     {
-      name: 'Successful response time',
-      colorVar: '--accent-positive-highlight',
-      data: attempts
-        .filter((attempt) => attempt.deliveryStatus === 'success')
-        .map((attempt) => ({
-          timestamp: attempt.timestamp,
-          value: attempt.durationMs,
-        })),
-    },
-    {
-      name: 'Failed response time',
-      colorVar: '--accent-error-highlight',
-      data: attempts
-        .filter((attempt) => attempt.deliveryStatus === 'failed')
-        .map((attempt) => ({
-          timestamp: attempt.timestamp,
-          value: attempt.durationMs,
-        })),
+      name: 'Response time',
+      colorVar: '--fg-tertiary',
+      data: attempts.map((attempt) => ({
+        timestamp: attempt.timestamp,
+        value: attempt.durationMs,
+      })),
     },
   ] satisfies WebhookStatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
@@ -271,6 +301,7 @@ export const WebhookOverviewContent = ({
           {hasAttempts ? (
             <WebhookStatsChart
               series={deliverySeries}
+              chartType="line"
               xAxisMin={rangeStartMs}
               xAxisMax={rangeEndMs}
             />

@@ -1,7 +1,7 @@
 'use client'
 
 import type { EChartsOption, SeriesOption } from 'echarts'
-import { ScatterChart } from 'echarts/charts'
+import { LineChart, ScatterChart } from 'echarts/charts'
 import {
   AxisPointerComponent,
   GridComponent,
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 
 echarts.use([
+  LineChart,
   ScatterChart,
   GridComponent,
   TooltipComponent,
@@ -26,20 +27,25 @@ echarts.use([
 
 type WebhookStatsChartPoint = {
   timestamp: string
-  value: number
+  value: number | null
 }
 
 type WebhookStatsChartSeries = {
   name: string
   data: WebhookStatsChartPoint[]
+  connectNulls?: boolean
+  showSymbol?: boolean
+  z?: number
   colorVar:
     | '--accent-info-highlight'
     | '--accent-error-highlight'
     | '--accent-positive-highlight'
+    | '--fg-tertiary'
 }
 
 type WebhookStatsChartProps = {
   series: WebhookStatsChartSeries[]
+  chartType?: 'line' | 'scatter'
   className?: string
   valueFormatter?: (value: number) => string
   xAxisMax?: number
@@ -67,6 +73,7 @@ const getNumericTooltipValue = (value: unknown) => {
 
 const WebhookStatsChart = memo(function WebhookStatsChart({
   series,
+  chartType = 'scatter',
   className,
   valueFormatter = defaultValueFormatter,
   xAxisMax,
@@ -77,8 +84,8 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
     '--accent-info-highlight',
     '--accent-error-highlight',
     '--accent-positive-highlight',
-    '--stroke',
     '--fg-tertiary',
+    '--stroke',
     '--bg-1',
     '--font-mono',
   ] as const)
@@ -90,7 +97,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
 
   const option = useMemo<EChartsOption>(() => {
     const values = series.flatMap((item) =>
-      item.data.map((point) => point.value)
+      item.data.flatMap((point) => (point.value === null ? [] : [point.value]))
     )
     const yAxisMax = calculateAxisMax(values.length > 0 ? values : [0], 1.5)
 
@@ -99,15 +106,22 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
 
       return {
         name: item.name,
-        type: 'scatter',
+        type: chartType,
+        z: item.z,
         data: item.data.map((point) => [
           new Date(point.timestamp).getTime(),
           point.value,
         ]),
         symbol: 'circle',
         symbolSize: 7,
+        showSymbol: item.showSymbol ?? chartType === 'scatter',
+        connectNulls: item.connectNulls,
         itemStyle: {
           color,
+        },
+        lineStyle: {
+          color,
+          width: 2,
         },
         emphasis: {
           disabled: true,
@@ -208,6 +222,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
     }
   }, [
     series,
+    chartType,
     cssVars,
     stroke,
     fgTertiary,
