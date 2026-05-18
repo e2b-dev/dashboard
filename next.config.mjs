@@ -128,6 +128,12 @@ const config = {
       destination: '/',
       permanent: true,
     },
+    {
+      source:
+        '/blog/how-perplexity-implemented-advanced-data-analysis-for-pro-users-in-1-week',
+      destination: '/blog/category/case-studies',
+      permanent: true,
+    },
   ],
   skipTrailingSlashRedirect: true,
 }
