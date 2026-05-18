@@ -632,6 +632,10 @@ export interface operations {
         cursor?: string
         limit?: number
         orderAsc?: boolean
+        /** @description Include deliveries at or after this timestamp. */
+        start?: string
+        /** @description Include deliveries before this timestamp. */
+        end?: string
         /** @description Filter deliveries by delivery status */
         deliveryStatus?: ('success' | 'failed')[]
         /** @description Filter deliveries by event type */

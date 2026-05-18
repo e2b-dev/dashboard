@@ -56,6 +56,8 @@ export const ListWebhookDeliveriesInputSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(25),
   cursor: z.string().optional(),
   orderAsc: z.boolean().optional().default(false),
+  start: z.iso.datetime().optional(),
+  end: z.iso.datetime().optional(),
   deliveryStatus: DeliveryStatusFilterSchema.optional().default('all'),
   eventType: z.string().trim().min(1).optional(),
 })

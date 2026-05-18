@@ -29,6 +29,8 @@ export interface ListWebhookDeliveriesInput {
   limit: number
   cursor?: string
   orderAsc: boolean
+  start?: string
+  end?: string
   deliveryStatus?: 'success' | 'failed'
   eventType?: string
 }
@@ -146,6 +148,8 @@ export function createWebhooksRepository(
               limit: input.limit,
               cursor: input.cursor,
               orderAsc: input.orderAsc,
+              start: input.start,
+              end: input.end,
               deliveryStatus,
               eventType,
             },

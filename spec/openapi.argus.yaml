@@ -696,6 +696,20 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include deliveries at or after this timestamp.
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include deliveries before this timestamp.
         - name: deliveryStatus
           in: query
           required: false

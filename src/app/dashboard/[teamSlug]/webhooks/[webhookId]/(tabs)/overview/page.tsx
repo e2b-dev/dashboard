@@ -29,9 +29,11 @@ export default async function WebhookOverviewPage({
   const apiRangeBounds = getWebhookStatsApiBounds(rangeBounds)
 
   prefetch(
-    trpc.webhooks.getDeliveryStats.queryOptions({
+    trpc.webhooks.listDeliveries.queryOptions({
       teamSlug,
       webhookId,
+      limit: 100,
+      orderAsc: true,
       ...apiRangeBounds,
     })
   )

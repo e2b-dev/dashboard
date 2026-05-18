@@ -2,9 +2,9 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useQueryStates } from 'nuqs'
+import type { ReactNode } from 'react'
 import { useMemo } from 'react'
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
-import { useTRPC } from '@/trpc/client'
+import { type TRPCRouterOutputs, useTRPC } from '@/trpc/client'
 import {
   Card,
   CardContent,
@@ -12,12 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/ui/primitives/card'
-import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/ui/primitives/chart'
 import { WebhookRangeSelector } from './range-selector'
 import {
   getValidWebhookStatsBounds,
@@ -28,6 +22,10 @@ import {
   type WebhookStatsRangeBounds,
   webhookStatsTimeframeParams,
 } from './stats-range'
+import {
+  WebhookStatsChart,
+  type WebhookStatsChartSeries,
+} from './webhook-stats-chart'
 
 type WebhookOverviewContentProps = {
   teamSlug: string
@@ -41,30 +39,13 @@ type MetricCardProps = {
   description: string
 }
 
-const deliveryChartConfig = {
-  total: {
-    label: 'Total deliveries',
-    color: 'var(--accent-info-highlight)',
-  },
-  failed: {
-    label: 'Failed deliveries',
-    color: 'var(--accent-error-highlight)',
-  },
-} satisfies ChartConfig
+type ChartCardProps = {
+  children: ReactNode
+  title: string
+}
 
-const latencyChartConfig = {
-  avgDurationMs: {
-    label: 'Average duration',
-    color: 'var(--accent-positive-highlight)',
-  },
-} satisfies ChartConfig
-
-const formatBucketLabel = (value: string) =>
-  new Date(value).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-  })
+type DeliveryAttempt =
+  TRPCRouterOutputs['webhooks']['listDeliveries']['groups'][number]['attempts'][number]
 
 const MetricCard = ({ label, value, description }: MetricCardProps) => (
   <Card variant="layer">
@@ -87,6 +68,84 @@ const EmptyChartState = ({ label }: { label: string }) => (
     {label}
   </div>
 )
+
+const ChartCard = ({ children, title }: ChartCardProps) => (
+  <section className="flex min-w-0 flex-col overflow-hidden border border-stroke bg-bg">
+    <div className="border-b p-3 md:px-6">
+      <h3 className="text-fg prose-label-highlight uppercase">{title}</h3>
+    </div>
+    <div className="p-6">{children}</div>
+  </section>
+)
+
+const getAttemptsFromGroups = (
+  groups: TRPCRouterOutputs['webhooks']['listDeliveries']['groups']
+) =>
+  groups
+    .flatMap((group) => group.attempts)
+    .sort(
+      (left, right) =>
+        new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+    )
+
+const getAttemptStats = (attempts: DeliveryAttempt[]) => {
+  const total = attempts.length
+  const failed = attempts.filter(
+    (attempt) => attempt.deliveryStatus === 'failed'
+  ).length
+  const durations = attempts.map((attempt) => attempt.durationMs)
+  const durationTotal = durations.reduce((sum, value) => sum + value, 0)
+
+  return {
+    total,
+    failed,
+    successful: total - failed,
+    minDurationMs: durations.length > 0 ? Math.min(...durations) : 0,
+    avgDurationMs: durations.length > 0 ? durationTotal / durations.length : 0,
+    maxDurationMs: durations.length > 0 ? Math.max(...durations) : 0,
+  }
+}
+
+// Picks a chart bucket size from the selected range, e.g. 7 days -> 1 hour.
+const getDeliveryBucketSizeMs = ({ start, end }: WebhookStatsRangeBounds) => {
+  const rangeMs = end - start
+
+  if (rangeMs <= 4 * 60 * 60 * 1000) return 60 * 1000
+  if (rangeMs <= 12 * 60 * 60 * 1000) return 5 * 60 * 1000
+  if (rangeMs <= 24 * 60 * 60 * 1000) return 15 * 60 * 1000
+
+  return 60 * 60 * 1000
+}
+
+// Buckets an ISO timestamp by duration, e.g. "2026-05-13T14:01:52.123Z" + 1h -> "2026-05-13T14:00:00.000Z".
+const getBucketTimestamp = (timestamp: string, bucketSizeMs: number) => {
+  const time = new Date(timestamp).getTime()
+  return new Date(Math.floor(time / bucketSizeMs) * bucketSizeMs).toISOString()
+}
+
+const getDeliveryCountSeriesData = (
+  attempts: DeliveryAttempt[],
+  bucketSizeMs: number,
+  status?: DeliveryAttempt['deliveryStatus']
+) => {
+  const countByBucketTimestamp = new Map<string, number>()
+
+  for (const attempt of attempts) {
+    if (status && attempt.deliveryStatus !== status) continue
+
+    const timestamp = getBucketTimestamp(attempt.timestamp, bucketSizeMs)
+
+    countByBucketTimestamp.set(
+      timestamp,
+      (countByBucketTimestamp.get(timestamp) ?? 0) + 1
+    )
+  }
+
+  return Array.from(countByBucketTimestamp, ([timestamp, value]) => ({
+    timestamp,
+    value,
+  }))
+}
 
 export const WebhookOverviewContent = ({
   teamSlug,
@@ -115,19 +174,65 @@ export const WebhookOverviewContent = ({
   const range = getWebhookStatsRangeFromBounds(rangeBounds)
   const trpc = useTRPC()
   const { data } = useSuspenseQuery(
-    trpc.webhooks.getDeliveryStats.queryOptions({
+    trpc.webhooks.listDeliveries.queryOptions({
       teamSlug,
       webhookId,
+      limit: 100,
+      orderAsc: true,
       ...apiRangeBounds,
     })
   )
-  const { stats } = data
-  const successful = Math.max(stats.total - stats.failed, 0)
+  const attempts = useMemo(
+    () => getAttemptsFromGroups(data.groups),
+    [data.groups]
+  )
+  const stats = getAttemptStats(attempts)
   const failureRate =
     stats.total > 0
       ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
       : '0%'
-  const hasBuckets = stats.buckets.length > 0
+  const hasAttempts = attempts.length > 0
+  const rangeStartMs = rangeBounds.start
+  const rangeEndMs = rangeBounds.end
+  const deliveryBucketSizeMs = getDeliveryBucketSizeMs(rangeBounds)
+  const deliverySeries = [
+    {
+      name: 'Total deliveries',
+      colorVar: '--accent-info-highlight',
+      data: getDeliveryCountSeriesData(attempts, deliveryBucketSizeMs),
+    },
+    {
+      name: 'Failed deliveries',
+      colorVar: '--accent-error-highlight',
+      data: getDeliveryCountSeriesData(
+        attempts,
+        deliveryBucketSizeMs,
+        'failed'
+      ),
+    },
+  ] satisfies WebhookStatsChartSeries[]
+  const latencySeries = [
+    {
+      name: 'Successful response time',
+      colorVar: '--accent-positive-highlight',
+      data: attempts
+        .filter((attempt) => attempt.deliveryStatus === 'success')
+        .map((attempt) => ({
+          timestamp: attempt.timestamp,
+          value: attempt.durationMs,
+        })),
+    },
+    {
+      name: 'Failed response time',
+      colorVar: '--accent-error-highlight',
+      data: attempts
+        .filter((attempt) => attempt.deliveryStatus === 'failed')
+        .map((attempt) => ({
+          timestamp: attempt.timestamp,
+          value: attempt.durationMs,
+        })),
+    },
+  ] satisfies WebhookStatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
     setTimeframeParams(getWebhookStatsRange(nextRange))
   }
@@ -142,7 +247,7 @@ export const WebhookOverviewContent = ({
         <MetricCard
           label="Deliveries"
           value={stats.total.toLocaleString()}
-          description={`${successful.toLocaleString()} successful`}
+          description={`${stats.successful.toLocaleString()} successful`}
         />
         <MetricCard
           label="Failed"
@@ -161,79 +266,31 @@ export const WebhookOverviewContent = ({
         />
       </div>
 
-      <div className="grid min-h-[340px] gap-4 xl:grid-cols-2">
-        <Card variant="layer" className="min-w-0">
-          <CardContent className="p-6">
-            {hasBuckets ? (
-              <ChartContainer
-                config={deliveryChartConfig}
-                className="h-[260px] w-full"
-              >
-                <LineChart data={stats.buckets}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="timestamp"
-                    tickFormatter={formatBucketLabel}
-                    tickLine={false}
-                    axisLine={false}
-                    minTickGap={32}
-                  />
-                  <YAxis tickLine={false} axisLine={false} width={36} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    stroke="var(--color-total)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="failed"
-                    stroke="var(--color-failed)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ChartContainer>
-            ) : (
-              <EmptyChartState label="No delivery data for this range" />
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid items-start gap-4 md:grid-cols-2">
+        <ChartCard title="Event deliveries">
+          {hasAttempts ? (
+            <WebhookStatsChart
+              series={deliverySeries}
+              xAxisMin={rangeStartMs}
+              xAxisMax={rangeEndMs}
+            />
+          ) : (
+            <EmptyChartState label="No delivery data for this range" />
+          )}
+        </ChartCard>
 
-        <Card variant="layer" className="min-w-0">
-          <CardContent className="p-6">
-            {hasBuckets ? (
-              <ChartContainer
-                config={latencyChartConfig}
-                className="h-[260px] w-full"
-              >
-                <LineChart data={stats.buckets}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="timestamp"
-                    tickFormatter={formatBucketLabel}
-                    tickLine={false}
-                    axisLine={false}
-                    minTickGap={32}
-                  />
-                  <YAxis tickLine={false} axisLine={false} width={44} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
-                    type="monotone"
-                    dataKey="avgDurationMs"
-                    stroke="var(--color-avgDurationMs)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ChartContainer>
-            ) : (
-              <EmptyChartState label="No latency data for this range" />
-            )}
-          </CardContent>
-        </Card>
+        <ChartCard title="Response time">
+          {hasAttempts ? (
+            <WebhookStatsChart
+              series={latencySeries}
+              xAxisMin={rangeStartMs}
+              xAxisMax={rangeEndMs}
+              valueFormatter={(value) => `${value.toLocaleString()}ms`}
+            />
+          ) : (
+            <EmptyChartState label="No latency data for this range" />
+          )}
+        </ChartCard>
       </div>
     </div>
   )

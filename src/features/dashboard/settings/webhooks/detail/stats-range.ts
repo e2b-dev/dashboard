@@ -30,14 +30,6 @@ const getStartOfDay = (timestamp: number) => {
   return date.getTime()
 }
 
-const getStartOfWeek = (timestamp: number) => {
-  const date = new Date(timestamp)
-  const daysSinceMonday = (date.getDay() + 6) % 7
-  date.setDate(date.getDate() - daysSinceMonday)
-  date.setHours(0, 0, 0, 0)
-  return date.getTime()
-}
-
 const WEBHOOK_STATS_RANGE_OPTIONS = [
   {
     value: '4h',
@@ -50,7 +42,11 @@ const WEBHOOK_STATS_RANGE_OPTIONS = [
     getStart: (end: number) => end - 12 * 60 * 60 * 1000,
   },
   { value: 'today', label: 'Today', getStart: getStartOfDay },
-  { value: 'this-week', label: 'This week', getStart: getStartOfWeek },
+  {
+    value: 'this-week',
+    label: 'Last 7 days',
+    getStart: (end: number) => end - 7 * 24 * 60 * 60 * 1000,
+  },
 ] as const
 
 const WEBHOOK_STATS_RANGE_VALUES = WEBHOOK_STATS_RANGE_OPTIONS.map(
