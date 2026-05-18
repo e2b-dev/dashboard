@@ -47,6 +47,13 @@ type ChartCardProps = {
 type DeliveryAttempt =
   TRPCRouterOutputs['webhooks']['listDeliveries']['groups'][number]['attempts'][number]
 
+type ResponseTimeBucketStats = {
+  count: number
+  maxDurationMs: number
+  minDurationMs: number
+  totalDurationMs: number
+}
+
 const MetricCard = ({ label, value, description }: MetricCardProps) => (
   <Card variant="layer">
     <CardHeader className="p-4 pb-2">
@@ -71,10 +78,10 @@ const EmptyChartState = ({ label }: { label: string }) => (
 
 const ChartCard = ({ children, title }: ChartCardProps) => (
   <section className="flex min-w-0 flex-col overflow-hidden border border-stroke bg-bg">
-    <div className="border-b p-3 md:px-6">
+    <div className="border-b px-4 py-3">
       <h3 className="text-fg prose-label-highlight uppercase">{title}</h3>
     </div>
-    <div className="p-6">{children}</div>
+    <div className="p-4">{children}</div>
   </section>
 )
 
@@ -180,6 +187,80 @@ const getFailedDeliveryLineData = (
     }
   })
 
+const getResponseTimeSeriesData = (
+  attempts: DeliveryAttempt[],
+  bucketSizeMs: number,
+  rangeBounds: WebhookStatsRangeBounds,
+  metric: 'avg' | 'max' | 'min'
+) => {
+  const statsByBucketTimestamp = new Map<string, ResponseTimeBucketStats>()
+
+  for (const attempt of attempts) {
+    const timestamp = getBucketTimestamp(
+      new Date(attempt.timestamp).getTime(),
+      bucketSizeMs
+    ).toISOString()
+    const currentStats = statsByBucketTimestamp.get(timestamp)
+
+    statsByBucketTimestamp.set(
+      timestamp,
+      currentStats
+        ? {
+            count: currentStats.count + 1,
+            maxDurationMs: Math.max(
+              currentStats.maxDurationMs,
+              attempt.durationMs
+            ),
+            minDurationMs: Math.min(
+              currentStats.minDurationMs,
+              attempt.durationMs
+            ),
+            totalDurationMs: currentStats.totalDurationMs + attempt.durationMs,
+          }
+        : {
+            count: 1,
+            maxDurationMs: attempt.durationMs,
+            minDurationMs: attempt.durationMs,
+            totalDurationMs: attempt.durationMs,
+          }
+    )
+  }
+
+  const bucketStart = getBucketTimestamp(rangeBounds.start, bucketSizeMs)
+  const points = []
+  let hasSeenValue = false
+  let hasAddedBaseline = false
+
+  for (
+    let timestamp = bucketStart.getTime();
+    timestamp <= rangeBounds.end;
+    timestamp += bucketSizeMs
+  ) {
+    const bucketTimestamp = new Date(timestamp).toISOString()
+    const stats = statsByBucketTimestamp.get(bucketTimestamp)
+    const value = stats
+      ? metric === 'avg'
+        ? stats.totalDurationMs / stats.count
+        : metric === 'max'
+          ? stats.maxDurationMs
+          : stats.minDurationMs
+      : null
+
+    if (value !== null) {
+      hasSeenValue = true
+    }
+
+    points.push({
+      synthetic: value === null && !hasSeenValue && !hasAddedBaseline,
+      timestamp: bucketTimestamp,
+      value: value ?? (!hasSeenValue && !hasAddedBaseline ? 0 : null),
+    })
+    if (!hasSeenValue) hasAddedBaseline = true
+  }
+
+  return points
+}
+
 export const WebhookOverviewContent = ({
   teamSlug,
   webhookId,
@@ -255,12 +336,46 @@ export const WebhookOverviewContent = ({
   ] satisfies WebhookStatsChartSeries[]
   const latencySeries = [
     {
-      name: 'Response time',
-      colorVar: '--fg-tertiary',
-      data: attempts.map((attempt) => ({
-        timestamp: attempt.timestamp,
-        value: attempt.durationMs,
-      })),
+      name: 'Min response time',
+      colorVar: '--accent-info-highlight',
+      connectNulls: true,
+      lineWidth: 2,
+      showSymbol: true,
+      z: 1,
+      data: getResponseTimeSeriesData(
+        attempts,
+        deliveryBucketSizeMs,
+        rangeBounds,
+        'min'
+      ),
+    },
+    {
+      name: 'Avg response time',
+      colorVar: '--accent-main-highlight',
+      connectNulls: true,
+      lineWidth: 2,
+      showSymbol: true,
+      z: 3,
+      data: getResponseTimeSeriesData(
+        attempts,
+        deliveryBucketSizeMs,
+        rangeBounds,
+        'avg'
+      ),
+    },
+    {
+      name: 'Max response time',
+      colorVar: '--accent-warning-highlight',
+      connectNulls: true,
+      lineWidth: 2,
+      showSymbol: true,
+      z: 2,
+      data: getResponseTimeSeriesData(
+        attempts,
+        deliveryBucketSizeMs,
+        rangeBounds,
+        'max'
+      ),
     },
   ] satisfies WebhookStatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
@@ -316,6 +431,7 @@ export const WebhookOverviewContent = ({
               series={latencySeries}
               xAxisMin={rangeStartMs}
               xAxisMax={rangeEndMs}
+              chartType="line"
               valueFormatter={(value) => `${value.toLocaleString()}ms`}
             />
           ) : (

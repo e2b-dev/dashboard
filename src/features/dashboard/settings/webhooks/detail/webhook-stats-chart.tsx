@@ -26,6 +26,7 @@ echarts.use([
 ])
 
 type WebhookStatsChartPoint = {
+  synthetic?: boolean
   timestamp: string
   value: number | null
 }
@@ -34,12 +35,17 @@ type WebhookStatsChartSeries = {
   name: string
   data: WebhookStatsChartPoint[]
   connectNulls?: boolean
+  lineWidth?: number
   showSymbol?: boolean
   z?: number
   colorVar:
+    | '--accent-main-highlight'
     | '--accent-info-highlight'
     | '--accent-error-highlight'
     | '--accent-positive-highlight'
+    | '--accent-warning-highlight'
+    | '--fg'
+    | '--fg-secondary'
     | '--fg-tertiary'
 }
 
@@ -61,14 +67,29 @@ const formatAxisLabel = (value: number) =>
 
 const defaultValueFormatter = (value: number) => value.toLocaleString()
 
-const getNumericTooltipValue = (value: unknown) => {
-  if (typeof value === 'number') return value
+const formatTooltipTimestamp = (timestampMs: number) => {
+  const date = new Date(timestampMs)
+  const pad = (value: number) => String(value).padStart(2, '0')
 
-  if (!Array.isArray(value)) return null
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
 
-  const yValue = value[1]
+const getTooltipTimestampMs = (param: unknown) => {
+  if (!param || typeof param !== 'object') return null
+  if (!('value' in param)) return null
+  if (!Array.isArray(param.value)) return null
 
-  return typeof yValue === 'number' ? yValue : null
+  const [timestamp] = param.value
+  return typeof timestamp === 'number' ? timestamp : null
+}
+
+const getTooltipSyntheticValue = (param: unknown) => {
+  if (!param || typeof param !== 'object') return false
+  if (!('data' in param)) return false
+  if (!param.data || typeof param.data !== 'object') return false
+  if (!('synthetic' in param.data)) return false
+
+  return param.data.synthetic === true
 }
 
 const WebhookStatsChart = memo(function WebhookStatsChart({
@@ -81,9 +102,13 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
 }: WebhookStatsChartProps) {
   const { resolvedTheme } = useTheme()
   const cssVars = useCssVars([
+    '--accent-main-highlight',
     '--accent-info-highlight',
     '--accent-error-highlight',
     '--accent-positive-highlight',
+    '--accent-warning-highlight',
+    '--fg',
+    '--fg-secondary',
     '--fg-tertiary',
     '--stroke',
     '--bg-1',
@@ -101,6 +126,42 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
     )
     const yAxisMax = calculateAxisMax(values.length > 0 ? values : [0], 1.5)
 
+    const getTooltipContent = (param: unknown) => {
+      if (getTooltipSyntheticValue(param)) return ''
+
+      const timestampMs = getTooltipTimestampMs(param)
+      if (timestampMs === null) return ''
+
+      const rows = series.flatMap((item) => {
+        const point = item.data.find(
+          (point) =>
+            !point.synthetic &&
+            point.value !== null &&
+            new Date(point.timestamp).getTime() === timestampMs
+        )
+        if (!point || point.value === null) return []
+
+        const color = cssVars[item.colorVar] || '#000'
+
+        return [
+          `<div style="display:flex;align-items:center;gap:12px;justify-content:space-between;">
+            <span style="display:inline-flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:9999px;background:${color};display:inline-block;"></span>
+              ${item.name}
+            </span>
+            <strong>${valueFormatter(point.value)}</strong>
+          </div>`,
+        ]
+      })
+
+      if (rows.length === 0) return ''
+
+      return `<div style="display:flex;flex-direction:column;gap:8px;">
+        <div>${formatTooltipTimestamp(timestampMs)}</div>
+        ${rows.join('')}
+      </div>`
+    }
+
     const chartSeries: SeriesOption[] = series.map((item) => {
       const color = cssVars[item.colorVar] || '#000'
 
@@ -108,12 +169,13 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         name: item.name,
         type: chartType,
         z: item.z,
-        data: item.data.map((point) => [
-          new Date(point.timestamp).getTime(),
-          point.value,
-        ]),
+        data: item.data.map((point) => ({
+          synthetic: point.synthetic,
+          value: [new Date(point.timestamp).getTime(), point.value],
+        })),
         symbol: 'circle',
-        symbolSize: 7,
+        symbolSize: (_value: unknown, params: unknown) =>
+          getTooltipSyntheticValue(params) ? 0 : 7,
         showSymbol: item.showSymbol ?? chartType === 'scatter',
         connectNulls: item.connectNulls,
         itemStyle: {
@@ -121,7 +183,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         },
         lineStyle: {
           color,
-          width: 2,
+          width: item.lineWidth ?? 2,
         },
         emphasis: {
           disabled: true,
@@ -139,7 +201,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         left: 42,
       },
       tooltip: {
-        trigger: 'axis',
+        trigger: 'item',
         confine: true,
         backgroundColor: bg,
         borderColor: stroke,
@@ -160,11 +222,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
             show: false,
           },
         },
-        valueFormatter: (value) => {
-          const numericValue = getNumericTooltipValue(value)
-
-          return numericValue === null ? '' : valueFormatter(numericValue)
-        },
+        formatter: getTooltipContent,
       },
       xAxis: {
         type: 'time',
