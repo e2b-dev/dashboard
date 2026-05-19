@@ -11,7 +11,7 @@ import * as echarts from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
@@ -54,16 +54,60 @@ type WebhookStatsChartProps = {
   chartType?: 'line' | 'scatter'
   className?: string
   valueFormatter?: (value: number) => string
+  xAxisScale?: 'daily' | 'four-hour' | 'twelve-hour' | 'today'
   xAxisMax?: number
   xAxisMin?: number
 }
 
-const formatAxisLabel = (value: number) =>
-  new Date(value).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-  })
+const HOUR_MS = 60 * 60 * 1000
+const DAY_MS = 24 * HOUR_MS
+
+const formatAxisLabel = (
+  value: number,
+  scale: NonNullable<WebhookStatsChartProps['xAxisScale']>,
+  bounds: Pick<WebhookStatsChartProps, 'xAxisMax' | 'xAxisMin'>
+) => {
+  const date = new Date(value)
+
+  if (scale === 'daily') {
+    return date.toLocaleDateString('en-US', { weekday: 'short' })
+  }
+
+  const isWholeHour =
+    date.getMinutes() === 0 &&
+    date.getSeconds() === 0 &&
+    date.getMilliseconds() === 0
+  if (!isWholeHour) return ''
+  if (bounds.xAxisMin && value < bounds.xAxisMin) return ''
+  if (bounds.xAxisMax && value >= bounds.xAxisMax) return ''
+  if (scale === 'twelve-hour' && bounds.xAxisMin) {
+    const firstWholeHour = Math.ceil(bounds.xAxisMin / HOUR_MS) * HOUR_MS
+    if ((value - firstWholeHour) % (2 * HOUR_MS) !== 0) return ''
+  }
+
+  return date
+    .toLocaleTimeString('en-US', { hour: 'numeric' })
+    .replace(/\s/g, '')
+}
+
+const getXAxisInterval = ({
+  scale,
+  xAxisMax,
+  xAxisMin,
+}: Pick<WebhookStatsChartProps, 'xAxisMax' | 'xAxisMin'> & {
+  scale: NonNullable<WebhookStatsChartProps['xAxisScale']>
+}) => {
+  if (scale === 'daily') return DAY_MS
+  if (scale === 'four-hour') return HOUR_MS
+  if (scale === 'twelve-hour') return 2 * HOUR_MS
+  if (!xAxisMin || !xAxisMax) return 2 * HOUR_MS
+
+  const rangeMs = xAxisMax - xAxisMin
+  if (rangeMs <= 6 * HOUR_MS) return HOUR_MS
+  if (rangeMs <= 12 * HOUR_MS) return 2 * HOUR_MS
+
+  return 4 * HOUR_MS
+}
 
 const defaultValueFormatter = (value: number) => value.toLocaleString()
 
@@ -97,9 +141,11 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
   chartType = 'scatter',
   className,
   valueFormatter = defaultValueFormatter,
+  xAxisScale = 'daily',
   xAxisMax,
   xAxisMin,
 }: WebhookStatsChartProps) {
+  const chartRef = useRef<ReactEChartsCore | null>(null)
   const { resolvedTheme } = useTheme()
   const cssVars = useCssVars([
     '--accent-main-highlight',
@@ -125,6 +171,11 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
       item.data.flatMap((point) => (point.value === null ? [] : [point.value]))
     )
     const yAxisMax = calculateAxisMax(values.length > 0 ? values : [0], 1.5)
+    const xAxisInterval = getXAxisInterval({
+      scale: xAxisScale,
+      xAxisMax,
+      xAxisMin,
+    })
 
     const getTooltipContent = (param: unknown) => {
       if (getTooltipSyntheticValue(param)) return ''
@@ -229,6 +280,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         type: 'time',
         min: xAxisMin,
         max: xAxisMax,
+        interval: xAxisInterval,
         boundaryGap: [0, 0],
         axisLine: { show: true, lineStyle: { color: stroke } },
         axisTick: { show: false },
@@ -237,7 +289,8 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
           fontFamily: fontMono,
           fontSize: 12,
           hideOverlap: true,
-          formatter: formatAxisLabel,
+          formatter: (value: number) =>
+            formatAxisLabel(value, xAxisScale, { xAxisMax, xAxisMin }),
         },
         splitLine: { show: false },
         axisPointer: {
@@ -288,20 +341,32 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
     bg,
     fontMono,
     valueFormatter,
+    xAxisScale,
     xAxisMax,
     xAxisMin,
   ])
 
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      chartRef.current?.getEchartsInstance().resize()
+    })
+
+    return () => cancelAnimationFrame(frame)
+  })
+
   return (
-    <ReactEChartsCore
-      key={resolvedTheme}
-      echarts={echarts}
-      option={option}
-      notMerge
-      lazyUpdate
-      style={{ width: '100%', height: 260 }}
-      className={cn('h-[260px] w-full cursor-crosshair', className)}
-    />
+    <div className={cn('h-[260px] min-w-0 w-full', className)}>
+      <ReactEChartsCore
+        ref={chartRef}
+        key={resolvedTheme}
+        echarts={echarts}
+        option={option}
+        notMerge
+        lazyUpdate={false}
+        style={{ width: '100%', height: '100%' }}
+        className="h-full w-full cursor-crosshair"
+      />
+    </div>
   )
 })
 

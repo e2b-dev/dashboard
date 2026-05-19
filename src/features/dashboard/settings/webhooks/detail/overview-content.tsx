@@ -17,6 +17,7 @@ import {
 } from './stats-range'
 import {
   WebhookStatsChart,
+  type WebhookStatsChartPoint,
   type WebhookStatsChartSeries,
 } from './webhook-stats-chart'
 
@@ -40,12 +41,16 @@ type ChartPanelProps = {
 type DeliveryAttempt =
   TRPCRouterOutputs['webhooks']['listDeliveries']['groups'][number]['attempts'][number]
 
-type ResponseTimeBucketStats = {
+type ResponseTimeTimestampStats = {
   count: number
   maxDurationMs: number
   minDurationMs: number
   totalDurationMs: number
 }
+
+type WebhookStatsGrouping = 'day' | 'timestamp'
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
   <section className="p-4 md:p-6">
@@ -55,12 +60,6 @@ const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
     </p>
     <p className="mt-2 text-fg-tertiary prose-body">{description}</p>
   </section>
-)
-
-const EmptyChartState = ({ label }: { label: string }) => (
-  <div className="flex h-[260px] items-center justify-center border border-dashed border-stroke text-fg-tertiary prose-body">
-    {label}
-  </div>
 )
 
 const ChartPanel = ({ children, title }: ChartPanelProps) => (
@@ -102,97 +101,148 @@ const getAttemptStats = (attempts: DeliveryAttempt[]) => {
   }
 }
 
-// Picks a chart bucket size from the selected range, e.g. 7 days -> 1 hour.
-const getDeliveryBucketSizeMs = ({ start, end }: WebhookStatsRangeBounds) => {
-  const rangeMs = end - start
+const getStartOfDay = (timestampMs: number) => {
+  const date = new Date(timestampMs)
+  date.setHours(0, 0, 0, 0)
 
-  if (rangeMs <= 4 * 60 * 60 * 1000) return 60 * 1000
-  if (rangeMs <= 12 * 60 * 60 * 1000) return 5 * 60 * 1000
-  if (rangeMs <= 24 * 60 * 60 * 1000) return 15 * 60 * 1000
-
-  return 60 * 60 * 1000
+  return date.getTime()
 }
 
-// Buckets a timestamp by duration, e.g. 14:01:52 + 1h -> 14:00:00.
-const getBucketTimestamp = (timestampMs: number, bucketSizeMs: number) => {
-  return new Date(Math.floor(timestampMs / bucketSizeMs) * bucketSizeMs)
+const getSeriesTimestamp = (
+  timestamp: string,
+  grouping: WebhookStatsGrouping
+) => {
+  const timestampMs = new Date(timestamp).getTime()
+  if (grouping === 'day') return getStartOfDay(timestampMs)
+
+  return timestampMs
 }
 
+// Groups attempts by range granularity, e.g. "11:53:24" -> exact point or "Mon" daily bucket.
 const getDeliveryCountSeriesData = (
   attempts: DeliveryAttempt[],
-  bucketSizeMs: number,
   rangeBounds: WebhookStatsRangeBounds,
+  grouping: WebhookStatsGrouping,
   status?: DeliveryAttempt['deliveryStatus']
 ) => {
-  const countByBucketTimestamp = new Map<string, number>()
+  const countByTimestamp = new Map<number, number>()
 
   for (const attempt of attempts) {
     if (status && attempt.deliveryStatus !== status) continue
 
-    const timestamp = getBucketTimestamp(
-      new Date(attempt.timestamp).getTime(),
-      bucketSizeMs
-    ).toISOString()
-
-    countByBucketTimestamp.set(
-      timestamp,
-      (countByBucketTimestamp.get(timestamp) ?? 0) + 1
+    const timestampMs = getSeriesTimestamp(attempt.timestamp, grouping)
+    countByTimestamp.set(
+      timestampMs,
+      (countByTimestamp.get(timestampMs) ?? 0) + 1
     )
   }
 
-  const bucketStart = getBucketTimestamp(rangeBounds.start, bucketSizeMs)
-  const points = []
+  if (grouping === 'day') {
+    const points = []
+    const start = getStartOfDay(rangeBounds.start)
+    const end = getStartOfDay(rangeBounds.end)
 
-  for (
-    let timestamp = bucketStart.getTime();
-    timestamp <= rangeBounds.end;
-    timestamp += bucketSizeMs
-  ) {
-    const bucketTimestamp = new Date(timestamp).toISOString()
-    points.push({
-      timestamp: bucketTimestamp,
-      value: countByBucketTimestamp.get(bucketTimestamp) ?? 0,
-    })
+    for (let timestampMs = start; timestampMs <= end; timestampMs += DAY_MS) {
+      points.push({
+        timestamp: new Date(timestampMs).toISOString(),
+        value: countByTimestamp.get(timestampMs) ?? 0,
+      })
+    }
+
+    return points
   }
+
+  const points: WebhookStatsChartPoint[] = [
+    {
+      synthetic: true,
+      timestamp: new Date(rangeBounds.start).toISOString(),
+      value: 0,
+    },
+  ]
+
+  for (const [timestampMs, count] of Array.from(countByTimestamp).sort(
+    ([left], [right]) => left - right
+  )) {
+    points.push(
+      {
+        synthetic: true,
+        timestamp: new Date(
+          Math.max(rangeBounds.start, timestampMs - 1)
+        ).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(timestampMs).toISOString(),
+        value: count,
+      },
+      {
+        synthetic: true,
+        timestamp: new Date(
+          Math.min(rangeBounds.end, timestampMs + 1)
+        ).toISOString(),
+        value: 0,
+      }
+    )
+  }
+
+  points.push({
+    synthetic: true,
+    timestamp: new Date(rangeBounds.end).toISOString(),
+    value: 0,
+  })
 
   return points
 }
 
-// Keeps line spikes visible while hiding the zero baseline, e.g. [0, 3, 0, 0] -> [0, 3, 0, null].
-const getFailedDeliveryLineData = (
-  points: ReturnType<typeof getDeliveryCountSeriesData>
-) =>
-  points.map((point, index) => {
-    if (point.value > 0) return point
+// Builds a zero-value baseline for an empty range, e.g. [May 19 10am, May 19 2pm] -> 0 deliveries line.
+const getEmptyDeliveryCountSeriesData = (
+  rangeBounds: WebhookStatsRangeBounds,
+  grouping: WebhookStatsGrouping
+) => {
+  if (grouping === 'day') {
+    const points = []
+    const start = getStartOfDay(rangeBounds.start)
+    const end = getStartOfDay(rangeBounds.end)
 
-    const previousPoint = points[index - 1]
-    const nextPoint = points[index + 1]
-    const isNextToFailure =
-      (previousPoint?.value ?? 0) > 0 || (nextPoint?.value ?? 0) > 0
-
-    return {
-      ...point,
-      value: isNextToFailure ? 0 : null,
+    for (let timestampMs = start; timestampMs <= end; timestampMs += DAY_MS) {
+      points.push({
+        synthetic: true,
+        timestamp: new Date(timestampMs).toISOString(),
+        value: 0,
+      })
     }
-  })
 
+    return points
+  }
+
+  return [
+    {
+      synthetic: true,
+      timestamp: new Date(rangeBounds.start).toISOString(),
+      value: 0,
+    },
+    {
+      synthetic: true,
+      timestamp: new Date(rangeBounds.end).toISOString(),
+      value: 0,
+    },
+  ]
+}
+
+// Groups response times by range granularity, e.g. "11:53:24" -> exact point or "Mon" daily bucket.
 const getResponseTimeSeriesData = (
   attempts: DeliveryAttempt[],
-  bucketSizeMs: number,
-  rangeBounds: WebhookStatsRangeBounds,
+  grouping: WebhookStatsGrouping,
   metric: 'avg' | 'max' | 'min'
 ) => {
-  const statsByBucketTimestamp = new Map<string, ResponseTimeBucketStats>()
+  const statsByTimestamp = new Map<number, ResponseTimeTimestampStats>()
 
   for (const attempt of attempts) {
-    const timestamp = getBucketTimestamp(
-      new Date(attempt.timestamp).getTime(),
-      bucketSizeMs
-    ).toISOString()
-    const currentStats = statsByBucketTimestamp.get(timestamp)
+    const timestampMs = getSeriesTimestamp(attempt.timestamp, grouping)
+    const currentStats = statsByTimestamp.get(timestampMs)
 
-    statsByBucketTimestamp.set(
-      timestamp,
+    statsByTimestamp.set(
+      timestampMs,
       currentStats
         ? {
             count: currentStats.count + 1,
@@ -215,39 +265,22 @@ const getResponseTimeSeriesData = (
     )
   }
 
-  const bucketStart = getBucketTimestamp(rangeBounds.start, bucketSizeMs)
-  const points = []
-  let hasSeenValue = false
-  let hasAddedBaseline = false
+  return Array.from(statsByTimestamp)
+    .sort(([left], [right]) => left - right)
+    .map(([timestampMs, stats]) => {
+      const value = stats
+        ? metric === 'avg'
+          ? stats.totalDurationMs / stats.count
+          : metric === 'max'
+            ? stats.maxDurationMs
+            : stats.minDurationMs
+        : null
 
-  for (
-    let timestamp = bucketStart.getTime();
-    timestamp <= rangeBounds.end;
-    timestamp += bucketSizeMs
-  ) {
-    const bucketTimestamp = new Date(timestamp).toISOString()
-    const stats = statsByBucketTimestamp.get(bucketTimestamp)
-    const value = stats
-      ? metric === 'avg'
-        ? stats.totalDurationMs / stats.count
-        : metric === 'max'
-          ? stats.maxDurationMs
-          : stats.minDurationMs
-      : null
-
-    if (value !== null) {
-      hasSeenValue = true
-    }
-
-    points.push({
-      synthetic: value === null && !hasSeenValue && !hasAddedBaseline,
-      timestamp: bucketTimestamp,
-      value: value ?? (!hasSeenValue && !hasAddedBaseline ? 0 : null),
+      return {
+        timestamp: new Date(timestampMs).toISOString(),
+        value,
+      }
     })
-    if (!hasSeenValue) hasAddedBaseline = true
-  }
-
-  return points
 }
 
 export const WebhookOverviewContent = ({
@@ -294,33 +327,41 @@ export const WebhookOverviewContent = ({
     stats.total > 0
       ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
       : '0%'
-  const hasAttempts = attempts.length > 0
   const rangeStartMs = rangeBounds.start
   const rangeEndMs = rangeBounds.end
-  const deliveryBucketSizeMs = getDeliveryBucketSizeMs(rangeBounds)
+  const grouping: WebhookStatsGrouping =
+    range === 'this-week' ? 'day' : 'timestamp'
+  const xAxisScale =
+    range === '4h'
+      ? 'four-hour'
+      : range === '12h'
+        ? 'twelve-hour'
+        : range === 'today'
+          ? 'today'
+          : 'daily'
   const deliverySeries = [
     {
       name: 'Total deliveries',
       colorVar: '--accent-info-highlight',
       z: 1,
-      data: getDeliveryCountSeriesData(
-        attempts,
-        deliveryBucketSizeMs,
-        rangeBounds
-      ),
+      data:
+        attempts.length > 0
+          ? getDeliveryCountSeriesData(attempts, rangeBounds, grouping)
+          : getEmptyDeliveryCountSeriesData(rangeBounds, grouping),
     },
     {
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
       z: 2,
-      data: getFailedDeliveryLineData(
-        getDeliveryCountSeriesData(
-          attempts,
-          deliveryBucketSizeMs,
-          rangeBounds,
-          'failed'
-        )
-      ),
+      data:
+        attempts.length > 0
+          ? getDeliveryCountSeriesData(
+              attempts,
+              rangeBounds,
+              grouping,
+              'failed'
+            )
+          : [],
     },
   ] satisfies WebhookStatsChartSeries[]
   const latencySeries = [
@@ -331,12 +372,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 1,
-      data: getResponseTimeSeriesData(
-        attempts,
-        deliveryBucketSizeMs,
-        rangeBounds,
-        'min'
-      ),
+      data: getResponseTimeSeriesData(attempts, grouping, 'min'),
     },
     {
       name: 'Avg response time',
@@ -345,12 +381,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 3,
-      data: getResponseTimeSeriesData(
-        attempts,
-        deliveryBucketSizeMs,
-        rangeBounds,
-        'avg'
-      ),
+      data: getResponseTimeSeriesData(attempts, grouping, 'avg'),
     },
     {
       name: 'Max response time',
@@ -359,12 +390,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 2,
-      data: getResponseTimeSeriesData(
-        attempts,
-        deliveryBucketSizeMs,
-        rangeBounds,
-        'max'
-      ),
+      data: getResponseTimeSeriesData(attempts, grouping, 'max'),
     },
   ] satisfies WebhookStatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
@@ -402,30 +428,24 @@ export const WebhookOverviewContent = ({
 
       <div className="grid flex-1 border-b border-stroke md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
         <ChartPanel title="Event deliveries">
-          {hasAttempts ? (
-            <WebhookStatsChart
-              series={deliverySeries}
-              chartType="line"
-              xAxisMin={rangeStartMs}
-              xAxisMax={rangeEndMs}
-            />
-          ) : (
-            <EmptyChartState label="No delivery data for this range" />
-          )}
+          <WebhookStatsChart
+            series={deliverySeries}
+            chartType="line"
+            xAxisScale={xAxisScale}
+            xAxisMin={rangeStartMs}
+            xAxisMax={rangeEndMs}
+          />
         </ChartPanel>
 
         <ChartPanel title="Response time">
-          {hasAttempts ? (
-            <WebhookStatsChart
-              series={latencySeries}
-              xAxisMin={rangeStartMs}
-              xAxisMax={rangeEndMs}
-              chartType="line"
-              valueFormatter={(value) => `${value.toLocaleString()}ms`}
-            />
-          ) : (
-            <EmptyChartState label="No latency data for this range" />
-          )}
+          <WebhookStatsChart
+            series={latencySeries}
+            xAxisMin={rangeStartMs}
+            xAxisMax={rangeEndMs}
+            xAxisScale={xAxisScale}
+            chartType="line"
+            valueFormatter={(value) => `${value.toLocaleString()}ms`}
+          />
         </ChartPanel>
       </div>
     </div>
