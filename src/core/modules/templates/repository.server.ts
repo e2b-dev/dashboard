@@ -8,6 +8,11 @@ import {
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
+import {
+  type AuthUserEmailResolver,
+  getAuthUserEmailsById,
+  resolveCreatorEmails,
+} from '@/core/modules/users/auth-user-emails.server'
 import { api, infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type {
@@ -20,6 +25,7 @@ type TemplatesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
   authHeaders: typeof SUPABASE_AUTH_HEADERS
+  resolveAuthUserEmailsById: AuthUserEmailResolver
 }
 
 export interface TeamTemplatesRepository {
@@ -43,6 +49,7 @@ export function createTemplatesRepository(
     apiClient: api,
     infraClient: infra,
     authHeaders: SUPABASE_AUTH_HEADERS,
+    resolveAuthUserEmailsById: getAuthUserEmailsById,
   }
 ): TeamTemplatesRepository {
   return {
@@ -74,7 +81,10 @@ export function createTemplatesRepository(
       }
 
       return ok({
-        templates: res.data,
+        templates: await resolveCreatorEmails(
+          res.data ?? [],
+          deps.resolveAuthUserEmailsById
+        ),
       })
     },
     async deleteTemplate(templateId) {
