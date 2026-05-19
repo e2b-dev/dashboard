@@ -34,7 +34,7 @@ export const WebhooksTable = ({
     : 'No webhooks match your search'
 
   return (
-    <Table className={cn('w-full table-fixed', className)}>
+    <Table className={cn('w-full min-w-[720px] table-fixed', className)}>
       <colgroup>
         <col />
         <col className="w-[264px]" />
