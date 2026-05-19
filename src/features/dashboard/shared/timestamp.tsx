@@ -1,7 +1,3 @@
-'use client'
-
-import CopyButton from '@/ui/copy-button'
-
 type TimestampProps = {
   value: string
 }
@@ -26,11 +22,8 @@ export const Timestamp = ({ value }: TimestampProps) => {
   })
 
   return (
-    <div className="flex items-center gap-1">
-      <p>
-        {prefix}, {timeStr}
-      </p>
-      <CopyButton value={value} />
-    </div>
+    <p>
+      {prefix}, {timeStr}
+    </p>
   )
 }
