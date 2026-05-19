@@ -278,7 +278,7 @@ export const WebhookDeliveriesContent = ({
 
       <div className="min-h-0 flex-1">
         <Card variant="layer" className="min-h-0 overflow-auto">
-          <Table className="min-w-[1740px] table-fixed">
+          <Table className="min-w-[2220px] table-fixed [&_td:not(:last-child)]:pr-12 [&_th:not(:last-child)]:pr-12">
             <colgroup>
               <col className="w-[120px]" />
               <col className="w-[130px]" />
