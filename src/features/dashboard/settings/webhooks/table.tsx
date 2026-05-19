@@ -34,11 +34,16 @@ export const WebhooksTable = ({
     : 'No webhooks match your search'
 
   return (
-    <Table className={cn('w-full table-fixed', className)}>
+    <Table
+      className={cn(
+        'w-full table-fixed [&_td:not(:last-child)]:pr-12 [&_th:not(:last-child)]:pr-12',
+        className
+      )}
+    >
       <colgroup>
         <col />
         <col className="w-[264px]" />
-        <col className="w-[136px]" />
+        <col className="w-[184px]" />
         <col className="w-10" />
       </colgroup>
       <TableHeader className="border-b-0">

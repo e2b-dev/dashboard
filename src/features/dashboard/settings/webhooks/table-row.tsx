@@ -93,7 +93,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
           onMouseEnter={() => setIsUrlHovered(true)}
           onMouseLeave={() => setIsUrlHovered(false)}
           aria-label={`Copy webhook URL ${url}`}
-          className="w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
+          className="w-fit max-w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
         >
           <span className="truncate">{url}</span>
         </Button>
@@ -172,9 +172,9 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className={cn(rowCellClassName, 'w-[136px]')}>
+      <TableCell className={cn(rowCellClassName, 'w-[184px]')}>
         <div className={cn(rowContentClassName, 'justify-end gap-6')}>
-          <p className="w-[92px] text-left text-fg-tertiary prose-body">
+          <p className="w-[92px] whitespace-nowrap text-left text-fg-tertiary prose-body">
             {createdAt}
           </p>
           <UserAvatar label={team.name} />
