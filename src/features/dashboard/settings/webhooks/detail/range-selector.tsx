@@ -30,7 +30,7 @@ export const WebhookRangeSelector = ({
 
   return (
     <Select value={value} onValueChange={handleValueChange}>
-      <SelectTrigger className="h-9 w-full md:w-[164px]">
+      <SelectTrigger className="h-9 w-full border-solid font-sans normal-case md:w-[164px]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
