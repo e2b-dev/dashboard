@@ -1,10 +1,19 @@
 'use client'
 
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
+import {
+  useVirtualizer,
+  type VirtualItem,
+  type Virtualizer,
+} from '@tanstack/react-virtual'
 import { useQueryStates } from 'nuqs'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
+import {
+  VirtualizedTableLoaderBody,
+  VirtualizedTableRow,
+} from '@/features/dashboard/common/virtualized-table-ui'
 import {
   EventTypeFilter,
   eventTypeFilterParams,
@@ -12,7 +21,7 @@ import {
   SandboxEventTypeBadge,
 } from '@/features/dashboard/shared'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
-import { useTRPC } from '@/trpc/client'
+import { type TRPCRouterOutputs, useTRPC } from '@/trpc/client'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -31,7 +40,6 @@ import {
   TableEmptyState,
   TableHead,
   TableHeader,
-  TableLoadingState,
   TableRow,
 } from '@/ui/primitives/table'
 import {
@@ -45,7 +53,13 @@ type WebhookDeliveriesContentProps = {
   webhookId: string
 }
 
+type WebhookDeliveryGroup =
+  TRPCRouterOutputs['webhooks']['listDeliveries']['groups'][number]
+
 const JsonValueSchema = z.unknown()
+const ROW_HEIGHT_PX = 32
+const VIRTUAL_OVERSCAN = 16
+const SCROLL_LOAD_THRESHOLD_PX = 240
 
 const deliveryStatusVariantMap: Record<
   WebhookDeliveryStatus,
@@ -177,10 +191,269 @@ const DeliveryDetailCell = ({
   )
 }
 
+interface WebhookDeliveriesTableProps {
+  groups: WebhookDeliveryGroup[]
+  isLoading: boolean
+  emptyStateLabel: string
+  scrollContainer: HTMLDivElement | null
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  onLoadMore: () => void
+}
+
+const WebhookDeliveriesTable = ({
+  groups,
+  isLoading,
+  emptyStateLabel,
+  scrollContainer,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+}: WebhookDeliveriesTableProps) => {
+  'use no memo'
+
+  return (
+    <Table className="grid min-w-[1464px] table-fixed">
+      <TableHeader className="sticky top-0 z-10 grid bg-bg">
+        <TableRow className="flex min-w-full">
+          <TableHead className="flex h-8 w-[100px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Event
+          </TableHead>
+          <TableHead className="flex h-8 w-[128px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Sandbox ID
+          </TableHead>
+          <TableHead className="flex h-8 w-[92px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Status
+          </TableHead>
+          <TableHead className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Last attempt
+          </TableHead>
+          <TableHead className="flex h-8 w-[92px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Attempts
+          </TableHead>
+          <TableHead className="flex h-8 w-[84px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Duration
+          </TableHead>
+          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Request headers
+          </TableHead>
+          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Request body
+          </TableHead>
+          <TableHead className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Response HTTP
+          </TableHead>
+          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+            Response headers
+          </TableHead>
+          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 [&>span]:whitespace-nowrap">
+            Response body
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+
+      {isLoading ? (
+        <VirtualizedTableLoaderBody />
+      ) : groups.length === 0 ? (
+        <TableBody className="grid min-w-full [&>tr>td]:flex-1 [&>tr]:flex [&>tr]:min-w-full">
+          <TableEmptyState colSpan={11}>
+            <WebhookIcon className="size-4" />
+            {emptyStateLabel}
+          </TableEmptyState>
+        </TableBody>
+      ) : (
+        <VirtualizedDeliveriesBody
+          key={`${groups.length}-${scrollContainer ? 'ready' : 'pending'}`}
+          groups={groups}
+          scrollContainer={scrollContainer}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={onLoadMore}
+        />
+      )}
+    </Table>
+  )
+}
+
+interface VirtualizedDeliveriesBodyProps {
+  groups: WebhookDeliveryGroup[]
+  scrollContainer: HTMLDivElement | null
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  onLoadMore: () => void
+}
+
+const VirtualizedDeliveriesBody = ({
+  groups,
+  scrollContainer,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+}: VirtualizedDeliveriesBodyProps) => {
+  'use no memo'
+
+  const initialRect = useMemo(() => {
+    if (!scrollContainer) return undefined
+
+    return {
+      height: scrollContainer.clientHeight,
+      width: scrollContainer.clientWidth,
+    }
+  }, [scrollContainer])
+
+  useScrollLoadMore({
+    scrollContainer,
+    hasNextPage,
+    isFetchingNextPage,
+    onLoadMore,
+  })
+
+  const virtualizer = useVirtualizer({
+    count: groups.length,
+    estimateSize: () => ROW_HEIGHT_PX,
+    getScrollElement: () => scrollContainer,
+    initialRect,
+    overscan: VIRTUAL_OVERSCAN,
+    paddingStart: 8,
+  })
+
+  return (
+    <TableBody
+      className="relative grid min-w-full [&_tr:last-child]:border-b-0 [&_tr]:border-b-0"
+      style={{ height: `${virtualizer.getTotalSize()}px` }}
+    >
+      {virtualizer.getVirtualItems().map((virtualRow) => {
+        const group = groups[virtualRow.index]
+        if (!group) return null
+
+        return (
+          <WebhookDeliveryRow
+            key={virtualRow.key}
+            group={group}
+            virtualRow={virtualRow}
+            virtualizer={virtualizer}
+          />
+        )
+      })}
+    </TableBody>
+  )
+}
+
+interface WebhookDeliveryRowProps {
+  group: WebhookDeliveryGroup
+  virtualRow: VirtualItem
+  virtualizer: Virtualizer<HTMLDivElement, Element>
+}
+
+const WebhookDeliveryRow = ({
+  group,
+  virtualRow,
+  virtualizer,
+}: WebhookDeliveryRowProps) => {
+  const attempt = group.latestAttempt
+
+  return (
+    <VirtualizedTableRow
+      virtualRow={virtualRow}
+      virtualizer={virtualizer}
+      height={ROW_HEIGHT_PX}
+    >
+      <TableCell className="flex h-8 w-[100px] min-w-0 items-center p-0 pr-12">
+        <div className="min-w-0">
+          <SandboxEventTypeBadge type={group.eventType} />
+        </div>
+      </TableCell>
+      <TableCell className="flex h-8 w-[128px] items-center p-0 pr-12">
+        <IdBadge
+          id={group.sandboxId}
+          onCopied={() => toast(defaultSuccessToast('Sandbox ID copied'))}
+        />
+      </TableCell>
+      <TableCell className="flex h-8 w-[92px] items-center p-0 pr-12">
+        {attempt ? (
+          <DeliveryStatusBadge status={attempt.deliveryStatus} />
+        ) : (
+          '-'
+        )}
+      </TableCell>
+      <TableCell className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12">
+        {attempt ? formatDateTime(attempt.timestamp) : '-'}
+      </TableCell>
+      <TableCell className="flex h-8 w-[92px] items-center p-0 pr-12">
+        {group.attemptCount}
+      </TableCell>
+      <TableCell className="flex h-8 w-[84px] items-center p-0 pr-12">
+        {attempt ? `${attempt.durationMs.toLocaleString()}ms` : '-'}
+      </TableCell>
+      <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
+        <DeliveryDetailCell value={attempt?.requestHeaders} />
+      </TableCell>
+      <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
+        <DeliveryDetailCell value={attempt?.requestBody} />
+      </TableCell>
+      <TableCell className="flex h-8 w-[144px] items-center p-0 pr-12">
+        {attempt ? formatHttpStatus(attempt.httpStatusCode) : '-'}
+      </TableCell>
+      <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
+        <DeliveryDetailCell value={attempt?.responseHeaders} />
+      </TableCell>
+      <TableCell className="flex h-8 w-[170px] items-center p-0">
+        <DeliveryDetailCell value={attempt?.responseBody} />
+      </TableCell>
+    </VirtualizedTableRow>
+  )
+}
+
+interface UseScrollLoadMoreParams {
+  scrollContainer: HTMLDivElement | null
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  onLoadMore: () => void
+}
+
+const useScrollLoadMore = ({
+  scrollContainer,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+}: UseScrollLoadMoreParams) => {
+  useEffect(() => {
+    if (!scrollContainer) return
+
+    const handleScroll = () => {
+      const distanceToBottom =
+        scrollContainer.scrollHeight -
+        scrollContainer.scrollTop -
+        scrollContainer.clientHeight
+
+      if (
+        distanceToBottom < SCROLL_LOAD_THRESHOLD_PX &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
+        onLoadMore()
+      }
+    }
+
+    const frame = requestAnimationFrame(handleScroll)
+    scrollContainer.addEventListener('scroll', handleScroll, {
+      passive: true,
+    })
+
+    return () => {
+      cancelAnimationFrame(frame)
+      scrollContainer.removeEventListener('scroll', handleScroll)
+    }
+  }, [scrollContainer, hasNextPage, isFetchingNextPage, onLoadMore])
+}
+
 export const WebhookDeliveriesContent = ({
   teamSlug,
   webhookId,
 }: WebhookDeliveriesContentProps) => {
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null
+  )
   const [filters, setFilters] = useQueryStates(
     {
       ...deliveryFilterParams,
@@ -265,6 +538,12 @@ export const WebhookDeliveriesContent = ({
       : hasActiveFilters
         ? 'No deliveries match these filters'
         : 'No deliveries yet'
+  const handleLoadMore = useCallback(() => {
+    if (!deliveriesQuery.hasNextPage || deliveriesQuery.isFetchingNextPage)
+      return
+
+    deliveriesQuery.fetchNextPage()
+  }, [deliveriesQuery])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -279,117 +558,19 @@ export const WebhookDeliveriesContent = ({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto bg-bg px-3 md:px-6">
-        <Table className="min-w-[1800px] table-fixed [&_td]:h-8 [&_td]:p-0 [&_td]:align-middle [&_td:not(:last-child)]:pr-12 [&_th]:h-8 [&_th]:p-0 [&_th]:align-middle [&_th:not(:last-child)]:pr-12">
-          <colgroup>
-            <col className="w-[100px]" />
-            <col className="w-[112px]" />
-            <col className="w-[92px]" />
-            <col className="w-[132px]" />
-            <col className="w-[84px]" />
-            <col className="w-[84px]" />
-            <col className="w-[170px]" />
-            <col className="w-[170px]" />
-            <col className="w-[120px]" />
-            <col className="w-[170px]" />
-            <col className="w-[170px]" />
-          </colgroup>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Event</TableHead>
-              <TableHead>Sandbox ID</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last attempt</TableHead>
-              <TableHead>Attempts</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Request headers</TableHead>
-              <TableHead>Request body</TableHead>
-              <TableHead>Response HTTP</TableHead>
-              <TableHead>Response headers</TableHead>
-              <TableHead>Response body</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isDeliveriesLoading ? (
-              <TableLoadingState colSpan={11} label="Loading deliveries" />
-            ) : groups.length === 0 ? (
-              <TableEmptyState colSpan={11}>
-                <WebhookIcon className="size-4" />
-                <p className="prose-body-highlight text-fg">
-                  {emptyStateLabel}
-                </p>
-              </TableEmptyState>
-            ) : (
-              groups.map((group) => {
-                const attempt = group.latestAttempt
-
-                return (
-                  <TableRow key={group.eventId}>
-                    <TableCell className="min-w-0">
-                      <div className="min-w-0">
-                        <SandboxEventTypeBadge type={group.eventType} />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <IdBadge
-                        id={group.sandboxId}
-                        onCopied={() =>
-                          toast(defaultSuccessToast('Sandbox ID copied'))
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {attempt ? (
-                        <DeliveryStatusBadge status={attempt.deliveryStatus} />
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {attempt ? formatDateTime(attempt.timestamp) : '-'}
-                    </TableCell>
-                    <TableCell>{group.attemptCount}</TableCell>
-                    <TableCell>
-                      {attempt
-                        ? `${attempt.durationMs.toLocaleString()}ms`
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <DeliveryDetailCell value={attempt?.requestHeaders} />
-                    </TableCell>
-                    <TableCell>
-                      <DeliveryDetailCell value={attempt?.requestBody} />
-                    </TableCell>
-                    <TableCell>
-                      {attempt ? formatHttpStatus(attempt.httpStatusCode) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <DeliveryDetailCell value={attempt?.responseHeaders} />
-                    </TableCell>
-                    <TableCell>
-                      <DeliveryDetailCell value={attempt?.responseBody} />
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex justify-end p-3 md:p-6">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            disabled={!deliveriesQuery.hasNextPage}
-            loading={
-              deliveriesQuery.isFetchingNextPage ? 'Loading more' : undefined
-            }
-            onClick={() => deliveriesQuery.fetchNextPage()}
-          >
-            Load more
-          </Button>
-        </div>
+      <div
+        ref={setScrollContainer}
+        className="min-h-0 flex-1 overflow-auto bg-bg px-3 md:px-6"
+      >
+        <WebhookDeliveriesTable
+          groups={groups}
+          isLoading={isDeliveriesLoading}
+          emptyStateLabel={emptyStateLabel}
+          scrollContainer={scrollContainer}
+          hasNextPage={deliveriesQuery.hasNextPage}
+          isFetchingNextPage={deliveriesQuery.isFetchingNextPage}
+          onLoadMore={handleLoadMore}
+        />
       </div>
     </div>
   )
