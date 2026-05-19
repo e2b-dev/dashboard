@@ -94,17 +94,7 @@ export function createKeysRepository(
         deps.resolveAuthUserEmailsById
       )
 
-      if (!apiKey) {
-        return err(
-          createRepoError({
-            code: 'internal',
-            status: 500,
-            message: 'Failed to create API key',
-          })
-        )
-      }
-
-      return ok(apiKey)
+      return ok(apiKey ?? res.data)
     },
     async deleteApiKey(apiKeyId) {
       const res = await deps.infraClient.DELETE('/api-keys/{apiKeyID}', {
