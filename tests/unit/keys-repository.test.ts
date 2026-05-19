@@ -1,10 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
 
+const loggerMocks = vi.hoisted(() => ({
+  warn: vi.fn(),
+}))
+
 vi.mock('@/core/shared/clients/supabase/admin', () => ({
   supabaseAdmin: {
     from: vi.fn(),
   },
+}))
+
+vi.mock('@/core/shared/clients/logger/logger', () => ({
+  l: loggerMocks,
+  serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
 function createApiResponse<T>(input: {
@@ -116,10 +125,10 @@ describe('createKeysRepository', () => {
   })
 
   it('keeps API key listing usable when creator email lookup fails', async () => {
+    loggerMocks.warn.mockClear()
     const userId = '11111111-1111-1111-1111-111111111111'
-    const resolveAuthUserEmailsById = vi
-      .fn()
-      .mockRejectedValue(new Error('lookup failed'))
+    const lookupError = new Error('lookup failed')
+    const resolveAuthUserEmailsById = vi.fn().mockRejectedValue(lookupError)
 
     const apiKey = {
       ...baseApiKey,
@@ -158,5 +167,16 @@ describe('createKeysRepository', () => {
       ok: true,
       data: [apiKey],
     })
+
+    expect(loggerMocks.warn).toHaveBeenCalledWith(
+      {
+        key: 'auth_user_emails:resolve_failed',
+        error: lookupError,
+        context: {
+          userCount: 1,
+        },
+      },
+      'Failed to resolve creator emails from Supabase Auth'
+    )
   })
 })

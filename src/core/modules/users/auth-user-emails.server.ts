@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 
 export type AuthUserEmailResolver = (
@@ -51,7 +52,18 @@ export async function resolveCreatorEmails<
   let emailByUserId: Map<string, string | null>
   try {
     emailByUserId = await resolveEmails(creatorUserIds)
-  } catch {
+  } catch (error) {
+    l.warn(
+      {
+        key: 'auth_user_emails:resolve_failed',
+        error: serializeErrorForLog(error),
+        context: {
+          userCount: new Set(creatorUserIds).size,
+        },
+      },
+      'Failed to resolve creator emails from Supabase Auth'
+    )
+
     return items
   }
 
