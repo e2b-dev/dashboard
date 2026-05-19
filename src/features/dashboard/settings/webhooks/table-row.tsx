@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
@@ -42,7 +42,6 @@ type WebhookRowActionsProps = {
 }
 
 type WebhookNameAndUrlProps = {
-  href: string
   name: string
   url: string
 }
@@ -55,7 +54,7 @@ const urlIconMap: Record<UrlIconState, typeof WebhookIcon> = {
   idle: WebhookIcon,
 }
 
-const WebhookNameAndUrl = ({ href, name, url }: WebhookNameAndUrlProps) => {
+const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
   const [wasCopied, copy] = useClipboard(1500)
   const [isUrlHovered, setIsUrlHovered] = useState(false)
   const iconState: UrlIconState = wasCopied
@@ -81,13 +80,12 @@ const WebhookNameAndUrl = ({ href, name, url }: WebhookNameAndUrlProps) => {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
-        <Link
-          href={href}
-          className="text-fg w-fit max-w-full truncate text-sm font-medium hover:underline"
+        <p
+          className="text-fg w-fit max-w-full truncate text-sm font-medium"
           title={name}
         >
           {name}
-        </Link>
+        </p>
         <Button
           variant="quaternary"
           size="none"
@@ -114,7 +112,10 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
   return (
     <DropdownMenu open={dropDownOpen} onOpenChange={setDropDownOpen}>
       <DropdownMenuTrigger asChild>
-        <IconButton aria-label={`Open actions for ${webhook.name}`}>
+        <IconButton
+          aria-label={`Open actions for ${webhook.name}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <IndicatorDotsIcon className="-rotate-90" />
         </IconButton>
       </DropdownMenuTrigger>
@@ -144,6 +145,7 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
 
 export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
+  const router = useRouter()
 
   const createdAt = webhook.createdAt
     ? new Date(webhook.createdAt).toLocaleDateString('en-US', {
@@ -156,13 +158,12 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)
 
   return (
-    <TableRow>
+    <TableRow
+      className="cursor-pointer hover:bg-bg-hover"
+      onClick={() => router.push(webhookHref)}
+    >
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
-        <WebhookNameAndUrl
-          href={webhookHref}
-          name={webhook.name}
-          url={webhook.url}
-        />
+        <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
       </TableCell>
 
       <TableCell className={cn(rowCellClassName, 'w-[216px]')}>
