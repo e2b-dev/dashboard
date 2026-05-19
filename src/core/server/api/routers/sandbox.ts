@@ -4,7 +4,7 @@ import {
   deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToModel,
   mapInfraSandboxDetailsToModel,
-  mapInfraSandboxLogToModel,
+  mapInfraSandboxLogToModels,
   type SandboxDetailsModel,
   type SandboxLogModel,
   type SandboxLogsModel,
@@ -102,11 +102,11 @@ export const sandboxRouter = createTRPCRouter({
       }
       const sandboxLogs = sandboxLogsResult.data
 
-      const logs: SandboxLogModel[] = sandboxLogs.logs
-        .map(mapInfraSandboxLogToModel)
+      const logs: SandboxLogModel[] = [...sandboxLogs.logs]
         .reverse()
+        .flatMap(mapInfraSandboxLogToModels)
 
-      const hasMore = logs.length === limit
+      const hasMore = sandboxLogs.logs.length === limit
       const cursorLog = logs[0]
       const nextCursor = hasMore ? (cursorLog?.timestampUnix ?? null) : null
 
@@ -145,8 +145,8 @@ export const sandboxRouter = createTRPCRouter({
       }
       const sandboxLogs = sandboxLogsResult.data
 
-      const logs: SandboxLogModel[] = sandboxLogs.logs.map(
-        mapInfraSandboxLogToModel
+      const logs: SandboxLogModel[] = sandboxLogs.logs.flatMap(
+        mapInfraSandboxLogToModels
       )
 
       const newestLog = logs[logs.length - 1]

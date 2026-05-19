@@ -102,3 +102,15 @@ export const Message = ({ message, search, shouldHighlight }: MessageProps) => {
     </span>
   )
 }
+
+interface LoggerProps {
+  logger?: SandboxLogModel['logger']
+}
+
+export const Logger = ({ logger }: LoggerProps) => {
+  if (!logger) {
+    return <span className="text-fg-tertiary font-mono text-xs">-</span>
+  }
+
+  return <span className="font-mono text-xs whitespace-nowrap">{logger}</span>
+}
