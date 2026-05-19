@@ -45,12 +45,14 @@ type ResponseTimeTimestampStats = {
   count: number
   maxDurationMs: number
   minDurationMs: number
+  timestampMs: number
   totalDurationMs: number
 }
 
 type WebhookStatsGrouping = 'day' | 'timestamp'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const MINUTE_MS = 60 * 1000
 
 const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
   <section className="p-4 md:p-6">
@@ -118,23 +120,32 @@ const getSeriesTimestamp = (
   return timestampMs
 }
 
-// Groups attempts by range granularity, e.g. "11:53:24" -> exact point or "Mon" daily bucket.
+// Groups delivery attempts by chart granularity, e.g. retries at "14:35:10" -> one "14:35" count.
 const getDeliveryCountSeriesData = (
   attempts: DeliveryAttempt[],
   rangeBounds: WebhookStatsRangeBounds,
   grouping: WebhookStatsGrouping,
   status?: DeliveryAttempt['deliveryStatus']
 ) => {
-  const countByTimestamp = new Map<number, number>()
+  const countByTimestamp = new Map<
+    number,
+    { count: number; timestampMs: number }
+  >()
 
   for (const attempt of attempts) {
     if (status && attempt.deliveryStatus !== status) continue
 
     const timestampMs = getSeriesTimestamp(attempt.timestamp, grouping)
-    countByTimestamp.set(
-      timestampMs,
-      (countByTimestamp.get(timestampMs) ?? 0) + 1
-    )
+    const bucketTimestampMs =
+      grouping === 'day'
+        ? timestampMs
+        : Math.floor(timestampMs / MINUTE_MS) * MINUTE_MS
+    const current = countByTimestamp.get(bucketTimestampMs)
+
+    countByTimestamp.set(bucketTimestampMs, {
+      count: (current?.count ?? 0) + 1,
+      timestampMs: Math.max(current?.timestampMs ?? timestampMs, timestampMs),
+    })
   }
 
   if (grouping === 'day') {
@@ -143,9 +154,12 @@ const getDeliveryCountSeriesData = (
     const end = getStartOfDay(rangeBounds.end)
 
     for (let timestampMs = start; timestampMs <= end; timestampMs += DAY_MS) {
+      const value = countByTimestamp.get(timestampMs)?.count ?? 0
+
       points.push({
+        synthetic: value === 0,
         timestamp: new Date(timestampMs).toISOString(),
-        value: countByTimestamp.get(timestampMs) ?? 0,
+        value,
       })
     }
 
@@ -160,9 +174,11 @@ const getDeliveryCountSeriesData = (
     },
   ]
 
-  for (const [timestampMs, count] of Array.from(countByTimestamp).sort(
+  for (const [, bucket] of Array.from(countByTimestamp).sort(
     ([left], [right]) => left - right
   )) {
+    const timestampMs = bucket.timestampMs
+
     points.push(
       {
         synthetic: true,
@@ -173,7 +189,7 @@ const getDeliveryCountSeriesData = (
       },
       {
         timestamp: new Date(timestampMs).toISOString(),
-        value: count,
+        value: bucket.count,
       },
       {
         synthetic: true,
@@ -229,9 +245,10 @@ const getEmptyDeliveryCountSeriesData = (
   ]
 }
 
-// Groups response times by range granularity, e.g. "11:53:24" -> exact point or "Mon" daily bucket.
+// Groups response times by chart granularity, e.g. retries at "14:35:10" -> one "14:35" min/avg/max point.
 const getResponseTimeSeriesData = (
   attempts: DeliveryAttempt[],
+  rangeBounds: WebhookStatsRangeBounds,
   grouping: WebhookStatsGrouping,
   metric: 'avg' | 'max' | 'min'
 ) => {
@@ -239,10 +256,14 @@ const getResponseTimeSeriesData = (
 
   for (const attempt of attempts) {
     const timestampMs = getSeriesTimestamp(attempt.timestamp, grouping)
-    const currentStats = statsByTimestamp.get(timestampMs)
+    const bucketTimestampMs =
+      grouping === 'day'
+        ? timestampMs
+        : Math.floor(timestampMs / MINUTE_MS) * MINUTE_MS
+    const currentStats = statsByTimestamp.get(bucketTimestampMs)
 
     statsByTimestamp.set(
-      timestampMs,
+      bucketTimestampMs,
       currentStats
         ? {
             count: currentStats.count + 1,
@@ -254,33 +275,47 @@ const getResponseTimeSeriesData = (
               currentStats.minDurationMs,
               attempt.durationMs
             ),
+            timestampMs: Math.max(currentStats.timestampMs, timestampMs),
             totalDurationMs: currentStats.totalDurationMs + attempt.durationMs,
           }
         : {
             count: 1,
             maxDurationMs: attempt.durationMs,
             minDurationMs: attempt.durationMs,
+            timestampMs,
             totalDurationMs: attempt.durationMs,
           }
     )
   }
 
-  return Array.from(statsByTimestamp)
-    .sort(([left], [right]) => left - right)
-    .map(([timestampMs, stats]) => {
-      const value = stats
-        ? metric === 'avg'
-          ? stats.totalDurationMs / stats.count
-          : metric === 'max'
-            ? stats.maxDurationMs
-            : stats.minDurationMs
-        : null
+  const points: WebhookStatsChartPoint[] = [
+    {
+      synthetic: true,
+      timestamp: new Date(rangeBounds.start).toISOString(),
+      value: 0,
+    },
+  ]
 
-      return {
-        timestamp: new Date(timestampMs).toISOString(),
-        value,
-      }
-    })
+  points.push(
+    ...Array.from(statsByTimestamp)
+      .sort(([left], [right]) => left - right)
+      .map(([, stats]) => {
+        const value = stats
+          ? metric === 'avg'
+            ? stats.totalDurationMs / stats.count
+            : metric === 'max'
+              ? stats.maxDurationMs
+              : stats.minDurationMs
+          : null
+
+        return {
+          timestamp: new Date(stats.timestampMs).toISOString(),
+          value,
+        }
+      })
+  )
+
+  return points
 }
 
 export const WebhookOverviewContent = ({
@@ -343,6 +378,7 @@ export const WebhookOverviewContent = ({
     {
       name: 'Total deliveries',
       colorVar: '--accent-info-highlight',
+      showSymbol: true,
       z: 1,
       data:
         attempts.length > 0
@@ -352,6 +388,7 @@ export const WebhookOverviewContent = ({
     {
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
+      showSymbol: true,
       z: 2,
       data:
         attempts.length > 0
@@ -372,7 +409,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 1,
-      data: getResponseTimeSeriesData(attempts, grouping, 'min'),
+      data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'min'),
     },
     {
       name: 'Avg response time',
@@ -381,7 +418,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 3,
-      data: getResponseTimeSeriesData(attempts, grouping, 'avg'),
+      data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'avg'),
     },
     {
       name: 'Max response time',
@@ -390,7 +427,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 2,
-      data: getResponseTimeSeriesData(attempts, grouping, 'max'),
+      data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'max'),
     },
   ] satisfies WebhookStatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
