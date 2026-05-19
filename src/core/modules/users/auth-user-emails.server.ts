@@ -30,34 +30,34 @@ export async function getAuthUserEmailsById(
   )
 }
 
-export async function resolveMissingCreatorEmails<
+export async function resolveCreatorEmails<
   T extends {
     createdBy?: { id: string; email?: string | null } | null
   },
 >(items: T[], resolveEmails: AuthUserEmailResolver): Promise<T[]> {
-  const missingEmailUserIds = items.flatMap((item) => {
+  const creatorUserIds = items.flatMap((item) => {
     const createdBy = item.createdBy
-    if (!createdBy || createdBy.email?.trim()) {
+    if (!createdBy) {
       return []
     }
 
     return [createdBy.id]
   })
 
-  if (missingEmailUserIds.length === 0) {
+  if (creatorUserIds.length === 0) {
     return items
   }
 
   let emailByUserId: Map<string, string | null>
   try {
-    emailByUserId = await resolveEmails(missingEmailUserIds)
+    emailByUserId = await resolveEmails(creatorUserIds)
   } catch {
     return items
   }
 
   return items.map((item) => {
     const createdBy = item.createdBy
-    if (!createdBy || createdBy.email?.trim()) {
+    if (!createdBy) {
       return item
     }
 
@@ -65,7 +65,7 @@ export async function resolveMissingCreatorEmails<
       ...item,
       createdBy: {
         ...createdBy,
-        email: emailByUserId.get(createdBy.id) ?? createdBy.email ?? null,
+        email: emailByUserId.get(createdBy.id) ?? null,
       },
     }
   })

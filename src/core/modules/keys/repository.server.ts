@@ -5,7 +5,7 @@ import type { CreatedTeamAPIKey, TeamAPIKey } from '@/core/modules/keys/models'
 import {
   type AuthUserEmailResolver,
   getAuthUserEmailsById,
-  resolveMissingCreatorEmails,
+  resolveCreatorEmails,
 } from '@/core/modules/users/auth-user-emails.server'
 import { infra } from '@/core/shared/clients/api'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
@@ -53,7 +53,7 @@ export function createKeysRepository(
       }
 
       return ok(
-        await resolveMissingCreatorEmails(
+        await resolveCreatorEmails(
           res.data ?? [],
           deps.resolveAuthUserEmailsById
         )
@@ -89,7 +89,7 @@ export function createKeysRepository(
         )
       }
 
-      const [apiKey] = await resolveMissingCreatorEmails(
+      const [apiKey] = await resolveCreatorEmails(
         [res.data],
         deps.resolveAuthUserEmailsById
       )

@@ -36,12 +36,15 @@ const baseApiKey = {
 }
 
 describe('createKeysRepository', () => {
-  it('hydrates only missing creator emails when listing API keys', async () => {
-    const missingEmailUserId = '11111111-1111-1111-1111-111111111111'
-    const existingEmailUserId = '22222222-2222-2222-2222-222222222222'
-    const resolveAuthUserEmailsById = vi
-      .fn()
-      .mockResolvedValue(new Map([[missingEmailUserId, 'resolved@e2b.dev']]))
+  it('hydrates creator emails from Supabase Auth when listing API keys', async () => {
+    const firstUserId = '11111111-1111-1111-1111-111111111111'
+    const secondUserId = '22222222-2222-2222-2222-222222222222'
+    const resolveAuthUserEmailsById = vi.fn().mockResolvedValue(
+      new Map([
+        [firstUserId, 'first@e2b.dev'],
+        [secondUserId, 'second@e2b.dev'],
+      ])
+    )
 
     const infraClient = {
       GET: vi.fn().mockResolvedValue(
@@ -51,18 +54,18 @@ describe('createKeysRepository', () => {
           data: [
             {
               ...baseApiKey,
-              id: 'missing-email-key',
+              id: 'first-key',
               createdBy: {
-                id: missingEmailUserId,
+                id: firstUserId,
                 email: null,
               },
             },
             {
               ...baseApiKey,
-              id: 'existing-email-key',
+              id: 'second-key',
               createdBy: {
-                id: existingEmailUserId,
-                email: 'existing@e2b.dev',
+                id: secondUserId,
+                email: 'deprecated-response-value@e2b.dev',
               },
             },
           ],
@@ -87,22 +90,25 @@ describe('createKeysRepository', () => {
 
     const result = await repository.listTeamApiKeys()
 
-    expect(resolveAuthUserEmailsById).toHaveBeenCalledWith([missingEmailUserId])
+    expect(resolveAuthUserEmailsById).toHaveBeenCalledWith([
+      firstUserId,
+      secondUserId,
+    ])
     expect(result).toEqual({
       ok: true,
       data: [
         expect.objectContaining({
-          id: 'missing-email-key',
+          id: 'first-key',
           createdBy: {
-            id: missingEmailUserId,
-            email: 'resolved@e2b.dev',
+            id: firstUserId,
+            email: 'first@e2b.dev',
           },
         }),
         expect.objectContaining({
-          id: 'existing-email-key',
+          id: 'second-key',
           createdBy: {
-            id: existingEmailUserId,
-            email: 'existing@e2b.dev',
+            id: secondUserId,
+            email: 'second@e2b.dev',
           },
         }),
       ],

@@ -11,7 +11,7 @@ import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import {
   type AuthUserEmailResolver,
   getAuthUserEmailsById,
-  resolveMissingCreatorEmails,
+  resolveCreatorEmails,
 } from '@/core/modules/users/auth-user-emails.server'
 import { api, infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -81,7 +81,7 @@ export function createTemplatesRepository(
       }
 
       return ok({
-        templates: await resolveMissingCreatorEmails(
+        templates: await resolveCreatorEmails(
           res.data ?? [],
           deps.resolveAuthUserEmailsById
         ),
