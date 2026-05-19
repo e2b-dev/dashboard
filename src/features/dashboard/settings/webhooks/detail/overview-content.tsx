@@ -463,7 +463,7 @@ export const WebhookOverviewContent = ({
         />
       </div>
 
-      <div className="grid flex-1 border-b border-stroke md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
+      <div className="grid flex-1 md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
         <ChartPanel title="Event deliveries">
           <WebhookStatsChart
             series={deliverySeries}
