@@ -366,7 +366,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
   })
 
   return (
-    <div className={cn('h-[260px] min-w-0 w-full', className)}>
+    <div className={cn('h-full min-h-[260px] min-w-0 w-full', className)}>
       <ReactEChartsCore
         ref={chartRef}
         key={resolvedTheme}

@@ -65,7 +65,7 @@ const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
 )
 
 const ChartPanel = ({ children, title }: ChartPanelProps) => (
-  <section className="flex min-w-0 flex-col overflow-hidden p-3 md:p-6">
+  <section className="flex min-w-0 flex-col p-3 md:min-h-0 md:overflow-hidden md:p-6">
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-fg uppercase prose-label-highlight max-md:text-sm">
         <span>{title}</span>
@@ -463,7 +463,7 @@ export const WebhookOverviewContent = ({
         />
       </div>
 
-      <div className="grid flex-1 md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
+      <div className="grid md:min-h-0 md:flex-1 md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
         <ChartPanel title="Event deliveries">
           <WebhookStatsChart
             series={deliverySeries}
