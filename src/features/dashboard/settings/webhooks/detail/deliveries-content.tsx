@@ -11,11 +11,11 @@ import {
   IdBadge,
   SandboxEventTypeBadge,
 } from '@/features/dashboard/shared'
+import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { Card } from '@/ui/primitives/card'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -158,9 +158,12 @@ const DeliveryDetailCell = ({
 
   if (typeof parsedValue === 'string') {
     return (
-      <span className="block max-w-[180px] truncate text-fg-tertiary">
-        {parsedValue}
-      </span>
+      <JsonPopover
+        className="min-w-0 max-w-[180px] normal-case text-fg-tertiary hover:text-fg hover:underline"
+        json={parsedValue}
+      >
+        <span className="block w-full truncate">{parsedValue}</span>
+      </JsonPopover>
     )
   }
 
@@ -264,8 +267,8 @@ export const WebhookDeliveriesContent = ({
         : 'No deliveries yet'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden p-3 md:p-6">
-      <div className="flex flex-col gap-1 md:flex-row md:items-center">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex flex-col gap-1 p-3 md:flex-row md:items-center md:p-6">
         <DeliveryStatusFilter
           statuses={deliveryStatuses}
           onStatusesChange={handleDeliveryStatusesChange}
@@ -276,106 +279,105 @@ export const WebhookDeliveriesContent = ({
         />
       </div>
 
-      <div className="min-h-0 flex-1">
-        <Card variant="layer" className="min-h-0 overflow-auto">
-          <Table className="min-w-[2220px] table-fixed [&_td:not(:last-child)]:pr-12 [&_th:not(:last-child)]:pr-12">
-            <colgroup>
-              <col className="w-[120px]" />
-              <col className="w-[130px]" />
-              <col className="w-[100px]" />
-              <col className="w-[150px]" />
-              <col className="w-[100px]" />
-              <col className="w-[100px]" />
-              <col className="w-[220px]" />
-              <col className="w-[220px]" />
-              <col className="w-[150px]" />
-              <col className="w-[220px]" />
-              <col className="w-[220px]" />
-            </colgroup>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="first:pl-4">Event</TableHead>
-                <TableHead>Sandbox ID</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last attempt</TableHead>
-                <TableHead>Attempts</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Request headers</TableHead>
-                <TableHead>Request body</TableHead>
-                <TableHead>Response HTTP</TableHead>
-                <TableHead>Response headers</TableHead>
-                <TableHead>Response body</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isDeliveriesLoading ? (
-                <TableLoadingState colSpan={11} label="Loading deliveries" />
-              ) : groups.length === 0 ? (
-                <TableEmptyState colSpan={11}>
-                  <WebhookIcon className="size-4" />
-                  <p className="prose-body-highlight text-fg">
-                    {emptyStateLabel}
-                  </p>
-                </TableEmptyState>
-              ) : (
-                groups.map((group) => {
-                  const attempt = group.latestAttempt
+      <div className="min-h-0 flex-1 overflow-auto bg-bg px-3 md:px-6">
+        <Table className="min-w-[1800px] table-fixed [&_td]:h-8 [&_td]:p-0 [&_td]:align-middle [&_td:not(:last-child)]:pr-12 [&_th]:h-8 [&_th]:p-0 [&_th]:align-middle [&_th:not(:last-child)]:pr-12">
+          <colgroup>
+            <col className="w-[100px]" />
+            <col className="w-[112px]" />
+            <col className="w-[92px]" />
+            <col className="w-[132px]" />
+            <col className="w-[84px]" />
+            <col className="w-[84px]" />
+            <col className="w-[170px]" />
+            <col className="w-[170px]" />
+            <col className="w-[120px]" />
+            <col className="w-[170px]" />
+            <col className="w-[170px]" />
+          </colgroup>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Event</TableHead>
+              <TableHead>Sandbox ID</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Last attempt</TableHead>
+              <TableHead>Attempts</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Request headers</TableHead>
+              <TableHead>Request body</TableHead>
+              <TableHead>Response HTTP</TableHead>
+              <TableHead>Response headers</TableHead>
+              <TableHead>Response body</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isDeliveriesLoading ? (
+              <TableLoadingState colSpan={11} label="Loading deliveries" />
+            ) : groups.length === 0 ? (
+              <TableEmptyState colSpan={11}>
+                <WebhookIcon className="size-4" />
+                <p className="prose-body-highlight text-fg">
+                  {emptyStateLabel}
+                </p>
+              </TableEmptyState>
+            ) : (
+              groups.map((group) => {
+                const attempt = group.latestAttempt
 
-                  return (
-                    <TableRow key={group.eventId}>
-                      <TableCell className="min-w-0 first:pl-4">
-                        <div className="min-w-0">
-                          <SandboxEventTypeBadge type={group.eventType} />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <IdBadge id={group.sandboxId} />
-                      </TableCell>
-                      <TableCell>
-                        {attempt ? (
-                          <DeliveryStatusBadge
-                            status={attempt.deliveryStatus}
-                          />
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {attempt ? formatDateTime(attempt.timestamp) : '-'}
-                      </TableCell>
-                      <TableCell>{group.attemptCount}</TableCell>
-                      <TableCell>
-                        {attempt
-                          ? `${attempt.durationMs.toLocaleString()}ms`
-                          : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <DeliveryDetailCell value={attempt?.requestHeaders} />
-                      </TableCell>
-                      <TableCell>
-                        <DeliveryDetailCell value={attempt?.requestBody} />
-                      </TableCell>
-                      <TableCell>
-                        {attempt
-                          ? formatHttpStatus(attempt.httpStatusCode)
-                          : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <DeliveryDetailCell value={attempt?.responseHeaders} />
-                      </TableCell>
-                      <TableCell>
-                        <DeliveryDetailCell value={attempt?.responseBody} />
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+                return (
+                  <TableRow key={group.eventId}>
+                    <TableCell className="min-w-0">
+                      <div className="min-w-0">
+                        <SandboxEventTypeBadge type={group.eventType} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <IdBadge
+                        id={group.sandboxId}
+                        onCopied={() =>
+                          toast(defaultSuccessToast('Sandbox ID copied'))
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {attempt ? (
+                        <DeliveryStatusBadge status={attempt.deliveryStatus} />
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {attempt ? formatDateTime(attempt.timestamp) : '-'}
+                    </TableCell>
+                    <TableCell>{group.attemptCount}</TableCell>
+                    <TableCell>
+                      {attempt
+                        ? `${attempt.durationMs.toLocaleString()}ms`
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <DeliveryDetailCell value={attempt?.requestHeaders} />
+                    </TableCell>
+                    <TableCell>
+                      <DeliveryDetailCell value={attempt?.requestBody} />
+                    </TableCell>
+                    <TableCell>
+                      {attempt ? formatHttpStatus(attempt.httpStatusCode) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <DeliveryDetailCell value={attempt?.responseHeaders} />
+                    </TableCell>
+                    <TableCell>
+                      <DeliveryDetailCell value={attempt?.responseBody} />
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end p-3 md:p-6">
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
