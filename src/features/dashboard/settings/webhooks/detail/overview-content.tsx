@@ -5,13 +5,6 @@ import { useQueryStates } from 'nuqs'
 import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 import { type TRPCRouterOutputs, useTRPC } from '@/trpc/client'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/ui/primitives/card'
 import { WebhookRangeSelector } from './range-selector'
 import {
   getValidWebhookStatsBounds,
@@ -33,13 +26,13 @@ type WebhookOverviewContentProps = {
   initialRangeBounds: WebhookStatsRangeBounds
 }
 
-type MetricCardProps = {
+type MetricPanelProps = {
   label: string
   value: string
   description: string
 }
 
-type ChartCardProps = {
+type ChartPanelProps = {
   children: ReactNode
   title: string
 }
@@ -54,20 +47,14 @@ type ResponseTimeBucketStats = {
   totalDurationMs: number
 }
 
-const MetricCard = ({ label, value, description }: MetricCardProps) => (
-  <Card variant="layer">
-    <CardHeader className="p-4 pb-2">
-      <CardDescription className="uppercase prose-label">
-        {label}
-      </CardDescription>
-      <CardTitle className="font-mono text-[28px] leading-none tracking-[-0.04em]">
-        {value}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="p-4 pt-0">
-      <p className="text-fg-tertiary prose-body">{description}</p>
-    </CardContent>
-  </Card>
+const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
+  <section className="p-4 md:p-6">
+    <p className="text-fg-tertiary uppercase prose-label">{label}</p>
+    <p className="text-fg font-mono text-[28px] leading-none tracking-[-0.04em]">
+      {value}
+    </p>
+    <p className="mt-2 text-fg-tertiary prose-body">{description}</p>
+  </section>
 )
 
 const EmptyChartState = ({ label }: { label: string }) => (
@@ -76,12 +63,14 @@ const EmptyChartState = ({ label }: { label: string }) => (
   </div>
 )
 
-const ChartCard = ({ children, title }: ChartCardProps) => (
-  <section className="flex min-w-0 flex-col overflow-hidden border border-stroke bg-bg">
-    <div className="border-b px-4 py-3">
-      <h3 className="text-fg prose-label-highlight uppercase">{title}</h3>
+const ChartPanel = ({ children, title }: ChartPanelProps) => (
+  <section className="flex min-w-0 flex-col overflow-hidden p-3 md:p-6">
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between text-fg uppercase prose-label-highlight max-md:text-sm">
+        <span>{title}</span>
+      </div>
     </div>
-    <div className="p-4">{children}</div>
+    <div className="mt-3 min-h-0 flex-1 md:mt-4">{children}</div>
   </section>
 )
 
@@ -383,36 +372,36 @@ export const WebhookOverviewContent = ({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-3 md:p-6">
-      <div className="flex">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="flex p-3 md:p-6">
         <WebhookRangeSelector value={range} onChange={handleRangeChange} />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
-        <MetricCard
+      <div className="grid border-y border-stroke md:grid-cols-4 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
+        <MetricPanel
           label="Deliveries"
           value={stats.total.toLocaleString()}
           description={`${stats.successful.toLocaleString()} successful`}
         />
-        <MetricCard
+        <MetricPanel
           label="Failed"
           value={stats.failed.toLocaleString()}
           description={`${failureRate} failure rate`}
         />
-        <MetricCard
+        <MetricPanel
           label="Avg latency"
           value={`${Math.round(stats.avgDurationMs).toLocaleString()}ms`}
           description="Across all attempts"
         />
-        <MetricCard
+        <MetricPanel
           label="Max latency"
           value={`${stats.maxDurationMs.toLocaleString()}ms`}
           description={`Min ${stats.minDurationMs.toLocaleString()}ms`}
         />
       </div>
 
-      <div className="grid items-start gap-4 md:grid-cols-2">
-        <ChartCard title="Event deliveries">
+      <div className="grid flex-1 border-b border-stroke md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
+        <ChartPanel title="Event deliveries">
           {hasAttempts ? (
             <WebhookStatsChart
               series={deliverySeries}
@@ -423,9 +412,9 @@ export const WebhookOverviewContent = ({
           ) : (
             <EmptyChartState label="No delivery data for this range" />
           )}
-        </ChartCard>
+        </ChartPanel>
 
-        <ChartCard title="Response time">
+        <ChartPanel title="Response time">
           {hasAttempts ? (
             <WebhookStatsChart
               series={latencySeries}
@@ -437,7 +426,7 @@ export const WebhookOverviewContent = ({
           ) : (
             <EmptyChartState label="No latency data for this range" />
           )}
-        </ChartCard>
+        </ChartPanel>
       </div>
     </div>
   )
