@@ -36,7 +36,7 @@ export const WebhooksTable = ({
   return (
     <Table
       className={cn(
-        'w-full table-fixed [&_td:not(:last-child)]:pr-12 [&_th:not(:last-child)]:pr-12',
+        'w-full min-w-[720px] table-fixed [&_td:not(:last-child)]:pr-12 [&_th:not(:last-child)]:pr-12',
         className
       )}
     >
