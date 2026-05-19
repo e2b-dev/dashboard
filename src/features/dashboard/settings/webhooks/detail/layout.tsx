@@ -30,7 +30,7 @@ export const WebhookDetailLayout = ({
         },
         {
           id: 'deliveries',
-          label: 'Event deliveries',
+          label: 'Events',
           href: PROTECTED_URLS.WEBHOOK_DELIVERIES(teamSlug, webhookId),
           icon: <ListIcon className="size-4" />,
         },

@@ -15,6 +15,7 @@ import { memo, useEffect, useMemo, useRef } from 'react'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
+import { formatDisplayTimestamp } from '@/lib/utils/formatting'
 
 echarts.use([
   LineChart,
@@ -111,11 +112,21 @@ const getXAxisInterval = ({
 
 const defaultValueFormatter = (value: number) => value.toLocaleString()
 
-const formatTooltipTimestamp = (timestampMs: number) => {
-  const date = new Date(timestampMs)
-  const pad = (value: number) => String(value).padStart(2, '0')
+const formatTooltipTimestamp = (
+  timestampMs: number,
+  scale: NonNullable<WebhookStatsChartProps['xAxisScale']>
+) => {
+  if (scale !== 'daily') return formatDisplayTimestamp(timestampMs)
 
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  const date = new Date(timestampMs)
+  const now = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+
+  if (date.toDateString() === now.toDateString()) return 'Today'
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+
+  return date.toLocaleDateString('en-US', { weekday: 'long' })
 }
 
 const getTooltipTimestampMs = (param: unknown) => {
@@ -208,7 +219,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
       if (rows.length === 0) return ''
 
       return `<div style="display:flex;flex-direction:column;gap:8px;">
-        <div>${formatTooltipTimestamp(timestampMs)}</div>
+        <div>${formatTooltipTimestamp(timestampMs, xAxisScale)}</div>
         ${rows.join('')}
       </div>`
     }

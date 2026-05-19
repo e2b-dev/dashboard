@@ -127,6 +127,29 @@ export function formatChartTimestampUTC(
   return formatInTimeZone(date, 'UTC', 'h:mm:ss a')
 }
 
+/** Formats a timestamp with a relative day label, e.g. "2026-05-19T14:35:10Z" -> "Today, 2:35:10 PM". */
+export const formatDisplayTimestamp = (value: string | number | Date) => {
+  const date = new Date(value)
+  const now = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+
+  const isToday = date.toDateString() === now.toDateString()
+  const isYesterday = date.toDateString() === yesterday.toDateString()
+  const prefix = isToday
+    ? 'Today'
+    : isYesterday
+      ? 'Yesterday'
+      : date.toLocaleDateString()
+  const timeStr = date.toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+
+  return `${prefix}, ${timeStr}`
+}
+
 /** Formats elapsed time as a compact relative label; e.g. `new Date(Date.now() - 7200000)` -> `"2h ago"` */
 export const formatRelativeAgo = (date: Date): string => {
   const now = Date.now()
