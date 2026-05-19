@@ -547,7 +547,7 @@ export const WebhookDeliveriesContent = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex flex-col gap-1 p-3 md:flex-row md:items-center md:p-6">
+      <div className="flex flex-row items-center gap-1 p-3 md:p-6">
         <DeliveryStatusFilter
           statuses={deliveryStatuses}
           onStatusesChange={handleDeliveryStatusesChange}
