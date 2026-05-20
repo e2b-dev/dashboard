@@ -62,11 +62,6 @@ export const ListWebhookDeliveriesInputSchema = z.object({
   eventType: z.array(SandboxLifecycleEventTypeSchema).optional(),
 })
 
-export const GetWebhookDeliveryInputSchema = z.object({
-  webhookId: z.uuid(),
-  deliveryId: z.uuid(),
-})
-
 export const GetWebhookDeliveryStatsInputSchema = z
   .object({
     webhookId: z.uuid(),
@@ -95,9 +90,6 @@ export type UpdateWebhookSecretInput = z.input<
 export type GetWebhookInput = z.input<typeof GetWebhookInputSchema>
 export type ListWebhookDeliveriesInput = z.input<
   typeof ListWebhookDeliveriesInputSchema
->
-export type GetWebhookDeliveryInput = z.input<
-  typeof GetWebhookDeliveryInputSchema
 >
 export type GetWebhookDeliveryStatsInput = z.input<
   typeof GetWebhookDeliveryStatsInputSchema

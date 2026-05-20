@@ -46,13 +46,6 @@ components:
       schema:
         type: string
         format: uuid
-    deliveryID:
-      name: deliveryID
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
 
   responses:
     "400":
@@ -754,32 +747,6 @@ paths:
                   $ref: "#/components/schemas/WebhookDeliveryEvent"
         "400":
           $ref: "#/components/responses/400"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /events/webhooks/{webhookID}/deliveries/{deliveryID}:
-    get:
-      operationId: webhookDeliveryGet
-      description: Get a webhook delivery attempt.
-      tags: [webhooks]
-      security:
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: "#/components/parameters/webhookID"
-        - $ref: "#/components/parameters/deliveryID"
-      responses:
-        "200":
-          description: Webhook delivery attempt.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebhookDelivery"
         "404":
           $ref: "#/components/responses/404"
         "401":

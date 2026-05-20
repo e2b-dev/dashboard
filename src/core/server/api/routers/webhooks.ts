@@ -3,7 +3,6 @@ import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import {
   DeleteWebhookInputSchema,
-  GetWebhookDeliveryInputSchema,
   GetWebhookDeliveryStatsInputSchema,
   GetWebhookInputSchema,
   ListWebhookDeliveriesInputSchema,
@@ -137,36 +136,6 @@ export const webhooksRouter = createTRPCRouter({
         groups: result.data.data.map(toDeliveryEventGroup),
         nextCursor: result.data.nextCursor,
       }
-    }),
-
-  getDelivery: webhooksRepositoryProcedure
-    .input(GetWebhookDeliveryInputSchema)
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.webhooksRepository.getWebhookDelivery({
-        webhookId: input.webhookId,
-        deliveryId: input.deliveryId,
-      })
-
-      if (!result.ok) {
-        l.error(
-          {
-            key: 'get_webhook_delivery_trpc:error',
-            status: result.error.status,
-            error: result.error,
-            team_id: ctx.teamId,
-            user_id: ctx.session.user.id,
-            context: {
-              webhookId: input.webhookId,
-              deliveryId: input.deliveryId,
-            },
-          },
-          `Failed to get webhook delivery: ${result.error.status}: ${result.error.message}`
-        )
-
-        throwTRPCErrorFromRepoError(result.error)
-      }
-
-      return { delivery: result.data }
     }),
 
   getDeliveryStats: webhooksRepositoryProcedure

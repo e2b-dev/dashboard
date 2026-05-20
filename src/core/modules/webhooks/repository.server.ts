@@ -40,11 +40,6 @@ interface ListWebhookDeliveriesResult {
   nextCursor: string | null
 }
 
-export interface GetWebhookDeliveryInput {
-  webhookId: string
-  deliveryId: string
-}
-
 export interface GetWebhookDeliveryStatsInput {
   webhookId: string
   start?: string
@@ -61,9 +56,6 @@ export interface WebhooksRepository {
   listWebhookDeliveries(
     input: ListWebhookDeliveriesInput
   ): Promise<RepoResult<ListWebhookDeliveriesResult>>
-  getWebhookDelivery(
-    input: GetWebhookDeliveryInput
-  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDelivery']>>
   getWebhookDeliveryStats(
     input: GetWebhookDeliveryStatsInput
   ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDeliveryStats']>>
@@ -170,34 +162,6 @@ export function createWebhooksRepository(
         data: response.data ?? [],
         nextCursor: response.response.headers.get('X-Next-Cursor'),
       })
-    },
-    async getWebhookDelivery(input) {
-      const response = await deps.infraClient.GET(
-        '/events/webhooks/{webhookID}/deliveries/{deliveryID}',
-        {
-          headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
-          },
-          params: {
-            path: {
-              webhookID: input.webhookId,
-              deliveryID: input.deliveryId,
-            },
-          },
-        }
-      )
-
-      if (!response.response.ok || response.error) {
-        return err(
-          repoErrorFromHttp(
-            response.response.status,
-            response.error?.message ?? 'Failed to get webhook delivery',
-            response.error
-          )
-        )
-      }
-
-      return ok(response.data)
     },
     async getWebhookDeliveryStats(input) {
       const response = await deps.infraClient.GET(
