@@ -1,13 +1,3 @@
-export const WEBHOOK_EVENTS = [
-  'sandbox.lifecycle.created',
-  'sandbox.lifecycle.paused',
-  'sandbox.lifecycle.resumed',
-  'sandbox.lifecycle.updated',
-  'sandbox.lifecycle.killed',
-] as const
-
-export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number]
-
 export const WEBHOOK_EXAMPLE_PAYLOAD = `{
   "id": "<UUID>",
   "version": "v2",

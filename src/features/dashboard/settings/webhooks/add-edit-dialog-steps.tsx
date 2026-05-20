@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
+import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
@@ -22,7 +23,6 @@ import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import {
-  WEBHOOK_EVENTS,
   WEBHOOK_EXAMPLE_PAYLOAD,
   WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
 } from './constants'
@@ -176,7 +176,7 @@ export function WebhookAddEditDialogSteps({
                     <Separator className="w-4" />
 
                     {/* Individual event checkboxes */}
-                    {WEBHOOK_EVENTS.map((event) => (
+                    {SandboxLifecycleEventTypeSchema.options.map((event) => (
                       <div key={event} className="flex items-center gap-2">
                         <Checkbox
                           id={`event-${event}`}
