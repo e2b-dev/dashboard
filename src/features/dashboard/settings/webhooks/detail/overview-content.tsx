@@ -38,8 +38,8 @@ type ChartPanelProps = {
   title: string
 }
 
-type DeliveryAttempt =
-  TRPCRouterOutputs['webhooks']['listDeliveries']['groups'][number]['attempts'][number]
+type WebhookDeliveryStats =
+  TRPCRouterOutputs['webhooks']['getDeliveryStats']['stats']
 
 type ResponseTimeTimestampStats = {
   count: number
@@ -50,6 +50,8 @@ type ResponseTimeTimestampStats = {
 }
 
 type WebhookStatsGrouping = 'day' | 'timestamp'
+type WebhookDeliveryStatsBucket = WebhookDeliveryStats['buckets'][number]
+type WebhookDeliveryStatus = 'failed'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const MINUTE_MS = 60 * 1000
@@ -75,34 +77,6 @@ const ChartPanel = ({ children, title }: ChartPanelProps) => (
   </section>
 )
 
-const getAttemptsFromGroups = (
-  groups: TRPCRouterOutputs['webhooks']['listDeliveries']['groups']
-) =>
-  groups
-    .flatMap((group) => group.attempts)
-    .sort(
-      (left, right) =>
-        new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
-    )
-
-const getAttemptStats = (attempts: DeliveryAttempt[]) => {
-  const total = attempts.length
-  const failed = attempts.filter(
-    (attempt) => attempt.deliveryStatus === 'failed'
-  ).length
-  const durations = attempts.map((attempt) => attempt.durationMs)
-  const durationTotal = durations.reduce((sum, value) => sum + value, 0)
-
-  return {
-    total,
-    failed,
-    successful: total - failed,
-    minDurationMs: durations.length > 0 ? Math.min(...durations) : 0,
-    avgDurationMs: durations.length > 0 ? durationTotal / durations.length : 0,
-    maxDurationMs: durations.length > 0 ? Math.max(...durations) : 0,
-  }
-}
-
 const getStartOfDay = (timestampMs: number) => {
   const date = new Date(timestampMs)
   date.setHours(0, 0, 0, 0)
@@ -120,22 +94,23 @@ const getSeriesTimestamp = (
   return timestampMs
 }
 
-// Groups delivery attempts by chart granularity, e.g. retries at "14:35:10" -> one "14:35" count.
+// Groups delivery buckets by chart granularity, e.g. minute buckets from one day -> one daily count.
 const getDeliveryCountSeriesData = (
-  attempts: DeliveryAttempt[],
+  buckets: WebhookDeliveryStatsBucket[],
   rangeBounds: WebhookStatsRangeBounds,
   grouping: WebhookStatsGrouping,
-  status?: DeliveryAttempt['deliveryStatus']
+  status?: WebhookDeliveryStatus
 ) => {
   const countByTimestamp = new Map<
     number,
     { count: number; timestampMs: number }
   >()
 
-  for (const attempt of attempts) {
-    if (status && attempt.deliveryStatus !== status) continue
+  for (const bucket of buckets) {
+    const count = status === 'failed' ? bucket.failed : bucket.total
+    if (count <= 0) continue
 
-    const timestampMs = getSeriesTimestamp(attempt.timestamp, grouping)
+    const timestampMs = getSeriesTimestamp(bucket.timestamp, grouping)
     const bucketTimestampMs =
       grouping === 'day'
         ? timestampMs
@@ -143,7 +118,7 @@ const getDeliveryCountSeriesData = (
     const current = countByTimestamp.get(bucketTimestampMs)
 
     countByTimestamp.set(bucketTimestampMs, {
-      count: (current?.count ?? 0) + 1,
+      count: (current?.count ?? 0) + count,
       timestampMs: Math.max(current?.timestampMs ?? timestampMs, timestampMs),
     })
   }
@@ -245,45 +220,48 @@ const getEmptyDeliveryCountSeriesData = (
   ]
 }
 
-// Groups response times by chart granularity, e.g. retries at "14:35:10" -> one "14:35" min/avg/max point.
+// Groups response-time buckets by chart granularity, e.g. minute buckets from one day -> one daily min/avg/max point.
 const getResponseTimeSeriesData = (
-  attempts: DeliveryAttempt[],
+  buckets: WebhookDeliveryStatsBucket[],
   rangeBounds: WebhookStatsRangeBounds,
   grouping: WebhookStatsGrouping,
   metric: 'avg' | 'max' | 'min'
 ) => {
   const statsByTimestamp = new Map<number, ResponseTimeTimestampStats>()
 
-  for (const attempt of attempts) {
-    const timestampMs = getSeriesTimestamp(attempt.timestamp, grouping)
+  for (const bucket of buckets) {
+    if (bucket.total <= 0) continue
+
+    const timestampMs = getSeriesTimestamp(bucket.timestamp, grouping)
     const bucketTimestampMs =
       grouping === 'day'
         ? timestampMs
         : Math.floor(timestampMs / MINUTE_MS) * MINUTE_MS
     const currentStats = statsByTimestamp.get(bucketTimestampMs)
+    const durationTotal = bucket.durationMs.average * bucket.total
 
     statsByTimestamp.set(
       bucketTimestampMs,
       currentStats
         ? {
-            count: currentStats.count + 1,
+            count: currentStats.count + bucket.total,
             maxDurationMs: Math.max(
               currentStats.maxDurationMs,
-              attempt.durationMs
+              bucket.durationMs.maximum
             ),
             minDurationMs: Math.min(
               currentStats.minDurationMs,
-              attempt.durationMs
+              bucket.durationMs.minimum
             ),
             timestampMs: Math.max(currentStats.timestampMs, timestampMs),
-            totalDurationMs: currentStats.totalDurationMs + attempt.durationMs,
+            totalDurationMs: currentStats.totalDurationMs + durationTotal,
           }
         : {
-            count: 1,
-            maxDurationMs: attempt.durationMs,
-            minDurationMs: attempt.durationMs,
+            count: bucket.total,
+            maxDurationMs: bucket.durationMs.maximum,
+            minDurationMs: bucket.durationMs.minimum,
             timestampMs,
-            totalDurationMs: attempt.durationMs,
+            totalDurationMs: durationTotal,
           }
     )
   }
@@ -345,19 +323,14 @@ export const WebhookOverviewContent = ({
   const range = getWebhookStatsRangeFromBounds(rangeBounds)
   const trpc = useTRPC()
   const { data } = useSuspenseQuery(
-    trpc.webhooks.listDeliveries.queryOptions({
+    trpc.webhooks.getDeliveryStats.queryOptions({
       teamSlug,
       webhookId,
-      limit: 100,
-      orderAsc: true,
       ...apiRangeBounds,
     })
   )
-  const attempts = useMemo(
-    () => getAttemptsFromGroups(data.groups),
-    [data.groups]
-  )
-  const stats = getAttemptStats(attempts)
+  const stats = data.stats
+  const buckets = stats.buckets
   const failureRate =
     stats.total > 0
       ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
@@ -381,8 +354,8 @@ export const WebhookOverviewContent = ({
       showSymbol: true,
       z: 2,
       data:
-        attempts.length > 0
-          ? getDeliveryCountSeriesData(attempts, rangeBounds, grouping)
+        buckets.length > 0
+          ? getDeliveryCountSeriesData(buckets, rangeBounds, grouping)
           : getEmptyDeliveryCountSeriesData(rangeBounds, grouping),
     },
     {
@@ -391,13 +364,8 @@ export const WebhookOverviewContent = ({
       showSymbol: true,
       z: 1,
       data:
-        attempts.length > 0
-          ? getDeliveryCountSeriesData(
-              attempts,
-              rangeBounds,
-              grouping,
-              'failed'
-            )
+        buckets.length > 0
+          ? getDeliveryCountSeriesData(buckets, rangeBounds, grouping, 'failed')
           : [],
     },
   ] satisfies WebhookStatsChartSeries[]
@@ -409,7 +377,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 1,
-      data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'min'),
+      data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'min'),
     },
     {
       name: 'Avg',
@@ -418,7 +386,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 3,
-      data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'avg'),
+      data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'avg'),
     },
     {
       name: 'Max',
@@ -427,7 +395,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 2,
-      data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'max'),
+      data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'max'),
     },
   ] satisfies WebhookStatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
@@ -444,7 +412,7 @@ export const WebhookOverviewContent = ({
         <MetricPanel
           label="Deliveries"
           value={stats.total.toLocaleString()}
-          description={`${stats.successful.toLocaleString()} successful`}
+          description={`${(stats.total - stats.failed).toLocaleString()} successful`}
         />
         <MetricPanel
           label="Failed"
@@ -453,13 +421,13 @@ export const WebhookOverviewContent = ({
         />
         <MetricPanel
           label="Avg latency"
-          value={`${Math.round(stats.avgDurationMs).toLocaleString()}ms`}
+          value={`${Math.round(stats.durationMs.average).toLocaleString()}ms`}
           description="Across all attempts"
         />
         <MetricPanel
           label="Max latency"
-          value={`${stats.maxDurationMs.toLocaleString()}ms`}
-          description={`Min ${stats.minDurationMs.toLocaleString()}ms`}
+          value={`${stats.durationMs.maximum.toLocaleString()}ms`}
+          description={`Min ${stats.durationMs.minimum.toLocaleString()}ms`}
         />
       </div>
 

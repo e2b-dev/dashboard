@@ -370,11 +370,7 @@ const WebhookDeliveryRow = ({
         />
       </TableCell>
       <TableCell className="flex h-8 w-[92px] items-center p-0 pr-12">
-        {attempt ? (
-          <DeliveryStatusBadge status={attempt.deliveryStatus} />
-        ) : (
-          '-'
-        )}
+        {attempt ? <DeliveryStatusBadge status={attempt.status} /> : '-'}
       </TableCell>
       <TableCell className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12">
         {attempt ? formatDateTime(attempt.timestamp) : '-'}

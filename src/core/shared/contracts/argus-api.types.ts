@@ -370,7 +370,7 @@ export interface components {
        * @description Delivery attempt status
        * @enum {string}
        */
-      deliveryStatus: 'success' | 'failed'
+      status: 'success' | 'failed'
       /**
        * Format: int32
        * @description Delivery request duration in milliseconds
@@ -411,12 +411,16 @@ export interface components {
       total: number
       /** Format: int64 */
       failed: number
+      durationMs: components['schemas']['WebhookDeliveryDurationStats']
+    }
+    /** @description Webhook delivery duration statistics in milliseconds */
+    WebhookDeliveryDurationStats: {
       /** Format: int32 */
-      minDurationMs: number
+      minimum: number
       /** Format: double */
-      avgDurationMs: number
+      average: number
       /** Format: int32 */
-      maxDurationMs: number
+      maximum: number
     }
     /** @description Webhook delivery stats for a time bucket */
     WebhookDeliveryStatsBucket: {
@@ -426,8 +430,7 @@ export interface components {
       total: number
       /** Format: int64 */
       failed: number
-      /** Format: double */
-      avgDurationMs: number
+      durationMs: components['schemas']['WebhookDeliveryDurationStats']
     }
     /** @description Webhook delivery attempts grouped by sandbox event */
     WebhookDeliveryEvent: {

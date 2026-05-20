@@ -282,7 +282,7 @@ components:
         - eventId
         - sandboxId
         - eventType
-        - deliveryStatus
+        - status
         - durationMs
         - requestBody
         - requestHeaders
@@ -312,7 +312,7 @@ components:
         eventType:
           type: string
           description: Sandbox event type
-        deliveryStatus:
+        status:
           type: string
           enum: [success, failed]
           description: Delivery attempt status
@@ -361,9 +361,7 @@ components:
         - buckets
         - total
         - failed
-        - minDurationMs
-        - avgDurationMs
-        - maxDurationMs
+        - durationMs
       properties:
         buckets:
           type: array
@@ -375,13 +373,23 @@ components:
         failed:
           type: integer
           format: int64
-        minDurationMs:
+        durationMs:
+          $ref: "#/components/schemas/WebhookDeliveryDurationStats"
+
+    WebhookDeliveryDurationStats:
+      description: Webhook delivery duration statistics in milliseconds
+      required:
+        - minimum
+        - average
+        - maximum
+      properties:
+        minimum:
           type: integer
           format: int32
-        avgDurationMs:
+        average:
           type: number
           format: double
-        maxDurationMs:
+        maximum:
           type: integer
           format: int32
 
@@ -391,7 +399,7 @@ components:
         - timestamp
         - total
         - failed
-        - avgDurationMs
+        - durationMs
       properties:
         timestamp:
           type: string
@@ -402,9 +410,8 @@ components:
         failed:
           type: integer
           format: int64
-        avgDurationMs:
-          type: number
-          format: double
+        durationMs:
+          $ref: "#/components/schemas/WebhookDeliveryDurationStats"
 
     WebhookDeliveryEvent:
       description: Webhook delivery attempts grouped by sandbox event
