@@ -224,9 +224,10 @@ const hideInactiveZeroValuePoints = (points: WebhookStatsChartPoint[]) =>
   points.map((point, index) => {
     if (point.value !== 0) return point
 
-    const hasAdjacentValue =
-      (points[index - 1]?.value ?? 0) > 0 || (points[index + 1]?.value ?? 0) > 0
-    if (hasAdjacentValue) return point
+    const hasNearbyValue = [-2, -1, 1, 2].some(
+      (offset) => (points[index + offset]?.value ?? 0) > 0
+    )
+    if (hasNearbyValue) return point
 
     return { ...point, synthetic: true, value: null }
   })
