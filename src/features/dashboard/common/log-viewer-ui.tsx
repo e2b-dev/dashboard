@@ -1,8 +1,6 @@
-import type { VirtualItem, Virtualizer } from '@tanstack/react-virtual'
 import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { ArrowDownIcon, ListIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 import {
   TableBody,
   TableCell,
@@ -57,20 +55,6 @@ export function LogsTableHeader({
   )
 }
 
-export function LogsLoaderBody() {
-  return (
-    <TableBody style={{ display: 'grid' }}>
-      <TableRow style={{ display: 'flex', minWidth: '100%', marginTop: 8 }}>
-        <TableCell className="flex-1">
-          <div className="h-[35svh] w-full flex justify-center items-center">
-            <Loader variant="slash" size="lg" />
-          </div>
-        </TableCell>
-      </TableRow>
-    </TableBody>
-  )
-}
-
 interface LogsEmptyBodyProps {
   description?: ReactNode
 }
@@ -92,47 +76,6 @@ export function LogsEmptyBody({ description }: LogsEmptyBodyProps) {
         </TableCell>
       </TableRow>
     </TableBody>
-  )
-}
-
-export function getLogVirtualRowStyle(
-  virtualRow: VirtualItem,
-  height: number
-): CSSProperties {
-  return {
-    display: 'flex',
-    position: 'absolute',
-    left: 0,
-    transform: `translateY(${virtualRow.start}px)`,
-    minWidth: '100%',
-    height,
-  }
-}
-
-interface LogVirtualRowProps {
-  virtualRow: VirtualItem
-  virtualizer: Virtualizer<HTMLDivElement, Element>
-  height: number
-  className?: string
-  children: ReactNode
-}
-
-export function LogVirtualRow({
-  virtualRow,
-  virtualizer,
-  height,
-  className,
-  children,
-}: LogVirtualRowProps) {
-  return (
-    <TableRow
-      data-index={virtualRow.index}
-      ref={(node) => virtualizer.measureElement(node)}
-      className={className}
-      style={getLogVirtualRowStyle(virtualRow, height)}
-    >
-      {children}
-    </TableRow>
   )
 }
 

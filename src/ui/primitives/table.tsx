@@ -151,8 +151,8 @@ const TableEmptyState = ({
   children,
   className,
 }: TableEmptyStateProps) => (
-  <TableRow>
-    <TableCell className="p-0" colSpan={colSpan}>
+  <TableRow className="flex w-full">
+    <TableCell className="flex flex-1 p-0" colSpan={colSpan}>
       <div
         className={cn(
           'w-full gap-2 relative flex flex-col justify-center items-center',

@@ -18,10 +18,12 @@ import { LogLevelFilter } from '@/features/dashboard/common/log-level-filter'
 import {
   LogStatusCell,
   LogsEmptyBody,
-  LogsLoaderBody,
   LogsTableHeader,
-  LogVirtualRow,
 } from '@/features/dashboard/common/log-viewer-ui'
+import {
+  VirtualizedTableLoaderBody,
+  VirtualizedTableRow,
+} from '@/features/dashboard/common/virtualized-table-ui'
 import { cn } from '@/lib/utils'
 import { Loader } from '@/ui/primitives/loader'
 import { Table, TableBody, TableCell } from '@/ui/primitives/table'
@@ -70,7 +72,7 @@ export default function Logs({
               levelWidth={COLUMN_WIDTHS_PX.level}
               timestampSortDirection="asc"
             />
-            <LogsLoaderBody />
+            <VirtualizedTableLoaderBody />
           </Table>
         </div>
       </div>
@@ -172,7 +174,7 @@ function LogsContent({
             timestampSortDirection="asc"
           />
 
-          {showLoader && <LogsLoaderBody />}
+          {showLoader && <VirtualizedTableLoaderBody />}
           {showEmpty && (
             <EmptyBody hasRetainedLogs={buildDetails.hasRetainedLogs} />
           )}
@@ -514,7 +516,7 @@ function LogRow({
   const millisAfterStart = log.timestampUnix - startedAt
 
   return (
-    <LogVirtualRow
+    <VirtualizedTableRow
       virtualRow={virtualRow}
       virtualizer={virtualizer}
       height={ROW_HEIGHT_PX}
@@ -551,7 +553,7 @@ function LogRow({
       >
         <Message message={log.message} />
       </TableCell>
-    </LogVirtualRow>
+    </VirtualizedTableRow>
   )
 }
 
@@ -567,7 +569,7 @@ function StatusRow({
   isFetchingNextPage,
 }: StatusRowProps) {
   return (
-    <LogVirtualRow
+    <VirtualizedTableRow
       virtualRow={virtualRow}
       virtualizer={virtualizer}
       height={ROW_HEIGHT_PX}
@@ -587,7 +589,7 @@ function StatusRow({
           )}
         </span>
       </LogStatusCell>
-    </LogVirtualRow>
+    </VirtualizedTableRow>
   )
 }
 
@@ -603,7 +605,7 @@ function LiveStatusRow({
   isBuilding,
 }: LiveStatusRowProps) {
   return (
-    <LogVirtualRow
+    <VirtualizedTableRow
       virtualRow={virtualRow}
       virtualizer={virtualizer}
       height={LIVE_STATUS_ROW_HEIGHT_PX}
@@ -628,6 +630,6 @@ function LiveStatusRow({
           </span>
         </span>
       </LogStatusCell>
-    </LogVirtualRow>
+    </VirtualizedTableRow>
   )
 }
