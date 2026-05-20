@@ -220,6 +220,17 @@ const getEmptyDeliveryCountSeriesData = (
   ]
 }
 
+const hideInactiveZeroValuePoints = (points: WebhookStatsChartPoint[]) =>
+  points.map((point, index) => {
+    if (point.value !== 0) return point
+
+    const hasAdjacentValue =
+      (points[index - 1]?.value ?? 0) > 0 || (points[index + 1]?.value ?? 0) > 0
+    if (hasAdjacentValue) return point
+
+    return { ...point, synthetic: true, value: null }
+  })
+
 // Groups response-time buckets by chart granularity, e.g. minute buckets from one day -> one daily min/avg/max point.
 const getResponseTimeSeriesData = (
   buckets: WebhookDeliveryStatsBucket[],
@@ -347,6 +358,7 @@ export const WebhookOverviewContent = ({
         : range === 'today'
           ? 'today'
           : 'daily'
+  const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)
   const deliverySeries = [
     {
       name: 'Total deliveries',
@@ -362,10 +374,17 @@ export const WebhookOverviewContent = ({
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
       showSymbol: true,
-      z: 1,
+      z: hasFailedDeliveries ? 3 : 1,
       data:
         buckets.length > 0
-          ? getDeliveryCountSeriesData(buckets, rangeBounds, grouping, 'failed')
+          ? hideInactiveZeroValuePoints(
+              getDeliveryCountSeriesData(
+                buckets,
+                rangeBounds,
+                grouping,
+                'failed'
+              )
+            )
           : [],
     },
   ] satisfies WebhookStatsChartSeries[]
