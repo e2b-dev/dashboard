@@ -392,7 +392,7 @@ const WebhookDeliveryRow = ({
         <DeliveryDetailCell value={attempt?.requestBody} />
       </TableCell>
       <TableCell className="flex h-8 w-[144px] items-center p-0 pr-12">
-        {attempt ? formatHttpStatus(attempt.httpStatusCode) : '-'}
+        {attempt ? formatHttpStatus(attempt.responseHttpStatusCode) : '-'}
       </TableCell>
       <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
         <DeliveryDetailCell value={attempt?.responseHeaders} />

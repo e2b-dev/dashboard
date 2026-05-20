@@ -373,27 +373,27 @@ export interface components {
       deliveryStatus: 'success' | 'failed'
       /**
        * Format: int32
-       * @description HTTP response status code, if a response was received
-       */
-      httpStatusCode?: number | null
-      /**
-       * Format: int32
        * @description Delivery request duration in milliseconds
        */
       durationMs: number
+      /** @description Serialized webhook request body */
+      requestBody: string
+      /** @description JSON-encoded request headers with sensitive values redacted */
+      requestHeaders: string
       /**
        * Format: uri
        * @description URL attempted for this delivery
        */
       requestUrl: string
-      /** @description JSON-encoded request headers with sensitive values redacted */
-      requestHeaders: string
-      /** @description Serialized webhook request body */
-      requestBody: string
-      /** @description JSON-encoded response headers, if a response was received */
-      responseHeaders?: string | null
       /** @description Truncated response body, if a response was received */
       responseBody?: string | null
+      /** @description JSON-encoded response headers, if a response was received */
+      responseHeaders?: string | null
+      /**
+       * Format: int32
+       * @description HTTP response status code, if a response was received
+       */
+      responseHttpStatusCode?: number | null
       /** @description Machine-readable non-HTTP or HTTP failure class */
       errorClass: string
       /** @description Error message for failures without a useful response body */

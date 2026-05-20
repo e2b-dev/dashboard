@@ -284,9 +284,9 @@ components:
         - eventType
         - deliveryStatus
         - durationMs
-        - requestUrl
-        - requestHeaders
         - requestBody
+        - requestHeaders
+        - requestUrl
         - errorClass
         - timestamp
       properties:
@@ -316,33 +316,33 @@ components:
           type: string
           enum: [success, failed]
           description: Delivery attempt status
-        httpStatusCode:
-          type: integer
-          format: int32
-          nullable: true
-          description: HTTP response status code, if a response was received
         durationMs:
           type: integer
           format: int32
           description: Delivery request duration in milliseconds
+        requestBody:
+          type: string
+          description: Serialized webhook request body
+        requestHeaders:
+          type: string
+          description: JSON-encoded request headers with sensitive values redacted
         requestUrl:
           type: string
           format: uri
           description: URL attempted for this delivery
-        requestHeaders:
-          type: string
-          description: JSON-encoded request headers with sensitive values redacted
-        requestBody:
-          type: string
-          description: Serialized webhook request body
-        responseHeaders:
-          type: string
-          nullable: true
-          description: JSON-encoded response headers, if a response was received
         responseBody:
           type: string
           nullable: true
           description: Truncated response body, if a response was received
+        responseHeaders:
+          type: string
+          nullable: true
+          description: JSON-encoded response headers, if a response was received
+        responseHttpStatusCode:
+          type: integer
+          format: int32
+          nullable: true
+          description: HTTP response status code, if a response was received
         errorClass:
           type: string
           description: Machine-readable non-HTTP or HTTP failure class
