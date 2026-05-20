@@ -412,7 +412,7 @@ export const WebhookOverviewContent = ({
       data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'min'),
     },
     {
-      name: 'Average',
+      name: 'Avg',
       colorVar: '--accent-main-highlight',
       connectNulls: true,
       lineWidth: 2,
