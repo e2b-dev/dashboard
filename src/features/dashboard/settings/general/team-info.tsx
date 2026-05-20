@@ -1,18 +1,37 @@
 'use client'
 
+import { ClipboardEvent } from 'react'
 import { useDashboard } from '@/features/dashboard/context'
 import { formatDate } from '@/lib/utils/formatting'
 
-const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-    <span className="text-fg-tertiary shrink-0 text-xs leading-[17px] font-normal uppercase">
-      {label}
-    </span>
-    <span className="text-fg-secondary font-mono text-base leading-5 font-semibold tracking-[-0.16px] uppercase [overflow-wrap:anywhere]">
-      {value}
-    </span>
-  </div>
-)
+/**
+ * Values are rendered uppercase via `text-transform`, which Safari (WebKit)
+ * leaks into the clipboard — Chrome (127+) and Firefox follow the CSS spec
+ * and copy the underlying DOM text. `[overflow-wrap:anywhere]` can also
+ * inject line breaks inside long tokens (UUIDs) that surface in
+ * `Selection.toString()`.
+ */
+const InfoRow = ({ label, value }: { label: string; value: string }) => {
+  const handleCopy = (e: ClipboardEvent<HTMLSpanElement>) => {
+    if (!window.getSelection()?.toString()) return
+    e.preventDefault()
+    e.clipboardData.setData('text/plain', value)
+  }
+
+  return (
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <span className="text-fg-tertiary shrink-0 text-xs leading-[17px] font-normal uppercase">
+        {label}
+      </span>
+      <span
+        className="text-fg-secondary font-mono text-base leading-5 font-semibold tracking-[-0.16px] uppercase [overflow-wrap:anywhere]"
+        onCopy={handleCopy}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
 
 export const TeamInfo = () => {
   const { team } = useDashboard()
