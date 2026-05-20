@@ -55,6 +55,7 @@ type WebhookStatsChartProps = {
   chartType?: 'line' | 'scatter'
   className?: string
   valueFormatter?: (value: number) => string
+  yAxisValueFormatter?: (value: number) => string
   xAxisScale?: 'daily' | 'four-hour' | 'twelve-hour' | 'today'
   xAxisMax?: number
   xAxisMin?: number
@@ -62,6 +63,8 @@ type WebhookStatsChartProps = {
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
+const AXIS_LABEL_GRID_GAP = 8
+const MONO_AXIS_LABEL_CHAR_WIDTH = 7.2
 
 const formatAxisLabel = (
   value: number,
@@ -152,6 +155,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
   chartType = 'scatter',
   className,
   valueFormatter = defaultValueFormatter,
+  yAxisValueFormatter = valueFormatter,
   xAxisScale = 'daily',
   xAxisMax,
   xAxisMin,
@@ -182,6 +186,12 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
       item.data.flatMap((point) => (point.value === null ? [] : [point.value]))
     )
     const yAxisMax = calculateAxisMax(values.length > 0 ? values : [0], 1.5)
+    const yAxisLabels = [0, yAxisMax / 2, yAxisMax].map(yAxisValueFormatter)
+    const yAxisLabelGutter =
+      Math.ceil(
+        Math.max(...yAxisLabels.map((label) => label.length)) *
+          MONO_AXIS_LABEL_CHAR_WIDTH
+      ) + AXIS_LABEL_GRID_GAP
     const xAxisInterval = getXAxisInterval({
       scale: xAxisScale,
       xAxisMax,
@@ -206,21 +216,23 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         const color = cssVars[item.colorVar] || '#000'
 
         return [
-          `<div style="display:flex;align-items:center;gap:12px;justify-content:space-between;">
-            <span style="display:inline-flex;align-items:center;gap:8px;">
+          `<div style="display:table-row;">
+            <span style="display:table-cell;padding-right:4px;vertical-align:middle;">
+              <span style="display:inline-flex;align-items:center;gap:8px;">
               <span style="width:10px;height:10px;border-radius:9999px;background:${color};display:inline-block;"></span>
               ${item.name}
+              </span>
             </span>
-            <strong>${valueFormatter(point.value)}</strong>
+            <strong style="color:${fgTertiary};display:table-cell;font-family:${fontMono};font-size:32px;font-weight:700;line-height:32px;text-align:right;vertical-align:middle;">${valueFormatter(point.value)}</strong>
           </div>`,
         ]
       })
 
       if (rows.length === 0) return ''
 
-      return `<div style="display:flex;flex-direction:column;gap:8px;">
+      return `<div style="display:flex;flex-direction:column;gap:4px;">
         <div>${formatTooltipTimestamp(timestampMs, xAxisScale)}</div>
-        ${rows.join('')}
+        <div style="display:table;border-spacing:0 4px;">${rows.join('')}</div>
       </div>`
     }
 
@@ -260,7 +272,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         top: 16,
         right: 16,
         bottom: 28,
-        left: 42,
+        left: yAxisLabelGutter,
       },
       tooltip: {
         trigger: 'item',
@@ -326,10 +338,13 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
+          align: 'left',
           color: fgTertiary,
           fontFamily: fontMono,
           fontSize: 12,
           interval: 0,
+          margin: yAxisLabelGutter,
+          formatter: (value: number) => yAxisValueFormatter(value),
         },
         splitLine: {
           show: true,
@@ -352,6 +367,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
     bg,
     fontMono,
     valueFormatter,
+    yAxisValueFormatter,
     xAxisScale,
     xAxisMax,
     xAxisMin,

@@ -379,7 +379,7 @@ export const WebhookOverviewContent = ({
       name: 'Total deliveries',
       colorVar: '--accent-info-highlight',
       showSymbol: true,
-      z: 1,
+      z: 2,
       data:
         attempts.length > 0
           ? getDeliveryCountSeriesData(attempts, rangeBounds, grouping)
@@ -389,7 +389,7 @@ export const WebhookOverviewContent = ({
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
       showSymbol: true,
-      z: 2,
+      z: 1,
       data:
         attempts.length > 0
           ? getDeliveryCountSeriesData(
@@ -403,7 +403,7 @@ export const WebhookOverviewContent = ({
   ] satisfies WebhookStatsChartSeries[]
   const latencySeries = [
     {
-      name: 'Min response time',
+      name: 'Min',
       colorVar: '--accent-info-highlight',
       connectNulls: true,
       lineWidth: 2,
@@ -412,7 +412,7 @@ export const WebhookOverviewContent = ({
       data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'min'),
     },
     {
-      name: 'Avg response time',
+      name: 'Average',
       colorVar: '--accent-main-highlight',
       connectNulls: true,
       lineWidth: 2,
@@ -421,7 +421,7 @@ export const WebhookOverviewContent = ({
       data: getResponseTimeSeriesData(attempts, rangeBounds, grouping, 'avg'),
     },
     {
-      name: 'Max response time',
+      name: 'Max',
       colorVar: '--accent-warning-highlight',
       connectNulls: true,
       lineWidth: 2,
@@ -481,7 +481,15 @@ export const WebhookOverviewContent = ({
             xAxisMax={rangeEndMs}
             xAxisScale={xAxisScale}
             chartType="line"
-            valueFormatter={(value) => `${value.toLocaleString()}ms`}
+            valueFormatter={(value) =>
+              `${value.toLocaleString('en-US', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}ms`
+            }
+            yAxisValueFormatter={(value) =>
+              `${Math.round(value).toLocaleString()}ms`
+            }
           />
         </ChartPanel>
       </div>
