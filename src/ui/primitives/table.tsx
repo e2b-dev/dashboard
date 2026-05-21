@@ -162,14 +162,15 @@ const TableEmptyState = ({
         {EMPTY_STATE_ROWS.map((_, index) => (
           <div
             key={index}
-            className={cn(
-              'h-11 w-full border border-bg-highlight relative flex items-center gap-2 justify-center overflow-hidden',
-              index === 1 && 'text-fg prose-body-highlight whitespace-nowrap'
-            )}
+            className="h-11 w-full border border-bg-highlight relative flex items-center gap-2 justify-center overflow-hidden"
           >
             <TableEmptyRowBorder className="absolute bottom-0 left-0 rotate-180 opacity-99" />
             <TableEmptyRowBorder className="absolute bottom-0 right-0 opacity-99" />
-            {index === 1 ? children : null}
+            {index === 1 ? (
+              <div className="text-fg prose-body-highlight flex items-center justify-center gap-2 px-2 text-center whitespace-nowrap">
+                {children}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
