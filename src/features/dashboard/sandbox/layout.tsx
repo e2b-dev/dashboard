@@ -4,7 +4,12 @@ import { notFound } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { DashboardTabsList } from '@/ui/dashboard-tabs'
-import { ListIcon, StorageIcon, TrendIcon } from '@/ui/primitives/icons'
+import {
+  HistoryIcon,
+  ListIcon,
+  StorageIcon,
+  TrendIcon,
+} from '@/ui/primitives/icons'
 import { useSandboxContext } from './context'
 
 interface SandboxLayoutProps {
@@ -48,6 +53,12 @@ export default function SandboxLayout({
             label: 'Monitoring',
             href: PROTECTED_URLS.SANDBOX_MONITORING(teamSlug, sandboxId),
             icon: <TrendIcon className="size-4" />,
+          },
+          {
+            id: 'events',
+            label: 'Events',
+            href: PROTECTED_URLS.SANDBOX_EVENTS(teamSlug, sandboxId),
+            icon: <HistoryIcon className="size-4" />,
           },
           {
             id: 'logs',
