@@ -29,7 +29,7 @@ export const updateUserAction = authActionClient
   .schema(UpdateUserSchema)
   .metadata({ actionName: 'updateUser' })
   .action(async ({ parsedInput, ctx }) => {
-    const { supabase, user } = ctx
+    const { authProvider, user } = ctx
 
     // basic security check, that password does not equal e-mail
     if (parsedInput.password) {
@@ -49,23 +49,17 @@ export const updateUserAction = authActionClient
 
     const origin = (await headers()).get('origin')
 
-    const { data: updateData, error } = await supabase.auth.updateUser(
-      {
-        email: parsedInput.email,
-        password: parsedInput.password,
-        data: {
-          name: parsedInput.name,
-        },
-      },
-      {
-        emailRedirectTo: `${origin}/api/auth/email-callback?new_email=${parsedInput.email}`,
-      }
-    )
+    const { data: updateData, error } = await authProvider.updateUser({
+      email: parsedInput.email,
+      password: parsedInput.password,
+      name: parsedInput.name,
+      emailRedirectTo: `${origin}/api/auth/email-callback?new_email=${parsedInput.email}`,
+    })
 
     if (!error) {
       // ensure other sessions are logged out if password was changed
       if (parsedInput.password) {
-        await supabase.auth.signOut({ scope: 'others' })
+        await authProvider.signOut({ scope: 'others' })
       }
 
       revalidatePath('/dashboard', 'layout')

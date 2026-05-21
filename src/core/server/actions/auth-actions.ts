@@ -20,8 +20,6 @@ import {
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
 import { l } from '@/core/shared/clients/logger/logger'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
-import { createClient } from '@/core/shared/clients/supabase/server'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -93,8 +91,6 @@ export const signInWithOAuthAction = actionClient
       )
     }
 
-    const supabase = await createClient()
-
     const headerStore = await headers()
 
     const origin = headerStore.get('origin')
@@ -114,12 +110,10 @@ export const signInWithOAuthAction = actionClient
       `sign_in_with_oauth_action: initializing OAuth sign-in with provider: ${provider}`
     )
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: provider,
-      options: {
-        redirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
-        scopes: 'email',
-      },
+    const { data, error } = await authProvider.signInWithOAuth({
+      provider,
+      redirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+      scopes: 'email',
     })
 
     if (error) {
@@ -167,7 +161,6 @@ export const signUpAction = actionClient
         )
       }
 
-      const supabase = await createClient()
       const headerStore = await headers()
 
       const origin = headerStore.get('origin')
@@ -203,15 +196,13 @@ export const signUpAction = actionClient
         }
       }
 
-      const { data: signUpData, error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await authProvider.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
-          data: validationResult?.data
-            ? { email_validation: validationResult.data }
-            : undefined,
-        },
+        emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+        data: validationResult?.data
+          ? { email_validation: validationResult.data }
+          : undefined,
       })
 
       if (error) {
@@ -231,7 +222,7 @@ export const signUpAction = actionClient
         (ip || userAgent)
       ) {
         try {
-          await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
+          await authProvider.updateUserById(signUpData.user.id, {
             app_metadata: {
               signup_ip: ip,
               signup_user_agent: userAgent,
@@ -262,8 +253,6 @@ export const signInAction = actionClient
       )
     }
 
-    const supabase = await createClient()
-
     const headerStore = await headers()
 
     const origin = headerStore.get('origin')
@@ -272,10 +261,7 @@ export const signInAction = actionClient
       throw new Error('Origin not found')
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { error } = await authProvider.signInWithPassword(email, password)
 
     if (error) {
       if (error.code === 'invalid_credentials') {
@@ -315,9 +301,7 @@ export const forgotPasswordAction = actionClient
       )
     }
 
-    const supabase = await createClient()
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    const { error } = await authProvider.resetPasswordForEmail(email)
 
     if (error) {
       l.error(

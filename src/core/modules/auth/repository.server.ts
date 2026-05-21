@@ -1,8 +1,9 @@
 import 'server-only'
 
 import type { OtpType } from '@/core/modules/auth/models'
+import type { ManagedSupabaseAuthProvider } from '@/core/server/auth/managed-supabase-auth-provider'
+import { authProvider } from '@/core/server/auth/session'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { createClient } from '@/core/shared/clients/supabase/server'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
@@ -11,7 +12,7 @@ interface VerifyOtpResult {
 }
 
 type AuthRepositoryDeps = {
-  createSupabaseClient: typeof createClient
+  authProvider: Pick<ManagedSupabaseAuthProvider, 'verifyOtp'>
 }
 
 export interface AuthRepository {
@@ -24,9 +25,7 @@ export interface AuthRepository {
 export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
   return {
     async verifyOtp(tokenHash, type) {
-      const supabase = await deps.createSupabaseClient()
-
-      const { data, error } = await supabase.auth.verifyOtp({
+      const { data, error } = await deps.authProvider.verifyOtp({
         type,
         token_hash: tokenHash,
       })
@@ -75,5 +74,5 @@ export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
 }
 
 export const authRepository = createAuthRepository({
-  createSupabaseClient: createClient,
+  authProvider,
 })

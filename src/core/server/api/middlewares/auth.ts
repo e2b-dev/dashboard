@@ -1,36 +1,9 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import {
-  createServerClient,
-  parseCookieHeader,
-  serializeCookieHeader,
-} from '@supabase/ssr'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { createAuthProvider } from '@/core/server/auth/session'
+import { createManagedSupabaseAuthProviderForHeaders } from '@/core/server/auth/managed-supabase-auth-provider'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
 import { getTracer } from '@/core/shared/clients/tracer'
-
-const createSupabaseServerClient = (headers: Headers) => {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return parseCookieHeader(headers.get('cookie') ?? '')
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            headers.append(
-              'Set-Cookie',
-              serializeCookieHeader(name, value, options)
-            )
-          })
-        },
-      },
-    }
-  )
-}
 
 export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   const tracer = getTracer()
@@ -39,14 +12,12 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   span.setAttribute('trpc.middleware.name', 'auth')
 
   try {
-    const supabase = createSupabaseServerClient(ctx.headers)
+    const provider = createManagedSupabaseAuthProviderForHeaders(ctx.headers)
 
     const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await createAuthProvider({
-          supabaseClient: supabase,
-        }).authContext
+        return await provider.authContext
       }
     )
 

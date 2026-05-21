@@ -2,7 +2,7 @@
 
 import { usePostHog } from 'posthog-js/react'
 import { useEffect } from 'react'
-import { supabase } from '@/core/shared/clients/supabase/client'
+import { clientAuthProvider } from '@/core/client/auth/auth-provider'
 
 export function GeneralAnalyticsCollector() {
   const posthog = usePostHog()
@@ -10,7 +10,7 @@ export function GeneralAnalyticsCollector() {
   useEffect(() => {
     if (!posthog || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    clientAuthProvider.onAuthStateChange((event, session) => {
       if (session?.user) {
         posthog?.identify(session.user.id, { email: session.user.email })
       } else if (event === 'SIGNED_OUT') {

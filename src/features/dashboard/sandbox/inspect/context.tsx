@@ -13,7 +13,7 @@ import {
 } from 'react'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
-import { supabase } from '@/core/shared/clients/supabase/client'
+import { clientAuthProvider } from '@/core/client/auth/auth-provider'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useDashboard } from '../../context'
@@ -181,7 +181,7 @@ export default function SandboxInspectProvider({
       sandboxManagerRef.current.stopWatching()
     }
 
-    const { data } = await supabase.auth.getSession()
+    const { data } = await clientAuthProvider.session
 
     if (!data || !data.session) {
       router.replace(AUTH_URLS.SIGN_IN)

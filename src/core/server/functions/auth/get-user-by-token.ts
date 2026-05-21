@@ -2,7 +2,7 @@ import 'server-only'
 
 import { AuthSessionMissingError } from '@supabase/supabase-js'
 import { cache } from 'react'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
+import { authProvider } from '@/core/server/auth/session'
 
 /**
  * Retrieves a user from Supabase using their access token.
@@ -24,7 +24,7 @@ function getUserByToken(accessToken: string | undefined) {
     return { error: AuthSessionMissingError, data: { user: null } }
   }
 
-  return supabaseAdmin.auth.getUser(accessToken)
+  return authProvider.getUserByAccessToken(trimmedAccessToken)
 }
 
 export default cache(getUserByToken)

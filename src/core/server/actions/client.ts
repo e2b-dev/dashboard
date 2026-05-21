@@ -10,6 +10,7 @@ import {
   getObservedException,
   toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
+import type { ManagedSupabaseAuthProvider } from '@/core/server/auth/managed-supabase-auth-provider'
 import { createAuthProvider } from '@/core/server/auth/session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
@@ -18,7 +19,6 @@ import {
   createRequestObservabilityContextFromHeaders,
   withRequestObservabilityContext,
 } from '@/core/shared/clients/logger/request-observability'
-import { createClient } from '@/core/shared/clients/supabase/server'
 import { getTracer } from '@/core/shared/clients/tracer'
 import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
 import type {
@@ -26,8 +26,6 @@ import type {
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
 import { ActionError, flattenClientInputValue } from './utils'
-
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
 type ActionSession = {
   access_token: string
@@ -37,7 +35,7 @@ type ActionSession = {
 export interface AuthActionContext {
   user: User
   session: ActionSession
-  supabase: SupabaseServerClient
+  authProvider: ManagedSupabaseAuthProvider
 }
 
 export interface TeamActionContext extends AuthActionContext {
@@ -217,10 +215,8 @@ export const actionClient = createSafeActionClient({
 })
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const supabase = await createClient()
-  const authContext = await createAuthProvider({
-    supabaseClient: supabase,
-  }).authContext
+  const authProvider = createAuthProvider()
+  const authContext = await authProvider.authContext
 
   if (!authContext) {
     throw UnauthenticatedError()
@@ -241,7 +237,7 @@ export const authActionClient = actionClient.use(async ({ next }) => {
         access_token: authContext.accessToken,
         user,
       },
-      supabase,
+      authProvider,
     },
   })
 })

@@ -1,7 +1,7 @@
 import 'server-only'
 
+import { authProvider } from '@/core/server/auth/session'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 
 export type AuthUserEmailResolver = (
   userIds: string[]
@@ -15,20 +15,7 @@ export async function getAuthUserEmailsById(
     return new Map()
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('auth_users')
-    .select('id,email')
-    .in('id', uniqueUserIds)
-
-  if (error) {
-    throw error
-  }
-
-  return new Map(
-    data
-      ?.filter((user) => user.id)
-      .map((user) => [user.id as string, user.email]) ?? []
-  )
+  return authProvider.getAuthUserEmailsById(uniqueUserIds)
 }
 
 export async function resolveCreatorEmails<

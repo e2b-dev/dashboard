@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { createClient } from '@/core/shared/clients/supabase/server'
+import { authProvider } from '@/core/server/auth/session'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 export async function GET(request: Request) {
@@ -27,8 +27,15 @@ export async function GET(request: Request) {
     redirect(`${next}?message=${message}&type=update_email`)
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase.auth.exchangeCodeForSession(code!)
+  if (!code) {
+    encodedRedirect('error', next, 'Invalid email verification link', {
+      type: 'update_email',
+    })
+
+    return
+  }
+
+  const { error } = await authProvider.exchangeCodeForSession(code)
 
   if (error) {
     encodedRedirect('error', next, 'Failed to update E-Mail', {

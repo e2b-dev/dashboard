@@ -3,8 +3,9 @@ import 'server-only'
 import type { User } from '@supabase/supabase-js'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
+import type { ManagedSupabaseAuthProvider } from '@/core/server/auth/managed-supabase-auth-provider'
+import { authProvider } from '@/core/server/auth/session'
 import { api } from '@/core/shared/clients/api'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
@@ -13,7 +14,7 @@ import type { TeamMember } from './models'
 type TeamsRepositoryDeps = {
   apiClient: typeof api
   authHeaders: typeof SUPABASE_AUTH_HEADERS
-  adminClient: typeof supabaseAdmin
+  authProvider: Pick<ManagedSupabaseAuthProvider, 'getUserById'>
 }
 
 export type TeamsRequestScope = RequestScope & {
@@ -66,7 +67,7 @@ export function createTeamsRepository(
   deps: TeamsRepositoryDeps = {
     apiClient: api,
     authHeaders: SUPABASE_AUTH_HEADERS,
-    adminClient: supabaseAdmin,
+    authProvider,
   }
 ): TeamsRepository {
   return {
@@ -97,8 +98,9 @@ export function createTeamsRepository(
       const members = data?.members ?? []
       const enrichedMembers = await Promise.all(
         members.map(async (member) => {
-          const { data: userData } =
-            await deps.adminClient.auth.admin.getUserById(member.id)
+          const { data: userData } = await deps.authProvider.getUserById(
+            member.id
+          )
           const user = userData.user
 
           return {
