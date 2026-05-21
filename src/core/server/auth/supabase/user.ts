@@ -8,7 +8,6 @@ export function toAuthUser(user: User): AuthUser {
     name: getStringFromMetadata(user.user_metadata, 'name'),
     avatarUrl: getStringFromMetadata(user.user_metadata, 'avatar_url'),
     providers: extractProviders(user),
-    createdAt: user.created_at ?? null,
   }
 }
 

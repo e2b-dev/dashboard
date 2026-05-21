@@ -7,13 +7,18 @@ import type { AuthContext, SignOutOptions } from '../types'
 export class OryHostedAuthProvider implements AuthProvider {
   constructor(private readonly cookie: string = '') {}
 
-  async getAuthContext(): Promise<AuthContext | null> {
-    void this.cookie
-    throw new Error('OryHostedAuthProvider.getAuthContext is not implemented yet')
+  getAuthContext(): Promise<AuthContext | null> {
+    return Promise.reject(
+      new Error(
+        `OryHostedAuthProvider.getAuthContext is not implemented yet (cookie length: ${this.cookie.length})`
+      )
+    )
   }
 
   signOut(_options?: SignOutOptions): Promise<void> {
-    throw new Error('OryHostedAuthProvider.signOut is not implemented yet')
+    return Promise.reject(
+      new Error('OryHostedAuthProvider.signOut is not implemented yet')
+    )
   }
 }
 

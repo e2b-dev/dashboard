@@ -10,7 +10,6 @@ export type AuthUser = {
   name: string | null
   avatarUrl: string | null
   providers: string[]
-  createdAt: string | null
 }
 
 export type SignOutOptions = {

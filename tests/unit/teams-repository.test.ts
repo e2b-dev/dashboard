@@ -23,7 +23,7 @@ describe('createTeamsRepository', () => {
           DELETE: vi.fn(),
         } as unknown as typeof import('@/core/shared/clients/api').api,
         authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
-        auth: {
+        authAdmin: {
           getUserById: vi.fn(),
         },
       }
