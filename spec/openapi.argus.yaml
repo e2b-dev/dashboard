@@ -426,6 +426,21 @@ components:
           items:
             $ref: "#/components/schemas/WebhookDelivery"
 
+    WebhookDeliveriesListPayload:
+      description: Paginated webhook delivery attempts grouped by event
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDeliveryEvent"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass to the next list request, or null when there is no next page.
+
 paths:
   /health:
     get:
@@ -680,7 +695,7 @@ paths:
           required: false
           schema:
             type: string
-          description: Opaque cursor from the X-Next-Cursor response header.
+          description: Opaque cursor from the previous response's nextCursor field.
         - name: limit
           in: query
           required: false
@@ -734,17 +749,10 @@ paths:
       responses:
         "200":
           description: List of webhook delivery attempts grouped by event.
-          headers:
-            X-Next-Cursor:
-              description: Cursor to pass to the next list request, omitted when there is no next page.
-              schema:
-                type: string
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/WebhookDeliveryEvent"
+                $ref: "#/components/schemas/WebhookDeliveriesListPayload"
         "400":
           $ref: "#/components/responses/400"
         "404":

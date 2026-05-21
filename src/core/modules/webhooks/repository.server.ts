@@ -159,8 +159,8 @@ export function createWebhooksRepository(
       }
 
       return ok({
-        data: response.data ?? [],
-        nextCursor: response.response.headers.get('X-Next-Cursor'),
+        data: response.data?.data ?? [],
+        nextCursor: response.data?.nextCursor ?? null,
       })
     },
     async getWebhookDeliveryStats(input) {

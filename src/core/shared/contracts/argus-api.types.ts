@@ -423,6 +423,12 @@ export interface components {
       sandboxId: string
       attempts: components['schemas']['WebhookDelivery'][]
     }
+    /** @description Paginated webhook delivery attempts grouped by event */
+    WebhookDeliveriesListPayload: {
+      data: components['schemas']['WebhookDeliveryEvent'][]
+      /** @description Cursor to pass to the next list request, or null when there is no next page. */
+      nextCursor: string | null
+    }
   }
   responses: {
     /** @description Bad request */
@@ -613,7 +619,7 @@ export interface operations {
   webhookDeliveriesList: {
     parameters: {
       query?: {
-        /** @description Opaque cursor from the X-Next-Cursor response header. */
+        /** @description Opaque cursor from the previous response's nextCursor field. */
         cursor?: string
         limit?: number
         orderAsc?: boolean
@@ -637,12 +643,10 @@ export interface operations {
       /** @description List of webhook delivery attempts grouped by event. */
       200: {
         headers: {
-          /** @description Cursor to pass to the next list request, omitted when there is no next page. */
-          'X-Next-Cursor'?: string
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['WebhookDeliveryEvent'][]
+          'application/json': components['schemas']['WebhookDeliveriesListPayload']
         }
       }
       400: components['responses']['400']
