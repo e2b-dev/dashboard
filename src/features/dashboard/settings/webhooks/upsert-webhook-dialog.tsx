@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import {
   type SandboxLifecycleEventType,
@@ -77,6 +77,14 @@ export function UpsertWebhookDialog({
     teamSlug: team.slug,
   }).queryKey
 
+  const preGeneratedSecret = useMemo(() => {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const array = new Uint8Array(32)
+    crypto.getRandomValues(array)
+    return Array.from(array, (byte) => chars[byte % chars.length]).join('')
+  }, [])
+
   const defaultValues: UpsertWebhookFormInput = {
     webhookId: isUpdateMode ? webhook?.id : undefined,
     mode,
@@ -88,7 +96,7 @@ export function UpsertWebhookDialog({
         (event): event is SandboxLifecycleEventType =>
           SandboxLifecycleEventTypeSchema.safeParse(event).success
       ) ?? [],
-    ...(isUpdateMode ? {} : { signatureSecret: '' }),
+    ...(isUpdateMode ? {} : { signatureSecret: preGeneratedSecret }),
   }
 
   const form = useForm<UpsertWebhookFormInput>({
@@ -276,6 +284,7 @@ export function UpsertWebhookDialog({
                   handleAllToggle={handleAllToggle}
                   handleEventToggle={handleEventToggle}
                   mode={mode}
+                  preGeneratedSecret={preGeneratedSecret}
                   secretType={secretType}
                   onSecretTypeChange={setSecretType}
                   hasCopied={hasCopied}

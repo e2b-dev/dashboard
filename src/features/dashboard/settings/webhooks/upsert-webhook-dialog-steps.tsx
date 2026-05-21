@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
 import { z } from 'zod'
@@ -52,6 +52,7 @@ type UpsertWebhookDialogStepsProps = {
   handleAllToggle: () => void
   handleEventToggle: (event: SandboxLifecycleEventType) => void
   mode: 'create' | 'update'
+  preGeneratedSecret: string
   secretType: SecretType
   onSecretTypeChange: (value: SecretType) => void
   hasCopied: boolean
@@ -68,20 +69,13 @@ export function UpsertWebhookDialogSteps({
   handleAllToggle,
   handleEventToggle,
   mode,
+  preGeneratedSecret,
   secretType,
   onSecretTypeChange,
   hasCopied,
   onCopied,
 }: UpsertWebhookDialogStepsProps) {
   const shikiTheme = useShikiTheme()
-
-  const preGeneratedSecret = useMemo(() => {
-    const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    const array = new Uint8Array(32)
-    crypto.getRandomValues(array)
-    return Array.from(array, (byte) => chars[byte % chars.length]).join('')
-  }, [])
 
   const [copied, copy] = useClipboard()
 
@@ -94,18 +88,19 @@ export function UpsertWebhookDialogSteps({
     return () => window.clearTimeout(id)
   }, [secretType])
 
-  // sync secret with form state and validation - only in create mode
-  // in update mode, we should never touch the signature secret
-  useEffect(() => {
+  const handleSecretTypeChange = (value: string) => {
+    const parsed = SecretTypeSchema.safeParse(value)
+    if (!parsed.success) return
+
+    onSecretTypeChange(parsed.data)
+
     if (mode !== 'create') return
 
-    if (secretType === 'pre-generated') {
-      // set pre-generated secret and trigger validation to clear any errors
+    if (parsed.data === 'pre-generated') {
       form.setValue('signatureSecret', preGeneratedSecret, {
         shouldValidate: true,
         shouldDirty: true,
       })
-      // explicitly clear any errors since pre-generated is always valid
       form.clearErrors('signatureSecret')
     } else {
       form.setValue('signatureSecret', '', {
@@ -113,7 +108,7 @@ export function UpsertWebhookDialogSteps({
         shouldDirty: false,
       })
     }
-  }, [mode, secretType, preGeneratedSecret, form])
+  }
 
   useEffect(() => {
     if (copied) onCopied()
@@ -292,10 +287,7 @@ export function UpsertWebhookDialogSteps({
           {/* Tabs */}
           <Tabs
             value={secretType}
-            onValueChange={(v) => {
-              const parsed = SecretTypeSchema.safeParse(v)
-              if (parsed.success) onSecretTypeChange(parsed.data)
-            }}
+            onValueChange={handleSecretTypeChange}
             className="min-h-0 w-full flex-1 h-full"
           >
             <TabsList className="w-full justify-start px-0">
