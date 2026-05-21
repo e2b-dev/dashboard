@@ -10,6 +10,7 @@ vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(() => ({
     auth: {
       getUser: vi.fn(),
+      getSession: vi.fn(),
     },
   })),
 }))
@@ -105,6 +106,8 @@ function createMockRequest({
 describe('Proxy Integration Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test-supabase.supabase.co'
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-supabase-anon-key'
 
     // default: authenticated user
     vi.mocked(createServerClient).mockImplementation(
@@ -113,6 +116,10 @@ describe('Proxy Integration Tests', () => {
           auth: {
             getUser: vi.fn().mockResolvedValue({
               data: { user: { id: 'user-123' } },
+              error: null,
+            }),
+            getSession: vi.fn().mockResolvedValue({
+              data: { session: { access_token: 'access-token' } },
               error: null,
             }),
           },
@@ -134,6 +141,7 @@ describe('Proxy Integration Tests', () => {
                 data: { user: null },
                 error: { message: 'Not authenticated' },
               }),
+              getSession: vi.fn(),
             },
           }) as unknown as ReturnType<typeof createServerClient>
       )
@@ -185,6 +193,7 @@ describe('Proxy Integration Tests', () => {
                 data: { user: null },
                 error: { message: 'Not authenticated' },
               }),
+              getSession: vi.fn(),
             },
           }) as unknown as ReturnType<typeof createServerClient>
       )
@@ -209,6 +218,7 @@ describe('Proxy Integration Tests', () => {
               getUser: vi
                 .fn()
                 .mockRejectedValue(new Error('Auth service error')),
+              getSession: vi.fn(),
             },
           }) as unknown as ReturnType<typeof createServerClient>
       )
