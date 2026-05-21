@@ -1,6 +1,17 @@
-import { SupabaseAuthSessionProvider } from './session.supabase'
+import {
+  SupabaseAuthSessionProvider,
+  type SupabaseServerClient,
+} from './session.supabase'
 import type { AuthSessionProvider } from './session-provider'
 
-export function getSelectedAuthSessionProvider(): AuthSessionProvider {
-  return new SupabaseAuthSessionProvider()
+export type CreateAuthProviderOptions = {
+  supabaseClient?: SupabaseServerClient
 }
+
+export function createAuthProvider(
+  options: CreateAuthProviderOptions = {}
+): AuthSessionProvider {
+  return new SupabaseAuthSessionProvider(options.supabaseClient)
+}
+
+export const authProvider = createAuthProvider()

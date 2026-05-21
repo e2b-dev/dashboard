@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
-import { SupabaseAuthSessionProvider } from './core/server/auth/session.supabase'
+import { createAuthProvider } from './core/server/auth/session'
 import { getAuthRedirect } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
@@ -92,9 +92,9 @@ export async function proxy(request: NextRequest) {
       },
     })
 
-    const authContext = await new SupabaseAuthSessionProvider(
-      supabase
-    ).getAuthContext()
+    const authContext = await createAuthProvider({
+      supabaseClient: supabase,
+    }).getAuthContext()
     const isAuthenticated = !!authContext
 
     const authRedirect = getAuthRedirect(request, isAuthenticated)

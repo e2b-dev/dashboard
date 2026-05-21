@@ -1,13 +1,15 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/core/shared/clients/supabase/server'
-import type { Database } from '@/core/shared/contracts/database.types'
 import {
   type AuthContext,
   AuthSessionProvider,
   type SignOutOptions,
 } from './session-provider'
 
-type SupabaseServerClient = SupabaseClient<Database>
+type SupabaseAuthClient = Awaited<ReturnType<typeof createClient>>['auth']
+
+export type SupabaseServerClient = {
+  auth: Pick<SupabaseAuthClient, 'getUser' | 'getSession' | 'signOut'>
+}
 
 export class SupabaseAuthSessionProvider extends AuthSessionProvider {
   constructor(private readonly client?: SupabaseServerClient) {

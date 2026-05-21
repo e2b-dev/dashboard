@@ -9,7 +9,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
-import { signOut } from '@/core/server/auth/session'
+import { authProvider } from '@/core/server/auth/session'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -339,7 +339,7 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  await signOut()
+  await authProvider.signOut()
 
   throw redirect(
     AUTH_URLS.SIGN_IN +

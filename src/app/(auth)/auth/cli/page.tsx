@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
-import { getAuthContext } from '@/core/server/auth/session'
+import { authProvider } from '@/core/server/auth/session'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
@@ -96,7 +96,7 @@ export default async function CLIAuthPage({
   searchParams: CLISearchParams
 }) {
   const { next, state, error } = await searchParams
-  const authContext = await getAuthContext()
+  const authContext = await authProvider.getAuthContext()
 
   if (state === 'success') {
     return <SuccessState />

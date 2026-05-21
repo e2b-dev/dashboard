@@ -4,7 +4,7 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
-import { getAuthContext } from '@/core/server/auth/session'
+import { authProvider } from '@/core/server/auth/session'
 import { infra } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
@@ -130,7 +130,7 @@ export async function GET(
     }
 
     const sandboxId = parsedSandboxId.data
-    const authContext = await getAuthContext()
+    const authContext = await authProvider.getAuthContext()
 
     if (!authContext) {
       l.info({

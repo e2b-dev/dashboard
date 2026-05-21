@@ -5,7 +5,7 @@ import {
   serializeCookieHeader,
 } from '@supabase/ssr'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { SupabaseAuthSessionProvider } from '@/core/server/auth/session.supabase'
+import { createAuthProvider } from '@/core/server/auth/session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
 import { getTracer } from '@/core/shared/clients/tracer'
@@ -44,7 +44,9 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
     const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await new SupabaseAuthSessionProvider(supabase).getAuthContext()
+        return await createAuthProvider({
+          supabaseClient: supabase,
+        }).getAuthContext()
       }
     )
 

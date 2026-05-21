@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { TAB_URL_MAP } from '@/configs/dashboard-tab-url-map'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { getAuthContext, signOut } from '@/core/server/auth/session'
+import { authProvider } from '@/core/server/auth/session'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
 
-  const authContext = await getAuthContext()
+  const authContext = await authProvider.getAuthContext()
 
   if (!authContext) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   )
 
   if (!team) {
-    await signOut()
+    await authProvider.signOut()
 
     const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
 

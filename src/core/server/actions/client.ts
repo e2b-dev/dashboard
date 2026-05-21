@@ -10,7 +10,7 @@ import {
   getObservedException,
   toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
-import { getAuthContext } from '@/core/server/auth/session'
+import { createAuthProvider } from '@/core/server/auth/session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -218,7 +218,9 @@ export const actionClient = createSafeActionClient({
 
 export const authActionClient = actionClient.use(async ({ next }) => {
   const supabase = await createClient()
-  const authContext = await getAuthContext()
+  const authContext = await createAuthProvider({
+    supabaseClient: supabase,
+  }).getAuthContext()
 
   if (!authContext) {
     throw UnauthenticatedError()
