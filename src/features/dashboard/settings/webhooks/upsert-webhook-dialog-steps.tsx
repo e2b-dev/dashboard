@@ -52,11 +52,11 @@ type UpsertWebhookDialogStepsProps = {
   handleAllToggle: () => void
   handleEventToggle: (event: SandboxLifecycleEventType) => void
   mode: 'create' | 'update'
+  hasCopiedSecret: boolean
+  setHasCopiedSecret: (value: boolean) => void
   preGeneratedSecret: string
   secretType: SecretType
   onSecretTypeChange: (value: SecretType) => void
-  hasCopied: boolean
-  onCopied: () => void
 }
 
 export function UpsertWebhookDialogSteps({
@@ -69,15 +69,14 @@ export function UpsertWebhookDialogSteps({
   handleAllToggle,
   handleEventToggle,
   mode,
+  hasCopiedSecret,
+  setHasCopiedSecret,
   preGeneratedSecret,
   secretType,
   onSecretTypeChange,
-  hasCopied,
-  onCopied,
 }: UpsertWebhookDialogStepsProps) {
   const shikiTheme = useShikiTheme()
-
-  const [copied, copy] = useClipboard()
+  const [secretCopiedFeedback, copySecret] = useClipboard()
 
   const customSecretInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -110,9 +109,10 @@ export function UpsertWebhookDialogSteps({
     }
   }
 
-  useEffect(() => {
-    if (copied) onCopied()
-  }, [copied, onCopied])
+  const handleCopySecret = () => {
+    void copySecret(preGeneratedSecret)
+    setHasCopiedSecret(true)
+  }
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -323,18 +323,22 @@ export function UpsertWebhookDialogSteps({
                       </FormControl>
                       <Button
                         type="button"
-                        variant={hasCopied ? 'secondary' : 'primary'}
-                        onClick={() => void copy(preGeneratedSecret)}
+                        variant={hasCopiedSecret ? 'secondary' : 'primary'}
+                        onClick={handleCopySecret}
                         disabled={isLoading}
                         className="shrink-0 relative"
                       >
                         <span
-                          className={copied ? 'invisible contents' : 'contents'}
+                          className={
+                            secretCopiedFeedback
+                              ? 'invisible contents'
+                              : 'contents'
+                          }
                         >
                           <CopyIcon className="size-4" />
                           Copy
                         </span>
-                        {copied && (
+                        {secretCopiedFeedback && (
                           <CheckIcon className="absolute size-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                         )}
                       </Button>

@@ -65,7 +65,7 @@ export function UpsertWebhookDialog({
   const [currentStep, setCurrentStep] = useState(1)
   const [lastSelectedEvent, setLastSelectedEvent] =
     useState<SandboxLifecycleEventType | null>(null)
-  const [hasCopied, setHasCopied] = useState(false)
+  const [hasCopiedSecret, setHasCopiedSecret] = useState(false)
   const [secretType, setSecretType] = useState<SecretType>('pre-generated')
   const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false)
@@ -143,7 +143,7 @@ export function UpsertWebhookDialog({
 
   const resetDialogState = () => {
     setCurrentStep(1)
-    setHasCopied(false)
+    setHasCopiedSecret(false)
     setSecretType('pre-generated')
     form.reset()
     upsertMutation.reset()
@@ -284,11 +284,11 @@ export function UpsertWebhookDialog({
                   handleAllToggle={handleAllToggle}
                   handleEventToggle={handleEventToggle}
                   mode={mode}
+                  hasCopiedSecret={hasCopiedSecret}
+                  setHasCopiedSecret={setHasCopiedSecret}
                   preGeneratedSecret={preGeneratedSecret}
                   secretType={secretType}
                   onSecretTypeChange={setSecretType}
-                  hasCopied={hasCopied}
-                  onCopied={() => setHasCopied(true)}
                 />
               </div>
 
@@ -332,7 +332,11 @@ export function UpsertWebhookDialog({
                     <Button
                       type="submit"
                       variant={
-                        (secretType === 'custom' ? isStep2Valid : hasCopied)
+                        (
+                          secretType === 'custom'
+                            ? isStep2Valid
+                            : hasCopiedSecret
+                        )
                           ? 'primary'
                           : 'secondary'
                       }
