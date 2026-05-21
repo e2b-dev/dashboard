@@ -377,14 +377,14 @@ components:
         - maximum
       properties:
         minimum:
-          type: integer
-          format: int32
+          type: number
+          format: double
         average:
           type: number
           format: double
         maximum:
-          type: integer
-          format: int32
+          type: number
+          format: double
 
     WebhookDeliveryStatsBucket:
       description: Webhook delivery stats for a time bucket

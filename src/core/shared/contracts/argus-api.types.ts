@@ -398,11 +398,11 @@ export interface components {
     }
     /** @description Webhook delivery duration statistics in milliseconds */
     WebhookDeliveryDurationStats: {
-      /** Format: int32 */
+      /** Format: double */
       minimum: number
       /** Format: double */
       average: number
-      /** Format: int32 */
+      /** Format: double */
       maximum: number
     }
     /** @description Webhook delivery stats for a time bucket */
