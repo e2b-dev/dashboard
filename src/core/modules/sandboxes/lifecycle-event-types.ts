@@ -1,13 +1,19 @@
 import { z } from 'zod'
 
+const SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX = 'sandbox.lifecycle.'
+
 const SandboxLifecycleEventTypeSchema = z.enum([
-  'sandbox.lifecycle.created',
-  'sandbox.lifecycle.updated',
-  'sandbox.lifecycle.paused',
-  'sandbox.lifecycle.resumed',
-  'sandbox.lifecycle.killed',
+  `${SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX}created`,
+  `${SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX}updated`,
+  `${SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX}paused`,
+  `${SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX}resumed`,
+  `${SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX}killed`,
 ])
 
 type SandboxLifecycleEventType = z.infer<typeof SandboxLifecycleEventTypeSchema>
 
-export { SandboxLifecycleEventTypeSchema, type SandboxLifecycleEventType }
+export {
+  SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX,
+  SandboxLifecycleEventTypeSchema,
+  type SandboxLifecycleEventType,
+}

@@ -3,7 +3,9 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import ShikiHighlighter from 'react-shiki'
 import { z } from 'zod'
+import { useShikiTheme } from '@/configs/shiki'
 import {
   type SandboxLifecycleEventType,
   SandboxLifecycleEventTypeSchema,
@@ -19,12 +21,22 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CheckIcon, CopyIcon, WarningIcon } from '@/ui/primitives/icons'
+import {
+  CheckIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
+import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-import { WEBHOOK_DOCS_URL, WEBHOOK_EVENT_LABELS } from './constants'
+import {
+  WEBHOOK_EXAMPLE_PAYLOAD,
+  WEBHOOK_EVENT_LABELS,
+  WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
+} from './constants'
 
 const SecretTypeSchema = z.enum(['pre-generated', 'custom'])
 
@@ -46,45 +58,6 @@ type UpsertWebhookDialogStepsProps = {
   onCopied: () => void
 }
 
-const WebhookExamplePayload = ({
-  eventType,
-}: {
-  eventType: SandboxLifecycleEventType
-}) => (
-  <div className="bg-bg border border-stroke flex w-full items-center px-4 py-2.5 font-mono text-[13px] leading-5 text-fg-secondary whitespace-pre-wrap">
-    <div className="flex-1 min-w-px">
-      <div>{'{'}</div>
-      <div>
-        {'  '}
-        <span className="text-accent-main-highlight">{'"type"'}</span>
-        {`: "${eventType}",`}
-      </div>
-      <div>
-        {'  '}
-        <span className="text-accent-main-highlight">{'"sandboxId"'}</span>
-        {': "<UUID>",'}
-      </div>
-      <div>
-        {'  '}
-        <span className="text-accent-main-highlight">{'"timestamp"'}</span>
-        {': "<TIMESTAMP>",'}
-      </div>
-      <div className="text-fg-tertiary">
-        {'  // ... more fields, '}
-        <a
-          href={WEBHOOK_DOCS_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-fg"
-        >
-          see docs
-        </a>
-      </div>
-      <div>{'}'}</div>
-    </div>
-  </div>
-)
-
 export function UpsertWebhookDialogSteps({
   currentStep,
   form,
@@ -100,6 +73,8 @@ export function UpsertWebhookDialogSteps({
   hasCopied,
   onCopied,
 }: UpsertWebhookDialogStepsProps) {
+  const shikiTheme = useShikiTheme()
+
   const preGeneratedSecret = useMemo(() => {
     const chars =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -254,14 +229,30 @@ export function UpsertWebhookDialogSteps({
 
           {/* Description */}
           <div className="flex flex-col gap-2 min-w-0">
-            <p className="text-fg-tertiary prose-body wrap-break-word">
+            <p className="text-fg-tertiary prose-body break-words">
               We'll send a POST request with a JSON payload to{' '}
-              <span className="break-all">
+              <span className="break-all text-fg">
                 {form.watch('url') || 'https://example.com/postreceive'}
               </span>{' '}
               for each event. Example:
             </p>
-            <WebhookExamplePayload eventType={exampleEventType} />
+            <div className="border overflow-hidden w-full">
+              <ScrollArea>
+                <ShikiHighlighter
+                  language="json"
+                  theme={shikiTheme}
+                  className="px-3 py-2 text-xs"
+                  addDefaultStyles={false}
+                  showLanguage={false}
+                >
+                  {WEBHOOK_EXAMPLE_PAYLOAD.replace(
+                    '"sandbox.lifecycle.created"',
+                    `"${exampleEventType}"`
+                  )}
+                </ShikiHighlighter>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </div>
           </div>
         </motion.div>
       )}
@@ -277,11 +268,25 @@ export function UpsertWebhookDialogSteps({
         >
           {/* Section Title and Description */}
           <div className="flex flex-col gap-2">
-            <p className="text-fg-secondary prose-label uppercase">Secret</p>
-            <p className="text-fg-tertiary prose-body">
-              A secret verifies that webhooks are from us and untampered. Use
-              our pre-generated one or add your own.
+            <p className="text-fg-secondary prose-label uppercase">
+              Signature Secret
             </p>
+            <p className="text-fg-tertiary prose-body">
+              This secret is used to verify webhook authenticity. Each request
+              includes an <code className="text-fg">e2b-signature</code> header
+              generated with Hash-based Message Authentication Code (HMAC)
+              SHA-256. Validate this in your endpoint to ensure requests are
+              from E2B and untampered.
+            </p>
+            <a
+              href={WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fg-link hover:text-fg-link-hover prose-body inline-flex items-center gap-1 w-fit"
+            >
+              View validation examples
+              <ExternalLinkIcon className="size-3" />
+            </a>
           </div>
 
           {/* Tabs */}
