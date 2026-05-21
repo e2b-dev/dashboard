@@ -220,7 +220,7 @@ export const authActionClient = actionClient.use(async ({ next }) => {
   const supabase = await createClient()
   const authContext = await createAuthProvider({
     supabaseClient: supabase,
-  }).getAuthContext()
+  }).authContext
 
   if (!authContext) {
     throw UnauthenticatedError()

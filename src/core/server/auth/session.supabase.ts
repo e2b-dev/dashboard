@@ -16,7 +16,11 @@ export class SupabaseAuthSessionProvider extends AuthSessionProvider {
     super()
   }
 
-  async getAuthContext(): Promise<AuthContext | null> {
+  get authContext(): Promise<AuthContext | null> {
+    return this.resolveAuthContext()
+  }
+
+  private async resolveAuthContext(): Promise<AuthContext | null> {
     const client = await this.getClient()
     const { data, error } = await client.auth.getUser()
 
@@ -40,7 +44,7 @@ export class SupabaseAuthSessionProvider extends AuthSessionProvider {
   }
 
   async getAccessToken(): Promise<string | null> {
-    const authContext = await this.getAuthContext()
+    const authContext = await this.authContext
 
     return authContext?.accessToken ?? null
   }

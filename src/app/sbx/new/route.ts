@@ -8,7 +8,7 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export const GET = async (req: NextRequest) => {
   try {
-    const authContext = await authProvider.getAuthContext()
+    const authContext = await authProvider.authContext
 
     if (!authContext) {
       const params = new URLSearchParams({

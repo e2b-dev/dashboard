@@ -47,7 +47,7 @@ export async function POST(
 
         const { start: startMs, end: endMs } = parsedInput.data
 
-        const authContext = await authProvider.getAuthContext()
+        const authContext = await authProvider.authContext
 
         if (!authContext) {
           l.warn(

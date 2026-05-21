@@ -96,7 +96,7 @@ export default async function CLIAuthPage({
   searchParams: CLISearchParams
 }) {
   const { next, state, error } = await searchParams
-  const authContext = await authProvider.getAuthContext()
+  const authContext = await authProvider.authContext
 
   if (state === 'success') {
     return <SuccessState />

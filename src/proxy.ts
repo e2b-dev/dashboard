@@ -94,7 +94,7 @@ export async function proxy(request: NextRequest) {
 
     const authContext = await createAuthProvider({
       supabaseClient: supabase,
-    }).getAuthContext()
+    }).authContext
     const isAuthenticated = !!authContext
 
     const authRedirect = getAuthRedirect(request, isAuthenticated)

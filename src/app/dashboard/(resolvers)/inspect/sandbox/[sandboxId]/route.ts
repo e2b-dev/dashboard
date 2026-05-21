@@ -130,7 +130,7 @@ export async function GET(
     }
 
     const sandboxId = parsedSandboxId.data
-    const authContext = await authProvider.getAuthContext()
+    const authContext = await authProvider.authContext
 
     if (!authContext) {
       l.info({

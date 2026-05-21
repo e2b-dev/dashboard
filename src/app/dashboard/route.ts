@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
 
-  const authContext = await authProvider.getAuthContext()
+  const authContext = await authProvider.authContext
 
   if (!authContext) {
     return NextResponse.redirect(new URL('/sign-in', request.url))

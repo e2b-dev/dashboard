@@ -6,7 +6,7 @@ import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
 
 export async function GET(request: NextRequest) {
-  const authContext = await authProvider.getAuthContext()
+  const authContext = await authProvider.authContext
 
   if (!authContext) {
     return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))

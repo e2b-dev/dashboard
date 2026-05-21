@@ -46,7 +46,7 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
       async () => {
         return await createAuthProvider({
           supabaseClient: supabase,
-        }).getAuthContext()
+        }).authContext
       }
     )
 
