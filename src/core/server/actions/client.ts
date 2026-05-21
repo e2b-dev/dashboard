@@ -1,5 +1,4 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import type { AuthUser } from '@/core/server/auth'
 import { headers } from 'next/headers'
 import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
@@ -10,6 +9,7 @@ import {
   getObservedException,
   toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
+import type { AuthUser } from '@/core/server/auth'
 import { auth } from '@/core/server/auth'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'

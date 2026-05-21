@@ -6,7 +6,6 @@ import {
   SpanStatusCode,
   trace,
 } from '@opentelemetry/api'
-import type { AuthUser } from '@/core/server/auth'
 import { TRPCError } from '@trpc/server'
 import { flattenClientInputValue } from '@/core/server/actions/utils'
 import {
@@ -16,6 +15,7 @@ import {
   internalServerError,
   isExpectedTRPCError,
 } from '@/core/server/adapters/errors'
+import type { AuthUser } from '@/core/server/auth'
 import { t } from '@/core/server/trpc/init'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { withRequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'

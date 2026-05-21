@@ -1,8 +1,8 @@
 import 'server-only'
 
 import { cache } from 'react'
-import { authAdmin } from '@/core/server/auth'
 import type { AuthUser } from '@/core/server/auth'
+import { authAdmin } from '@/core/server/auth'
 
 async function getUserByToken(
   accessToken: string | undefined

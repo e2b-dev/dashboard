@@ -262,7 +262,10 @@ export const signInAction = actionClient
       throw new Error('Origin not found')
     }
 
-    const { error } = await supabaseAuthFlows.signInWithPassword(email, password)
+    const { error } = await supabaseAuthFlows.signInWithPassword(
+      email,
+      password
+    )
 
     if (error) {
       if (error.code === 'invalid_credentials') {

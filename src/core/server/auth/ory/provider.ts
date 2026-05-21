@@ -29,6 +29,8 @@ export function createOryAuthForProxy(
   return new OryHostedAuthProvider(request.headers.get('cookie') ?? '')
 }
 
-export function createOryAuthForHeaders(headers: Headers): OryHostedAuthProvider {
+export function createOryAuthForHeaders(
+  headers: Headers
+): OryHostedAuthProvider {
   return new OryHostedAuthProvider(headers.get('cookie') ?? '')
 }
