@@ -33,8 +33,8 @@ import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import {
-  WEBHOOK_EXAMPLE_PAYLOAD,
   WEBHOOK_EVENT_LABELS,
+  WEBHOOK_EXAMPLE_PAYLOAD,
   WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
 } from './constants'
 
