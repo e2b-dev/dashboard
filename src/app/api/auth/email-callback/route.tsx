@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { authProvider } from '@/core/server/auth/session'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 export async function GET(request: Request) {
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     return
   }
 
-  const { error } = await authProvider.exchangeCodeForSession(code)
+  const { error } = await supabaseAuthFlows.exchangeCodeForSession(code)
 
   if (error) {
     encodedRedirect('error', next, 'Failed to update E-Mail', {

@@ -1,7 +1,7 @@
 import 'server-cli-only'
 
 import { toRouteErrorResponse } from '@/core/server/adapters/errors'
-import { authProvider } from '@/core/server/auth/session'
+import { auth } from '@/core/server/auth'
 import { getTeamMetricsCore } from '@/core/server/functions/sandboxes/get-team-metrics-core'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -47,7 +47,7 @@ export async function POST(
 
         const { start: startMs, end: endMs } = parsedInput.data
 
-        const authContext = await authProvider.authContext
+        const authContext = await auth.getAuthContext()
 
         if (!authContext) {
           l.warn(

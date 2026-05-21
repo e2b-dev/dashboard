@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { authProvider } from '@/core/server/auth/session'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { encodedRedirect } from '@/lib/utils/auth'
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   )
 
   if (code) {
-    const { data, error } = await authProvider.exchangeCodeForSession(code)
+    const { data, error } = await supabaseAuthFlows.exchangeCodeForSession(code)
 
     if (error) {
       l.error(

@@ -9,7 +9,8 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
-import { authProvider } from '@/core/server/auth/session'
+import { auth } from '@/core/server/auth'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -110,7 +111,7 @@ export const signInWithOAuthAction = actionClient
       `sign_in_with_oauth_action: initializing OAuth sign-in with provider: ${provider}`
     )
 
-    const { data, error } = await authProvider.signInWithOAuth({
+    const { data, error } = await supabaseAuthFlows.signInWithOAuth({
       provider,
       redirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
       scopes: 'email',
@@ -196,7 +197,7 @@ export const signUpAction = actionClient
         }
       }
 
-      const { data: signUpData, error } = await authProvider.signUp({
+      const { data: signUpData, error } = await supabaseAuthFlows.signUp({
         email,
         password,
         emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
@@ -222,7 +223,7 @@ export const signUpAction = actionClient
         (ip || userAgent)
       ) {
         try {
-          await authProvider.updateUserById(signUpData.user.id, {
+          await supabaseAuthFlows.updateUserById(signUpData.user.id, {
             app_metadata: {
               signup_ip: ip,
               signup_user_agent: userAgent,
@@ -261,7 +262,7 @@ export const signInAction = actionClient
       throw new Error('Origin not found')
     }
 
-    const { error } = await authProvider.signInWithPassword(email, password)
+    const { error } = await supabaseAuthFlows.signInWithPassword(email, password)
 
     if (error) {
       if (error.code === 'invalid_credentials') {
@@ -301,7 +302,7 @@ export const forgotPasswordAction = actionClient
       )
     }
 
-    const { error } = await authProvider.resetPasswordForEmail(email)
+    const { error } = await supabaseAuthFlows.resetPasswordForEmail(email)
 
     if (error) {
       l.error(
@@ -323,7 +324,7 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  await authProvider.signOut()
+  await auth.signOut()
 
   throw redirect(
     AUTH_URLS.SIGN_IN +

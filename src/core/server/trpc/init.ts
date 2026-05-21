@@ -1,12 +1,12 @@
-import type { User } from '@supabase/supabase-js'
 import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
 import { flattenError, ZodError } from 'zod'
+import type { AuthUser } from '@/core/server/auth'
 import type { RequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'
 
 type AuthenticatedSession = {
   access_token: string
-  user: User
+  user: AuthUser
 }
 
 /**
@@ -21,7 +21,7 @@ export const createTRPCContext = async (opts: {
   return {
     ...opts,
     session: undefined as AuthenticatedSession | undefined,
-    user: undefined as User | undefined,
+    user: undefined as AuthUser | undefined,
     teamId: undefined as string | undefined,
   }
 }

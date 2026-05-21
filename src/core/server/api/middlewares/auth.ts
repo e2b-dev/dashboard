@@ -1,6 +1,6 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { createManagedSupabaseAuthProviderForHeaders } from '@/core/server/auth/managed-supabase-auth-provider'
+import { createAuthForHeaders } from '@/core/server/auth'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
 import { getTracer } from '@/core/shared/clients/tracer'
@@ -12,12 +12,12 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   span.setAttribute('trpc.middleware.name', 'auth')
 
   try {
-    const provider = createManagedSupabaseAuthProviderForHeaders(ctx.headers)
+    const provider = createAuthForHeaders(ctx.headers)
 
     const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await provider.authContext
+        return await provider.getAuthContext()
       }
     )
 
@@ -30,11 +30,12 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
       throw unauthorizedUserError()
     }
 
-    const {
-      data: { user },
-    } = await context.with(trace.setSpan(context.active(), span), async () => {
-      return await getUserByToken(authContext.accessToken)
-    })
+    const user = await context.with(
+      trace.setSpan(context.active(), span),
+      async () => {
+        return await getUserByToken(authContext.accessToken)
+      }
+    )
 
     if (!user) {
       span.setStatus({

@@ -25,3 +25,15 @@ export const CAPTCHA_REQUIRED_SERVER =
   CAPTCHA_ENABLED &&
   !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
   !!process.env.TURNSTILE_SECRET_KEY
+
+export const AUTH_PROVIDERS = ['supabase', 'ory'] as const
+export type AuthProviderName = (typeof AUTH_PROVIDERS)[number]
+
+const configuredAuthProvider = process.env.AUTH_PROVIDER
+
+export const AUTH_PROVIDER: AuthProviderName =
+  configuredAuthProvider === 'ory' ? 'ory' : 'supabase'
+
+export function isOryAuthEnabled() {
+  return AUTH_PROVIDER === 'ory'
+}

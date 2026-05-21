@@ -5,6 +5,8 @@ import { headers } from 'next/headers'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
 import { authActionClient } from '@/core/server/actions/client'
+import { auth } from '@/core/server/auth'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 
 const UpdateUserSchema = z
@@ -29,7 +31,7 @@ export const updateUserAction = authActionClient
   .schema(UpdateUserSchema)
   .metadata({ actionName: 'updateUser' })
   .action(async ({ parsedInput, ctx }) => {
-    const { authProvider, user } = ctx
+    const { user } = ctx
 
     // basic security check, that password does not equal e-mail
     if (parsedInput.password) {
@@ -49,7 +51,7 @@ export const updateUserAction = authActionClient
 
     const origin = (await headers()).get('origin')
 
-    const { data: updateData, error } = await authProvider.updateUser({
+    const { data: updateData, error } = await supabaseAuthFlows.updateUser({
       email: parsedInput.email,
       password: parsedInput.password,
       name: parsedInput.name,
@@ -59,7 +61,7 @@ export const updateUserAction = authActionClient
     if (!error) {
       // ensure other sessions are logged out if password was changed
       if (parsedInput.password) {
-        await authProvider.signOut({ scope: 'others' })
+        await auth.signOut({ scope: 'others' })
       }
 
       revalidatePath('/dashboard', 'layout')

@@ -14,7 +14,6 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { getUserProviders } from '@/lib/utils/auth'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -62,7 +61,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   })
 
   const hasEmailProvider = useMemo(
-    () => getUserProviders(user)?.includes('email'),
+    () => user.providers.includes('email'),
     [user]
   )
 

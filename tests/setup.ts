@@ -1,9 +1,13 @@
 import { loadEnvConfig } from '@next/env'
 import { vi } from 'vitest'
 
-// load env variables
 const projectDir = process.cwd()
 loadEnvConfig(projectDir)
+
+// fall back to placeholder values for env-coupled clients that initialize at module load
+process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'http://localhost'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= 'test-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY ??= 'test-service-role-key'
 
 // mock server-only to prevent vitest errors
 vi.mock('server-only', () => ({}))

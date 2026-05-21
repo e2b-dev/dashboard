@@ -1,4 +1,3 @@
-import type { User } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
 /**
@@ -23,10 +22,6 @@ export function encodedRedirect(
     })
   }
   return redirect(`${path}?${queryString.toString()}`)
-}
-
-export function getUserProviders(user: User) {
-  return user.app_metadata.providers as string[] | undefined
 }
 
 /**

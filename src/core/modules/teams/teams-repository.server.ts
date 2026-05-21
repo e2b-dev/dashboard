@@ -1,10 +1,9 @@
 import 'server-only'
 
-import type { User } from '@supabase/supabase-js'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
-import type { ManagedSupabaseAuthProvider } from '@/core/server/auth/managed-supabase-auth-provider'
-import { authProvider } from '@/core/server/auth/session'
+import type { AuthAdmin } from '@/core/server/auth'
+import { authAdmin } from '@/core/server/auth'
 import { api } from '@/core/shared/clients/api'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
@@ -14,7 +13,7 @@ import type { TeamMember } from './models'
 type TeamsRepositoryDeps = {
   apiClient: typeof api
   authHeaders: typeof SUPABASE_AUTH_HEADERS
-  authProvider: Pick<ManagedSupabaseAuthProvider, 'getUserById'>
+  authAdmin: Pick<AuthAdmin, 'getUserById'>
 }
 
 export type TeamsRequestScope = RequestScope & {
@@ -31,21 +30,6 @@ export interface TeamsRepository {
   updateTeamProfilePictureUrl(
     profilePictureUrl: string | null
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
-}
-
-function extractSignInProviders(user: User | null | undefined): string[] {
-  const appProviders = Array.isArray(user?.app_metadata?.providers)
-    ? user.app_metadata.providers.filter(
-        (provider): provider is string => typeof provider === 'string'
-      )
-    : []
-  const identityProviders =
-    user?.identities
-      ?.map((identity) => identity.provider)
-      .filter((provider): provider is string => typeof provider === 'string') ??
-    []
-
-  return [...new Set([...appProviders, ...identityProviders])]
 }
 
 function requireTeamId(scope: TeamsRequestScope): RepoResult<string> {
@@ -67,7 +51,7 @@ export function createTeamsRepository(
   deps: TeamsRepositoryDeps = {
     apiClient: api,
     authHeaders: SUPABASE_AUTH_HEADERS,
-    authProvider,
+    authAdmin,
   }
 ): TeamsRepository {
   return {
@@ -98,18 +82,15 @@ export function createTeamsRepository(
       const members = data?.members ?? []
       const enrichedMembers = await Promise.all(
         members.map(async (member) => {
-          const { data: userData } = await deps.authProvider.getUserById(
-            member.id
-          )
-          const user = userData.user
+          const user = await deps.authAdmin.getUserById(member.id)
 
           return {
             info: {
               id: member.id,
               email: member.email,
-              name: user?.user_metadata?.name,
-              avatar_url: user?.user_metadata?.avatar_url,
-              providers: extractSignInProviders(user),
+              name: user?.name ?? undefined,
+              avatar_url: user?.avatarUrl ?? undefined,
+              providers: user?.providers ?? [],
               createdAt: member.createdAt,
             },
             relation: {

@@ -1,5 +1,5 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import type { User } from '@supabase/supabase-js'
+import type { AuthUser } from '@/core/server/auth'
 import { headers } from 'next/headers'
 import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
@@ -10,8 +10,7 @@ import {
   getObservedException,
   toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
-import type { ManagedSupabaseAuthProvider } from '@/core/server/auth/managed-supabase-auth-provider'
-import { createAuthProvider } from '@/core/server/auth/session'
+import { auth } from '@/core/server/auth'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -29,13 +28,12 @@ import { ActionError, flattenClientInputValue } from './utils'
 
 type ActionSession = {
   access_token: string
-  user: User
+  user: AuthUser
 }
 
 export interface AuthActionContext {
-  user: User
+  user: AuthUser
   session: ActionSession
-  authProvider: ManagedSupabaseAuthProvider
 }
 
 export interface TeamActionContext extends AuthActionContext {
@@ -215,16 +213,13 @@ export const actionClient = createSafeActionClient({
 })
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const authProvider = createAuthProvider()
-  const authContext = await authProvider.authContext
+  const authContext = await auth.getAuthContext()
 
   if (!authContext) {
     throw UnauthenticatedError()
   }
 
-  const {
-    data: { user },
-  } = await getUserByToken(authContext.accessToken)
+  const user = await getUserByToken(authContext.accessToken)
 
   if (!user) {
     throw UnauthenticatedError()
@@ -237,7 +232,6 @@ export const authActionClient = actionClient.use(async ({ next }) => {
         access_token: authContext.accessToken,
         user,
       },
-      authProvider,
     },
   })
 })

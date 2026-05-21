@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
-import { createManagedSupabaseAuthProviderForProxy } from './core/server/auth/managed-supabase-auth-provider'
+import { createAuthForProxy } from './core/server/auth'
 import { getAuthRedirect } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
@@ -75,10 +75,10 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.next({
       request,
     })
-    const authContext = await createManagedSupabaseAuthProviderForProxy(
+    const authContext = await createAuthForProxy(
       request,
       response
-    ).authContext
+    ).getAuthContext()
     const isAuthenticated = !!authContext
 
     const authRedirect = getAuthRedirect(request, isAuthenticated)

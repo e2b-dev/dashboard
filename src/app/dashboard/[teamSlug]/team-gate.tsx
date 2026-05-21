@@ -1,8 +1,8 @@
 'use client'
 
-import type { User } from '@supabase/supabase-js'
 import { useQuery } from '@tanstack/react-query'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
+import type { AuthUser } from '@/core/server/auth'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useTRPC } from '@/trpc/client'
@@ -10,7 +10,7 @@ import Unauthorized from '../unauthorized'
 
 interface DashboardTeamGateProps {
   teamSlug: string
-  user: User
+  user: AuthUser
   children: React.ReactNode
 }
 
