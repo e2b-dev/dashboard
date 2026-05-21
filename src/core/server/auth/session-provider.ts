@@ -17,7 +17,7 @@ export class MissingAuthSessionError extends Error {
 
 export abstract class AuthSessionProvider {
   abstract get authContext(): Promise<AuthContext | null>
-  abstract getAccessToken(): Promise<string | null>
+  abstract get accessToken(): Promise<string | null>
   abstract signOut(options?: SignOutOptions): Promise<void>
 
   async requireAuthContext(): Promise<AuthContext> {

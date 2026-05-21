@@ -43,7 +43,11 @@ export class SupabaseAuthSessionProvider extends AuthSessionProvider {
     }
   }
 
-  async getAccessToken(): Promise<string | null> {
+  get accessToken(): Promise<string | null> {
+    return this.resolveAccessToken()
+  }
+
+  private async resolveAccessToken(): Promise<string | null> {
     const authContext = await this.authContext
 
     return authContext?.accessToken ?? null
