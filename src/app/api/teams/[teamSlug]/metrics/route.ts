@@ -1,7 +1,7 @@
 import 'server-cli-only'
 
 import { toRouteErrorResponse } from '@/core/server/adapters/errors'
-import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { getAuthContext } from '@/core/server/auth/session'
 import { getTeamMetricsCore } from '@/core/server/functions/sandboxes/get-team-metrics-core'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -47,9 +47,9 @@ export async function POST(
 
         const { start: startMs, end: endMs } = parsedInput.data
 
-        const session = await getSessionInsecure()
+        const authContext = await getAuthContext()
 
-        if (!session) {
+        if (!authContext) {
           l.warn(
             {
               key: 'team_metrics_route_handler:unauthenticated',
@@ -63,7 +63,7 @@ export async function POST(
 
         const teamIdResult = await getTeamIdFromSlug(
           teamSlug,
-          session.access_token
+          authContext.accessToken
         )
 
         if (!teamIdResult.ok) {
@@ -77,7 +77,7 @@ export async function POST(
             {
               key: 'team_metrics_route_handler:forbidden_team',
               team_slug: teamSlug,
-              user_id: session.user.id,
+              user_id: authContext.userId,
             },
             'team_metrics_route_handler: forbidden team'
           )
@@ -86,9 +86,9 @@ export async function POST(
         }
 
         const result = await getTeamMetricsCore({
-          accessToken: session.access_token,
+          accessToken: authContext.accessToken,
           teamId,
-          userId: session.user.id,
+          userId: authContext.userId,
           startMs,
           endMs,
         })

@@ -9,6 +9,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
+import { signOut } from '@/core/server/auth/session'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -44,12 +45,18 @@ async function validateCaptcha(captchaToken: string | undefined) {
 
 async function checkAuthProviderHealth(): Promise<boolean> {
   try {
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseAnonKey) {
+      return false
+    }
+
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`,
       {
         method: 'GET',
         headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          apikey: supabaseAnonKey,
         },
         signal: AbortSignal.timeout(5000),
         next: { revalidate: 30 },
@@ -332,9 +339,7 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  const supabase = await createClient()
-
-  await supabase.auth.signOut()
+  await signOut()
 
   throw redirect(
     AUTH_URLS.SIGN_IN +

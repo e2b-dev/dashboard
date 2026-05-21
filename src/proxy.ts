@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
+import { SupabaseAuthSessionProvider } from './core/server/auth/session.supabase'
 import { getAuthRedirect } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
@@ -45,7 +46,7 @@ export async function proxy(request: NextRequest) {
       rewriteUrl.hostname = middlewareRewriteConfig.domain
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
-      if (middlewareRewriteRule && middlewareRewriteRule.pathPreprocessor) {
+      if (middlewareRewriteRule?.pathPreprocessor) {
         rewriteUrl.pathname = middlewareRewriteRule.pathPreprocessor(
           rewriteUrl.pathname
         )
@@ -75,30 +76,31 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.next({
       request,
     })
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
-          },
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return response
+    }
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
         },
-      }
-    )
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    })
 
-    // checks/refreshes auth session
-    const { error, data } = await supabase.auth.getUser()
+    const authContext = await new SupabaseAuthSessionProvider(
+      supabase
+    ).getAuthContext()
+    const isAuthenticated = !!authContext
 
-    const isAuthenticated = !error && !!data?.user
-
-    // if user is not authenticated, redirects to sign-in
     const authRedirect = getAuthRedirect(request, isAuthenticated)
 
     if (authRedirect) {

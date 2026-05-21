@@ -1,5 +1,5 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import type { Session, User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
@@ -10,7 +10,7 @@ import {
   getObservedException,
   toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
-import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { getAuthContext } from '@/core/server/auth/session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -29,9 +29,14 @@ import { ActionError, flattenClientInputValue } from './utils'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
+type ActionSession = {
+  access_token: string
+  user: User
+}
+
 export interface AuthActionContext {
   user: User
-  session: Session
+  session: ActionSession
   supabase: SupabaseServerClient
 }
 
@@ -213,24 +218,27 @@ export const actionClient = createSafeActionClient({
 
 export const authActionClient = actionClient.use(async ({ next }) => {
   const supabase = await createClient()
-  const session = await getSessionInsecure(supabase)
+  const authContext = await getAuthContext()
 
-  if (!session) {
+  if (!authContext) {
     throw UnauthenticatedError()
   }
 
   const {
     data: { user },
-  } = await getUserByToken(session.access_token)
+  } = await getUserByToken(authContext.accessToken)
 
-  if (!user || !session) {
+  if (!user) {
     throw UnauthenticatedError()
   }
 
   return next({
     ctx: {
       user,
-      session,
+      session: {
+        access_token: authContext.accessToken,
+        user,
+      },
       supabase,
     },
   })

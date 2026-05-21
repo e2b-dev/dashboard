@@ -6,7 +6,7 @@ import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
-import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { getAuthContext } from '@/core/server/auth/session'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
@@ -35,8 +35,8 @@ export default async function DashboardLayout({
   const cookieStore = await cookies()
   const { teamSlug } = await params
 
-  const session = await getSessionInsecure()
-  const { error, data } = await getUserByToken(session?.access_token)
+  const authContext = await getAuthContext()
+  const { error, data } = await getUserByToken(authContext?.accessToken)
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'

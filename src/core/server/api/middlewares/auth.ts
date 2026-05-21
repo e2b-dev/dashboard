@@ -5,7 +5,7 @@ import {
   serializeCookieHeader,
 } from '@supabase/ssr'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
+import { SupabaseAuthSessionProvider } from '@/core/server/auth/session.supabase'
 import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
 import { getTracer } from '@/core/shared/clients/tracer'
@@ -41,14 +41,14 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   try {
     const supabase = createSupabaseServerClient(ctx.headers)
 
-    const session = await context.with(
+    const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await getSessionInsecure(supabase)
+        return await new SupabaseAuthSessionProvider(supabase).getAuthContext()
       }
     )
 
-    if (!session) {
+    if (!authContext) {
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: 'session not found',
@@ -60,7 +60,7 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
     const {
       data: { user },
     } = await context.with(trace.setSpan(context.active(), span), async () => {
-      return await getUserByToken(session.access_token)
+      return await getUserByToken(authContext.accessToken)
     })
 
     if (!user) {
@@ -77,7 +77,10 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
     return next({
       ctx: {
         ...ctx,
-        session,
+        session: {
+          access_token: authContext.accessToken,
+          user,
+        },
         user,
       },
     })
