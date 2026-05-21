@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
 import { infra } from '@/core/shared/clients/api'
 import type { components as ArgusComponents } from '@/core/shared/contracts/argus-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -13,16 +14,6 @@ type WebhooksRepositoryDeps = {
 }
 
 export type WebhooksScope = TeamRequestScope
-
-export interface UpsertWebhookInput {
-  mode: 'create' | 'update'
-  webhookId?: string
-  name: string
-  url: string
-  events: string[]
-  signatureSecret?: string
-  enabled: boolean
-}
 
 export interface WebhooksRepository {
   listWebhooks(): Promise<

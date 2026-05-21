@@ -9,7 +9,7 @@ import {
   SandboxLifecycleEventTypeSchema,
 } from '@/core/modules/sandboxes/lifecycle-event-types'
 import {
-  type UpsertWebhookInput,
+  type UpsertWebhookFormInput,
   UpsertWebhookInputSchema,
 } from '@/core/server/functions/webhooks/schema'
 import {
@@ -77,7 +77,7 @@ export function UpsertWebhookDialog({
     teamSlug: team.slug,
   }).queryKey
 
-  const defaultValues: UpsertWebhookInput = {
+  const defaultValues: UpsertWebhookFormInput = {
     webhookId: isUpdateMode ? webhook?.id : undefined,
     mode,
     name: webhook?.name || '',
@@ -91,7 +91,7 @@ export function UpsertWebhookDialog({
     ...(isUpdateMode ? {} : { signatureSecret: '' }),
   }
 
-  const form = useForm<UpsertWebhookInput>({
+  const form = useForm<UpsertWebhookFormInput>({
     resolver: zodResolver(UpsertWebhookInputSchema),
     mode: 'onChange',
     disabled: !team.slug,

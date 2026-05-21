@@ -10,7 +10,7 @@ import {
   type SandboxLifecycleEventType,
   SandboxLifecycleEventTypeSchema,
 } from '@/core/modules/sandboxes/lifecycle-event-types'
-import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
+import type { UpsertWebhookFormInput } from '@/core/server/functions/webhooks/schema'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
@@ -44,7 +44,7 @@ export type SecretType = z.infer<typeof SecretTypeSchema>
 
 type UpsertWebhookDialogStepsProps = {
   currentStep: number
-  form: UseFormReturn<UpsertWebhookInput>
+  form: UseFormReturn<UpsertWebhookFormInput>
   isLoading: boolean
   selectedEvents: string[]
   exampleEventType: SandboxLifecycleEventType
