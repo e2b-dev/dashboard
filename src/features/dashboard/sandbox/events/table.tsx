@@ -21,11 +21,11 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableEmptyState,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/ui/primitives/table'
+import { TableEmptyRowBorder } from '@/ui/primitives/table-empty-row-border'
 import { SandboxEventTypeBadge } from './event-type-badge'
 
 const ROW_HEIGHT_PX = 32
@@ -90,11 +90,28 @@ export const SandboxEventsTable = ({
           scrollContainer={scrollContainer}
         />
       ) : (
-        <TableBody className="grid min-w-full">
-          <TableEmptyState colSpan={4}>
-            <HistoryIcon className="size-5" />
-            No events found
-          </TableEmptyState>
+        <TableBody className="grid">
+          <TableRow className="flex min-w-full">
+            <TableCell className="flex-1 p-0">
+              <div className="w-full gap-2 relative flex flex-col justify-center items-center">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-11 w-full border border-bg-highlight relative flex items-center gap-2 justify-center overflow-hidden"
+                  >
+                    <TableEmptyRowBorder className="absolute bottom-0 left-0 rotate-180 opacity-99" />
+                    <TableEmptyRowBorder className="absolute bottom-0 right-0 opacity-99" />
+                    {index === 1 ? (
+                      <div className="text-fg prose-body-highlight flex items-center justify-center gap-2 px-2 text-center whitespace-nowrap">
+                        <HistoryIcon className="size-5" />
+                        No events found
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </TableCell>
+          </TableRow>
         </TableBody>
       )}
     </Table>
