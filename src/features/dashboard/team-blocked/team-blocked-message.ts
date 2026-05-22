@@ -7,16 +7,6 @@ export interface BlockedMessage {
   href: string | null
 }
 
-/**
- * Slug-independent user-facing text for a blocked-team reason.
- *
- * Used by the server error adapter (`getPublicErrorMessage`) to translate
- * raw infra-api `team is blocked: <reason>` responses into clean, user-
- * facing messages.
- *
- * When the reason is unrecognized, falls back to a generic
- * "Team suspended." when no reason is provided.
- */
 export function getBlockedReasonText(blockedReason: string | null): string {
   const reason = blockedReason?.toLowerCase() ?? ''
 

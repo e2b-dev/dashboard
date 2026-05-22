@@ -54,10 +54,6 @@ export const ApiError = (message: string) => new E2BError('API_ERROR', message)
 export const UnknownError = (message?: string) =>
   new E2BError('UNKNOWN', message ?? PUBLIC_ERROR_MESSAGE_INTERNAL)
 
-/**
- * Detects whether an error response came from infra-api's blocked-team
- * enforcement (403 with the `team is blocked[: <reason>]` wire format).
- */
 export function isTeamBlockedError(input: {
   status?: number
   message?: string | null
@@ -66,10 +62,6 @@ export function isTeamBlockedError(input: {
   return input.message.toLowerCase().startsWith(TEAM_BLOCKED_MESSAGE_PREFIX)
 }
 
-/**
- * Extracts the reason from a `team is blocked: <reason>` message.
- * Returns `null` for the bare `team is blocked` form (no reason supplied).
- */
 export function extractBlockedReason(
   message: string | null | undefined
 ): string | null {
