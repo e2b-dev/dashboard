@@ -140,7 +140,7 @@ export async function GET(
       return redirectToSignInPage(request)
     }
 
-    const userId = authContext.userId
+    const userId = authContext.user.id
     const accessToken = authContext.accessToken
     const teamsResult = await createUserTeamsRepository({
       accessToken,

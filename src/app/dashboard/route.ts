@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 
   const team = await resolveUserTeam(
-    authContext.userId,
+    authContext.user.id,
     authContext.accessToken
   )
 

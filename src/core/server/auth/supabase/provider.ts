@@ -9,6 +9,7 @@ import {
   createServerClientForProxy,
   type SupabaseServerClient,
 } from './server-client'
+import { toAuthUser } from './user'
 
 export class SupabaseAuthProvider implements AuthProvider {
   constructor(private readonly client?: SupabaseServerClient) {}
@@ -30,9 +31,8 @@ export class SupabaseAuthProvider implements AuthProvider {
     }
 
     return {
-      userId: data.user.id,
+      user: toAuthUser(data.user),
       accessToken: session.access_token,
-      email: data.user.email ?? null,
     }
   }
 

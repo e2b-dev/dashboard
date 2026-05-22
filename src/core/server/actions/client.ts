@@ -11,7 +11,6 @@ import {
 } from '@/core/server/adapters/errors'
 import type { AuthUser } from '@/core/server/auth'
 import { auth } from '@/core/server/auth'
-import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {
@@ -219,18 +218,12 @@ export const authActionClient = actionClient.use(async ({ next }) => {
     throw UnauthenticatedError()
   }
 
-  const user = await getUserByToken(authContext.accessToken)
-
-  if (!user) {
-    throw UnauthenticatedError()
-  }
-
   return next({
     ctx: {
-      user,
+      user: authContext.user,
       session: {
         access_token: authContext.accessToken,
-        user,
+        user: authContext.user,
       },
     },
   })

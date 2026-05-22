@@ -7,12 +7,11 @@ import type { AuthContext, SignOutOptions } from '../types'
 export class OryHostedAuthProvider implements AuthProvider {
   constructor(private readonly cookie: string = '') {}
 
+  // fail-closed until ory is wired: callers (proxy, middleware) treat null as
+  // unauthenticated and redirect to sign-in instead of letting requests through
   getAuthContext(): Promise<AuthContext | null> {
-    return Promise.reject(
-      new Error(
-        `OryHostedAuthProvider.getAuthContext is not implemented yet (cookie length: ${this.cookie.length})`
-      )
-    )
+    void this.cookie
+    return Promise.resolve(null)
   }
 
   signOut(_options?: SignOutOptions): Promise<void> {

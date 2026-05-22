@@ -77,7 +77,7 @@ export async function POST(
             {
               key: 'team_metrics_route_handler:forbidden_team',
               team_slug: teamSlug,
-              user_id: authContext.userId,
+              user_id: authContext.user.id,
             },
             'team_metrics_route_handler: forbidden team'
           )
@@ -88,7 +88,7 @@ export async function POST(
         const result = await getTeamMetricsCore({
           accessToken: authContext.accessToken,
           teamId,
-          userId: authContext.userId,
+          userId: authContext.user.id,
           startMs,
           endMs,
         })

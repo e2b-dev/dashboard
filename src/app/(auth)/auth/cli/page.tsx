@@ -107,7 +107,7 @@ export default async function CLIAuthPage({
     l.error(
       {
         key: 'cli_auth:invalid_redirect_url',
-        user_id: authContext?.userId,
+        user_id: authContext?.user.id,
         context: {
           next,
         },
@@ -128,13 +128,13 @@ export default async function CLIAuthPage({
   // Handle CLI callback if authenticated
   if (!error && next && authContext) {
     try {
-      if (!authContext.email) {
+      if (!authContext.user.email) {
         throw new Error('No user email found')
       }
 
       return await handleCLIAuth(
         next,
-        authContext.email,
+        authContext.user.email,
         authContext.accessToken
       )
     } catch (err) {
@@ -146,7 +146,7 @@ export default async function CLIAuthPage({
         {
           key: 'cli_auth:unexpected_error',
           error: serializeErrorForLog(err),
-          user_id: authContext.userId,
+          user_id: authContext.user.id,
           context: {
             next,
           },

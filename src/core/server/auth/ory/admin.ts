@@ -3,15 +3,16 @@ import 'server-only'
 import type { AuthAdmin } from '../admin'
 
 export const oryAuthAdmin: AuthAdmin = {
+  // fail-closed: tRPC auth middleware treats null as unauthenticated
   getUserByAccessToken(_accessToken) {
-    throw new Error('oryAuthAdmin.getUserByAccessToken is not implemented yet')
+    return Promise.resolve(null)
   },
 
   getUserById(_userId) {
-    throw new Error('oryAuthAdmin.getUserById is not implemented yet')
+    return Promise.resolve(null)
   },
 
   getEmailsByIds(_userIds) {
-    throw new Error('oryAuthAdmin.getEmailsByIds is not implemented yet')
+    return Promise.resolve(new Map<string, string | null>())
   },
 }

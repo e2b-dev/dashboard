@@ -1,7 +1,6 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
 import { createAuthForHeaders } from '@/core/server/auth'
-import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
 import { t } from '@/core/server/trpc/init'
 import { getTracer } from '@/core/shared/clients/tracer'
 
@@ -30,22 +29,6 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
       throw unauthorizedUserError()
     }
 
-    const user = await context.with(
-      trace.setSpan(context.active(), span),
-      async () => {
-        return await getUserByToken(authContext.accessToken)
-      }
-    )
-
-    if (!user) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: 'user not found for session',
-      })
-
-      throw unauthorizedUserError()
-    }
-
     span.setStatus({ code: SpanStatusCode.OK })
 
     return next({
@@ -53,9 +36,9 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
         ...ctx,
         session: {
           access_token: authContext.accessToken,
-          user,
+          user: authContext.user,
         },
-        user,
+        user: authContext.user,
       },
     })
   } finally {

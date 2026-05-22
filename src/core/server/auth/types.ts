@@ -1,15 +1,14 @@
-export type AuthContext = {
-  userId: string
-  accessToken: string
-  email: string | null
-}
-
 export type AuthUser = {
   id: string
   email: string | null
   name: string | null
   avatarUrl: string | null
   providers: string[]
+}
+
+export type AuthContext = {
+  user: AuthUser
+  accessToken: string
 }
 
 export type SignOutOptions = {

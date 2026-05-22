@@ -44,23 +44,21 @@ async function validateCaptcha(captchaToken: string | undefined) {
 
 async function checkAuthProviderHealth(): Promise<boolean> {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (!supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return false
     }
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`,
-      {
-        method: 'GET',
-        headers: {
-          apikey: supabaseAnonKey,
-        },
-        signal: AbortSignal.timeout(5000),
-        next: { revalidate: 30 },
-      }
-    )
+    const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+      method: 'GET',
+      headers: {
+        apikey: supabaseAnonKey,
+      },
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 30 },
+    })
     return response.ok
   } catch {
     return false
