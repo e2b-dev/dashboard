@@ -8,6 +8,7 @@ import {
 import { useMemo } from 'react'
 import type { SandboxEventModel } from '@/core/modules/sandboxes/models'
 import {
+  VirtualizedTableEmptyState,
   VirtualizedTableLoaderBody,
   VirtualizedTableRow,
 } from '@/features/dashboard/common/virtualized-table-ui'
@@ -21,7 +22,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableEmptyState,
   TableHead,
   TableHeader,
   TableRow,
@@ -90,12 +90,10 @@ export const SandboxEventsTable = ({
           scrollContainer={scrollContainer}
         />
       ) : (
-        <TableBody>
-          <TableEmptyState colSpan={4}>
-            <HistoryIcon className="size-5" />
-            No events found
-          </TableEmptyState>
-        </TableBody>
+        <VirtualizedTableEmptyState>
+          <HistoryIcon className="size-5" />
+          No events found
+        </VirtualizedTableEmptyState>
       )}
     </Table>
   )
