@@ -2,6 +2,7 @@ import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import {
   createServerClient,
   parseCookieHeader,
+  type SetAllCookies,
   serializeCookieHeader,
 } from '@supabase/ssr'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
@@ -19,7 +20,7 @@ const createSupabaseServerClient = (headers: Headers) => {
         getAll() {
           return parseCookieHeader(headers.get('cookie') ?? '')
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {
           cookiesToSet.forEach(({ name, value, options }) => {
             headers.append(
               'Set-Cookie',
