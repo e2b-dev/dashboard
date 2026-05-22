@@ -20,7 +20,7 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
-import { l } from '@/core/shared/clients/logger/logger'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -48,6 +48,16 @@ async function checkAuthProviderHealth(): Promise<boolean> {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
+      l.error(
+        {
+          key: 'auth_provider:health_check:misconfigured',
+          context: {
+            hasUrl: !!supabaseUrl,
+            hasAnonKey: !!supabaseAnonKey,
+          },
+        },
+        'supabase auth health check skipped: missing env config'
+      )
       return false
     }
 
@@ -59,8 +69,29 @@ async function checkAuthProviderHealth(): Promise<boolean> {
       signal: AbortSignal.timeout(5000),
       next: { revalidate: 30 },
     })
+
+    if (!response.ok) {
+      l.error(
+        {
+          key: 'auth_provider:health_check:non_ok',
+          context: {
+            status: response.status,
+            statusText: response.statusText,
+          },
+        },
+        `supabase auth health check returned non-ok status: ${response.status}`
+      )
+    }
+
     return response.ok
-  } catch {
+  } catch (error) {
+    l.error(
+      {
+        key: 'auth_provider:health_check:error',
+        error: serializeErrorForLog(error),
+      },
+      'supabase auth health check failed'
+    )
     return false
   }
 }

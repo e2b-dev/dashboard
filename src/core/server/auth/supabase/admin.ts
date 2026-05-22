@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 import type { AuthAdmin } from '../admin'
 import { toAuthUser } from './user'
@@ -8,7 +9,19 @@ export const supabaseAuthAdmin: AuthAdmin = {
   async getUserById(userId) {
     const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId)
 
-    if (error || !data.user) {
+    if (error) {
+      l.error(
+        {
+          key: 'auth_admin:get_user_by_id:error',
+          user_id: userId,
+          error: serializeErrorForLog(error),
+        },
+        `supabase admin getUserById failed: ${error.message}`
+      )
+      return null
+    }
+
+    if (!data.user) {
       return null
     }
 
@@ -27,6 +40,16 @@ export const supabaseAuthAdmin: AuthAdmin = {
       .in('id', uniqueIds)
 
     if (error) {
+      l.error(
+        {
+          key: 'auth_admin:get_emails_by_ids:error',
+          error: serializeErrorForLog(error),
+          context: {
+            userCount: uniqueIds.length,
+          },
+        },
+        `supabase admin getEmailsByIds failed: ${error.message}`
+      )
       throw error
     }
 

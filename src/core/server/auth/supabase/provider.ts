@@ -1,9 +1,10 @@
 import 'server-only'
 
 import type { NextRequest, NextResponse } from 'next/server'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import type { AuthProvider } from '../provider'
-import type { AuthContext, SignOutOptions } from '../types'
+import type { AuthContext, SignOutOptions, SignOutResult } from '../types'
 import {
   createServerClientForHeaders,
   createServerClientForProxy,
@@ -16,29 +17,68 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async getAuthContext(): Promise<AuthContext | null> {
     const client = await this.resolveClient()
-    const { data, error } = await client.auth.getUser()
+    const { data, error: userError } = await client.auth.getUser()
 
-    if (error || !data.user) {
+    if (userError) {
+      l.error(
+        {
+          key: 'auth_provider:get_user:error',
+          error: serializeErrorForLog(userError),
+        },
+        `supabase getUser failed: ${userError.message}`
+      )
       return null
     }
 
-    const {
-      data: { session },
-    } = await client.auth.getSession()
+    if (!data.user) {
+      return null
+    }
 
-    if (!session?.access_token) {
+    const { data: sessionData, error: sessionError } =
+      await client.auth.getSession()
+
+    if (sessionError) {
+      l.error(
+        {
+          key: 'auth_provider:get_session:error',
+          user_id: data.user.id,
+          error: serializeErrorForLog(sessionError),
+        },
+        `supabase getSession failed: ${sessionError.message}`
+      )
+      return null
+    }
+
+    if (!sessionData.session?.access_token) {
       return null
     }
 
     return {
       user: toAuthUser(data.user),
-      accessToken: session.access_token,
+      accessToken: sessionData.session.access_token,
     }
   }
 
-  async signOut(options?: SignOutOptions): Promise<void> {
+  async signOut(options?: SignOutOptions): Promise<SignOutResult> {
     const client = await this.resolveClient()
-    await client.auth.signOut(options)
+    const { error } = await client.auth.signOut(options)
+
+    if (error) {
+      l.error(
+        {
+          key: 'auth_provider:sign_out:error',
+          error: serializeErrorForLog(error),
+          context: {
+            scope: options?.scope,
+            error_code: error.code,
+            error_status: error.status,
+          },
+        },
+        `supabase signOut failed: ${error.message}`
+      )
+    }
+
+    return { error: error ?? null }
   }
 
   private resolveClient(): Promise<SupabaseServerClient> {

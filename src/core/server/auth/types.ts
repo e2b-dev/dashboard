@@ -14,3 +14,11 @@ export type AuthContext = {
 export type SignOutOptions = {
   scope?: 'local' | 'others' | 'global'
 }
+
+export type AuthError = {
+  message: string
+  code?: string
+  status?: number
+}
+
+export type SignOutResult = { error: AuthError | null }

@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { authActionClient } from '@/core/server/actions/client'
 import { auth } from '@/core/server/auth'
 import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 
 const UpdateUserSchema = z
@@ -73,7 +74,18 @@ export const updateUserAction = authActionClient
     if (!error) {
       // ensure other sessions are logged out if password was changed
       if (parsedInput.password) {
-        await auth.signOut({ scope: 'others' })
+        const { error: signOutError } = await auth.signOut({ scope: 'others' })
+
+        if (signOutError) {
+          l.error(
+            {
+              key: 'update_user_action:sign_out_others_failed',
+              user_id: user.id,
+              error: serializeErrorForLog(signOutError),
+            },
+            'failed to invalidate other sessions after password change'
+          )
+        }
       }
 
       revalidatePath('/dashboard', 'layout')
