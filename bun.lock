@@ -51,6 +51,7 @@
         "@vercel/kv": "^3.0.0",
         "@vercel/otel": "^1.13.0",
         "@vercel/speed-insights": "^1.2.0",
+        "@xterm/xterm": "^6.0.0",
         "cheerio": "^1.0.0",
         "chrono-node": "^2.8.4",
         "class-variance-authority": "^0.7.1",
@@ -1015,6 +1016,8 @@
     "@vercel/otel": ["@vercel/otel@1.14.0", "", { "peerDependencies": { "@opentelemetry/api": ">=1.7.0 <2.0.0", "@opentelemetry/api-logs": ">=0.46.0 <0.200.0", "@opentelemetry/instrumentation": ">=0.46.0 <0.200.0", "@opentelemetry/resources": ">=1.19.0 <2.0.0", "@opentelemetry/sdk-logs": ">=0.46.0 <0.200.0", "@opentelemetry/sdk-metrics": ">=1.19.0 <2.0.0", "@opentelemetry/sdk-trace-base": ">=1.19.0 <2.0.0" } }, "sha512-4FXrYvjmHh3ia2v/TN/iiz0oVIw1xSnkW/MzRtsUGpu4jlcfu1qXJIfugQ1iAZnRolyTKn8FxhoWA6EhiAIZBg=="],
 
     "@vercel/speed-insights": ["@vercel/speed-insights@1.2.0", "", { "peerDependencies": { "@sveltejs/kit": "^1 || ^2", "next": ">= 13", "react": "^18 || ^19 || ^19.0.0-rc", "svelte": ">= 4", "vue": "^3", "vue-router": "^4" }, "optionalPeers": ["@sveltejs/kit", "next", "react", "svelte", "vue", "vue-router"] }, "sha512-y9GVzrUJ2xmgtQlzFP2KhVRoCglwfRQgjyfY607aU0hh0Un6d0OUyrJkjuAlsV18qR4zfoFPs/BiIj9YDS6Wzw=="],
+
+    "@xterm/xterm": ["@xterm/xterm@6.0.0", "", {}, "sha512-TQwDdQGtwwDt+2cgKDLn0IRaSxYu1tSUjgKarSDkUM0ZNiSRXFpjxEsvc/Zgc5kq5omJ+V0a8/kIM2WD3sMOYg=="],
 
     "@vitest/coverage-v8": ["@vitest/coverage-v8@3.2.4", "", { "dependencies": { "@ampproject/remapping": "^2.3.0", "@bcoe/v8-coverage": "^1.0.2", "ast-v8-to-istanbul": "^0.3.3", "debug": "^4.4.1", "istanbul-lib-coverage": "^3.2.2", "istanbul-lib-report": "^3.0.1", "istanbul-lib-source-maps": "^5.0.6", "istanbul-reports": "^3.1.7", "magic-string": "^0.30.17", "magicast": "^0.3.5", "std-env": "^3.9.0", "test-exclude": "^7.0.1", "tinyrainbow": "^2.0.0" }, "peerDependencies": { "@vitest/browser": "3.2.4", "vitest": "3.2.4" }, "optionalPeers": ["@vitest/browser"] }, "sha512-EyF9SXU6kS5Ku/U82E259WSnvg6c8KTjppUncuNdm5QHpe17mwREHnjDzozC8x9MZ0xfBUFSaLkRv4TMA75ALQ=="],
 
