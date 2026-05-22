@@ -10,7 +10,7 @@ const schema = serverSchema
     (data) => Boolean(data.KV_REST_API_URL) === Boolean(data.KV_REST_API_TOKEN),
     {
       message: 'KV_REST_API_URL and KV_REST_API_TOKEN must be set together',
-      path: ['KV_REST_API_URL'],
+      path: ['KV_REST_API_URL', 'KV_REST_API_TOKEN'],
     }
   )
   .refine(

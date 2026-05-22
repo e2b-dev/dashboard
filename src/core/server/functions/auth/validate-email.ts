@@ -115,7 +115,6 @@ export const shouldWarnAboutAlternateEmail = async (
               ? serializeErrorForLog(warnedAlternateEmail.error)
               : undefined,
           context: {
-            email: validationResult.address,
             reason: warnedAlternateEmail.reason,
           },
         },
@@ -140,7 +139,6 @@ export const shouldWarnAboutAlternateEmail = async (
                 ? serializeErrorForLog(setResult.error)
                 : undefined,
             context: {
-              email: validationResult.address,
               reason: setResult.reason,
             },
           },
