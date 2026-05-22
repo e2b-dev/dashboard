@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { summarizeClientInput } from '@/core/server/actions/utils'
+import { sanitizeClientInput } from '@/core/server/actions/utils'
 
-describe('summarizeClientInput', () => {
+describe('sanitizeClientInput', () => {
   it('inlines allowlisted scalar keys verbatim', () => {
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       teamSlug: 'acme',
       teamId: 't_123',
       templateId: 'tmpl_456',
@@ -43,7 +43,7 @@ describe('summarizeClientInput', () => {
   })
 
   it('summarizes non-allowlisted keys as a type hint, never the raw value', () => {
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       signatureSecret: 'a'.repeat(64),
       password: 'hunter2',
       apiToken: 'tok_secret',
@@ -66,7 +66,7 @@ describe('summarizeClientInput', () => {
   })
 
   it('mixes allowlisted and sensitive fields safely', () => {
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       teamSlug: 'acme',
       webhookId: 'wh_123',
       signatureSecret: 'super-secret-value',
@@ -80,7 +80,7 @@ describe('summarizeClientInput', () => {
   })
 
   it('summarizes nested objects as "object" without recursing into values', () => {
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       teamSlug: 'acme',
       payload: {
         nested: {
@@ -97,7 +97,7 @@ describe('summarizeClientInput', () => {
   })
 
   it('describes arrays with length', () => {
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       sandboxIds: ['a', 'b', 'c', 'd'],
     })
 
@@ -105,21 +105,21 @@ describe('summarizeClientInput', () => {
   })
 
   it('handles null, undefined, and primitive inputs', () => {
-    expect(summarizeClientInput(null)).toEqual({ _shape: 'null' })
-    expect(summarizeClientInput(undefined)).toEqual({ _shape: 'undefined' })
-    expect(summarizeClientInput('raw-string')).toEqual({
+    expect(sanitizeClientInput(null)).toEqual({ _shape: 'null' })
+    expect(sanitizeClientInput(undefined)).toEqual({ _shape: 'undefined' })
+    expect(sanitizeClientInput('raw-string')).toEqual({
       _shape: 'string(10)',
     })
-    expect(summarizeClientInput(42)).toEqual({ _shape: 'number' })
-    expect(summarizeClientInput(true)).toEqual({ _shape: 'boolean' })
+    expect(sanitizeClientInput(42)).toEqual({ _shape: 'number' })
+    expect(sanitizeClientInput(true)).toEqual({ _shape: 'boolean' })
   })
 
   it('treats top-level array input as a non-object shape', () => {
-    expect(summarizeClientInput(['a', 'b'])).toEqual({ _shape: 'array(2)' })
+    expect(sanitizeClientInput(['a', 'b'])).toEqual({ _shape: 'array(2)' })
   })
 
   it('describes null and undefined values inside an object', () => {
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       teamSlug: 'acme',
       maybeNull: null,
       maybeUndefined: undefined,
@@ -135,7 +135,7 @@ describe('summarizeClientInput', () => {
   it('does not inline allowlisted keys when their value is a non-scalar', () => {
     // teamSlug is allowlisted, but only when scalar — guard against payload
     // shapes that smuggle objects through allowlisted keys.
-    const out = summarizeClientInput({
+    const out = sanitizeClientInput({
       teamSlug: { evil: 'object' },
     })
 
