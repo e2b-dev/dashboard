@@ -177,7 +177,7 @@ export default async function CLIAuthPage({
       <div className="text-fg-tertiary mt-12 leading-8">
         <Suspense fallback={<div>Loading...</div>}>
           {error ? (
-            <ErrorAlert message={decodeURIComponent(error)} />
+            <ErrorAlert message={error} />
           ) : (
             <div>Authorizing CLI...</div>
           )}

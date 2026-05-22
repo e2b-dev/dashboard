@@ -49,6 +49,18 @@ export const updateUserAction = authActionClient
 
     const origin = (await headers()).get('origin')
 
+    let emailRedirectTo: string | undefined
+
+    if (parsedInput.email) {
+      if (!origin) {
+        throw new Error('Missing origin header for email update redirect')
+      }
+
+      const redirectUrl = new URL('/api/auth/email-callback', origin)
+      redirectUrl.searchParams.set('new_email', parsedInput.email)
+      emailRedirectTo = redirectUrl.toString()
+    }
+
     const { data: updateData, error } = await supabase.auth.updateUser(
       {
         email: parsedInput.email,
@@ -57,9 +69,7 @@ export const updateUserAction = authActionClient
           name: parsedInput.name,
         },
       },
-      {
-        emailRedirectTo: `${origin}/api/auth/email-callback?new_email=${parsedInput.email}`,
-      }
+      emailRedirectTo ? { emailRedirectTo } : undefined
     )
 
     if (!error) {

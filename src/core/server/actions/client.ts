@@ -25,7 +25,11 @@ import type {
   RequestScope,
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
-import { ActionError, flattenClientInputValue } from './utils'
+import {
+  ActionError,
+  flattenClientInputValue,
+  sanitizeClientInput,
+} from './utils'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
@@ -135,7 +139,7 @@ export const actionClient = createSafeActionClient({
   const baseLogPayload = {
     server_function_type: type,
     server_function_name: name,
-    server_function_input: clientInput,
+    server_function_input_summary: sanitizeClientInput(clientInput),
     server_function_duration_ms: duration.toFixed(3),
     request_url: requestObservabilityContext.request_url,
     request_path: requestObservabilityContext.request_path,

@@ -7,15 +7,32 @@ export interface BlockedMessage {
   href: string | null
 }
 
+export function getBlockedReasonText(blockedReason: string | null): string {
+  const reason = blockedReason?.toLowerCase() ?? ''
+
+  if (reason.includes(TEAM_BLOCKED_REASONS.billingLimit)) {
+    return 'Billing limit reached.'
+  }
+  if (reason.includes(TEAM_BLOCKED_REASONS.missingPayment)) {
+    return 'Missing payment method.'
+  }
+  if (reason.includes(TEAM_BLOCKED_REASONS.verification)) {
+    return 'Verification required.'
+  }
+
+  return blockedReason ?? 'Team suspended.'
+}
+
 export function getBlockedMessage(
   slug: string,
   blockedReason: string | null
 ): BlockedMessage {
   const reason = blockedReason?.toLowerCase() ?? ''
+  const text = getBlockedReasonText(blockedReason)
 
-  if (reason.includes('billing limit')) {
+  if (reason.includes(TEAM_BLOCKED_REASONS.billingLimit)) {
     return {
-      text: 'Billing limit reached.',
+      text,
       cta: 'Update limit.',
       href: PROTECTED_URLS.LIMITS(slug),
     }
@@ -23,7 +40,7 @@ export function getBlockedMessage(
 
   if (reason.includes(TEAM_BLOCKED_REASONS.missingPayment)) {
     return {
-      text: 'Missing payment method.',
+      text,
       cta: 'Add payment method.',
       href: null,
     }
@@ -31,14 +48,14 @@ export function getBlockedMessage(
 
   if (reason.includes(TEAM_BLOCKED_REASONS.verification)) {
     return {
-      text: 'Verification required.',
+      text,
       cta: 'Complete verification.',
       href: null,
     }
   }
 
   return {
-    text: blockedReason ?? 'Team suspended.',
+    text,
     cta: null,
     href: null,
   }

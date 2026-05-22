@@ -6,6 +6,7 @@ const TOP_LEVEL_REDACTION_KEYS = [
   'refreshToken',
   'refresh_token',
   'secret',
+  'signatureSecret',
   'token',
   'apiKey',
   'api_key',

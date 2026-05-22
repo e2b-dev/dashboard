@@ -44,3 +44,65 @@ export const flattenClientInputValue = (
 
   return undefined
 }
+
+const SAFE_INPUT_KEYS = new Set<string>([
+  'teamSlug',
+  'teamId',
+  'templateId',
+  'sandboxId',
+  'userId',
+  'webhookId',
+  'organizationId',
+  'page',
+  'pageSize',
+  'limit',
+  'offset',
+  'sortBy',
+  'sortOrder',
+  'mode',
+  'kind',
+  'type',
+])
+
+function describeValue(value: unknown): string {
+  if (value === null) return 'null'
+  if (value === undefined) return 'undefined'
+  if (Array.isArray(value)) return `array(${value.length})`
+  const t = typeof value
+  if (t === 'string') return `string(${(value as string).length})`
+  if (t === 'object') return 'object'
+  return t
+}
+
+/**
+ * Sanitize action `clientInput` for safe logging (e.g. telemetry summaries).
+ *
+ * - Allowlisted scalar keys are inlined as-is.
+ * - Everything else is replaced with `_<key>: <type-hint>` so shape and
+ *   length are visible without leaking values.
+ *
+ * Allowlist-based sanitization is the inverse of the old blocklist-via-pino-
+ * redaction approach: new sensitive fields are safe by default and only become
+ * loggable when explicitly added to {@link SAFE_INPUT_KEYS}.
+ */
+export function sanitizeClientInput(input: unknown): Record<string, unknown> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return { _shape: describeValue(input) }
+  }
+
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    const valueType = typeof value
+    if (
+      SAFE_INPUT_KEYS.has(key) &&
+      (valueType === 'string' ||
+        valueType === 'number' ||
+        valueType === 'boolean')
+    ) {
+      out[key] = value
+    } else {
+      out[`_${key}`] = describeValue(value)
+    }
+  }
+  return out
+}

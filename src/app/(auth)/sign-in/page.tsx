@@ -31,8 +31,8 @@ export default function Login() {
   const [message, setMessage] = useState<AuthMessage | undefined>(() => {
     const error = searchParams.get('error')
     const success = searchParams.get('success')
-    if (error) return { error: decodeURIComponent(error) }
-    if (success) return { success: decodeURIComponent(success) }
+    if (error) return { error }
+    if (success) return { success }
     return undefined
   })
 
