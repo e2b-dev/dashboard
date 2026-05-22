@@ -377,8 +377,19 @@ export interface components {
        * @description HTTP response status code, if a response was received
        */
       responseHttpStatusCode?: number | null
-      /** @description Machine-readable non-HTTP or HTTP failure class */
-      errorClass: string
+      /**
+       * @description Machine-readable non-HTTP or HTTP failure class
+       * @enum {string|null}
+       */
+      errorClass:
+        | 'http_error'
+        | 'dns_error'
+        | 'timeout'
+        | 'transport_error'
+        | 'request_error'
+        | 'signature_error'
+        | 'canceled'
+        | null
       /** @description Error message for failures without a useful response body */
       errorMessage?: string | null
       /**

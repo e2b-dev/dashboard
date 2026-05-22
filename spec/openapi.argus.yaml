@@ -338,6 +338,15 @@ components:
           description: HTTP response status code, if a response was received
         errorClass:
           type: string
+          nullable: true
+          enum:
+            - http_error
+            - dns_error
+            - timeout
+            - transport_error
+            - request_error
+            - signature_error
+            - canceled
           description: Machine-readable non-HTTP or HTTP failure class
         errorMessage:
           type: string
