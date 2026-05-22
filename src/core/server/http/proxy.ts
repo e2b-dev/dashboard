@@ -15,6 +15,12 @@ export function isDashboardRoute(pathname: string): boolean {
   return pathname.startsWith(PROTECTED_URLS.DASHBOARD)
 }
 
+function isDashboardTerminalRoute(pathname: string): boolean {
+  return (
+    pathname === '/dashboard/terminal' || pathname === '/dashboard/terminal/'
+  )
+}
+
 export function buildRedirectUrl(path: string, request: NextRequest): URL {
   return new URL(path, request.url)
 }
@@ -23,7 +29,11 @@ export function getAuthRedirect(
   request: NextRequest,
   isAuthenticated: boolean
 ): NextResponse | null {
-  if (isDashboardRoute(request.nextUrl.pathname) && !isAuthenticated) {
+  if (
+    isDashboardRoute(request.nextUrl.pathname) &&
+    !isDashboardTerminalRoute(request.nextUrl.pathname) &&
+    !isAuthenticated
+  ) {
     return NextResponse.redirect(buildRedirectUrl(AUTH_URLS.SIGN_IN, request))
   }
 
