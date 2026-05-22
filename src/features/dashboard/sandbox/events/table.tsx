@@ -90,7 +90,7 @@ export const SandboxEventsTable = ({
           scrollContainer={scrollContainer}
         />
       ) : (
-        <TableBody>
+        <TableBody className="grid min-w-full">
           <TableEmptyState colSpan={4}>
             <HistoryIcon className="size-5" />
             No events found
