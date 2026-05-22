@@ -1,4 +1,13 @@
+import { getBlockedReasonText } from '@/features/dashboard/team-blocked/team-blocked-message'
 import type { RepoError, RepoErrorCode } from './result'
+
+/**
+ * Wire-format prefix used by infra-api for 403 responses caused by a
+ * blocked team. The dashboard pattern-matches this prefix to translate
+ * the response into a friendly, user-facing message.
+ *
+ */
+export const TEAM_BLOCKED_MESSAGE_PREFIX = 'team is blocked'
 
 export const PUBLIC_ERROR_MESSAGE_UNAUTHORIZED = 'Unauthorized'
 export const PUBLIC_ERROR_MESSAGE_FORBIDDEN =
@@ -45,6 +54,27 @@ export const ApiError = (message: string) => new E2BError('API_ERROR', message)
 export const UnknownError = (message?: string) =>
   new E2BError('UNKNOWN', message ?? PUBLIC_ERROR_MESSAGE_INTERNAL)
 
+export function isTeamBlockedError(input: {
+  status?: number
+  message?: string | null
+}): boolean {
+  if (input.status !== 403 || !input.message) return false
+  return input.message.toLowerCase().startsWith(TEAM_BLOCKED_MESSAGE_PREFIX)
+}
+
+export function extractBlockedReason(
+  message: string | null | undefined
+): string | null {
+  if (!message) return null
+  const lower = message.toLowerCase()
+  if (!lower.startsWith(TEAM_BLOCKED_MESSAGE_PREFIX)) return null
+  const rest = message
+    .slice(TEAM_BLOCKED_MESSAGE_PREFIX.length)
+    .replace(/^[:\s]+/, '')
+    .trim()
+  return rest || null
+}
+
 export function createRepoError(input: {
   code: RepoErrorCode
   status: number
@@ -62,8 +92,13 @@ export function createRepoError(input: {
 export function getPublicErrorMessage(input: {
   code?: RepoErrorCode | string
   status?: number
+  message?: string
 }): string {
-  const { code, status } = input
+  const { code, status, message } = input
+
+  if (isTeamBlockedError({ status, message })) {
+    return getBlockedReasonText(extractBlockedReason(message))
+  }
 
   if (code === 'unauthorized' || status === 401)
     return PUBLIC_ERROR_MESSAGE_UNAUTHORIZED
@@ -86,7 +121,11 @@ export function getPublicRepoErrorMessage(error: RepoError): string {
     case 'conflict':
       return error.message
     default:
-      return getPublicErrorMessage({ code: error.code, status: error.status })
+      return getPublicErrorMessage({
+        code: error.code,
+        status: error.status,
+        message: error.message,
+      })
   }
 }
 

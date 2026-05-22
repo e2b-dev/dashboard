@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { getBlockedMessage } from '@/features/dashboard/team-blocked/team-blocked-message'
+import {
+  getBlockedMessage,
+  getBlockedReasonText,
+} from '@/features/dashboard/team-blocked/team-blocked-message'
 
 describe('getBlockedMessage', () => {
   it('links billing limit blocks to limits', () => {
@@ -32,5 +35,36 @@ describe('getBlockedMessage', () => {
       cta: null,
       href: null,
     })
+  })
+})
+
+describe('getBlockedReasonText', () => {
+  it('returns the friendly text for billing limit', () => {
+    expect(getBlockedReasonText('billing limit')).toBe('Billing limit reached.')
+    expect(getBlockedReasonText('Billing limit reached')).toBe(
+      'Billing limit reached.'
+    )
+  })
+
+  it('returns the friendly text for missing payment method', () => {
+    expect(getBlockedReasonText('missing payment method')).toBe(
+      'Missing payment method.'
+    )
+  })
+
+  it('returns the friendly text for verification required', () => {
+    expect(getBlockedReasonText('verification required')).toBe(
+      'Verification required.'
+    )
+  })
+
+  it('returns the raw reason for support-set messages', () => {
+    expect(getBlockedReasonText('blocked by support')).toBe(
+      'blocked by support'
+    )
+  })
+
+  it('returns a generic fallback for null reason', () => {
+    expect(getBlockedReasonText(null)).toBe('Team suspended.')
   })
 })
