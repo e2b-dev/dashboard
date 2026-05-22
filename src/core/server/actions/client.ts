@@ -28,7 +28,7 @@ import type {
 import {
   ActionError,
   flattenClientInputValue,
-  summarizeClientInput,
+  sanitizeClientInput,
 } from './utils'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
@@ -139,11 +139,7 @@ export const actionClient = createSafeActionClient({
   const baseLogPayload = {
     server_function_type: type,
     server_function_name: name,
-    // Do NOT log raw clientInput — it's an arbitrary user-supplied payload
-    // and relying on pino redaction as a blocklist is fragile (any new action
-    // with a non-standard sensitive field name would leak by default).
-    // summarizeClientInput keeps an allowlisted, debug-safe shape view.
-    server_function_input_summary: summarizeClientInput(clientInput),
+    server_function_input_summary: sanitizeClientInput(clientInput),
     server_function_duration_ms: duration.toFixed(3),
     request_url: requestObservabilityContext.request_url,
     request_path: requestObservabilityContext.request_path,

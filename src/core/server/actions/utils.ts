@@ -83,17 +83,17 @@ function describeValue(value: unknown): string {
 }
 
 /**
- * Build a debug-safe summary of an action's clientInput.
+ * Sanitize action `clientInput` for safe logging (e.g. telemetry summaries).
  *
  * - Allowlisted scalar keys are inlined as-is.
  * - Everything else is replaced with `_<key>: <type-hint>` so shape and
  *   length are visible without leaking values.
  *
- * This is the inverse of the previous blocklist-via-pino-redaction approach:
- * new sensitive fields are safe by default and only become loggable when
- * explicitly added to {@link SAFE_INPUT_KEYS}.
+ * Allowlist-based sanitization is the inverse of the old blocklist-via-pino-
+ * redaction approach: new sensitive fields are safe by default and only become
+ * loggable when explicitly added to {@link SAFE_INPUT_KEYS}.
  */
-export function summarizeClientInput(input: unknown): Record<string, unknown> {
+export function sanitizeClientInput(input: unknown): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return { _shape: describeValue(input) }
   }
