@@ -1,6 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import { ALLOW_SEO_INDEXING } from './configs/flags'
+import { createAuthForProxy } from './core/server/auth'
 import { getAuthRedirect } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
@@ -45,7 +45,7 @@ export async function proxy(request: NextRequest) {
       rewriteUrl.hostname = middlewareRewriteConfig.domain
       rewriteUrl.protocol = 'https'
       rewriteUrl.port = ''
-      if (middlewareRewriteRule && middlewareRewriteRule.pathPreprocessor) {
+      if (middlewareRewriteRule?.pathPreprocessor) {
         rewriteUrl.pathname = middlewareRewriteRule.pathPreprocessor(
           rewriteUrl.pathname
         )
@@ -75,30 +75,12 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.next({
       request,
     })
+    const authContext = await createAuthForProxy(
+      request,
+      response
+    ).getAuthContext()
+    const isAuthenticated = !!authContext
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    // checks/refreshes auth session
-    const { error, data } = await supabase.auth.getUser()
-
-    const isAuthenticated = !error && !!data?.user
-
-    // if user is not authenticated, redirects to sign-in
     const authRedirect = getAuthRedirect(request, isAuthenticated)
 
     if (authRedirect) {

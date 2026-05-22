@@ -25,3 +25,7 @@ export const CAPTCHA_REQUIRED_SERVER =
   CAPTCHA_ENABLED &&
   !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
   !!process.env.TURNSTILE_SECRET_KEY
+
+export function isOryAuthEnabled() {
+  return process.env.AUTH_PROVIDER === 'ory'
+}

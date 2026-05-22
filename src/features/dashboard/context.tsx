@@ -1,14 +1,14 @@
 'use client'
 
-import type { User } from '@supabase/supabase-js'
 import { createContext, type ReactNode, useContext, useEffect } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 import type { TeamModel } from '@/core/modules/teams/models'
+import type { AuthUser } from '@/core/server/auth'
 
 interface DashboardContextValue {
   team: TeamModel
   teams: TeamModel[]
-  user: User
+  user: AuthUser
 }
 
 const DashboardContext = createContext<DashboardContextValue | undefined>(
@@ -19,7 +19,7 @@ interface DashboardContextProviderProps {
   children: ReactNode
   initialTeam: TeamModel
   initialTeams: TeamModel[]
-  initialUser: User
+  initialUser: AuthUser
 }
 
 export function DashboardContextProvider({

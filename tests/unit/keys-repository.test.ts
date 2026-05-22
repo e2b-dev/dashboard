@@ -176,7 +176,7 @@ describe('createKeysRepository', () => {
           userCount: 1,
         },
       },
-      'Failed to resolve creator emails from Supabase Auth'
+      'Failed to resolve creator emails from auth provider'
     )
   })
 })

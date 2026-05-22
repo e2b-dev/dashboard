@@ -8,8 +8,7 @@ import {
   createDefaultTemplatesRepository,
   createTemplatesRepository,
 } from '@/core/modules/templates/repository.server'
-import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
-import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
+import { auth } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { infra } from '@/core/shared/clients/api'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
@@ -45,10 +44,9 @@ export default async function TerminalPage({
     return <TerminalUnavailable message="The terminal sandbox ID is invalid." />
   }
 
-  const session = await getSessionInsecure()
-  const { data, error } = await getUserByToken(session?.access_token)
+  const authContext = await auth.getAuthContext()
 
-  if (error || !data.user || !session) {
+  if (!authContext) {
     return (
       <TerminalSignIn
         sandboxId={terminalSandboxId}
@@ -58,7 +56,7 @@ export default async function TerminalPage({
   }
 
   const teamsRepository = createUserTeamsRepository({
-    accessToken: session.access_token,
+    accessToken: authContext.accessToken,
   })
   const teamsResult = await teamsRepository.listUserTeams()
 
@@ -66,10 +64,13 @@ export default async function TerminalPage({
     return <TerminalUnavailable />
   }
 
-  const resolvedTeam = await resolveUserTeam(data.user.id, session.access_token)
+  const resolvedTeam = await resolveUserTeam(
+    authContext.user.id,
+    authContext.accessToken
+  )
   const team = terminalSandboxId
     ? await resolveTerminalSandboxTeam({
-        accessToken: session.access_token,
+        accessToken: authContext.accessToken,
         preferredTeamId: resolvedTeam?.id,
         sandboxId: terminalSandboxId,
         teams: teamsResult.data,
@@ -83,7 +84,7 @@ export default async function TerminalPage({
   const templateAvailable = terminalSandboxId
     ? { ok: true as const, available: true }
     : await isTerminalTemplateAvailable({
-        accessToken: session.access_token,
+        accessToken: authContext.accessToken,
         teamId: team.id,
         template: terminalTemplate,
       })
