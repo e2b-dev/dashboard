@@ -15,10 +15,7 @@ import {
 } from '@/core/modules/users/auth-user-emails.server'
 import { api, infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
-import type {
-  RequestScope,
-  TeamRequestScope,
-} from '@/core/shared/repository-scope'
+import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type TemplatesRepositoryDeps = {
@@ -142,7 +139,7 @@ export function createTemplatesRepository(
 }
 
 export function createDefaultTemplatesRepository(
-  scope: RequestScope,
+  scope: TeamRequestScope,
   deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'authHeaders'> = {
     apiClient: api,
     authHeaders: SUPABASE_AUTH_HEADERS,
@@ -159,7 +156,7 @@ export function createDefaultTemplatesRepository(
       const { data, error, response } = await deps.apiClient.GET(
         '/templates/defaults',
         {
-          headers: deps.authHeaders(scope.accessToken),
+          headers: deps.authHeaders(scope.accessToken, scope.teamId),
           next: { tags: [CACHE_TAGS.DEFAULT_TEMPLATES] },
         }
       )
