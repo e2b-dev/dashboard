@@ -37,7 +37,7 @@ export async function GET(request: Request) {
           key: 'auth_callback:supabase_error',
           error: serializeErrorForLog(error),
           context: {
-            code,
+            hasCode: !!code,
             origin,
             returnTo,
             redirectTo,

@@ -24,7 +24,7 @@ type UpdateUserOptions = {
   email?: string
   password?: string
   name?: string
-  emailRedirectTo: string
+  emailRedirectTo?: string
 }
 
 export const supabaseAuthFlows = {
@@ -73,7 +73,7 @@ export const supabaseAuthFlows = {
 
     return client.auth.updateUser(
       { email, password, data: { name } },
-      { emailRedirectTo }
+      emailRedirectTo ? { emailRedirectTo } : undefined
     )
   },
 
