@@ -7,20 +7,20 @@ import { createClient } from '@/core/shared/clients/supabase/server'
 type SupabaseAuthClient = Awaited<ReturnType<typeof createClient>>['auth']
 type SupabaseAdminAuthClient = typeof supabaseAdmin.auth
 
-export type SignInWithOAuthOptions = {
+type SignInWithOAuthOptions = {
   provider: Extract<Provider, 'github' | 'google'>
   redirectTo: string
   scopes?: string
 }
 
-export type SignUpOptions = {
+type SignUpOptions = {
   email: string
   password: string
   emailRedirectTo: string
   data?: Record<string, unknown>
 }
 
-export type UpdateUserOptions = {
+type UpdateUserOptions = {
   email?: string
   password?: string
   name?: string
@@ -93,5 +93,3 @@ export const supabaseAuthFlows = {
     return supabaseAdmin.auth.admin.updateUserById(...args)
   },
 }
-
-export type SupabaseAuthFlows = typeof supabaseAuthFlows

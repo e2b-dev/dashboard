@@ -40,7 +40,5 @@ export function createAuthForHeaders(headers: Headers): AuthProvider {
     : createSupabaseAuthForHeaders(headers)
 }
 
-export { isOryAuthEnabled } from '@/configs/flags'
 export type { AuthAdmin } from './admin'
-export type { AuthProvider } from './provider'
-export type { AuthContext, AuthUser, SignOutOptions } from './types'
+export type { AuthUser } from './types'

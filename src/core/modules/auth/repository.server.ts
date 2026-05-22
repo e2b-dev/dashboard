@@ -14,14 +14,14 @@ type AuthRepositoryDeps = {
   flows: Pick<typeof supabaseAuthFlows, 'verifyOtp'>
 }
 
-export interface AuthRepository {
+interface AuthRepository {
   verifyOtp(
     tokenHash: string,
     type: OtpType
   ): Promise<RepoResult<VerifyOtpResult>>
 }
 
-export function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
+function createAuthRepository(deps: AuthRepositoryDeps): AuthRepository {
   return {
     async verifyOtp(tokenHash, type) {
       const { data, error } = await deps.flows.verifyOtp({
