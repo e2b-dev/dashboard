@@ -44,7 +44,7 @@ function buildRedirectUrl(
  */
 function buildErrorRedirectUrl(origin: string, message: string): string {
   const url = new URL(origin + AUTH_URLS.SIGN_IN)
-  url.searchParams.set('error', encodeURIComponent(message))
+  url.searchParams.set('error', message)
   return url.toString()
 }
 
