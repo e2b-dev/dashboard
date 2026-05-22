@@ -5,16 +5,6 @@ import type { AuthAdmin } from '../admin'
 import { toAuthUser } from './user'
 
 export const supabaseAuthAdmin: AuthAdmin = {
-  async getUserByAccessToken(accessToken) {
-    const { data, error } = await supabaseAdmin.auth.getUser(accessToken)
-
-    if (error || !data.user) {
-      return null
-    }
-
-    return toAuthUser(data.user)
-  },
-
   async getUserById(userId) {
     const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId)
 

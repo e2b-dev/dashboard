@@ -3,11 +3,7 @@ import 'server-only'
 import type { AuthAdmin } from '../admin'
 
 export const oryAuthAdmin: AuthAdmin = {
-  // fail-closed: tRPC auth middleware treats null as unauthenticated
-  getUserByAccessToken(_accessToken) {
-    return Promise.resolve(null)
-  },
-
+  // fail-closed: callers treat null as unauthenticated / missing
   getUserById(_userId) {
     return Promise.resolve(null)
   },
