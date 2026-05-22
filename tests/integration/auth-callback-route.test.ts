@@ -19,11 +19,15 @@ vi.mock('@/core/shared/clients/supabase/server', () => ({
 }))
 
 vi.mock('@/lib/utils/auth', () => ({
-  encodedRedirect: vi.fn((type, url, message) => ({
-    type,
-    destination: `${url}?${type}=${encodeURIComponent(message)}`,
-    message,
-  })),
+  encodedRedirect: vi.fn((type, url, message) => {
+    const params = new URLSearchParams({ [type]: message })
+
+    return {
+      type,
+      destination: `${url}?${params.toString()}`,
+      message,
+    }
+  }),
 }))
 
 import { GET } from '@/app/api/auth/callback/route'
@@ -63,7 +67,9 @@ describe('Auth Callback Route', () => {
       GET(new Request('https://dashboard.e2b.dev/api/auth/callback?code=test'))
     ).rejects.toEqual({
       type: 'error',
-      destination: `${AUTH_URLS.SIGN_IN}?error=${encodeURIComponent('Missing session after auth callback')}`,
+      destination: `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({
+        error: 'Missing session after auth callback',
+      }).toString()}`,
       message: 'Missing session after auth callback',
     })
   })

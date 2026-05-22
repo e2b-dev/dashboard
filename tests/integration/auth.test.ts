@@ -68,12 +68,19 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/lib/utils/auth', () => ({
-  encodedRedirect: vi.fn((type, url, message, params) => ({
-    type,
-    destination: `${url}?${type}=${encodeURIComponent(message)}${params ? `&${new URLSearchParams(params).toString()}` : ''}`,
-    message,
-    params,
-  })),
+  encodedRedirect: vi.fn((type, url, message, params) => {
+    const queryString = new URLSearchParams({
+      [type]: message,
+      ...(params ?? {}),
+    })
+
+    return {
+      type,
+      destination: `${url}?${queryString.toString()}`,
+      message,
+      params,
+    }
+  }),
 }))
 
 // Use the hoisted mock functions in the module mock
@@ -484,8 +491,7 @@ describe('Auth Actions - Integration Tests', () => {
       // Execute and Verify: Call the sign-out action and expect it to throw redirect
       await expect(signOutAction('/dashboard')).rejects.toEqual(
         expect.objectContaining({
-          destination:
-            AUTH_URLS.SIGN_IN + '?returnTo=' + encodeURIComponent('/dashboard'),
+          destination: `${AUTH_URLS.SIGN_IN}?returnTo=${encodeURIComponent('/dashboard')}`,
         })
       )
     })
