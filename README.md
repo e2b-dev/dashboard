@@ -83,11 +83,11 @@ cp .env.example .env.local
    {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
    ```
 
-#### c. Supabase Storage Setup
+#### b. Supabase Storage Setup
 1. Go to Storage > Buckets
 2. Create a new **public** bucket named `profile-pictures`
 
-#### d. Key-Value Store Setup (Optional)
+#### c. Key-Value Store Setup (Optional)
 Redis/KV is optional for standard dashboard deployments, including local, enterprise, and on-prem environments. The dashboard can boot and run core auth and dashboard workflows without KV configured.
 
 KV is currently used for optional capability checks and for deduplicating ZeroBounce alternate-email warnings. If you need those capabilities, configure a Vercel/Upstash Redis REST-compatible store:
@@ -100,7 +100,7 @@ KV is currently used for optional capability checks and for deduplicating ZeroBo
 
 > **Health check**: When `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set, `/api/health` will report `503 degraded` if KV is unreachable. Leave both unset to opt out of the KV health check entirely.
 
-#### e. Start the development server
+#### d. Start the development server
 ```bash
 # Using Bun (recommended)
 bun run dev
