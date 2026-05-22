@@ -45,14 +45,6 @@ export const flattenClientInputValue = (
   return undefined
 }
 
-/**
- * Keys that are safe to log in cleartext from action inputs — IDs, slugs,
- * enums, and small flags. Any key not on this list is replaced with a type
- * hint (e.g. `string(64)`, `array(3)`, `object`) so we never leak raw values.
- *
- * Keep this list tight: prefer adding scoped per-action logging in the action
- * body over expanding this allowlist.
- */
 const SAFE_INPUT_KEYS = new Set<string>([
   'teamSlug',
   'teamId',
