@@ -4,13 +4,6 @@ import { ClipboardEvent } from 'react'
 import { useDashboard } from '@/features/dashboard/context'
 import { formatDate } from '@/lib/utils/formatting'
 
-/**
- * Values are rendered uppercase via `text-transform`, which Safari (WebKit)
- * leaks into the clipboard — Chrome (127+) and Firefox follow the CSS spec
- * and copy the underlying DOM text. `[overflow-wrap:anywhere]` can also
- * inject line breaks inside long tokens (UUIDs) that surface in
- * `Selection.toString()`.
- */
 const InfoRow = ({ label, value }: { label: string; value: string }) => {
   const handleCopy = (e: ClipboardEvent<HTMLSpanElement>) => {
     if (!window.getSelection()?.toString()) return
