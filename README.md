@@ -1,10 +1,7 @@
-<!-- <p align="center">
-  <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
-</p> -->
 ![Dashboard Preview Dark](/readme-assets/dashboard-preview-dark.png#gh-dark-mode-only)
 ![Dashboard Preview Light](/readme-assets/dashboard-preview-light.png#gh-light-mode-only)
 
-# E2B Dashboard
+# Dashboard
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/1092455714431180995?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.com/channels/1092455714431180995)
@@ -17,13 +14,12 @@
 - 🤝 [Contributing Guide](CONTRIBUTING.md)
 
 ## Overview
-Our Dashboard is a modern, feature-rich web application built to manage and monitor E2B services. Built with Next.js 15 and React 19, it provides a seamless user experience for managing sandboxes, API keys, and usage analytics.
+Our Dashboard is a modern, feature-rich web application built to manage and monitor E2B services. Built with Next.js 16 and React 19, it provides a seamless user experience for managing sandboxes, API keys, and usage analytics.
 
 ## Features
-- **Modern Stack**: Built with Next.js 15, React 19, and TypeScript
+- **Modern Stack**: Built with Next.js 16, React 19, and TypeScript
 - **Real-time Analytics**: Monitor your sandbox usage and performance
 - **Authentication**: Secure authentication powered by Supabase
-- **Documentation**: Integrated MDX documentation support
 - **Type Safety**: Full TypeScript support throughout the codebase
 
 ## Getting Started
@@ -31,12 +27,10 @@ Our Dashboard is a modern, feature-rich web application built to manage and moni
 > **Self-hosting Note**: If you're planning to self-host this dashboard, you'll likely want to self-host our infrastructure first. Please refer to our [infrastructure repository](https://github.com/e2b-dev/infra) for guidance on setting up the E2B platform on your own infrastructure.
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20.9+
 - Git
 - Vercel account
 - Supabase account
-- PostHog account (optional for analytics)
-- Plain account (optional for customer support)
 
 ### Local Development Setup
 
@@ -103,18 +97,11 @@ This project requires a Redis-compatible key-value store. You'll need to:
    {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
    ```
 
-#### c. Database Setup
-1. Apply the database migrations manually:
-   - Navigate to the `/migrations` folder in the project
-   - Execute each SQL migration file in sequential order against your Supabase database
-   - You can run these migrations using the Supabase SQL Editor or a PostgreSQL client
-   - Make sure to apply migrations in the correct order based on their timestamp prefixes
-
-#### d. Supabase Storage Setup
+#### c. Supabase Storage Setup
 1. Go to Storage > Buckets
 2. Create a new **public** bucket named `profile-pictures`
 
-#### e. Start the development server
+#### d. Start the development server
 ```bash
 # Using Bun (recommended)
 bun run dev
@@ -138,8 +125,6 @@ bun run lint       # Run Biome linter
 bun run lint:fix   # Auto-fix Biome lint issues
 bun run format     # Format + organize imports with Biome
 bun run check      # Run full Biome check (lint + format + imports)
-SUPABASE_PROJECT_ID=your-project-id bun run db:types   # Generate DB types
-bun run db:migration # Create migration
 
 # All commands work with npm as well:
 npm run dev
@@ -149,13 +134,15 @@ npm run dev
 ### Project Structure
 ```
 src/
-├── app/          # Next.js app router pages
-├── features/     # Feature-specific components
-├── ui/           # Reusable UI components
-├── lib/          # Utility functions and shared logic
+├── app/          # Next.js App Router pages and layouts
+├── configs/      # Global constants, feature flags, and URL maps
+├── core/         # Server-side logic: actions, adapters, modules, and shared clients
+├── features/     # Domain-specific components (auth, dashboard, billing, etc.)
+├── lib/          # Utility functions, hooks, and shared helpers
 ├── styles/       # Global styles and Tailwind config
-└── types/        # TypeScript type definitions
-└── server/       # Server only logic & actions
+├── trpc/         # tRPC client and server setup
+├── types/        # TypeScript type definitions
+└── ui/           # Reusable UI primitives and Shadcn components
 tests/
 ├── unit/         # Vitest unit tests
 ├── integration/  # Vitest integration tests
