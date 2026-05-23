@@ -38,15 +38,6 @@ Email on the payment method:
 Reason for canceling (optional, helps us improve): `,
   },
   {
-    id: 'refund_or_credit',
-    label: 'Refund or credit request',
-    title: 'Refund / credit request',
-    prefill: `Team ID:
-Invoice number or charge date:
-Amount:
-Reason for the request: `,
-  },
-  {
     id: 'delete_account',
     label: 'Delete my account',
     title: 'Account deletion request',
@@ -88,7 +79,6 @@ Region preference (currently us-west1 only): `,
     title: 'EU cluster / data residency request',
     prefill: `Team ID:
 Specific data residency requirement (region, regulation, customer ask):
-Expected sandbox volume per month:
 Timeline: `,
   },
   {
@@ -100,15 +90,6 @@ Use case:
 Current scale (sandboxes per day or month):
 Expected scale at 6 months:
 Timeline: `,
-  },
-  {
-    id: 'self_hosting',
-    label: 'Self-hosting / BYOC',
-    title: 'Self-hosting / BYOC inquiry',
-    prefill: `Company:
-Cloud provider you want to deploy on:
-Why self-hosted is required (compliance, data residency, latency, etc.):
-Expected scale: `,
   },
   {
     id: 'startup_program',
