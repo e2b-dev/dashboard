@@ -30,7 +30,11 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
   const showWatcherError = watcherError && isRunning && rootNodeCount > 0
 
   const stoppedLabel =
-    sandboxInfo?.state === 'paused' ? 'Sandbox Paused' : sandboxInfo?.state === 'killed' ? 'Sandbox Killed' : 'Sandbox Stopped'
+    sandboxInfo?.state === 'paused'
+      ? 'Sandbox Paused'
+      : sandboxInfo?.state === 'killed'
+        ? 'Sandbox Killed'
+        : 'Sandbox Stopped'
 
   return (
     <AnimatePresence mode="wait">
