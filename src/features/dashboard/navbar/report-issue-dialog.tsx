@@ -35,7 +35,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CloseIcon, FileIcon } from '@/ui/primitives/icons'
+import { CloseIcon, ExternalLinkIcon, FileIcon } from '@/ui/primitives/icons'
 import {
   Select,
   SelectContent,
@@ -264,33 +264,47 @@ export default function ContactSupportDialog({
             <FormField
               control={form.control}
               name="templateId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs text-fg-secondary">
-                    What's this about? (optional)
-                  </FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) =>
-                      handleTemplateChange(value as SupportTemplateId)
-                    }
-                    disabled={isSubmitting}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {SUPPORT_TEMPLATES.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selected = getSupportTemplate(field.value)
+                return (
+                  <FormItem>
+                    <FormLabel className="text-xs text-fg-secondary">
+                      What's this about? (optional)
+                    </FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) =>
+                        handleTemplateChange(value as SupportTemplateId)
+                      }
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SUPPORT_TEMPLATES.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selected.docsUrl && (
+                      <a
+                        href={selected.docsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-fg-secondary hover:text-fg transition-colors w-fit"
+                      >
+                        {selected.docsLabel ?? 'Related docs'}
+                        <ExternalLinkIcon className="!size-3" />
+                      </a>
+                    )}
+                  </FormItem>
+                )
+              }}
             />
 
             <div className="flex flex-col gap-2">
