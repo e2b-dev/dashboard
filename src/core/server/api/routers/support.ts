@@ -1,10 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { createSupportRepository } from '@/core/modules/support/repository.server'
-import {
-  getSupportTemplate,
-  SUPPORT_TEMPLATE_IDS,
-} from '@/core/modules/support/templates'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
@@ -28,7 +24,6 @@ export const supportRouter = createTRPCRouter({
       z.object({
         description: z.string().min(1),
         files: z.array(FileSchema).max(5).optional(),
-        templateId: z.enum(SUPPORT_TEMPLATE_IDS).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -52,11 +47,6 @@ export const supportRouter = createTRPCRouter({
         throwTRPCErrorFromRepoError(teamResult.error)
       }
 
-      const templateTitle =
-        input.templateId && input.templateId !== 'something_else'
-          ? getSupportTemplate(input.templateId).title
-          : undefined
-
       const createResult = await ctx.supportRepository.createSupportThread({
         description: input.description,
         files: input.files,
@@ -65,7 +55,6 @@ export const supportRouter = createTRPCRouter({
         customerEmail: email,
         accountOwnerEmail: teamResult.data.email,
         customerTier: teamResult.data.tier,
-        titleOverride: templateTitle,
       })
       if (!createResult.ok) {
         throwTRPCErrorFromRepoError(createResult.error)
