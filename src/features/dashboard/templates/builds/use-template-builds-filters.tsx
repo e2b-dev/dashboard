@@ -6,8 +6,7 @@ import {
   parseAsStringEnum,
   useQueryStates,
 } from 'nuqs'
-import { useMemo } from 'react'
-import { useDebounceCallback } from 'usehooks-ts'
+import { useCallback, useMemo } from 'react'
 import { INITIAL_BUILD_STATUSES } from '@/core/modules/builds/constants'
 import type { BuildStatus } from '@/core/modules/builds/models'
 
@@ -39,13 +38,19 @@ export default function useTemplateBuildsFilters() {
 
   const q = filters?.q ?? undefined
 
-  const setStatuses = useDebounceCallback((next: BuildStatus[]) => {
-    setFilters({ statuses: next })
-  }, 300)
+  const setStatuses = useCallback(
+    (next: BuildStatus[]) => {
+      setFilters({ statuses: next })
+    },
+    [setFilters]
+  )
 
-  const setQ = useDebounceCallback((next: string) => {
-    setFilters({ q: next.length > 0 ? next : null })
-  }, 300)
+  const setQ = useCallback(
+    (next: string) => {
+      setFilters({ q: next.length > 0 ? next : null })
+    },
+    [setFilters]
+  )
 
   return { statuses, setStatuses, q, setQ }
 }
