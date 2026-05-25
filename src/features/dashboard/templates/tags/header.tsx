@@ -1,36 +1,57 @@
 'use client'
 
-import { SearchIcon } from '@/ui/primitives/icons'
-import { Input } from '@/ui/primitives/input'
+import type { Table } from '@tanstack/react-table'
+import { useCallback } from 'react'
+import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { Button } from '@/ui/primitives/button'
+import { AddIcon, SearchIcon } from '@/ui/primitives/icons'
+import { DebouncedInput } from '@/ui/primitives/input'
+import { useTagTableStore } from './stores/table-store'
+import type { TagGroup } from './types'
 
 interface TagsHeaderProps {
-  search: string
-  onSearchChange: (value: string) => void
-  totalCount: number
-  visibleCount: number
+  table: Table<TagGroup>
 }
 
-export default function TagsHeader({
-  search,
-  onSearchChange,
-  totalCount,
-  visibleCount,
-}: TagsHeaderProps) {
-  const isFiltered = search.trim().length > 0
+export default function TagsHeader({ table }: TagsHeaderProps) {
+  'use no memo'
+
+  const { toast } = useToast()
+  const globalFilter = useTagTableStore((s) => s.globalFilter)
+  const setGlobalFilter = useTagTableStore((s) => s.setGlobalFilter)
+
+  const totalCount = table.options.data.length
+  const visibleCount = table.getFilteredRowModel().rows.length
+  const isFiltered = globalFilter.trim().length > 0
+
+  const handleSearchChange = useCallback(
+    (value: string | number) => {
+      setGlobalFilter(String(value))
+    },
+    [setGlobalFilter]
+  )
+
+  const handleAssignClick = () => {
+    toast(defaultErrorToast('Assign new tag: not implemented yet'))
+  }
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Toolbar row. v1 omits the "Assign new tag" CTA on the right. */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 justify-between">
         <div className="relative w-full max-w-70">
           <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-tertiary pointer-events-none" />
-          <Input
+          <DebouncedInput
             placeholder="Search by name"
             className="pl-[30px]"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={globalFilter}
+            onChange={handleSearchChange}
+            debounce={300}
           />
         </div>
+        <Button variant="primary" onClick={handleAssignClick}>
+          <AddIcon />
+          Assign new tag
+        </Button>
       </div>
 
       <div className="flex items-center justify-between gap-4">

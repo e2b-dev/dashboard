@@ -13,6 +13,8 @@ import type {
   ListTeamTemplatesResult,
   Template,
   TemplateTag,
+  TemplateTagExistsResult,
+  TemplateTagGroup,
 } from '@/core/modules/templates/models'
 import {
   type AuthUserEmailResolver,
@@ -41,7 +43,19 @@ export interface TeamTemplatesRepository {
   ): Promise<RepoResult<ListTeamTemplatesResult>>
   getTemplate(templateId: string): Promise<RepoResult<{ template: Template }>>
   getTags(templateId: string): Promise<RepoResult<{ tags: TemplateTag[] }>>
+  getTagGroups(
+    templateId: string,
+    options?: { assignmentLimit?: number }
+  ): Promise<RepoResult<{ tags: TemplateTagGroup[] }>>
+  checkTagExists(
+    templateId: string,
+    tag: string
+  ): Promise<RepoResult<TemplateTagExistsResult>>
   deleteTemplate(templateId: string): Promise<RepoResult<{ success: true }>>
+  deleteTags(
+    templateName: string,
+    tags: string[]
+  ): Promise<RepoResult<{ success: true }>>
   updateTemplateVisibility(
     templateId: string,
     isPublic: boolean
@@ -108,6 +122,77 @@ export function createTemplatesRepository(
       }
 
       return ok({ tags: res.data ?? [] })
+    },
+    async getTagGroups(templateId, options) {
+      if (USE_MOCK_DATA) {
+        return ok({ tags: [] })
+      }
+
+      const res = await deps.apiClient.GET(
+        '/templates/{templateID}/tags/groups',
+        {
+          params: {
+            path: {
+              templateID: templateId,
+            },
+            query: {
+              assignmentLimit: options?.assignmentLimit,
+            },
+          },
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch template tag groups',
+            res.error
+          )
+        )
+      }
+
+      return ok({ tags: res.data?.tags ?? [] })
+    },
+    async checkTagExists(templateId, tag) {
+      if (USE_MOCK_DATA) {
+        return ok({ exists: false, normalizedTag: tag })
+      }
+
+      const res = await deps.apiClient.GET(
+        '/templates/{templateID}/tags/exists',
+        {
+          params: {
+            path: {
+              templateID: templateId,
+            },
+            query: {
+              tag,
+            },
+          },
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to check template tag existence',
+            res.error
+          )
+        )
+      }
+
+      return ok({
+        exists: res.data?.exists ?? false,
+        normalizedTag: res.data?.normalizedTag ?? tag,
+      })
     },
     async getTeamTemplates() {
       if (USE_MOCK_DATA) {
@@ -198,6 +283,29 @@ export function createTemplatesRepository(
       }))
 
       return ok({ data, nextCursor: res.data.nextCursor ?? null })
+    },
+    async deleteTags(templateName, tags) {
+      const res = await deps.infraClient.DELETE('/templates/tags', {
+        body: {
+          name: templateName,
+          tags,
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to delete template tags',
+            res.error
+          )
+        )
+      }
+
+      return ok({ success: true as const })
     },
     async deleteTemplate(templateId) {
       const res = await deps.infraClient.DELETE('/templates/{templateID}', {

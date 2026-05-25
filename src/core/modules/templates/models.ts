@@ -40,3 +40,10 @@ export interface ListTeamTemplatesResult {
 }
 
 export type TemplateTag = InfraComponents['schemas']['TemplateTag']
+
+export type TemplateTagAssignment =
+  DashboardComponents['schemas']['TemplateTagAssignment']
+export type TemplateTagGroup =
+  DashboardComponents['schemas']['TemplateTagGroup']
+export type TemplateTagExistsResult =
+  DashboardComponents['schemas']['TemplateTagExistsResponse']

@@ -848,6 +848,106 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/templates/{templateID}/tags/groups': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List template tag groups
+     * @description Returns ready template tag assignment groups with bounded per-tag history.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Maximum number of ready assignment rows to return per tag. */
+          assignmentLimit?: components['parameters']['tag_assignment_limit']
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned template tag groups. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagGroupsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/exists': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Check ready template tag existence
+     * @description Checks whether a template tag has at least one ready assignment.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Template tag name to check. */
+          tag: components['parameters']['tag']
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully checked template tag existence. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagExistsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1158,6 +1258,50 @@ export interface components {
       /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
       nextCursor: string | null
     }
+    TemplateTagAssignment: {
+      /**
+       * Format: uuid
+       * @description Identifier of the tag assignment event.
+       */
+      assignmentId: string
+      /**
+       * Format: uuid
+       * @description Identifier of the assigned build.
+       */
+      buildId: string
+      /**
+       * Format: date-time
+       * @description Time when the tag was assigned to the build.
+       */
+      assignedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the assigned build was created.
+       */
+      buildCreatedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the assigned build finished.
+       */
+      buildFinishedAt: string | null
+    }
+    TemplateTagGroup: {
+      /** @description Template tag name. */
+      tag: string
+      /** @description Ready assignment events for this tag, sorted latest first. */
+      assignments: components['schemas']['TemplateTagAssignment'][]
+      /** @description Whether more ready assignment events exist beyond the requested assignment limit. */
+      hasMore: boolean
+    }
+    TemplateTagGroupsResponse: {
+      tags: components['schemas']['TemplateTagGroup'][]
+    }
+    TemplateTagExistsResponse: {
+      /** @description Whether the template tag has at least one ready assignment. */
+      exists: boolean
+      /** @description Normalized template tag name. */
+      normalizedTag: string
+    }
     TeamResolveResponse: {
       /** Format: uuid */
       id: string
@@ -1255,6 +1399,12 @@ export interface components {
       | 'created_at_desc'
       | 'updated_at_asc'
       | 'updated_at_desc'
+    /** @description Identifier of the template. */
+    templateID: string
+    /** @description Template tag name to check. */
+    tag: string
+    /** @description Maximum number of ready assignment rows to return per tag. */
+    tag_assignment_limit: number
   }
   requestBodies: never
   headers: never

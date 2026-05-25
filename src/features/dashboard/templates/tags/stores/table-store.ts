@@ -1,0 +1,76 @@
+import type {
+  ExpandedState,
+  OnChangeFn,
+  SortingState,
+} from '@tanstack/react-table'
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { createHashStorage } from '@/lib/utils/store'
+import { trackTagTableInteraction } from '../table-config'
+
+interface TagTableState {
+  sorting: SortingState
+  globalFilter: string
+  expanded: ExpandedState
+}
+
+interface TagTableActions {
+  setSorting: OnChangeFn<SortingState>
+  setGlobalFilter: OnChangeFn<string>
+  setExpanded: OnChangeFn<ExpandedState>
+  resetFilters: () => void
+}
+
+type Store = TagTableState & TagTableActions
+
+const initialState: TagTableState = {
+  sorting: [{ id: 'assignedAt', desc: true }],
+  globalFilter: '',
+  expanded: {},
+}
+
+export const useTagTableStore = create<Store>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
+
+      setSorting: (sorting) => {
+        const next =
+          typeof sorting === 'function' ? sorting(get().sorting) : sorting
+        set({ sorting: next })
+        trackTagTableInteraction('sorted', { column_count: next.length })
+      },
+
+      setGlobalFilter: (globalFilter) => {
+        const next =
+          typeof globalFilter === 'function'
+            ? globalFilter(get().globalFilter)
+            : globalFilter
+        if (next !== get().globalFilter) {
+          trackTagTableInteraction('searched', {
+            has_query: Boolean(next),
+            query: next,
+          })
+        }
+        set({ globalFilter: next })
+      },
+
+      setExpanded: (expanded) => {
+        const next =
+          typeof expanded === 'function' ? expanded(get().expanded) : expanded
+        set({ expanded: next })
+      },
+
+      resetFilters: () => {
+        set({ globalFilter: '' })
+        trackTagTableInteraction('reset filters')
+      },
+    }),
+    {
+      name: 'tags-table',
+      storage: createJSONStorage(() => createHashStorage(initialState)),
+      // `expanded` is transient UI state — don't pollute the URL with it.
+      partialize: ({ sorting, globalFilter }) => ({ sorting, globalFilter }),
+    }
+  )
+)
