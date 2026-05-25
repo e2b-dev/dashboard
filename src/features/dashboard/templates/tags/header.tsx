@@ -41,7 +41,7 @@ export default function TagsHeader({
             href="https://e2b.dev/docs/template/tags"
             target="_blank"
             rel="noopener"
-            className="text-fg-secondary underline-offset-2 underline"
+            className="underline-offset-2 underline"
           >
             Read more
           </a>

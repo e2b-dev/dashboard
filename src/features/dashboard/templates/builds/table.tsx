@@ -45,7 +45,7 @@ const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
 const MAX_CACHED_PAGES = 3
 
 const COLUMN_WIDTHS = {
-  id: 152,
+  id: 168,
   status: 96,
   template: 192,
   started: 126,
