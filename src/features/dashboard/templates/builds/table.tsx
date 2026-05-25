@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
+  BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/modules/builds/models'
@@ -37,8 +38,6 @@ import {
   Status,
   Template,
 } from './table-cells'
-import useFilters from './use-filters'
-import useTemplateBuildsFilters from './use-template-builds-filters'
 
 const BUILDS_REFETCH_INTERVAL_MS = 15_000
 const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
@@ -53,11 +52,22 @@ const COLUMN_WIDTHS = {
 } as const
 
 interface BuildsTableProps {
-  // When set, scopes the backend query to this template and enables 'q' as a client-side build-ID filter.
-  templateId?: string
+  // Pre-resolved filter values; the table is hook-source agnostic.
+  filters: {
+    statuses: BuildStatus[]
+    buildIdOrTemplate?: string
+  }
+  // Optional client-side row filter applied after fetch + live-status merge.
+  postFilter?: (build: ListedBuildModel) => boolean
+  // Whether to render the Template column. Default true.
+  showTemplateColumn?: boolean
 }
 
-const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
+const BuildsTable = ({
+  filters,
+  postFilter,
+  showTemplateColumn = true,
+}: BuildsTableProps) => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -65,18 +75,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
 
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
-  const isTemplateScoped = templateId !== undefined
-
-  // Hook order must stay stable; templateId only changes on route navigation (component unmount).
-  const sharedFilters = useFilters()
-  const scopedFilters = useTemplateBuildsFilters()
-
-  const statuses = isTemplateScoped
-    ? scopedFilters.statuses
-    : sharedFilters.statuses
-  const buildIdOrTemplate = isTemplateScoped
-    ? templateId
-    : sharedFilters.buildIdOrTemplate
+  const { statuses, buildIdOrTemplate } = filters
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
     buildIdOrTemplate
@@ -146,15 +145,13 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     [builds, runningStatusesData]
   )
 
-  // 'q' is a client-side narrow over the templateID-scoped backend result.
+  // Optional client-side row filter from the caller. The backend query
+  // is the source of truth for which builds belong to this table; the
+  // postFilter only narrows the already-loaded pages.
   const visibleBuilds = useMemo(() => {
-    if (!isTemplateScoped) return buildsWithLiveStatus
-    const query = scopedFilters.q?.trim().toLowerCase()
-    if (!query) return buildsWithLiveStatus
-    return buildsWithLiveStatus.filter((b) =>
-      b.id.toLowerCase().includes(query)
-    )
-  }, [buildsWithLiveStatus, isTemplateScoped, scopedFilters.q])
+    if (!postFilter) return buildsWithLiveStatus
+    return buildsWithLiveStatus.filter(postFilter)
+  }, [buildsWithLiveStatus, postFilter])
 
   const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
     teamSlug,
@@ -178,7 +175,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
-  const visibleColumnCount = isTemplateScoped ? 5 : 6
+  const visibleColumnCount = showTemplateColumn ? 6 : 5
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
@@ -189,7 +186,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
         <Table suppressHydrationWarning>
           <colgroup>
             <col style={colStyle(COLUMN_WIDTHS.status)} />
-            {!isTemplateScoped && (
+            {showTemplateColumn && (
               <col style={colStyle(COLUMN_WIDTHS.template)} />
             )}
             <col style={colStyle(COLUMN_WIDTHS.started)} />
@@ -201,7 +198,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Status</TableHead>
-              {!isTemplateScoped && <TableHead>Template</TableHead>}
+              {showTemplateColumn && <TableHead>Template</TableHead>}
               <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
                   Started
@@ -278,7 +275,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
                       >
                         <Status status={build.status} />
                       </TableCell>
-                      {!isTemplateScoped && (
+                      {showTemplateColumn && (
                         <TableCell
                           className="py-1.5 overflow-hidden"
                           style={{ maxWidth: COLUMN_WIDTHS.template }}

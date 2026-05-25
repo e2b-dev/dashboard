@@ -66,6 +66,38 @@ export const templatesRouter = createTRPCRouter({
       return result.data
     }),
 
+  getTagGroups: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        assignmentLimit: z.number().int().min(1).max(25).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.getTagGroups(
+        input.templateId,
+        { assignmentLimit: input.assignmentLimit }
+      )
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
+
+  checkTagExists: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        tag: z.string().min(1),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.checkTagExists(
+        input.templateId,
+        input.tag
+      )
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
+
   getDefaultTemplatesCached: templatesRepositoryProcedure.query(
     async ({ ctx }) => {
       const result = await ctx.templatesRepository.getDefaultTemplatesCached()
@@ -122,6 +154,23 @@ export const templatesRouter = createTRPCRouter({
       )
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
 
+      return result.data
+    }),
+
+  deleteTags: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        templateName: z.string(),
+        tags: z.array(z.string()).min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.deleteTags(
+        input.templateName,
+        input.tags
+      )
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
       return result.data
     }),
 })

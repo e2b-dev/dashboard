@@ -1,3 +1,4 @@
+import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 
 export type Template = Pick<
@@ -25,3 +26,10 @@ export type DefaultTemplate = Template & {
 }
 
 export type TemplateTag = InfraComponents['schemas']['TemplateTag']
+
+export type TemplateTagAssignment =
+  DashboardComponents['schemas']['TemplateTagAssignment']
+export type TemplateTagGroup =
+  DashboardComponents['schemas']['TemplateTagGroup']
+export type TemplateTagExistsResult =
+  DashboardComponents['schemas']['TemplateTagExistsResponse']
