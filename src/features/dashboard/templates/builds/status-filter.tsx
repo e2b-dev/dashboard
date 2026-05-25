@@ -25,12 +25,6 @@ interface BuildsStatusFilterProps {
   onStatusesChange: (statuses: BuildStatus[]) => void
 }
 
-/**
- * Pure presentational status filter for the builds list. Takes a value
- * and a change callback; owns no state, calls no hooks beyond primitive
- * UI ones. Mirrors the pattern used by `EventTypeFilter` in
- * `features/dashboard/sandbox/events/`.
- */
 export function BuildsStatusFilter({
   statuses,
   onStatusesChange,
@@ -38,8 +32,7 @@ export function BuildsStatusFilter({
   const toggleStatus = (status: BuildStatus) => {
     const isSelected = statuses.includes(status)
 
-    // Don't allow deselecting the last status \u2014 the table query needs
-    // at least one to filter on.
+    // Don't allow deselecting the last status — the table query needs at least one.
     if (isSelected && statuses.length === 1) return
 
     const next = isSelected

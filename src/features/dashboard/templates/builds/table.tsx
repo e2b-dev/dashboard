@@ -53,16 +53,7 @@ const COLUMN_WIDTHS = {
 } as const
 
 interface BuildsTableProps {
-  /**
-   * When provided, the table is scoped to a single template:
-   *  - filters are read from `useTemplateBuildsFilters` (statuses + `q`)
-   *  - the Template column is hidden
-   *  - the `buildIdOrTemplate` query param is set to this UUID, so the
-   *    backend returns only builds for this template
-   *  - the scoped `q` value applies as an additional client-side filter
-   *    (case-insensitive substring match on build ID) so cross-template
-   *    name matches can never leak in
-   */
+  // When set, scopes the backend query to this template and enables 'q' as a client-side build-ID filter.
   templateId?: string
 }
 
@@ -76,10 +67,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
 
   const isTemplateScoped = templateId !== undefined
 
-  // Two filter hooks live here, but only one is active per render. React
-  // requires consistent hook order across renders — `templateId` only
-  // changes via route navigation (which unmounts the component), so it is
-  // safe to call both unconditionally and pick which result to use.
+  // Hook order must stay stable; templateId only changes on route navigation (component unmount).
   const sharedFilters = useFilters()
   const scopedFilters = useTemplateBuildsFilters()
 
@@ -94,7 +82,6 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     buildIdOrTemplate
   )
 
-  // Builds list query
   const {
     data: paginatedBuilds,
     fetchNextPage,
@@ -131,7 +118,6 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     }
   }, [isFetchingBuilds, isFilterRefetching, clearFilterRefetching])
 
-  // Running builds status polling
   const runningBuildIds = useMemo(
     () => builds.filter((b) => b.status === 'building').map((b) => b.id),
     [builds]
@@ -160,9 +146,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     [builds, runningStatusesData]
   )
 
-  // Client-side narrowing for the scoped builds tab. The backend query
-  // is templateID-scoped (authoritative); `q` only filters the loaded
-  // pages by build-ID substring.
+  // 'q' is a client-side narrow over the templateID-scoped backend result.
   const visibleBuilds = useMemo(() => {
     if (!isTemplateScoped) return buildsWithLiveStatus
     const query = scopedFilters.q?.trim().toLowerCase()
@@ -172,7 +156,6 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     )
   }, [buildsWithLiveStatus, isTemplateScoped, scopedFilters.q])
 
-  // Handlers
   const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
     teamSlug,
     statuses,
@@ -190,16 +173,12 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     }
   }, [queryClient, buildsQueryKey])
 
-  // Derived UI state
   const hasData = visibleBuilds.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
-  // colSpan must match the visible column count (status + [template] +
-  // started + duration + id + reason filler) when the Template column is
-  // conditionally hidden in template-scoped mode.
-  const colSpan = isTemplateScoped ? 5 : 6
+  const visibleColumnCount = isTemplateScoped ? 5 : 6
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
@@ -242,7 +221,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
           >
             {showLoader && (
               <TableRow>
-                <TableCell colSpan={colSpan}>
+                <TableCell colSpan={visibleColumnCount}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
@@ -252,7 +231,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
 
             {showEmpty && (
               <TableRow>
-                <TableCell colSpan={colSpan}>
+                <TableCell colSpan={visibleColumnCount}>
                   <BuildsEmpty error={buildsError?.message} />
                 </TableCell>
               </TableRow>
@@ -263,7 +242,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
                 {hasScrolledPastInitialPages && (
                   <TableRow>
                     <TableCell
-                      colSpan={colSpan}
+                      colSpan={visibleColumnCount}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
@@ -336,7 +315,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
                 {hasNextPage && (
                   <TableRow>
                     <TableCell
-                      colSpan={colSpan}
+                      colSpan={visibleColumnCount}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton

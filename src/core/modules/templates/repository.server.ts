@@ -60,9 +60,7 @@ export function createTemplatesRepository(
 ): TeamTemplatesRepository {
   return {
     async getTemplate(templateId) {
-      // v1: filter server-side over the existing list endpoint. No
-      // separate per-template fetch needed; this keeps the cache hot
-      // for cross-page reuse and avoids any new infra dependencies.
+      // Filter the list endpoint; infra has no per-template GET that exposes the same shape.
       const listResult = await this.getTeamTemplates()
       if (!listResult.ok) return listResult
 

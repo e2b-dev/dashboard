@@ -17,16 +17,6 @@ interface TemplateDetailHeaderProps {
 
 const NULL_BUILD_ID = '00000000-0000-0000-0000-000000000000'
 
-/**
- * Overview-tab header: the 5-cell DetailsRow.
- *
- * The fetch here is deduped with the layout-level TemplateTitleBinder
- * (same query key), so this renders synchronously off the cache when
- * the user lands on Overview after the binder has already resolved.
- *
- * 404 handling lives in the binder, not here \u2014 by the time this
- * component renders, the template is guaranteed to exist.
- */
 export default function TemplateDetailHeader({
   teamSlug,
   templateId,

@@ -36,7 +36,6 @@ export default function TemplateDetailTabs({
 
   useEffect(() => {
     if (prevTabRef.current === null) {
-      // First render \u2014 emit `template detail opened` once per mount.
       posthog.capture('template detail opened', {
         templateId,
         tab: activeTab,

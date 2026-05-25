@@ -13,16 +13,7 @@ interface TemplateTitleBinderProps {
   templateId: string
 }
 
-/**
- * Renders nothing. Fetches the template, then drives the dashboard
- * title bar via usePageTitle. Lives in the detail layout so the title
- * stays correct on every tab (Overview, Builds, Tags) without each
- * tab needing its own title-management logic.
- *
- * Doubles as the central 404 entry point: if the templateId isn't in
- * the team's list, this throws notFound() and all three tabs fail
- * cleanly to the dashboard not-found page.
- */
+// Drives the dashboard title for all detail tabs from a single fetch; also the 404 entry point.
 export default function TemplateTitleBinder({
   teamSlug,
   templateId,
