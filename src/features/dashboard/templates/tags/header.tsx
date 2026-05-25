@@ -1,6 +1,6 @@
 'use client'
 
-import { SearchIcon } from '@/ui/primitives/icons'
+import { ExternalLinkIcon, SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 
 interface TagsHeaderProps {
@@ -37,9 +37,15 @@ export default function TagsHeader({
       <div className="flex items-center justify-between gap-4">
         <p className="prose-body text-fg-tertiary">
           Tags identify builds and can only be assigned to one build at once.{' '}
-          <span className="underline cursor-default" aria-disabled="true">
-            Read more.
-          </span>
+          <a
+            href="https://e2b.dev/docs/template/tags"
+            target="_blank"
+            rel="noopener"
+            className="text-fg-secondary underline-offset-2 hover:underline inline-flex items-center gap-0.5"
+          >
+            Read more
+            <ExternalLinkIcon className="size-3" />
+          </a>
         </p>
         <p className="prose-body text-fg-tertiary whitespace-nowrap">
           {isFiltered
