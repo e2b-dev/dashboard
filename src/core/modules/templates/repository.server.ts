@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
@@ -24,7 +24,7 @@ import { err, ok, type RepoResult } from '@/core/shared/result'
 type TemplatesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
   resolveAuthUserEmailsById: AuthUserEmailResolver
 }
 
@@ -48,7 +48,7 @@ export function createTemplatesRepository(
   deps: TemplatesRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
     resolveAuthUserEmailsById: getAuthUserEmailsById,
   }
 ): TeamTemplatesRepository {
@@ -145,7 +145,7 @@ export function createDefaultTemplatesRepository(
   scope: RequestScope,
   deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'authHeaders'> = {
     apiClient: api,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): DefaultTemplatesRepository {
   return {

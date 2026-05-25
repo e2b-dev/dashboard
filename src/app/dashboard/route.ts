@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { TAB_URL_MAP } from '@/configs/dashboard-tab-url-map'
+import { isOryAuthEnabled } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { auth } from '@/core/server/auth'
+import { getOrySignOutPath } from '@/core/server/auth/ory/signout'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { setTeamCookies } from '@/lib/utils/cookies'
@@ -34,14 +36,26 @@ export async function GET(request: NextRequest) {
   )
 
   if (!team) {
-    await auth.signOut()
+    const error = 'No personal team found. Please contact support.'
 
-    const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
+    if (isOryAuthEnabled()) {
+      return NextResponse.redirect(
+        new URL(
+          getOrySignOutPath({
+            returnTo: AUTH_URLS.SIGN_IN,
+            message: { type: 'error', value: error },
+          }),
+          request.url
+        )
+      )
+    }
+
+    await auth.signOut()
 
     return encodedRedirect(
       'error',
-      signInUrl.toString(),
-      'No personal team found. Please contact support.'
+      new URL(AUTH_URLS.SIGN_IN, request.url).toString(),
+      error
     )
   }
 

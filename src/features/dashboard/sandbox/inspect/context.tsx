@@ -11,7 +11,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import { supabase } from '@/core/shared/clients/supabase/client'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
@@ -193,7 +193,7 @@ export default function SandboxInspectProvider({
       // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
       timeoutMs: 1_000,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(data.session.access_token, teamId),
+        ...authHeaders(data.session.access_token, teamId),
       },
     })
 

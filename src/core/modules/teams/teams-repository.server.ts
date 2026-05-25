@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { AuthAdmin } from '@/core/server/auth'
 import { authAdmin } from '@/core/server/auth'
@@ -12,7 +12,7 @@ import type { TeamMember } from './models'
 
 type TeamsRepositoryDeps = {
   apiClient: typeof api
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
   authAdmin: Pick<AuthAdmin, 'getUserById'>
 }
 
@@ -50,7 +50,7 @@ export function createTeamsRepository(
   scope: TeamsRequestScope,
   deps: TeamsRepositoryDeps = {
     apiClient: api,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
     authAdmin,
   }
 ): TeamsRepository {

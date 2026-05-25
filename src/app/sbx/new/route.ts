@@ -1,6 +1,6 @@
 import Sandbox from 'e2b'
 import { type NextRequest, NextResponse } from 'next/server'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { auth } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
@@ -32,7 +32,7 @@ export const GET = async (req: NextRequest) => {
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(authContext.accessToken, team.id),
+        ...authHeaders(authContext.accessToken, team.id),
       },
     })
 

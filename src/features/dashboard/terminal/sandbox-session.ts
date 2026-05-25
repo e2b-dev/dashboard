@@ -1,5 +1,5 @@
 import Sandbox from 'e2b'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { supabase } from '@/core/shared/clients/supabase/client'
 import { TERMINAL_SANDBOX_TIMEOUT_MS } from './constants'
 import {
@@ -30,7 +30,7 @@ export async function openTerminalSandbox({
   }
 
   const userId = data.session.user.id
-  const headers = SUPABASE_AUTH_HEADERS(data.session.access_token, teamId)
+  const headers = authHeaders(data.session.access_token, teamId)
 
   if (sandboxId) {
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)

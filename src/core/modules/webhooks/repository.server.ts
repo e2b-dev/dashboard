@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { infra } from '@/core/shared/clients/api'
 import type { components as ArgusComponents } from '@/core/shared/contracts/argus-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -9,7 +9,7 @@ import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type WebhooksRepositoryDeps = {
   infraClient: typeof infra
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type WebhooksScope = TeamRequestScope
@@ -40,7 +40,7 @@ export function createWebhooksRepository(
   scope: WebhooksScope,
   deps: WebhooksRepositoryDeps = {
     infraClient: infra,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): WebhooksRepository {
   return {

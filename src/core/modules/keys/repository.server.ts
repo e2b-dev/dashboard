@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { CreatedTeamAPIKey, TeamAPIKey } from '@/core/modules/keys/models'
 import {
   type AuthUserEmailResolver,
@@ -14,7 +14,7 @@ import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type KeysRepositoryDeps = {
   infraClient: typeof infra
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
   resolveAuthUserEmailsById: AuthUserEmailResolver
 }
 
@@ -30,7 +30,7 @@ export function createKeysRepository(
   scope: KeysScope,
   deps: KeysRepositoryDeps = {
     infraClient: infra,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
     resolveAuthUserEmailsById: getAuthUserEmailsById,
   }
 ): KeysRepository {

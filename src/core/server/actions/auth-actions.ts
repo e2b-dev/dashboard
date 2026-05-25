@@ -4,12 +4,13 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
-import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
+import { CAPTCHA_REQUIRED_SERVER, isOryAuthEnabled } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import { auth } from '@/core/server/auth'
+import { getOrySignOutPath } from '@/core/server/auth/ory/signout'
 import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import {
   forgotPasswordSchema,
@@ -356,10 +357,15 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
+  const signInPath =
+    AUTH_URLS.SIGN_IN +
+    (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
+
+  if (isOryAuthEnabled()) {
+    throw redirect(getOrySignOutPath({ returnTo: signInPath }))
+  }
+
   await auth.signOut()
 
-  throw redirect(
-    AUTH_URLS.SIGN_IN +
-      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
-  )
+  throw redirect(signInPath)
 }

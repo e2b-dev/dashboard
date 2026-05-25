@@ -1,45 +1,56 @@
 import 'server-only'
 
-import type { NextRequest, NextResponse } from 'next/server'
-import { l } from '@/core/shared/clients/logger/logger'
+import type { Session } from 'next-auth'
+import { auth as authjs } from '@/auth'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import type { AuthProvider } from '../provider'
-import type { AuthContext, SignOutOptions, SignOutResult } from '../types'
+import { fromAuthSession } from './identity'
 
-export class OryHostedAuthProvider implements AuthProvider {
-  constructor(private readonly cookie: string = '') {}
+export const oryAuthProvider: AuthProvider = {
+  async getAuthContext() {
+    let session: Session | null
+    try {
+      session = await authjs()
+    } catch (error) {
+      l.error(
+        {
+          key: 'auth_provider:ory_get_session:error',
+          error: serializeErrorForLog(error),
+        },
+        'Auth.js auth() helper threw while reading session'
+      )
+      return null
+    }
 
-  // fail-closed until ory is wired: callers (proxy, middleware) treat null as
-  // unauthenticated and redirect to sign-in instead of letting requests through
-  getAuthContext(): Promise<AuthContext | null> {
-    void this.cookie
-    l.warn(
-      {
-        key: 'auth_provider:ory_stub_unauthenticated',
-      },
-      'OryHostedAuthProvider.getAuthContext is a stub and always returns null'
-    )
-    return Promise.resolve(null)
-  }
+    if (!session?.user?.id || !session.accessToken) {
+      return null
+    }
 
-  signOut(_options?: SignOutOptions): Promise<SignOutResult> {
+    if (session.error) {
+      l.warn(
+        {
+          key: 'auth_provider:ory_session_error',
+          user_id: session.user.id,
+          context: { error: session.error },
+        },
+        `Auth.js session reports error '${session.error}'; treating as unauthenticated`
+      )
+      return null
+    }
+
+    return {
+      user: fromAuthSession(session),
+      accessToken: session.accessToken,
+    }
+  },
+
+  signOut() {
     return Promise.resolve({
       error: {
-        message: 'OryHostedAuthProvider.signOut is not implemented yet',
-        code: 'ory_stub_not_implemented',
+        message:
+          'Ory sign-out must redirect through /api/auth/oauth/signout-flow',
+        code: 'ory_sign_out_requires_route',
       },
     })
-  }
-}
-
-export function createOryAuthForProxy(
-  request: NextRequest,
-  _response: NextResponse
-): OryHostedAuthProvider {
-  return new OryHostedAuthProvider(request.headers.get('cookie') ?? '')
-}
-
-export function createOryAuthForHeaders(
-  headers: Headers
-): OryHostedAuthProvider {
-  return new OryHostedAuthProvider(headers.get('cookie') ?? '')
+  },
 }

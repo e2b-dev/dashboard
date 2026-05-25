@@ -1,12 +1,20 @@
-import { type NextRequest, NextResponse } from 'next/server'
-import { ALLOW_SEO_INDEXING } from './configs/flags'
+import {
+  type NextFetchEvent,
+  type NextRequest,
+  NextResponse,
+} from 'next/server'
+import { auth as authjsMiddleware } from '@/auth'
+import { ALLOW_SEO_INDEXING, isOryAuthEnabled } from './configs/flags'
 import { createAuthForProxy } from './core/server/auth'
 import { getAuthRedirect } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
 import { getRewriteForPath } from './lib/utils/rewrites'
 
-export async function proxy(request: NextRequest) {
+async function proxyCore(
+  request: NextRequest,
+  resolvedIsAuthenticated?: boolean
+): Promise<Response> {
   try {
     const pathname = request.nextUrl.pathname
 
@@ -75,11 +83,17 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.next({
       request,
     })
-    const authContext = await createAuthForProxy(
-      request,
-      response
-    ).getAuthContext()
-    const isAuthenticated = !!authContext
+
+    let isAuthenticated: boolean
+    if (resolvedIsAuthenticated !== undefined) {
+      isAuthenticated = resolvedIsAuthenticated
+    } else {
+      const authContext = await createAuthForProxy(
+        request,
+        response
+      ).getAuthContext()
+      isAuthenticated = !!authContext
+    }
 
     const authRedirect = getAuthRedirect(request, isAuthenticated)
 
@@ -106,6 +120,17 @@ export async function proxy(request: NextRequest) {
       request,
     })
   }
+}
+
+const proxyWithOryAuth = authjsMiddleware(async (req, _event: NextFetchEvent) =>
+  proxyCore(req, !!req.auth)
+)
+
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (isOryAuthEnabled()) {
+    return proxyWithOryAuth(request, event)
+  }
+  return proxyCore(request)
 }
 
 export const config = {

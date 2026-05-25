@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next/types'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
@@ -181,7 +181,7 @@ async function hasSandboxInTeam({
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        ...authHeaders(accessToken, teamId),
       },
       cache: 'no-store',
     })
