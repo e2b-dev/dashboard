@@ -18,6 +18,26 @@ export const serverSchema = z.object({
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),
   ORY_SDK_URL: z.url().optional(),
+  // Hydra's admin API. In Ory Network this is identical to ORY_SDK_URL
+  // (admin is on the same host, gated by ORY_PROJECT_API_TOKEN). In a
+  // self-hosted Hydra (e.g. local devenv) the admin port is different
+  // (4445 vs 4444), so we need a separate URL. When unset, callers fall
+  // back to ORY_SDK_URL.
+  ORY_HYDRA_ADMIN_URL: z.url().optional(),
+  // Subject used to auto-accept Hydra login challenges in local/dev setups
+  // where the dashboard is configured to act as both the OIDC client AND a
+  // single-user login provider. Leave unset in production: production
+  // deployments delegate the login UI to a real IdP (Kratos / Ory
+  // Network) and never auto-accept.
+  ORY_LOCAL_LOGIN_SUBJECT: z.string().min(1).optional(),
+  // Fallback identity claims used by bootstrapOryUser when the JWT
+  // access token does not carry email / name claims. Self-hosted Hydra
+  // with skip_consent=true cannot inject identity claims, so we supply
+  // them from the environment instead. Production must leave these
+  // unset — bootstrap will then refuse to run if the IdP doesn't
+  // supply the claims itself, which is the safer default.
+  ORY_LOCAL_LOGIN_EMAIL: z.email().optional(),
+  ORY_LOCAL_LOGIN_NAME: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),

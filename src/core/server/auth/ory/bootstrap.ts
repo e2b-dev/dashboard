@@ -27,11 +27,24 @@ export async function bootstrapOryUser(
     const accessClaims = decodeJwtClaims(input.accessToken)
     const idClaims = input.idToken ? decodeJwtClaims(input.idToken) : null
     const oidcUserId = readRequiredStringClaim(accessClaims, 'sub')
+    // Local-dev fallback: when self-hosted Hydra is configured with
+    // `skip_consent: true`, identity claims (email / name) never get a
+    // chance to be injected — Hydra v2.2 only supports propagating them
+    // via the consent step's `session.id_token`, which we skip. Fall
+    // back to ORY_LOCAL_LOGIN_EMAIL / ORY_LOCAL_LOGIN_NAME from the
+    // environment so bootstrap can still succeed. These env vars are
+    // intentionally unset in production: real deployments delegate
+    // login to an IdP that supplies the claims.
     const oidcUserEmail =
       readStringClaim(accessClaims, 'email') ??
-      readStringClaim(idClaims, 'email')
+      readStringClaim(idClaims, 'email') ??
+      process.env.ORY_LOCAL_LOGIN_EMAIL ??
+      null
     const oidcUserName =
-      readDisplayName(accessClaims) ?? readDisplayName(idClaims)
+      readDisplayName(accessClaims) ??
+      readDisplayName(idClaims) ??
+      process.env.ORY_LOCAL_LOGIN_NAME ??
+      null
 
     if (!oidcUserId || !oidcUserEmail) {
       l.error(
