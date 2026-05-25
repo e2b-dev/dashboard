@@ -54,7 +54,8 @@ export function BuildLinkCell({
     <span
       className={cn(
         'font-mono prose-body-numeric',
-        isLinkable && 'underline-offset-2 group-hover/build:underline'
+        isLinkable &&
+          'underline underline-offset-2 decoration-fg-tertiary group-hover/build:decoration-fg'
       )}
     >
       {shortId}
