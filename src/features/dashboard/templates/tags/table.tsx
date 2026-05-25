@@ -89,6 +89,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
                   sortKey="tag"
                   activeKey={sortKey}
                   dir={sortDir}
+                  defaultDir="asc"
                   onChange={handleSortChange}
                 />
               </TableHead>
@@ -98,6 +99,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
                   sortKey="createdAt"
                   activeKey={sortKey}
                   dir={sortDir}
+                  defaultDir="desc"
                   onChange={handleSortChange}
                 />
               </TableHead>

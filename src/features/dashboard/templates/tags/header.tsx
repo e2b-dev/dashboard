@@ -1,6 +1,6 @@
 'use client'
 
-import { ExternalLinkIcon, SearchIcon } from '@/ui/primitives/icons'
+import { SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 
 interface TagsHeaderProps {
@@ -23,10 +23,10 @@ export default function TagsHeader({
       {/* Toolbar row. v1 omits the "Assign new tag" CTA on the right. */}
       <div className="flex items-center gap-2">
         <div className="relative w-full max-w-70">
-          <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-fg-tertiary pointer-events-none" />
+          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-tertiary pointer-events-none" />
           <Input
             placeholder="Search by name"
-            className="pl-7"
+            className="pl-[30px]"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -41,11 +41,11 @@ export default function TagsHeader({
             href="https://e2b.dev/docs/template/tags"
             target="_blank"
             rel="noopener"
-            className="text-fg-secondary underline-offset-2 hover:underline inline-flex items-center gap-0.5"
+            className="text-fg-secondary underline-offset-2 underline"
           >
             Read more
-            <ExternalLinkIcon className="size-3" />
           </a>
+          .
         </p>
         <p className="prose-body text-fg-tertiary whitespace-nowrap">
           {isFiltered

@@ -15,6 +15,7 @@ import { Input } from '@/ui/primitives/input'
 import { Status } from './table-cells'
 import useFilters from './use-filters'
 import useTemplateBuildsFilters from './use-template-builds-filters'
+import { SearchIcon } from '@/ui/primitives/icons'
 
 interface DashedStatusCircleIconProps {
   status: BuildStatus
@@ -139,15 +140,18 @@ export default function BuildsHeader({
   return (
     <div className="flex sm:flex-row flex-col gap-1">
       {showSearchInput && (
-        <Input
-          placeholder={searchPlaceholder}
-          className="w-full max-w-62"
-          value={localSearch}
-          onChange={(e) => {
-            setLocalSearch(e.target.value)
-            setSearch(e.target.value)
-          }}
-        />
+        <div className="relative w-full max-w-70">
+          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-tertiary pointer-events-none" />
+          <Input
+            placeholder={searchPlaceholder}
+            className="pl-[30px]"
+              value={localSearch}
+              onChange={(e) => {
+                setLocalSearch(e.target.value)
+                setSearch(e.target.value)
+              }}
+          />
+        </div>
       )}
 
       <DropdownMenu>
