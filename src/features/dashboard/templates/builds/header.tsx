@@ -65,16 +65,15 @@ const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
 
 interface BuildsHeaderProps {
   /**
-   * When false, hides the build/template search input. Used on the
-   * per-template detail page where the table is already scoped via the
-   * `templateId` prop on `BuildsTable`. Defaults to true.
+   * When false, hides the search input entirely. Default true.
    */
   showSearchInput?: boolean
   /**
-   * When provided, the header uses the template-scoped filters hook
-   * (statuses-only URL state) instead of the shared `useFilters` hook.
+   * When true, the header uses the template-scoped filters hook
+   * (statuses + `q` URL state) instead of the shared `useFilters` hook.
    * Pair this with `BuildsTable templateId={...}` so both surfaces read
-   * from the same URL state.
+   * from the same URL state and the search applies client-side to the
+   * templateID-scoped backend results.
    */
   scoped?: boolean
 }
@@ -93,20 +92,24 @@ export default function BuildsHeader({
   const setStatuses = scoped
     ? scopedFilters.setStatuses
     : sharedFilters.setStatuses
-  const buildIdOrTemplate = scoped ? undefined : sharedFilters.buildIdOrTemplate
-  const setBuildIdOrTemplate = scoped
-    ? undefined
-    : sharedFilters.setBuildIdOrTemplate
 
-  const [localBuildIdOrTemplate, setLocalBuildIdOrTemplate] = useState<string>(
-    buildIdOrTemplate ?? ''
-  )
+  // Unified search state: in scoped mode it maps to `q` (URL),
+  // in all-team mode it maps to `buildIdOrTemplate` (URL).
+  const search = scoped ? scopedFilters.q : sharedFilters.buildIdOrTemplate
+  const setSearch = scoped
+    ? scopedFilters.setQ
+    : sharedFilters.setBuildIdOrTemplate
+  const searchPlaceholder = scoped
+    ? 'Search by build ID'
+    : 'Build ID, Template ID or Name'
+
+  const [localSearch, setLocalSearch] = useState<string>(search ?? '')
 
   const [localStatuses, setLocalStatuses] = useState<BuildStatus[]>(statuses)
 
   useEffect(() => {
-    setLocalBuildIdOrTemplate(buildIdOrTemplate ?? '')
-  }, [buildIdOrTemplate])
+    setLocalSearch(search ?? '')
+  }, [search])
 
   useEffect(() => {
     setLocalStatuses(statuses)
@@ -134,15 +137,15 @@ export default function BuildsHeader({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {showSearchInput && setBuildIdOrTemplate && (
+    <div className="flex sm:flex-row flex-col gap-1">
+      {showSearchInput && (
         <Input
-          placeholder="Build ID, Template ID or Name"
+          placeholder={searchPlaceholder}
           className="w-full max-w-62"
-          value={localBuildIdOrTemplate}
+          value={localSearch}
           onChange={(e) => {
-            setLocalBuildIdOrTemplate(e.target.value)
-            setBuildIdOrTemplate(e.target.value)
+            setLocalSearch(e.target.value)
+            setSearch(e.target.value)
           }}
         />
       )}

@@ -55,10 +55,13 @@ const COLUMN_WIDTHS = {
 interface BuildsTableProps {
   /**
    * When provided, the table is scoped to a single template:
-   *  - filters are read from `useTemplateBuildsFilters` (statuses only,
-   *    no search input affects the list)
+   *  - filters are read from `useTemplateBuildsFilters` (statuses + `q`)
    *  - the Template column is hidden
-   *  - the `buildIdOrTemplate` query param is set to this UUID
+   *  - the `buildIdOrTemplate` query param is set to this UUID, so the
+   *    backend returns only builds for this template
+   *  - the scoped `q` value applies as an additional client-side filter
+   *    (case-insensitive substring match on build ID) so cross-template
+   *    name matches can never leak in
    */
   templateId?: string
 }
@@ -157,6 +160,18 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
     [builds, runningStatusesData]
   )
 
+  // Client-side narrowing for the scoped builds tab. The backend query
+  // is templateID-scoped (authoritative); `q` only filters the loaded
+  // pages by build-ID substring.
+  const visibleBuilds = useMemo(() => {
+    if (!isTemplateScoped) return buildsWithLiveStatus
+    const query = scopedFilters.q?.trim().toLowerCase()
+    if (!query) return buildsWithLiveStatus
+    return buildsWithLiveStatus.filter((b) =>
+      b.id.toLowerCase().includes(query)
+    )
+  }, [buildsWithLiveStatus, isTemplateScoped, scopedFilters.q])
+
   // Handlers
   const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
     teamSlug,
@@ -176,7 +191,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
   }, [queryClient, buildsQueryKey])
 
   // Derived UI state
-  const hasData = buildsWithLiveStatus.length > 0
+  const hasData = visibleBuilds.length > 0
   const showLoader = isInitialLoad && !hasData
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
@@ -256,7 +271,7 @@ const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
                   </TableRow>
                 )}
 
-                {buildsWithLiveStatus.map((build) => {
+                {visibleBuilds.map((build) => {
                   const isBuilding = build.status === 'building'
 
                   return (

@@ -2119,12 +2119,22 @@ export const TagIcon = ({ className, ...props }: IconProps) => (
     {...props}
   >
     <path
-      d="M2 2H7.33333L13.6667 8.33333C13.9533 8.62 14 9.06667 13.7867 9.40667L9.40667 13.7867C9.06667 14 8.62 13.9533 8.33333 13.6667L2 7.33333V2Z"
+      d="M2 8V2H8L14 8L8 14L2 8Z"
       stroke="currentColor"
       strokeLinecap="square"
-      strokeLinejoin="round"
       strokeWidth="1.33333"
     />
-    <circle cx="5" cy="5" r="0.833" fill="currentColor" />
+    <path
+      d="M5.33366 4.99996C5.33366 5.18405 5.18442 5.33329 5.00033 5.33329C4.81623 5.33329 4.66699 5.18405 4.66699 4.99996C4.66699 4.81587 4.81623 4.66663 5.00033 4.66663C5.18442 4.66663 5.33366 4.81587 5.33366 4.99996Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+    <path
+      d="M4.93262 5H5.06595"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
   </svg>
-)
+);
