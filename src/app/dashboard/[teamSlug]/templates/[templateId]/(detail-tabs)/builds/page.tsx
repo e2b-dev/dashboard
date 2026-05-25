@@ -8,7 +8,7 @@ export default async function TemplateDetailBuildsPage({
 
   return (
     <div className="h-full min-h-0 flex-1 p-3 md:p-6 flex flex-col gap-3">
-      <BuildsHeader showSearchInput={false} scoped />
+      <BuildsHeader scoped />
       <BuildsTable templateId={templateId} />
     </div>
   )
