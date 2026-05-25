@@ -38,3 +38,5 @@ export interface ListTeamTemplatesResult {
   data: Array<Template | DefaultTemplate>
   nextCursor: string | null
 }
+
+export type TemplateTag = InfraComponents['schemas']['TemplateTag']
