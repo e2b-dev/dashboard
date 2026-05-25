@@ -94,7 +94,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
               </TableHead>
               <TableHead>
                 <SortableHeader
-                  label="Build"
+                  label="Assigned to"
                   sortKey="createdAt"
                   activeKey={sortKey}
                   dir={sortDir}

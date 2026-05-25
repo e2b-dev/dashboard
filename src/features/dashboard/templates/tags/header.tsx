@@ -1,6 +1,6 @@
 'use client'
 
-import { InfoIcon, SearchIcon } from '@/ui/primitives/icons'
+import { SearchIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 
 interface TagsHeaderProps {
@@ -20,8 +20,9 @@ export default function TagsHeader({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full max-w-62">
+      {/* Toolbar row. v1 omits the "Assign new tag" CTA on the right. */}
+      <div className="flex items-center gap-2">
+        <div className="relative w-full max-w-70">
           <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-fg-tertiary pointer-events-none" />
           <Input
             placeholder="Search by name"
@@ -32,20 +33,22 @@ export default function TagsHeader({
         </div>
       </div>
 
-      <div className="flex items-start gap-2 bg-bg-1 border border-stroke p-2.5">
-        <InfoIcon className="size-3.5 text-fg-tertiary mt-0.5 shrink-0" />
-        <p className="prose-body text-fg-secondary">
-          Tags identify builds and can only be assigned to one build at once.
+      {/* Info row \u2014 plain helper text (left) + tag count (right). */}
+      <div className="flex items-center justify-between gap-4">
+        <p className="prose-body text-fg-tertiary">
+          Tags identify builds and can only be assigned to one build at once.{' '}
+          <span className="underline cursor-default" aria-disabled="true">
+            Read more.
+          </span>
+        </p>
+        <p className="prose-body text-fg-tertiary whitespace-nowrap">
+          {isFiltered
+            ? `${visibleCount} of ${totalCount} ${
+                totalCount === 1 ? 'tag' : 'tags'
+              }`
+            : `${totalCount} ${totalCount === 1 ? 'tag' : 'tags'} in total`}
         </p>
       </div>
-
-      <p className="prose-body text-fg-tertiary">
-        {isFiltered
-          ? `${visibleCount} of ${totalCount} ${
-              totalCount === 1 ? 'tag' : 'tags'
-            }`
-          : `${totalCount} ${totalCount === 1 ? 'tag' : 'tags'} in total`}
-      </p>
     </div>
   )
 }
