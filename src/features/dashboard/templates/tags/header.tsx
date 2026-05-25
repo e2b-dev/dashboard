@@ -33,7 +33,6 @@ export default function TagsHeader({
         </div>
       </div>
 
-      {/* Info row \u2014 plain helper text (left) + tag count (right). */}
       <div className="flex items-center justify-between gap-4">
         <p className="prose-body text-fg-tertiary">
           Tags identify builds and can only be assigned to one build at once.{' '}

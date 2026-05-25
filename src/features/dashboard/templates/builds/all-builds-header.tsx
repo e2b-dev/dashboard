@@ -5,13 +5,6 @@ import { DebouncedInput } from '@/ui/primitives/input'
 import { BuildsStatusFilter } from './status-filter'
 import useFilters from './use-filters'
 
-/**
- * Toolbar for the all-team builds list (`/templates/builds`).
- *
- * Search input writes the `buildIdOrTemplate` URL param, which the
- * backend resolves against build IDs and template IDs/names. Status
- * filter writes `statuses`.
- */
 export function AllBuildsHeader() {
   const { statuses, setStatuses, buildIdOrTemplate, setBuildIdOrTemplate } =
     useFilters()

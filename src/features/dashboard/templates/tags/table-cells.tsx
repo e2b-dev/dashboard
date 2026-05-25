@@ -37,7 +37,7 @@ export function BuildLinkCell({
   const shortId = useMemo(() => {
     if (buildId === NULL_BUILD_ID) return '--'
     if (buildId.length <= 12) return buildId
-    return `${buildId.slice(0, 5)}…${buildId.slice(-5)}`
+    return `${buildId.slice(0, 5)}...${buildId.slice(-5)}`
   }, [buildId])
 
   const relative = useMemo(() => {

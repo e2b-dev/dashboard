@@ -89,15 +89,12 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
-  // Template detail tabs: fallback title (UUID-derived) used until
-  // usePageTitle injects the friendly template name from fetched data.
+  // Pathname fallback; usePageTitle replaces with the friendly template name once data loads.
   '/dashboard/*/templates/*/overview': (pathname) =>
     templateDetailLayoutConfig(pathname),
   '/dashboard/*/templates/*/tags': (pathname) =>
     templateDetailLayoutConfig(pathname),
-  // Template detail Builds tab — same fallback, but the path matches
-  // /templates/*/builds (no trailing buildId) so it doesn't collide
-  // with the build-detail glob above (/templates/*/builds/*).
+  // Distinct from /templates/*/builds/* (build detail) — keep the more specific glob earlier.
   '/dashboard/*/templates/*/builds': (pathname) =>
     templateDetailLayoutConfig(pathname),
 
@@ -183,8 +180,7 @@ function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
       ? `${templateId.slice(0, 6)}...${templateId.slice(-6)}`
       : templateId
 
-  // Note: no `includeHeaderBottomStyles` — the tabs row sits flush
-  // below the global title bar, matching /templates/list and /sandboxes.
+  // No `includeHeaderBottomStyles` — tabs row sits flush below the title bar.
   return {
     title: [
       {

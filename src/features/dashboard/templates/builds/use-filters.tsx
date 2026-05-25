@@ -18,9 +18,7 @@ export default function useFilters() {
 
   const buildIdOrTemplate = filters?.buildIdOrTemplate ?? undefined
 
-  // Setters write to the URL synchronously. Bursty input (search keystrokes)
-  // is debounced at the source via `DebouncedInput`, not here \u2014 so consumers
-  // get a stable, predictable setter signature.
+  // Debouncing lives in DebouncedInput; setters here write synchronously.
   const setStatuses = useCallback(
     (next: BuildStatus[]) => {
       setFilters({ statuses: next })

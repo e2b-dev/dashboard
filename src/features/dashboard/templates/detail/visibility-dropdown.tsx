@@ -54,7 +54,6 @@ export function TemplateVisibilityDropdown({
           public: variables.public,
         })
 
-        // Optimistically update both the list and the per-template caches.
         const listKey = trpc.templates.getTemplates.queryKey({ teamSlug })
         const detailKey = trpc.templates.getTemplate.queryKey({
           teamSlug,

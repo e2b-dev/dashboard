@@ -5,14 +5,7 @@ import { DebouncedInput } from '@/ui/primitives/input'
 import { BuildsStatusFilter } from './status-filter'
 import useTemplateBuildsFilters from './use-template-builds-filters'
 
-/**
- * Toolbar for a single template's builds tab
- * (`/templates/[templateId]/builds`).
- *
- * Search input writes the `q` URL param, which is applied client-side
- * as a substring match on build IDs (the backend query stays scoped
- * by templateID). Status filter writes `statuses`.
- */
+// 'q' filters client-side over the templateID-scoped backend results (see BuildsTable).
 export function TemplateBuildsHeader() {
   const { statuses, setStatuses, q, setQ } = useTemplateBuildsFilters()
 

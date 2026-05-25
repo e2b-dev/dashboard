@@ -33,14 +33,6 @@ export const usePageTitleStore = create<PageTitleStore>((set) => ({
   setOverride: (override) => set({ override }),
 }))
 
-/**
- * Set the dashboard title bar contents for as long as the calling
- * component is mounted. Passing `null` (or omitting `title`) clears
- * any previously set override on mount.
- *
- * Safe to call before data is loaded \u2014 pass `null` while loading and
- * the pathname-derived fallback title will render.
- */
 export function usePageTitle(
   title: string | TitleSegment[] | null,
   copyValue?: string
@@ -54,8 +46,7 @@ export function usePageTitle(
     usePageTitleStore.getState().setOverride({ title, copyValue })
 
     return () => {
-      // Only clear if this hook is still the active owner of the
-      // override. A subsequent page may have already set its own.
+      // Don't clear if a subsequent page has already replaced our override.
       const current = usePageTitleStore.getState().override
       if (current && current.title === title) {
         usePageTitleStore.getState().setOverride(null)

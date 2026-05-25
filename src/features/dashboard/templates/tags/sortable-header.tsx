@@ -11,25 +11,11 @@ interface SortableHeaderProps {
   sortKey: SortKey
   activeKey: SortKey
   dir: SortDir
-  /**
-   * Hint shown on hover when this column is inactive. Mirrors the
-   * `sortDescFirst` flag on the templates list \u2014 the inactive icon
-   * previews the direction a first click will sort to.
-   */
+  // Direction previewed on hover when this column is inactive.
   defaultDir: SortDir
   onChange: (key: SortKey) => void
 }
 
-/**
- * Visual treatment matches the templates list header (see
- * `DataTableHead` in `src/ui/data-table.tsx`):
- *  - mono uppercase prose-label
- *  - dimmer default (`text-fg-tertiary`), brighter active
- *    (`prose-label-highlight text-fg`)
- *  - icon hidden until hover when inactive, with the direction icon
- *    of `defaultDir` previewed
- *  - active state always shows the current direction icon
- */
 export function SortableHeader({
   label,
   sortKey,
