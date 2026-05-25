@@ -13,6 +13,7 @@ export type AuthContext = {
 
 export type SignOutOptions = {
   scope?: 'local' | 'others' | 'global'
+  returnTo?: string
 }
 
 export type AuthError = {
@@ -21,4 +22,7 @@ export type AuthError = {
   status?: number
 }
 
-export type SignOutResult = { error: AuthError | null }
+export type SignOutResult = {
+  redirectTo: string
+  error?: AuthError | null
+}

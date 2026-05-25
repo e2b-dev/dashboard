@@ -5,6 +5,7 @@ import { auth as authjs } from '@/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import type { AuthProvider } from '../provider'
 import { fromAuthSession } from './identity'
+import { getOrySignOutPath } from './signout'
 
 export const oryAuthProvider: AuthProvider = {
   async getAuthContext() {
@@ -45,12 +46,6 @@ export const oryAuthProvider: AuthProvider = {
   },
 
   signOut() {
-    return Promise.resolve({
-      error: {
-        message:
-          'Ory sign-out must redirect through /api/auth/oauth/signout-flow',
-        code: 'ory_sign_out_requires_route',
-      },
-    })
+    return Promise.resolve({ redirectTo: getOrySignOutPath() })
   },
 }

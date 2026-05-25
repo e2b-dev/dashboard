@@ -1,11 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { TAB_URL_MAP } from '@/configs/dashboard-tab-url-map'
-import { isOryAuthEnabled } from '@/configs/flags'
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { auth } from '@/core/server/auth'
-import { getOrySignOutPath } from '@/core/server/auth/ory/signout'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
-import { encodedRedirect } from '@/lib/utils/auth'
+import { l } from '@/core/shared/clients/logger/logger'
 import { setTeamCookies } from '@/lib/utils/cookies'
 
 function getTabRedirectPath(tab: string | null, teamSlug: string) {
@@ -36,27 +34,17 @@ export async function GET(request: NextRequest) {
   )
 
   if (!team) {
-    const error = 'No personal team found. Please contact support.'
-
-    if (isOryAuthEnabled()) {
-      return NextResponse.redirect(
-        new URL(
-          getOrySignOutPath({
-            returnTo: AUTH_URLS.SIGN_IN,
-            message: { type: 'error', value: error },
-          }),
-          request.url
-        )
-      )
-    }
-
-    await auth.signOut()
-
-    return encodedRedirect(
-      'error',
-      new URL(AUTH_URLS.SIGN_IN, request.url).toString(),
-      error
+    l.warn(
+      {
+        key: 'dashboard:no_personal_team',
+        user_id: authContext.user.id,
+      },
+      'no personal team for user, signing out'
     )
+
+    const { redirectTo } = await auth.signOut()
+
+    return NextResponse.redirect(new URL(redirectTo, request.url))
   }
 
   await setTeamCookies(team.id, team.slug)

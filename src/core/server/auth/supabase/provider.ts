@@ -1,6 +1,7 @@
 import 'server-only'
 
 import type { NextRequest, NextResponse } from 'next/server'
+import { AUTH_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { createClient } from '@/core/shared/clients/supabase/server'
 import type { AuthProvider } from '../provider'
@@ -61,7 +62,9 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async signOut(options?: SignOutOptions): Promise<SignOutResult> {
     const client = await this.resolveClient()
-    const { error } = await client.auth.signOut(options)
+    const { error } = await client.auth.signOut(
+      options?.scope ? { scope: options.scope } : undefined
+    )
 
     if (error) {
       l.error(
@@ -78,7 +81,10 @@ export class SupabaseAuthProvider implements AuthProvider {
       )
     }
 
-    return { error: error ?? null }
+    return {
+      redirectTo: buildSignInRedirect(options?.returnTo),
+      error: error ?? null,
+    }
   }
 
   private resolveClient(): Promise<SupabaseServerClient> {
@@ -97,4 +103,10 @@ export function createSupabaseAuthForHeaders(
   headers: Headers
 ): SupabaseAuthProvider {
   return new SupabaseAuthProvider(createServerClientForHeaders(headers))
+}
+
+function buildSignInRedirect(returnTo?: string): string {
+  if (!returnTo) return AUTH_URLS.SIGN_IN
+  const params = new URLSearchParams({ returnTo })
+  return `${AUTH_URLS.SIGN_IN}?${params.toString()}`
 }

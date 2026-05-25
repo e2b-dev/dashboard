@@ -112,14 +112,10 @@ describe('OryAuthProvider', () => {
   })
 
   describe('signOut', () => {
-    it('returns an explicit error because Ory sign-out must go through the route handler', async () => {
+    it('returns the signout-flow route URL so callers redirect to it', async () => {
       const result = await oryAuthProvider.signOut()
       expect(result).toEqual({
-        error: {
-          message:
-            'Ory sign-out must redirect through /api/auth/oauth/signout-flow',
-          code: 'ory_sign_out_requires_route',
-        },
+        redirectTo: '/api/auth/oauth/signout-flow',
       })
     })
   })
