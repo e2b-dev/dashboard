@@ -38,6 +38,7 @@ import {
   Template,
 } from './table-cells'
 import useFilters from './use-filters'
+import useTemplateBuildsFilters from './use-template-builds-filters'
 
 const BUILDS_REFETCH_INTERVAL_MS = 15_000
 const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
@@ -51,14 +52,40 @@ const COLUMN_WIDTHS = {
   duration: 96,
 } as const
 
-const BuildsTable = () => {
+interface BuildsTableProps {
+  /**
+   * When provided, the table is scoped to a single template:
+   *  - filters are read from `useTemplateBuildsFilters` (statuses only,
+   *    no search input affects the list)
+   *  - the Template column is hidden
+   *  - the `buildIdOrTemplate` query param is set to this UUID
+   */
+  templateId?: string
+}
+
+const BuildsTable = ({ templateId }: BuildsTableProps = {}) => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
-  const { statuses, buildIdOrTemplate } = useFilters()
+
+  const isTemplateScoped = templateId !== undefined
+
+  // Two filter hooks live here, but only one is active per render. React
+  // requires consistent hook order across renders — `templateId` only
+  // changes via route navigation (which unmounts the component), so it is
+  // safe to call both unconditionally and pick which result to use.
+  const sharedFilters = useFilters()
+  const scopedFilters = useTemplateBuildsFilters()
+
+  const statuses = isTemplateScoped
+    ? scopedFilters.statuses
+    : sharedFilters.statuses
+  const buildIdOrTemplate = isTemplateScoped
+    ? templateId
+    : sharedFilters.buildIdOrTemplate
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
     buildIdOrTemplate
@@ -154,6 +181,11 @@ const BuildsTable = () => {
   const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
+  // colSpan must match the visible column count (status + [template] +
+  // started + duration + id + reason filler) when the Template column is
+  // conditionally hidden in template-scoped mode.
+  const colSpan = isTemplateScoped ? 5 : 6
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
       <div
@@ -163,7 +195,9 @@ const BuildsTable = () => {
         <Table suppressHydrationWarning>
           <colgroup>
             <col style={colStyle(COLUMN_WIDTHS.status)} />
-            <col style={colStyle(COLUMN_WIDTHS.template)} />
+            {!isTemplateScoped && (
+              <col style={colStyle(COLUMN_WIDTHS.template)} />
+            )}
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
             <col style={colStyle(COLUMN_WIDTHS.id)} />
@@ -173,7 +207,7 @@ const BuildsTable = () => {
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Status</TableHead>
-              <TableHead>Template</TableHead>
+              {!isTemplateScoped && <TableHead>Template</TableHead>}
               <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
                   Started
@@ -193,7 +227,7 @@ const BuildsTable = () => {
           >
             {showLoader && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={colSpan}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
@@ -203,7 +237,7 @@ const BuildsTable = () => {
 
             {showEmpty && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={colSpan}>
                   <BuildsEmpty error={buildsError?.message} />
                 </TableCell>
               </TableRow>
@@ -214,7 +248,7 @@ const BuildsTable = () => {
                 {hasScrolledPastInitialPages && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={colSpan}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
@@ -250,15 +284,17 @@ const BuildsTable = () => {
                       >
                         <Status status={build.status} />
                       </TableCell>
-                      <TableCell
-                        className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: COLUMN_WIDTHS.template }}
-                      >
-                        <Template
-                          template={build.template}
-                          templateId={build.templateId}
-                        />
-                      </TableCell>
+                      {!isTemplateScoped && (
+                        <TableCell
+                          className="py-1.5 overflow-hidden"
+                          style={{ maxWidth: COLUMN_WIDTHS.template }}
+                        >
+                          <Template
+                            template={build.template}
+                            templateId={build.templateId}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="py-1.5">
                         <StartedAt timestamp={build.createdAt} />
                       </TableCell>
@@ -285,7 +321,7 @@ const BuildsTable = () => {
                 {hasNextPage && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={colSpan}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton

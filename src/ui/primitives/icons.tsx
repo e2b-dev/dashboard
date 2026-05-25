@@ -2109,3 +2109,22 @@ export const WebhookIcon = ({ className, ...props }: IconProps) => (
     </defs>
   </svg>
 )
+
+export const TagIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 2H7.33333L13.6667 8.33333C13.9533 8.62 14 9.06667 13.7867 9.40667L9.40667 13.7867C9.06667 14 8.62 13.9533 8.33333 13.6667L2 7.33333V2Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeLinejoin="round"
+      strokeWidth="1.33333"
+    />
+    <circle cx="5" cy="5" r="0.833" fill="currentColor" />
+  </svg>
+)

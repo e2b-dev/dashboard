@@ -14,6 +14,7 @@ import {
 import { Input } from '@/ui/primitives/input'
 import { Status } from './table-cells'
 import useFilters from './use-filters'
+import useTemplateBuildsFilters from './use-template-builds-filters'
 
 interface DashedStatusCircleIconProps {
   status: BuildStatus
@@ -62,9 +63,40 @@ const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
   { value: 'failed', label: 'Failed' },
 ]
 
-export default function BuildsHeader() {
-  const { statuses, setStatuses, buildIdOrTemplate, setBuildIdOrTemplate } =
-    useFilters()
+interface BuildsHeaderProps {
+  /**
+   * When false, hides the build/template search input. Used on the
+   * per-template detail page where the table is already scoped via the
+   * `templateId` prop on `BuildsTable`. Defaults to true.
+   */
+  showSearchInput?: boolean
+  /**
+   * When provided, the header uses the template-scoped filters hook
+   * (statuses-only URL state) instead of the shared `useFilters` hook.
+   * Pair this with `BuildsTable templateId={...}` so both surfaces read
+   * from the same URL state.
+   */
+  scoped?: boolean
+}
+
+export default function BuildsHeader({
+  showSearchInput = true,
+  scoped = false,
+}: BuildsHeaderProps = {}) {
+  // Both hooks must be called unconditionally to satisfy React's rules.
+  // `scoped` only changes via route navigation — the component is
+  // unmounted between transitions, so hook order remains consistent.
+  const sharedFilters = useFilters()
+  const scopedFilters = useTemplateBuildsFilters()
+
+  const statuses = scoped ? scopedFilters.statuses : sharedFilters.statuses
+  const setStatuses = scoped
+    ? scopedFilters.setStatuses
+    : sharedFilters.setStatuses
+  const buildIdOrTemplate = scoped ? undefined : sharedFilters.buildIdOrTemplate
+  const setBuildIdOrTemplate = scoped
+    ? undefined
+    : sharedFilters.setBuildIdOrTemplate
 
   const [localBuildIdOrTemplate, setLocalBuildIdOrTemplate] = useState<string>(
     buildIdOrTemplate ?? ''
@@ -103,15 +135,17 @@ export default function BuildsHeader() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Input
-        placeholder="Build ID, Template ID or Name"
-        className="w-full max-w-62"
-        value={localBuildIdOrTemplate}
-        onChange={(e) => {
-          setLocalBuildIdOrTemplate(e.target.value)
-          setBuildIdOrTemplate(e.target.value)
-        }}
-      />
+      {showSearchInput && setBuildIdOrTemplate && (
+        <Input
+          placeholder="Build ID, Template ID or Name"
+          className="w-full max-w-62"
+          value={localBuildIdOrTemplate}
+          onChange={(e) => {
+            setLocalBuildIdOrTemplate(e.target.value)
+            setBuildIdOrTemplate(e.target.value)
+          }}
+        />
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

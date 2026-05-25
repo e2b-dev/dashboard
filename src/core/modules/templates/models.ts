@@ -23,3 +23,5 @@ export type DefaultTemplate = Template & {
   isDefault: true
   defaultDescription?: string
 }
+
+export type TemplateTag = InfraComponents['schemas']['TemplateTag']

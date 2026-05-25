@@ -7,7 +7,11 @@ import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
-import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
+import type {
+  DefaultTemplate,
+  Template,
+  TemplateTag,
+} from '@/core/modules/templates/models'
 import {
   type AuthUserEmailResolver,
   getAuthUserEmailsById,
@@ -30,6 +34,8 @@ type TemplatesRepositoryDeps = {
 
 export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
+  getTemplate(templateId: string): Promise<RepoResult<{ template: Template }>>
+  getTags(templateId: string): Promise<RepoResult<{ tags: TemplateTag[] }>>
   deleteTemplate(templateId: string): Promise<RepoResult<{ success: true }>>
   updateTemplateVisibility(
     templateId: string,
@@ -53,6 +59,53 @@ export function createTemplatesRepository(
   }
 ): TeamTemplatesRepository {
   return {
+    async getTemplate(templateId) {
+      // v1: filter server-side over the existing list endpoint. No
+      // separate per-template fetch needed; this keeps the cache hot
+      // for cross-page reuse and avoids any new infra dependencies.
+      const listResult = await this.getTeamTemplates()
+      if (!listResult.ok) return listResult
+
+      const template = listResult.data.templates.find(
+        (t) => t.templateID === templateId
+      )
+
+      if (!template) {
+        return err(
+          repoErrorFromHttp(404, 'Template not found in this team', undefined)
+        )
+      }
+
+      return ok({ template })
+    },
+    async getTags(templateId) {
+      if (USE_MOCK_DATA) {
+        return ok({ tags: [] })
+      }
+
+      const res = await deps.infraClient.GET('/templates/{templateID}/tags', {
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch template tags',
+            res.error
+          )
+        )
+      }
+
+      return ok({ tags: res.data ?? [] })
+    },
     async getTeamTemplates() {
       if (USE_MOCK_DATA) {
         return ok({

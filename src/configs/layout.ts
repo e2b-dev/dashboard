@@ -89,6 +89,17 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
+  // Template detail tabs: fallback title (UUID-derived) used until
+  // usePageTitle injects the friendly template name from fetched data.
+  '/dashboard/*/templates/*/overview': (pathname) =>
+    templateDetailLayoutConfig(pathname),
+  '/dashboard/*/templates/*/tags': (pathname) =>
+    templateDetailLayoutConfig(pathname),
+  // Template detail Builds tab — same fallback, but the path matches
+  // /templates/*/builds (no trailing buildId) so it doesn't collide
+  // with the build-detail glob above (/templates/*/builds/*).
+  '/dashboard/*/templates/*/builds': (pathname) =>
+    templateDetailLayoutConfig(pathname),
 
   // integrations
   '/dashboard/*/webhooks': () => ({
@@ -161,6 +172,30 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Account',
     type: 'default',
   }),
+}
+
+function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
+  const parts = pathname.split('/')
+  const teamSlug = parts[2]!
+  const templateId = parts[4]!
+  const templateIdSliced =
+    templateId.length > 14
+      ? `${templateId.slice(0, 6)}...${templateId.slice(-6)}`
+      : templateId
+
+  // Note: no `includeHeaderBottomStyles` — the tabs row sits flush
+  // below the global title bar, matching /templates/list and /sandboxes.
+  return {
+    title: [
+      {
+        label: 'Templates',
+        href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
+      },
+      { label: templateIdSliced },
+    ],
+    type: 'custom',
+    copyValue: templateId,
+  }
 }
 
 /**

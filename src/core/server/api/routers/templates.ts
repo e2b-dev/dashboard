@@ -42,6 +42,30 @@ export const templatesRouter = createTRPCRouter({
     return result.data
   }),
 
+  getTemplate: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.getTemplate(input.templateId)
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
+
+  getTags: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.getTags(input.templateId)
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
+
   getDefaultTemplatesCached: templatesRepositoryProcedure.query(
     async ({ ctx }) => {
       const result = await ctx.templatesRepository.getDefaultTemplatesCached()
