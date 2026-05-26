@@ -220,10 +220,13 @@ components:
     AdminAuthProviderUserBootstrapRequest:
       type: object
       required:
+        - oidc_issuer
         - oidc_user_id
         - oidc_user_email
-        - oidc_user_name
       properties:
+        oidc_issuer:
+          type: string
+          minLength: 1
         oidc_user_id:
           type: string
           minLength: 1
@@ -516,12 +519,24 @@ components:
         - email
         - isDefault
         - createdAt
+        - providers
       properties:
         id:
           type: string
           format: uuid
         email:
           type: string
+        name:
+          type: string
+          nullable: true
+        profilePictureUrl:
+          type: string
+          format: uri
+          nullable: true
+        providers:
+          type: array
+          items:
+            type: string
         isDefault:
           type: boolean
         addedBy:
