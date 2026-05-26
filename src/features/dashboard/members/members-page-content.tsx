@@ -2,6 +2,7 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Suspense, useMemo, useState } from 'react'
+import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { useDashboard } from '@/features/dashboard/context'
 import { cn } from '@/lib/utils'
 import { pluralize } from '@/lib/utils/formatting'
@@ -94,7 +95,7 @@ export const MembersPageContent = ({ className }: MembersPageContentProps) => {
               value={query}
             />
           </div>
-          <AddMemberDialog />
+          {!AUTH_MIGRATION_IN_PROGRESS && <AddMemberDialog />}
         </div>
 
         <CatchErrorBoundary classNames={{ wrapper: 'w-full' }}>

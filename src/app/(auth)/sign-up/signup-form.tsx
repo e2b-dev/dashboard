@@ -5,7 +5,10 @@ import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hoo
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { CAPTCHA_REQUIRED_CLIENT } from '@/configs/flags'
+import {
+  AUTH_MIGRATION_IN_PROGRESS,
+  CAPTCHA_REQUIRED_CLIENT,
+} from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import {
   getTimeoutMsFromUserMessage,
@@ -93,6 +96,22 @@ export default function SignUp() {
       return () => clearTimeout(timer)
     }
   }, [message])
+
+  if (AUTH_MIGRATION_IN_PROGRESS) {
+    return (
+      <div className="flex w-full flex-col gap-3">
+        <h1>Sign up</h1>
+        <p className="text-fg-secondary leading-6">
+          New sign-ups are temporarily paused while we migrate our
+          authentication system. Existing users can still{' '}
+          <Link className="text-fg underline" href={AUTH_URLS.SIGN_IN}>
+            sign in
+          </Link>
+          .
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex w-full flex-col">

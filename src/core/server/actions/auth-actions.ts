@@ -4,7 +4,10 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
-import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
+import {
+  AUTH_MIGRATION_IN_PROGRESS,
+  CAPTCHA_REQUIRED_SERVER,
+} from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
@@ -177,6 +180,12 @@ export const signUpAction = actionClient
     async ({
       parsedInput: { email, password, returnTo = '', captchaToken },
     }) => {
+      if (AUTH_MIGRATION_IN_PROGRESS) {
+        return returnServerError(
+          'Sign-ups are temporarily paused while we migrate our authentication system. Please try again later.'
+        )
+      }
+
       const captchaError = await validateCaptcha(captchaToken)
       if (captchaError) return captchaError
 

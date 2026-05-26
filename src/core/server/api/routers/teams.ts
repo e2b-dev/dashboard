@@ -3,6 +3,7 @@ import { fileTypeFromBuffer } from 'file-type'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
+import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
 import { CreateApiKeySchema } from '@/core/modules/keys/schemas'
 import {
@@ -158,6 +159,14 @@ export const teamsRouter = createTRPCRouter({
   addMember: teamsRepositoryProcedure
     .input(AddTeamMemberSchema)
     .mutation(async ({ ctx, input }) => {
+      if (AUTH_MIGRATION_IN_PROGRESS) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'Adding team members is temporarily paused while we migrate our authentication system. Please try again later.',
+        })
+      }
+
       const result = await ctx.teamsRepository.addTeamMember(input.email)
 
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
