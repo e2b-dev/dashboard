@@ -25,7 +25,6 @@ export default function SandboxLayout({
 }: SandboxLayoutProps) {
   const { teamSlug, sandboxId } =
     useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
-
   const { sandboxInfo, isSandboxInfoLoading, isSandboxNotFound } =
     useSandboxContext()
 
@@ -40,41 +39,47 @@ export default function SandboxLayout({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
-      {header}
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex h-full w-full min-h-0 flex-col max-md:overflow-y-auto md:flex-1">
+        <div className="max-md:shrink-0">{header}</div>
 
-      <DashboardTabsList
-        layoutKey="tabs-indicator-sandbox"
-        className="max-md:sticky max-md:top-0 max-md:z-20"
-        headerAccessory={tabsHeaderAccessory}
-        tabs={[
-          {
-            id: 'monitoring',
-            label: 'Monitoring',
-            href: PROTECTED_URLS.SANDBOX_MONITORING(teamSlug, sandboxId),
-            icon: <TrendIcon className="size-4" />,
-          },
-          {
-            id: 'events',
-            label: 'Events',
-            href: PROTECTED_URLS.SANDBOX_EVENTS(teamSlug, sandboxId),
-            icon: <HistoryIcon className="size-4" />,
-          },
-          {
-            id: 'logs',
-            label: 'Logs',
-            href: PROTECTED_URLS.SANDBOX_LOGS(teamSlug, sandboxId),
-            icon: <ListIcon className="size-4" />,
-          },
-          {
-            id: 'filesystem',
-            label: 'Filesystem',
-            href: PROTECTED_URLS.SANDBOX_FILESYSTEM(teamSlug, sandboxId),
-            icon: <StorageIcon className="size-4" />,
-          },
-        ]}
-      />
-      {children}
+        <div className="flex flex-col max-md:h-full max-md:shrink-0 md:min-h-0 md:flex-1">
+          <DashboardTabsList
+            layoutKey="tabs-indicator-sandbox"
+            className="bg-bg z-20 max-md:sticky max-md:top-0"
+            mobileVariant="select"
+            headerAccessory={tabsHeaderAccessory}
+            tabs={[
+              {
+                id: 'monitoring',
+                label: 'Monitoring',
+                href: PROTECTED_URLS.SANDBOX_MONITORING(teamSlug, sandboxId),
+                icon: <TrendIcon className="size-4" />,
+              },
+              {
+                id: 'events',
+                label: 'Events',
+                href: PROTECTED_URLS.SANDBOX_EVENTS(teamSlug, sandboxId),
+                icon: <HistoryIcon className="size-4" />,
+              },
+              {
+                id: 'logs',
+                label: 'Logs',
+                href: PROTECTED_URLS.SANDBOX_LOGS(teamSlug, sandboxId),
+                icon: <ListIcon className="size-4" />,
+              },
+              {
+                id: 'filesystem',
+                label: 'Filesystem',
+                href: PROTECTED_URLS.SANDBOX_FILESYSTEM(teamSlug, sandboxId),
+                icon: <StorageIcon className="size-4" />,
+              },
+            ]}
+          />
+
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        </div>
+      </div>
     </div>
   )
 }
