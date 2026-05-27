@@ -24,7 +24,12 @@ import { useDashboard } from '../context'
 import { TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
-import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
+import {
+  formatHours,
+  formatMibToGb,
+  formatTierDisplayName,
+  isEnterpriseTier,
+} from './utils'
 
 interface PlanFeature {
   icon: React.ReactNode
@@ -121,6 +126,7 @@ interface PlanCardProps {
   isLoading?: boolean
   onSelectPlan: () => void
   isSelectingPlan: boolean
+  disabled?: boolean
 }
 
 function PlanCardSkeleton() {
@@ -154,6 +160,7 @@ function PlanCard({
   isLoading,
   onSelectPlan,
   isSelectingPlan,
+  disabled,
 }: PlanCardProps) {
   const { team } = useDashboard()
 
@@ -197,8 +204,10 @@ function PlanCard({
             <span className="prose-value-big text-fg">{priceDisplay}</span>
           </div>
 
-          {isCurrentPlan ? (
-            <Button disabled>Your current plan</Button>
+          {isCurrentPlan || disabled ? (
+            <Button disabled>
+              {isCurrentPlan ? 'Your current plan' : buttonText}
+            </Button>
           ) : (
             <div className="flex items-center gap-4 flex-wrap">
               <span className="prose-body text-fg-tertiary">
@@ -285,6 +294,7 @@ export default function SelectPlan() {
 
   const isOnBaseTier = selectedTierId === TIER_BASE_ID
   const isOnProTier = selectedTierId === TIER_PRO_ID
+  const isEnterprise = selectedTierId ? isEnterpriseTier(selectedTierId) : false
 
   const hobbyFeatures = getHobbyFeatures(baseTier)
   const proFeatures = getProFeatures(proTier)
@@ -299,6 +309,7 @@ export default function SelectPlan() {
         isLoading={isLoading}
         onSelectPlan={handleDowngrade}
         isSelectingPlan={isPortalLoading}
+        disabled={isEnterprise}
       />
       <PlanCard
         tier={proTier}
@@ -308,6 +319,7 @@ export default function SelectPlan() {
         isLoading={isLoading}
         onSelectPlan={() => proTier?.id && handleUpgrade(proTier.id)}
         isSelectingPlan={isCheckoutLoading}
+        disabled={isEnterprise}
       />
     </section>
   )

@@ -20,7 +20,7 @@ import { useDashboard } from '../context'
 import { ConcurrentSandboxAddOnPurchaseDialog } from './concurrent-sandboxes-addon-dialog'
 import { ADDON_500_SANDBOXES_ID, TIER_PRO_ID } from './constants'
 import { useBillingItems } from './hooks'
-import { formatAddonQuantity } from './utils'
+import { formatAddonQuantity, isEnterpriseTier } from './utils'
 
 interface AddonItemProps {
   name: string
@@ -220,6 +220,12 @@ export default function Addons() {
         <AddonsLoading />
       </section>
     )
+  }
+
+  const isEnterprise = selectedTierId ? isEnterpriseTier(selectedTierId) : false
+
+  if (isEnterprise) {
+    return null
   }
 
   if (!isOnProTier) {

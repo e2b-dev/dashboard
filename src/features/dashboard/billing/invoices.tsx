@@ -21,7 +21,9 @@ import {
   TableLoadingState,
   TableRow,
 } from '@/ui/primitives/table'
+import { useDashboard } from '../context'
 import { useInvoices } from './hooks'
+import { isEnterpriseTier } from './utils'
 
 const COLUMN_WIDTHS = {
   date: 120,
@@ -43,9 +45,14 @@ function formatDate(dateString: string) {
 
 interface InvoicesEmptyProps {
   error?: string
+  isEnterprise?: boolean
 }
 
-function InvoicesEmpty({ error }: InvoicesEmptyProps) {
+function InvoicesEmpty({ error, isEnterprise }: InvoicesEmptyProps) {
+  const emptyMessage = isEnterprise
+    ? "Invoices are sent directly to your team's registered email address."
+    : 'No invoices yet'
+
   return (
     <TableEmptyState colSpan={4}>
       <InvoiceIcon
@@ -55,7 +62,7 @@ function InvoicesEmpty({ error }: InvoicesEmptyProps) {
         )}
       />
       <span className={cn(error && 'text-accent-error-highlight')}>
-        {error ? error : 'No invoices yet'}
+        {error ? error : emptyMessage}
       </span>
     </TableEmptyState>
   )
@@ -63,6 +70,8 @@ function InvoicesEmpty({ error }: InvoicesEmptyProps) {
 
 export default function BillingInvoicesTable() {
   const { invoices, isLoading, error } = useInvoices()
+  const { team } = useDashboard()
+  const isEnterprise = isEnterpriseTier(team.tier)
 
   const hasData = invoices && invoices.length > 0
   const showLoader = isLoading && !hasData
@@ -99,7 +108,9 @@ export default function BillingInvoicesTable() {
           {showLoader && (
             <TableLoadingState colSpan={4} label="Loading invoices" />
           )}
-          {showEmpty && <InvoicesEmpty error={error?.message} />}
+          {showEmpty && (
+            <InvoicesEmpty error={error?.message} isEnterprise={isEnterprise} />
+          )}
 
           {hasData &&
             invoices.map((invoice) => (
