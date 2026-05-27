@@ -15,7 +15,7 @@ import { l } from '@/core/shared/clients/logger/logger'
 import type { components as ArgusComponents } from '@/core/shared/contracts/argus-api.types'
 
 type WebhookDelivery = ArgusComponents['schemas']['WebhookDelivery']
-type WebhookDeliveryEvent = ArgusComponents['schemas']['WebhookDeliveryEvent']
+type WebhookDeliveryGroup = ArgusComponents['schemas']['WebhookDeliveryGroup']
 
 // Returns the newest delivery attempt, e.g. [10:00, 10:05] -> 10:05.
 const getLatestAttempt = (
@@ -29,16 +29,16 @@ const getLatestAttempt = (
   return sortedAttempts[0] ?? null
 }
 
-const toDeliveryEventGroup = (event: WebhookDeliveryEvent) => {
-  const attempts = [...event.attempts].sort(
+const toDeliveryGroup = (group: WebhookDeliveryGroup) => {
+  const attempts = [...group.attempts].sort(
     (left, right) =>
       new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime()
   )
 
   return {
-    eventId: event.eventId,
-    eventType: event.eventType,
-    sandboxId: event.sandboxId,
+    eventId: group.eventId,
+    eventType: group.eventType,
+    sandboxId: group.sandboxId,
     attempts,
     attemptCount: attempts.length,
     latestAttempt: getLatestAttempt(attempts),
@@ -133,7 +133,7 @@ export const webhooksRouter = createTRPCRouter({
       }
 
       return {
-        groups: result.data.data.map(toDeliveryEventGroup),
+        groups: result.data.data.map(toDeliveryGroup),
         nextCursor: result.data.nextCursor,
       }
     }),

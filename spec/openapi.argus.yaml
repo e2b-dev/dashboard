@@ -415,7 +415,7 @@ components:
         durationMs:
           $ref: "#/components/schemas/WebhookDeliveryDurationStats"
 
-    WebhookDeliveryEvent:
+    WebhookDeliveryGroup:
       description: Webhook delivery attempts grouped by sandbox event
       required:
         - eventId
@@ -444,7 +444,7 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/WebhookDeliveryEvent"
+            $ref: "#/components/schemas/WebhookDeliveryGroup"
         nextCursor:
           type: string
           nullable: true

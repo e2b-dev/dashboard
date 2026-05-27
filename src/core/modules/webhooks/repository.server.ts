@@ -36,7 +36,7 @@ export interface ListWebhookDeliveriesInput {
 }
 
 interface ListWebhookDeliveriesResult {
-  data: ArgusComponents['schemas']['WebhookDeliveryEvent'][]
+  data: ArgusComponents['schemas']['WebhookDeliveryGroup'][]
   nextCursor: string | null
 }
 

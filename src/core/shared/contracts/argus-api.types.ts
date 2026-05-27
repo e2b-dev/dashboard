@@ -427,7 +427,7 @@ export interface components {
       durationMs: components['schemas']['WebhookDeliveryDurationStats']
     }
     /** @description Webhook delivery attempts grouped by sandbox event */
-    WebhookDeliveryEvent: {
+    WebhookDeliveryGroup: {
       /** Format: uuid */
       eventId: string
       eventType: string
@@ -436,7 +436,7 @@ export interface components {
     }
     /** @description Paginated webhook delivery attempts grouped by event */
     WebhookDeliveriesListPayload: {
-      data: components['schemas']['WebhookDeliveryEvent'][]
+      data: components['schemas']['WebhookDeliveryGroup'][]
       /** @description Cursor to pass to the next list request, or null when there is no next page. */
       nextCursor: string | null
     }
