@@ -78,7 +78,15 @@ export default async function TerminalPage({
     : teamsResult.data.find((candidate) => candidate.id === resolvedTeam?.id)
 
   if (!team) {
-    return <TerminalUnavailable />
+    return (
+      <TerminalUnavailable
+        message={
+          terminalSandboxId
+            ? 'Sandbox not found or you do not have access to it.'
+            : undefined
+        }
+      />
+    )
   }
 
   const templateAvailable = terminalSandboxId
