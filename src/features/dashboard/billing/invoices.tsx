@@ -50,7 +50,7 @@ interface InvoicesEmptyProps {
 
 function InvoicesEmpty({ error, isEnterprise }: InvoicesEmptyProps) {
   const emptyMessage = isEnterprise
-    ? "Invoices are sent directly to your team's registered email address."
+    ? 'Invoices are sent directly to your company via email.'
     : 'No invoices yet'
 
   return (
