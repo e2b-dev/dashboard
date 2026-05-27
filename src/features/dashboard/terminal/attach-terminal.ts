@@ -26,7 +26,7 @@ export async function attachTerminalWithRetry<TResult>({
       const retryDelay = retryDelaysMs[attachAttempt]
       if (
         !canRetry ||
-        !retryDelay ||
+        retryDelay == null ||
         !isCurrent() ||
         !isRetryableError(error)
       ) {

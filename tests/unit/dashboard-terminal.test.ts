@@ -261,6 +261,33 @@ describe('dashboard terminal helpers', () => {
       expect(waitForRetry).toHaveBeenCalledWith(100)
     })
 
+    it('allows immediate retries with a zero delay', async () => {
+      const attachResult = { pty: 'pty', sandbox: 'sandbox' }
+      const retryableError = new Error('timeout')
+      const open = vi
+        .fn()
+        .mockRejectedValueOnce(retryableError)
+        .mockResolvedValueOnce(attachResult)
+      const waitForRetry = vi.fn().mockResolvedValue(undefined)
+      const onRetry = vi.fn()
+
+      await expect(
+        attachTerminalWithRetry({
+          canRetry: true,
+          isCurrent: () => true,
+          isRetryableError: (error) => error === retryableError,
+          onRetry,
+          open,
+          retryDelaysMs: [0],
+          waitForRetry,
+        })
+      ).resolves.toBe(attachResult)
+
+      expect(open).toHaveBeenCalledTimes(2)
+      expect(onRetry).toHaveBeenCalledWith(0)
+      expect(waitForRetry).toHaveBeenCalledWith(0)
+    })
+
     it('does not retry non-retryable attach failures', async () => {
       const error = new Error('permission denied')
       const waitForRetry = vi.fn()
