@@ -132,6 +132,7 @@ export default function DashboardTerminal({
 
     const pty = ptyRef.current
     ptyRef.current = null
+    inputQueueRef.current = Promise.resolve()
     if (!pty) return
 
     try {
