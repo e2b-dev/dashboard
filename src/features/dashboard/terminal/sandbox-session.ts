@@ -11,6 +11,7 @@ import {
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  shouldStoreSession?: boolean
   sandboxId?: string
   teamId: string
   template: string
@@ -19,6 +20,7 @@ interface OpenTerminalSandboxOptions {
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  shouldStoreSession,
   sandboxId,
   teamId,
   template,
@@ -68,10 +70,12 @@ export async function openTerminalSandbox({
     sandbox = await createTerminalSandbox({ headers, template, userId })
   }
 
-  writeStoredTerminalSession(userId, {
-    sandboxId: sandbox.sandboxId,
-    template,
-  })
+  if (shouldStoreSession ?? true) {
+    writeStoredTerminalSession(userId, {
+      sandboxId: sandbox.sandboxId,
+      template,
+    })
+  }
 
   return {
     sandbox,

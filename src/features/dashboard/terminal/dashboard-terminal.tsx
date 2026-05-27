@@ -38,6 +38,7 @@ interface DashboardTerminalProps {
   initialCommand?: string
   initialSandboxId?: string
   initialTemplate?: string
+  sandboxScoped?: boolean
   teamId: string
 }
 
@@ -46,6 +47,7 @@ export default function DashboardTerminal({
   initialCommand = '',
   initialSandboxId,
   initialTemplate,
+  sandboxScoped = false,
   teamId,
 }: DashboardTerminalProps) {
   const [status, setStatus] = useState<TerminalStatus>('idle')
@@ -147,7 +149,7 @@ export default function DashboardTerminal({
       const url = new URL(window.location.href)
       let changed = false
 
-      if (url.searchParams.get('sandboxId') !== sandboxId) {
+      if (!sandboxScoped && url.searchParams.get('sandboxId') !== sandboxId) {
         url.searchParams.set('sandboxId', sandboxId)
         changed = true
       }
@@ -161,7 +163,7 @@ export default function DashboardTerminal({
         window.history.replaceState(window.history.state, '', url)
       }
     },
-    []
+    [sandboxScoped]
   )
 
   const startTerminal = useCallback(
@@ -200,6 +202,7 @@ export default function DashboardTerminal({
         const { sandbox } = await openTerminalSandbox({
           forceNewSandbox: options.forceNewSandbox,
           onStatus: appendOutput,
+          shouldStoreSession: !sandboxScoped,
           sandboxId: options.sandboxId,
           teamId,
           template: nextTemplate,
@@ -270,6 +273,7 @@ export default function DashboardTerminal({
       disconnectTerminal,
       resizeTerminal,
       runCommand,
+      sandboxScoped,
       teamId,
       template,
       updateTerminalUrl,
