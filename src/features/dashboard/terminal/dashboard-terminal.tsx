@@ -11,6 +11,7 @@ import {
   MAX_TERMINAL_TRANSCRIPT_CHARS,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
   TERMINAL_ATTACH_RETRY_DELAYS_MS,
+  TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
@@ -70,7 +71,6 @@ export default function DashboardTerminal({
   const decoderRef = useRef(new TextDecoder())
   const pendingCommandsRef = useRef<string[]>([])
   const inputQueueRef = useRef(Promise.resolve())
-  const didAutoStartRef = useRef(false)
   const isStartingRef = useRef(false)
   const retryResolveRef = useRef<(() => void) | null>(null)
   const retryTimerRef = useRef<number | null>(null)
@@ -464,19 +464,27 @@ export default function DashboardTerminal({
   }
 
   useEffect(() => {
-    if (!autoStart || didAutoStartRef.current) return
+    if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
-    didAutoStartRef.current = true
-    queueTerminalCommand(initialCommand, {
-      sandboxId: initialSandboxId,
-      template: initialTemplate,
-    })
+    const autoStartTimer = window.setTimeout(() => {
+      if (isStartingRef.current || ptyRef.current) return
+
+      queueTerminalCommand(initialCommand, {
+        sandboxId: initialSandboxId,
+        template: initialTemplate,
+      })
+    }, TERMINAL_AUTOSTART_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(autoStartTimer)
+    }
   }, [
     autoStart,
     initialCommand,
     initialSandboxId,
     initialTemplate,
     queueTerminalCommand,
+    status,
   ])
 
   useEffect(() => {
