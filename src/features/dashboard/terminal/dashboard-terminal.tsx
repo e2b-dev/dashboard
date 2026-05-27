@@ -1,5 +1,6 @@
 'use client'
 
+import '@xterm/xterm/css/xterm.css'
 import { Terminal as XTerm } from '@xterm/xterm'
 import type Sandbox from 'e2b'
 import type { CommandHandle } from 'e2b'
