@@ -2,13 +2,15 @@
 
 import '@xterm/xterm/css/xterm.css'
 import { Terminal as XTerm } from '@xterm/xterm'
-import type { CommandHandle, Sandbox } from 'e2b'
+import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   DEFAULT_COLS,
   DEFAULT_CWD,
   DEFAULT_ROWS,
   MAX_TERMINAL_TRANSCRIPT_CHARS,
+  TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
+  TERMINAL_ATTACH_RETRY_DELAYS_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
@@ -70,7 +72,31 @@ export default function DashboardTerminal({
   const inputQueueRef = useRef(Promise.resolve())
   const didAutoStartRef = useRef(false)
   const isStartingRef = useRef(false)
+  const retryResolveRef = useRef<(() => void) | null>(null)
+  const retryTimerRef = useRef<number | null>(null)
   const startGenerationRef = useRef(0)
+
+  const clearAttachRetryTimer = useCallback(() => {
+    if (!retryTimerRef.current) return
+
+    window.clearTimeout(retryTimerRef.current)
+    retryTimerRef.current = null
+    retryResolveRef.current?.()
+    retryResolveRef.current = null
+  }, [])
+
+  const waitForAttachRetry = useCallback(
+    (delayMs: number) =>
+      new Promise<void>((resolve) => {
+        retryResolveRef.current = resolve
+        retryTimerRef.current = window.setTimeout(() => {
+          retryTimerRef.current = null
+          retryResolveRef.current = null
+          resolve()
+        }, delayMs)
+      }),
+    []
+  )
 
   const resizeTerminal = useCallback(() => {
     const nextSize = calculateTerminalSize(
@@ -102,6 +128,8 @@ export default function DashboardTerminal({
   }, [])
 
   const disconnectTerminal = useCallback(async () => {
+    clearAttachRetryTimer()
+
     const pty = ptyRef.current
     ptyRef.current = null
     if (!pty) return
@@ -111,7 +139,7 @@ export default function DashboardTerminal({
     } catch {
       // Best-effort cleanup. The sandbox is intentionally left alive to pause.
     }
-  }, [])
+  }, [clearAttachRetryTimer])
 
   const sendInputToPty = useCallback(
     (value: string | Uint8Array, terminalPid = pidRef.current) => {
@@ -198,38 +226,77 @@ export default function DashboardTerminal({
       setTemplate(nextTemplate)
       appendOutput('Opening terminal...\r\n')
 
-      try {
+      const openSandboxAndPty = async () => {
         const { sandbox } = await openTerminalSandbox({
           forceNewSandbox: options.forceNewSandbox,
           onStatus: appendOutput,
+          requestTimeoutMs: options.sandboxId
+            ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
+            : undefined,
           shouldStoreSession: !sandboxScoped,
           sandboxId: options.sandboxId,
           teamId,
           template: nextTemplate,
         })
 
-        if (!isCurrentStart()) return
+        if (!isCurrentStart()) return null
 
-        sandboxRef.current = sandbox
-        setActiveSandboxId(sandbox.sandboxId)
-        updateTerminalUrl({
-          // Keep ?command= until the confirmed command has an attached sandbox.
-          clearCommand: pendingCommandsRef.current.length > 0,
-          sandboxId: sandbox.sandboxId,
-        })
         appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
-
         appendOutput('Opening PTY...\r\n')
         const terminalSize = resizeTerminal()
         const pty = await sandbox.pty.create({
           cols: terminalSize.cols,
           rows: terminalSize.rows,
           timeoutMs: 0,
+          requestTimeoutMs: TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
           cwd: DEFAULT_CWD,
           onData: (data) => {
             appendOutput(data)
           },
         })
+
+        return { pty, sandbox }
+      }
+
+      const canRetryAttach = Boolean(options.sandboxId)
+
+      try {
+        type AttachResult = NonNullable<
+          Awaited<ReturnType<typeof openSandboxAndPty>>
+        >
+        let attachAttempt = 0
+        let sandbox: AttachResult['sandbox']
+        let pty: AttachResult['pty']
+
+        while (true) {
+          try {
+            const result = await openSandboxAndPty()
+            if (!result) return
+            sandbox = result.sandbox
+            pty = result.pty
+            break
+          } catch (error) {
+            const retryDelay = TERMINAL_ATTACH_RETRY_DELAYS_MS[attachAttempt]
+            if (
+              !canRetryAttach ||
+              !retryDelay ||
+              !isCurrentStart() ||
+              !(error instanceof TimeoutError)
+            ) {
+              throw error
+            }
+
+            attachAttempt += 1
+            appendOutput(
+              `Terminal attach timed out. Retrying in ${Math.round(
+                retryDelay / 1000
+              )}s...\r\n`
+            )
+            await waitForAttachRetry(retryDelay)
+
+            if (!isCurrentStart()) return
+          }
+        }
 
         if (!isCurrentStart()) {
           try {
@@ -240,6 +307,13 @@ export default function DashboardTerminal({
           return
         }
 
+        sandboxRef.current = sandbox
+        setActiveSandboxId(sandbox.sandboxId)
+        updateTerminalUrl({
+          // Keep ?command= until the confirmed command has an attached sandbox.
+          clearCommand: pendingCommandsRef.current.length > 0,
+          sandboxId: sandbox.sandboxId,
+        })
         ptyRef.current = pty
         pidRef.current = pty.pid
         resizeTerminal()
@@ -263,7 +337,6 @@ export default function DashboardTerminal({
         )
       } finally {
         if (isCurrentStart()) {
-          // Only the latest start owns the shared starting flag.
           isStartingRef.current = false
         }
       }
@@ -277,6 +350,7 @@ export default function DashboardTerminal({
       teamId,
       template,
       updateTerminalUrl,
+      waitForAttachRetry,
     ]
   )
 
@@ -408,9 +482,10 @@ export default function DashboardTerminal({
   useEffect(() => {
     return () => {
       startGenerationRef.current += 1
+      clearAttachRetryTimer()
       void disconnectTerminal()
     }
-  }, [disconnectTerminal])
+  }, [clearAttachRetryTimer, disconnectTerminal])
 
   useEffect(() => {
     const container = terminalContainerRef.current

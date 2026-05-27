@@ -5,3 +5,5 @@ export const DEFAULT_PANEL_HEIGHT = 260
 export const MAX_TERMINAL_TRANSCRIPT_CHARS = 200_000
 export const TERMINAL_SESSION_STORAGE_PREFIX = 'dashboard-terminal-session'
 export const DEFAULT_CWD = '/home/user'
+export const TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS = 15_000
+export const TERMINAL_ATTACH_RETRY_DELAYS_MS = [1500, 3000, 5000] as const
