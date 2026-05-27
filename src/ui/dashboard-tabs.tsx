@@ -1,17 +1,16 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { memo, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/ui/primitives/select'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-
-export interface DashboardTabsListProps {
-  layoutKey: string
-  tabs: DashboardTabItem[]
-  className?: string
-  headerAccessory?: ReactNode
-}
 
 export interface DashboardTabItem {
   id: string
@@ -20,21 +19,40 @@ export interface DashboardTabItem {
   icon?: ReactNode
 }
 
+export interface DashboardTabsListProps {
+  layoutKey: string
+  tabs: DashboardTabItem[]
+  className?: string
+  headerAccessory?: ReactNode
+  /**
+   * Controls how the tab bar renders on mobile (`max-md`) viewports.
+   * - `tabs` (default): horizontal `TabsList`, identical to desktop.
+   * - `select`: replaces the tab list with a `Select` dropdown and renders
+   *   the optional `headerAccessory` inline on the same row.
+   *
+   * Desktop rendering is unchanged regardless of variant.
+   */
+  mobileVariant?: 'tabs' | 'select'
+}
+
 function DashboardTabsListComponent({
   layoutKey,
   tabs,
   className,
   headerAccessory,
+  mobileVariant = 'tabs',
 }: DashboardTabsListProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
   const firstTab = tabs[0]
   if (!firstTab) {
     return null
   }
 
-  const activeTabId =
-    tabs.find((tab) => isTabActive(pathname, tab.href))?.id ?? firstTab.id
+  const activeTab =
+    tabs.find((tab) => isTabActive(pathname, tab.href)) ?? firstTab
+  const activeTabId = activeTab.id
 
   const tabTriggers = tabs.map((tab) => (
     <TabsTrigger
@@ -50,6 +68,52 @@ function DashboardTabsListComponent({
       </HoverPrefetchLink>
     </TabsTrigger>
   ))
+
+  if (mobileVariant === 'select') {
+    const handleSelectChange = (id: string) => {
+      const next = tabs.find((tab) => tab.id === id)
+      if (next) router.push(next.href)
+    }
+
+    return (
+      <Tabs
+        value={activeTabId}
+        className={cn(
+          'bg-bg flex w-full flex-none flex-row items-end',
+          className
+        )}
+      >
+        <Select value={activeTabId} onValueChange={handleSelectChange}>
+          <SelectTrigger className="h-9 w-fit border-x-0 border-t-0 border-b border-solid md:hidden">
+            <div className="flex items-center gap-2">
+              {activeTab.icon}
+              {activeTab.label}
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            {tabs.map((tab) => (
+              <SelectItem key={tab.id} value={tab.id}>
+                <div className="flex items-center gap-2">
+                  {tab.icon}
+                  {tab.label}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <TabsList className="bg-bg justify-start max-md:hidden md:flex-1">
+          {tabTriggers}
+        </TabsList>
+
+        {headerAccessory && (
+          <div className="flex items-end border-b border-solid max-md:flex-1 max-md:justify-end md:px-6">
+            {headerAccessory}
+          </div>
+        )}
+      </Tabs>
+    )
+  }
 
   return (
     <Tabs value={activeTabId} className={cn('w-full flex-none', className)}>
