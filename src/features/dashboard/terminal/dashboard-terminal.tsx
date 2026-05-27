@@ -2,8 +2,7 @@
 
 import '@xterm/xterm/css/xterm.css'
 import { Terminal as XTerm } from '@xterm/xterm'
-import type Sandbox from 'e2b'
-import type { CommandHandle } from 'e2b'
+import type { CommandHandle, Sandbox } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   DEFAULT_COLS,
