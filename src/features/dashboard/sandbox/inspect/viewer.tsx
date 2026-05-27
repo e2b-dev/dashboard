@@ -4,6 +4,7 @@ import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 import ShikiHighlighter, { type Language } from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
+import { DashboardPanelFrame as SandboxInspectFrame } from '@/features/dashboard/shared'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -16,7 +17,6 @@ import {
   type UnreadableFileTypeContentState,
   type UnreadableTooLargeContentState,
 } from './filesystem/store'
-import SandboxInspectFrame from './frame'
 import { useContent } from './hooks/use-content'
 import { useFile } from './hooks/use-file'
 import { useErrorPaths, useSelectedPath } from './hooks/use-node'

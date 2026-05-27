@@ -2,9 +2,9 @@
 
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
+import { DashboardPanelFrame as SandboxInspectFrame } from '@/features/dashboard/shared'
 import { ScrollArea } from '@/ui/primitives/scroll-area'
 import { useSandboxContext } from '../context'
-import SandboxInspectFrame from './frame'
 import { useDirectoryState } from './hooks/use-directory'
 import { useRootChildren } from './hooks/use-node'
 import SandboxInspectNode from './node'
