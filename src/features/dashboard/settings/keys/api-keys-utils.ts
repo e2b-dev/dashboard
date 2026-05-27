@@ -8,6 +8,12 @@ const getMaskedIdSearchString = (apiKey: TeamAPIKey): string => {
   return `${prefix}${maskedValuePrefix}...${maskedValueSuffix}`.toLowerCase()
 }
 
+/** Visual masked key for the KEY column; e.g. `"e2b_1f••••6ba3"`. */
+const formatMaskedApiKey = (apiKey: TeamAPIKey): string => {
+  const { prefix, maskedValuePrefix, maskedValueSuffix } = apiKey.mask
+  return `${prefix}${maskedValuePrefix}••••${maskedValueSuffix}`.toLowerCase()
+}
+
 /** Returns true when the key name or masked id contains the trimmed query (case-insensitive). */
 const matchesApiKeySearch = (apiKey: TeamAPIKey, query: string): boolean => {
   const q = query.trim().toLowerCase()
@@ -29,4 +35,9 @@ const getLastUsedLabel = (apiKey: TeamAPIKey): string => {
   return 'Never'
 }
 
-export { getLastUsedLabel, getMaskedIdSearchString, matchesApiKeySearch }
+export {
+  formatMaskedApiKey,
+  getLastUsedLabel,
+  getMaskedIdSearchString,
+  matchesApiKeySearch,
+}

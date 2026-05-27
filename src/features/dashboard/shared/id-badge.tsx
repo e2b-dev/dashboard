@@ -36,7 +36,7 @@ export const IdBadge = ({
 
   return (
     <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 align-middle prose-label-numeric">
-      <span className="tracking-wider">{displayId}</span>
+      <span className="tracking-wider font-mono">{displayId}</span>
       <Button
         type="button"
         variant="quaternary"
