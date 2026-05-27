@@ -1,14 +1,8 @@
 'use client'
-
-import '@xterm/xterm/css/xterm.css'
-import { Terminal as XTerm } from '@xterm/xterm'
 import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  DEFAULT_COLS,
   DEFAULT_CWD,
-  DEFAULT_ROWS,
-  MAX_TERMINAL_TRANSCRIPT_CHARS,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
   TERMINAL_ATTACH_RETRY_DELAYS_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
@@ -20,21 +14,12 @@ import {
   resolveTerminalTemplateOverride,
 } from './template'
 import TerminalPanel from './terminal-panel'
-import { calculateTerminalSize } from './terminal-size'
 import type {
   PendingTerminalLaunch,
   StartTerminalOptions,
   TerminalStatus,
 } from './types'
-
-const INITIAL_TERMINAL_TEXT =
-  'Open a terminal to start a persistent E2B sandbox.\r\n'
-const TERMINAL_THEME = {
-  background: '#000000',
-  cursor: '#ffffff',
-  foreground: '#ffffff',
-  selectionBackground: '#ffffff40',
-}
+import { useTerminalInstance } from './use-terminal-instance'
 
 interface DashboardTerminalProps {
   autoStart?: boolean
@@ -64,11 +49,6 @@ export default function DashboardTerminal({
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
   const pidRef = useRef<number | undefined>(undefined)
-  const xtermRef = useRef<XTerm | null>(null)
-  const terminalContainerRef = useRef<HTMLDivElement | null>(null)
-  const terminalTranscriptRef = useRef(INITIAL_TERMINAL_TEXT)
-  const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
-  const decoderRef = useRef(new TextDecoder())
   const pendingCommandsRef = useRef<string[]>([])
   const inputQueueRef = useRef(Promise.resolve())
   const isStartingRef = useRef(false)
@@ -98,34 +78,38 @@ export default function DashboardTerminal({
     []
   )
 
-  const resizeTerminal = useCallback(() => {
-    const nextSize = calculateTerminalSize(
-      terminalContainerRef.current,
-      xtermRef.current
-    )
-    terminalSizeRef.current = nextSize
-    xtermRef.current?.resize(nextSize.cols, nextSize.rows)
+  const sendInputToPty = useCallback(
+    (value: string | Uint8Array, terminalPid = pidRef.current) => {
+      if (!value || !sandboxRef.current || !terminalPid) return
 
+      const sandbox = sandboxRef.current
+      const data =
+        typeof value === 'string' ? new TextEncoder().encode(value) : value
+
+      inputQueueRef.current = inputQueueRef.current
+        .catch(() => undefined)
+        .then(() => sandbox.pty.sendInput(terminalPid, data))
+    },
+    []
+  )
+
+  const resizePty = useCallback((size: { cols: number; rows: number }) => {
     if (sandboxRef.current && pidRef.current) {
-      void sandboxRef.current.pty.resize(pidRef.current, nextSize)
+      void sandboxRef.current.pty.resize(pidRef.current, size)
     }
-
-    return nextSize
   }, [])
 
-  const appendOutput = useCallback((chunk: string | Uint8Array) => {
-    const text =
-      typeof chunk === 'string'
-        ? chunk
-        : decoderRef.current.decode(chunk, { stream: true })
-
-    terminalTranscriptRef.current = (
-      terminalTranscriptRef.current + text
-    ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
-    xtermRef.current?.write(chunk, () => {
-      xtermRef.current?.scrollToBottom()
-    })
-  }, [])
+  const {
+    appendOutput,
+    copyTerminalText,
+    focusTerminal,
+    resetTerminal,
+    resizeTerminal,
+    terminalContainerRef,
+  } = useTerminalInstance({
+    onInput: sendInputToPty,
+    onResize: resizePty,
+  })
 
   const disconnectTerminal = useCallback(async () => {
     clearAttachRetryTimer()
@@ -141,21 +125,6 @@ export default function DashboardTerminal({
       // Best-effort cleanup. The sandbox is intentionally left alive to pause.
     }
   }, [clearAttachRetryTimer])
-
-  const sendInputToPty = useCallback(
-    (value: string | Uint8Array, terminalPid = pidRef.current) => {
-      if (!value || !sandboxRef.current || !terminalPid) return
-
-      const sandbox = sandboxRef.current
-      const data =
-        typeof value === 'string' ? new TextEncoder().encode(value) : value
-
-      inputQueueRef.current = inputQueueRef.current
-        .catch(() => undefined)
-        .then(() => sandbox.pty.sendInput(terminalPid, data))
-    },
-    []
-  )
 
   const runCommand = useCallback(
     (command: string, terminalPid?: number) => {
@@ -218,10 +187,8 @@ export default function DashboardTerminal({
       await disconnectTerminal()
       sandboxRef.current = null
       pidRef.current = undefined
-      decoderRef.current = new TextDecoder()
       inputQueueRef.current = Promise.resolve()
-      terminalTranscriptRef.current = ''
-      xtermRef.current?.reset()
+      resetTerminal()
       setStatus('starting')
       setActiveSandboxId(options.sandboxId)
       setTemplate(nextTemplate)
@@ -320,7 +287,7 @@ export default function DashboardTerminal({
         resizeTerminal()
         setStatus('ready')
         appendOutput(`PTY ${pty.pid} attached.\r\n`)
-        xtermRef.current?.focus()
+        focusTerminal()
 
         const pendingCommands = pendingCommandsRef.current
         pendingCommandsRef.current = []
@@ -346,6 +313,8 @@ export default function DashboardTerminal({
       appendOutput,
       disconnectTerminal,
       resizeTerminal,
+      resetTerminal,
+      focusTerminal,
       runCommand,
       sandboxScoped,
       teamId,
@@ -450,20 +419,6 @@ export default function DashboardTerminal({
     void startTerminal({ forceNewSandbox: true })
   }, [reconnectSandboxId, sandboxScoped, startTerminal])
 
-  const copyTerminalText = async () => {
-    const value =
-      xtermRef.current?.getSelection() || terminalTranscriptRef.current
-    if (!value) return
-
-    try {
-      await navigator.clipboard.writeText(value)
-    } catch {
-      appendOutput('\r\nCould not copy terminal output to clipboard.\r\n')
-    } finally {
-      xtermRef.current?.focus()
-    }
-  }
-
   useEffect(() => {
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
@@ -496,73 +451,6 @@ export default function DashboardTerminal({
     }
   }, [clearAttachRetryTimer, disconnectTerminal])
 
-  useEffect(() => {
-    const container = terminalContainerRef.current
-    if (!container) return
-
-    const terminal = new XTerm({
-      cols: terminalSizeRef.current.cols,
-      rows: terminalSizeRef.current.rows,
-      cursorBlink: true,
-      cursorStyle: 'block',
-      fontFamily:
-        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: 13,
-      lineHeight: 1.54,
-      scrollback: 10_000,
-      theme: TERMINAL_THEME,
-    })
-
-    xtermRef.current = terminal
-    terminal.open(container)
-    terminal.write(terminalTranscriptRef.current)
-    const dataSubscription = terminal.onData((data) => {
-      sendInputToPty(data)
-    })
-
-    requestAnimationFrame(() => {
-      resizeTerminal()
-      terminal.focus()
-    })
-    const resizeTimer = window.setTimeout(() => {
-      resizeTerminal()
-    }, 100)
-
-    return () => {
-      window.clearTimeout(resizeTimer)
-      dataSubscription.dispose()
-      terminal.dispose()
-      if (xtermRef.current === terminal) {
-        xtermRef.current = null
-      }
-    }
-  }, [resizeTerminal, sendInputToPty])
-
-  useEffect(() => {
-    const container = terminalContainerRef.current
-    const resizeObserver =
-      container && typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            resizeTerminal()
-          })
-        : null
-
-    if (container) {
-      resizeObserver?.observe(container)
-    }
-
-    const handleWindowResize = () => {
-      resizeTerminal()
-    }
-
-    window.addEventListener('resize', handleWindowResize)
-
-    return () => {
-      resizeObserver?.disconnect()
-      window.removeEventListener('resize', handleWindowResize)
-    }
-  }, [resizeTerminal])
-
   return (
     <>
       <TerminalPanel
@@ -571,7 +459,7 @@ export default function DashboardTerminal({
         restartLabel={restartLabel}
         template={sandboxScoped ? undefined : template}
         terminalContainerRef={terminalContainerRef}
-        onFocusTerminal={() => xtermRef.current?.focus()}
+        onFocusTerminal={focusTerminal}
         onCopyTerminalText={() => void copyTerminalText()}
         onRestartTerminal={restartTerminal}
       />
