@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SUPABASE_TEAM_HEADER, SUPABASE_TOKEN_HEADER } from '@/configs/api'
+import { attachTerminalWithRetry } from '@/features/dashboard/terminal/attach-terminal'
 import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/constants'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
 import {
@@ -208,6 +209,98 @@ describe('dashboard terminal helpers', () => {
         cols: 83,
         rows: 20,
       })
+    })
+  })
+
+  describe('attachTerminalWithRetry', () => {
+    it('returns the first successful attach without retrying', async () => {
+      const attachResult = { pty: 'pty', sandbox: 'sandbox' }
+      const waitForRetry = vi.fn()
+      const onRetry = vi.fn()
+
+      await expect(
+        attachTerminalWithRetry({
+          canRetry: true,
+          isCurrent: () => true,
+          isRetryableError: () => true,
+          onRetry,
+          open: vi.fn().mockResolvedValue(attachResult),
+          retryDelaysMs: [100],
+          waitForRetry,
+        })
+      ).resolves.toBe(attachResult)
+
+      expect(onRetry).not.toHaveBeenCalled()
+      expect(waitForRetry).not.toHaveBeenCalled()
+    })
+
+    it('retries retryable attach failures using the configured delays', async () => {
+      const attachResult = { pty: 'pty', sandbox: 'sandbox' }
+      const retryableError = new Error('timeout')
+      const open = vi
+        .fn()
+        .mockRejectedValueOnce(retryableError)
+        .mockResolvedValueOnce(attachResult)
+      const waitForRetry = vi.fn().mockResolvedValue(undefined)
+      const onRetry = vi.fn()
+
+      await expect(
+        attachTerminalWithRetry({
+          canRetry: true,
+          isCurrent: () => true,
+          isRetryableError: (error) => error === retryableError,
+          onRetry,
+          open,
+          retryDelaysMs: [100],
+          waitForRetry,
+        })
+      ).resolves.toBe(attachResult)
+
+      expect(open).toHaveBeenCalledTimes(2)
+      expect(onRetry).toHaveBeenCalledWith(100)
+      expect(waitForRetry).toHaveBeenCalledWith(100)
+    })
+
+    it('does not retry non-retryable attach failures', async () => {
+      const error = new Error('permission denied')
+      const waitForRetry = vi.fn()
+
+      await expect(
+        attachTerminalWithRetry({
+          canRetry: true,
+          isCurrent: () => true,
+          isRetryableError: () => false,
+          onRetry: vi.fn(),
+          open: vi.fn().mockRejectedValue(error),
+          retryDelaysMs: [100],
+          waitForRetry,
+        })
+      ).rejects.toBe(error)
+
+      expect(waitForRetry).not.toHaveBeenCalled()
+    })
+
+    it('stops retrying when the caller is no longer current', async () => {
+      let isCurrent = true
+      const open = vi.fn().mockRejectedValue(new Error('timeout'))
+      const waitForRetry = vi.fn().mockImplementation(async () => {
+        isCurrent = false
+      })
+
+      await expect(
+        attachTerminalWithRetry({
+          canRetry: true,
+          isCurrent: () => isCurrent,
+          isRetryableError: () => true,
+          onRetry: vi.fn(),
+          open,
+          retryDelaysMs: [100, 200],
+          waitForRetry,
+        })
+      ).resolves.toBeNull()
+
+      expect(open).toHaveBeenCalledTimes(1)
+      expect(waitForRetry).toHaveBeenCalledWith(100)
     })
   })
 

@@ -1,6 +1,8 @@
 'use client'
+
 import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { attachTerminalWithRetry } from './attach-terminal'
 import {
   DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
@@ -229,42 +231,24 @@ export default function DashboardTerminal({
       const canRetryAttach = Boolean(options.sandboxId)
 
       try {
-        type AttachResult = NonNullable<
-          Awaited<ReturnType<typeof openSandboxAndPty>>
-        >
-        let attachAttempt = 0
-        let sandbox: AttachResult['sandbox']
-        let pty: AttachResult['pty']
-
-        while (true) {
-          try {
-            const result = await openSandboxAndPty()
-            if (!result) return
-            sandbox = result.sandbox
-            pty = result.pty
-            break
-          } catch (error) {
-            const retryDelay = TERMINAL_ATTACH_RETRY_DELAYS_MS[attachAttempt]
-            if (
-              !canRetryAttach ||
-              !retryDelay ||
-              !isCurrentStart() ||
-              !(error instanceof TimeoutError)
-            ) {
-              throw error
-            }
-
-            attachAttempt += 1
+        const result = await attachTerminalWithRetry({
+          canRetry: canRetryAttach,
+          isCurrent: isCurrentStart,
+          isRetryableError: (error) => error instanceof TimeoutError,
+          onRetry: (retryDelay) => {
             appendOutput(
               `Terminal attach timed out. Retrying in ${Math.round(
                 retryDelay / 1000
               )}s...\r\n`
             )
-            await waitForAttachRetry(retryDelay)
+          },
+          open: openSandboxAndPty,
+          retryDelaysMs: TERMINAL_ATTACH_RETRY_DELAYS_MS,
+          waitForRetry: waitForAttachRetry,
+        })
 
-            if (!isCurrentStart()) return
-          }
-        }
+        if (!result) return
+        const { sandbox, pty } = result
 
         if (!isCurrentStart()) {
           try {
