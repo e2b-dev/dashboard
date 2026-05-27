@@ -6,26 +6,27 @@ import {
   RefreshIcon,
   TerminalCustomIcon,
 } from '@/ui/primitives/icons'
-import type { StartTerminalOptions, TerminalStatus } from './types'
 
 interface TerminalPanelProps {
   sandboxId?: string
-  template: string
-  status: TerminalStatus
+  template?: string
+  restartDisabled: boolean
+  restartLabel: string
   terminalContainerRef: RefObject<HTMLDivElement | null>
   onFocusTerminal: () => void
   onCopyTerminalText: () => void
-  onStartTerminal: (options?: StartTerminalOptions) => void
+  onRestartTerminal: () => void
 }
 
 export default function TerminalPanel({
   sandboxId,
   template,
-  status,
+  restartDisabled,
+  restartLabel,
   terminalContainerRef,
   onFocusTerminal,
   onCopyTerminalText,
-  onStartTerminal,
+  onRestartTerminal,
 }: TerminalPanelProps) {
   const header = (
     <div className="flex h-full items-center justify-between px-3">
@@ -34,9 +35,11 @@ export default function TerminalPanel({
         <span className="prose-label-highlight shrink-0 uppercase">
           Terminal
         </span>
-        <span className="text-fg-tertiary shrink-0 font-mono text-xs">
-          {template}
-        </span>
+        {template ? (
+          <span className="text-fg-tertiary shrink-0 font-mono text-xs">
+            {template}
+          </span>
+        ) : null}
         {sandboxId ? (
           <span className="text-fg-tertiary truncate font-mono text-xs">
             {sandboxId}
@@ -60,10 +63,10 @@ export default function TerminalPanel({
           type="button"
           variant="tertiary"
           className="size-7"
-          aria-label="Start new terminal sandbox"
-          title="Start new terminal sandbox"
-          disabled={status === 'starting'}
-          onClick={() => onStartTerminal({ forceNewSandbox: true })}
+          aria-label={restartLabel}
+          title={restartLabel}
+          disabled={restartDisabled}
+          onClick={onRestartTerminal}
         >
           <RefreshIcon />
         </IconButton>

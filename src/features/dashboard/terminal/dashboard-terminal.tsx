@@ -357,6 +357,24 @@ export default function DashboardTerminal({
     updateTerminalUrl,
   ])
 
+  const reconnectSandboxId = sandboxScoped ? initialSandboxId : activeSandboxId
+  const restartLabel = sandboxScoped
+    ? 'Reconnect terminal'
+    : 'Start new terminal sandbox'
+  const restartDisabled =
+    status === 'starting' || (sandboxScoped && !reconnectSandboxId)
+
+  const restartTerminal = useCallback(() => {
+    if (sandboxScoped) {
+      if (!reconnectSandboxId) return
+
+      void startTerminal({ sandboxId: reconnectSandboxId })
+      return
+    }
+
+    void startTerminal({ forceNewSandbox: true })
+  }, [reconnectSandboxId, sandboxScoped, startTerminal])
+
   const copyTerminalText = async () => {
     const value =
       xtermRef.current?.getSelection() || terminalTranscriptRef.current
@@ -465,12 +483,13 @@ export default function DashboardTerminal({
     <>
       <TerminalPanel
         sandboxId={activeSandboxId}
-        template={template}
-        status={status}
+        restartDisabled={restartDisabled}
+        restartLabel={restartLabel}
+        template={sandboxScoped ? undefined : template}
         terminalContainerRef={terminalContainerRef}
         onFocusTerminal={() => xtermRef.current?.focus()}
         onCopyTerminalText={() => void copyTerminalText()}
-        onStartTerminal={(options) => void startTerminal(options)}
+        onRestartTerminal={restartTerminal}
       />
 
       <DashboardTerminalCommandDialog
