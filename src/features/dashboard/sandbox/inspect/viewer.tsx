@@ -4,7 +4,7 @@ import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 import ShikiHighlighter, { type Language } from 'react-shiki'
 import { useShikiTheme } from '@/configs/shiki'
-import { DashboardPanelFrame } from '@/features/dashboard/shared'
+import { SandboxInspectFrame } from '@/features/dashboard/shared'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
@@ -81,7 +81,7 @@ function SandboxInspectViewerContent({
   }
 
   return (
-    <DashboardPanelFrame
+    <SandboxInspectFrame
       classNames={{
         frame: 'max-md:max-w-full max-md:border-none max-h-full',
         header: 'max-md:bg-transparent max-md:h-9 max-md:border-none',
@@ -125,7 +125,7 @@ function SandboxInspectViewerContent({
       ) : (
         <UnreadableContent state={state} onDownload={download} />
       )}
-    </DashboardPanelFrame>
+    </SandboxInspectFrame>
   )
 }
 

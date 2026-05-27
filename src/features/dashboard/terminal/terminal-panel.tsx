@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { DashboardPanelFrame } from '@/features/dashboard/shared'
+import { SandboxInspectFrame as DashboardPanelFrame } from '@/features/dashboard/shared'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
   CopyIcon,

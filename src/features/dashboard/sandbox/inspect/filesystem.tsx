@@ -2,7 +2,7 @@
 
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
-import { DashboardPanelFrame } from '@/features/dashboard/shared'
+import { SandboxInspectFrame } from '@/features/dashboard/shared'
 import { ScrollArea } from '@/ui/primitives/scroll-area'
 import { useSandboxContext } from '../context'
 import { useDirectoryState } from './hooks/use-directory'
@@ -28,7 +28,7 @@ export default function SandboxInspectFilesystem({
   return (
     <div className="h-full flex-1 flex flex-col gap-1 overflow-hidden">
       <StoppedBanner rootNodeCount={children.length} />
-      <DashboardPanelFrame
+      <SandboxInspectFrame
         initial={{
           flex: 1,
         }}
@@ -49,7 +49,7 @@ export default function SandboxInspectFilesystem({
             </ScrollArea>
           )}
         </div>
-      </DashboardPanelFrame>
+      </SandboxInspectFrame>
     </div>
   )
 }

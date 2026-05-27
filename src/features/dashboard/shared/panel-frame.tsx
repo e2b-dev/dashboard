@@ -4,7 +4,7 @@ import { motion } from 'motion/react'
 import type React from 'react'
 import { cn } from '@/lib/utils'
 
-type DashboardPanelFrameProps = React.ComponentProps<typeof motion.div> & {
+type SandboxInspectFrameProps = React.ComponentProps<typeof motion.div> & {
   header: React.ReactNode
   classNames?: {
     frame?: string
@@ -12,13 +12,13 @@ type DashboardPanelFrameProps = React.ComponentProps<typeof motion.div> & {
   }
 }
 
-export function DashboardPanelFrame({
+export function SandboxInspectFrame({
   className,
   classNames,
   children,
   header,
   ...props
-}: DashboardPanelFrameProps) {
+}: SandboxInspectFrameProps) {
   return (
     <motion.div
       transition={{ duration: 0.25, ease: 'easeInOut' }}
