@@ -8,6 +8,7 @@ import {
   HistoryIcon,
   ListIcon,
   StorageIcon,
+  TerminalCustomIcon,
   TrendIcon,
 } from '@/ui/primitives/icons'
 import { useSandboxContext } from './context'
@@ -67,6 +68,12 @@ export default function SandboxLayout({
                 label: 'Logs',
                 href: PROTECTED_URLS.SANDBOX_LOGS(teamSlug, sandboxId),
                 icon: <ListIcon className="size-4" />,
+              },
+              {
+                id: 'terminal',
+                label: 'Terminal',
+                href: PROTECTED_URLS.SANDBOX_TERMINAL(teamSlug, sandboxId),
+                icon: <TerminalCustomIcon className="size-4" />,
               },
               {
                 id: 'filesystem',
