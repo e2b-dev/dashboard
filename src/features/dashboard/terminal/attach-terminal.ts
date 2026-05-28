@@ -2,9 +2,11 @@ interface AttachTerminalWithRetryOptions<TResult> {
   canRetry: boolean
   isCurrent: () => boolean
   isRetryableError: (error: unknown) => boolean
+  maxRetries: number
   onRetry: (delayMs: number) => void
   open: () => Promise<TResult | null>
-  retryDelaysMs: readonly number[]
+  retryBaseDelayMs: number
+  retryMaxDelayMs: number
   waitForRetry: (delayMs: number) => Promise<void>
 }
 
@@ -12,32 +14,49 @@ export async function attachTerminalWithRetry<TResult>({
   canRetry,
   isCurrent,
   isRetryableError,
+  maxRetries,
   onRetry,
   open,
-  retryDelaysMs,
+  retryBaseDelayMs,
+  retryMaxDelayMs,
   waitForRetry,
 }: AttachTerminalWithRetryOptions<TResult>) {
-  let attachAttempt = 0
-
-  while (true) {
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
       return await open()
     } catch (error) {
-      const retryDelay = retryDelaysMs[attachAttempt]
       if (
         !canRetry ||
-        retryDelay == null ||
+        attempt >= maxRetries ||
         !isCurrent() ||
         !isRetryableError(error)
       ) {
         throw error
       }
 
-      attachAttempt += 1
+      const retryDelay = getRetryDelayMs({
+        attempt,
+        baseDelayMs: retryBaseDelayMs,
+        maxDelayMs: retryMaxDelayMs,
+      })
       onRetry(retryDelay)
       await waitForRetry(retryDelay)
 
       if (!isCurrent()) return null
     }
   }
+
+  return null
+}
+
+function getRetryDelayMs({
+  attempt,
+  baseDelayMs,
+  maxDelayMs,
+}: {
+  attempt: number
+  baseDelayMs: number
+  maxDelayMs: number
+}) {
+  return Math.min(baseDelayMs * 2 ** attempt, maxDelayMs)
 }

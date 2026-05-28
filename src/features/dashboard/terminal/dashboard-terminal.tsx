@@ -6,7 +6,9 @@ import { attachTerminalWithRetry } from './attach-terminal'
 import {
   DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
-  TERMINAL_ATTACH_RETRY_DELAYS_MS,
+  TERMINAL_ATTACH_MAX_RETRIES,
+  TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
+  TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
@@ -235,6 +237,7 @@ export default function DashboardTerminal({
           canRetry: canRetryAttach,
           isCurrent: isCurrentStart,
           isRetryableError: (error) => error instanceof TimeoutError,
+          maxRetries: TERMINAL_ATTACH_MAX_RETRIES,
           onRetry: (retryDelay) => {
             appendOutput(
               `Terminal attach timed out. Retrying in ${Math.round(
@@ -243,7 +246,8 @@ export default function DashboardTerminal({
             )
           },
           open: openSandboxAndPty,
-          retryDelaysMs: TERMINAL_ATTACH_RETRY_DELAYS_MS,
+          retryBaseDelayMs: TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
+          retryMaxDelayMs: TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
           waitForRetry: waitForAttachRetry,
         })
 

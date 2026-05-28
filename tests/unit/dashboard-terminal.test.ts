@@ -213,6 +213,12 @@ describe('dashboard terminal helpers', () => {
   })
 
   describe('attachTerminalWithRetry', () => {
+    const retryOptions = {
+      maxRetries: 2,
+      retryBaseDelayMs: 100,
+      retryMaxDelayMs: 500,
+    }
+
     it('returns the first successful attach without retrying', async () => {
       const attachResult = { pty: 'pty', sandbox: 'sandbox' }
       const waitForRetry = vi.fn()
@@ -223,9 +229,9 @@ describe('dashboard terminal helpers', () => {
           canRetry: true,
           isCurrent: () => true,
           isRetryableError: () => true,
+          ...retryOptions,
           onRetry,
           open: vi.fn().mockResolvedValue(attachResult),
-          retryDelaysMs: [100],
           waitForRetry,
         })
       ).resolves.toBe(attachResult)
@@ -234,11 +240,12 @@ describe('dashboard terminal helpers', () => {
       expect(waitForRetry).not.toHaveBeenCalled()
     })
 
-    it('retries retryable attach failures using the configured delays', async () => {
+    it('retries retryable attach failures with exponential backoff', async () => {
       const attachResult = { pty: 'pty', sandbox: 'sandbox' }
       const retryableError = new Error('timeout')
       const open = vi
         .fn()
+        .mockRejectedValueOnce(retryableError)
         .mockRejectedValueOnce(retryableError)
         .mockResolvedValueOnce(attachResult)
       const waitForRetry = vi.fn().mockResolvedValue(undefined)
@@ -249,23 +256,27 @@ describe('dashboard terminal helpers', () => {
           canRetry: true,
           isCurrent: () => true,
           isRetryableError: (error) => error === retryableError,
+          ...retryOptions,
           onRetry,
           open,
-          retryDelaysMs: [100],
           waitForRetry,
         })
       ).resolves.toBe(attachResult)
 
-      expect(open).toHaveBeenCalledTimes(2)
-      expect(onRetry).toHaveBeenCalledWith(100)
-      expect(waitForRetry).toHaveBeenCalledWith(100)
+      expect(open).toHaveBeenCalledTimes(3)
+      expect(onRetry).toHaveBeenNthCalledWith(1, 100)
+      expect(onRetry).toHaveBeenNthCalledWith(2, 200)
+      expect(waitForRetry).toHaveBeenNthCalledWith(1, 100)
+      expect(waitForRetry).toHaveBeenNthCalledWith(2, 200)
     })
 
-    it('allows immediate retries with a zero delay', async () => {
+    it('caps exponential backoff at the configured max delay', async () => {
       const attachResult = { pty: 'pty', sandbox: 'sandbox' }
       const retryableError = new Error('timeout')
       const open = vi
         .fn()
+        .mockRejectedValueOnce(retryableError)
+        .mockRejectedValueOnce(retryableError)
         .mockRejectedValueOnce(retryableError)
         .mockResolvedValueOnce(attachResult)
       const waitForRetry = vi.fn().mockResolvedValue(undefined)
@@ -276,16 +287,22 @@ describe('dashboard terminal helpers', () => {
           canRetry: true,
           isCurrent: () => true,
           isRetryableError: (error) => error === retryableError,
+          maxRetries: 3,
           onRetry,
           open,
-          retryDelaysMs: [0],
+          retryBaseDelayMs: 100,
+          retryMaxDelayMs: 150,
           waitForRetry,
         })
       ).resolves.toBe(attachResult)
 
-      expect(open).toHaveBeenCalledTimes(2)
-      expect(onRetry).toHaveBeenCalledWith(0)
-      expect(waitForRetry).toHaveBeenCalledWith(0)
+      expect(open).toHaveBeenCalledTimes(4)
+      expect(onRetry).toHaveBeenNthCalledWith(1, 100)
+      expect(onRetry).toHaveBeenNthCalledWith(2, 150)
+      expect(onRetry).toHaveBeenNthCalledWith(3, 150)
+      expect(waitForRetry).toHaveBeenNthCalledWith(1, 100)
+      expect(waitForRetry).toHaveBeenNthCalledWith(2, 150)
+      expect(waitForRetry).toHaveBeenNthCalledWith(3, 150)
     })
 
     it('does not retry non-retryable attach failures', async () => {
@@ -297,9 +314,9 @@ describe('dashboard terminal helpers', () => {
           canRetry: true,
           isCurrent: () => true,
           isRetryableError: () => false,
+          ...retryOptions,
           onRetry: vi.fn(),
           open: vi.fn().mockRejectedValue(error),
-          retryDelaysMs: [100],
           waitForRetry,
         })
       ).rejects.toBe(error)
@@ -319,9 +336,9 @@ describe('dashboard terminal helpers', () => {
           canRetry: true,
           isCurrent: () => isCurrent,
           isRetryableError: () => true,
+          ...retryOptions,
           onRetry: vi.fn(),
           open,
-          retryDelaysMs: [100, 200],
           waitForRetry,
         })
       ).resolves.toBeNull()

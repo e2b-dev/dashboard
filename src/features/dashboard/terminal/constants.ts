@@ -7,4 +7,6 @@ export const TERMINAL_SESSION_STORAGE_PREFIX = 'dashboard-terminal-session'
 export const DEFAULT_CWD = '/home/user'
 export const TERMINAL_AUTOSTART_DEBOUNCE_MS = 300
 export const TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS = 15_000
-export const TERMINAL_ATTACH_RETRY_DELAYS_MS = [1500, 3000, 5000] as const
+export const TERMINAL_ATTACH_MAX_RETRIES = 3
+export const TERMINAL_ATTACH_RETRY_BASE_DELAY_MS = 1500
+export const TERMINAL_ATTACH_RETRY_MAX_DELAY_MS = 5000
