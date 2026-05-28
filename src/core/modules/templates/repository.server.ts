@@ -9,8 +9,6 @@ import {
 } from '@/configs/mock-data'
 import type {
   DefaultTemplate,
-  ListTeamTemplatesOptions,
-  ListTeamTemplatesResult,
   Template,
   TemplateTag,
   TemplateTagExistsResult,
@@ -38,9 +36,6 @@ type TemplatesRepositoryDeps = {
 
 export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
-  listTeamTemplates(
-    options: ListTeamTemplatesOptions
-  ): Promise<RepoResult<ListTeamTemplatesResult>>
   getTemplate(templateId: string): Promise<RepoResult<{ template: Template }>>
   getTags(templateId: string): Promise<RepoResult<{ tags: TemplateTag[] }>>
   getTagGroups(
@@ -51,6 +46,11 @@ export interface TeamTemplatesRepository {
     templateId: string,
     tag: string
   ): Promise<RepoResult<TemplateTagExistsResult>>
+  assignTag(input: {
+    templateName: string
+    buildId: string
+    tag: string
+  }): Promise<RepoResult<{ tags: string[]; buildID: string }>>
   deleteTemplate(templateId: string): Promise<RepoResult<{ success: true }>>
   deleteTags(
     templateName: string,
@@ -228,14 +228,11 @@ export function createTemplatesRepository(
         ),
       })
     },
-    async listTeamTemplates(options) {
-      if (USE_MOCK_DATA) {
-        return ok({ data: MOCK_TEMPLATES_DATA, nextCursor: null })
-      }
-
-      const res = await deps.apiClient.GET('/templates', {
-        params: {
-          query: options,
+    async assignTag({ templateName, buildId, tag }) {
+      const res = await deps.infraClient.POST('/templates/tags', {
+        body: {
+          target: `${templateName}:${buildId}`,
+          tags: [tag],
         },
         headers: {
           ...deps.authHeaders(scope.accessToken, scope.teamId),
@@ -246,43 +243,16 @@ export function createTemplatesRepository(
         return err(
           repoErrorFromHttp(
             res.response.status,
-            res.error?.message ?? 'Failed to fetch templates',
+            res.error?.message ?? 'Failed to assign template tag',
             res.error
           )
         )
       }
 
-      if (!res.data?.data?.length) {
-        return ok({ data: [], nextCursor: res.data?.nextCursor ?? null })
-      }
-
-      const data = res.data.data.map((t): Template | DefaultTemplate => ({
-        templateID: t.templateID,
-        buildID: t.buildID,
-        cpuCount: t.cpuCount,
-        memoryMB: t.memoryMB,
-        diskSizeMB: t.diskSizeMB ?? 0,
-        public: t.public,
-        aliases: t.aliases,
-        names: t.names,
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt,
-        // Email resolution is deferred while the Supabase auth migration is
-        // in progress; the endpoint returns only the creator id for now.
-        createdBy: t.createdBy
-          ? { id: t.createdBy.id, email: t.createdBy.email ?? '' }
-          : null,
-        lastSpawnedAt: t.lastSpawnedAt ?? null,
-        spawnCount: t.spawnCount,
-        buildCount: t.buildCount,
-        envdVersion: t.envdVersion ?? '',
-        ...(t.isDefault && {
-          isDefault: true as const,
-          defaultDescription: t.defaultDescription ?? undefined,
-        }),
-      }))
-
-      return ok({ data, nextCursor: res.data.nextCursor ?? null })
+      return ok({
+        tags: res.data?.tags ?? [tag],
+        buildID: res.data?.buildID ?? buildId,
+      })
     },
     async deleteTags(templateName, tags) {
       const res = await deps.infraClient.DELETE('/templates/tags', {

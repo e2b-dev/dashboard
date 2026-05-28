@@ -117,7 +117,12 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
 
   return (
     <div className="flex flex-col gap-6 h-full min-h-0">
-      <TagsHeader table={table} />
+      <TagsHeader
+        table={table}
+        teamSlug={teamSlug}
+        templateId={templateId}
+        templateName={templateName}
+      />
 
       <div className="flex-1 min-h-0 -mx-3 px-3">
         <DataTable className="w-full">
@@ -134,7 +139,6 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
                     sorting={sorting.find((s) => s.id === header.id)?.desc}
                     align={header.id === 'actions' ? 'right' : 'left'}
                     className={cn(
-                      // Figma spec: header height = text line-height (17px).
                       'h-auto px-0',
                       header.id === 'tag' && 'flex-1 min-w-0',
                       header.id === 'assignedAt' && 'w-[178px] shrink-0',

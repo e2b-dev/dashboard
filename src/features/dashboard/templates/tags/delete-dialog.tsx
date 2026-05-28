@@ -88,7 +88,7 @@ export default function TagDeleteDialog({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
           <DialogHeader className="min-w-0 flex-1 text-left">
             <DialogTitle className="flex items-center gap-2 text-accent-error-highlight">
-              <WarningIcon className="size-4" />
+              <WarningIcon className="size-4 shrink-0" />
               <span>{`Delete '${tag}' tag?`}</span>
             </DialogTitle>
             <DialogDescription className="sr-only">
