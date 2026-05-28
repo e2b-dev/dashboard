@@ -156,11 +156,17 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
     : '-'
 
   const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)
+  const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
+    if (!(event.target instanceof Node)) return
+    if (!event.currentTarget.contains(event.target)) return
+
+    router.push(webhookHref)
+  }
 
   return (
     <TableRow
       className="cursor-pointer hover:bg-bg-hover"
-      onClick={() => router.push(webhookHref)}
+      onClick={handleRowClick}
     >
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
         <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
