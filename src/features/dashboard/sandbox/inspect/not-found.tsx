@@ -120,16 +120,20 @@ export default function SandboxInspectNotFound({
 
   const isPaused = sandboxInfo?.state === 'paused'
   const resourceName = resource === 'terminal' ? 'terminal' : 'filesystem'
+  const isFilesystem = resource === 'filesystem'
 
-  const description = isRunning
-    ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
-    : isPaused
-      ? `Resume this sandbox to access the ${resourceName}.`
-      : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
+  const description =
+    isRunning && isFilesystem
+      ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
+      : isRunning
+        ? 'The terminal is unavailable right now. Refresh to try again.'
+        : isPaused
+          ? `Resume this sandbox to access the ${resourceName}.`
+          : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
 
   let actions: ReactNode
 
-  if (isRunning) {
+  if (isRunning && isFilesystem) {
     actions = (
       <>
         <div className="flex w-full justify-between gap-4">
@@ -171,6 +175,26 @@ export default function SandboxInspectNotFound({
         </Button>
       </>
     )
+  } else if (isRunning) {
+    actions = (
+      <Button
+        variant="secondary"
+        onClick={() =>
+          resetTransition(async () => {
+            router.refresh()
+          })
+        }
+        className="w-full gap-2"
+        disabled={isResetPending}
+      >
+        <RefreshIcon
+          className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
+            'animate-spin': isResetPending,
+          })}
+        />
+        Refresh
+      </Button>
+    )
   } else if (isPaused) {
     actions = (
       <Button
@@ -200,11 +224,13 @@ export default function SandboxInspectNotFound({
   return (
     <SandboxInspectEmptyFrame
       title={
-        isRunning
+        isRunning && isFilesystem
           ? 'Empty Directory'
-          : isPaused
-            ? 'Sandbox Paused'
-            : 'Not Connected'
+          : isRunning
+            ? 'Terminal Unavailable'
+            : isPaused
+              ? 'Sandbox Paused'
+              : 'Not Connected'
       }
       description={description}
       actions={actions}
