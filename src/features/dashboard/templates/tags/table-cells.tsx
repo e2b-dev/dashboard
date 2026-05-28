@@ -128,25 +128,6 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            className="sm:hidden"
-            onSelect={() =>
-              toast(defaultErrorToast('Promote: not implemented yet'))
-            }
-          >
-            <ArrowUpIcon className="size-4" />
-            Promote
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="sm:hidden"
-            onSelect={() =>
-              toast(defaultErrorToast('Rollback: not implemented yet'))
-            }
-          >
-            <UndoIcon className="size-4" />
-            Rollback
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="md:hidden" />
-          <DropdownMenuItem
             variant="error"
             onSelect={(e) => {
               e.preventDefault()
