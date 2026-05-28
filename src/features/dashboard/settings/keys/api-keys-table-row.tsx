@@ -16,7 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
-import { getLastUsedLabel } from './api-keys-utils'
+import { formatMaskedApiKey, getLastUsedLabel } from './api-keys-utils'
 
 const tableCellClassName = 'py-3 text-left [tr:first-child>&]:pt-1.5'
 
@@ -33,6 +33,7 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
     ? (formatDate(new Date(apiKey.createdAt), 'MMM d, yyyy') ?? '—')
     : '—'
 
+  const maskedKey = formatMaskedApiKey(apiKey)
   const lastUsedAt = apiKey.lastUsed
   const lastUsedLabel = getLastUsedLabel(apiKey)
   const isCliKey = apiKey.name === CLI_GENERATED_KEY_NAME
@@ -59,6 +60,11 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
         </div>
       </TableCell>
       <TableCell className={tableCellClassName}>
+        <span className="text-fg-tertiary truncate font-mono text-sm tabular-nums">
+          {maskedKey}
+        </span>
+      </TableCell>
+      <TableCell className={tableCellClassName}>
         <IdBadge
           id={apiKey.id}
           copyAriaLabel="Copy full API key ID"
@@ -79,14 +85,12 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
           lastUsedLabel
         )}
       </TableCell>
-      <TableCell
-        className={cn(tableCellClassName, 'pl-3 pr-0 text-sm text-fg-tertiary')}
-      >
-        <div className="flex items-center gap-6 justify-between">
+      <TableCell className={cn(tableCellClassName, 'text-sm text-fg-tertiary')}>
+        <div className="flex items-center gap-3">
           <span className="block w-[92px] shrink-0 whitespace-nowrap">
             {addedDate}
           </span>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             {isCliKey ? (
               <Tooltip>
                 <TooltipTrigger asChild>

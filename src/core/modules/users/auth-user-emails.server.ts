@@ -1,7 +1,7 @@
 import 'server-only'
 
+import { authAdmin } from '@/core/server/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
 
 export type AuthUserEmailResolver = (
   userIds: string[]
@@ -10,25 +10,7 @@ export type AuthUserEmailResolver = (
 export async function getAuthUserEmailsById(
   userIds: string[]
 ): Promise<Map<string, string | null>> {
-  const uniqueUserIds = [...new Set(userIds.filter(Boolean))]
-  if (uniqueUserIds.length === 0) {
-    return new Map()
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from('auth_users')
-    .select('id,email')
-    .in('id', uniqueUserIds)
-
-  if (error) {
-    throw error
-  }
-
-  return new Map(
-    data
-      ?.filter((user) => user.id)
-      .map((user) => [user.id as string, user.email]) ?? []
-  )
+  return authAdmin.getEmailsByIds(userIds)
 }
 
 export async function resolveCreatorEmails<
@@ -61,7 +43,7 @@ export async function resolveCreatorEmails<
           userCount: new Set(creatorUserIds).size,
         },
       },
-      'Failed to resolve creator emails from Supabase Auth'
+      'Failed to resolve creator emails from auth provider'
     )
 
     return items

@@ -1,5 +1,6 @@
 import { PROTECTED_URLS } from '@/configs/urls'
-import { createClient } from '@/core/shared/clients/supabase/server'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 export async function GET(request: Request) {
@@ -24,10 +25,21 @@ export async function GET(request: Request) {
     })
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase.auth.exchangeCodeForSession(code!)
+  const { error } = await supabaseAuthFlows.exchangeCodeForSession(code)
 
   if (error) {
+    l.error(
+      {
+        key: 'email_callback:supabase_error',
+        error: serializeErrorForLog(error),
+        context: {
+          error_code: error.code,
+          error_status: error.status,
+        },
+      },
+      `email callback supabase error: ${error.message}`
+    )
+
     return encodedRedirect('error', next, 'Failed to update E-Mail', {
       type: 'update_email',
     })

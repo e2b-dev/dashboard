@@ -9,6 +9,8 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
+import { auth } from '@/core/server/auth'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import {
   forgotPasswordSchema,
   signInSchema,
@@ -18,12 +20,11 @@ import {
   shouldWarnAboutAlternateEmail,
   validateEmail,
 } from '@/core/server/functions/auth/validate-email'
-import { l } from '@/core/shared/clients/logger/logger'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
-import { createClient } from '@/core/shared/clients/supabase/server'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
 import { encodedRedirect } from '@/lib/utils/auth'
+import { isGoogleEmail } from '@/lib/utils/email'
 
 async function validateCaptcha(captchaToken: string | undefined) {
   if (!CAPTCHA_REQUIRED_SERVER) {
@@ -44,19 +45,54 @@ async function validateCaptcha(captchaToken: string | undefined) {
 
 async function checkAuthProviderHealth(): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`,
-      {
-        method: 'GET',
-        headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      l.error(
+        {
+          key: 'auth_provider:health_check:misconfigured',
+          context: {
+            hasUrl: !!supabaseUrl,
+            hasAnonKey: !!supabaseAnonKey,
+          },
         },
-        signal: AbortSignal.timeout(5000),
-        next: { revalidate: 30 },
-      }
-    )
+        'supabase auth health check skipped: missing env config'
+      )
+      return false
+    }
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+      method: 'GET',
+      headers: {
+        apikey: supabaseAnonKey,
+      },
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 30 },
+    })
+
+    if (!response.ok) {
+      l.error(
+        {
+          key: 'auth_provider:health_check:non_ok',
+          context: {
+            status: response.status,
+            statusText: response.statusText,
+          },
+        },
+        `supabase auth health check returned non-ok status: ${response.status}`
+      )
+    }
+
     return response.ok
-  } catch {
+  } catch (error) {
+    l.error(
+      {
+        key: 'auth_provider:health_check:error',
+        error: serializeErrorForLog(error),
+      },
+      'supabase auth health check failed'
+    )
     return false
   }
 }
@@ -86,8 +122,6 @@ export const signInWithOAuthAction = actionClient
       )
     }
 
-    const supabase = await createClient()
-
     const headerStore = await headers()
 
     const origin = headerStore.get('origin')
@@ -107,12 +141,10 @@ export const signInWithOAuthAction = actionClient
       `sign_in_with_oauth_action: initializing OAuth sign-in with provider: ${provider}`
     )
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: provider,
-      options: {
-        redirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
-        scopes: 'email',
-      },
+    const { data, error } = await supabaseAuthFlows.signInWithOAuth({
+      provider,
+      redirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+      scopes: 'email',
     })
 
     if (error) {
@@ -160,7 +192,6 @@ export const signUpAction = actionClient
         )
       }
 
-      const supabase = await createClient()
       const headerStore = await headers()
 
       const origin = headerStore.get('origin')
@@ -172,6 +203,10 @@ export const signUpAction = actionClient
       const userAgent = headerStore.get('user-agent') ?? undefined
       const ip =
         headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
+
+      if (isGoogleEmail(email)) {
+        return returnServerError(USER_MESSAGES.signUpGoogleEmail.message)
+      }
 
       // basic security check, that password does not equal e-mail
       if (password && email && password.toLowerCase() === email.toLowerCase()) {
@@ -196,15 +231,13 @@ export const signUpAction = actionClient
         }
       }
 
-      const { data: signUpData, error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabaseAuthFlows.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
-          data: validationResult?.data
-            ? { email_validation: validationResult.data }
-            : undefined,
-        },
+        emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
+        data: validationResult?.data
+          ? { email_validation: validationResult.data }
+          : undefined,
       })
 
       if (error) {
@@ -224,7 +257,7 @@ export const signUpAction = actionClient
         (ip || userAgent)
       ) {
         try {
-          await supabaseAdmin.auth.admin.updateUserById(signUpData.user.id, {
+          await supabaseAuthFlows.updateUserById(signUpData.user.id, {
             app_metadata: {
               signup_ip: ip,
               signup_user_agent: userAgent,
@@ -255,8 +288,6 @@ export const signInAction = actionClient
       )
     }
 
-    const supabase = await createClient()
-
     const headerStore = await headers()
 
     const origin = headerStore.get('origin')
@@ -265,10 +296,10 @@ export const signInAction = actionClient
       throw new Error('Origin not found')
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabaseAuthFlows.signInWithPassword(
       email,
-      password,
-    })
+      password
+    )
 
     if (error) {
       if (error.code === 'invalid_credentials') {
@@ -308,9 +339,7 @@ export const forgotPasswordAction = actionClient
       )
     }
 
-    const supabase = await createClient()
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    const { error } = await supabaseAuthFlows.resetPasswordForEmail(email)
 
     if (error) {
       l.error(
@@ -332,9 +361,7 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  const supabase = await createClient()
-
-  await supabase.auth.signOut()
+  await auth.signOut()
 
   throw redirect(
     AUTH_URLS.SIGN_IN +

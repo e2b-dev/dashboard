@@ -5,6 +5,9 @@ import { headers } from 'next/headers'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
 import { authActionClient } from '@/core/server/actions/client'
+import { auth } from '@/core/server/auth'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 
 const UpdateUserSchema = z
@@ -29,7 +32,7 @@ export const updateUserAction = authActionClient
   .schema(UpdateUserSchema)
   .metadata({ actionName: 'updateUser' })
   .action(async ({ parsedInput, ctx }) => {
-    const { supabase, user } = ctx
+    const { user } = ctx
 
     // basic security check, that password does not equal e-mail
     if (parsedInput.password) {
@@ -61,21 +64,28 @@ export const updateUserAction = authActionClient
       emailRedirectTo = redirectUrl.toString()
     }
 
-    const { data: updateData, error } = await supabase.auth.updateUser(
-      {
-        email: parsedInput.email,
-        password: parsedInput.password,
-        data: {
-          name: parsedInput.name,
-        },
-      },
-      emailRedirectTo ? { emailRedirectTo } : undefined
-    )
+    const { data: updateData, error } = await supabaseAuthFlows.updateUser({
+      email: parsedInput.email,
+      password: parsedInput.password,
+      name: parsedInput.name,
+      emailRedirectTo,
+    })
 
     if (!error) {
       // ensure other sessions are logged out if password was changed
       if (parsedInput.password) {
-        await supabase.auth.signOut({ scope: 'others' })
+        const { error: signOutError } = await auth.signOut({ scope: 'others' })
+
+        if (signOutError) {
+          l.error(
+            {
+              key: 'update_user_action:sign_out_others_failed',
+              user_id: user.id,
+              error: serializeErrorForLog(signOutError),
+            },
+            'failed to invalidate other sessions after password change'
+          )
+        }
       }
 
       revalidatePath('/dashboard', 'layout')
