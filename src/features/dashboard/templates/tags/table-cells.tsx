@@ -10,16 +10,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
-import {
-  ArrowUpIcon,
-  MoreActionsIcon,
-  TrashIcon,
-  UndoIcon,
-} from '@/ui/primitives/icons'
+import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
 import { BuildLink } from './build-link'
 import TagDeleteDialog from './delete-dialog'
 import type { TagGroup } from './types'
