@@ -26,6 +26,8 @@ import type { TagGroup } from './types'
 
 const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
 
+const DEFAULT_TAG_NAME = 'default'
+
 export interface TagTableMeta {
   teamSlug: string
   templateId: string
@@ -70,6 +72,7 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
 
   const isExpanded = row.getIsExpanded()
   const group = row.original
+  const isDefaultTag = group.tag === DEFAULT_TAG_NAME
 
   return (
     <div className="flex items-center justify-end gap-4 w-full">
@@ -112,7 +115,12 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <IconButton
-            aria-label={`Actions for tag ${group.tag}`}
+            aria-label={
+              isDefaultTag
+                ? 'Actions unavailable for default tag'
+                : `Actions for tag ${group.tag}`
+            }
+            disabled={isDefaultTag}
             onClick={(e) => e.stopPropagation()}
           >
             <MoreActionsIcon />
