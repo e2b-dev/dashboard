@@ -173,4 +173,27 @@ export const templatesRouter = createTRPCRouter({
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
       return result.data
     }),
+
+  assignTag: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        templateName: z.string(),
+        buildId: z.string().uuid(),
+        tag: z
+          .string()
+          .min(1)
+          .max(128)
+          .regex(/^[a-z0-9._-]+$/),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.assignTag({
+        templateName: input.templateName,
+        buildId: input.buildId,
+        tag: input.tag,
+      })
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
 })

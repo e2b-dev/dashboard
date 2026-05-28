@@ -2,21 +2,25 @@
 
 import type { Table } from '@tanstack/react-table'
 import { useCallback } from 'react'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
-import { Button } from '@/ui/primitives/button'
-import { AddIcon, SearchIcon } from '@/ui/primitives/icons'
+import { SearchIcon } from '@/ui/primitives/icons'
 import { DebouncedInput } from '@/ui/primitives/input'
+import AssignTagDialog from './assign-dialog'
 import { useTagTableStore } from './stores/table-store'
 import type { TagGroup } from './types'
 
 interface TagsHeaderProps {
   table: Table<TagGroup>
+  teamSlug: string
+  templateId: string
+  templateName: string
 }
 
-export default function TagsHeader({ table }: TagsHeaderProps) {
-  'use no memo'
-
-  const { toast } = useToast()
+export default function TagsHeader({
+  table,
+  teamSlug,
+  templateId,
+  templateName,
+}: TagsHeaderProps) {
   const globalFilter = useTagTableStore((s) => s.globalFilter)
   const setGlobalFilter = useTagTableStore((s) => s.setGlobalFilter)
 
@@ -31,10 +35,6 @@ export default function TagsHeader({ table }: TagsHeaderProps) {
     [setGlobalFilter]
   )
 
-  const handleAssignClick = () => {
-    toast(defaultErrorToast('Assign new tag: not implemented yet'))
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 justify-between">
@@ -45,13 +45,14 @@ export default function TagsHeader({ table }: TagsHeaderProps) {
             className="pl-[30px]"
             value={globalFilter}
             onChange={handleSearchChange}
-            debounce={300}
+            debounce={200}
           />
         </div>
-        <Button variant="primary" onClick={handleAssignClick}>
-          <AddIcon />
-          Assign new tag
-        </Button>
+        <AssignTagDialog
+          teamSlug={teamSlug}
+          templateId={templateId}
+          templateName={templateName}
+        />
       </div>
 
       <div className="flex items-center justify-between gap-4">

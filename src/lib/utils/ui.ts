@@ -7,7 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Animation easing curves
- * ⚠️ Must be kept in sync with theme.css utilities (anim-ease-appear, anim-ease-transform)
+ * ⚠️ Must be kept in sync with theme.css `--ease-*` tokens.
  */
 export const EASE_APPEAR = [0.23, 1, 0.32, 1] as const // ease-out-quint
 export const EASE_TRANSFORM = [0.79, 0.14, 0.15, 0.86] as const // ease-in-out-circ
+export const EASE_IN_OUT_QUINT = [0.83, 0, 0.17, 1] as const // ease-in-out-quint

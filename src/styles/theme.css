@@ -480,6 +480,9 @@
   --animate-shiny-text: shiny-text 0.5s linear infinite;
   --animate-loader-slash: loader-slash 0.4s linear infinite;
   --animate-loader-square: loader-square 0.4s linear infinite;
+
+  /* Easings (kept in sync with src/lib/utils/ui.ts) */
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 }
 
 /* Container */

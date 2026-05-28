@@ -46,6 +46,11 @@ export interface TeamTemplatesRepository {
     templateId: string,
     tag: string
   ): Promise<RepoResult<TemplateTagExistsResult>>
+  assignTag(input: {
+    templateName: string
+    buildId: string
+    tag: string
+  }): Promise<RepoResult<{ tags: string[]; buildID: string }>>
   deleteTemplate(templateId: string): Promise<RepoResult<{ success: true }>>
   deleteTags(
     templateName: string,
@@ -221,6 +226,32 @@ export function createTemplatesRepository(
           res.data ?? [],
           deps.resolveAuthUserEmailsById
         ),
+      })
+    },
+    async assignTag({ templateName, buildId, tag }) {
+      const res = await deps.infraClient.POST('/templates/tags', {
+        body: {
+          target: `${templateName}:${buildId}`,
+          tags: [tag],
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to assign template tag',
+            res.error
+          )
+        )
+      }
+
+      return ok({
+        tags: res.data?.tags ?? [tag],
+        buildID: res.data?.buildID ?? buildId,
       })
     },
     async deleteTags(templateName, tags) {

@@ -89,7 +89,7 @@ function DialogContent({
             className={cn(
               [
                 'absolute top-4 right-4',
-                'text-icon-tertiary transition-colors hover:text-icon',
+                'text-icon-tertiary transition-colors hover:text-icon cursor-pointer',
                 'outline-none focus-visible:ring-1 focus-visible:ring-accent-main-highlight',
                 'disabled:pointer-events-none',
                 "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -135,7 +135,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-headline-small! uppercase', className)}
+      className={cn('prose-headline-small! uppercase', className)}
       {...props}
     />
   )
