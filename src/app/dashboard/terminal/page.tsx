@@ -115,9 +115,11 @@ export default async function TerminalPage({
     <main className="h-dvh min-h-[360px] bg-bg p-3">
       <DashboardTerminal
         autoStart
-        initialCommand={command}
-        initialSandboxId={terminalSandboxId}
-        initialTemplate={terminalTemplate}
+        launchTarget={{
+          command,
+          sandboxId: terminalSandboxId,
+          template: terminalTemplate,
+        }}
         teamId={team.id}
       />
     </main>

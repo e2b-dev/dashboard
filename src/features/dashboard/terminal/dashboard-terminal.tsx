@@ -21,31 +21,32 @@ import TerminalPanel from './terminal-panel'
 import type {
   PendingTerminalLaunch,
   StartTerminalOptions,
+  TerminalLaunchTarget,
   TerminalStatus,
 } from './types'
 import { useTerminalInstance } from './use-terminal-instance'
 
 interface DashboardTerminalProps {
   autoStart?: boolean
-  initialCommand?: string
-  initialSandboxId?: string
-  initialTemplate?: string
+  launchTarget?: TerminalLaunchTarget
+  onSandboxAttached?: (sandboxId: string) => void
+  onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
   sandboxScoped?: boolean
   teamId: string
 }
 
 export default function DashboardTerminal({
   autoStart = false,
-  initialCommand = '',
-  initialSandboxId,
-  initialTemplate,
+  launchTarget,
+  onSandboxAttached,
+  onSandboxAttachFailed,
   sandboxScoped = false,
   teamId,
 }: DashboardTerminalProps) {
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
   const [template, setTemplate] = useState(
-    normalizeTerminalTemplate(initialTemplate) ?? 'base'
+    normalizeTerminalTemplate(launchTarget?.template) ?? 'base'
   )
   const [pendingLaunch, setPendingLaunch] =
     useState<PendingTerminalLaunch | null>(null)
@@ -171,8 +172,9 @@ export default function DashboardTerminal({
   const startTerminal = useCallback(
     async (options: StartTerminalOptions = {}) => {
       if (isStartingRef.current) return
+      const target = options.target
       const nextTemplate = resolveTerminalTemplateOverride(
-        options.template,
+        target?.template,
         template
       )
 
@@ -182,6 +184,7 @@ export default function DashboardTerminal({
         return
       }
 
+      const requestedSandboxId = target?.sandboxId
       isStartingRef.current = true
       const startGeneration = startGenerationRef.current + 1
       startGenerationRef.current = startGeneration
@@ -194,7 +197,7 @@ export default function DashboardTerminal({
       inputQueueRef.current = Promise.resolve()
       resetTerminal()
       setStatus('starting')
-      setActiveSandboxId(options.sandboxId)
+      setActiveSandboxId(requestedSandboxId)
       setTemplate(nextTemplate)
       appendOutput('Opening terminal...\r\n')
 
@@ -202,11 +205,11 @@ export default function DashboardTerminal({
         const { sandbox } = await openTerminalSandbox({
           forceNewSandbox: options.forceNewSandbox,
           onStatus: appendOutput,
-          requestTimeoutMs: options.sandboxId
+          requestTimeoutMs: requestedSandboxId
             ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
             : undefined,
           shouldStoreSession: !sandboxScoped,
-          sandboxId: options.sandboxId,
+          sandboxId: requestedSandboxId,
           teamId,
           template: nextTemplate,
         })
@@ -230,7 +233,7 @@ export default function DashboardTerminal({
         return { pty, sandbox }
       }
 
-      const canRetryAttach = Boolean(options.sandboxId)
+      const canRetryAttach = Boolean(requestedSandboxId)
 
       try {
         const result = await attachTerminalWithRetry({
@@ -276,6 +279,7 @@ export default function DashboardTerminal({
         setStatus('ready')
         appendOutput(`PTY ${pty.pid} attached.\r\n`)
         focusTerminal()
+        onSandboxAttached?.(sandbox.sandboxId)
 
         const pendingCommands = pendingCommandsRef.current
         pendingCommandsRef.current = []
@@ -286,6 +290,7 @@ export default function DashboardTerminal({
         if (!isCurrentStart()) return
 
         setStatus('error')
+        onSandboxAttachFailed?.(target)
         appendOutput(
           `\r\nFailed to start terminal: ${
             error instanceof Error ? error.message : 'Unknown error'
@@ -307,6 +312,8 @@ export default function DashboardTerminal({
       sandboxScoped,
       teamId,
       template,
+      onSandboxAttached,
+      onSandboxAttachFailed,
       updateTerminalUrl,
       waitForAttachRetry,
     ]
@@ -315,7 +322,7 @@ export default function DashboardTerminal({
   const queueTerminalCommand = useCallback(
     (command: string, options: StartTerminalOptions = {}) => {
       const nextTemplate = resolveTerminalTemplateOverride(
-        options.template,
+        options.target?.template,
         template
       )
 
@@ -330,8 +337,10 @@ export default function DashboardTerminal({
         // sending anything into the PTY.
         setPendingLaunch({
           command: command.trim(),
-          sandboxId: options.sandboxId,
-          template: nextTemplate,
+          target: {
+            ...options.target,
+            template: nextTemplate,
+          },
         })
         return
       }
@@ -339,7 +348,10 @@ export default function DashboardTerminal({
       if (status === 'idle' || status === 'error' || options.forceNewSandbox) {
         void startTerminal({
           ...options,
-          template: nextTemplate,
+          target: {
+            ...options.target,
+            template: nextTemplate,
+          },
         })
       }
     },
@@ -349,11 +361,9 @@ export default function DashboardTerminal({
   const confirmPendingLaunch = useCallback(() => {
     if (!pendingLaunch) return
 
-    const {
-      command,
-      sandboxId: launchSandboxId,
-      template: launchTemplate,
-    } = pendingLaunch
+    const { command, target: launchTarget } = pendingLaunch
+    const launchTemplate = launchTarget?.template ?? 'base'
+    const launchSandboxId = launchTarget?.sandboxId
 
     if (
       status === 'ready' &&
@@ -363,7 +373,10 @@ export default function DashboardTerminal({
       setPendingLaunch(null)
       runCommand(command)
       if (activeSandboxId) {
-        updateTerminalUrl({ clearCommand: true, sandboxId: activeSandboxId })
+        updateTerminalUrl({
+          clearCommand: true,
+          sandboxId: activeSandboxId,
+        })
       }
       return
     }
@@ -376,8 +389,7 @@ export default function DashboardTerminal({
     pendingCommandsRef.current = [command]
     void startTerminal({
       forceNewSandbox: !launchSandboxId && template !== launchTemplate,
-      sandboxId: launchSandboxId,
-      template: launchTemplate,
+      target: launchTarget,
     })
   }, [
     activeSandboxId,
@@ -389,7 +401,14 @@ export default function DashboardTerminal({
     updateTerminalUrl,
   ])
 
-  const reconnectSandboxId = sandboxScoped ? initialSandboxId : activeSandboxId
+  const reconnectTarget = sandboxScoped
+    ? launchTarget
+    : activeSandboxId
+      ? { sandboxId: activeSandboxId, template }
+      : undefined
+  const reconnectSandboxId = sandboxScoped
+    ? launchTarget?.sandboxId
+    : activeSandboxId
   const restartLabel = sandboxScoped
     ? 'Reconnect terminal'
     : 'Start new terminal sandbox'
@@ -400,12 +419,14 @@ export default function DashboardTerminal({
     if (sandboxScoped) {
       if (!reconnectSandboxId) return
 
-      void startTerminal({ sandboxId: reconnectSandboxId })
+      void startTerminal({
+        target: reconnectTarget,
+      })
       return
     }
 
     void startTerminal({ forceNewSandbox: true })
-  }, [reconnectSandboxId, sandboxScoped, startTerminal])
+  }, [reconnectTarget, reconnectSandboxId, sandboxScoped, startTerminal])
 
   useEffect(() => {
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
@@ -413,23 +434,15 @@ export default function DashboardTerminal({
     const autoStartTimer = window.setTimeout(() => {
       if (isStartingRef.current || ptyRef.current) return
 
-      queueTerminalCommand(initialCommand, {
-        sandboxId: initialSandboxId,
-        template: initialTemplate,
+      queueTerminalCommand(launchTarget?.command ?? '', {
+        target: launchTarget,
       })
     }, TERMINAL_AUTOSTART_DEBOUNCE_MS)
 
     return () => {
       window.clearTimeout(autoStartTimer)
     }
-  }, [
-    autoStart,
-    initialCommand,
-    initialSandboxId,
-    initialTemplate,
-    queueTerminalCommand,
-    status,
-  ])
+  }, [autoStart, launchTarget, queueTerminalCommand, status])
 
   useEffect(() => {
     return () => {
