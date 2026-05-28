@@ -83,6 +83,18 @@ export default function DashboardTerminal({
     []
   )
 
+  const requestPtyKill = useCallback(
+    ({ pid, sandboxId }: { pid: number; sandboxId: string }) => {
+      void fetch('/api/sandbox/terminal/pty/kill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pid, sandboxId, teamId }),
+        keepalive: true,
+      })
+    },
+    [teamId]
+  )
+
   const sendInputToPty = useCallback(
     (value: string | Uint8Array, terminalPid = pidRef.current) => {
       if (!value || !sandboxRef.current || !terminalPid) return
@@ -116,20 +128,26 @@ export default function DashboardTerminal({
     onResize: resizePty,
   })
 
-  const disconnectTerminal = useCallback(async () => {
+  const closeTerminal = useCallback(async () => {
     clearAttachRetryTimer()
 
     const pty = ptyRef.current
+    const sandboxId = sandboxRef.current?.sandboxId
     ptyRef.current = null
+    pidRef.current = undefined
     inputQueueRef.current = Promise.resolve()
     if (!pty) return
 
-    try {
-      await pty.disconnect()
-    } catch {
-      // Best-effort cleanup. The sandbox is intentionally left alive to pause.
+    if (sandboxId) {
+      requestPtyKill({ pid: pty.pid, sandboxId })
     }
-  }, [clearAttachRetryTimer])
+
+    try {
+      await pty.kill()
+    } catch {
+      // Best-effort cleanup. The sandbox is intentionally left alive.
+    }
+  }, [clearAttachRetryTimer, requestPtyKill])
 
   const runCommand = useCallback(
     (command: string, terminalPid?: number) => {
@@ -191,7 +209,7 @@ export default function DashboardTerminal({
       const isCurrentStart = () =>
         startGenerationRef.current === startGeneration
 
-      await disconnectTerminal()
+      await closeTerminal()
       sandboxRef.current = null
       pidRef.current = undefined
       inputQueueRef.current = Promise.resolve()
@@ -259,7 +277,7 @@ export default function DashboardTerminal({
 
         if (!isCurrentStart()) {
           try {
-            await pty.disconnect()
+            await pty.kill()
           } catch {
             // The start was superseded or unmounted; best-effort PTY cleanup.
           }
@@ -304,7 +322,7 @@ export default function DashboardTerminal({
     },
     [
       appendOutput,
-      disconnectTerminal,
+      closeTerminal,
       resizeTerminal,
       resetTerminal,
       focusTerminal,
@@ -445,12 +463,24 @@ export default function DashboardTerminal({
   }, [autoStart, launchTarget, queueTerminalCommand, status])
 
   useEffect(() => {
+    const handlePageHide = () => {
+      const pty = ptyRef.current
+      const sandboxId = sandboxRef.current?.sandboxId
+
+      if (!pty || !sandboxId) return
+
+      requestPtyKill({ pid: pty.pid, sandboxId })
+    }
+
+    window.addEventListener('pagehide', handlePageHide)
+
     return () => {
+      window.removeEventListener('pagehide', handlePageHide)
       startGenerationRef.current += 1
       clearAttachRetryTimer()
-      void disconnectTerminal()
+      void closeTerminal()
     }
-  }, [clearAttachRetryTimer, disconnectTerminal])
+  }, [clearAttachRetryTimer, closeTerminal, requestPtyKill])
 
   return (
     <>
