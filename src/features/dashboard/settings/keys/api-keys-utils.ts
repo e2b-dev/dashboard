@@ -3,32 +3,28 @@ import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { formatRelativeAgo } from '@/lib/utils/formatting'
 
 /** Builds a short masked id string for search and display; e.g. input mask fields → `"e2b_…a1b2"` */
-export const getMaskedIdSearchString = (apiKey: TeamAPIKey): string => {
+const getMaskedIdSearchString = (apiKey: TeamAPIKey): string => {
   const { prefix, maskedValuePrefix, maskedValueSuffix } = apiKey.mask
   return `${prefix}${maskedValuePrefix}...${maskedValueSuffix}`.toLowerCase()
 }
 
-/** Builds the visible uppercase ID badge label; e.g. `"e2b_c28e178eecf2"` -> `"E2B_...ECF2"` */
-export const getApiKeyIdBadgeLabel = (id: string): string => {
-  if (id.length <= 8) return id.toUpperCase()
-  return `${id.slice(0, 4)}...${id.slice(-4)}`.toUpperCase()
+/** Visual masked key for the KEY column; e.g. `"e2b_1f••••6ba3"`. */
+const formatMaskedApiKey = (apiKey: TeamAPIKey): string => {
+  const { prefix, maskedValuePrefix, maskedValueSuffix } = apiKey.mask
+  return `${prefix}${maskedValuePrefix}••••${maskedValueSuffix}`.toLowerCase()
 }
 
 /** Returns true when the key name or masked id contains the trimmed query (case-insensitive). */
-export const matchesApiKeySearch = (
-  apiKey: TeamAPIKey,
-  query: string
-): boolean => {
+const matchesApiKeySearch = (apiKey: TeamAPIKey, query: string): boolean => {
   const q = query.trim().toLowerCase()
   if (!q) return true
   if (apiKey.name.toLowerCase().includes(q)) return true
   if (apiKey.id.toLowerCase().includes(q)) return true
-  if (getApiKeyIdBadgeLabel(apiKey.id).toLowerCase().includes(q)) return true
   return getMaskedIdSearchString(apiKey).includes(q)
 }
 
 /** Human line for last-used cell, matching legacy semantics for pre-collection keys. */
-export const getLastUsedLabel = (apiKey: TeamAPIKey): string => {
+const getLastUsedLabel = (apiKey: TeamAPIKey): string => {
   if (apiKey.lastUsed) return formatRelativeAgo(new Date(apiKey.lastUsed))
 
   const createdBefore =
@@ -37,4 +33,11 @@ export const getLastUsedLabel = (apiKey: TeamAPIKey): string => {
 
   if (createdBefore) return 'N/A'
   return 'Never'
+}
+
+export {
+  formatMaskedApiKey,
+  getLastUsedLabel,
+  getMaskedIdSearchString,
+  matchesApiKeySearch,
 }

@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { createClient } from '@/core/shared/clients/supabase/server'
+import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 export async function GET(request: Request) {
@@ -11,32 +11,41 @@ export async function GET(request: Request) {
 
   const next = PROTECTED_URLS.ACCOUNT_SETTINGS
 
-  if (!code && message) {
+  if (message) {
     // E-Mail updates can be validated on both e-mails. This case is for the first validation link press.
     // `message` should inform the user that he has to validate on the other e-mail address as well for successful update.
-    redirect(`${next}?message=${message}&type=update_email`)
-  }
-
-  if (!code && !message) {
-    encodedRedirect('error', next, 'Invalid email verification link', {
+    return encodedRedirect('message', next, message, {
       type: 'update_email',
     })
   }
 
-  if (message) {
-    redirect(`${next}?message=${message}&type=update_email`)
+  if (!code) {
+    return encodedRedirect('error', next, 'Invalid email verification link', {
+      type: 'update_email',
+    })
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase.auth.exchangeCodeForSession(code!)
+  const { error } = await supabaseAuthFlows.exchangeCodeForSession(code)
 
   if (error) {
-    encodedRedirect('error', next, 'Failed to update E-Mail', {
+    l.error(
+      {
+        key: 'email_callback:supabase_error',
+        error: serializeErrorForLog(error),
+        context: {
+          error_code: error.code,
+          error_status: error.status,
+        },
+      },
+      `email callback supabase error: ${error.message}`
+    )
+
+    return encodedRedirect('error', next, 'Failed to update E-Mail', {
       type: 'update_email',
     })
   }
 
-  encodedRedirect('success', next, 'E-Mail changed successfully', {
+  return encodedRedirect('success', next, 'E-Mail changed successfully', {
     new_email: newEmail || '',
     type: 'update_email',
   })

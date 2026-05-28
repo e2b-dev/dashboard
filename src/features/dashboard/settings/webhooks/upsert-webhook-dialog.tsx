@@ -2,14 +2,14 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import {
   type SandboxLifecycleEventType,
   SandboxLifecycleEventTypeSchema,
 } from '@/core/modules/sandboxes/lifecycle-event-types'
 import {
-  type UpsertWebhookInput,
+  type UpsertWebhookFormInput,
   UpsertWebhookInputSchema,
 } from '@/core/server/functions/webhooks/schema'
 import {
@@ -65,7 +65,7 @@ export function UpsertWebhookDialog({
   const [currentStep, setCurrentStep] = useState(1)
   const [lastSelectedEvent, setLastSelectedEvent] =
     useState<SandboxLifecycleEventType | null>(null)
-  const [hasCopied, setHasCopied] = useState(false)
+  const [hasCopiedSecret, setHasCopiedSecret] = useState(false)
   const [secretType, setSecretType] = useState<SecretType>('pre-generated')
   const [finishSetupDialogOpen, setFinishSetupDialogOpen] = useState(false)
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false)
@@ -77,7 +77,15 @@ export function UpsertWebhookDialog({
     teamSlug: team.slug,
   }).queryKey
 
-  const defaultValues: UpsertWebhookInput = {
+  const preGeneratedSecret = useMemo(() => {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const array = new Uint8Array(32)
+    crypto.getRandomValues(array)
+    return Array.from(array, (byte) => chars[byte % chars.length]).join('')
+  }, [])
+
+  const defaultValues: UpsertWebhookFormInput = {
     webhookId: isUpdateMode ? webhook?.id : undefined,
     mode,
     name: webhook?.name || '',
@@ -88,10 +96,10 @@ export function UpsertWebhookDialog({
         (event): event is SandboxLifecycleEventType =>
           SandboxLifecycleEventTypeSchema.safeParse(event).success
       ) ?? [],
-    ...(isUpdateMode ? {} : { signatureSecret: '' }),
+    ...(isUpdateMode ? {} : { signatureSecret: preGeneratedSecret }),
   }
 
-  const form = useForm<UpsertWebhookInput>({
+  const form = useForm<UpsertWebhookFormInput>({
     resolver: zodResolver(UpsertWebhookInputSchema),
     mode: 'onChange',
     disabled: !team.slug,
@@ -135,7 +143,7 @@ export function UpsertWebhookDialog({
 
   const resetDialogState = () => {
     setCurrentStep(1)
-    setHasCopied(false)
+    setHasCopiedSecret(false)
     setSecretType('pre-generated')
     form.reset()
     upsertMutation.reset()
@@ -276,10 +284,11 @@ export function UpsertWebhookDialog({
                   handleAllToggle={handleAllToggle}
                   handleEventToggle={handleEventToggle}
                   mode={mode}
+                  hasCopiedSecret={hasCopiedSecret}
+                  setHasCopiedSecret={setHasCopiedSecret}
+                  preGeneratedSecret={preGeneratedSecret}
                   secretType={secretType}
                   onSecretTypeChange={setSecretType}
-                  hasCopied={hasCopied}
-                  onCopied={() => setHasCopied(true)}
                 />
               </div>
 
@@ -323,7 +332,11 @@ export function UpsertWebhookDialog({
                     <Button
                       type="submit"
                       variant={
-                        (secretType === 'custom' ? isStep2Valid : hasCopied)
+                        (
+                          secretType === 'custom'
+                            ? isStep2Valid
+                            : hasCopiedSecret
+                        )
                           ? 'primary'
                           : 'secondary'
                       }

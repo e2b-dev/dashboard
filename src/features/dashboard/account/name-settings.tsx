@@ -53,10 +53,10 @@ export function NameSettings({ className }: NameSettingsProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: user?.user_metadata?.name || '',
+      name: user?.name || '',
     },
     values: {
-      name: user?.user_metadata?.name || '',
+      name: user?.name || '',
     },
   })
 
@@ -114,7 +114,7 @@ export function NameSettings({ className }: NameSettingsProps) {
             <p className="text-fg-tertiary ">Max 100 characters.</p>
             <Button
               loading={isPending ? 'Saving...' : undefined}
-              disabled={form.watch('name') === user?.user_metadata?.name}
+              disabled={form.watch('name') === user?.name}
               type="submit"
               onClick={form.handleSubmit((values) =>
                 updateName({ name: values.name })

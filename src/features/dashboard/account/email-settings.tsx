@@ -14,7 +14,6 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { getUserProviders } from '@/lib/utils/auth'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -62,7 +61,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   })
 
   const hasEmailProvider = useMemo(
-    () => getUserProviders(user)?.includes('email'),
+    () => user.providers.includes('email'),
     [user]
   )
 
@@ -95,25 +94,21 @@ export function EmailSettings({ className }: EmailSettingsProps) {
       return
 
     if (searchParams.get('type') === 'update_email') {
-      if (searchParams.has('success')) {
-        toast(
-          defaultSuccessToast(decodeURIComponent(searchParams.get('success')!))
-        )
+      const success = searchParams.get('success')
+      if (success !== null) {
+        toast(defaultSuccessToast(success))
         return
       }
 
-      if (searchParams.has('message')) {
-        toast(
-          defaultSuccessToast(decodeURIComponent(searchParams.get('message')!))
-        )
+      const message = searchParams.get('message')
+      if (message !== null) {
+        toast(defaultSuccessToast(message))
         return
       }
 
       toast(
         defaultErrorToast(
-          decodeURIComponent(
-            searchParams.get('error') ?? 'Failed to update e-mail.'
-          )
+          searchParams.get('error') ?? 'Failed to update e-mail.'
         )
       )
     }

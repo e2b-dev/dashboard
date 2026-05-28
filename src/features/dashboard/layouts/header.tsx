@@ -65,7 +65,7 @@ export default function DashboardLayoutHeader({
           )}
         </div>
 
-        <ClientOnly className="flex items-center pl-2 pr-2">
+        <ClientOnly className="flex items-center gap-2 pl-2 pr-2">
           <ThemeSwitcher />
         </ClientOnly>
 

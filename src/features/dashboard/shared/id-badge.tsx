@@ -6,6 +6,7 @@ import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
 
+/** Builds the visible uppercase ID badge label; e.g. "e2b_c28e178eecf2" -> "E2B_...ECF2". */
 const getIdBadgeLabel = (id: string): string => {
   if (id.length <= 8) return id.toUpperCase()
   return `${id.slice(0, 4)}...${id.slice(-4)}`.toUpperCase()
@@ -35,7 +36,7 @@ export const IdBadge = ({
 
   return (
     <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 align-middle prose-label-numeric">
-      <span className="tracking-wider">{displayId}</span>
+      <span className="tracking-wider font-mono">{displayId}</span>
       <Button
         type="button"
         variant="quaternary"

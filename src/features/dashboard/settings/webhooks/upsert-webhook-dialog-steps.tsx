@@ -1,14 +1,16 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import ShikiHighlighter from 'react-shiki'
 import { z } from 'zod'
+import { useShikiTheme } from '@/configs/shiki'
 import {
   type SandboxLifecycleEventType,
   SandboxLifecycleEventTypeSchema,
 } from '@/core/modules/sandboxes/lifecycle-event-types'
-import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
+import type { UpsertWebhookFormInput } from '@/core/server/functions/webhooks/schema'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
@@ -19,12 +21,22 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CheckIcon, CopyIcon, WarningIcon } from '@/ui/primitives/icons'
+import {
+  CheckIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
+import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
-import { WEBHOOK_DOCS_URL, WEBHOOK_EVENT_LABELS } from './constants'
+import {
+  WEBHOOK_EVENT_LABELS,
+  WEBHOOK_EXAMPLE_PAYLOAD,
+  WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
+} from './constants'
 
 const SecretTypeSchema = z.enum(['pre-generated', 'custom'])
 
@@ -32,7 +44,7 @@ export type SecretType = z.infer<typeof SecretTypeSchema>
 
 type UpsertWebhookDialogStepsProps = {
   currentStep: number
-  form: UseFormReturn<UpsertWebhookInput>
+  form: UseFormReturn<UpsertWebhookFormInput>
   isLoading: boolean
   selectedEvents: string[]
   exampleEventType: SandboxLifecycleEventType
@@ -40,50 +52,12 @@ type UpsertWebhookDialogStepsProps = {
   handleAllToggle: () => void
   handleEventToggle: (event: SandboxLifecycleEventType) => void
   mode: 'create' | 'update'
+  hasCopiedSecret: boolean
+  setHasCopiedSecret: (value: boolean) => void
+  preGeneratedSecret: string
   secretType: SecretType
   onSecretTypeChange: (value: SecretType) => void
-  hasCopied: boolean
-  onCopied: () => void
 }
-
-const WebhookExamplePayload = ({
-  eventType,
-}: {
-  eventType: SandboxLifecycleEventType
-}) => (
-  <div className="bg-bg border border-stroke flex w-full items-center px-4 py-2.5 font-mono text-[13px] leading-5 text-fg-secondary whitespace-pre-wrap">
-    <div className="flex-1 min-w-px">
-      <div>{'{'}</div>
-      <div>
-        {'  '}
-        <span className="text-accent-main-highlight">{'"type"'}</span>
-        {`: "${eventType}",`}
-      </div>
-      <div>
-        {'  '}
-        <span className="text-accent-main-highlight">{'"sandboxId"'}</span>
-        {': "<UUID>",'}
-      </div>
-      <div>
-        {'  '}
-        <span className="text-accent-main-highlight">{'"timestamp"'}</span>
-        {': "<TIMESTAMP>",'}
-      </div>
-      <div className="text-fg-tertiary">
-        {'  // ... more fields, '}
-        <a
-          href={WEBHOOK_DOCS_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-fg"
-        >
-          see docs
-        </a>
-      </div>
-      <div>{'}'}</div>
-    </div>
-  </div>
-)
 
 export function UpsertWebhookDialogSteps({
   currentStep,
@@ -95,20 +69,14 @@ export function UpsertWebhookDialogSteps({
   handleAllToggle,
   handleEventToggle,
   mode,
+  hasCopiedSecret,
+  setHasCopiedSecret,
+  preGeneratedSecret,
   secretType,
   onSecretTypeChange,
-  hasCopied,
-  onCopied,
 }: UpsertWebhookDialogStepsProps) {
-  const preGeneratedSecret = useMemo(() => {
-    const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    const array = new Uint8Array(32)
-    crypto.getRandomValues(array)
-    return Array.from(array, (byte) => chars[byte % chars.length]).join('')
-  }, [])
-
-  const [copied, copy] = useClipboard()
+  const shikiTheme = useShikiTheme()
+  const [secretCopiedFeedback, copySecret] = useClipboard()
 
   const customSecretInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -119,18 +87,19 @@ export function UpsertWebhookDialogSteps({
     return () => window.clearTimeout(id)
   }, [secretType])
 
-  // sync secret with form state and validation - only in create mode
-  // in update mode, we should never touch the signature secret
-  useEffect(() => {
+  const handleSecretTypeChange = (value: string) => {
+    const parsed = SecretTypeSchema.safeParse(value)
+    if (!parsed.success) return
+
+    onSecretTypeChange(parsed.data)
+
     if (mode !== 'create') return
 
-    if (secretType === 'pre-generated') {
-      // set pre-generated secret and trigger validation to clear any errors
+    if (parsed.data === 'pre-generated') {
       form.setValue('signatureSecret', preGeneratedSecret, {
         shouldValidate: true,
         shouldDirty: true,
       })
-      // explicitly clear any errors since pre-generated is always valid
       form.clearErrors('signatureSecret')
     } else {
       form.setValue('signatureSecret', '', {
@@ -138,11 +107,12 @@ export function UpsertWebhookDialogSteps({
         shouldDirty: false,
       })
     }
-  }, [mode, secretType, preGeneratedSecret, form])
+  }
 
-  useEffect(() => {
-    if (copied) onCopied()
-  }, [copied, onCopied])
+  const handleCopySecret = () => {
+    void copySecret(preGeneratedSecret)
+    setHasCopiedSecret(true)
+  }
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -254,14 +224,30 @@ export function UpsertWebhookDialogSteps({
 
           {/* Description */}
           <div className="flex flex-col gap-2 min-w-0">
-            <p className="text-fg-tertiary prose-body wrap-break-word">
+            <p className="text-fg-tertiary prose-body break-words">
               We'll send a POST request with a JSON payload to{' '}
-              <span className="break-all">
+              <span className="break-all text-fg">
                 {form.watch('url') || 'https://example.com/postreceive'}
               </span>{' '}
               for each event. Example:
             </p>
-            <WebhookExamplePayload eventType={exampleEventType} />
+            <div className="border overflow-hidden w-full">
+              <ScrollArea>
+                <ShikiHighlighter
+                  language="json"
+                  theme={shikiTheme}
+                  className="px-3 py-2 text-xs"
+                  addDefaultStyles={false}
+                  showLanguage={false}
+                >
+                  {WEBHOOK_EXAMPLE_PAYLOAD.replace(
+                    '"sandbox.lifecycle.created"',
+                    `"${exampleEventType}"`
+                  )}
+                </ShikiHighlighter>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </div>
           </div>
         </motion.div>
       )}
@@ -277,20 +263,31 @@ export function UpsertWebhookDialogSteps({
         >
           {/* Section Title and Description */}
           <div className="flex flex-col gap-2">
-            <p className="text-fg-secondary prose-label uppercase">Secret</p>
-            <p className="text-fg-tertiary prose-body">
-              A secret verifies that webhooks are from us and untampered. Use
-              our pre-generated one or add your own.
+            <p className="text-fg-secondary prose-label uppercase">
+              Signature Secret
             </p>
+            <p className="text-fg-tertiary prose-body">
+              This secret is used to verify webhook authenticity. Each request
+              includes an <code className="text-fg">e2b-signature</code> header
+              generated with Hash-based Message Authentication Code (HMAC)
+              SHA-256. Validate this in your endpoint to ensure requests are
+              from E2B and untampered.
+            </p>
+            <a
+              href={WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fg-link hover:text-fg-link-hover prose-body inline-flex items-center gap-1 w-fit"
+            >
+              View validation examples
+              <ExternalLinkIcon className="size-3" />
+            </a>
           </div>
 
           {/* Tabs */}
           <Tabs
             value={secretType}
-            onValueChange={(v) => {
-              const parsed = SecretTypeSchema.safeParse(v)
-              if (parsed.success) onSecretTypeChange(parsed.data)
-            }}
+            onValueChange={handleSecretTypeChange}
             className="min-h-0 w-full flex-1 h-full"
           >
             <TabsList className="w-full justify-start px-0">
@@ -326,18 +323,22 @@ export function UpsertWebhookDialogSteps({
                       </FormControl>
                       <Button
                         type="button"
-                        variant={hasCopied ? 'secondary' : 'primary'}
-                        onClick={() => void copy(preGeneratedSecret)}
+                        variant={hasCopiedSecret ? 'secondary' : 'primary'}
+                        onClick={handleCopySecret}
                         disabled={isLoading}
                         className="shrink-0 relative"
                       >
                         <span
-                          className={copied ? 'invisible contents' : 'contents'}
+                          className={
+                            secretCopiedFeedback
+                              ? 'invisible contents'
+                              : 'contents'
+                          }
                         >
                           <CopyIcon className="size-4" />
                           Copy
                         </span>
-                        {copied && (
+                        {secretCopiedFeedback && (
                           <CheckIcon className="absolute size-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                         )}
                       </Button>

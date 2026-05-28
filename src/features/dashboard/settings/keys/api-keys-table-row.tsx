@@ -1,25 +1,22 @@
 'use client'
 
 import { usePostHog } from 'posthog-js/react'
-import type { MouseEvent } from 'react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
-import { UserAvatar } from '@/features/dashboard/shared'
-import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { IdBadge, UserAvatar } from '@/features/dashboard/shared'
 import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
-import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { CheckIcon, CopyIcon, KeyIcon, TrashIcon } from '@/ui/primitives/icons'
+import { KeyIcon, TrashIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
-import { getApiKeyIdBadgeLabel, getLastUsedLabel } from './api-keys-utils'
+import { formatMaskedApiKey, getLastUsedLabel } from './api-keys-utils'
 
 const tableCellClassName = 'py-3 text-left [tr:first-child>&]:pt-1.5'
 
@@ -31,23 +28,18 @@ interface ApiKeysTableRowProps {
 export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
   const posthog = usePostHog()
   const { toast } = useToast()
-  const [wasCopied, copy] = useClipboard()
 
   const addedDate = apiKey.createdAt
     ? (formatDate(new Date(apiKey.createdAt), 'MMM d, yyyy') ?? '—')
     : '—'
 
+  const maskedKey = formatMaskedApiKey(apiKey)
   const lastUsedAt = apiKey.lastUsed
   const lastUsedLabel = getLastUsedLabel(apiKey)
   const isCliKey = apiKey.name === CLI_GENERATED_KEY_NAME
-  const displayId = getApiKeyIdBadgeLabel(apiKey.id)
   const createdByEmail = apiKey.createdBy?.email?.trim() || 'Unknown user'
 
-  const handleCopy = async (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-    event.stopPropagation()
-
-    await copy(apiKey.id)
+  const handleIdCopied = () => {
     posthog.capture('copied API key id')
     toast(defaultSuccessToast('ID copied to clipboard'))
   }
@@ -68,23 +60,16 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
         </div>
       </TableCell>
       <TableCell className={tableCellClassName}>
-        <Badge className="bg-bg-highlight text-fg-tertiary h-[18px] gap-[3px] px-1 prose-label-numeric">
-          <span className="tracking-wider">{displayId}</span>
-          <Button
-            type="button"
-            variant="quaternary"
-            size="none"
-            className="text-fg-tertiary hover:text-fg h-3 w-3 shrink-0 active:translate-y-0"
-            aria-label="Copy full API key ID"
-            onClick={handleCopy}
-          >
-            {wasCopied ? (
-              <CheckIcon className="size-3" />
-            ) : (
-              <CopyIcon className="size-3" />
-            )}
-          </Button>
-        </Badge>
+        <span className="text-fg-tertiary truncate font-mono text-sm tabular-nums">
+          {maskedKey}
+        </span>
+      </TableCell>
+      <TableCell className={tableCellClassName}>
+        <IdBadge
+          id={apiKey.id}
+          copyAriaLabel="Copy full API key ID"
+          onCopied={handleIdCopied}
+        />
       </TableCell>
       <TableCell className={cn(tableCellClassName, 'text-sm text-fg-tertiary')}>
         {lastUsedAt ? (
@@ -100,14 +85,12 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
           lastUsedLabel
         )}
       </TableCell>
-      <TableCell
-        className={cn(tableCellClassName, 'pl-3 pr-0 text-sm text-fg-tertiary')}
-      >
-        <div className="flex items-center gap-6 justify-between">
+      <TableCell className={cn(tableCellClassName, 'text-sm text-fg-tertiary')}>
+        <div className="flex items-center gap-3">
           <span className="block w-[92px] shrink-0 whitespace-nowrap">
             {addedDate}
           </span>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             {isCliKey ? (
               <Tooltip>
                 <TooltipTrigger asChild>

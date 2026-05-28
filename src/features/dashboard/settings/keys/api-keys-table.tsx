@@ -46,14 +46,16 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
       />
       <Table className={cn('w-full table-fixed', className)}>
         <colgroup>
-          <col className="min-w-[260px] lg:w-[48%]" />
-          <col className="w-[132px] lg:w-[16%]" />
-          <col className="w-[96px] lg:w-[12%]" />
-          <col className="w-[180px] lg:w-[24%]" />
+          <col className="min-w-[220px]" />
+          <col className="w-[150px]" />
+          <col className="w-[135px]" />
+          <col className="w-[106px]" />
+          <col className="w-[168px]" />
         </colgroup>
         <TableHeader className="border-b-0">
           <TableRow className="hover:bg-transparent">
             <ApiKeysTableHead>LABEL</ApiKeysTableHead>
+            <ApiKeysTableHead>KEY</ApiKeysTableHead>
             <ApiKeysTableHead>ID</ApiKeysTableHead>
             <ApiKeysTableHead>LAST USED</ApiKeysTableHead>
             <ApiKeysTableHead>ADDED</ApiKeysTableHead>
@@ -68,9 +70,9 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({
           )}
         >
           {isLoading ? (
-            <TableLoadingState colSpan={4} label="Loading API keys" />
+            <TableLoadingState colSpan={5} label="Loading API keys" />
           ) : apiKeys.length === 0 ? (
-            <TableEmptyState colSpan={4}>
+            <TableEmptyState colSpan={5}>
               <KeyIcon
                 aria-hidden
                 className={cn(

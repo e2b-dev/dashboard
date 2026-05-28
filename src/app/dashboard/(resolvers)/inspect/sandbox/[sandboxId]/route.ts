@@ -4,9 +4,9 @@ import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { auth } from '@/core/server/auth'
 import { infra } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { createClient } from '@/core/shared/clients/supabase/server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { setTeamCookies } from '@/lib/utils/cookies'
 
@@ -130,34 +130,18 @@ export async function GET(
     }
 
     const sandboxId = parsedSandboxId.data
-    const supabase = await createClient()
-    const { data: userResponse, error: userError } =
-      await supabase.auth.getUser()
+    const authContext = await auth.getAuthContext()
 
-    if (userError || !userResponse.user) {
+    if (!authContext) {
       l.info({
         key: 'inspect_sandbox:unauthenticated',
         sandbox_id: sandboxId,
-        error: userError,
       })
       return redirectToSignInPage(request)
     }
 
-    const userId = userResponse.user.id
-    const { data: sessionResponse, error: sessionError } =
-      await supabase.auth.getSession()
-
-    if (sessionError || !sessionResponse.session) {
-      l.warn({
-        key: 'inspect_sandbox:session_error',
-        user_id: userId,
-        sandbox_id: sandboxId,
-        error: sessionError,
-      })
-      return redirectToSignInPage(request)
-    }
-
-    const accessToken = sessionResponse.session.access_token
+    const userId = authContext.user.id
+    const accessToken = authContext.accessToken
     const teamsResult = await createUserTeamsRepository({
       accessToken,
     }).listUserTeams()

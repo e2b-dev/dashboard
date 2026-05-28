@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { auth } from '@/core/server/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { createClient } from '@/core/shared/clients/supabase/server'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
@@ -96,11 +96,7 @@ export default async function CLIAuthPage({
   searchParams: CLISearchParams
 }) {
   const { next, state, error } = await searchParams
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const authContext = await auth.getAuthContext()
 
   if (state === 'success') {
     return <SuccessState />
@@ -111,7 +107,7 @@ export default async function CLIAuthPage({
     l.error(
       {
         key: 'cli_auth:invalid_redirect_url',
-        user_id: user?.id,
+        user_id: authContext?.user.id,
         context: {
           next,
         },
@@ -122,7 +118,7 @@ export default async function CLIAuthPage({
   }
 
   // If user is not authenticated, redirect to sign in with return URL
-  if (!user) {
+  if (!authContext) {
     const searchParams = new URLSearchParams({
       returnTo: `${AUTH_URLS.CLI}?${new URLSearchParams({ next }).toString()}`,
     })
@@ -130,21 +126,17 @@ export default async function CLIAuthPage({
   }
 
   // Handle CLI callback if authenticated
-  if (!error && next && user) {
+  if (!error && next && authContext) {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error('No provider access token found')
-      }
-
-      if (!user.email) {
+      if (!authContext.user.email) {
         throw new Error('No user email found')
       }
 
-      return await handleCLIAuth(next, user.email, session.access_token)
+      return await handleCLIAuth(
+        next,
+        authContext.user.email,
+        authContext.accessToken
+      )
     } catch (err) {
       if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
         throw err
@@ -154,7 +146,7 @@ export default async function CLIAuthPage({
         {
           key: 'cli_auth:unexpected_error',
           error: serializeErrorForLog(err),
-          user_id: user?.id,
+          user_id: authContext.user.id,
           context: {
             next,
           },
@@ -177,7 +169,7 @@ export default async function CLIAuthPage({
       <div className="text-fg-tertiary mt-12 leading-8">
         <Suspense fallback={<div>Loading...</div>}>
           {error ? (
-            <ErrorAlert message={decodeURIComponent(error)} />
+            <ErrorAlert message={error} />
           ) : (
             <div>Authorizing CLI...</div>
           )}

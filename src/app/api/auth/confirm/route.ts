@@ -4,12 +4,13 @@ import { z } from 'zod'
 import { AUTH_URLS } from '@/configs/urls'
 import { OtpTypeSchema } from '@/core/modules/auth/models'
 import { l } from '@/core/shared/clients/logger/logger'
+import { httpUrlSchema } from '@/core/shared/schemas/url'
 import { encodedRedirect, isExternalOrigin } from '@/lib/utils/auth'
 
 const confirmSchema = z.object({
   token_hash: z.string().min(1),
   type: OtpTypeSchema,
-  next: z.httpUrl(),
+  next: httpUrlSchema,
 })
 
 /**

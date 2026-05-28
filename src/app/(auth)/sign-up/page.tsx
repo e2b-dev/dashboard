@@ -17,6 +17,7 @@ import { AuthFormMessage, type AuthMessage } from '@/features/auth/form-message'
 import { OAuthProviders } from '@/features/auth/oauth-provider-buttons'
 import { TurnstileWidget } from '@/features/auth/turnstile-widget'
 import { useTurnstile } from '@/features/auth/use-turnstile'
+import { isGoogleEmail } from '@/lib/utils/email'
 import { Button } from '@/ui/primitives/button'
 import {
   Form,
@@ -36,8 +37,8 @@ export default function SignUp() {
   const [message, setMessage] = useState<AuthMessage | undefined>(() => {
     const error = searchParams.get('error')
     const success = searchParams.get('success')
-    if (error) return { error: decodeURIComponent(error) }
-    if (success) return { success: decodeURIComponent(success) }
+    if (error) return { error }
+    if (success) return { success }
 
     return undefined
   })
@@ -83,6 +84,9 @@ export default function SignUp() {
       form.setFocus('email')
     }
   }, [searchParams, form])
+
+  const emailValue = form.watch('email')
+  const isGoogleSignUp = emailValue ? isGoogleEmail(emailValue) : false
 
   useEffect(() => {
     if (message && 'success' in message && message.success) {
@@ -179,10 +183,22 @@ export default function SignUp() {
             className="my-1"
           />
 
+          {isGoogleSignUp && (
+            <AuthFormMessage
+              className="mt-2"
+              message={{
+                message: USER_MESSAGES.signUpGoogleEmail.message,
+              }}
+            />
+          )}
+
           <Button
             type="submit"
             loading={isExecuting ? 'Signing up...' : undefined}
-            disabled={CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken}
+            disabled={
+              isGoogleSignUp ||
+              (CAPTCHA_REQUIRED_CLIENT && !turnstile.captchaToken)
+            }
           >
             Sign up
           </Button>

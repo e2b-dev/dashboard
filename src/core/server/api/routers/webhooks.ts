@@ -173,33 +173,26 @@ export const webhooksRouter = createTRPCRouter({
   upsert: webhooksRepositoryProcedure
     .input(UpsertWebhookInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const { mode, webhookId, name, url, events, signatureSecret, enabled } =
-        input
-
-      const result = await ctx.webhooksRepository.upsertWebhook({
-        mode,
-        webhookId: webhookId ?? undefined,
-        name,
-        url,
-        events,
-        signatureSecret: signatureSecret ?? undefined,
-        enabled: enabled ?? true,
-      })
+      const result = await ctx.webhooksRepository.upsertWebhook(input)
 
       if (!result.ok) {
         l.error(
           {
             key:
-              mode === 'update'
+              input.mode === 'update'
                 ? 'update_webhook_trpc:error'
                 : 'create_webhook_trpc:error',
             status: result.error.status,
             error: result.error,
             team_id: ctx.teamId,
             user_id: ctx.session.user.id,
-            context: { mode, name, events },
+            context: {
+              mode: input.mode,
+              name: input.name,
+              events: input.events,
+            },
           },
-          `Failed to ${mode} webhook: ${result.error.status}: ${result.error.message}`
+          `Failed to ${input.mode} webhook: ${result.error.status}: ${result.error.message}`
         )
 
         throwTRPCErrorFromRepoError(result.error)

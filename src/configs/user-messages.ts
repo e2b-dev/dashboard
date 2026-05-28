@@ -84,6 +84,10 @@ export const USER_MESSAGES = {
   captchaFailed: {
     message: 'Captcha verification failed. Please try again.',
   },
+  signUpGoogleEmail: {
+    message:
+      'Please use "Continue with Google" above to sign up with your Google account.',
+  },
 }
 
 export const getTimeoutMsFromUserMessage = (

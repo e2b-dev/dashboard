@@ -1,36 +1,9 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import {
-  createServerClient,
-  parseCookieHeader,
-  serializeCookieHeader,
-} from '@supabase/ssr'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { getSessionInsecure } from '@/core/server/functions/auth/get-session'
-import getUserByToken from '@/core/server/functions/auth/get-user-by-token'
+import { createAuthForHeaders } from '@/core/server/auth'
 import { t } from '@/core/server/trpc/init'
+import { l } from '@/core/shared/clients/logger/logger'
 import { getTracer } from '@/core/shared/clients/tracer'
-
-const createSupabaseServerClient = (headers: Headers) => {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return parseCookieHeader(headers.get('cookie') ?? '')
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            headers.append(
-              'Set-Cookie',
-              serializeCookieHeader(name, value, options)
-            )
-          })
-        },
-      },
-    }
-  )
-}
 
 export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   const tracer = getTracer()
@@ -39,35 +12,29 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   span.setAttribute('trpc.middleware.name', 'auth')
 
   try {
-    const supabase = createSupabaseServerClient(ctx.headers)
+    const provider = createAuthForHeaders(ctx.headers)
 
-    const session = await context.with(
+    const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await getSessionInsecure(supabase)
+        return await provider.getAuthContext()
       }
     )
 
-    if (!session) {
+    if (!authContext) {
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: 'session not found',
       })
 
-      throw unauthorizedUserError()
-    }
-
-    const {
-      data: { user },
-    } = await context.with(trace.setSpan(context.active(), span), async () => {
-      return await getUserByToken(session.access_token)
-    })
-
-    if (!user) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: 'user not found for session',
-      })
+      // provider-level logs already capture supabase errors when present;
+      // this warn distinguishes "no cookie / expired session" at the trpc boundary
+      l.warn(
+        {
+          key: 'trpc_auth_middleware:no_session',
+        },
+        'tRPC auth middleware: no auth context'
+      )
 
       throw unauthorizedUserError()
     }
@@ -77,8 +44,11 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
     return next({
       ctx: {
         ...ctx,
-        session,
-        user,
+        session: {
+          access_token: authContext.accessToken,
+          user: authContext.user,
+        },
+        user: authContext.user,
       },
     })
   } finally {

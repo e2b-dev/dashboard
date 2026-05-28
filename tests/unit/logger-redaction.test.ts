@@ -39,8 +39,10 @@ describe('logger redaction', () => {
         captchaToken: 'captcha-secret',
         nested: {
           token_hash: 'otp-token-hash',
+          signatureSecret: 'nested-signature-secret',
         },
         password: 'super-secret-password',
+        signatureSecret: 'webhook-signing-secret',
       },
     })
 
@@ -58,8 +60,10 @@ describe('logger redaction', () => {
         captchaToken?: string
         nested?: {
           token_hash?: string
+          signatureSecret?: string
         }
         password?: string
+        signatureSecret?: string
       }
     }
 
@@ -67,9 +71,43 @@ describe('logger redaction', () => {
     expect(payload.server_function_input?.captchaToken).toBe(REDACTION_CENSOR)
     expect(payload.server_function_input?.access_token).toBe(REDACTION_CENSOR)
     expect(payload.server_function_input?.api_key).toBe(REDACTION_CENSOR)
+    expect(payload.server_function_input?.signatureSecret).toBe(
+      REDACTION_CENSOR
+    )
     expect(payload.server_function_input?.nested?.token_hash).toBe(
       REDACTION_CENSOR
     )
+    expect(payload.server_function_input?.nested?.signatureSecret).toBe(
+      REDACTION_CENSOR
+    )
     expect(payload.error?.config?.headers?.Authorization).toBe(REDACTION_CENSOR)
+  })
+
+  it('redacts signatureSecret at top level', () => {
+    const writes: string[] = []
+
+    const logger = pino(
+      {
+        base: undefined,
+        redact: {
+          paths: REDACTION_PATHS,
+          censor: REDACTION_CENSOR,
+        },
+        timestamp: false,
+      },
+      {
+        write(chunk: string) {
+          writes.push(chunk)
+        },
+      }
+    )
+
+    logger.info({ signatureSecret: 'top-level-webhook-secret' })
+
+    const payload = JSON.parse(writes[0] ?? '{}') as {
+      signatureSecret?: string
+    }
+
+    expect(payload.signatureSecret).toBe(REDACTION_CENSOR)
   })
 })

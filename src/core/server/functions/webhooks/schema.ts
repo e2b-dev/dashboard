@@ -82,7 +82,8 @@ export const GetWebhookDeliveryStatsInputSchema = z
     })
   })
 
-export type UpsertWebhookInput = z.input<typeof UpsertWebhookInputSchema>
+export type UpsertWebhookFormInput = z.input<typeof UpsertWebhookInputSchema>
+export type UpsertWebhookInput = z.output<typeof UpsertWebhookInputSchema>
 export type DeleteWebhookInput = z.input<typeof DeleteWebhookInputSchema>
 export type UpdateWebhookSecretInput = z.input<
   typeof UpdateWebhookSecretInputSchema

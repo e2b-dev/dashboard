@@ -47,20 +47,23 @@ const LOCAL_LOG_STYLE_TIMEZONE_FORMATTER = new Intl.DateTimeFormat(undefined, {
 
 /**
  * Format timestamp parts in local timezone, matching logs table style.
- * Example: "Jan 05 14:32:09"
+ * Example: "Jan 05 14:32:09.93"
  */
 export function formatLocalLogStyleTimestamp(
   timestamp: number | string | Date,
   {
     includeSeconds = true,
     includeYear = false,
+    includeCentiseconds = false,
   }: {
     includeSeconds?: boolean
     includeYear?: boolean
+    includeCentiseconds?: boolean
   } = {}
 ): {
   datePart: string
   timePart: string
+  subsecondPart: string | null
   timezonePart: string
   iso: string
 } | null {
@@ -86,6 +89,11 @@ export function formatLocalLogStyleTimestamp(
       ? LOCAL_LOG_STYLE_TIME_FORMATTER
       : LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER
     ).format(date),
+    subsecondPart: includeCentiseconds
+      ? Math.floor((date.getMilliseconds() / 10) % 100)
+          .toString()
+          .padStart(2, '0')
+      : null,
     timezonePart,
     iso: date.toISOString(),
   }

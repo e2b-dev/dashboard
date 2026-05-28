@@ -35,10 +35,22 @@ vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
 }))
 
 vi.mock('@/core/shared/clients/kv', () => ({
-  kv: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
+  isKvConfigured: vi.fn(() => false),
+  pingKv: vi.fn(async () => ({
+    configured: false,
+    available: false,
+    status: 'not_configured' as const,
+  })),
+  getKvValue: vi.fn(async () => ({
+    ok: false,
+    configured: false,
+    reason: 'not_configured' as const,
+  })),
+  setKvValue: vi.fn(async () => ({
+    ok: false,
+    configured: false,
+    reason: 'not_configured' as const,
+  })),
 }))
 
 vi.mock('@/core/shared/clients/api', () => ({
