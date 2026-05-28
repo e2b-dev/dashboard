@@ -7,9 +7,16 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
-import { AlertDialog } from '@/ui/alert-dialog'
+import { Button } from '@/ui/primitives/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/primitives/dialog'
 import { WarningIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 
 interface TagDeleteDialogProps {
   open: boolean
@@ -76,38 +83,53 @@ export default function TagDeleteDialog({
   const isDeleting = deleteTags.isPending
 
   return (
-    <AlertDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={
-        <span className="flex items-center gap-2 text-accent-error-highlight">
-          <WarningIcon className="size-4" />
-          <span>{`Delete '${tag}' tag?`}</span>
-        </span>
-      }
-      description="Any associated history will be also deleted. This action is irreversible."
-      confirm={
-        isDeleting ? (
-          <>
-            <Loader variant="slash" />
-            <span>Deleting...</span>
-          </>
-        ) : (
-          'Delete'
-        )
-      }
-      confirmProps={{
-        variant: 'error',
-        disabled: isDeleting,
-      }}
-      onConfirm={() => {
-        deleteTags.mutate({
-          teamSlug,
-          templateId,
-          templateName,
-          tags: [tag],
-        })
-      }}
-    />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent hideClose className="gap-0 sm:max-w-[520px]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <DialogHeader className="min-w-0 flex-1 text-left">
+            <DialogTitle className="flex items-center gap-2 text-accent-error-highlight">
+              <WarningIcon className="size-4" />
+              <span>{`Delete '${tag}' tag?`}</span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Confirm deletion of this tag. This cannot be undone.
+            </DialogDescription>
+            <p className="text-fg-primary mt-2 font-sans text-sm">
+              Any associated history will be also deleted. This action is
+              irreversible.
+            </p>
+          </DialogHeader>
+          <div className="flex shrink-0 items-center justify-end gap-5">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="tertiary"
+                disabled={isDeleting}
+                className="text-fg-tertiary font-sans normal-case hover:text-fg-tertiary focus:text-fg-tertiary"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="error"
+              loading={isDeleting ? 'Deleting' : undefined}
+              disabled={isDeleting}
+              className="font-sans normal-case"
+              onClick={() => {
+                deleteTags.mutate({
+                  teamSlug,
+                  templateId,
+                  templateName,
+                  tags: [tag],
+                })
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
