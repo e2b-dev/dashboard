@@ -10,7 +10,6 @@ import {
   TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
   TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
-  TERMINAL_INPUT_FLUSH_DELAY_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
@@ -27,6 +26,8 @@ import type {
   TerminalStatus,
 } from './types'
 import { useTerminalInstance } from './use-terminal-instance'
+
+const FLUSH_INPUT_INTERVAL_MS = 10
 
 interface DashboardTerminalProps {
   autoStart?: boolean
@@ -62,8 +63,9 @@ export default function DashboardTerminal({
   const pidRef = useRef<number | undefined>(undefined)
   const pendingInputRef = useRef<Uint8Array[]>([])
   const inputFlushTimerRef = useRef<number | null>(null)
+  const inputFlushInFlightRef = useRef(false)
+  const inputGenerationRef = useRef(0)
   const pendingCommandsRef = useRef<string[]>([])
-  const inputQueueRef = useRef(Promise.resolve())
   const isStartingRef = useRef(false)
   const retryResolveRef = useRef<(() => void) | null>(null)
   const retryTimerRef = useRef<number | null>(null)
@@ -116,11 +118,15 @@ export default function DashboardTerminal({
       window.clearTimeout(inputFlushTimerRef.current)
       inputFlushTimerRef.current = null
     }
+    inputGenerationRef.current += 1
+    inputFlushInFlightRef.current = false
     pendingInputRef.current = []
   }, [])
 
   const flushInputToPty = useCallback((terminalPid = pidRef.current) => {
     inputFlushTimerRef.current = null
+
+    if (inputFlushInFlightRef.current) return
 
     if (!sandboxRef.current || !terminalPid) {
       pendingInputRef.current = []
@@ -143,9 +149,21 @@ export default function DashboardTerminal({
     }
 
     const sandbox = sandboxRef.current
-    inputQueueRef.current = inputQueueRef.current
+    const inputGeneration = inputGenerationRef.current
+    inputFlushInFlightRef.current = true
+
+    void sandbox.pty
+      .sendInput(terminalPid, data)
       .catch(() => undefined)
-      .then(() => sandbox.pty.sendInput(terminalPid, data))
+      .finally(() => {
+        if (inputGenerationRef.current !== inputGeneration) return
+
+        inputFlushInFlightRef.current = false
+
+        if (pidRef.current === terminalPid && pendingInputRef.current.length) {
+          flushInputToPty(terminalPid)
+        }
+      })
   }, [])
 
   const sendInputToPty = useCallback(
@@ -161,7 +179,7 @@ export default function DashboardTerminal({
 
       inputFlushTimerRef.current = window.setTimeout(() => {
         flushInputToPty(terminalPid)
-      }, TERMINAL_INPUT_FLUSH_DELAY_MS)
+      }, FLUSH_INPUT_INTERVAL_MS)
     },
     [flushInputToPty]
   )
@@ -192,7 +210,6 @@ export default function DashboardTerminal({
     const sandboxId = sandboxRef.current?.sandboxId
     ptyRef.current = null
     pidRef.current = undefined
-    inputQueueRef.current = Promise.resolve()
     if (!pty) return
 
     if (sandboxId) {

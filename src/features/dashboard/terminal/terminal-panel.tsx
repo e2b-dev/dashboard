@@ -28,7 +28,50 @@ export default function TerminalPanel({
   onCopyTerminalText,
   onRestartTerminal,
 }: TerminalPanelProps) {
-  const header = (
+  return (
+    <DashboardPanelFrame
+      classNames={{
+        frame: 'bg-bg-1',
+      }}
+      header={
+        <TerminalPanelHeader
+          sandboxId={sandboxId}
+          template={template}
+          restartDisabled={restartDisabled}
+          restartLabel={restartLabel}
+          onCopyTerminalText={onCopyTerminalText}
+          onRestartTerminal={onRestartTerminal}
+        />
+      }
+    >
+      <div
+        ref={terminalContainerRef}
+        role="application"
+        aria-label="Terminal"
+        className="min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3"
+        onMouseDown={onFocusTerminal}
+      />
+    </DashboardPanelFrame>
+  )
+}
+
+function TerminalPanelHeader({
+  sandboxId,
+  template,
+  restartDisabled,
+  restartLabel,
+  onCopyTerminalText,
+  onRestartTerminal,
+}: Pick<
+  TerminalPanelProps,
+  | 'sandboxId'
+  | 'template'
+  | 'restartDisabled'
+  | 'restartLabel'
+  | 'onCopyTerminalText'
+  | 'onRestartTerminal'
+>) {
+  return (
     <div className="flex h-full items-center justify-between px-3">
       <div className="flex min-w-0 items-center gap-2">
         <TerminalCustomIcon className="text-icon-tertiary size-4" />
@@ -72,22 +115,5 @@ export default function TerminalPanel({
         </IconButton>
       </div>
     </div>
-  )
-
-  return (
-    <DashboardPanelFrame
-      classNames={{
-        frame: 'bg-bg-1',
-      }}
-      header={header}
-    >
-      <div
-        ref={terminalContainerRef}
-        role="application"
-        aria-label="Terminal"
-        className="min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3"
-        onMouseDown={onFocusTerminal}
-      />
-    </DashboardPanelFrame>
   )
 }
