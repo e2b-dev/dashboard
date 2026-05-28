@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useCallback, useMemo, useState } from 'react'
 import { useDashboard } from '@/features/dashboard/context'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
@@ -18,6 +18,26 @@ export default function SandboxTerminalView() {
   const [resumeRequestedSandboxId, setResumeRequestedSandboxId] = useState<
     string | null
   >(null)
+
+  const launchTarget = useMemo(
+    () =>
+      sandboxInfo
+        ? {
+            sandboxId: sandboxInfo.sandboxID,
+            template: sandboxInfo.templateID,
+          }
+        : undefined,
+    [sandboxInfo]
+  )
+
+  const refetchSandbox = useCallback(() => {
+    void refetchSandboxInfo()
+  }, [refetchSandboxInfo])
+
+  const handleSandboxAttachFailed = useCallback(() => {
+    setResumeRequestedSandboxId(null)
+    void refetchSandboxInfo()
+  }, [refetchSandboxInfo])
 
   if (isSandboxInfoLoading && !sandboxInfo) {
     return <LoadingLayout />
@@ -52,12 +72,9 @@ export default function SandboxTerminalView() {
     <div className="flex min-h-0 flex-1 overflow-hidden p-3 md:p-6">
       <DashboardTerminal
         autoStart
-        launchTarget={{
-          sandboxId: sandboxInfo.sandboxID,
-          template: sandboxInfo.templateID,
-        }}
-        onSandboxAttached={() => void refetchSandboxInfo()}
-        onSandboxAttachFailed={() => void refetchSandboxInfo()}
+        launchTarget={launchTarget}
+        onSandboxAttached={refetchSandbox}
+        onSandboxAttachFailed={handleSandboxAttachFailed}
         sandboxScoped
         teamId={team.id}
       />
