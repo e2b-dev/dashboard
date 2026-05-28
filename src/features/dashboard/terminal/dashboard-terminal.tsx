@@ -23,26 +23,31 @@ import type {
   PendingTerminalLaunch,
   StartTerminalOptions,
   TerminalLaunchTarget,
+  TerminalSandboxResolver,
   TerminalStatus,
 } from './types'
 import { useTerminalInstance } from './use-terminal-instance'
 
 interface DashboardTerminalProps {
   autoStart?: boolean
+  getSandbox?: TerminalSandboxResolver
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
   sandboxScoped?: boolean
   teamId: string
+  teamSlug: string
 }
 
 export default function DashboardTerminal({
   autoStart = false,
+  getSandbox,
   launchTarget,
   onSandboxAttached,
   onSandboxAttachFailed,
   sandboxScoped = false,
   teamId,
+  teamSlug,
 }: DashboardTerminalProps) {
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
@@ -88,14 +93,22 @@ export default function DashboardTerminal({
 
   const requestPtyKill = useCallback(
     ({ pid, sandboxId }: { pid: number; sandboxId: string }) => {
-      void fetch('/api/sandbox/terminal/pty/kill', {
+      void fetch('/api/trpc/sandbox.killTerminalPty?batch=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pid, sandboxId, teamId }),
+        body: JSON.stringify({
+          0: {
+            json: {
+              pid,
+              sandboxId,
+              teamSlug,
+            },
+          },
+        }),
         keepalive: true,
       })
     },
-    [teamId]
+    [teamSlug]
   )
 
   const clearPendingInput = useCallback(() => {
@@ -256,7 +269,6 @@ export default function DashboardTerminal({
       await closeTerminal()
       sandboxRef.current = null
       pidRef.current = undefined
-      inputQueueRef.current = Promise.resolve()
       resetTerminal()
       setStatus('starting')
       setActiveSandboxId(requestedSandboxId)
@@ -264,17 +276,25 @@ export default function DashboardTerminal({
       appendOutput('Opening terminal...\r\n')
 
       const openSandboxAndPty = async () => {
-        const { sandbox } = await openTerminalSandbox({
-          forceNewSandbox: options.forceNewSandbox,
-          onStatus: appendOutput,
-          requestTimeoutMs: requestedSandboxId
-            ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
-            : undefined,
-          shouldStoreSession: !sandboxScoped,
-          sandboxId: requestedSandboxId,
-          teamId,
-          template: nextTemplate,
-        })
+        let sandbox: Sandbox
+
+        if (getSandbox) {
+          appendOutput('Connecting to sandbox...\r\n')
+          sandbox = await getSandbox()
+        } else {
+          const terminalSandbox = await openTerminalSandbox({
+            forceNewSandbox: options.forceNewSandbox,
+            onStatus: appendOutput,
+            requestTimeoutMs: requestedSandboxId
+              ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
+              : undefined,
+            shouldStoreSession: !sandboxScoped,
+            sandboxId: requestedSandboxId,
+            teamId,
+            template: nextTemplate,
+          })
+          sandbox = terminalSandbox.sandbox
+        }
 
         if (!isCurrentStart()) return null
 
@@ -295,7 +315,7 @@ export default function DashboardTerminal({
         return { pty, sandbox }
       }
 
-      const canRetryAttach = Boolean(requestedSandboxId)
+      const canRetryAttach = Boolean(requestedSandboxId || getSandbox)
 
       try {
         const result = await attachTerminalWithRetry({
@@ -370,6 +390,7 @@ export default function DashboardTerminal({
       resizeTerminal,
       resetTerminal,
       focusTerminal,
+      getSandbox,
       runCommand,
       sandboxScoped,
       teamId,
@@ -475,11 +496,12 @@ export default function DashboardTerminal({
     ? 'Reconnect terminal'
     : 'Start new terminal sandbox'
   const restartDisabled =
-    status === 'starting' || (sandboxScoped && !reconnectSandboxId)
+    status === 'starting' ||
+    (sandboxScoped && !reconnectSandboxId && !getSandbox)
 
   const restartTerminal = useCallback(() => {
     if (sandboxScoped) {
-      if (!reconnectSandboxId) return
+      if (!reconnectSandboxId && !getSandbox) return
 
       void startTerminal({
         target: reconnectTarget,
@@ -488,7 +510,13 @@ export default function DashboardTerminal({
     }
 
     void startTerminal({ forceNewSandbox: true })
-  }, [reconnectTarget, reconnectSandboxId, sandboxScoped, startTerminal])
+  }, [
+    getSandbox,
+    reconnectTarget,
+    reconnectSandboxId,
+    sandboxScoped,
+    startTerminal,
+  ])
 
   useEffect(() => {
     if (!autoStart || status !== 'idle' || isStartingRef.current) return

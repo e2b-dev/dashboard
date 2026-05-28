@@ -1,7 +1,5 @@
 'use client'
 
-import Sandbox from 'e2b'
-import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 import {
   createContext,
@@ -11,9 +9,6 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { AUTH_URLS } from '@/configs/urls'
-import { supabase } from '@/core/shared/clients/supabase/client'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useDashboard } from '../../context'
@@ -43,11 +38,11 @@ export default function SandboxInspectProvider({
   const { team } = useDashboard()
   const teamId = team.id
 
-  const { sandboxInfo, isRunning } = useSandboxContext()
+  const { getSandbox, sandboxInfo, isRunning } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
+  const connectGenerationRef = useRef(0)
 
-  const router = useRouter()
   const { trackInteraction } = useSandboxInspectAnalytics()
 
   // ---------- synchronous store initialisation ----------
@@ -66,6 +61,7 @@ export default function SandboxInspectProvider({
 
       // stop previous watcher (if any)
       if (sandboxManagerRef.current) {
+        connectGenerationRef.current += 1
         sandboxManagerRef.current.stopWatching()
         sandboxManagerRef.current = null
       }
@@ -175,33 +171,27 @@ export default function SandboxInspectProvider({
 
   const connectSandbox = useCallback(async () => {
     if (!storeRef.current || !sandboxInfo || !teamId) return
+    const generation = connectGenerationRef.current + 1
+    connectGenerationRef.current = generation
+    const store = storeRef.current
+    const sandboxId = sandboxInfo.sandboxID
 
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
       sandboxManagerRef.current.stopWatching()
     }
 
-    const { data } = await supabase.auth.getSession()
+    const sandbox = await getSandbox()
 
-    if (!data || !data.session) {
-      router.replace(AUTH_URLS.SIGN_IN)
+    if (
+      connectGenerationRef.current !== generation ||
+      storeRef.current !== store ||
+      sandboxInfo.sandboxID !== sandboxId
+    ) {
       return
     }
 
-    const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
-      domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-      // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
-      timeoutMs: 1_000,
-      headers: {
-        ...SUPABASE_AUTH_HEADERS(data.session.access_token, teamId),
-      },
-    })
-
-    sandboxManagerRef.current = new SandboxManager(
-      storeRef.current,
-      sandbox,
-      rootPath
-    )
+    sandboxManagerRef.current = new SandboxManager(store, sandbox, rootPath)
     await sandboxManagerRef.current.loadDirectory(rootPath)
 
     trackInteraction('started_watching', {
@@ -209,7 +199,7 @@ export default function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [sandboxInfo, teamId, rootPath, trackInteraction, router])
+  }, [getSandbox, sandboxInfo, teamId, rootPath, trackInteraction])
 
   // handle sandbox connection / disconnection
   useEffect(() => {
@@ -220,7 +210,9 @@ export default function SandboxInspectProvider({
       return
     }
 
+    connectGenerationRef.current += 1
     sandboxManagerRef.current?.stopWatching()
+    sandboxManagerRef.current = null
 
     trackInteraction('stopped_watching', {
       sandbox_id: sandboxInfo?.sandboxID,

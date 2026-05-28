@@ -121,6 +121,7 @@ export default async function TerminalPage({
           template: terminalTemplate,
         }}
         teamId={team.id}
+        teamSlug={team.slug}
       />
     </main>
   )

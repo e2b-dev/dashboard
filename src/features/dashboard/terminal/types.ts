@@ -1,3 +1,5 @@
+import type { Sandbox } from 'e2b'
+
 export type TerminalStatus = 'idle' | 'starting' | 'ready' | 'error'
 
 export type StoredTerminalSession = {
@@ -20,3 +22,5 @@ export type TerminalLaunchTarget = {
   sandboxId?: string
   template?: string
 }
+
+export type TerminalSandboxResolver = () => Promise<Sandbox>

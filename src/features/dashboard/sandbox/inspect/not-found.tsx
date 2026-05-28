@@ -1,14 +1,9 @@
 'use client'
 
-import Sandbox from 'e2b'
 import { useParams, useRouter } from 'next/navigation'
-import type { ReactNode } from 'react'
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { supabase } from '@/core/shared/clients/supabase/client'
-import { useDashboard } from '@/features/dashboard/context'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -21,27 +16,20 @@ import {
 import { useSandboxContext } from '../context'
 import SandboxInspectEmptyFrame from './empty'
 
-const SANDBOX_RESUME_TIMEOUT_MS = 5 * 60 * 1000
-
 interface SandboxInspectNotFoundProps {
-  onResumeSandbox?: () => void
   resource?: 'filesystem' | 'terminal'
 }
 
 export default function SandboxInspectNotFound({
-  onResumeSandbox,
   resource = 'filesystem',
 }: SandboxInspectNotFoundProps) {
   const router = useRouter()
-  const { team } = useDashboard()
-  const { isRunning, sandboxInfo, refetchSandboxInfo } = useSandboxContext()
+  const { isRunning, sandboxInfo } = useSandboxContext()
 
   const { teamSlug } = useParams()
 
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
-  const [isResumePending, setIsResumePending] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [isResetPending, resetTransition] = useTransition()
 
   const save = useCallback(async (newPath: string) => {
     try {
@@ -72,46 +60,6 @@ export default function SandboxInspectNotFound({
     [router, save]
   )
 
-  const resumeSandbox = useCallback(async () => {
-    if (onResumeSandbox) {
-      onResumeSandbox()
-      return
-    }
-
-    if (!sandboxInfo) return
-
-    setIsResumePending(true)
-    try {
-      const { data } = await supabase.auth.getSession()
-
-      if (!data.session) {
-        router.replace(AUTH_URLS.SIGN_IN)
-        return
-      }
-
-      await Sandbox.connect(sandboxInfo.sandboxID, {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        timeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
-        headers: {
-          ...SUPABASE_AUTH_HEADERS(data.session.access_token, team.id),
-        },
-      })
-
-      await refetchSandboxInfo()
-    } catch (error) {
-      l.error(
-        {
-          key: 'sandbox_inspect_not_found:resume_failed',
-          error: serializeErrorForLog(error),
-          sandbox_id: sandboxInfo.sandboxID,
-        },
-        `${error instanceof Error ? error.message : 'Failed to resume sandbox'}`
-      )
-    } finally {
-      setIsResumePending(false)
-    }
-  }, [onResumeSandbox, refetchSandboxInfo, router, sandboxInfo, team.id])
-
   useEffect(() => {
     if (!isPending) {
       setPendingPath(undefined)
@@ -131,10 +79,56 @@ export default function SandboxInspectNotFound({
           ? `Resume this sandbox to access the ${resourceName}.`
           : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
 
-  let actions: ReactNode
+  return (
+    <SandboxInspectEmptyFrame
+      title={
+        isRunning && isFilesystem
+          ? 'Empty Directory'
+          : isRunning
+            ? 'Terminal Unavailable'
+            : isPaused
+              ? 'Sandbox Paused'
+              : 'Not Connected'
+      }
+      description={description}
+      actions={
+        <SandboxInspectNotFoundActions
+          isFilesystem={isFilesystem}
+          isPaused={isPaused}
+          isPending={isPending}
+          isRunning={isRunning}
+          pendingPath={pendingPath}
+          setRootPath={setRootPath}
+          teamSlug={teamSlug as string}
+        />
+      }
+    />
+  )
+}
+
+function SandboxInspectNotFoundActions({
+  isFilesystem,
+  isPaused,
+  isPending,
+  isRunning,
+  pendingPath,
+  setRootPath,
+  teamSlug,
+}: {
+  isFilesystem: boolean
+  isPaused: boolean
+  isPending: boolean
+  isRunning: boolean
+  pendingPath?: string
+  setRootPath: (newPath: string) => void
+  teamSlug: string
+}) {
+  const router = useRouter()
+  const { isSandboxResumePending, resumeSandbox } = useSandboxContext()
+  const [isResetPending, resetTransition] = useTransition()
 
   if (isRunning && isFilesystem) {
-    actions = (
+    return (
       <>
         <div className="flex w-full justify-between gap-4">
           <Button
@@ -156,84 +150,76 @@ export default function SandboxInspectNotFound({
             To Root
           </Button>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() =>
+        <SandboxInspectRefreshButton
+          isResetPending={isResetPending}
+          onRefresh={() =>
             resetTransition(async () => {
               router.refresh()
             })
           }
-          className="w-full gap-2"
-          disabled={isResetPending}
-        >
-          <RefreshIcon
-            className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
-              'animate-spin': isResetPending,
-            })}
-          />
-          Refresh
-        </Button>
+        />
       </>
     )
-  } else if (isRunning) {
-    actions = (
-      <Button
-        variant="secondary"
-        onClick={() =>
+  }
+
+  if (isRunning) {
+    return (
+      <SandboxInspectRefreshButton
+        isResetPending={isResetPending}
+        onRefresh={() =>
           resetTransition(async () => {
             router.refresh()
           })
         }
-        className="w-full gap-2"
-        disabled={isResetPending}
-      >
-        <RefreshIcon
-          className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
-            'animate-spin': isResetPending,
-          })}
-        />
-        Refresh
-      </Button>
+      />
     )
-  } else if (isPaused) {
-    actions = (
+  }
+
+  if (isPaused) {
+    return (
       <Button
         className="w-full gap-2"
-        onClick={resumeSandbox}
-        disabled={isResumePending}
+        onClick={() => void resumeSandbox()}
+        disabled={isSandboxResumePending}
       >
         <RunningIcon className="h-4 w-4" />
         Resume sandbox
       </Button>
     )
-  } else {
-    actions = (
-      <Button
-        variant="secondary"
-        onClick={() =>
-          router.push(PROTECTED_URLS.SANDBOXES(teamSlug as string))
-        }
-        className="w-full gap-2"
-      >
-        <ArrowLeftIcon className="text-fg-tertiary h-4 w-4" />
-        Back to Sandboxes
-      </Button>
-    )
   }
 
   return (
-    <SandboxInspectEmptyFrame
-      title={
-        isRunning && isFilesystem
-          ? 'Empty Directory'
-          : isRunning
-            ? 'Terminal Unavailable'
-            : isPaused
-              ? 'Sandbox Paused'
-              : 'Not Connected'
-      }
-      description={description}
-      actions={actions}
-    />
+    <Button
+      variant="secondary"
+      onClick={() => router.push(PROTECTED_URLS.SANDBOXES(teamSlug))}
+      className="w-full gap-2"
+    >
+      <ArrowLeftIcon className="text-fg-tertiary h-4 w-4" />
+      Back to Sandboxes
+    </Button>
+  )
+}
+
+function SandboxInspectRefreshButton({
+  isResetPending,
+  onRefresh,
+}: {
+  isResetPending: boolean
+  onRefresh: () => void
+}) {
+  return (
+    <Button
+      variant="secondary"
+      onClick={onRefresh}
+      className="w-full gap-2"
+      disabled={isResetPending}
+    >
+      <RefreshIcon
+        className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
+          'animate-spin': isResetPending,
+        })}
+      />
+      Refresh
+    </Button>
   )
 }
