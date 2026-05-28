@@ -10,6 +10,7 @@ import {
   TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
   TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
+  TERMINAL_INPUT_FLUSH_DELAY_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
@@ -54,6 +55,8 @@ export default function DashboardTerminal({
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
   const pidRef = useRef<number | undefined>(undefined)
+  const pendingInputRef = useRef<Uint8Array[]>([])
+  const inputFlushTimerRef = useRef<number | null>(null)
   const pendingCommandsRef = useRef<string[]>([])
   const inputQueueRef = useRef(Promise.resolve())
   const isStartingRef = useRef(false)
@@ -95,19 +98,59 @@ export default function DashboardTerminal({
     [teamId]
   )
 
+  const clearPendingInput = useCallback(() => {
+    if (inputFlushTimerRef.current) {
+      window.clearTimeout(inputFlushTimerRef.current)
+      inputFlushTimerRef.current = null
+    }
+    pendingInputRef.current = []
+  }, [])
+
+  const flushInputToPty = useCallback((terminalPid = pidRef.current) => {
+    inputFlushTimerRef.current = null
+
+    if (!sandboxRef.current || !terminalPid) {
+      pendingInputRef.current = []
+      return
+    }
+
+    const pendingInput = pendingInputRef.current
+    pendingInputRef.current = []
+    if (!pendingInput.length) return
+
+    const byteLength = pendingInput.reduce(
+      (total, chunk) => total + chunk.byteLength,
+      0
+    )
+    const data = new Uint8Array(byteLength)
+    let offset = 0
+    for (const chunk of pendingInput) {
+      data.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+
+    const sandbox = sandboxRef.current
+    inputQueueRef.current = inputQueueRef.current
+      .catch(() => undefined)
+      .then(() => sandbox.pty.sendInput(terminalPid, data))
+  }, [])
+
   const sendInputToPty = useCallback(
     (value: string | Uint8Array, terminalPid = pidRef.current) => {
       if (!value || !sandboxRef.current || !terminalPid) return
 
-      const sandbox = sandboxRef.current
       const data =
         typeof value === 'string' ? new TextEncoder().encode(value) : value
 
-      inputQueueRef.current = inputQueueRef.current
-        .catch(() => undefined)
-        .then(() => sandbox.pty.sendInput(terminalPid, data))
+      pendingInputRef.current.push(data)
+
+      if (inputFlushTimerRef.current) return
+
+      inputFlushTimerRef.current = window.setTimeout(() => {
+        flushInputToPty(terminalPid)
+      }, TERMINAL_INPUT_FLUSH_DELAY_MS)
     },
-    []
+    [flushInputToPty]
   )
 
   const resizePty = useCallback((size: { cols: number; rows: number }) => {
@@ -130,6 +173,7 @@ export default function DashboardTerminal({
 
   const closeTerminal = useCallback(async () => {
     clearAttachRetryTimer()
+    clearPendingInput()
 
     const pty = ptyRef.current
     const sandboxId = sandboxRef.current?.sandboxId
@@ -147,7 +191,7 @@ export default function DashboardTerminal({
     } catch {
       // Best-effort cleanup. The sandbox is intentionally left alive.
     }
-  }, [clearAttachRetryTimer, requestPtyKill])
+  }, [clearAttachRetryTimer, clearPendingInput, requestPtyKill])
 
   const runCommand = useCallback(
     (command: string, terminalPid?: number) => {
@@ -478,9 +522,10 @@ export default function DashboardTerminal({
       window.removeEventListener('pagehide', handlePageHide)
       startGenerationRef.current += 1
       clearAttachRetryTimer()
+      clearPendingInput()
       void closeTerminal()
     }
-  }, [clearAttachRetryTimer, closeTerminal, requestPtyKill])
+  }, [clearAttachRetryTimer, clearPendingInput, closeTerminal, requestPtyKill])
 
   return (
     <>
