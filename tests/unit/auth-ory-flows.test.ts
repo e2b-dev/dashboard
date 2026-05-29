@@ -9,6 +9,8 @@ const loggerMocks = vi.hoisted(() => ({
 }))
 
 const patchIdentityMock = vi.hoisted(() => vi.fn())
+const getIdentityMock = vi.hoisted(() => vi.fn())
+const updateIdentityMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: loggerMocks,
@@ -16,7 +18,11 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
 }))
 
 vi.mock('@/core/server/auth/ory/client', () => ({
-  getOryIdentityApi: () => ({ patchIdentity: patchIdentityMock }),
+  getOryIdentityApi: () => ({
+    patchIdentity: patchIdentityMock,
+    getIdentity: getIdentityMock,
+    updateIdentity: updateIdentityMock,
+  }),
 }))
 
 const { oryAuthFlows } = await import('@/core/server/auth/ory/flows')
@@ -34,6 +40,8 @@ function oryError(
 describe('oryAuthFlows.updateUser', () => {
   beforeEach(() => {
     patchIdentityMock.mockReset()
+    getIdentityMock.mockReset()
+    updateIdentityMock.mockReset()
     loggerMocks.error.mockClear()
   })
 
@@ -69,8 +77,15 @@ describe('oryAuthFlows.updateUser', () => {
     })
   })
 
-  it('patches the password credential config when a password is provided', async () => {
-    patchIdentityMock.mockResolvedValue({
+  it('sets the password via updateIdentity (import path) so Kratos hashes it', async () => {
+    getIdentityMock.mockResolvedValue({
+      id: 'identity-1',
+      schema_id: 'default',
+      state: 'active',
+      traits: { email: 'a@b.test', name: 'Ada' },
+      external_id: 'legacy-id',
+    })
+    updateIdentityMock.mockResolvedValue({
       id: 'identity-1',
       traits: { email: 'a@b.test' },
       credentials: { password: {} },
@@ -81,15 +96,17 @@ describe('oryAuthFlows.updateUser', () => {
       password: 'super-secret',
     })
 
-    expect(patchIdentityMock).toHaveBeenCalledWith({
+    // not the raw patch — that writes cleartext without hashing
+    expect(patchIdentityMock).not.toHaveBeenCalled()
+    expect(updateIdentityMock).toHaveBeenCalledWith({
       id: 'identity-1',
-      jsonPatch: [
-        {
-          op: 'replace',
-          path: '/credentials/password/config/password',
-          value: 'super-secret',
-        },
-      ],
+      updateIdentityBody: expect.objectContaining({
+        schema_id: 'default',
+        state: 'active',
+        external_id: 'legacy-id',
+        traits: { email: 'a@b.test', name: 'Ada' },
+        credentials: { password: { config: { password: 'super-secret' } } },
+      }),
     })
   })
 
@@ -113,7 +130,13 @@ describe('oryAuthFlows.updateUser', () => {
   })
 
   it('maps a 400 password policy violation to weak_password', async () => {
-    patchIdentityMock.mockRejectedValue(
+    getIdentityMock.mockResolvedValue({
+      id: 'identity-1',
+      schema_id: 'default',
+      state: 'active',
+      traits: { email: 'a@b.test' },
+    })
+    updateIdentityMock.mockRejectedValue(
       oryError(400, {
         error: {
           code: 400,

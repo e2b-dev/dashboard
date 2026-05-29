@@ -1,6 +1,10 @@
 import 'server-only'
 
-import { type JsonPatch, JsonPatchOpEnum } from '@ory/client-fetch'
+import {
+  type Identity,
+  type JsonPatch,
+  JsonPatchOpEnum,
+} from '@ory/client-fetch'
 import { l } from '@/core/shared/clients/logger/logger'
 import type { UpdateUserErrorCode, UpdateUserResult } from '../types'
 import { getOryIdentityApi } from './client'
@@ -21,13 +25,13 @@ export const oryAuthFlows = {
     email,
     password,
   }: OryUpdateUserInput): Promise<UpdateUserResult> {
-    const jsonPatch = buildIdentityPatches({ name, email, password })
-
     try {
-      const identity = await getOryIdentityApi().patchIdentity({
-        id: identityId,
-        jsonPatch,
-      })
+      // A password change must go through updateIdentity (the credential import
+      // path) — see setPassword. Trait-only changes use the lighter patch.
+      const identity =
+        password !== undefined
+          ? await setPassword(identityId, { name, email, password })
+          : await patchTraits(identityId, { name, email })
 
       return { ok: true, user: fromOryIdentity(identity) }
     } catch (error) {
@@ -36,13 +40,66 @@ export const oryAuthFlows = {
   },
 }
 
+// Kratos only hashes a cleartext password when it runs through the credential
+// IMPORT pipeline (updateIdentity / createIdentity). A JSON-Patch write to
+// `/credentials/password/config/password` is accepted with 200 but stored raw —
+// `hashed_password` is left untouched, so the change appears to succeed while
+// the OLD password keeps working and the new one never does. So we set the
+// password via updateIdentity (PUT). Only the password credential is supplied,
+// which Kratos hashes; existing credentials (e.g. oidc) are preserved. We
+// re-send schema_id/state/traits/external_id/metadata to avoid clobbering them
+// on the full update.
+async function setPassword(
+  identityId: string,
+  { name, email, password }: Omit<OryUpdateUserInput, 'identityId'>
+): Promise<Identity> {
+  const api = getOryIdentityApi()
+  const current = await api.getIdentity({ id: identityId })
+
+  return api.updateIdentity({
+    id: identityId,
+    updateIdentityBody: {
+      schema_id: current.schema_id,
+      state: current.state ?? 'active',
+      traits: mergeTraits(current.traits, { name, email }),
+      external_id: current.external_id,
+      metadata_public: current.metadata_public,
+      metadata_admin: current.metadata_admin,
+      credentials: { password: { config: { password } } },
+    },
+  })
+}
+
+async function patchTraits(
+  identityId: string,
+  { name, email }: Pick<OryUpdateUserInput, 'name' | 'email'>
+): Promise<Identity> {
+  const api = getOryIdentityApi()
+  const jsonPatch = buildTraitPatches({ name, email })
+
+  if (jsonPatch.length === 0) {
+    return api.getIdentity({ id: identityId })
+  }
+
+  return api.patchIdentity({ id: identityId, jsonPatch })
+}
+
+function mergeTraits(
+  current: unknown,
+  { name, email }: Pick<OryUpdateUserInput, 'name' | 'email'>
+): Record<string, unknown> {
+  const traits = { ...((current as Record<string, unknown>) ?? {}) }
+  if (name !== undefined) traits.name = name
+  if (email !== undefined) traits.email = email
+  return traits
+}
+
 // Assumes a flat `name` trait. If the project's identity schema nests name as
-// `{ first, last }`, this patch path needs to target those sub-paths instead.
-function buildIdentityPatches({
+// `{ first, last }`, these patch paths need to target those sub-paths instead.
+function buildTraitPatches({
   name,
   email,
-  password,
-}: Omit<OryUpdateUserInput, 'identityId'>): JsonPatch[] {
+}: Pick<OryUpdateUserInput, 'name' | 'email'>): JsonPatch[] {
   const patches: JsonPatch[] = []
 
   if (name !== undefined) {
@@ -57,15 +114,6 @@ function buildIdentityPatches({
       op: JsonPatchOpEnum.Replace,
       path: '/traits/email',
       value: email,
-    })
-  }
-  if (password !== undefined) {
-    // The password-settings UI is only shown for identities that already have
-    // the email/password credential, so the config object exists to replace.
-    patches.push({
-      op: JsonPatchOpEnum.Replace,
-      path: '/credentials/password/config/password',
-      value: password,
     })
   }
 
