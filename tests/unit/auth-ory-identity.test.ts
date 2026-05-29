@@ -37,7 +37,7 @@ describe('fromOryIdentity providers normalization', () => {
 })
 
 describe('fromOryIdentity account capabilities', () => {
-  it('allows email and password changes for password-only identities with password material', () => {
+  it('blocks email changes but allows password changes for password-only identities with password material', () => {
     const user = fromOryIdentity(
       identity({
         credentials: {
@@ -46,7 +46,7 @@ describe('fromOryIdentity account capabilities', () => {
       })
     )
 
-    expect(user.canChangeEmail).toBe(true)
+    expect(user.canChangeEmail).toBe(false)
     expect(user.canChangePassword).toBe(true)
   })
 

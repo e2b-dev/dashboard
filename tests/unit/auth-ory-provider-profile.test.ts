@@ -63,7 +63,7 @@ describe('oryAuthProvider.getUserProfile', () => {
       name: 'Ada',
       avatarUrl: null,
       providers: ['email'],
-      canChangeEmail: true,
+      canChangeEmail: false,
       canChangePassword: true,
     })
   })

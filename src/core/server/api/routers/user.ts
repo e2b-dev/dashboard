@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { isOryAuthEnabled } from '@/configs/flags'
 import type { AuthUser } from '@/core/server/auth'
 import { createAuthForHeaders } from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
@@ -69,6 +70,13 @@ export const userRouter = createTRPCRouter({
   update: protectedProcedure
     .input(UpdateUserSchema)
     .mutation(async ({ ctx, input }) => {
+      if (input.email !== undefined && isOryAuthEnabled()) {
+        return {
+          status: 'error' as const,
+          code: 'account_credentials_not_changeable' as const,
+        }
+      }
+
       // Basic security check: a password must not equal the account email
       // (current or the new one being set in the same request).
       if (input.password) {

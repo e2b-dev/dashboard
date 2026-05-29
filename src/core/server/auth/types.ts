@@ -43,6 +43,7 @@ export type UpdateUserErrorCode =
   | 'weak_password'
   | 'same_password'
   | 'reauthentication_needed'
+  | 'account_credentials_not_changeable'
 
 export type UpdateUserResult =
   | { ok: true; user: AuthUser }

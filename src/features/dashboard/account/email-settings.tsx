@@ -53,6 +53,9 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
+  const showEmailSettings =
+    Boolean(user?.canChangeEmail) || Boolean(user?.providers.includes('email'))
+  const canChangeEmail = Boolean(user?.canChangeEmail)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -89,6 +92,14 @@ export function EmailSettings({ className }: EmailSettingsProps) {
 
         if (data.status === 'error' && data.code === 'email_invalid') {
           form.setError('email', { message: 'Invalid e-mail address.' })
+          return
+        }
+
+        if (
+          data.status === 'error' &&
+          data.code === 'account_credentials_not_changeable'
+        ) {
+          toast(defaultErrorToast('E-mail changes are currently unavailable.'))
           return
         }
 
@@ -129,21 +140,28 @@ export function EmailSettings({ className }: EmailSettingsProps) {
     }
   }, [searchParams, toast])
 
-  if (!user || !user.canChangeEmail) return null
+  if (!user || !showEmailSettings) return null
+
+  function submitEmailChange(values: FormValues) {
+    if (!canChangeEmail) return
+    updateEmail({ email: values.email })
+  }
 
   return (
     <>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit((values) =>
-            updateEmail({ email: values.email })
-          )}
+          onSubmit={form.handleSubmit(submitEmailChange)}
           className="w-full"
         >
           <Card className={cn('overflow-hidden border-b md:border', className)}>
             <CardHeader>
               <CardTitle>E-Mail</CardTitle>
-              <CardDescription>Update your e-mail address.</CardDescription>
+              <CardDescription>
+                {canChangeEmail
+                  ? 'Update your e-mail address.'
+                  : 'E-mail changes are currently unavailable.'}
+              </CardDescription>
             </CardHeader>
 
             <CardContent className="flex flex-col gap-3">
@@ -157,6 +175,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
                         placeholder="E-Mail"
                         className="md:max-w-[17rem]"
                         {...field}
+                        disabled={!canChangeEmail || isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -171,11 +190,13 @@ export function EmailSettings({ className }: EmailSettingsProps) {
               </p>
               <Button
                 loading={isPending ? 'Saving...' : undefined}
-                disabled={form.watch('email') === user?.email}
+                disabled={
+                  !canChangeEmail ||
+                  isPending ||
+                  form.watch('email') === user.email
+                }
                 type="submit"
-                onClick={form.handleSubmit((values) =>
-                  updateEmail({ email: values.email })
-                )}
+                onClick={form.handleSubmit(submitEmailChange)}
               >
                 Save
               </Button>

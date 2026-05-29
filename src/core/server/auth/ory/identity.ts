@@ -33,7 +33,7 @@ export function fromOryIdentity(identity: Identity): AuthUser {
     identity.credentials?.password
   )
   const hasOidcCredential = hasLinkedOidcCredential(identity.credentials?.oidc)
-  const canChangeEmail = hasPasswordCredential && !hasOidcCredential
+  const canChangePassword = hasPasswordCredential && !hasOidcCredential
 
   return {
     id: identity.id,
@@ -41,8 +41,10 @@ export function fromOryIdentity(identity: Identity): AuthUser {
     name,
     avatarUrl,
     providers,
-    canChangeEmail,
-    canChangePassword: canChangeEmail,
+    // Email changes are disabled until the custom UI drives Ory's
+    // settings/verification flows instead of patching traits directly.
+    canChangeEmail: false,
+    canChangePassword,
   }
 }
 
