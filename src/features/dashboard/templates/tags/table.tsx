@@ -123,14 +123,13 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
         templateId={templateId}
         templateName={templateName}
       />
-
-      <div className="flex-1 min-h-0 -mx-3 px-3">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mx-8 px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <DataTable className="w-full">
-          <DataTableHeader className="sticky top-0 z-10 bg-bg border-b-0">
+          <DataTableHeader className="sticky top-0 z-10 bg-bg border-b-0 mb-px">
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow
                 key={headerGroup.id}
-                className="border-b-0 flex w-full items-center gap-6"
+                className="border-b-0 flex items-center gap-6 -mx-8 px-8 w-[calc(100%+64px)]"
               >
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
