@@ -67,6 +67,15 @@ export default function TemplateDetailHeader({
           <span className="text-fg-tertiary font-mono">--</span>
         )}
       </DetailsItem>
+      <DetailsItem label="Envd">
+        {hasReadyBuild ? (
+          <span className="font-mono whitespace-nowrap">
+            {template.envdVersion}
+          </span>
+        ) : (
+          <span className="text-fg-tertiary font-mono">--</span>
+        )}
+      </DetailsItem>
       <DetailsItem label="Created">
         <span className="font-mono whitespace-nowrap prose-body-numeric">
           <span className="text-fg-tertiary">{created?.datePart ?? '--'}</span>{' '}
