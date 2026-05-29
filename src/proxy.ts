@@ -3,105 +3,32 @@ import {
   type NextRequest,
   NextResponse,
 } from 'next/server'
+import type { Session } from 'next-auth'
 import { auth as authjsMiddleware } from '@/auth'
-import { ALLOW_SEO_INDEXING, isOryAuthEnabled } from './configs/flags'
-import { createAuthForProxy } from './core/server/auth'
-import { getAuthRedirect } from './core/server/http/proxy'
+import { isOryAuthEnabled } from './configs/flags'
+import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
+import {
+  handleAuthGate,
+  handleMiddlewareRedirect,
+  handleMiddlewareRewrite,
+  handleRouteRewritePassthrough,
+} from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
-import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
-import { getRewriteForPath } from './lib/utils/rewrites'
 
+// Runs the proxy's ordered concerns: the first handler that returns a Response
+// wins; otherwise we fall through to the auth gate. `knownAuth` is passed in Ory
+// mode (resolved by the Auth.js middleware wrapper) and omitted in Supabase mode.
 async function proxyCore(
   request: NextRequest,
-  resolvedIsAuthenticated?: boolean
+  knownAuth?: boolean
 ): Promise<Response> {
   try {
-    const pathname = request.nextUrl.pathname
-
-    // Redirects, that require custom headers
-    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
-    const middlewareRedirect = getMiddlewareRedirectFromPath(
-      request.nextUrl.pathname
+    return (
+      handleMiddlewareRedirect(request) ??
+      handleRouteRewritePassthrough(request) ??
+      handleMiddlewareRewrite(request) ??
+      (await handleAuthGate(request, knownAuth))
     )
-
-    if (middlewareRedirect) {
-      const headers = new Headers(middlewareRedirect.headers)
-      const url = new URL(middlewareRedirect.destination, request.url)
-
-      return NextResponse.redirect(url, {
-        status: middlewareRedirect.statusCode,
-        headers,
-      })
-    }
-
-    // Catch-all route rewrite paths should not be handled by middleware
-    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
-    const { config: routeRewriteConfig } = getRewriteForPath(pathname, 'route')
-
-    if (routeRewriteConfig) {
-      return NextResponse.next({
-        request,
-      })
-    }
-
-    // Check if the path should be rewritten by middleware
-    const { config: middlewareRewriteConfig, rule: middlewareRewriteRule } =
-      getRewriteForPath(pathname, 'middleware')
-
-    if (middlewareRewriteConfig) {
-      const rewriteUrl = new URL(request.url)
-      rewriteUrl.hostname = middlewareRewriteConfig.domain
-      rewriteUrl.protocol = 'https'
-      rewriteUrl.port = ''
-      if (middlewareRewriteRule?.pathPreprocessor) {
-        rewriteUrl.pathname = middlewareRewriteRule.pathPreprocessor(
-          rewriteUrl.pathname
-        )
-      }
-
-      const headers = new Headers(request.headers)
-
-      if (ALLOW_SEO_INDEXING) {
-        headers.set('x-e2b-should-index', '1')
-      }
-
-      const response = NextResponse.rewrite(rewriteUrl, {
-        request: {
-          headers,
-        },
-      })
-
-      if (ALLOW_SEO_INDEXING) {
-        response.headers.set('X-Robots-Tag', 'index, follow')
-      } else {
-        response.headers.set('X-Robots-Tag', 'noindex, nofollow')
-      }
-
-      return response
-    }
-
-    const response = NextResponse.next({
-      request,
-    })
-
-    let isAuthenticated: boolean
-    if (resolvedIsAuthenticated !== undefined) {
-      isAuthenticated = resolvedIsAuthenticated
-    } else {
-      const authContext = await createAuthForProxy(
-        request,
-        response
-      ).getAuthContext()
-      isAuthenticated = !!authContext
-    }
-
-    const authRedirect = getAuthRedirect(request, isAuthenticated)
-
-    if (authRedirect) {
-      return authRedirect
-    }
-
-    return response
   } catch (error) {
     l.error(
       {
@@ -116,21 +43,36 @@ async function proxyCore(
     )
 
     // return a basic response to avoid infinite loops
-    return NextResponse.next({
-      request,
-    })
+    return NextResponse.next({ request })
   }
 }
 
-const proxyWithOryAuth = authjsMiddleware(async (req, _event: NextFetchEvent) =>
-  proxyCore(req, !!req.auth)
+// req.auth is truthy even when the session carries a RefreshTokenError, so we
+// must check session.error too — otherwise the auth-route guard treats a
+// poisoned session as "logged in" and ping-pongs the user between /dashboard
+// (redirects to /sign-in via getAuthContext()) and /sign-in (redirects back to
+// /dashboard via the proxy's authenticated-on-auth-route rule).
+function isSessionAuthenticated(session: Session | null): boolean {
+  return !!session && !session.error
+}
+
+// In Ory mode the Auth.js middleware wrapper populates req.auth and manages its
+// session cookies, so auth is resolved here and threaded into proxyCore.
+const proxyWithOryAuth = authjsMiddleware((req, _event: NextFetchEvent) =>
+  proxyCore(req, isSessionAuthenticated(req.auth))
 )
 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (isOryAuthEnabled()) {
-    return proxyWithOryAuth(request, event)
+  if (!isOryAuthEnabled()) {
+    return proxyCore(request)
   }
-  return proxyCore(request)
+
+  // Bounce the legacy auth pages straight to the Ory hosted UI before the
+  // (auth) layout can render.
+  const authRouteRedirect = getOryAuthRouteRedirect(request)
+  if (authRouteRedirect) return authRouteRedirect
+
+  return proxyWithOryAuth(request, event)
 }
 
 export const config = {
