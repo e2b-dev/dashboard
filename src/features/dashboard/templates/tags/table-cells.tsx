@@ -88,10 +88,10 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
           className={SMALL_BUTTON}
           onClick={(e) => {
             e.stopPropagation()
-            toast(defaultErrorToast('Promote: not implemented yet'))
+            toast(defaultErrorToast('Reassign: not implemented yet'))
           }}
         >
-          Promote
+          Reassign
         </Button>
         <Button
           variant="secondary"
