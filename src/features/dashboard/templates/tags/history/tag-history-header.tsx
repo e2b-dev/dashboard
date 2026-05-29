@@ -16,6 +16,7 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
 import { BuildLink } from '../build-link'
 import TagDeleteDialog from '../delete-dialog'
+import RollbackTagDialog from '../rollback-dialog'
 
 const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
 
@@ -27,12 +28,14 @@ interface TagHistoryHeaderProps {
   templateId: string
   templateName: string
   primaryAssignment: TemplateTagAssignment
+  previousAssignment: TemplateTagAssignment | undefined
   /**
    * Called after the tag is successfully deleted. The history page passes a
    * handler that invalidates the assignments query for this tag and routes
    * back to the Tags list.
    */
   onTagDeleted: () => void | Promise<void>
+  onRolledBack?: () => void | Promise<void>
 }
 
 export function TagHistoryHeader({
@@ -41,13 +44,17 @@ export function TagHistoryHeader({
   templateId,
   templateName,
   primaryAssignment,
+  previousAssignment,
   onTagDeleted,
+  onRolledBack,
 }: TagHistoryHeaderProps) {
   const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [rollbackOpen, setRollbackOpen] = useState(false)
 
   const isDefaultTag = tag === DEFAULT_TAG_NAME
+  const canRollback = !!previousAssignment
 
   return (
     <div
@@ -91,9 +98,13 @@ export function TagHistoryHeader({
             variant="secondary"
             size="none"
             className={SMALL_BUTTON}
-            onClick={() =>
-              toast(defaultErrorToast('Rollback: not implemented yet'))
+            disabled={!canRollback}
+            aria-label={
+              canRollback
+                ? `Rollback tag ${tag} to previous build`
+                : `No previous build to rollback to for tag ${tag}`
             }
+            onClick={() => setRollbackOpen(true)}
           >
             Rollback
           </Button>
@@ -137,6 +148,21 @@ export function TagHistoryHeader({
         templateName={templateName}
         onDeleted={onTagDeleted}
       />
+
+      {previousAssignment && (
+        <RollbackTagDialog
+          open={rollbackOpen}
+          onOpenChange={setRollbackOpen}
+          tag={tag}
+          currentBuildId={primaryAssignment.buildId}
+          targetBuildId={previousAssignment.buildId}
+          teamSlug={teamSlug}
+          templateId={templateId}
+          templateName={templateName}
+          surface="history-header"
+          onRolledBack={onRolledBack}
+        />
+      )}
     </div>
   )
 }

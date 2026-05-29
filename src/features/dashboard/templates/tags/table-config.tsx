@@ -86,6 +86,7 @@ export const useTagColumns = () =>
   )
 
 export const tagsTableConfig: Partial<TableOptions<TagGroup>> = {
+  getRowId: (row) => row.tag,
   filterFns: { fuzzy: fuzzyFilter },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),

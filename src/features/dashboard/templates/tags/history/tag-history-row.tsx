@@ -2,15 +2,23 @@
 
 import type { KeyboardEvent, MouseEvent } from 'react'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils/ui'
 import { UndoIcon } from '@/ui/primitives/icons'
 import { BuildLink } from '../build-link'
 
 interface TagHistoryRowProps {
   assignment: TemplateTagAssignment
+  /** Current build for this tag. Used to detect the no-op "rollback to current" case. */
+  primaryAssignment: TemplateTagAssignment
   teamSlug: string
   templateId: string
+  /**
+   * Asks the parent to open the rollback dialog with this assignment as
+   * the target. The dialog lives at a stable parent (the GroupSection or
+   * TagHistoryView) so it doesn't get destroyed when this row unmounts
+   * after a successful rollback shuffles the assignments list.
+   */
+  onRequestRollback: (target: TemplateTagAssignment) => void
 }
 
 /**
@@ -18,19 +26,45 @@ interface TagHistoryRowProps {
  * - the collapsed history under a tag group in `tags/table.tsx`
  * - the full-history page at `tags/[tag]`
  *
- * Full-row click / Enter / Space fires the rollback demo toast. Inner BuildLink
- * still navigates to the build: the click handler early-returns when the event
- * target isn't the row itself.
+ * The row is purely presentational. It owns no rollback state and no
+ * dialog. When the user activates the row (click / Enter / Space) it asks
+ * the parent to open the rollback dialog with this row's assignment as
+ * the target. The parent's dialog stays mounted across data refetches,
+ * which is essential because after a successful rollback the parent's
+ * `assignments` list shuffles and this row is destroyed.
+ *
+ * When the row already represents the current build, it's non-
+ * interactive — rolling back to the current build is a no-op.
  */
 export function TagHistoryRow({
   assignment,
+  primaryAssignment,
   teamSlug,
   templateId,
+  onRequestRollback,
 }: TagHistoryRowProps) {
-  const { toast } = useToast()
+  'use no memo'
 
-  const rollback = () => {
-    toast(defaultErrorToast('Rollback to this build: not implemented yet'))
+  const isCurrentBuild = assignment.buildId === primaryAssignment.buildId
+
+  const buildSummary = (
+    <div className="flex items-center gap-2 prose-body text-fg-tertiary">
+      <span>Assigned to</span>
+      <BuildLink
+        teamSlug={teamSlug}
+        templateId={templateId}
+        buildId={assignment.buildId}
+        assignedAt={assignment.assignedAt}
+      />
+    </div>
+  )
+
+  if (isCurrentBuild) {
+    return (
+      <div className="flex w-full items-center justify-between gap-4 bg-bg py-2">
+        {buildSummary}
+      </div>
+    )
   }
 
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -38,13 +72,13 @@ export function TagHistoryRow({
     if (target?.closest('button, a, [role=button]') !== e.currentTarget) {
       return
     }
-    rollback()
+    onRequestRollback(assignment)
   }
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.currentTarget !== e.target) return
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      rollback()
+      onRequestRollback(assignment)
     }
   }
 
@@ -61,15 +95,7 @@ export function TagHistoryRow({
         'focus-visible:outline-none'
       )}
     >
-      <div className="flex items-center gap-2 prose-body text-fg-tertiary">
-        <span>Assigned to</span>
-        <BuildLink
-          teamSlug={teamSlug}
-          templateId={templateId}
-          buildId={assignment.buildId}
-          assignedAt={assignment.assignedAt}
-        />
-      </div>
+      {buildSummary}
       <span
         aria-hidden
         className={cn(
