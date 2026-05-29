@@ -23,7 +23,7 @@ export function RowHoverFrame({ className }: RowHoverFrameProps) {
     <div
       aria-hidden
       className={cn(
-        'pointer-events-none absolute inset-x-0 -inset-y-px z-20',
+        'pointer-events-none absolute inset-x-0 -inset-y-px',
         'border border-transparent',
         'group-hover/row:border-stroke',
         'group-hover/row:[--corner-mark-color:var(--color-fg-tertiary)]',
