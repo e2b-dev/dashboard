@@ -6,6 +6,7 @@ import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
+import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
 import { auth } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
@@ -43,13 +44,24 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  await prefetchAsync(
-    trpc.teams.list.queryOptions(undefined, DASHBOARD_TEAMS_LIST_QUERY_OPTIONS)
-  )
+  await Promise.all([
+    prefetchAsync(
+      trpc.teams.list.queryOptions(
+        undefined,
+        DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
+      )
+    ),
+    prefetchAsync(
+      trpc.user.profile.queryOptions(
+        undefined,
+        DASHBOARD_USER_PROFILE_QUERY_OPTIONS
+      )
+    ),
+  ])
 
   return (
     <HydrateClient>
-      <DashboardTeamGate teamSlug={teamSlug} user={authContext.user}>
+      <DashboardTeamGate teamSlug={teamSlug}>
         <SidebarProvider
           defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
         >

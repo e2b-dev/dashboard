@@ -1,7 +1,6 @@
 'use client'
 
-import { PROTECTED_URLS } from '@/configs/urls'
-import { signOutAction } from '@/core/server/actions/auth-actions'
+import { reauthForAccountSettingsAction } from '@/core/server/actions/auth-actions'
 import { AlertDialog } from '@/ui/alert-dialog'
 
 interface ReauthDialogProps {
@@ -11,7 +10,7 @@ interface ReauthDialogProps {
 
 export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
   const handleReauth = () => {
-    signOutAction(PROTECTED_URLS.ACCOUNT_SETTINGS)
+    reauthForAccountSettingsAction()
   }
 
   return (

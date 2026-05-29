@@ -1,19 +1,19 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
-import { useAction } from 'next-safe-action/hooks'
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -49,6 +49,8 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   const { user } = useDashboard()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -65,25 +67,36 @@ export function EmailSettings({ className }: EmailSettingsProps) {
     [user]
   )
 
-  const { execute: updateEmail, isPending } = useAction(updateUserAction, {
-    onSuccess: () => {
-      toast(
-        defaultSuccessToast(USER_MESSAGES.emailUpdateVerification.message, {
-          duration: USER_MESSAGES.emailUpdateVerification.timeoutMs,
-        })
-      )
-    },
-    onError: ({ error }) => {
-      if (error.validationErrors?.fieldErrors?.email?.[0]) {
-        form.setError('email', {
-          message: error.validationErrors.fieldErrors.email?.[0],
-        })
-        return
-      }
+  const { mutate: updateEmail, isPending } = useMutation(
+    trpc.user.update.mutationOptions({
+      onSuccess: (data) => {
+        if (data.status === 'ok') {
+          queryClient.setQueryData(trpc.user.profile.queryKey(), data.user)
+          toast(
+            defaultSuccessToast(USER_MESSAGES.emailUpdateVerification.message, {
+              duration: USER_MESSAGES.emailUpdateVerification.timeoutMs,
+            })
+          )
+          return
+        }
 
-      toast(defaultErrorToast(error.serverError || 'Failed to update e-mail.'))
-    },
-  })
+        if (data.status === 'error' && data.code === 'email_exists') {
+          form.setError('email', { message: 'E-mail already in use.' })
+          return
+        }
+
+        if (data.status === 'error' && data.code === 'email_invalid') {
+          form.setError('email', { message: 'Invalid e-mail address.' })
+          return
+        }
+
+        toast(defaultErrorToast('Failed to update e-mail.'))
+      },
+      onError: () => {
+        toast(defaultErrorToast('Failed to update e-mail.'))
+      },
+    })
+  )
 
   useEffect(() => {
     if (

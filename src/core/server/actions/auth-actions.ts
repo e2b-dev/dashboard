@@ -369,3 +369,16 @@ export async function signOutAction(returnTo?: string) {
 
   throw redirect(redirectTo)
 }
+
+// Drives the account-settings re-authentication step. Supabase signs the user
+// out and bounces through /sign-in (which lands back on the account page with
+// ?reauth=1); Ory forces a fresh OAuth2 login via the oauth-start route.
+export async function reauthForAccountSettingsAction() {
+  const dispatch = await auth.startReauthForAccountSettings()
+
+  if (dispatch.kind === 'sign-out') {
+    return signOutAction(dispatch.returnTo)
+  }
+
+  throw redirect(dispatch.to)
+}
