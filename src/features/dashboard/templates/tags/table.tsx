@@ -223,7 +223,7 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
     : undefined
 
   return (
-    <div className="flex flex-col divide-y divide-stroke/80">
+    <div className="group/section flex flex-col divide-y divide-stroke/80">
       <DataTableRow
         data-state={dataState}
         role={canExpand ? 'button' : undefined}

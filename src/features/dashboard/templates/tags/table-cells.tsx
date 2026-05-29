@@ -64,7 +64,6 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const isExpanded = row.getIsExpanded()
   const group = row.original
   const isDefaultTag = group.tag === DEFAULT_TAG_NAME
 
@@ -73,13 +72,7 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
       <div
         className={cn(
           'flex items-center gap-1 max-sm:hidden',
-          isExpanded
-            ? 'opacity-100'
-            : // Reveal on mouse hover anywhere in the row, or when a
-              // keyboard-focused descendant is inside the row.
-              // `has-[:focus-visible]` (not focus-within) avoids the
-              // buttons lingering after a mouse click leaves focus on them.
-              'opacity-0 group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100'
+          'opacity-0 group-hover/section:opacity-100 group-has-focus-visible/section:opacity-100'
         )}
       >
         <Button
