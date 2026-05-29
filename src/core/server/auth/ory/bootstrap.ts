@@ -4,6 +4,7 @@ import { ADMIN_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
+import { decodeJwtClaims, readStringClaim, tokenFormat } from './jwt-claims'
 
 type BootstrapOryUserInput = {
   accessToken: string
@@ -24,16 +25,20 @@ export async function bootstrapOryUser(
   input: BootstrapOryUserInput
 ): Promise<void> {
   try {
-    const accessClaims = decodeJwtClaims(input.accessToken)
-    const idClaims = input.idToken ? decodeJwtClaims(input.idToken) : null
-    const oidcUserId = readRequiredStringClaim(accessClaims, 'sub')
+    const accessClaims = decodeJwtClaims<OryTokenClaims>(input.accessToken)
+    const idClaims = input.idToken
+      ? decodeJwtClaims<OryTokenClaims>(input.idToken)
+      : null
+    const oidcIssuer =
+      readStringClaim(accessClaims, 'iss') ?? readStringClaim(idClaims, 'iss')
+    const oidcUserId = readStringClaim(accessClaims, 'sub')
     const oidcUserEmail =
       readStringClaim(accessClaims, 'email') ??
       readStringClaim(idClaims, 'email')
     const oidcUserName =
       readDisplayName(accessClaims) ?? readDisplayName(idClaims)
 
-    if (!oidcUserId || !oidcUserEmail) {
+    if (!oidcIssuer || !oidcUserId || !oidcUserEmail) {
       l.error(
         {
           key: 'auth_events:bootstrap_user:missing_claims',
@@ -45,6 +50,7 @@ export async function bootstrapOryUser(
               : 'missing',
             has_access_claims: !!accessClaims,
             has_id_claims: !!idClaims,
+            has_iss: !!oidcIssuer,
             has_sub: !!oidcUserId,
             has_email: !!oidcUserEmail,
             has_name: !!oidcUserName,
@@ -68,6 +74,7 @@ export async function bootstrapOryUser(
     }
 
     const body = {
+      oidc_issuer: oidcIssuer,
       oidc_user_id: oidcUserId,
       oidc_user_email: oidcUserEmail,
       oidc_user_name: oidcUserName,
@@ -90,6 +97,7 @@ export async function bootstrapOryUser(
           context: {
             provider: input.provider,
             error_status: response.status,
+            has_oidc_issuer: body.oidc_issuer !== '',
             has_oidc_user_id: body.oidc_user_id !== '',
             has_oidc_user_email: body.oidc_user_email !== '',
             has_oidc_user_name: body.oidc_user_name !== null,
@@ -112,43 +120,10 @@ export async function bootstrapOryUser(
   }
 }
 
-function decodeJwtClaims(token: string): OryTokenClaims | null {
-  const [, payload] = token.split('.')
-  if (!payload) return null
-
-  try {
-    return JSON.parse(
-      Buffer.from(payload, 'base64url').toString('utf8')
-    ) as OryTokenClaims
-  } catch {
-    return null
-  }
-}
-
-function readRequiredStringClaim(
-  claims: OryTokenClaims | null,
-  name: keyof OryTokenClaims
-): string | null {
-  return readStringClaim(claims, name)
-}
-
-function readStringClaim(
-  claims: OryTokenClaims | null,
-  name: keyof OryTokenClaims
-): string | null {
-  const value = claims?.[name]
-  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null
-}
-
 function readDisplayName(claims: OryTokenClaims | null): string | null {
   return (
     readStringClaim(claims, 'name') ??
     readStringClaim(claims, 'given_name') ??
     readStringClaim(claims, 'preferred_username')
   )
-}
-
-function tokenFormat(token: string): 'jwt' | 'opaque' | 'empty' {
-  if (!token) return 'empty'
-  return token.split('.').length === 3 ? 'jwt' : 'opaque'
 }

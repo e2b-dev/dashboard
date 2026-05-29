@@ -1,0 +1,132 @@
+import type { Session } from 'next-auth'
+import type { JWT } from 'next-auth/jwt'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const resolveIdentityMock = vi.hoisted(() => vi.fn())
+const refreshOryTokenMock = vi.hoisted(() => vi.fn())
+
+vi.mock('@/core/server/auth/ory/find-identity', () => ({
+  resolveOryIdentity: resolveIdentityMock,
+}))
+
+vi.mock('@/core/server/auth/ory/refresh-token', () => ({
+  refreshOryToken: refreshOryTokenMock,
+}))
+
+const { resolveOryJwt, applyTokenToSession } = await import(
+  '@/core/server/auth/ory/auth-callbacks'
+)
+
+function makeJwt(claims: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString(
+    'base64url'
+  )
+  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url')
+  return `${header}.${payload}.sig`
+}
+
+const nowSeconds = Math.floor(Date.now() / 1000)
+
+describe('resolveOryJwt', () => {
+  beforeEach(() => {
+    resolveIdentityMock.mockReset()
+    refreshOryTokenMock.mockReset()
+  })
+
+  it('persists Ory tokens and the resolved Kratos id on fresh sign-in', async () => {
+    resolveIdentityMock.mockResolvedValue({ id: 'kratos-uuid' })
+
+    const result = await resolveOryJwt({
+      token: { sub: 'e2b-user-id', error: 'StalePoison' } as JWT,
+      account: {
+        provider: 'ory',
+        type: 'oidc',
+        providerAccountId: 'x',
+        access_token: 'at',
+        refresh_token: 'rt',
+        id_token: makeJwt({ email: 'ada@example.test' }),
+        expires_at: 1234,
+      },
+      profile: { sub: 'profile-sub' },
+    })
+
+    expect(resolveIdentityMock).toHaveBeenCalledWith({
+      subjects: ['profile-sub', 'e2b-user-id'],
+      email: 'ada@example.test',
+    })
+    expect(result).toMatchObject({
+      sub: 'e2b-user-id',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresAt: 1234,
+      identityId: 'kratos-uuid',
+      error: undefined,
+    })
+  })
+
+  it('leaves identityId undefined when resolution fails (sign-in not blocked)', async () => {
+    resolveIdentityMock.mockResolvedValue(null)
+
+    const result = await resolveOryJwt({
+      token: {} as JWT,
+      account: {
+        provider: 'ory',
+        type: 'oidc',
+        providerAccountId: 'x',
+        access_token: 'at',
+      },
+    })
+
+    expect(result.identityId).toBeUndefined()
+    expect(result.accessToken).toBe('at')
+  })
+
+  it('stops retrying once the token carries a refresh error', async () => {
+    const token = { error: 'RefreshTokenError', sub: 'x' } as JWT
+
+    const result = await resolveOryJwt({ token, account: null })
+
+    expect(result).toBe(token)
+    expect(refreshOryTokenMock).not.toHaveBeenCalled()
+  })
+
+  it('refreshes when the access token is near expiry', async () => {
+    refreshOryTokenMock.mockResolvedValue({ accessToken: 'fresh' })
+
+    const result = await resolveOryJwt({
+      token: { expiresAt: nowSeconds + 30 } as JWT,
+      account: null,
+    })
+
+    expect(refreshOryTokenMock).toHaveBeenCalled()
+    expect(result).toEqual({ accessToken: 'fresh' })
+  })
+
+  it('leaves a still-valid token untouched', async () => {
+    const token = { expiresAt: nowSeconds + 3600 } as JWT
+
+    const result = await resolveOryJwt({ token, account: null })
+
+    expect(result).toBe(token)
+    expect(refreshOryTokenMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('applyTokenToSession', () => {
+  it('projects the token fields onto the session', () => {
+    const session = { user: { id: 'placeholder' } } as Session
+
+    const result = applyTokenToSession(session, {
+      sub: 'e2b-user-id',
+      accessToken: 'at',
+      idToken: 'it',
+      identityId: 'kratos-uuid',
+      error: undefined,
+    } as JWT)
+
+    expect(result.user.id).toBe('e2b-user-id')
+    expect(result.accessToken).toBe('at')
+    expect(result.idToken).toBe('it')
+    expect(result.identityId).toBe('kratos-uuid')
+  })
+})

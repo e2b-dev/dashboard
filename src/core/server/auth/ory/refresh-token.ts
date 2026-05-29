@@ -10,8 +10,23 @@ type OryTokenResponse = {
   id_token?: string
 }
 
+// returned on every failure path so the next jwt-callback invocation
+// short-circuits instead of re-presenting an already-invalidated refresh_token
+// in a loop. expiresAt is zeroed so isExpired() checks don't matter — the
+// error gate kicks in first.
+function deadToken(token: JWT, error: string): JWT {
+  return {
+    ...token,
+    accessToken: undefined,
+    refreshToken: undefined,
+    idToken: undefined,
+    expiresAt: 0,
+    error,
+  }
+}
+
 export async function refreshOryToken(token: JWT): Promise<JWT> {
-  if (!token.refreshToken) return { ...token, error: 'NoRefreshToken' }
+  if (!token.refreshToken) return deadToken(token, 'NoRefreshToken')
 
   const sdkUrl = process.env.ORY_SDK_URL!.replace(/\/$/, '')
   const credentials = btoa(
@@ -39,7 +54,7 @@ export async function refreshOryToken(token: JWT): Promise<JWT> {
         },
         `Ory refresh_token rejected (${res.status})`
       )
-      return { ...token, error: 'RefreshTokenError' }
+      return deadToken(token, 'RefreshTokenError')
     }
 
     const fresh = (await res.json()) as OryTokenResponse
@@ -59,6 +74,6 @@ export async function refreshOryToken(token: JWT): Promise<JWT> {
       },
       'Ory refresh_token threw'
     )
-    return { ...token, error: 'RefreshTokenError' }
+    return deadToken(token, 'RefreshTokenError')
   }
 }

@@ -69,6 +69,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
     expect(apiPostMock).toHaveBeenCalledTimes(1)
     expect(apiPostMock).toHaveBeenCalledWith('/admin/users/bootstrap', {
       body: {
+        oidc_issuer: 'https://ory.example.test',
         oidc_user_id: 'access-token-sub',
         oidc_user_email: 'access-token-user@example.com',
         oidc_user_name: 'Access Token User',
@@ -101,12 +102,36 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
 
     expect(apiPostMock).toHaveBeenCalledWith('/admin/users/bootstrap', {
       body: {
+        oidc_issuer: 'https://ory.example.test',
         oidc_user_id: 'access-token-sub',
         oidc_user_email: 'id-token-user@example.com',
         oidc_user_name: 'Id Token User',
       },
       headers: { 'X-Admin-Token': 'admin-token' },
     })
+  })
+
+  it('skips the bootstrap call and logs when iss is missing', async () => {
+    await bootstrapOryUser({
+      accessToken: jwt({
+        sub: 'access-token-sub',
+        email: 'user@example.com',
+      }),
+      provider: 'ory',
+    })
+
+    expect(apiPostMock).not.toHaveBeenCalled()
+    expect(loggerMocks.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'auth_events:bootstrap_user:missing_claims',
+        context: expect.objectContaining({
+          has_iss: false,
+          has_sub: true,
+          has_email: true,
+        }),
+      }),
+      expect.stringContaining('missing required bootstrap claims')
+    )
   })
 
   it('logs but does not throw when the bootstrap call returns an api error', async () => {
@@ -119,6 +144,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
     await expect(
       bootstrapOryUser({
         accessToken: jwt({
+          iss: 'https://ory.example.test',
           sub: 'access-token-sub',
           email: 'user@example.com',
           name: 'User',
@@ -146,6 +172,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
     await expect(
       bootstrapOryUser({
         accessToken: jwt({
+          iss: 'https://ory.example.test',
           sub: 'access-token-sub',
           email: 'user@example.com',
         }),
