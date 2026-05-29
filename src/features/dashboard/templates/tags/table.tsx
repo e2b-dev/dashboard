@@ -7,9 +7,9 @@ import {
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
+import Link from 'next/link'
 import { type KeyboardEvent, type MouseEvent, useMemo } from 'react'
-import type { TemplateTagAssignment } from '@/core/modules/templates/models'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import {
@@ -19,11 +19,11 @@ import {
   DataTableHeader,
   DataTableRow,
 } from '@/ui/data-table'
-import { TriangleIcon, UndoIcon } from '@/ui/primitives/icons'
+import { TriangleIcon } from '@/ui/primitives/icons'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
-import { BuildLink } from './build-link'
 import TagsEmpty from './empty'
 import TagsHeader from './header'
+import { TagHistoryRow } from './history/tag-history-row'
 import { useTagTableStore } from './stores/table-store'
 import {
   fallbackData,
@@ -289,101 +289,42 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
       {isExpanded && (
         <div className="flex flex-col divide-y divide-stroke/80">
           {row.original.assignments.slice(1).map((assignment) => (
-            <HistoryBuildRow
+            <TagHistoryRow
               key={assignment.assignmentId}
               assignment={assignment}
               teamSlug={teamSlug}
               templateId={templateId}
             />
           ))}
-          {row.original.hasMore && <ShowFullHistoryRow />}
+          {row.original.hasMore && (
+            <ShowFullHistoryRow
+              tag={row.original.tag}
+              teamSlug={teamSlug}
+              templateId={templateId}
+            />
+          )}
         </div>
       )}
     </div>
   )
 }
 
-interface HistoryBuildRowProps {
-  assignment: TemplateTagAssignment
+interface ShowFullHistoryRowProps {
+  tag: string
   teamSlug: string
   templateId: string
 }
 
-function HistoryBuildRow({
-  assignment,
+function ShowFullHistoryRow({
+  tag,
   teamSlug,
   templateId,
-}: HistoryBuildRowProps) {
-  'use no memo'
-
-  const { toast } = useToast()
-
-  const rollback = () => {
-    toast(defaultErrorToast('Rollback to this build: not implemented yet'))
-  }
-
-  const handleClick = (e: MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement | null
-    if (target?.closest('button, a, [role=button]') !== e.currentTarget) {
-      return
-    }
-    rollback()
-  }
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.currentTarget !== e.target) return
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      rollback()
-    }
-  }
-
+}: ShowFullHistoryRowProps) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: The row contains nested links, so a button would be invalid HTML.
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        'group/childRow flex w-full items-center justify-between gap-4',
-        'bg-bg py-2 cursor-pointer',
-        'focus-visible:outline-none'
-      )}
-    >
-      <div className="flex items-center gap-2 prose-body text-fg-tertiary">
-        <span>Assigned to</span>
-        <BuildLink
-          teamSlug={teamSlug}
-          templateId={templateId}
-          buildId={assignment.buildId}
-          assignedAt={assignment.assignedAt}
-        />
-      </div>
-      <span
-        aria-hidden
-        className={cn(
-          'inline-flex items-center gap-1',
-          'prose-body-highlight text-fg',
-          'opacity-0 group-hover/childRow:opacity-100 group-focus-visible/childRow:opacity-100',
-          'group-has-[a:hover]/childRow:opacity-0',
-          '[&_svg]:size-4 [&_svg]:text-icon-tertiary'
-        )}
-      >
-        <UndoIcon />
-        Rollback to this build
-      </span>
-    </div>
-  )
-}
-
-function ShowFullHistoryRow() {
-  const { toast } = useToast()
-
-  return (
-    <button
-      type="button"
+    <Link
+      href={PROTECTED_URLS.TEMPLATE_TAG_HISTORY(teamSlug, templateId, tag)}
       onClick={() =>
-        toast(defaultErrorToast('Show full history: not implemented yet'))
+        trackTagTableInteraction('show_full_history_clicked', { tag })
       }
       className={cn(
         'flex w-full items-center justify-center bg-bg py-2 cursor-pointer',
@@ -391,6 +332,6 @@ function ShowFullHistoryRow() {
       )}
     >
       Show full history
-    </button>
+    </Link>
   )
 }
