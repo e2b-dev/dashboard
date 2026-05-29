@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
@@ -32,6 +32,7 @@ import {
 } from '@/ui/primitives/form'
 import { Input } from '@/ui/primitives/input'
 import { useDashboard } from '../context'
+import { ReauthDialog } from './reauth-dialog'
 
 const formSchema = z.object({
   email: z.email('Invalid e-mail address'),
@@ -51,6 +52,7 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,6 +72,11 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   const { mutate: updateEmail, isPending } = useMutation(
     trpc.user.update.mutationOptions({
       onSuccess: (data) => {
+        if (data.status === 'reauth') {
+          setReauthDialogOpen(true)
+          return
+        }
+
         if (data.status === 'ok') {
           queryClient.setQueryData(trpc.user.profile.queryKey(), data.user)
           toast(
@@ -130,55 +137,62 @@ export function EmailSettings({ className }: EmailSettingsProps) {
   if (!user || !hasEmailProvider) return null
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit((values) =>
-          updateEmail({ email: values.email })
-        )}
-        className="w-full"
-      >
-        <Card className={cn('overflow-hidden border-b md:border', className)}>
-          <CardHeader>
-            <CardTitle>E-Mail</CardTitle>
-            <CardDescription>Update your e-mail address.</CardDescription>
-          </CardHeader>
+    <>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((values) =>
+            updateEmail({ email: values.email })
+          )}
+          className="w-full"
+        >
+          <Card className={cn('overflow-hidden border-b md:border', className)}>
+            <CardHeader>
+              <CardTitle>E-Mail</CardTitle>
+              <CardDescription>Update your e-mail address.</CardDescription>
+            </CardHeader>
 
-          <CardContent className="flex flex-col gap-3">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem className="max-w-[17rem] flex-1">
-                  <FormControl>
-                    <Input
-                      placeholder="E-Mail"
-                      className="md:max-w-[17rem]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
+            <CardContent className="flex flex-col gap-3">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="max-w-[17rem] flex-1">
+                    <FormControl>
+                      <Input
+                        placeholder="E-Mail"
+                        className="md:max-w-[17rem]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
 
-          <CardFooter className="bg-bg-1 justify-between">
-            <p className="text-fg-tertiary ">
-              Has to be a valid e-mail address.
-            </p>
-            <Button
-              loading={isPending ? 'Saving...' : undefined}
-              disabled={form.watch('email') === user?.email}
-              type="submit"
-              onClick={form.handleSubmit((values) =>
-                updateEmail({ email: values.email })
-              )}
-            >
-              Save
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
-    </Form>
+            <CardFooter className="bg-bg-1 justify-between">
+              <p className="text-fg-tertiary ">
+                Has to be a valid e-mail address.
+              </p>
+              <Button
+                loading={isPending ? 'Saving...' : undefined}
+                disabled={form.watch('email') === user?.email}
+                type="submit"
+                onClick={form.handleSubmit((values) =>
+                  updateEmail({ email: values.email })
+                )}
+              >
+                Save
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
+
+      <ReauthDialog
+        open={reauthDialogOpen}
+        onOpenChange={setReauthDialogOpen}
+      />
+    </>
   )
 }

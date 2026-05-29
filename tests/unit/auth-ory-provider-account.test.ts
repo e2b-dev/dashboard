@@ -149,6 +149,21 @@ describe('oryAuthProvider account operations', () => {
       expect(updateUserMock).not.toHaveBeenCalled()
     })
 
+    it('requires reauth for an email change when auth_time is stale', async () => {
+      authjsMock.mockResolvedValue({
+        user: { id: 'identity-1' },
+        accessToken: 'a',
+        idToken: makeIdToken({ auth_time: nowSeconds - 10_000 }),
+      })
+
+      const result = await oryAuthProvider.updateUser({
+        email: 'new@example.test',
+      })
+
+      expect(result).toEqual({ ok: false, code: 'reauthentication_needed' })
+      expect(updateUserMock).not.toHaveBeenCalled()
+    })
+
     it('requires reauth for a password change when auth_time is stale', async () => {
       authjsMock.mockResolvedValue({
         user: { id: 'identity-1' },

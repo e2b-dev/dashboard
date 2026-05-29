@@ -76,10 +76,13 @@ export const oryAuthProvider: AuthProvider = {
       throw new Error('updateUser called without an authenticated Ory session')
     }
 
-    // Changing the password is privileged: require a recent active login so a
-    // stolen dashboard session can't silently reset credentials. The caller
+    // Changing the password OR the email is privileged: require a recent active
+    // login so a stolen dashboard session can't silently take over the account
+    // (swap the email, then reset the password via the new inbox). The caller
     // turns this into the forced OAuth2 re-auth round-trip.
-    if (input.password !== undefined && !isReauthFresh(session.idToken)) {
+    const changesCredentials =
+      input.password !== undefined || input.email !== undefined
+    if (changesCredentials && !isReauthFresh(session.idToken)) {
       return { ok: false, code: 'reauthentication_needed' }
     }
 

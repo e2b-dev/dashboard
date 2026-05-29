@@ -370,15 +370,27 @@ export async function signOutAction(returnTo?: string) {
   throw redirect(redirectTo)
 }
 
-// Drives the account-settings re-authentication step. Supabase signs the user
-// out and bounces through /sign-in (which lands back on the account page with
-// ?reauth=1); Ory forces a fresh OAuth2 login via the oauth-start route.
-export async function reauthForAccountSettingsAction() {
+// Drives the account-settings re-authentication step and returns the URL the
+// client should HARD-navigate to. Supabase signs the user out and bounces
+// through /sign-in (which lands back on the account page with ?reauth=1); Ory
+// forces a fresh OAuth2 login via the oauth-start route.
+//
+// We deliberately return the URL instead of redirect()-ing: a server-action
+// redirect is a soft RSC navigation, which prefetches and re-invokes the
+// oauth-start GET (a side-effecting endpoint that mints OAuth state/pkce/
+// callback-url cookies). Those duplicate invocations corrupt the cookies so the
+// post-reauth callback loses its callbackUrl and falls back to "/". A single
+// window.location navigation on the client avoids that entirely.
+export async function reauthForAccountSettingsAction(): Promise<{
+  url: string
+}> {
   const dispatch = await auth.startReauthForAccountSettings()
 
   if (dispatch.kind === 'sign-out') {
-    return signOutAction(dispatch.returnTo)
+    // Supabase: clear the session server-side, then hand back the sign-in URL.
+    const { redirectTo } = await auth.signOut({ returnTo: dispatch.returnTo })
+    return { url: redirectTo }
   }
 
-  throw redirect(dispatch.to)
+  return { url: dispatch.to }
 }
