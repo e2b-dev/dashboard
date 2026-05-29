@@ -2,7 +2,6 @@
 
 import type { CellContext } from '@tanstack/react-table'
 import { useState } from 'react'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils/ui'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -16,6 +15,7 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
 import { BuildLink } from './build-link'
 import TagDeleteDialog from './delete-dialog'
+import ReassignTagDialog from './reassign-dialog'
 import RollbackTagDialog from './rollback-dialog'
 import type { TagGroup } from './types'
 
@@ -61,10 +61,10 @@ export function BuildLinkCell(ctx: CellContext<TagGroup, unknown>) {
 export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
   const { row } = ctx
   const { teamSlug, templateId, templateName } = getMeta(ctx)
-  const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [rollbackOpen, setRollbackOpen] = useState(false)
+  const [reassignOpen, setReassignOpen] = useState(false)
 
   const group = row.original
   const isDefaultTag = group.tag === DEFAULT_TAG_NAME
@@ -83,9 +83,10 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
           variant="primary"
           size="none"
           className={SMALL_BUTTON}
+          aria-label={`Reassign tag ${group.tag} to a different build`}
           onClick={(e) => {
             e.stopPropagation()
-            toast(defaultErrorToast('Reassign: not implemented yet'))
+            setReassignOpen(true)
           }}
         >
           Reassign
@@ -160,6 +161,17 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
           surface="tags-tab"
         />
       )}
+
+      <ReassignTagDialog
+        open={reassignOpen}
+        onOpenChange={setReassignOpen}
+        tag={group.tag}
+        currentBuildId={group.primaryAssignment.buildId}
+        teamSlug={teamSlug}
+        templateId={templateId}
+        templateName={templateName}
+        surface="tags-tab"
+      />
     </div>
   )
 }

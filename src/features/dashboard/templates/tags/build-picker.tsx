@@ -23,7 +23,7 @@ type BuildsQueryResult = {
 export type BuildSelectionSource = 'default' | 'search'
 
 const DEFAULT_LIMIT = 5
-const PICKER_REGION_MIN_HEIGHT = 'min-h-[170px]'
+const PICKER_REGION_MIN_HEIGHT = 'min-h-[128px]'
 
 interface BuildPickerProps {
   open: boolean
@@ -285,12 +285,9 @@ function BuildSearchInput({
 
 function SkeletonRows({ count }: { count: number }) {
   return (
-    <ul className="flex flex-col" aria-hidden="true">
+    <ul className="flex flex-col gap-1 pt-0.5" aria-hidden="true">
       {Array.from({ length: count }, (_, i) => (
-        <li
-          key={`skeleton-${i}`}
-          className="flex items-center gap-3 px-2 py-1.5"
-        >
+        <li key={`skeleton-${i}`} className="flex items-center gap-3">
           <Skeleton className="size-4" />
           <Skeleton className="h-4 w-64" />
           <Skeleton className="ml-auto h-4 w-14" />
