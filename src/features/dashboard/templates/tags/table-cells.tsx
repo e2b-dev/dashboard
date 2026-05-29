@@ -38,9 +38,11 @@ export function TagPillCell({ row }: CellContext<TagGroup, unknown>) {
     <Badge
       variant="default"
       size="sm"
-      className="uppercase bg-fill pointer-events-none"
+      className="uppercase bg-fill max-w-full min-w-0 shrink pointer-events-none"
     >
-      {row.original.tag}
+      <span className="min-w-0 truncate [direction:rtl]">
+        {row.original.tag}
+      </span>
     </Badge>
   )
 }
