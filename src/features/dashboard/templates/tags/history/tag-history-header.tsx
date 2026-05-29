@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
-import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils/ui'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -16,6 +15,7 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
 import { BuildLink } from '../build-link'
 import TagDeleteDialog from '../delete-dialog'
+import ReassignTagDialog from '../reassign-dialog'
 import RollbackTagDialog from '../rollback-dialog'
 
 const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
@@ -36,6 +36,7 @@ interface TagHistoryHeaderProps {
    */
   onTagDeleted: () => void | Promise<void>
   onRolledBack?: () => void | Promise<void>
+  onReassigned?: () => void | Promise<void>
 }
 
 export function TagHistoryHeader({
@@ -47,11 +48,12 @@ export function TagHistoryHeader({
   previousAssignment,
   onTagDeleted,
   onRolledBack,
+  onReassigned,
 }: TagHistoryHeaderProps) {
-  const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [rollbackOpen, setRollbackOpen] = useState(false)
+  const [reassignOpen, setReassignOpen] = useState(false)
 
   const isDefaultTag = tag === DEFAULT_TAG_NAME
   const canRollback = !!previousAssignment
@@ -88,9 +90,8 @@ export function TagHistoryHeader({
             variant="primary"
             size="none"
             className={SMALL_BUTTON}
-            onClick={() =>
-              toast(defaultErrorToast('Reassign: not implemented yet'))
-            }
+            aria-label={`Reassign tag ${tag} to a different build`}
+            onClick={() => setReassignOpen(true)}
           >
             Reassign
           </Button>
@@ -163,6 +164,18 @@ export function TagHistoryHeader({
           onRolledBack={onRolledBack}
         />
       )}
+
+      <ReassignTagDialog
+        open={reassignOpen}
+        onOpenChange={setReassignOpen}
+        tag={tag}
+        currentBuildId={primaryAssignment.buildId}
+        teamSlug={teamSlug}
+        templateId={templateId}
+        templateName={templateName}
+        surface="history-header"
+        onReassigned={onReassigned}
+      />
     </div>
   )
 }

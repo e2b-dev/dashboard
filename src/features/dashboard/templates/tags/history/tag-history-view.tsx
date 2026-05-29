@@ -165,6 +165,7 @@ export default function TagHistoryView({
         previousAssignment={previous}
         onTagDeleted={handleTagDeleted}
         onRolledBack={handleRolledBack}
+        onReassigned={handleRolledBack}
       />
 
       <div
