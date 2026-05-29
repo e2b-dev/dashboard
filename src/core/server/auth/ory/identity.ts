@@ -14,6 +14,8 @@ export function fromAuthSession(session: Session): AuthUser {
     name: session.user.name ?? null,
     avatarUrl: session.user.image ?? null,
     providers: [],
+    canChangeEmail: false,
+    canChangePassword: false,
   }
 }
 
@@ -27,6 +29,11 @@ export function fromOryIdentity(identity: Identity): AuthUser {
   const avatarUrl =
     readString(traits, 'picture') ?? readString(traits, 'avatar_url')
   const providers = normalizeProviders(identity.credentials)
+  const hasPasswordCredential = hasUsablePasswordCredential(
+    identity.credentials?.password
+  )
+  const hasOidcCredential = hasLinkedOidcCredential(identity.credentials?.oidc)
+  const canChangeEmail = hasPasswordCredential && !hasOidcCredential
 
   return {
     id: identity.id,
@@ -34,14 +41,15 @@ export function fromOryIdentity(identity: Identity): AuthUser {
     name,
     avatarUrl,
     providers,
+    canChangeEmail,
+    canChangePassword: canChangeEmail,
   }
 }
 
 // Kratos credential keys (`password`, `oidc`, …) don't match the provider
 // vocabulary the dashboard UI expects (Supabase emits `email` for the
-// email/password credential). Map `password` → `email` so the account-settings
-// provider gate (`providers.includes('email')`) stays provider-agnostic, while
-// preserving other keys like `oidc`.
+// email/password credential). Map `password` → `email` for display parity,
+// while preserving other keys like `oidc`.
 function normalizeProviders(credentials: Identity['credentials']): string[] {
   if (!credentials) return []
 
@@ -50,6 +58,31 @@ function normalizeProviders(credentials: Identity['credentials']): string[] {
   )
 
   return [...new Set(mapped)]
+}
+
+function hasUsablePasswordCredential(
+  credential: NonNullable<Identity['credentials']>[string] | undefined
+): boolean {
+  const config = credential?.config as Record<string, unknown> | undefined
+  return (
+    (typeof config?.hashed_password === 'string' &&
+      config.hashed_password !== '') ||
+    config?.use_password_migration_hook === true
+  )
+}
+
+function hasLinkedOidcCredential(
+  credential: NonNullable<Identity['credentials']>[string] | undefined
+): boolean {
+  if (!credential) return false
+
+  if (credential.identifiers && credential.identifiers.length > 0) {
+    return true
+  }
+
+  const config = credential.config as Record<string, unknown> | undefined
+  const providers = config?.providers
+  return Array.isArray(providers) && providers.length > 0
 }
 
 function readString(

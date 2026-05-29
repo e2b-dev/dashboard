@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
@@ -63,11 +63,6 @@ export function EmailSettings({ className }: EmailSettingsProps) {
       email: searchParams.get('new_email') || user?.email || '',
     },
   })
-
-  const hasEmailProvider = useMemo(
-    () => user.providers.includes('email'),
-    [user]
-  )
 
   const { mutate: updateEmail, isPending } = useMutation(
     trpc.user.update.mutationOptions({
@@ -132,9 +127,9 @@ export function EmailSettings({ className }: EmailSettingsProps) {
         )
       )
     }
-  }, [searchParams])
+  }, [searchParams, toast])
 
-  if (!user || !hasEmailProvider) return null
+  if (!user || !user.canChangeEmail) return null
 
   return (
     <>

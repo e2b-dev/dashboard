@@ -1,6 +1,11 @@
 import 'server-only'
 
-import { type Identity, ResponseError } from '@ory/client-fetch'
+import {
+  type GetIdentityByExternalIDIncludeCredentialEnum,
+  type GetIdentityIncludeCredentialEnum,
+  type Identity,
+  ResponseError,
+} from '@ory/client-fetch'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getOryIdentityApi } from './client'
 import { readOryError } from './ory-error'
@@ -22,7 +27,13 @@ export type ResolveOryIdentityInput = {
   subjects?: Array<string | null | undefined>
   // Verified login email — the unambiguous fallback for password identities.
   email?: string | null
+  // Optional credential config needed by callers that decide account
+  // capabilities. Leave unset on hot paths that only need the identity id.
+  includeCredential?: OryIdentityCredentialInclude[]
 }
+
+export type OryIdentityCredentialInclude = GetIdentityIncludeCredentialEnum &
+  GetIdentityByExternalIDIncludeCredentialEnum
 
 export async function resolveOryIdentity(
   input: ResolveOryIdentityInput
@@ -36,12 +47,18 @@ export async function resolveOryIdentity(
   ]
 
   for (const subject of subjects) {
-    const identity = await findOryIdentityBySubject(subject)
+    const identity = await findOryIdentityBySubject(
+      subject,
+      input.includeCredential
+    )
     if (identity) return identity
   }
 
   if (input.email) {
-    const identity = await findOryIdentityByEmail(input.email)
+    const identity = await findOryIdentityByEmail(
+      input.email,
+      input.includeCredential
+    )
     if (identity) return identity
   }
 
@@ -66,12 +83,15 @@ export async function resolveOryIdentity(
 // logged, and stops the search. The terminal "not found" belongs to
 // resolveOryIdentity once every strategy is exhausted.
 export async function findOryIdentityBySubject(
-  subject: string
+  subject: string,
+  includeCredential?: OryIdentityCredentialInclude[]
 ): Promise<Identity | null> {
   const api = getOryIdentityApi()
 
   try {
-    return await api.getIdentity({ id: subject })
+    return await api.getIdentity(
+      withIncludedCredentials({ id: subject }, includeCredential)
+    )
   } catch (error) {
     if (!isNotFound(error)) {
       await logLookupError('by_id', error)
@@ -80,7 +100,9 @@ export async function findOryIdentityBySubject(
   }
 
   try {
-    return await api.getIdentityByExternalID({ externalID: subject })
+    return await api.getIdentityByExternalID(
+      withIncludedCredentials({ externalID: subject }, includeCredential)
+    )
   } catch (error) {
     if (!isNotFound(error)) {
       await logLookupError('by_external_id', error)
@@ -90,12 +112,14 @@ export async function findOryIdentityBySubject(
 }
 
 export async function findOryIdentityByEmail(
-  email: string
+  email: string,
+  includeCredential?: OryIdentityCredentialInclude[]
 ): Promise<Identity | null> {
   try {
     const identities = await getOryIdentityApi().listIdentities({
       credentialsIdentifier: email,
       pageSize: 2,
+      ...(includeCredential ? { includeCredential } : {}),
     })
 
     if (identities.length === 0) return null
@@ -109,6 +133,13 @@ export async function findOryIdentityByEmail(
     await logLookupError('by_email', error)
     return null
   }
+}
+
+function withIncludedCredentials<T extends Record<string, unknown>>(
+  params: T,
+  includeCredential: OryIdentityCredentialInclude[] | undefined
+): T & { includeCredential?: OryIdentityCredentialInclude[] } {
+  return includeCredential ? { ...params, includeCredential } : params
 }
 
 function emailTrait(identity: Identity): string | null {

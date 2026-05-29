@@ -4,6 +4,8 @@ export type AuthUser = {
   name: string | null
   avatarUrl: string | null
   providers: string[]
+  canChangeEmail: boolean
+  canChangePassword: boolean
 }
 
 export type AuthContext = {

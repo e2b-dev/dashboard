@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
@@ -71,11 +71,6 @@ export function PasswordSettings({
     setClientShowPasswordForm(showPasswordChangeForm)
   }, [showPasswordChangeForm])
 
-  const hasEmailProvider = useMemo(
-    () => user.providers.includes('email'),
-    [user]
-  )
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -93,6 +88,11 @@ export function PasswordSettings({
         }
 
         if (data.status === 'error') {
+          if (data.code === 'account_credentials_not_changeable') {
+            toast(defaultErrorToast(USER_MESSAGES.failedUpdatePassword.message))
+            return
+          }
+
           const message =
             data.code === 'same_password'
               ? 'New password cannot be the same as the old password.'
@@ -121,7 +121,7 @@ export function PasswordSettings({
     setReauthDialogOpen(true)
   }
 
-  if (!user || !hasEmailProvider) return null
+  if (!user || !user.canChangePassword) return null
 
   return (
     <>

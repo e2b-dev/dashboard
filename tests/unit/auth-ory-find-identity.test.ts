@@ -60,6 +60,22 @@ describe('findOryIdentityBySubject', () => {
     expect(identity).toEqual({ id: 'kratos-uuid' })
   })
 
+  it('passes included credential requests through both subject lookup strategies', async () => {
+    getIdentityMock.mockRejectedValue(notFound())
+    getIdentityByExternalIDMock.mockResolvedValue({ id: 'kratos-uuid' })
+
+    await findOryIdentityBySubject('legacy-id', ['password', 'oidc'])
+
+    expect(getIdentityMock).toHaveBeenCalledWith({
+      id: 'legacy-id',
+      includeCredential: ['password', 'oidc'],
+    })
+    expect(getIdentityByExternalIDMock).toHaveBeenCalledWith({
+      externalID: 'legacy-id',
+      includeCredential: ['password', 'oidc'],
+    })
+  })
+
   it('returns null without a terminal error log when both miss', async () => {
     getIdentityMock.mockRejectedValue(notFound())
     getIdentityByExternalIDMock.mockRejectedValue(notFound())
@@ -99,6 +115,20 @@ describe('findOryIdentityByEmail', () => {
     const identity = await findOryIdentityByEmail('nobody@example.test')
 
     expect(identity).toBeNull()
+  })
+
+  it('passes included credential requests through email lookups', async () => {
+    listIdentitiesMock.mockResolvedValue([
+      { id: 'match', traits: { email: 'ada@example.test' } },
+    ])
+
+    await findOryIdentityByEmail('ada@example.test', ['password', 'oidc'])
+
+    expect(listIdentitiesMock).toHaveBeenCalledWith({
+      credentialsIdentifier: 'ada@example.test',
+      pageSize: 2,
+      includeCredential: ['password', 'oidc'],
+    })
   })
 })
 

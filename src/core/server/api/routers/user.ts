@@ -83,6 +83,22 @@ export const userRouter = createTRPCRouter({
       }
 
       const provider = createAuthForHeaders(ctx.headers)
+
+      if (input.email !== undefined || input.password !== undefined) {
+        const profile = await provider.getUserProfile()
+
+        if (
+          !profile ||
+          (input.email !== undefined && !profile.canChangeEmail) ||
+          (input.password !== undefined && !profile.canChangePassword)
+        ) {
+          return {
+            status: 'error' as const,
+            code: 'account_credentials_not_changeable' as const,
+          }
+        }
+      }
+
       const result = await provider.updateUser({
         email: input.email,
         password: input.password,

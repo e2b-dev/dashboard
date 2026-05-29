@@ -36,6 +36,42 @@ describe('fromOryIdentity providers normalization', () => {
   })
 })
 
+describe('fromOryIdentity account capabilities', () => {
+  it('allows email and password changes for password-only identities with password material', () => {
+    const user = fromOryIdentity(
+      identity({
+        credentials: {
+          password: { config: { hashed_password: 'hash' } },
+        },
+      })
+    )
+
+    expect(user.canChangeEmail).toBe(true)
+    expect(user.canChangePassword).toBe(true)
+  })
+
+  it('does not treat a bare password credential key as a usable email/password account', () => {
+    const user = fromOryIdentity(identity({ credentials: { password: {} } }))
+
+    expect(user.canChangeEmail).toBe(false)
+    expect(user.canChangePassword).toBe(false)
+  })
+
+  it('blocks account credential changes when an oidc credential is linked', () => {
+    const user = fromOryIdentity(
+      identity({
+        credentials: {
+          password: { config: { hashed_password: 'hash' } },
+          oidc: { identifiers: ['github:123'] },
+        },
+      })
+    )
+
+    expect(user.canChangeEmail).toBe(false)
+    expect(user.canChangePassword).toBe(false)
+  })
+})
+
 describe('fromOryIdentity traits', () => {
   it('reads the flat `name` trait (the project schema shape)', () => {
     const user = fromOryIdentity(

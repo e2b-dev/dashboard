@@ -104,6 +104,8 @@ describe('OryAuthProvider', () => {
           name: 'Alice',
           avatarUrl: 'https://example.test/a.png',
           providers: [],
+          canChangeEmail: false,
+          canChangePassword: false,
         },
         accessToken: 'access-token',
       })

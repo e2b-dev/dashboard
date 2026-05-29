@@ -36,6 +36,7 @@ describe('oryAuthProvider.getUserProfile', () => {
     getIdentityMock.mockReset()
     getIdentityByExternalIDMock.mockReset()
     loggerMocks.error.mockClear()
+    loggerMocks.debug.mockClear()
   })
 
   it('returns the normalized profile from the live identity lookup', async () => {
@@ -43,18 +44,27 @@ describe('oryAuthProvider.getUserProfile', () => {
     getIdentityMock.mockResolvedValue({
       id: 'identity-1',
       traits: { email: 'ada@example.test', name: 'Ada' },
-      credentials: { password: {} },
+      credentials: {
+        password: {
+          config: { hashed_password: 'hash' },
+        },
+      },
     })
 
     const profile = await oryAuthProvider.getUserProfile()
 
-    expect(getIdentityMock).toHaveBeenCalledWith({ id: 'identity-1' })
+    expect(getIdentityMock).toHaveBeenCalledWith({
+      id: 'identity-1',
+      includeCredential: ['password', 'oidc'],
+    })
     expect(profile).toEqual({
       id: 'identity-1',
       email: 'ada@example.test',
       name: 'Ada',
       avatarUrl: null,
       providers: ['email'],
+      canChangeEmail: true,
+      canChangePassword: true,
     })
   })
 
@@ -66,12 +76,19 @@ describe('oryAuthProvider.getUserProfile', () => {
     getIdentityMock.mockResolvedValue({
       id: 'kratos-uuid',
       traits: { email: 'ada@example.test' },
-      credentials: { password: {} },
+      credentials: {
+        password: {
+          config: { hashed_password: 'hash' },
+        },
+      },
     })
 
     const profile = await oryAuthProvider.getUserProfile()
 
-    expect(getIdentityMock).toHaveBeenCalledWith({ id: 'kratos-uuid' })
+    expect(getIdentityMock).toHaveBeenCalledWith({
+      id: 'kratos-uuid',
+      includeCredential: ['password', 'oidc'],
+    })
     expect(getIdentityByExternalIDMock).not.toHaveBeenCalled()
     expect(profile?.id).toBe('kratos-uuid')
   })
@@ -93,16 +110,46 @@ describe('oryAuthProvider.getUserProfile', () => {
     getIdentityByExternalIDMock.mockResolvedValue({
       id: 'kratos-uuid',
       traits: { email: 'ada@example.test', name: 'Ada' },
-      credentials: { password: {} },
+      credentials: {
+        password: {
+          config: { hashed_password: 'hash' },
+        },
+      },
     })
 
     const profile = await oryAuthProvider.getUserProfile()
 
     expect(getIdentityByExternalIDMock).toHaveBeenCalledWith({
       externalID: 'legacy-id',
+      includeCredential: ['password', 'oidc'],
     })
     expect(profile?.id).toBe('kratos-uuid')
     expect(profile?.providers).toEqual(['email'])
+  })
+
+  it('does not allow account credential changes for oidc-linked identities', async () => {
+    authjsMock.mockResolvedValue({ user: { id: 'identity-1' } })
+    getIdentityMock.mockResolvedValue({
+      id: 'identity-1',
+      traits: { email: 'ada@example.test', name: 'Ada' },
+      credentials: {
+        password: {
+          config: { hashed_password: 'hash' },
+        },
+        oidc: {
+          identifiers: ['github:123'],
+        },
+      },
+    })
+
+    const profile = await oryAuthProvider.getUserProfile()
+
+    expect(profile).toEqual(
+      expect.objectContaining({
+        canChangeEmail: false,
+        canChangePassword: false,
+      })
+    )
   })
 
   it('returns null when neither id nor external_id matches', async () => {
