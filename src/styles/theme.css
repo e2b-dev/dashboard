@@ -12,16 +12,23 @@
     @apply bg-bg text-fg prose-body antialiased;
   }
 
+  /* Inline heading styles to allow utility overrides. */
   h1,
   h2,
   h3 {
-    @apply prose-headline uppercase;
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
   }
 
   h4,
   h5,
   h6 {
-    @apply prose-headline-small uppercase;
+    font-size: 1rem; /* 16px */
+    line-height: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
   }
 
   .font-mono {

@@ -88,7 +88,7 @@ function DialogContent({
           <DialogPrimitive.Close
             className={cn(
               [
-                'absolute top-4 right-4',
+                'absolute top-[18px] right-[20px]',
                 'text-icon-tertiary transition-colors hover:text-icon cursor-pointer',
                 'outline-none focus-visible:ring-1 focus-visible:ring-accent-main-highlight',
                 'disabled:pointer-events-none',

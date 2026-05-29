@@ -10,6 +10,10 @@
   border-radius: 2px;
 }
 
+:root {
+  caret-color: var(--accent-main-highlight);
+}
+
 *::selection {
   background-color: var(--accent-main-bg);
 }
