@@ -14,8 +14,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
-import { AddIcon, ArrowRightIcon, CheckIcon } from '@/ui/primitives/icons'
+import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
+import { ArrowDivider } from './arrow-divider'
 import {
   isValidTagShape,
   normalizeTagInput,
@@ -169,6 +170,11 @@ export default function AssignTagDialog({
           ? 'success'
           : 'idle'
 
+  const successTag =
+    existsQuery.data?.normalizedTag ??
+    mutation.data?.tags[0] ??
+    normalizedDebouncedName
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -180,7 +186,7 @@ export default function AssignTagDialog({
 
       <DialogContent
         hideClose={stage === 'pending'}
-        className="sm:max-w-[450px] sm:h-[436px]"
+        className="sm:max-w-[425px] sm:h-[436px]"
         onPointerDownOutside={(e) => {
           if (stage === 'pending') e.preventDefault()
         }}
@@ -189,17 +195,15 @@ export default function AssignTagDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Assign new tag</DialogTitle>
+          <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
+            {stage === 'success'
+              ? `‘${successTag}’ assigned successfully`
+              : 'Assign new tag'}
+          </DialogTitle>
         </DialogHeader>
 
         {stage === 'success' ? (
-          <SuccessBody
-            tag={
-              existsQuery.data?.normalizedTag ??
-              mutation.data?.tags[0] ??
-              normalizedDebouncedName
-            }
-          />
+          <SuccessBody tag={successTag} />
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <TagNameField
@@ -320,24 +324,12 @@ function Footer({
 function SuccessBody({ tag }: { tag: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-      <span className="flex size-12 items-center justify-center rounded-full bg-accent-positive-bg text-accent-positive-highlight">
-        <CheckIcon className="size-6" />
-      </span>
-      <p className="prose-headline-small text-fg">
+      <CheckIcon className="size-12 text-accent-positive-highlight" />
+      <p className="prose-headline-small uppercase text-fg">
         <span className="font-mono">‘{tag}’</span>
         <br />
         assigned successfully
       </p>
-    </div>
-  )
-}
-
-function ArrowDivider() {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="h-px flex-1 bg-stroke" aria-hidden />
-      <ArrowRightIcon className="size-4 rotate-90 text-fg-tertiary" />
-      <span className="h-px flex-1 bg-stroke" aria-hidden />
     </div>
   )
 }

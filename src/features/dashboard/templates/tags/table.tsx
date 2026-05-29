@@ -8,8 +8,15 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import Link from 'next/link'
-import { type KeyboardEvent, type MouseEvent, useMemo } from 'react'
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type { TemplateTagAssignment } from '@/core/modules/templates/models'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import {
@@ -24,6 +31,7 @@ import { RowHoverFrame } from '@/ui/row-hover-frame'
 import TagsEmpty from './empty'
 import TagsHeader from './header'
 import { TagHistoryRow } from './history/tag-history-row'
+import RollbackTagDialog from './rollback-dialog'
 import { useTagTableStore } from './stores/table-store'
 import {
   fallbackData,
@@ -172,6 +180,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
                   row={row}
                   teamSlug={teamSlug}
                   templateId={templateId}
+                  templateName={templateName}
                 />
               ))}
             </div>
@@ -186,14 +195,35 @@ interface GroupSectionProps {
   row: Row<TagGroup>
   teamSlug: string
   templateId: string
+  templateName: string
 }
 
-function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
+function GroupSection({
+  row,
+  teamSlug,
+  templateId,
+  templateName,
+}: GroupSectionProps) {
   'use no memo'
 
   const canExpand = row.getCanExpand()
   const isExpanded = row.getIsExpanded()
   const dataState = isExpanded ? 'open' : 'closed'
+
+  const [rollbackRequest, setRollbackRequest] = useState<{
+    target: TemplateTagAssignment
+    currentBuildId: string
+  } | null>(null)
+
+  const handleRequestRowRollback = useCallback(
+    (target: TemplateTagAssignment) => {
+      setRollbackRequest({
+        target,
+        currentBuildId: row.original.primaryAssignment.buildId,
+      })
+    },
+    [row.original.primaryAssignment.buildId]
+  )
 
   const toggle = () => {
     row.toggleExpanded()
@@ -292,8 +322,10 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
             <TagHistoryRow
               key={assignment.assignmentId}
               assignment={assignment}
+              primaryAssignment={row.original.primaryAssignment}
               teamSlug={teamSlug}
               templateId={templateId}
+              onRequestRollback={handleRequestRowRollback}
             />
           ))}
           {row.original.hasMore && (
@@ -305,6 +337,20 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
           )}
         </div>
       )}
+
+      <RollbackTagDialog
+        open={rollbackRequest !== null}
+        onOpenChange={(next) => {
+          if (!next) setRollbackRequest(null)
+        }}
+        tag={row.original.tag}
+        currentBuildId={rollbackRequest?.currentBuildId ?? ''}
+        targetBuildId={rollbackRequest?.target.buildId ?? ''}
+        teamSlug={teamSlug}
+        templateId={templateId}
+        templateName={templateName}
+        surface="history-row"
+      />
     </div>
   )
 }

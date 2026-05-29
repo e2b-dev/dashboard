@@ -8,11 +8,13 @@ import {
 } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type { TemplateTagAssignment } from '@/core/modules/templates/models'
 import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cells'
 import { useTRPC } from '@/trpc/client'
 import { Loader } from '@/ui/primitives/loader'
+import RollbackTagDialog from '../rollback-dialog'
 import { TagHistoryEmpty } from './tag-history-empty'
 import { TagHistoryHeader } from './tag-history-header'
 import { TagHistoryRow } from './tag-history-row'
@@ -77,6 +79,7 @@ export default function TagHistoryView({
   )
 
   const primary = assignments[0]
+  const previous = assignments[1]
   const history = useMemo(() => assignments.slice(1), [assignments])
 
   const virtualizer = useVirtualizer({
@@ -116,6 +119,29 @@ export default function TagHistoryView({
     router.push(PROTECTED_URLS.TEMPLATE_TAGS(teamSlug, templateId))
   }
 
+  const handleRolledBack = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: trpc.templates.getTagAssignments.queryKey({
+        teamSlug,
+        templateId,
+        tag,
+      }),
+    })
+  }, [queryClient, trpc, teamSlug, templateId, tag])
+
+  const [rollbackRequest, setRollbackRequest] = useState<{
+    target: TemplateTagAssignment
+    currentBuildId: string
+  } | null>(null)
+
+  const handleRequestRowRollback = useCallback(
+    (target: TemplateTagAssignment) => {
+      if (!primary) return
+      setRollbackRequest({ target, currentBuildId: primary.buildId })
+    },
+    [primary]
+  )
+
   if (isPending) {
     return (
       <div className="flex flex-1 items-center justify-center py-12">
@@ -136,7 +162,9 @@ export default function TagHistoryView({
         templateId={templateId}
         templateName={templateName}
         primaryAssignment={primary}
+        previousAssignment={previous}
         onTagDeleted={handleTagDeleted}
+        onRolledBack={handleRolledBack}
       />
 
       <div
@@ -160,8 +188,10 @@ export default function TagHistoryView({
               >
                 <TagHistoryRow
                   assignment={assignment}
+                  primaryAssignment={primary}
                   teamSlug={teamSlug}
                   templateId={templateId}
+                  onRequestRollback={handleRequestRowRollback}
                 />
               </div>
             )
@@ -177,6 +207,21 @@ export default function TagHistoryView({
           </div>
         )}
       </div>
+
+      <RollbackTagDialog
+        open={rollbackRequest !== null}
+        onOpenChange={(next) => {
+          if (!next) setRollbackRequest(null)
+        }}
+        tag={tag}
+        currentBuildId={rollbackRequest?.currentBuildId ?? ''}
+        targetBuildId={rollbackRequest?.target.buildId ?? ''}
+        teamSlug={teamSlug}
+        templateId={templateId}
+        templateName={templateName}
+        surface="history-row"
+        onRolledBack={handleRolledBack}
+      />
     </div>
   )
 }

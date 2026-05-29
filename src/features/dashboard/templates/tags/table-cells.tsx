@@ -16,6 +16,7 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
 import { BuildLink } from './build-link'
 import TagDeleteDialog from './delete-dialog'
+import RollbackTagDialog from './rollback-dialog'
 import type { TagGroup } from './types'
 
 const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
@@ -63,9 +64,12 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
   const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [rollbackOpen, setRollbackOpen] = useState(false)
 
   const group = row.original
   const isDefaultTag = group.tag === DEFAULT_TAG_NAME
+  const previousAssignment = group.assignments[1]
+  const canRollback = !!previousAssignment
 
   return (
     <div className="flex items-center justify-end gap-4 w-full">
@@ -90,9 +94,15 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
           variant="secondary"
           size="none"
           className={SMALL_BUTTON}
+          disabled={!canRollback}
+          aria-label={
+            canRollback
+              ? `Rollback tag ${group.tag} to previous build`
+              : `No previous build to rollback to for tag ${group.tag}`
+          }
           onClick={(e) => {
             e.stopPropagation()
-            toast(defaultErrorToast('Rollback: not implemented yet'))
+            setRollbackOpen(true)
           }}
         >
           Rollback
@@ -136,6 +146,20 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
         templateId={templateId}
         templateName={templateName}
       />
+
+      {previousAssignment && (
+        <RollbackTagDialog
+          open={rollbackOpen}
+          onOpenChange={setRollbackOpen}
+          tag={group.tag}
+          currentBuildId={group.primaryAssignment.buildId}
+          targetBuildId={previousAssignment.buildId}
+          teamSlug={teamSlug}
+          templateId={templateId}
+          templateName={templateName}
+          surface="tags-tab"
+        />
+      )}
     </div>
   )
 }
