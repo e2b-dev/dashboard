@@ -4,6 +4,12 @@ import { type ReactElement, useId } from 'react'
 import { cn } from '@/lib/utils'
 import { SearchIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/primitives/tooltip'
+import { TAG_MAX_LENGTH } from './assign-dialog.helpers'
 
 export type TagNameStatus =
   | 'idle'
@@ -26,6 +32,29 @@ const STATUS_INDICATOR: Partial<Record<TagNameStatus, ReactElement>> = {
     <span className="prose-body whitespace-nowrap text-accent-error-highlight">
       Already exists
     </span>
+  ),
+  invalid: (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="prose-body cursor-help whitespace-nowrap text-accent-error-highlight decoration-dotted underline-offset-2">
+          Invalid format
+        </span>
+      </TooltipTrigger>
+      <TooltipContent
+        side="bottom"
+        align="end"
+        alignOffset={-13}
+        sideOffset={10}
+        className="max-w-[260px]"
+      >
+        <p className="prose-body text-fg-secondary">
+          Allowed: <span className="text-fg">lowercase letters, digits</span>,
+          and <span className="font-mono text-fg">. _ -</span>
+          <br />
+          Max <span className="text-fg">{TAG_MAX_LENGTH}</span> characters
+        </p>
+      </TooltipContent>
+    </Tooltip>
   ),
 }
 
@@ -62,7 +91,7 @@ export default function TagNameField({
         placeholder="Enter tag name"
         aria-invalid={showAsInvalid || undefined}
         className={cn(
-          'prose-body min-w-0 flex-1 bg-transparent outline-none placeholder:text-fg-tertiary',
+          'prose-body min-w-0 flex-1 truncate bg-transparent outline-none placeholder:text-fg-tertiary',
           // Leading-truncation trick: flip to RTL only when blurred AND has content,
           // so the ellipsis appears at the start of the value.
           '[&:not(:focus):not(:placeholder-shown)]:[direction:rtl]',
