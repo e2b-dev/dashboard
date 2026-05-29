@@ -30,9 +30,8 @@ export function isOryAuthEnabled() {
   return process.env.AUTH_PROVIDER === 'ory'
 }
 
-// freezes user/team membership mutations while we migrate identity stores.
-// when on: blocks new sign-ups (email/password + freshly-registered OIDC
-// identities) and rejects add-team-member requests. existing users keep
-// signing in normally.
+// Freezes new identity creation while we migrate identity stores.
+// When on: blocks new sign-ups (email/password + freshly-registered OIDC
+// identities). Existing users keep signing in normally.
 export const AUTH_MIGRATION_IN_PROGRESS =
   process.env.NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS === '1'
