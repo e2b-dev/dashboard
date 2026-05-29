@@ -14,7 +14,7 @@ import type { TemplateTagAssignment } from '@/core/modules/templates/models'
 import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cells'
 import { useTRPC } from '@/trpc/client'
 import { Loader } from '@/ui/primitives/loader'
-import RollbackTagDialog from '../rollback-dialog'
+import RollbackTagDialog, { type RollbackSurface } from '../rollback-dialog'
 import { TagHistoryEmpty } from './tag-history-empty'
 import { TagHistoryHeader } from './tag-history-header'
 import { TagHistoryRow } from './tag-history-row'
@@ -132,15 +132,29 @@ export default function TagHistoryView({
   const [rollbackRequest, setRollbackRequest] = useState<{
     target: TemplateTagAssignment
     currentBuildId: string
+    surface: RollbackSurface
   } | null>(null)
 
-  const handleRequestRowRollback = useCallback(
-    (target: TemplateTagAssignment) => {
+  const requestRollback = useCallback(
+    (target: TemplateTagAssignment, surface: RollbackSurface) => {
       if (!primary) return
-      setRollbackRequest({ target, currentBuildId: primary.buildId })
+      setRollbackRequest({
+        target,
+        currentBuildId: primary.buildId,
+        surface,
+      })
     },
     [primary]
   )
+
+  const handleRequestRowRollback = useCallback(
+    (target: TemplateTagAssignment) => requestRollback(target, 'history-row'),
+    [requestRollback]
+  )
+
+  const handleRequestHeaderRollback = previous
+    ? () => requestRollback(previous, 'history-header')
+    : undefined
 
   if (isPending) {
     return (
@@ -162,9 +176,8 @@ export default function TagHistoryView({
         templateId={templateId}
         templateName={templateName}
         primaryAssignment={primary}
-        previousAssignment={previous}
         onTagDeleted={handleTagDeleted}
-        onRolledBack={handleRolledBack}
+        onRequestRollback={handleRequestHeaderRollback}
         onReassigned={handleRolledBack}
       />
 
@@ -220,7 +233,7 @@ export default function TagHistoryView({
         teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
-        surface="history-row"
+        surface={rollbackRequest?.surface ?? 'history-row'}
         onRolledBack={handleRolledBack}
       />
     </div>
