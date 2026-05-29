@@ -108,26 +108,21 @@ export default function TagHistoryView({
     fetchNextPage,
   ])
 
+  const tagAssignmentsQueryKey =
+    trpc.templates.getTagAssignments.infiniteQueryOptions({
+      teamSlug,
+      templateId,
+      tag,
+    }).queryKey
+
   const handleTagDeleted = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: trpc.templates.getTagAssignments.queryKey({
-        teamSlug,
-        templateId,
-        tag,
-      }),
-    })
+    await queryClient.invalidateQueries({ queryKey: tagAssignmentsQueryKey })
     router.push(PROTECTED_URLS.TEMPLATE_TAGS(teamSlug, templateId))
   }
 
   const handleRolledBack = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: trpc.templates.getTagAssignments.queryKey({
-        teamSlug,
-        templateId,
-        tag,
-      }),
-    })
-  }, [queryClient, trpc, teamSlug, templateId, tag])
+    await queryClient.invalidateQueries({ queryKey: tagAssignmentsQueryKey })
+  }, [queryClient, tagAssignmentsQueryKey])
 
   const [rollbackRequest, setRollbackRequest] = useState<{
     target: TemplateTagAssignment
