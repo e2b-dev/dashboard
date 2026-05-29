@@ -105,6 +105,25 @@ export const templatesRouter = createTRPCRouter({
       return result.data
     }),
 
+  getTagAssignments: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        tag: z.string().min(1),
+        cursor: z.string().optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.getTagAssignments(
+        input.templateId,
+        input.tag,
+        { cursor: input.cursor, limit: input.limit }
+      )
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
+
   checkTagExists: teamTemplatesRepositoryProcedure
     .input(
       z.object({

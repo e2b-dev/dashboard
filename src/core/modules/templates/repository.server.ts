@@ -11,6 +11,7 @@ import type {
   DefaultTemplate,
   Template,
   TemplateTag,
+  TemplateTagAssignment,
   TemplateTagExistsResult,
   TemplateTagGroup,
 } from '@/core/modules/templates/models'
@@ -42,6 +43,16 @@ export interface TeamTemplatesRepository {
     templateId: string,
     options?: { assignmentLimit?: number }
   ): Promise<RepoResult<{ tags: TemplateTagGroup[] }>>
+  getTagAssignments(
+    templateId: string,
+    tag: string,
+    options?: { cursor?: string; limit?: number }
+  ): Promise<
+    RepoResult<{
+      data: TemplateTagAssignment[]
+      nextCursor: string | null
+    }>
+  >
   checkTagExists(
     templateId: string,
     tag: string
@@ -156,6 +167,45 @@ export function createTemplatesRepository(
       }
 
       return ok({ tags: res.data?.tags ?? [] })
+    },
+    async getTagAssignments(templateId, tag, options) {
+      if (USE_MOCK_DATA) {
+        return ok({ data: [], nextCursor: null })
+      }
+
+      const res = await deps.apiClient.GET(
+        '/templates/{templateID}/tags/{tag}/assignments',
+        {
+          params: {
+            path: {
+              templateID: templateId,
+              tag,
+            },
+            query: {
+              cursor: options?.cursor,
+              limit: options?.limit,
+            },
+          },
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch template tag assignments',
+            res.error
+          )
+        )
+      }
+
+      return ok({
+        data: res.data?.data ?? [],
+        nextCursor: res.data?.nextCursor ?? null,
+      })
     },
     async checkTagExists(templateId, tag) {
       if (USE_MOCK_DATA) {

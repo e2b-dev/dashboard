@@ -94,6 +94,9 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     templateDetailLayoutConfig(pathname),
   '/dashboard/*/templates/*/tags': (pathname) =>
     templateDetailLayoutConfig(pathname),
+  // Tag history page lives under (detail-tabs); same chrome as the parent tags tab.
+  '/dashboard/*/templates/*/tags/*': (pathname) =>
+    templateDetailLayoutConfig(pathname),
   // Distinct from /templates/*/builds/* (build detail) — keep the more specific glob earlier.
   '/dashboard/*/templates/*/builds': (pathname) =>
     templateDetailLayoutConfig(pathname),

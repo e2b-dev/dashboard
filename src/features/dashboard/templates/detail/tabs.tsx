@@ -15,9 +15,9 @@ interface TemplateDetailTabsProps {
 type DetailTabId = 'overview' | 'builds' | 'tags'
 
 const TAB_PATHS: Record<DetailTabId, (pathname: string) => boolean> = {
-  overview: (p) => p.endsWith('/overview'),
-  builds: (p) => p.endsWith('/builds'),
-  tags: (p) => p.endsWith('/tags'),
+  overview: (p) => /\/overview(\/|$)/.test(p),
+  builds: (p) => /\/builds(\/|$)/.test(p),
+  tags: (p) => /\/tags(\/|$)/.test(p),
 }
 
 function tabFromPath(pathname: string): DetailTabId {

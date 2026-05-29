@@ -25,6 +25,12 @@ interface TagDeleteDialogProps {
   teamSlug: string
   templateId: string
   templateName: string
+  /**
+   * Optional hook called after the success toast fires, before the dialog closes
+   * and `getTagGroups` is invalidated. Used by surfaces that need to navigate
+   * away (e.g. the tag-history page redirects back to the Tags list).
+   */
+  onDeleted?: () => void | Promise<void>
 }
 
 export default function TagDeleteDialog({
@@ -34,6 +40,7 @@ export default function TagDeleteDialog({
   teamSlug,
   templateId,
   templateName,
+  onDeleted,
 }: TagDeleteDialogProps) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -67,6 +74,8 @@ export default function TagDeleteDialog({
             tags: old.tags.filter((t) => !removed.has(t.tag)),
           }
         })
+
+        await onDeleted?.()
       },
       onError: (error) => {
         toast(
