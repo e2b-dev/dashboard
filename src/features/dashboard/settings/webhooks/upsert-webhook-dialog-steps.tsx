@@ -1,12 +1,17 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import ShikiHighlighter from 'react-shiki'
+import { z } from 'zod'
 import { useShikiTheme } from '@/configs/shiki'
-import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
-import type { UpsertWebhookSchemaType } from '@/core/server/functions/webhooks/schema'
+import {
+  type SandboxLifecycleEventType,
+  SandboxLifecycleEventTypeSchema,
+} from '@/core/modules/sandboxes/lifecycle-event-types'
+import type { UpsertWebhookFormInput } from '@/core/server/functions/webhooks/schema'
+import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
 import {
@@ -16,83 +21,97 @@ import {
   FormLabel,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CopyIcon, ExternalLinkIcon, WarningIcon } from '@/ui/primitives/icons'
+import {
+  CheckIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  WarningIcon,
+} from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { ScrollArea, ScrollBar } from '@/ui/primitives/scroll-area'
 import { Separator } from '@/ui/primitives/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import {
+  WEBHOOK_EVENT_LABELS,
   WEBHOOK_EXAMPLE_PAYLOAD,
   WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL,
 } from './constants'
 
-type WebhookAddEditDialogStepsProps = {
+const SecretTypeSchema = z.enum(['pre-generated', 'custom'])
+
+export type SecretType = z.infer<typeof SecretTypeSchema>
+
+type UpsertWebhookDialogStepsProps = {
   currentStep: number
-  form: UseFormReturn<UpsertWebhookSchemaType>
+  form: UseFormReturn<UpsertWebhookFormInput>
   isLoading: boolean
   selectedEvents: string[]
+  exampleEventType: SandboxLifecycleEventType
   allEventsSelected: boolean
   handleAllToggle: () => void
-  handleEventToggle: (event: string) => void
-  mode: 'add' | 'edit'
+  handleEventToggle: (event: SandboxLifecycleEventType) => void
+  mode: 'create' | 'update'
+  hasCopiedSecret: boolean
+  setHasCopiedSecret: (value: boolean) => void
+  preGeneratedSecret: string
+  secretType: SecretType
+  onSecretTypeChange: (value: SecretType) => void
 }
 
-export function WebhookAddEditDialogSteps({
+export function UpsertWebhookDialogSteps({
   currentStep,
   form,
   isLoading,
   selectedEvents,
+  exampleEventType,
   allEventsSelected,
   handleAllToggle,
   handleEventToggle,
   mode,
-}: WebhookAddEditDialogStepsProps) {
+  hasCopiedSecret,
+  setHasCopiedSecret,
+  preGeneratedSecret,
+  secretType,
+  onSecretTypeChange,
+}: UpsertWebhookDialogStepsProps) {
   const shikiTheme = useShikiTheme()
-  const [secretType, setSecretType] = useState<'pre-generated' | 'custom'>(
-    'pre-generated'
-  )
+  const [secretCopiedFeedback, copySecret] = useClipboard()
 
-  const preGeneratedSecret = useMemo(() => {
-    const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    const array = new Uint8Array(32)
-    crypto.getRandomValues(array)
-    return Array.from(array, (byte) => chars[byte % chars.length]).join('')
-  }, [])
-
-  const [copied, setCopied] = useState(false)
-
-  // sync secret with form state and validation - only in 'add' mode
-  // in 'edit' mode, we should never touch the signature secret
+  const customSecretInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
-    if (mode !== 'add') return
+    if (secretType !== 'custom') return
+    const id = window.setTimeout(() => {
+      customSecretInputRef.current?.focus()
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [secretType])
 
-    if (secretType === 'pre-generated') {
-      // set pre-generated secret and trigger validation to clear any errors
+  const handleSecretTypeChange = (value: string) => {
+    const parsed = SecretTypeSchema.safeParse(value)
+    if (!parsed.success) return
+
+    onSecretTypeChange(parsed.data)
+
+    if (mode !== 'create') return
+
+    if (parsed.data === 'pre-generated') {
       form.setValue('signatureSecret', preGeneratedSecret, {
         shouldValidate: true,
         shouldDirty: true,
       })
-      // explicitly clear any errors since pre-generated is always valid
       form.clearErrors('signatureSecret')
     } else {
-      // clear for custom input
       form.setValue('signatureSecret', '', {
-        shouldValidate: false,
+        shouldValidate: true,
         shouldDirty: false,
       })
     }
-  }, [mode, secretType, preGeneratedSecret, form])
+  }
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(preGeneratedSecret)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
-    }
+  const handleCopySecret = () => {
+    void copySecret(preGeneratedSecret)
+    setHasCopiedSecret(true)
   }
 
   return (
@@ -118,6 +137,8 @@ export function WebhookAddEditDialogSteps({
                     placeholder="Example webhook"
                     disabled={isLoading}
                     className="min-w-0"
+                    clearable
+                    onClear={() => field.onChange('')}
                     {...field}
                   />
                 </FormControl>
@@ -138,6 +159,8 @@ export function WebhookAddEditDialogSteps({
                     placeholder="https://example.com/postreceive"
                     disabled={isLoading}
                     className="min-w-0"
+                    clearable
+                    onClear={() => field.onChange('')}
                     {...field}
                   />
                 </FormControl>
@@ -188,7 +211,7 @@ export function WebhookAddEditDialogSteps({
                           htmlFor={`event-${event}`}
                           className="cursor-pointer select-none"
                         >
-                          {event}
+                          {WEBHOOK_EVENT_LABELS[event]}
                         </Label>
                       </div>
                     ))}
@@ -217,7 +240,10 @@ export function WebhookAddEditDialogSteps({
                   addDefaultStyles={false}
                   showLanguage={false}
                 >
-                  {WEBHOOK_EXAMPLE_PAYLOAD}
+                  {WEBHOOK_EXAMPLE_PAYLOAD.replace(
+                    '"sandbox.lifecycle.created"',
+                    `"${exampleEventType}"`
+                  )}
                 </ShikiHighlighter>
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
@@ -243,8 +269,9 @@ export function WebhookAddEditDialogSteps({
             <p className="text-fg-tertiary prose-body">
               This secret is used to verify webhook authenticity. Each request
               includes an <code className="text-fg">e2b-signature</code> header
-              generated with HMAC SHA-256. Validate this in your endpoint to
-              ensure requests are from E2B and untampered.
+              generated with Hash-based Message Authentication Code (HMAC)
+              SHA-256. Validate this in your endpoint to ensure requests are
+              from E2B and untampered.
             </p>
             <a
               href={WEBHOOK_SIGNATURE_VALIDATION_DOCS_URL}
@@ -260,9 +287,7 @@ export function WebhookAddEditDialogSteps({
           {/* Tabs */}
           <Tabs
             value={secretType}
-            onValueChange={(v) =>
-              setSecretType(v as 'pre-generated' | 'custom')
-            }
+            onValueChange={handleSecretTypeChange}
             className="min-h-0 w-full flex-1 h-full"
           >
             <TabsList className="w-full justify-start px-0">
@@ -298,19 +323,31 @@ export function WebhookAddEditDialogSteps({
                       </FormControl>
                       <Button
                         type="button"
-                        onClick={handleCopy}
+                        variant={hasCopiedSecret ? 'secondary' : 'primary'}
+                        onClick={handleCopySecret}
                         disabled={isLoading}
-                        className="shrink-0"
+                        className="shrink-0 relative"
                       >
-                        <CopyIcon className="size-4" />
-                        {copied ? 'Copied' : 'Copy'}
+                        <span
+                          className={
+                            secretCopiedFeedback
+                              ? 'invisible contents'
+                              : 'contents'
+                          }
+                        >
+                          <CopyIcon className="size-4" />
+                          Copy
+                        </span>
+                        {secretCopiedFeedback && (
+                          <CheckIcon className="absolute size-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        )}
                       </Button>
                     </div>
-                    <div className="flex gap-2 items-start">
-                      <WarningIcon className="size-4 text-accent-warning-highlight shrink-0 mt-0.5" />
+                    <div className="flex gap-1.5 items-center">
+                      <WarningIcon className="size-4 text-accent-warning-highlight shrink-0" />
                       <p className="text-fg-secondary prose-body">
-                        Store this secret securely. You won't be able to view it
-                        again after creating the webhook.
+                        Copy and store it now. You won't be able to view it
+                        again.
                       </p>
                     </div>
                   </div>
@@ -329,14 +366,24 @@ export function WebhookAddEditDialogSteps({
                       <Input
                         placeholder="Enter your custom secret"
                         disabled={isLoading}
+                        minLength={32}
                         className="min-w-0"
+                        clearable
+                        onClear={() => field.onChange('')}
                         {...field}
+                        ref={(el) => {
+                          field.ref(el)
+                          customSecretInputRef.current = el
+                        }}
                       />
                     </FormControl>
-                    <p className="text-fg-tertiary prose-body">
-                      {'> 32 characters'}
-                    </p>
-                    <FormMessage />
+                    {form.formState.errors.signatureSecret ? (
+                      <FormMessage />
+                    ) : (
+                      <p className="text-fg-tertiary prose-body">
+                        {'> 32 characters'}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />

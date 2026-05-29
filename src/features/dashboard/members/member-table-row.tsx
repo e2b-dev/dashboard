@@ -257,7 +257,7 @@ const AddedCell = ({
       ) : (
         <UserAvatar
           url={addedByMember?.info.avatar_url}
-          email={addedByMember?.info.email}
+          label={addedByMember?.info.email}
         />
       )}
       {showRemove ? (

@@ -106,7 +106,7 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-default shrink-0">
-                    <UserAvatar email={createdByEmail} />
+                    <UserAvatar label={createdByEmail} />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top">{createdByEmail}</TooltipContent>

@@ -6,6 +6,7 @@ import { sandboxesRouter } from './sandboxes'
 import { supportRouter } from './support'
 import { teamsRouter } from './teams'
 import { templatesRouter } from './templates'
+import { webhooksRouter } from './webhooks'
 
 export const trpcAppRouter = createTRPCRouter({
   sandbox: sandboxRouter,
@@ -15,6 +16,7 @@ export const trpcAppRouter = createTRPCRouter({
   billing: billingRouter,
   support: supportRouter,
   teams: teamsRouter,
+  webhooks: webhooksRouter,
 })
 
 export type TRPCAppRouter = typeof trpcAppRouter
