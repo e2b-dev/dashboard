@@ -13,6 +13,9 @@ export default function TemplateDetailHeaderSkeleton() {
       <DetailsItem label="CPU">
         <Skeleton className="w-16 h-5" />
       </DetailsItem>
+      <DetailsItem label="Envd">
+        <Skeleton className="w-14 h-5" />
+      </DetailsItem>
       <DetailsItem label="Created">
         <Skeleton className="w-36 h-5" />
       </DetailsItem>
