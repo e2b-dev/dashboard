@@ -1,0 +1,30 @@
+import { signIn } from '@/auth'
+
+// Server-side entry point for the Ory OAuth2 flow. Pages redirect here
+// instead of rendering a client-side form so that Auth.js can set its
+// state/PKCE cookies (only allowed in route handlers / server actions
+// / middleware) without any client JS in the loop.
+//
+// `intent=signup` forwards `prompt=registration` to Hydra, which routes
+// to its registration UI (`urls.registration`, default `/ui/registration`)
+// instead of the login UI.
+//
+// `intent=reauth` forwards `prompt=login`, forcing Hydra to redo the login
+// flow even with an active session so we get a fresh `auth_time`. Used to
+// re-authenticate before sensitive account changes (password).
+// https://www.ory.com/docs/oauth2-oidc/authorization-code-flow
+export async function GET(request: Request) {
+  const url = new URL(request.url)
+  const intent = url.searchParams.get('intent')
+  const returnTo = url.searchParams.get('returnTo')
+  const redirectTo = returnTo && returnTo.length > 0 ? returnTo : '/dashboard'
+
+  const authorizationParams =
+    intent === 'signup'
+      ? { prompt: 'registration' }
+      : intent === 'reauth'
+        ? { prompt: 'login' }
+        : undefined
+
+  await signIn('ory', { redirectTo }, authorizationParams)
+}
