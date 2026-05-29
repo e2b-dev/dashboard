@@ -2,23 +2,21 @@
 
 import { useDashboard } from '@/features/dashboard/context'
 import { formatDate } from '@/lib/utils/formatting'
-import CopyButton from '@/ui/copy-button'
+import CopyButtonInline from '@/ui/copy-button-inline'
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="group/row flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
     <span className="text-fg-tertiary shrink-0 text-xs leading-[17px] font-normal uppercase">
       {label}
     </span>
-    <div className="flex min-w-0 items-center gap-1.5">
-      <CopyButton
-        value={value}
-        aria-label={`Copy ${label}`}
-        className="opacity-0 transition-opacity group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 focus-visible:opacity-100"
-      />
-      <span className="text-fg-secondary text-sm leading-5 font-normal [overflow-wrap:anywhere]">
-        {value}
-      </span>
-    </div>
+    <CopyButtonInline
+      value={value}
+      iconPosition="left"
+      aria-label={`Copy ${label}`}
+      className="text-fg-secondary text-sm leading-5 font-normal"
+    >
+      {value}
+    </CopyButtonInline>
   </div>
 )
 
