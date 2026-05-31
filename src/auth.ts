@@ -22,11 +22,32 @@ const oryProvider = OryHydra({
   checks: ['state'],
 })
 
+// Cookies are scoped by host+path+name, NOT by port. Running two local
+// dashboards on localhost:3000 and localhost:3001 makes them share the
+// default `authjs.session-token` cookie and clobber each other's session.
+// AUTH_COOKIE_PREFIX lets each local instance use a distinct cookie name.
+// Unset in prod/preview => standard `authjs.session-token` name is used.
+const cookiePrefix = process.env.AUTH_COOKIE_PREFIX
+  ? `${process.env.AUTH_COOKIE_PREFIX}.`
+  : ''
+const useSecureCookies = process.env.NODE_ENV === 'production'
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // isolates from existing /api/auth/{callback,email-callback,verify-otp}
   basePath: '/api/auth/oauth',
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   providers: [oryProvider],
   callbacks: {
     async jwt({ token, account }) {

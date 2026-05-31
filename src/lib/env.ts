@@ -17,6 +17,10 @@ export const serverSchema = z.object({
   AUTH_PROVIDER: z.enum(['supabase', 'ory']).optional(),
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),
+  // Prefix for Auth.js cookie names to disambiguate multiple local
+  // instances sharing localhost (cookies aren't scoped by port).
+  // Leave unset in prod/preview.
+  AUTH_COOKIE_PREFIX: z.string().min(1).optional(),
   ORY_SDK_URL: z.url().optional(),
   // Hydra's admin API. In Ory Network this is identical to ORY_SDK_URL
   // (admin is on the same host, gated by ORY_PROJECT_API_TOKEN). In a
