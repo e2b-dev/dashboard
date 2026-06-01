@@ -1,17 +1,41 @@
 import 'server-only'
 
 import { cookies } from 'next/headers'
-import type { Account, Profile, Session } from 'next-auth'
-import type { JWT } from 'next-auth/jwt'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import {
+  type OryAuthJsAccount,
+  type OryAuthJsJwt,
+  type OryAuthJsJwtInput,
+  type OryAuthJsSessionInput,
+  type OryAuthJsSignInInput,
+  readOryAuthJsAccount,
+  readOryEmailClaim,
+  readOryProfileSubject,
+} from './authjs-boundary'
 import { ensureOryUserBootstrapped } from './dashboard-bootstrap'
 import { resolveOryIdentity } from './find-identity'
-import { decodeJwtClaims, readStringClaim } from './jwt-claims'
 import { refreshOryToken } from './refresh-token'
 import {
   ORY_BOOTSTRAP_FAILURE_FLOW_PATH,
   ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE,
 } from './signout'
+
+/**
+ * Auth.js <-> Ory data flow:
+ *
+ * signIn callback:
+ *   `account` is the OAuth token endpoint response (access/id/refresh tokens).
+ *   `profile` is OIDC claims from the id_token/userinfo response.
+ *   `user` is Auth.js's synthetic profile user, not our AuthUser/Kratos Identity.
+ *
+ * jwt callback:
+ *   Persists selected Ory token fields into Auth.js's encrypted JWT cookie.
+ *
+ * session callback:
+ *   Projects those fields from the JWT cookie onto the Session object consumed
+ *   by our AuthProvider. Live Kratos traits/credentials are fetched separately
+ *   through getUserProfile().
+ */
 
 // Refresh the access token slightly before it actually expires so we never hand
 // a token that dies mid-request to downstream APIs.
@@ -24,21 +48,20 @@ const BOOTSTRAP_FAILURE_COOKIE_MAX_AGE_SECONDS = 60
 // the new session cookie. On failure, we hand the id_token to a local route via
 // a short-lived httpOnly cookie so that route can perform Ory RP-initiated
 // logout in the browser.
-export async function allowOrySignIn(params: {
-  account?: Account | null
-  profile?: Profile
-}): Promise<boolean | string> {
-  const { account } = params
+export async function handleOryAuthJsSignIn(
+  params: OryAuthJsSignInInput
+): Promise<boolean | string> {
+  const account = readOryAuthJsAccount(params.account)
 
-  if (!account?.access_token) {
+  if (!account) {
     l.error(
       {
         key: 'auth_callbacks:sign_in:missing_access_token',
-        context: { provider: account?.provider ?? null },
+        context: { provider: params.account?.provider ?? null },
       },
       'Ory sign-in missing access token; denying sign-in'
     )
-    return prepareBootstrapFailureRedirect(account)
+    return prepareBootstrapFailureRedirect(params.account)
   }
 
   const bootstrapped = await ensureOryUserBootstrapped({
@@ -61,15 +84,18 @@ export async function allowOrySignIn(params: {
 
 // Implements the Auth.js `jwt` callback: mint the token on fresh sign-in,
 // otherwise refresh it as it nears expiry.
-export async function resolveOryJwt(params: {
-  token: JWT
-  account?: Account | null
-  profile?: Profile
-}): Promise<JWT> {
+export async function persistOryTokensInAuthJsJwt(
+  params: OryAuthJsJwtInput
+): Promise<OryAuthJsJwt> {
   const { token, account, profile } = params
 
   if (account) {
-    return buildSignInToken(token, account, profile)
+    const oryAccount = readOryAuthJsAccount(account)
+    if (!oryAccount) {
+      return { ...token, error: 'InvalidOryAccount' }
+    }
+
+    return buildSignInToken(token, oryAccount, profile)
   }
 
   // Once a refresh has failed we stop retrying. The dead token (cleared
@@ -88,7 +114,10 @@ export async function resolveOryJwt(params: {
 
 // Implements the Auth.js `session` callback: project the persisted token fields
 // onto the session the rest of the app reads.
-export function applyTokenToSession(session: Session, token: JWT): Session {
+export function projectOryJwtToAuthJsSession({
+  session,
+  token,
+}: OryAuthJsSessionInput) {
   session.user.id = token.sub ?? session.user.id
   session.accessToken = token.accessToken
   session.idToken = token.idToken
@@ -101,10 +130,10 @@ export function applyTokenToSession(session: Session, token: JWT): Session {
 // identity id. Clears any RefreshTokenError carried over from a previously
 // poisoned cookie so the new session starts clean.
 async function buildSignInToken(
-  token: JWT,
-  account: Account,
-  profile?: Profile
-): Promise<JWT> {
+  token: OryAuthJsJwt,
+  account: OryAuthJsAccount,
+  profile: OryAuthJsJwtInput['profile']
+): Promise<OryAuthJsJwt> {
   return {
     ...token,
     accessToken: account.access_token,
@@ -123,31 +152,20 @@ async function buildSignInToken(
 // Kratos id without a per-request lookup. Returns undefined on failure; the
 // provider then falls back to a per-request lookup, so sign-in is never blocked.
 async function resolveKratosIdentityId(
-  token: JWT,
-  account: Account,
-  profile?: Profile
+  token: OryAuthJsJwt,
+  account: OryAuthJsAccount,
+  profile: OryAuthJsJwtInput['profile']
 ): Promise<string | undefined> {
-  const profileSub = typeof profile?.sub === 'string' ? profile.sub : undefined
-
   const identity = await resolveOryIdentity({
-    subjects: [profileSub, token.sub],
-    email: readEmailClaim(account),
+    subjects: [readOryProfileSubject(profile), token.sub],
+    email: readOryEmailClaim(account),
   })
 
   return identity?.id
 }
 
-function readEmailClaim(account: Account): string | undefined {
-  for (const jwt of [account.id_token, account.access_token]) {
-    if (typeof jwt !== 'string') continue
-    const email = readStringClaim(decodeJwtClaims(jwt), 'email')
-    if (email) return email
-  }
-  return undefined
-}
-
 async function prepareBootstrapFailureRedirect(
-  account?: Account | null
+  account?: { id_token?: string } | null
 ): Promise<string> {
   if (!account?.id_token) return ORY_BOOTSTRAP_FAILURE_FLOW_PATH
 
@@ -174,38 +192,9 @@ async function prepareBootstrapFailureRedirect(
 }
 
 function isAccessTokenExpiring(
-  token: JWT,
+  token: OryAuthJsJwt,
   nowSeconds: number = Math.floor(Date.now() / 1000)
 ): boolean {
   if (token.expiresAt == null) return false
   return nowSeconds > token.expiresAt - ACCESS_TOKEN_REFRESH_SKEW_SECONDS
-}
-
-declare module 'next-auth' {
-  interface Session {
-    accessToken?: string
-    idToken?: string
-    // Kratos identity id, resolved from the OIDC subject at sign-in. Differs
-    // from user.id (the OIDC subject / E2B user id) when the project customizes
-    // the OAuth2 subject.
-    identityId?: string
-    error?: string
-    user: {
-      id: string
-      email?: string | null
-      name?: string | null
-      image?: string | null
-    }
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    accessToken?: string
-    refreshToken?: string
-    idToken?: string
-    identityId?: string
-    expiresAt?: number | null
-    error?: string
-  }
 }
