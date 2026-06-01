@@ -2,6 +2,7 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import type { TitleSegment } from '@/configs/layout'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { usePageTitle } from '@/lib/hooks/use-page-title'
@@ -29,16 +30,18 @@ export default function TemplateTitleBinder({
     [template]
   )
 
-  usePageTitle(
-    [
+  const titleSegments = useMemo<TitleSegment[]>(
+    () => [
       {
         label: 'Templates',
         href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
       },
       { label: displayName },
     ],
-    displayName
+    [teamSlug, displayName]
   )
+
+  usePageTitle(titleSegments, displayName)
 
   return null
 }
