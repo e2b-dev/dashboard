@@ -13,6 +13,7 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
+import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 import { BuildLink } from '../build-link'
 import TagDeleteDialog from '../delete-dialog'
 import ReassignTagDialog from '../reassign-dialog'
@@ -60,9 +61,9 @@ export function TagHistoryHeader({
         <Badge
           variant="default"
           size="sm"
-          className="uppercase bg-fill pointer-events-none"
+          className="uppercase bg-fill max-w-full min-w-0 pointer-events-none"
         >
-          {tag}
+          <MiddleTruncate text={tag} />
         </Badge>
       </div>
 
