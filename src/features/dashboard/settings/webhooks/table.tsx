@@ -20,7 +20,7 @@ interface WebhooksTableProps {
 }
 
 const headerCellClassName =
-  'h-[17px] p-0 pb-0.5 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
+  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
 
 export const WebhooksTable = ({
   webhooks,
