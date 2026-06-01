@@ -13,6 +13,7 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
+import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 import { BuildLink } from './build-link'
 import TagDeleteDialog from './delete-dialog'
 import ReassignTagDialog from './reassign-dialog'
@@ -40,9 +41,7 @@ export function TagPillCell({ row }: CellContext<TagGroup, unknown>) {
       size="sm"
       className="uppercase bg-fill max-w-full min-w-0 shrink pointer-events-none"
     >
-      <span className="min-w-0 truncate [direction:rtl]">
-        {row.original.tag}
-      </span>
+      <MiddleTruncate text={row.original.tag} />
     </Badge>
   )
 }
