@@ -2,13 +2,55 @@ import 'server-only'
 
 import type { Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
+import { l } from '@/core/shared/clients/logger/logger'
+import { ensureOryUserBootstrapped } from './bootstrap'
 import { resolveOryIdentity } from './find-identity'
 import { decodeJwtClaims, readStringClaim } from './jwt-claims'
 import { refreshOryToken } from './refresh-token'
+import { ORY_SIGN_OUT_FLOW_PATH } from './signout'
 
 // Refresh the access token slightly before it actually expires so we never hand
 // a token that dies mid-request to downstream APIs.
 const ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 60
+
+// Implements the Auth.js `signIn` callback. This is intentionally a callback,
+// not an event: returning a URL here denies the sign-in before Auth.js finalizes
+// the session cookie, then routes through our sign-out flow to clear any prior
+// app/Ory session state.
+export async function allowOrySignIn(params: {
+  account?: Account | null
+  profile?: Profile
+}): Promise<boolean | string> {
+  const { account } = params
+
+  if (!account?.access_token) {
+    l.error(
+      {
+        key: 'auth_callbacks:sign_in:missing_access_token',
+        context: { provider: account?.provider ?? null },
+      },
+      'Ory sign-in missing access token; denying sign-in'
+    )
+    return ORY_SIGN_OUT_FLOW_PATH
+  }
+
+  const bootstrapped = await ensureOryUserBootstrapped({
+    accessToken: account.access_token,
+    idToken: account.id_token,
+    provider: account.provider,
+  })
+
+  if (bootstrapped) return true
+
+  l.error(
+    {
+      key: 'auth_callbacks:sign_in:bootstrap_failed',
+      context: { provider: account.provider },
+    },
+    'Ory user bootstrap could not be confirmed; denying sign-in'
+  )
+  return ORY_SIGN_OUT_FLOW_PATH
+}
 
 // Implements the Auth.js `jwt` callback: mint the token on fresh sign-in,
 // otherwise refresh it as it nears expiry.

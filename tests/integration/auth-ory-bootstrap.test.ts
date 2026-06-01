@@ -8,6 +8,7 @@ const loggerMocks = vi.hoisted(() => ({
 }))
 
 const apiPostMock = vi.hoisted(() => vi.fn())
+const resolveUserTeamMock = vi.hoisted(() => vi.fn())
 const originalDashboardApiAdminToken = process.env.DASHBOARD_API_ADMIN_TOKEN
 
 function jwt(claims: Record<string, unknown>) {
@@ -35,7 +36,13 @@ vi.mock('@/core/shared/clients/api', () => ({
   },
 }))
 
-const { bootstrapOryUser } = await import('@/core/server/auth/ory/bootstrap')
+vi.mock('@/core/server/functions/team/resolve-user-team', () => ({
+  resolveUserTeam: resolveUserTeamMock,
+}))
+
+const { bootstrapOryUser, ensureOryUserBootstrapped } = await import(
+  '@/core/server/auth/ory/bootstrap'
+)
 
 describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
   beforeEach(() => {
@@ -43,6 +50,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
     loggerMocks.error.mockClear()
     loggerMocks.warn.mockClear()
     apiPostMock.mockReset()
+    resolveUserTeamMock.mockReset()
   })
 
   afterEach(() => {
@@ -56,7 +64,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
       response: { ok: true, status: 200, statusText: 'OK' },
     })
 
-    await bootstrapOryUser({
+    const result = await bootstrapOryUser({
       accessToken: jwt({
         iss: 'https://ory.example.test',
         sub: 'access-token-sub',
@@ -66,6 +74,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
       provider: 'ory',
     })
 
+    expect(result).toBe(true)
     expect(apiPostMock).toHaveBeenCalledTimes(1)
     expect(apiPostMock).toHaveBeenCalledWith('/admin/users/bootstrap', {
       body: {
@@ -86,7 +95,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
       response: { ok: true, status: 200, statusText: 'OK' },
     })
 
-    await bootstrapOryUser({
+    const result = await bootstrapOryUser({
       accessToken: jwt({
         iss: 'https://ory.example.test',
         sub: 'access-token-sub',
@@ -100,6 +109,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
       provider: 'ory',
     })
 
+    expect(result).toBe(true)
     expect(apiPostMock).toHaveBeenCalledWith('/admin/users/bootstrap', {
       body: {
         oidc_issuer: 'https://ory.example.test',
@@ -112,7 +122,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
   })
 
   it('skips the bootstrap call and logs when iss is missing', async () => {
-    await bootstrapOryUser({
+    const result = await bootstrapOryUser({
       accessToken: jwt({
         sub: 'access-token-sub',
         email: 'user@example.com',
@@ -120,6 +130,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
       provider: 'ory',
     })
 
+    expect(result).toBe(false)
     expect(apiPostMock).not.toHaveBeenCalled()
     expect(loggerMocks.error).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -151,7 +162,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
         }),
         provider: 'ory',
       })
-    ).resolves.toBeUndefined()
+    ).resolves.toBe(false)
 
     expect(loggerMocks.error).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -177,7 +188,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
           email: 'user@example.com',
         }),
       })
-    ).resolves.toBeUndefined()
+    ).resolves.toBe(false)
 
     expect(loggerMocks.error).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -186,5 +197,66 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
       }),
       expect.stringContaining('threw unexpected exception')
     )
+  })
+
+  it('skips dashboard-api bootstrap when the user already resolves to a team', async () => {
+    resolveUserTeamMock.mockResolvedValue({ id: 'team-1', slug: 'team-1' })
+
+    const result = await ensureOryUserBootstrapped({
+      accessToken: jwt({
+        iss: 'https://ory.example.test',
+        sub: 'access-token-sub',
+        email: 'user@example.com',
+      }),
+      provider: 'ory',
+    })
+
+    expect(result).toBe(true)
+    expect(resolveUserTeamMock).toHaveBeenCalledWith(
+      'access-token-sub',
+      expect.any(String)
+    )
+    expect(apiPostMock).not.toHaveBeenCalled()
+  })
+
+  it('bootstraps through dashboard-api when no user team resolves', async () => {
+    resolveUserTeamMock.mockResolvedValue(null)
+    apiPostMock.mockResolvedValue({
+      data: { id: 'team-1', slug: 'team-1' },
+      error: null,
+      response: { ok: true, status: 200, statusText: 'OK' },
+    })
+
+    const result = await ensureOryUserBootstrapped({
+      accessToken: jwt({
+        iss: 'https://ory.example.test',
+        sub: 'access-token-sub',
+        email: 'user@example.com',
+      }),
+      provider: 'ory',
+    })
+
+    expect(result).toBe(true)
+    expect(apiPostMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns false when no user team resolves and bootstrap fails', async () => {
+    resolveUserTeamMock.mockResolvedValue(null)
+    apiPostMock.mockResolvedValue({
+      data: null,
+      error: { status: 503, message: 'dashboard-api unavailable' },
+      response: { ok: false, status: 503, statusText: 'Service Unavailable' },
+    })
+
+    const result = await ensureOryUserBootstrapped({
+      accessToken: jwt({
+        iss: 'https://ory.example.test',
+        sub: 'access-token-sub',
+        email: 'user@example.com',
+      }),
+      provider: 'ory',
+    })
+
+    expect(result).toBe(false)
   })
 })

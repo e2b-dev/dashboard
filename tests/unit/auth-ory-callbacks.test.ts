@@ -4,16 +4,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const resolveIdentityMock = vi.hoisted(() => vi.fn())
 const refreshOryTokenMock = vi.hoisted(() => vi.fn())
+const ensureBootstrappedMock = vi.hoisted(() => vi.fn())
+const loggerMocks = vi.hoisted(() => ({
+  error: vi.fn(),
+  warn: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+}))
 
 vi.mock('@/core/server/auth/ory/find-identity', () => ({
   resolveOryIdentity: resolveIdentityMock,
+}))
+
+vi.mock('@/core/server/auth/ory/bootstrap', () => ({
+  ensureOryUserBootstrapped: ensureBootstrappedMock,
 }))
 
 vi.mock('@/core/server/auth/ory/refresh-token', () => ({
   refreshOryToken: refreshOryTokenMock,
 }))
 
-const { resolveOryJwt, applyTokenToSession } = await import(
+vi.mock('@/core/shared/clients/logger/logger', () => ({
+  l: loggerMocks,
+}))
+
+const { allowOrySignIn, resolveOryJwt, applyTokenToSession } = await import(
   '@/core/server/auth/ory/auth-callbacks'
 )
 
@@ -26,6 +41,68 @@ function makeJwt(claims: Record<string, unknown>): string {
 }
 
 const nowSeconds = Math.floor(Date.now() / 1000)
+
+describe('allowOrySignIn', () => {
+  beforeEach(() => {
+    ensureBootstrappedMock.mockReset()
+    loggerMocks.error.mockClear()
+  })
+
+  it('allows sign-in when dashboard bootstrap is confirmed', async () => {
+    ensureBootstrappedMock.mockResolvedValue(true)
+
+    const result = await allowOrySignIn({
+      account: {
+        provider: 'ory',
+        type: 'oidc',
+        providerAccountId: 'x',
+        access_token: 'at',
+        id_token: 'it',
+      },
+    })
+
+    expect(result).toBe(true)
+    expect(ensureBootstrappedMock).toHaveBeenCalledWith({
+      accessToken: 'at',
+      idToken: 'it',
+      provider: 'ory',
+    })
+  })
+
+  it('redirects to sign-out flow when bootstrap cannot be confirmed', async () => {
+    ensureBootstrappedMock.mockResolvedValue(false)
+
+    const result = await allowOrySignIn({
+      account: {
+        provider: 'ory',
+        type: 'oidc',
+        providerAccountId: 'x',
+        access_token: 'at',
+      },
+    })
+
+    expect(result).toBe('/api/auth/oauth/signout-flow')
+    expect(loggerMocks.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'auth_callbacks:sign_in:bootstrap_failed',
+      }),
+      expect.stringContaining('could not be confirmed')
+    )
+  })
+
+  it('redirects to sign-out flow when Auth.js provides no access token', async () => {
+    const result = await allowOrySignIn({
+      account: {
+        provider: 'ory',
+        type: 'oidc',
+        providerAccountId: 'x',
+      },
+    })
+
+    expect(result).toBe('/api/auth/oauth/signout-flow')
+    expect(ensureBootstrappedMock).not.toHaveBeenCalled()
+  })
+})
 
 describe('resolveOryJwt', () => {
   beforeEach(() => {

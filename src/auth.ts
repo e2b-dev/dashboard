@@ -1,10 +1,10 @@
 import NextAuth from 'next-auth'
 import OryHydra from 'next-auth/providers/ory-hydra'
 import {
+  allowOrySignIn,
   applyTokenToSession,
   resolveOryJwt,
 } from '@/core/server/auth/ory/auth-callbacks'
-import { bootstrapOryUser } from '@/core/server/auth/ory/bootstrap'
 
 const oryOAuth2Audience = process.env.ORY_OAUTH2_AUDIENCE
 
@@ -35,18 +35,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    signIn: ({ account, profile }) => allowOrySignIn({ account, profile }),
     jwt: ({ token, account, profile }) =>
       resolveOryJwt({ token, account, profile }),
     session: ({ session, token }) => applyTokenToSession(session, token),
-  },
-  events: {
-    async signIn({ account }) {
-      if (!account?.access_token) return
-      await bootstrapOryUser({
-        accessToken: account.access_token,
-        idToken: account.id_token,
-        provider: account.provider,
-      })
-    },
   },
 })
