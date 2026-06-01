@@ -24,14 +24,7 @@ export default function TemplateDetailHeader({
   const trpc = useTRPC()
 
   const { data } = useSuspenseQuery(
-    trpc.templates.getTemplate.queryOptions(
-      { teamSlug, templateId },
-      {
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-      }
-    )
+    trpc.templates.getTemplate.queryOptions({ teamSlug, templateId })
   )
 
   const template = data.template
