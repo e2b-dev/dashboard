@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
 import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cells'
+import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { useTRPC } from '@/trpc/client'
 import { Loader } from '@/ui/primitives/loader'
 import RollbackTagDialog, { type RollbackSurface } from '../rollback-dialog'
@@ -55,10 +56,7 @@ export default function TagHistoryView({
   )
 
   const templateName = useMemo(
-    () =>
-      templateData.template.names.find((n) => !n.includes('/')) ??
-      templateData.template.names[0] ??
-      templateData.template.templateID,
+    () => getTemplateDisplayName(templateData.template),
     [templateData]
   )
 

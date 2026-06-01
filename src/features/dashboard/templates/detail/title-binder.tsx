@@ -3,6 +3,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { usePageTitle } from '@/lib/hooks/use-page-title'
 import { useTRPC } from '@/trpc/client'
 
@@ -23,10 +24,10 @@ export default function TemplateTitleBinder({
 
   const template = data.template
 
-  const displayName = useMemo(() => {
-    const noSlash = template.names.find((n) => !n.includes('/'))
-    return noSlash ?? template.names[0] ?? template.templateID
-  }, [template.names, template.templateID])
+  const displayName = useMemo(
+    () => getTemplateDisplayName(template),
+    [template]
+  )
 
   usePageTitle(
     [
