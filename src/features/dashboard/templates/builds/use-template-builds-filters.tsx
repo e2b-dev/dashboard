@@ -10,7 +10,6 @@ import { useCallback, useMemo } from 'react'
 import { INITIAL_BUILD_STATUSES } from '@/core/modules/builds/constants'
 import type { BuildStatus } from '@/core/modules/builds/models'
 
-// 'q' applies client-side over the already-templateID-scoped builds list — see BuildsTable.
 const templateScopedFilterParams = {
   statuses: parseAsArrayOf(
     parseAsStringEnum<BuildStatus>(['building', 'failed', 'success'])

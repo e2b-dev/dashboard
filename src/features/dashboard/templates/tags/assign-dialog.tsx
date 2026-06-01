@@ -137,9 +137,7 @@ export default function AssignTagDialog({
 
   const handleOpenChange = (next: boolean) => {
     if (mutation.isPending) return
-    // Reset before opening so the dialog mounts with clean state. Don't reset
-    // on close — the dialog stays mounted during its exit animation and any
-    // visible body swap (e.g. success → idle form) would flicker through.
+    // Reset on open only; resetting on close would flicker through the exit animation.
     if (next && !open) resetState()
     setOpen(next)
   }

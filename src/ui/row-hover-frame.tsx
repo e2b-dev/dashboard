@@ -5,18 +5,9 @@ interface RowHoverFrameProps {
 }
 
 /**
- * Decorative hover frame for table rows. Place as a child of a row that
- * carries `group/row` and `relative`.
- *
- * Defaults:
- *  - 12px horizontal bleed, 1px vertical bleed
- *  - visible on `group-hover/row` and `group-focus-visible/row`
- *  - corner marks driven by `--corner-mark-color` (transparent until lit)
- *
- * Extend by passing className with Tailwind utilities. To override the
- * corner colour with a non-default trigger, prefix with `!` so it wins
- * against the variant-prefixed defaults (twMerge can't always reconcile
- * arbitrary CSS-variable assignments).
+ * Decorative hover frame for table rows. Parent row must carry `group/row` and `relative`.
+ * Corner marks light via `--corner-mark-color` on hover/focus-visible.
+ * Override the corner colour for custom triggers with a `!`-prefixed utility so it beats the variant defaults.
  */
 export function RowHoverFrame({ className }: RowHoverFrameProps) {
   return (

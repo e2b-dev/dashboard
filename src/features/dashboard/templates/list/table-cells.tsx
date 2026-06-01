@@ -252,7 +252,6 @@ export function TemplateNameCell({
   const nameValue = (primaryName as string) ?? '--'
 
   const isDefault = 'isDefault' in template && template.isDefault
-  // Default (E2B) templates have no detail page; render as plain text.
   const isLinkable = !isDefault && nameValue !== '--'
 
   const handleCopy = (e: React.MouseEvent) => {

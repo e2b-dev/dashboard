@@ -25,11 +25,6 @@ interface TagDeleteDialogProps {
   teamSlug: string
   templateId: string
   templateName: string
-  /**
-   * Optional hook called after the success toast fires, before the dialog closes
-   * and `getTagGroups` is invalidated. Used by surfaces that need to navigate
-   * away (e.g. the tag-history page redirects back to the Tags list).
-   */
   onDeleted?: () => void | Promise<void>
 }
 

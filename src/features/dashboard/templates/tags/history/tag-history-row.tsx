@@ -8,34 +8,12 @@ import { BuildLink } from '../build-link'
 
 interface TagHistoryRowProps {
   assignment: TemplateTagAssignment
-  /** Current build for this tag. Used to detect the no-op "rollback to current" case. */
   primaryAssignment: TemplateTagAssignment
   teamSlug: string
   templateId: string
-  /**
-   * Asks the parent to open the rollback dialog with this assignment as
-   * the target. The dialog lives at a stable parent (the GroupSection or
-   * TagHistoryView) so it doesn't get destroyed when this row unmounts
-   * after a successful rollback shuffles the assignments list.
-   */
   onRequestRollback: (target: TemplateTagAssignment) => void
 }
 
-/**
- * Single historical assignment row, shared between:
- * - the collapsed history under a tag group in `tags/table.tsx`
- * - the full-history page at `tags/[tag]`
- *
- * The row is purely presentational. It owns no rollback state and no
- * dialog. When the user activates the row (click / Enter / Space) it asks
- * the parent to open the rollback dialog with this row's assignment as
- * the target. The parent's dialog stays mounted across data refetches,
- * which is essential because after a successful rollback the parent's
- * `assignments` list shuffles and this row is destroyed.
- *
- * When the row already represents the current build, it's non-
- * interactive — rolling back to the current build is a no-op.
- */
 export function TagHistoryRow({
   assignment,
   primaryAssignment,

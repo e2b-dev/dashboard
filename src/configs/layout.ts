@@ -89,15 +89,13 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
-  // Pathname fallback; usePageTitle replaces with the friendly template name once data loads.
   '/dashboard/*/templates/*/overview': (pathname) =>
     templateDetailLayoutConfig(pathname),
   '/dashboard/*/templates/*/tags': (pathname) =>
     templateDetailLayoutConfig(pathname),
-  // Tag history page lives under (detail-tabs); same chrome as the parent tags tab.
   '/dashboard/*/templates/*/tags/*': (pathname) =>
     templateDetailLayoutConfig(pathname),
-  // Distinct from /templates/*/builds/* (build detail) — keep the more specific glob earlier.
+  // Keep this more specific glob ahead of /templates/*/builds/* (build detail).
   '/dashboard/*/templates/*/builds': (pathname) =>
     templateDetailLayoutConfig(pathname),
 
@@ -174,6 +172,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   }),
 }
 
+// Pathname fallback for detail tabs; usePageTitle replaces with the friendly template name once data loads.
 function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
   const parts = pathname.split('/')
   const teamSlug = parts[2]!
@@ -183,7 +182,6 @@ function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
       ? `${templateId.slice(0, 6)}...${templateId.slice(-6)}`
       : templateId
 
-  // No `includeHeaderBottomStyles` — tabs row sits flush below the title bar.
   return {
     title: [
       {
