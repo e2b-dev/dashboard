@@ -4,7 +4,7 @@ import {
   allowOrySignIn,
   applyTokenToSession,
   resolveOryJwt,
-} from '@/core/server/auth/ory/auth-callbacks'
+} from '@/core/server/auth/ory/authjs-callbacks'
 
 const oryOAuth2Audience = process.env.ORY_OAUTH2_AUDIENCE
 

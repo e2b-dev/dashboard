@@ -8,7 +8,7 @@ const loggerMocks = vi.hoisted(() => ({
 }))
 
 const apiPostMock = vi.hoisted(() => vi.fn())
-const resolveUserTeamMock = vi.hoisted(() => vi.fn())
+const listUserTeamsMock = vi.hoisted(() => vi.fn())
 const originalDashboardApiAdminToken = process.env.DASHBOARD_API_ADMIN_TOKEN
 
 function jwt(claims: Record<string, unknown>) {
@@ -36,21 +36,23 @@ vi.mock('@/core/shared/clients/api', () => ({
   },
 }))
 
-vi.mock('@/core/server/functions/team/resolve-user-team', () => ({
-  resolveUserTeam: resolveUserTeamMock,
+vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
+  createUserTeamsRepository: vi.fn(() => ({
+    listUserTeams: listUserTeamsMock,
+  })),
 }))
 
 const { bootstrapOryUser, ensureOryUserBootstrapped } = await import(
-  '@/core/server/auth/ory/bootstrap'
+  '@/core/server/auth/ory/dashboard-bootstrap'
 )
 
-describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
+describe('dashboard bootstrap for Ory users', () => {
   beforeEach(() => {
     process.env.DASHBOARD_API_ADMIN_TOKEN = 'admin-token'
     loggerMocks.error.mockClear()
     loggerMocks.warn.mockClear()
     apiPostMock.mockReset()
-    resolveUserTeamMock.mockReset()
+    listUserTeamsMock.mockReset()
   })
 
   afterEach(() => {
@@ -200,7 +202,10 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
   })
 
   it('skips dashboard-api bootstrap when the user already resolves to a team', async () => {
-    resolveUserTeamMock.mockResolvedValue({ id: 'team-1', slug: 'team-1' })
+    listUserTeamsMock.mockResolvedValue({
+      ok: true,
+      data: [{ id: 'team-1', slug: 'team-1', isDefault: true }],
+    })
 
     const result = await ensureOryUserBootstrapped({
       accessToken: jwt({
@@ -212,15 +217,12 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
     })
 
     expect(result).toBe(true)
-    expect(resolveUserTeamMock).toHaveBeenCalledWith(
-      'access-token-sub',
-      expect.any(String)
-    )
+    expect(listUserTeamsMock).toHaveBeenCalledTimes(1)
     expect(apiPostMock).not.toHaveBeenCalled()
   })
 
   it('bootstraps through dashboard-api when no user team resolves', async () => {
-    resolveUserTeamMock.mockResolvedValue(null)
+    listUserTeamsMock.mockResolvedValue({ ok: true, data: [] })
     apiPostMock.mockResolvedValue({
       data: { id: 'team-1', slug: 'team-1' },
       error: null,
@@ -241,7 +243,7 @@ describe('bootstrapOryUser (Auth.js events.signIn handler)', () => {
   })
 
   it('returns false when no user team resolves and bootstrap fails', async () => {
-    resolveUserTeamMock.mockResolvedValue(null)
+    listUserTeamsMock.mockResolvedValue({ ok: true, data: [] })
     apiPostMock.mockResolvedValue({
       data: null,
       error: { status: 503, message: 'dashboard-api unavailable' },

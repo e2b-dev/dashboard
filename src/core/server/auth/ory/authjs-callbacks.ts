@@ -1,22 +1,29 @@
 import 'server-only'
 
+import { cookies } from 'next/headers'
 import type { Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
-import { l } from '@/core/shared/clients/logger/logger'
-import { ensureOryUserBootstrapped } from './bootstrap'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { ensureOryUserBootstrapped } from './dashboard-bootstrap'
 import { resolveOryIdentity } from './find-identity'
 import { decodeJwtClaims, readStringClaim } from './jwt-claims'
 import { refreshOryToken } from './refresh-token'
-import { ORY_SIGN_OUT_FLOW_PATH } from './signout'
+import {
+  ORY_BOOTSTRAP_FAILURE_FLOW_PATH,
+  ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE,
+} from './signout'
 
 // Refresh the access token slightly before it actually expires so we never hand
 // a token that dies mid-request to downstream APIs.
 const ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 60
 
+const BOOTSTRAP_FAILURE_COOKIE_MAX_AGE_SECONDS = 60
+
 // Implements the Auth.js `signIn` callback. This is intentionally a callback,
 // not an event: returning a URL here denies the sign-in before Auth.js finalizes
-// the session cookie, then routes through our sign-out flow to clear any prior
-// app/Ory session state.
+// the new session cookie. On failure, we hand the id_token to a local route via
+// a short-lived httpOnly cookie so that route can perform Ory RP-initiated
+// logout in the browser.
 export async function allowOrySignIn(params: {
   account?: Account | null
   profile?: Profile
@@ -31,7 +38,7 @@ export async function allowOrySignIn(params: {
       },
       'Ory sign-in missing access token; denying sign-in'
     )
-    return ORY_SIGN_OUT_FLOW_PATH
+    return prepareBootstrapFailureRedirect(account)
   }
 
   const bootstrapped = await ensureOryUserBootstrapped({
@@ -49,7 +56,7 @@ export async function allowOrySignIn(params: {
     },
     'Ory user bootstrap could not be confirmed; denying sign-in'
   )
-  return ORY_SIGN_OUT_FLOW_PATH
+  return prepareBootstrapFailureRedirect(account)
 }
 
 // Implements the Auth.js `jwt` callback: mint the token on fresh sign-in,
@@ -137,6 +144,33 @@ function readEmailClaim(account: Account): string | undefined {
     if (email) return email
   }
   return undefined
+}
+
+async function prepareBootstrapFailureRedirect(
+  account?: Account | null
+): Promise<string> {
+  if (!account?.id_token) return ORY_BOOTSTRAP_FAILURE_FLOW_PATH
+
+  try {
+    const cookieStore = await cookies()
+    cookieStore.set(ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE, account.id_token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: BOOTSTRAP_FAILURE_COOKIE_MAX_AGE_SECONDS,
+      secure: process.env.NODE_ENV === 'production',
+    })
+  } catch (error) {
+    l.warn(
+      {
+        key: 'auth_callbacks:sign_in:bootstrap_failure_cookie_error',
+        error: serializeErrorForLog(error),
+      },
+      'Failed to persist Ory bootstrap-failure logout handoff cookie'
+    )
+  }
+
+  return ORY_BOOTSTRAP_FAILURE_FLOW_PATH
 }
 
 function isAccessTokenExpiring(

@@ -1,6 +1,5 @@
 import 'server-only'
 
-import type { Identity, IdentityCredentials } from '@ory/client-fetch'
 import type { Session } from 'next-auth'
 import { auth as authjs } from '@/auth'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -15,7 +14,7 @@ import type {
 } from '../types'
 import { buildOryStartURL } from './build-start-url'
 import {
-  type OryIdentityCredentialInclude,
+  ACCOUNT_IDENTITY_CREDENTIALS,
   resolveOryIdentity,
 } from './find-identity'
 import { oryAuthFlows } from './flows'
@@ -27,10 +26,6 @@ import { ORY_SIGN_OUT_FLOW_PATH } from './signout'
 // Where the account-settings page expects to land after a forced re-auth so it
 // reveals the password form (matches the Supabase ?reauth=1 contract).
 const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
-const PROFILE_IDENTITY_CREDENTIALS = [
-  'password',
-  'oidc',
-] satisfies OryIdentityCredentialInclude[]
 
 export const oryAuthProvider: AuthProvider = {
   async getAuthContext() {
@@ -70,21 +65,8 @@ export const oryAuthProvider: AuthProvider = {
     const identity = await resolveOryIdentity({
       subjects: [session.identityId, session.user.id],
       email: session.user.email,
-      includeCredential: PROFILE_IDENTITY_CREDENTIALS,
+      includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
     })
-
-    l.debug(
-      {
-        key: 'auth_provider:ory_get_user_profile:identity',
-        user_id: session.user.id,
-        context: {
-          session_identity_id: session.identityId ?? null,
-          session_user_email: session.user.email ?? null,
-          identity: identity ? summarizeIdentityForLog(identity) : null,
-        },
-      },
-      'resolved Ory identity for dashboard user profile'
-    )
 
     return identity ? fromOryIdentity(identity) : null
   },
@@ -172,92 +154,4 @@ async function readSession(): Promise<Session | null> {
     )
     return null
   }
-}
-
-function summarizeIdentityForLog(identity: Identity) {
-  const traits = (identity.traits ?? {}) as Record<string, unknown>
-
-  return {
-    id: identity.id,
-    external_id: identity.external_id ?? null,
-    schema_id: identity.schema_id,
-    state: identity.state ?? null,
-    traits: {
-      email: readTraitString(traits, 'email'),
-      name: readTraitString(traits, 'name'),
-      keys: Object.keys(traits),
-    },
-    credential_keys: Object.keys(identity.credentials ?? {}),
-    credentials: summarizeCredentialsForLog(identity.credentials),
-  }
-}
-
-function summarizeCredentialsForLog(credentials: Identity['credentials']) {
-  if (!credentials) return null
-
-  return {
-    password_credential: summarizeCredentialForLog(credentials.password),
-    oidc_credential: summarizeCredentialForLog(credentials.oidc),
-    other_credential_keys: Object.keys(credentials).filter(
-      (key) => key !== 'password' && key !== 'oidc'
-    ),
-  }
-}
-
-function summarizeCredentialForLog(
-  credential: IdentityCredentials | undefined
-) {
-  if (!credential) return null
-
-  const config = credential.config as Record<string, unknown> | undefined
-
-  return {
-    type: credential.type ?? null,
-    identifiers: credential.identifiers ?? [],
-    has_config: !!config,
-    config_keys: config ? Object.keys(config) : [],
-    has_hashed_password:
-      typeof config?.hashed_password === 'string' &&
-      config.hashed_password !== '',
-    uses_password_migration_hook: config?.use_password_migration_hook === true,
-    oidc_providers: readOidcProvidersForLog(config),
-  }
-}
-
-function readOidcProvidersForLog(config: Record<string, unknown> | undefined) {
-  const providers = config?.providers
-  if (!Array.isArray(providers)) return []
-
-  return providers
-    .filter(
-      (provider): provider is Record<string, unknown> =>
-        provider !== null && typeof provider === 'object'
-    )
-    .map((provider) => ({
-      provider: readTraitString(provider, 'provider'),
-      organization: readTraitString(provider, 'organization'),
-      has_subject:
-        typeof provider.subject === 'string' && provider.subject !== '',
-      use_auto_link:
-        typeof provider.use_auto_link === 'boolean'
-          ? provider.use_auto_link
-          : null,
-      has_initial_access_token:
-        typeof provider.initial_access_token === 'string' &&
-        provider.initial_access_token !== '',
-      has_initial_id_token:
-        typeof provider.initial_id_token === 'string' &&
-        provider.initial_id_token !== '',
-      has_initial_refresh_token:
-        typeof provider.initial_refresh_token === 'string' &&
-        provider.initial_refresh_token !== '',
-    }))
-}
-
-function readTraitString(
-  source: Record<string, unknown>,
-  field: string
-): string | null {
-  const value = source[field]
-  return typeof value === 'string' && value.length > 0 ? value : null
 }

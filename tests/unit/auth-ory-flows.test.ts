@@ -46,10 +46,11 @@ describe('oryAuthFlows.updateUser', () => {
   })
 
   it('patches only the provided traits and returns the mapped user', async () => {
-    patchIdentityMock.mockResolvedValue({
+    patchIdentityMock.mockResolvedValue({})
+    getIdentityMock.mockResolvedValue({
       id: 'identity-1',
       traits: { email: 'new@example.test', name: 'Ada' },
-      credentials: { password: {} },
+      credentials: { password: { config: { hashed_password: 'hash' } } },
     })
 
     const result = await oryAuthFlows.updateUser({
@@ -65,6 +66,10 @@ describe('oryAuthFlows.updateUser', () => {
         { op: 'replace', path: '/traits/email', value: 'new@example.test' },
       ],
     })
+    expect(getIdentityMock).toHaveBeenCalledWith({
+      id: 'identity-1',
+      includeCredential: ['password', 'oidc'],
+    })
     expect(result).toEqual({
       ok: true,
       user: expect.objectContaining({
@@ -78,18 +83,20 @@ describe('oryAuthFlows.updateUser', () => {
   })
 
   it('sets the password via updateIdentity (import path) so Kratos hashes it', async () => {
-    getIdentityMock.mockResolvedValue({
-      id: 'identity-1',
-      schema_id: 'default',
-      state: 'active',
-      traits: { email: 'a@b.test', name: 'Ada' },
-      external_id: 'legacy-id',
-    })
-    updateIdentityMock.mockResolvedValue({
-      id: 'identity-1',
-      traits: { email: 'a@b.test' },
-      credentials: { password: {} },
-    })
+    getIdentityMock
+      .mockResolvedValueOnce({
+        id: 'identity-1',
+        schema_id: 'default',
+        state: 'active',
+        traits: { email: 'a@b.test', name: 'Ada' },
+        external_id: 'legacy-id',
+      })
+      .mockResolvedValueOnce({
+        id: 'identity-1',
+        traits: { email: 'a@b.test' },
+        credentials: { password: { config: { hashed_password: 'hash' } } },
+      })
+    updateIdentityMock.mockResolvedValue({})
 
     await oryAuthFlows.updateUser({
       identityId: 'identity-1',
@@ -107,6 +114,10 @@ describe('oryAuthFlows.updateUser', () => {
         traits: { email: 'a@b.test', name: 'Ada' },
         credentials: { password: { config: { password: 'super-secret' } } },
       }),
+    })
+    expect(getIdentityMock).toHaveBeenLastCalledWith({
+      id: 'identity-1',
+      includeCredential: ['password', 'oidc'],
     })
   })
 

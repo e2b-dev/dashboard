@@ -35,6 +35,11 @@ export type ResolveOryIdentityInput = {
 export type OryIdentityCredentialInclude = GetIdentityIncludeCredentialEnum &
   GetIdentityByExternalIDIncludeCredentialEnum
 
+export const ACCOUNT_IDENTITY_CREDENTIALS = [
+  'password',
+  'oidc',
+] satisfies OryIdentityCredentialInclude[]
+
 export async function resolveOryIdentity(
   input: ResolveOryIdentityInput
 ): Promise<Identity | null> {

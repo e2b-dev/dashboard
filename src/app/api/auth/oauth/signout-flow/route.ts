@@ -4,11 +4,11 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { auth, signOut } from '@/auth'
 import { revokeKratosSessionsForIdentity } from '@/core/server/auth/ory/kratos-session'
+import {
+  buildOryLogoutUrl,
+  ORY_POST_LOGOUT_PATH,
+} from '@/core/server/auth/ory/signout'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-
-// lands users on the marketing root instead of /sign-in so they don't get
-// bounced straight back to the Ory-hosted login UI after signing out.
-const ORY_POST_LOGOUT_PATH = '/'
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin
@@ -48,19 +48,10 @@ export async function GET(request: NextRequest) {
     await revokeKratosSessionsForIdentity(identityId)
   }
 
-  const sdkUrl = process.env.ORY_SDK_URL
-  if (!idToken || !sdkUrl) {
+  const logoutUrl = idToken ? buildOryLogoutUrl({ idToken, origin }) : null
+  if (!logoutUrl) {
     return NextResponse.redirect(postLogoutUrl)
   }
 
-  const hydraLogout = new URL(
-    `${sdkUrl.replace(/\/$/, '')}/oauth2/sessions/logout`
-  )
-  hydraLogout.searchParams.set('id_token_hint', idToken)
-  hydraLogout.searchParams.set(
-    'post_logout_redirect_uri',
-    postLogoutUrl.toString()
-  )
-
-  return NextResponse.redirect(hydraLogout.toString())
+  return NextResponse.redirect(logoutUrl.toString())
 }

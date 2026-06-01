@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { ADMIN_AUTH_HEADERS } from '@/configs/api'
-import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { api } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
@@ -35,8 +35,9 @@ export async function ensureOryUserBootstrapped(
   const claims = readBootstrapClaims(input)
   if (!claims) return false
 
-  const team = await resolveUserTeam(claims.oidcUserId, input.accessToken)
-  if (team) return true
+  if (await hasBootstrappedUserTeam(claims.oidcUserId, input.accessToken)) {
+    return true
+  }
 
   return bootstrapOryUserWithClaims(claims, input.provider)
 }
@@ -48,6 +49,27 @@ export async function bootstrapOryUser(
   if (!claims) return false
 
   return bootstrapOryUserWithClaims(claims, input.provider)
+}
+
+async function hasBootstrappedUserTeam(
+  userId: string,
+  accessToken: string
+): Promise<boolean> {
+  const userTeamsRepository = createUserTeamsRepository({ accessToken })
+  const teamsResult = await userTeamsRepository.listUserTeams()
+
+  if (!teamsResult.ok) {
+    l.error(
+      {
+        key: 'auth_events:bootstrap_user:team_check_error',
+        user_id: userId,
+      },
+      'Failed to check whether Ory user already has a dashboard team'
+    )
+    return false
+  }
+
+  return teamsResult.data.some((team) => Boolean(team.slug))
 }
 
 function readBootstrapClaims(

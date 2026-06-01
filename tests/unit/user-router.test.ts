@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTRPCContext } from '@/core/server/trpc/init'
 
 const providerMock = vi.hoisted(() => ({
@@ -35,7 +35,6 @@ const authUser = {
 
 describe('userRouter.update', () => {
   beforeEach(() => {
-    vi.stubEnv('AUTH_PROVIDER', 'ory')
     providerMock.getAuthContext.mockResolvedValue({
       user: authUser,
       accessToken: 'access-token',
@@ -44,11 +43,9 @@ describe('userRouter.update', () => {
     providerMock.updateUser.mockReset()
   })
 
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
+  it('denies email changes when the provider profile says they are not changeable', async () => {
+    providerMock.getUserProfile.mockResolvedValue(authUser)
 
-  it('denies email changes in Ory mode before updating the provider user', async () => {
     const ctx = await createTRPCContext({ headers: new Headers() })
     const caller = createCaller(ctx)
 
@@ -58,7 +55,7 @@ describe('userRouter.update', () => {
       status: 'error',
       code: 'account_credentials_not_changeable',
     })
-    expect(providerMock.getUserProfile).not.toHaveBeenCalled()
+    expect(providerMock.getUserProfile).toHaveBeenCalled()
     expect(providerMock.updateUser).not.toHaveBeenCalled()
   })
 })

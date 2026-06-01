@@ -8,6 +8,7 @@ import {
 import { l } from '@/core/shared/clients/logger/logger'
 import type { UpdateUserErrorCode, UpdateUserResult } from '../types'
 import { getOryIdentityApi } from './client'
+import { ACCOUNT_IDENTITY_CREDENTIALS } from './find-identity'
 import { fromOryIdentity } from './identity'
 import { isOryResponseError, readOryError } from './ory-error'
 
@@ -28,16 +29,27 @@ export const oryAuthFlows = {
     try {
       // A password change must go through updateIdentity (the credential import
       // path) — see setPassword. Trait-only changes use the lighter patch.
-      const identity =
-        password !== undefined
-          ? await setPassword(identityId, { name, email, password })
-          : await patchTraits(identityId, { name, email })
+      if (password !== undefined) {
+        await setPassword(identityId, { name, email, password })
+      } else {
+        await patchTraits(identityId, { name, email })
+      }
 
+      const identity = await getIdentityWithAccountCredentials(identityId)
       return { ok: true, user: fromOryIdentity(identity) }
     } catch (error) {
       return mapUpdateUserError(error, identityId)
     }
   },
+}
+
+async function getIdentityWithAccountCredentials(
+  identityId: string
+): Promise<Identity> {
+  return getOryIdentityApi().getIdentity({
+    id: identityId,
+    includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
+  })
 }
 
 // Kratos only hashes a cleartext password when it runs through the credential
@@ -52,11 +64,11 @@ export const oryAuthFlows = {
 async function setPassword(
   identityId: string,
   { name, email, password }: Omit<OryUpdateUserInput, 'identityId'>
-): Promise<Identity> {
+): Promise<void> {
   const api = getOryIdentityApi()
   const current = await api.getIdentity({ id: identityId })
 
-  return api.updateIdentity({
+  await api.updateIdentity({
     id: identityId,
     updateIdentityBody: {
       schema_id: current.schema_id,
@@ -73,15 +85,15 @@ async function setPassword(
 async function patchTraits(
   identityId: string,
   { name, email }: Pick<OryUpdateUserInput, 'name' | 'email'>
-): Promise<Identity> {
+): Promise<void> {
   const api = getOryIdentityApi()
   const jsonPatch = buildTraitPatches({ name, email })
 
   if (jsonPatch.length === 0) {
-    return api.getIdentity({ id: identityId })
+    return
   }
 
-  return api.patchIdentity({ id: identityId, jsonPatch })
+  await api.patchIdentity({ id: identityId, jsonPatch })
 }
 
 function mergeTraits(

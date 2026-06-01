@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const resolveIdentityMock = vi.hoisted(() => vi.fn())
 const refreshOryTokenMock = vi.hoisted(() => vi.fn())
 const ensureBootstrappedMock = vi.hoisted(() => vi.fn())
+const cookieSetMock = vi.hoisted(() => vi.fn())
 const loggerMocks = vi.hoisted(() => ({
   error: vi.fn(),
   warn: vi.fn(),
@@ -12,11 +13,15 @@ const loggerMocks = vi.hoisted(() => ({
   debug: vi.fn(),
 }))
 
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(() => Promise.resolve({ set: cookieSetMock })),
+}))
+
 vi.mock('@/core/server/auth/ory/find-identity', () => ({
   resolveOryIdentity: resolveIdentityMock,
 }))
 
-vi.mock('@/core/server/auth/ory/bootstrap', () => ({
+vi.mock('@/core/server/auth/ory/dashboard-bootstrap', () => ({
   ensureOryUserBootstrapped: ensureBootstrappedMock,
 }))
 
@@ -26,10 +31,11 @@ vi.mock('@/core/server/auth/ory/refresh-token', () => ({
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: loggerMocks,
+  serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
 const { allowOrySignIn, resolveOryJwt, applyTokenToSession } = await import(
-  '@/core/server/auth/ory/auth-callbacks'
+  '@/core/server/auth/ory/authjs-callbacks'
 )
 
 function makeJwt(claims: Record<string, unknown>): string {
@@ -45,7 +51,9 @@ const nowSeconds = Math.floor(Date.now() / 1000)
 describe('allowOrySignIn', () => {
   beforeEach(() => {
     ensureBootstrappedMock.mockReset()
+    cookieSetMock.mockReset()
     loggerMocks.error.mockClear()
+    loggerMocks.warn.mockClear()
   })
 
   it('allows sign-in when dashboard bootstrap is confirmed', async () => {
@@ -69,7 +77,7 @@ describe('allowOrySignIn', () => {
     })
   })
 
-  it('redirects to sign-out flow when bootstrap cannot be confirmed', async () => {
+  it('redirects to bootstrap-failed flow when bootstrap cannot be confirmed', async () => {
     ensureBootstrappedMock.mockResolvedValue(false)
 
     const result = await allowOrySignIn({
@@ -78,10 +86,16 @@ describe('allowOrySignIn', () => {
         type: 'oidc',
         providerAccountId: 'x',
         access_token: 'at',
+        id_token: 'id-token',
       },
     })
 
-    expect(result).toBe('/api/auth/oauth/signout-flow')
+    expect(result).toBe('/api/auth/oauth/bootstrap-failed')
+    expect(cookieSetMock).toHaveBeenCalledWith(
+      'e2b-ory-bootstrap-failed-id-token',
+      'id-token',
+      expect.objectContaining({ httpOnly: true, maxAge: 60 })
+    )
     expect(loggerMocks.error).toHaveBeenCalledWith(
       expect.objectContaining({
         key: 'auth_callbacks:sign_in:bootstrap_failed',
@@ -90,7 +104,7 @@ describe('allowOrySignIn', () => {
     )
   })
 
-  it('redirects to sign-out flow when Auth.js provides no access token', async () => {
+  it('redirects to bootstrap-failed flow when Auth.js provides no access token', async () => {
     const result = await allowOrySignIn({
       account: {
         provider: 'ory',
@@ -99,8 +113,9 @@ describe('allowOrySignIn', () => {
       },
     })
 
-    expect(result).toBe('/api/auth/oauth/signout-flow')
+    expect(result).toBe('/api/auth/oauth/bootstrap-failed')
     expect(ensureBootstrappedMock).not.toHaveBeenCalled()
+    expect(cookieSetMock).not.toHaveBeenCalled()
   })
 })
 
