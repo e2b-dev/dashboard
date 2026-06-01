@@ -58,7 +58,7 @@ export default function AssignTagDialog({
       { teamSlug, templateId, tag: normalizedDebouncedName },
       {
         enabled: open && hasValidShape,
-        staleTime: 30_000,
+        staleTime: 0,
         refetchOnWindowFocus: false,
       }
     )
@@ -115,8 +115,13 @@ export default function AssignTagDialog({
     if (name !== normalizedDebouncedName) return 'checking'
     if (!hasValidShape) return 'invalid'
     if (existsQuery.isFetching) return 'checking'
-    if (existsQuery.data?.exists) return 'exists'
-    return 'available'
+
+    const data = existsQuery.data
+    if (!data || data.normalizedTag !== normalizedDebouncedName) {
+      return 'checking'
+    }
+
+    return data.exists ? 'exists' : 'available'
   }, [name, normalizedDebouncedName, hasValidShape, existsQuery])
 
   const canSubmit =
@@ -146,8 +151,17 @@ export default function AssignTagDialog({
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!canSubmit || !selectedBuildId) return
-    const tagToSubmit =
-      existsQuery.data?.normalizedTag ?? normalizedDebouncedName
+
+    const data = existsQuery.data
+    if (
+      !data ||
+      data.normalizedTag !== normalizedDebouncedName ||
+      data.exists
+    ) {
+      return
+    }
+
+    const tagToSubmit = data.normalizedTag
     trackAssign('assign submitted', {
       via_search: selectionSource === 'search',
     })
