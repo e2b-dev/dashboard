@@ -10,8 +10,8 @@ import { Button } from '@/ui/primitives/button'
 import { AlertIcon, BuildIcon, SearchIcon } from '@/ui/primitives/icons'
 import { RadioGroup } from '@/ui/primitives/radio-group'
 import { Skeleton } from '@/ui/primitives/skeleton'
-import { isValidUuid } from './assign-dialog.helpers'
 import { BuildPickerRow } from './build-picker-row'
+import { isValidUuid } from './helpers'
 
 type BuildsQueryResult = {
   data?: { data: ListedBuildModel[]; nextCursor: string | null }

@@ -23,3 +23,16 @@ export function buildAssignTarget(
 ): string {
   return `${templateName}:${buildId}`
 }
+
+export type TagDialogStage = 'idle' | 'pending' | 'error' | 'success'
+
+export function tagDialogStageFromMutation(mutation: {
+  isPending: boolean
+  isError: boolean
+  isSuccess: boolean
+}): TagDialogStage {
+  if (mutation.isSuccess) return 'success'
+  if (mutation.isPending) return 'pending'
+  if (mutation.isError) return 'error'
+  return 'idle'
+}

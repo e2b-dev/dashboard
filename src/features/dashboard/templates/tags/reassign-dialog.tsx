@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import {
   Dialog,
@@ -11,11 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { CheckIcon } from '@/ui/primitives/icons'
 import { ArrowDivider } from './arrow-divider'
 import BuildPicker, { type BuildSelectionSource } from './build-picker'
+import {
+  TagDialogBuildRow,
+  TagDialogFooter,
+  TagDialogSuccess,
+} from './components'
+import { tagDialogStageFromMutation } from './helpers'
 import { trackTagTableInteraction } from './table-config'
-import { TagDialogFooter, type TagDialogStage } from './tag-dialog-footer'
 
 export type ReassignSurface = 'tags-tab' | 'history-header'
 
@@ -72,13 +75,7 @@ export default function ReassignTagDialog({
     })
   )
 
-  const stage: TagDialogStage = reassign.isSuccess
-    ? 'success'
-    : reassign.isPending
-      ? 'pending'
-      : reassign.isError
-        ? 'error'
-        : 'idle'
+  const stage = tagDialogStageFromMutation(reassign)
 
   const { reset } = reassign
   useEffect(() => {
@@ -147,12 +144,12 @@ export default function ReassignTagDialog({
         </DialogHeader>
 
         {stage === 'success' ? (
-          <SuccessBody tag={tag} />
+          <TagDialogSuccess tag={tag} message="reassigned successfully" />
         ) : (
           <div className="flex flex-col gap-2">
-            <BuildRow label="Current" buildId={currentBuildId} />
+            <TagDialogBuildRow label="Current" buildId={currentBuildId} />
             <ArrowDivider />
-            <BuildRow
+            <TagDialogBuildRow
               label="Target"
               buildId={selectedBuildId ?? '--'}
               dim={selectedBuildId === null}
@@ -181,42 +178,5 @@ export default function ReassignTagDialog({
         />
       </DialogContent>
     </Dialog>
-  )
-}
-
-interface BuildRowProps {
-  label: string
-  buildId: string
-  dim?: boolean
-}
-
-function BuildRow({ label, buildId, dim }: BuildRowProps) {
-  return (
-    <div className="flex items-center gap-3 mb-1">
-      <span className="prose-label-highlight uppercase text-fg-tertiary w-14 shrink-0">
-        {label}
-      </span>
-      <span
-        className={cn(
-          'prose-body font-mono truncate',
-          dim ? 'text-fg-tertiary' : 'text-fg-primary'
-        )}
-      >
-        {buildId}
-      </span>
-    </div>
-  )
-}
-
-function SuccessBody({ tag }: { tag: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 text-center">
-      <CheckIcon className="size-12 text-accent-positive-highlight" />
-      <p className="prose-headline-small uppercase text-fg">
-        <span className="font-mono">‘{tag}’</span>
-        <br />
-        reassigned successfully
-      </p>
-    </div>
   )
 }
