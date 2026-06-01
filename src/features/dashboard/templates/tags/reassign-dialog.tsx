@@ -161,6 +161,7 @@ export default function ReassignTagDialog({
               open={open}
               teamSlug={teamSlug}
               templateId={templateId}
+              currentBuildId={currentBuildId}
               selectedBuildId={selectedBuildId}
               onSelect={handleSelect}
               disabled={stage === 'pending'}

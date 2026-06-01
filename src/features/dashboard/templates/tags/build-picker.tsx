@@ -29,6 +29,7 @@ interface BuildPickerProps {
   open: boolean
   teamSlug: string
   templateId: string
+  currentBuildId?: string
   selectedBuildId: string | null
   onSelect: (buildId: string | null, source: BuildSelectionSource) => void
   disabled?: boolean
@@ -38,6 +39,7 @@ export default function BuildPicker({
   open,
   teamSlug,
   templateId,
+  currentBuildId,
   selectedBuildId,
   onSelect,
   disabled,
@@ -47,13 +49,15 @@ export default function BuildPicker({
   const debouncedSearch = useDebouncedValue(searchValue.trim(), 300)
   const isUuid = isValidUuid(debouncedSearch)
 
+  // Fetch one extra so we can still show DEFAULT_LIMIT rows after filtering out
+  // the currently-assigned build.
   const defaultQuery = useQuery(
     trpc.builds.list.queryOptions(
       {
         teamSlug,
         buildIdOrTemplate: templateId,
         statuses: ['success'],
-        limit: DEFAULT_LIMIT,
+        limit: DEFAULT_LIMIT + 1,
       },
       {
         enabled: open,
@@ -82,18 +86,24 @@ export default function BuildPicker({
 
   const isSearchMode = debouncedSearch.length > 0 && isUuid
 
-  const defaultBuilds = useMemo(
-    () => defaultQuery.data?.data ?? [],
-    [defaultQuery.data]
-  )
+  const defaultBuilds = useMemo(() => {
+    const all = defaultQuery.data?.data ?? []
+    const filtered = currentBuildId
+      ? all.filter((b) => b.id !== currentBuildId)
+      : all
+    return filtered.slice(0, DEFAULT_LIMIT)
+  }, [defaultQuery.data, currentBuildId])
 
   const searchResult = useMemo(() => {
     if (!isSearchMode) return null
     const build = searchQuery.data?.data[0]
     if (!build) return { kind: 'not-found' as const }
     if (build.templateId !== templateId) return { kind: 'not-found' as const }
+    if (currentBuildId && build.id === currentBuildId) {
+      return { kind: 'already-assigned' as const, build }
+    }
     return { kind: 'found' as const, build }
-  }, [isSearchMode, searchQuery.data, templateId])
+  }, [isSearchMode, searchQuery.data, templateId, currentBuildId])
 
   // Drop selection when the selected build is no longer renderable.
   useEffect(() => {
@@ -143,6 +153,7 @@ interface PickerBodyProps {
   searchQuery: BuildsQueryResult
   searchResult:
     | { kind: 'found'; build: ListedBuildModel }
+    | { kind: 'already-assigned'; build: ListedBuildModel }
     | { kind: 'not-found' }
     | null
   defaultBuilds: ListedBuildModel[]
@@ -185,6 +196,9 @@ function PickerBody({
           title="No build found"
         />
       )
+    }
+    if (searchResult.kind === 'already-assigned') {
+      return <AlreadyAssignedMessage />
     }
     return (
       <RadioGroup
@@ -302,6 +316,16 @@ interface PickerMessageProps {
   title: string
   description?: string
   action?: ReactElement
+}
+
+function AlreadyAssignedMessage() {
+  return (
+    <output className="flex flex-1 flex-col items-start justify-start pt-0.5 text-start">
+      <p className="prose-body-regular text-fg-tertiary">
+        Already assigned to this tag
+      </p>
+    </output>
+  )
 }
 
 function PickerMessage({
