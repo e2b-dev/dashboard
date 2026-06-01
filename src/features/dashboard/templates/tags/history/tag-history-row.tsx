@@ -61,8 +61,17 @@ export function TagHistoryRow({
 
   if (isCurrentBuild) {
     return (
-      <div className="flex w-full items-center justify-between gap-4 bg-bg py-2">
+      <div className="group/childRow flex w-full items-center justify-between gap-4 bg-bg py-2">
         {buildSummary}
+        <span
+          className={cn(
+            'inline-flex items-center gap-1',
+            'prose-body-highlight text-fg',
+            'opacity-0 group-hover/childRow:opacity-100'
+          )}
+        >
+          Currently assigned
+        </span>
       </div>
     )
   }
