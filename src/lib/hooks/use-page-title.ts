@@ -4,20 +4,6 @@ import { useEffect } from 'react'
 import { create } from 'zustand'
 import type { TitleSegment } from '@/configs/layout'
 
-/**
- * Reusable mechanism that lets a client page override the dashboard
- * title bar with data fetched at runtime (e.g. friendly resource names
- * derived from a UUID in the URL).
- *
- * The global `DashboardLayoutHeader` reads from this store; when no
- * override is set, it falls back to the pathname-derived
- * `getDashboardLayoutConfig` mapping.
- *
- * Pages call `usePageTitle(segments, copyValue?)` once they have data;
- * the hook handles cleanup automatically on unmount, so navigating
- * back to a page without an override restores the pathname-derived title.
- */
-
 export interface PageTitleOverride {
   title: string | TitleSegment[]
   copyValue?: string

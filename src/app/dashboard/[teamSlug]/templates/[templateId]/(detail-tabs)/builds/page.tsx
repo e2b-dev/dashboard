@@ -12,8 +12,6 @@ export default function TemplateDetailBuildsPage({
   const { templateId } = use(params)
   const { statuses, q } = useTemplateBuildsFilters()
 
-  // Substring match on build ID over the already-loaded pages. The
-  // backend query stays scoped by templateID (authoritative).
   const postFilter = useCallback(
     (build: ListedBuildModel) => {
       if (!q) return true

@@ -52,14 +52,12 @@ const COLUMN_WIDTHS = {
 } as const
 
 interface BuildsTableProps {
-  // Pre-resolved filter values; the table is hook-source agnostic.
   filters: {
     statuses: BuildStatus[]
     buildIdOrTemplate?: string
   }
   // Optional client-side row filter applied after fetch + live-status merge.
   postFilter?: (build: ListedBuildModel) => boolean
-  // Whether to render the Template column. Default true.
   showTemplateColumn?: boolean
 }
 
@@ -145,9 +143,6 @@ const BuildsTable = ({
     [builds, runningStatusesData]
   )
 
-  // Optional client-side row filter from the caller. The backend query
-  // is the source of truth for which builds belong to this table; the
-  // postFilter only narrows the already-loaded pages.
   const visibleBuilds = useMemo(() => {
     if (!postFilter) return buildsWithLiveStatus
     return buildsWithLiveStatus.filter(postFilter)

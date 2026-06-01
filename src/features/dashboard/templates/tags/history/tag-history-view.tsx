@@ -28,8 +28,7 @@ interface TagHistoryViewProps {
 const ROW_HEIGHT_PX = 36
 const VIRTUAL_OVERSCAN = 12
 const PREFETCH_THRESHOLD = 8
-// Pixel offset of the rows container from the top of the scroll container:
-// TagHistoryHeader (py-2 + h-7 button = 44px) + parent gap-3 (12px).
+// TagHistoryHeader (44px) + parent gap-3 (12px).
 const HEADER_SCROLL_MARGIN_PX = 56
 
 export default function TagHistoryView({

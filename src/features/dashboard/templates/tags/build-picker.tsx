@@ -105,7 +105,6 @@ export default function BuildPicker({
     return { kind: 'found' as const, build }
   }, [isSearchMode, searchQuery.data, templateId, currentBuildId])
 
-  // Drop selection when the selected build is no longer renderable.
   useEffect(() => {
     if (!selectedBuildId) return
     if (isSearchMode) {

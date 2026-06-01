@@ -18,7 +18,6 @@ export default function useFilters() {
 
   const buildIdOrTemplate = filters?.buildIdOrTemplate ?? undefined
 
-  // Debouncing lives in DebouncedInput; setters here write synchronously.
   const setStatuses = useCallback(
     (next: BuildStatus[]) => {
       setFilters({ statuses: next })

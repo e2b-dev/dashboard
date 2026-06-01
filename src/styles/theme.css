@@ -16,7 +16,7 @@
   h1,
   h2,
   h3 {
-    font-size: 1.25rem; /* 20px */
+    font-size: 1.25rem;
     line-height: 1.25rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -25,7 +25,7 @@
   h4,
   h5,
   h6 {
-    font-size: 1rem; /* 16px */
+    font-size: 1rem;
     line-height: 1.25rem;
     font-weight: 700;
     text-transform: uppercase;
