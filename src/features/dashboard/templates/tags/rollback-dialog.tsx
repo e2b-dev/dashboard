@@ -10,10 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { CheckIcon } from '@/ui/primitives/icons'
 import { ArrowDivider } from './arrow-divider'
+import {
+  TagDialogBuildRow,
+  TagDialogFooter,
+  TagDialogSuccess,
+} from './components'
+import { tagDialogStageFromMutation } from './helpers'
 import { trackTagTableInteraction } from './table-config'
-import { TagDialogFooter, type TagDialogStage } from './tag-dialog-footer'
 
 export type RollbackSurface = 'tags-tab' | 'history-header' | 'history-row'
 
@@ -68,13 +72,7 @@ export default function RollbackTagDialog({
     })
   )
 
-  const stage: TagDialogStage = rollback.isSuccess
-    ? 'success'
-    : rollback.isPending
-      ? 'pending'
-      : rollback.isError
-        ? 'error'
-        : 'idle'
+  const stage = tagDialogStageFromMutation(rollback)
 
   const { reset } = rollback
   useEffect(() => {
@@ -125,12 +123,12 @@ export default function RollbackTagDialog({
         </DialogHeader>
 
         {stage === 'success' ? (
-          <SuccessBody tag={tag} />
+          <TagDialogSuccess tag={tag} message="rolled back successfully" />
         ) : (
           <div className="flex flex-col gap-2">
-            <BuildRow label="Current" buildId={currentBuildId} />
+            <TagDialogBuildRow label="Current" buildId={currentBuildId} />
             <ArrowDivider />
-            <BuildRow label="Target" buildId={targetBuildId} />
+            <TagDialogBuildRow label="Target" buildId={targetBuildId} />
           </div>
         )}
 
@@ -146,36 +144,5 @@ export default function RollbackTagDialog({
         />
       </DialogContent>
     </Dialog>
-  )
-}
-
-interface BuildRowProps {
-  label: string
-  buildId: string
-}
-
-function BuildRow({ label, buildId }: BuildRowProps) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="prose-label-highlight uppercase text-fg-tertiary w-14 shrink-0">
-        {label}
-      </span>
-      <span className="prose-body font-mono text-fg-primary truncate">
-        {buildId}
-      </span>
-    </div>
-  )
-}
-
-function SuccessBody({ tag }: { tag: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 text-center">
-      <CheckIcon className="size-12 text-accent-positive-highlight" />
-      <p className="prose-headline-small uppercase text-fg">
-        <span className="font-mono">‘{tag}’</span>
-        <br />
-        rolled back successfully
-      </p>
-    </div>
   )
 }

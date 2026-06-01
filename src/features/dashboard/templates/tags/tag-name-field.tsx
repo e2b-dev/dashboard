@@ -9,7 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
-import { TAG_MAX_LENGTH } from './assign-dialog.helpers'
+import { TAG_MAX_LENGTH } from './helpers'
 
 export type TagNameStatus =
   | 'idle'

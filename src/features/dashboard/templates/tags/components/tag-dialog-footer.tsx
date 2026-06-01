@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils/ui'
 import { Button } from '@/ui/primitives/button'
 import { DialogFooter } from '@/ui/primitives/dialog'
 import { Loader } from '@/ui/primitives/loader'
+import type { TagDialogStage } from '../helpers'
 
-export type TagDialogStage = 'idle' | 'pending' | 'error' | 'success'
+export type { TagDialogStage }
 
 type BaseProps = {
   stage: TagDialogStage

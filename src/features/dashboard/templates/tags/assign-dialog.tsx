@@ -13,16 +13,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
-import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
+import { AddIcon } from '@/ui/primitives/icons'
 import { ArrowDivider } from './arrow-divider'
+import BuildPicker, { type BuildSelectionSource } from './build-picker'
+import { TagDialogFooter, TagDialogSuccess } from './components'
 import {
   isValidTagShape,
   normalizeTagInput,
   TAG_MAX_LENGTH,
   TAG_REGEX,
-} from './assign-dialog.helpers'
-import BuildPicker, { type BuildSelectionSource } from './build-picker'
-import { TagDialogFooter, type TagDialogStage } from './tag-dialog-footer'
+  tagDialogStageFromMutation,
+} from './helpers'
 import TagNameField, { type TagNameStatus } from './tag-name-field'
 
 const NAME_DEBOUNCE_MS = 350
@@ -159,14 +160,7 @@ export default function AssignTagDialog({
     })
   }
 
-  const stage: TagDialogStage =
-    mutation.status === 'pending'
-      ? 'pending'
-      : mutation.status === 'error'
-        ? 'error'
-        : mutation.status === 'success'
-          ? 'success'
-          : 'idle'
+  const stage = tagDialogStageFromMutation(mutation)
 
   const successTag =
     existsQuery.data?.normalizedTag ??
@@ -201,7 +195,7 @@ export default function AssignTagDialog({
         </DialogHeader>
 
         {stage === 'success' ? (
-          <SuccessBody tag={successTag} />
+          <TagDialogSuccess tag={successTag} message="assigned successfully" />
         ) : (
           <form
             id={formId}
@@ -250,19 +244,6 @@ export default function AssignTagDialog({
         />
       </DialogContent>
     </Dialog>
-  )
-}
-
-function SuccessBody({ tag }: { tag: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-      <CheckIcon className="size-12 text-accent-positive-highlight" />
-      <p className="prose-headline-small uppercase text-fg">
-        <span className="font-mono">‘{tag}’</span>
-        <br />
-        assigned successfully
-      </p>
-    </div>
   )
 }
 
