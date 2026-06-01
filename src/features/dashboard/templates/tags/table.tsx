@@ -12,6 +12,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -105,6 +106,11 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   const setGlobalFilter = useTagTableStore((s) => s.setGlobalFilter)
   const expanded = useTagTableStore((s) => s.expanded)
   const setExpanded = useTagTableStore((s) => s.setExpanded)
+  const resetFilters = useTagTableStore((s) => s.resetFilters)
+
+  useEffect(() => {
+    return () => resetFilters()
+  }, [resetFilters])
 
   const columns = useTagColumns()
 

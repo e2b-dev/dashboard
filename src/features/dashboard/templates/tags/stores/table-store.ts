@@ -62,8 +62,7 @@ export const useTagTableStore = create<Store>()(
       },
 
       resetFilters: () => {
-        set({ globalFilter: '' })
-        trackTagTableInteraction('reset filters')
+        set({ globalFilter: '', expanded: {} })
       },
     }),
     {
