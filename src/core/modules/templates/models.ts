@@ -16,7 +16,6 @@ export type Template = Pick<
   | 'names'
   | 'createdAt'
   | 'updatedAt'
-  | 'createdBy'
   | 'lastSpawnedAt'
   | 'spawnCount'
   | 'buildCount'

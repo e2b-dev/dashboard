@@ -848,6 +848,52 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/templates/{templateID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get template
+     * @description Returns a single template owned by the current team. Dashboard-shaped read, indexed by template ID.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the template. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateDetail']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/templates/{templateID}/tags/groups': {
     parameters: {
       query?: never
@@ -1311,6 +1357,52 @@ export interface components {
       data: components['schemas']['TeamTemplate'][]
       /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
       nextCursor: string | null
+    }
+    /** @description Dashboard-shaped single-template read. Mirrors the infra-api `Template` schema fields the dashboard renders. */
+    TemplateDetail: {
+      /** @description Identifier of the template. */
+      templateID: string
+      /** @description Identifier of the latest ready build for the template, or the zero UUID when none. */
+      buildID: string
+      cpuCount: components['schemas']['CPUCount']
+      memoryMB: components['schemas']['MemoryMB']
+      diskSizeMB: components['schemas']['DiskSizeMB']
+      /** @description Whether the template is public or only accessible by the team. */
+      public: boolean
+      /**
+       * @deprecated
+       * @description Aliases of the template.
+       */
+      aliases: string[]
+      /** @description Names of the template (namespace/alias format when namespaced). */
+      names: string[]
+      /**
+       * Format: date-time
+       * @description Time when the template was created.
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Time when the template was last updated.
+       */
+      updatedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the template was last used.
+       */
+      lastSpawnedAt: string | null
+      /**
+       * Format: int64
+       * @description Number of times the template was used.
+       */
+      spawnCount: number
+      /**
+       * Format: int32
+       * @description Number of times the template was built.
+       */
+      buildCount: number
+      /** @description Envd version of the latest ready build, or an empty string when none. */
+      envdVersion: string
     }
     TemplateTagAssignment: {
       /**

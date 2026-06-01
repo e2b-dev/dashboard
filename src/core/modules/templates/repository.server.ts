@@ -88,21 +88,47 @@ export function createTemplatesRepository(
 ): TeamTemplatesRepository {
   return {
     async getTemplate(templateId) {
-      // Filter the list endpoint; infra has no per-template GET that exposes the same shape.
-      const listResult = await this.getTeamTemplates()
-      if (!listResult.ok) return listResult
+      if (USE_MOCK_DATA) {
+        const template = MOCK_TEMPLATES_DATA.find(
+          (t) => t.templateID === templateId
+        )
+        if (!template) {
+          return err(
+            repoErrorFromHttp(404, 'Template not found in this team', undefined)
+          )
+        }
 
-      const template = listResult.data.templates.find(
-        (t) => t.templateID === templateId
-      )
+        return ok({ template })
+      }
 
-      if (!template) {
+      const res = await deps.apiClient.GET('/templates/{templateID}', {
+        params: {
+          path: {
+            templateID: templateId,
+          },
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch template',
+            res.error
+          )
+        )
+      }
+
+      if (!res.data) {
         return err(
           repoErrorFromHttp(404, 'Template not found in this team', undefined)
         )
       }
 
-      return ok({ template })
+      return ok({ template: res.data })
     },
     async getTagGroups(templateId, options) {
       if (USE_MOCK_DATA) {
