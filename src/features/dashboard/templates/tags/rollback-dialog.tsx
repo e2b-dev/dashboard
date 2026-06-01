@@ -3,18 +3,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useTRPC } from '@/trpc/client'
-import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { CheckIcon } from '@/ui/primitives/icons'
 import { ArrowDivider } from './arrow-divider'
 import { trackTagTableInteraction } from './table-config'
+import { TagDialogFooter, type TagDialogStage } from './tag-dialog-footer'
 
 export type RollbackSurface = 'tags-tab' | 'history-header' | 'history-row'
 
@@ -69,7 +68,7 @@ export default function RollbackTagDialog({
     })
   )
 
-  const stage: Stage = rollback.isSuccess
+  const stage: TagDialogStage = rollback.isSuccess
     ? 'success'
     : rollback.isPending
       ? 'pending'
@@ -135,9 +134,12 @@ export default function RollbackTagDialog({
           </div>
         )}
 
-        <Footer
+        <TagDialogFooter
           stage={stage}
+          canSubmit
           errorMessage={rollback.error?.message ?? null}
+          submitLabel="Rollback"
+          pendingLabel="Rolling back"
           onSubmit={submit}
           onCancel={() => handleOpenChange(false)}
           onDismiss={() => handleOpenChange(false)}
@@ -146,8 +148,6 @@ export default function RollbackTagDialog({
     </Dialog>
   )
 }
-
-type Stage = 'idle' | 'pending' | 'error' | 'success'
 
 interface BuildRowProps {
   label: string
@@ -177,88 +177,5 @@ function SuccessBody({ tag }: { tag: string }) {
         rolled back successfully
       </p>
     </div>
-  )
-}
-
-interface FooterProps {
-  stage: Stage
-  errorMessage: string | null
-  onSubmit: () => void
-  onCancel: () => void
-  onDismiss: () => void
-}
-
-/**
- * The footer keeps a fixed-height inline message slot above the buttons so
- * the dialog doesn't jump when an error appears or clears. The slot is
- * present in idle/pending/error and collapsed in success (which has its
- * own full-width Dismiss button).
- */
-function Footer({
-  stage,
-  errorMessage,
-  onSubmit,
-  onCancel,
-  onDismiss,
-}: FooterProps) {
-  if (stage === 'success') {
-    return (
-      <DialogFooter className="sm:flex-row mt-auto">
-        <Button autoFocus className="w-full" onClick={onDismiss}>
-          Dismiss
-        </Button>
-      </DialogFooter>
-    )
-  }
-
-  return (
-    <DialogFooter className="flex-col gap-2 sm:flex-col">
-      <InlineMessage stage={stage} message={errorMessage} />
-      {stage === 'pending' ? (
-        <Button variant="secondary" className="w-full" loading="Rolling back" />
-      ) : stage === 'error' ? (
-        <div className="grid w-full grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button autoFocus onClick={onSubmit}>
-            Retry
-          </Button>
-        </div>
-      ) : (
-        <div className="grid w-full grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button onClick={onSubmit}>Rollback</Button>
-        </div>
-      )}
-    </DialogFooter>
-  )
-}
-
-/**
- * Reserves a single-line slot for inline feedback so toggling between idle
- * and error doesn't shift the buttons below.
- */
-function InlineMessage({
-  stage,
-  message,
-}: {
-  stage: Exclude<Stage, 'success'>
-  message: string | null
-}) {
-  const text = stage === 'error' ? (message ?? 'Rollback failed.') : '\u00a0'
-  return (
-    <p
-      aria-live="polite"
-      className={
-        stage === 'error'
-          ? 'prose-body w-full min-h-5 text-center text-accent-error-highlight'
-          : 'prose-body w-full min-h-5 text-center text-transparent select-none'
-      }
-    >
-      {text}
-    </p>
   )
 }

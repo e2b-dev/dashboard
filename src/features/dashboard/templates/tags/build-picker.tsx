@@ -114,7 +114,7 @@ export default function BuildPicker({
   }, [selectedBuildId, isSearchMode, searchResult, defaultBuilds, onSelect])
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-1.5">
       <BuildSearchInput
         value={searchValue}
         onChange={setSearchValue}
@@ -182,7 +182,7 @@ function PickerBody({
       return (
         <PickerMessage
           icon={<SearchIcon className="size-5 text-fg-tertiary" />}
-          title="No build found with this ID."
+          title="No build found"
         />
       )
     }
@@ -223,7 +223,7 @@ function PickerBody({
       <PickerMessage
         icon={<BuildIcon className="size-5 text-fg-tertiary" />}
         title="No ready builds yet"
-        description="Builds appear here once they finish successfully."
+        description="Latest successful builds appear here."
       />
     )
   }
@@ -231,7 +231,7 @@ function PickerBody({
     <RadioGroup
       value={selectedBuildId ?? ''}
       onValueChange={(value) => onSelect(value || null, 'default')}
-      className="flex flex-col gap-1"
+      className="flex flex-col gap-0.5"
       aria-label="Recent ready builds"
     >
       {defaultBuilds.map((build) => (
@@ -311,11 +311,13 @@ function PickerMessage({
   action,
 }: PickerMessageProps) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-6 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-1 px-4 pt-3 text-center">
       {icon}
       <p className="prose-body-highlight text-fg">{title}</p>
       {description ? (
-        <p className="prose-body max-w-64 text-fg-tertiary">{description}</p>
+        <p className="prose-body max-w-64 text-fg-tertiary text-balance">
+          {description}
+        </p>
       ) : null}
       {action ? <div className="pt-1">{action}</div> : null}
     </div>

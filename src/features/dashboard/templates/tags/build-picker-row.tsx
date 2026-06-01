@@ -19,7 +19,7 @@ function BuildPickerRowComponent({
   const id = `build-row-${buildId}`
 
   return (
-    <div className="flex items-center gap-2 hover:bg-bg-hover">
+    <div className="flex items-center gap-2 hover:bg-bg-hover py-0.5">
       <RadioGroupItem id={id} value={buildId} disabled={disabled} />
       <Label
         htmlFor={id}
