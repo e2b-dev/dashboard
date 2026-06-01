@@ -2,20 +2,18 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import posthog from 'posthog-js'
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useId, useMemo, useState } from 'react'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 import { ArrowDivider } from './arrow-divider'
 import {
   isValidTagShape,
@@ -24,6 +22,7 @@ import {
   TAG_REGEX,
 } from './assign-dialog.helpers'
 import BuildPicker, { type BuildSelectionSource } from './build-picker'
+import { TagDialogFooter, type TagDialogStage } from './tag-dialog-footer'
 import TagNameField, { type TagNameStatus } from './tag-name-field'
 
 const NAME_DEBOUNCE_MS = 350
@@ -42,6 +41,7 @@ export default function AssignTagDialog({
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
+  const formId = useId()
   const [open, setOpen] = useState(false)
   const [name, setNameRaw] = useState('')
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null)
@@ -144,8 +144,8 @@ export default function AssignTagDialog({
     setOpen(next)
   }
 
-  const handleSubmit = (e?: FormEvent<HTMLFormElement>) => {
-    e?.preventDefault()
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     if (!canSubmit || !selectedBuildId) return
     const tagToSubmit =
       existsQuery.data?.normalizedTag ?? normalizedDebouncedName
@@ -161,7 +161,7 @@ export default function AssignTagDialog({
     })
   }
 
-  const stage: Stage =
+  const stage: TagDialogStage =
     mutation.status === 'pending'
       ? 'pending'
       : mutation.status === 'error'
@@ -186,7 +186,7 @@ export default function AssignTagDialog({
 
       <DialogContent
         hideClose={stage === 'pending'}
-        className="sm:max-w-[425px] sm:h-[436px]"
+        className="sm:max-w-[430px] sm:h-[422px] gap-4"
         onPointerDownOutside={(e) => {
           if (stage === 'pending') e.preventDefault()
         }}
@@ -205,7 +205,11 @@ export default function AssignTagDialog({
         {stage === 'success' ? (
           <SuccessBody tag={successTag} />
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <form
+            id={formId}
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-2"
+          >
             <TagNameField
               value={name}
               onChange={setName}
@@ -233,92 +237,22 @@ export default function AssignTagDialog({
               onSelect={handleSetSelectedBuildId}
               disabled={stage === 'pending'}
             />
-
-            {/* Hidden submit so Enter from any input triggers submit if enabled. */}
-            <button type="submit" hidden aria-hidden tabIndex={-1} />
           </form>
         )}
 
-        <Footer
+        <TagDialogFooter
           stage={stage}
           canSubmit={canSubmit}
           errorMessage={mutation.error?.message ?? null}
-          onSubmit={handleSubmit}
+          submitLabel="Assign"
+          pendingLabel="Assigning"
+          formId={formId}
           onCancel={() => handleOpenChange(false)}
           onDismiss={() => handleOpenChange(false)}
         />
       </DialogContent>
     </Dialog>
   )
-}
-
-type Stage = 'idle' | 'pending' | 'error' | 'success'
-
-interface FooterProps {
-  stage: Stage
-  canSubmit: boolean
-  errorMessage: string | null
-  onSubmit: () => void
-  onCancel: () => void
-  onDismiss: () => void
-}
-
-function Footer({
-  stage,
-  canSubmit,
-  errorMessage,
-  onSubmit,
-  onCancel,
-  onDismiss,
-}: FooterProps) {
-  switch (stage) {
-    case 'pending':
-      return (
-        <DialogFooter className="flex-col sm:flex-row">
-          <div className="flex w-full items-center justify-center gap-2 py-2">
-            <Loader variant="slash" size="sm" />
-            <span className="prose-body text-fg-secondary">Assigning…</span>
-          </div>
-        </DialogFooter>
-      )
-    case 'error':
-      return (
-        <DialogFooter className="flex-col gap-3 sm:flex-col">
-          {errorMessage ? (
-            <p className="prose-body w-full text-accent-error-highlight">
-              {errorMessage}
-            </p>
-          ) : null}
-          <div className="grid w-full grid-cols-2 gap-2">
-            <Button variant="secondary" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button autoFocus onClick={onSubmit}>
-              Retry
-            </Button>
-          </div>
-        </DialogFooter>
-      )
-    case 'success':
-      return (
-        <DialogFooter className="mt-auto">
-          <Button autoFocus className="w-full" onClick={onDismiss}>
-            Dismiss
-          </Button>
-        </DialogFooter>
-      )
-    default:
-      return (
-        <DialogFooter className="grid grid-cols-2 gap-2 sm:flex-row">
-          <Button variant="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button disabled={!canSubmit} onClick={onSubmit}>
-            Assign
-          </Button>
-        </DialogFooter>
-      )
-  }
 }
 
 function SuccessBody({ tag }: { tag: string }) {
