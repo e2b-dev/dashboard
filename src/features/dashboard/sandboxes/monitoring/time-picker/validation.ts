@@ -39,11 +39,11 @@ export const customTimeFormSchema = z
     const now = Date.now()
     const startTimestamp = startDateTime.getTime()
 
-    // validate start date is not more than 31 days ago
+    // validate start date is not more than 91 days ago
     if (startTimestamp < now - MAX_DAYS_AGO) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Start date cannot be more than 31 days ago',
+        message: 'Start date cannot be more than 91 days ago',
         path: ['startDate'],
       })
       return
@@ -108,7 +108,7 @@ export const customTimeFormSchema = z
       if (endTimestamp - startTimestamp > MAX_DAYS_AGO) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Date range cannot exceed 31 days',
+          message: 'Date range cannot exceed 91 days',
           path: ['endDate'],
         })
         return
