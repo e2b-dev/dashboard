@@ -9,6 +9,7 @@ const baseMetric = {
   timestamp: '1970-01-01T00:00:00.000Z',
   cpuCount: 2,
   memTotal: 1_000,
+  memCache: 0,
   diskTotal: 2_000,
 } satisfies Omit<
   SandboxMetric,

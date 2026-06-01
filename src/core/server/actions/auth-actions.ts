@@ -27,6 +27,7 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 import { verifyTurnstileToken } from '@/lib/captcha/turnstile'
 import { encodedRedirect } from '@/lib/utils/auth'
+import { isGoogleEmail } from '@/lib/utils/email'
 
 async function validateCaptcha(captchaToken: string | undefined) {
   if (!CAPTCHA_REQUIRED_SERVER) {
@@ -211,6 +212,10 @@ export const signUpAction = actionClient
       const userAgent = headerStore.get('user-agent') ?? undefined
       const ip =
         headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
+
+      if (isGoogleEmail(email)) {
+        return returnServerError(USER_MESSAGES.signUpGoogleEmail.message)
+      }
 
       // basic security check, that password does not equal e-mail
       if (password && email && password.toLowerCase() === email.toLowerCase()) {

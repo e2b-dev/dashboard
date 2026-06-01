@@ -3,13 +3,20 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { CloseIcon } from './icons'
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  clearable?: boolean
+  onClear?: () => void
+}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
+  ({ className, type, clearable, onClear, ...props }, ref) => {
+    const showClear =
+      clearable && !props.disabled && !props.readOnly && Boolean(props.value)
+
+    const inputElement = (
       <input
         type={type}
         className={cn(
@@ -29,11 +36,30 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           'autofill:border-accent-main-highlight autofill:border-b-accent-main-highlight autofill:border-solid autofill:shadow-[inset_0_0_0px_1000px_var(--accent-main-bg)]',
           'autofill:bg-accent-main-bg autofill:text-fg',
 
+          showClear && 'pr-8',
           className
         )}
         ref={ref}
         {...props}
       />
+    )
+
+    if (!clearable) return inputElement
+
+    return (
+      <div className="relative w-full">
+        {inputElement}
+        {showClear && (
+          <button
+            type="button"
+            aria-label="Clear input"
+            onClick={onClear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex size-5 items-center justify-center text-fg-tertiary hover:text-fg cursor-pointer"
+          >
+            <CloseIcon className="size-4" />
+          </button>
+        )}
+      </div>
     )
   }
 )
