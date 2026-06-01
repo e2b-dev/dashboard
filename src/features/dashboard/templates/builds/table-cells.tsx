@@ -24,7 +24,7 @@ export function BuildId({ id }: { id: string }) {
   return (
     <CopyButtonInline
       value={id}
-      className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
+      className="w-full text-left text-fg-secondary font-mono prose-table-numeric"
     >
       {id.slice(0, 6)}...{id.slice(-6)}
     </CopyButtonInline>
