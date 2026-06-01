@@ -14,15 +14,13 @@ interface TemplateDetailTabsProps {
 
 type DetailTabId = 'overview' | 'builds' | 'tags'
 
-const TAB_PATHS: Record<DetailTabId, (pathname: string) => boolean> = {
-  overview: (p) => /\/overview(\/|$)/.test(p),
-  builds: (p) => /\/builds(\/|$)/.test(p),
-  tags: (p) => /\/tags(\/|$)/.test(p),
-}
-
-function tabFromPath(pathname: string): DetailTabId {
-  if (TAB_PATHS.builds(pathname)) return 'builds'
-  if (TAB_PATHS.tags(pathname)) return 'tags'
+function tabFromPath(pathname: string, templateId: string): DetailTabId {
+  const marker = `/templates/${templateId}/`
+  const idx = pathname.indexOf(marker)
+  if (idx === -1) return 'overview'
+  const segment = pathname.slice(idx + marker.length).split('/')[0]
+  if (segment === 'builds') return 'builds'
+  if (segment === 'tags') return 'tags'
   return 'overview'
 }
 
@@ -31,7 +29,7 @@ export default function TemplateDetailTabs({
   templateId,
 }: TemplateDetailTabsProps) {
   const pathname = usePathname()
-  const activeTab = tabFromPath(pathname)
+  const activeTab = tabFromPath(pathname, templateId)
   const prevTabRef = useRef<DetailTabId | null>(null)
 
   useEffect(() => {
