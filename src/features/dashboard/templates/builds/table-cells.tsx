@@ -1,13 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
 } from '@/core/modules/builds/models'
-import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import {
@@ -40,23 +39,21 @@ export function Template({
   templateId: string
   className?: string
 }) {
-  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
+      asChild
       variant="link-table"
       size="none"
       className={cn('max-w-full', className)}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
-      }}
     >
-      <p className="truncate">{template}</p>
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_DETAIL(teamSlug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="truncate">{template}</p>
+      </Link>
     </Button>
   )
 }
