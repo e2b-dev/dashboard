@@ -18,6 +18,7 @@ import {
 } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
+import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import {
@@ -75,10 +76,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   )
 
   const templateName = useMemo(
-    () =>
-      templateData.template.names.find((n) => !n.includes('/')) ??
-      templateData.template.names[0] ??
-      templateData.template.templateID,
+    () => getTemplateDisplayName(templateData.template),
     [templateData]
   )
 

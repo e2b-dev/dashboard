@@ -6,6 +6,7 @@ import {
   DetailsItem,
   DetailsRow,
 } from '@/features/dashboard/layouts/details-row'
+import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { TemplateVisibilityDropdown } from './visibility-dropdown'
@@ -30,10 +31,7 @@ export default function TemplateDetailHeader({
   const template = data.template
   const hasReadyBuild = template.buildID !== NULL_BUILD_ID
 
-  const displayName =
-    template.names.find((n) => !n.includes('/')) ??
-    template.names[0] ??
-    template.templateID
+  const displayName = getTemplateDisplayName(template)
 
   const created = formatLocalLogStyleTimestamp(template.createdAt, {
     includeSeconds: false,
