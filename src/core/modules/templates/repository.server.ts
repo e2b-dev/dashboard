@@ -10,7 +10,6 @@ import {
 import type {
   DefaultTemplate,
   Template,
-  TemplateTag,
   TemplateTagAssignment,
   TemplateTagExistsResult,
   TemplateTagGroup,
@@ -38,7 +37,6 @@ type TemplatesRepositoryDeps = {
 export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
   getTemplate(templateId: string): Promise<RepoResult<{ template: Template }>>
-  getTags(templateId: string): Promise<RepoResult<{ tags: TemplateTag[] }>>
   getTagGroups(
     templateId: string,
     options?: { assignmentLimit?: number }
@@ -105,34 +103,6 @@ export function createTemplatesRepository(
       }
 
       return ok({ template })
-    },
-    async getTags(templateId) {
-      if (USE_MOCK_DATA) {
-        return ok({ tags: [] })
-      }
-
-      const res = await deps.infraClient.GET('/templates/{templateID}/tags', {
-        params: {
-          path: {
-            templateID: templateId,
-          },
-        },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-      })
-
-      if (!res.response.ok || res.error) {
-        return err(
-          repoErrorFromHttp(
-            res.response.status,
-            res.error?.message ?? 'Failed to fetch template tags',
-            res.error
-          )
-        )
-      }
-
-      return ok({ tags: res.data ?? [] })
     },
     async getTagGroups(templateId, options) {
       if (USE_MOCK_DATA) {

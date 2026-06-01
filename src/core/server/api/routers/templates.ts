@@ -54,18 +54,6 @@ export const templatesRouter = createTRPCRouter({
       return result.data
     }),
 
-  getTags: teamTemplatesRepositoryProcedure
-    .input(
-      z.object({
-        templateId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.templatesRepository.getTags(input.templateId)
-      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
-      return result.data
-    }),
-
   getTagGroups: teamTemplatesRepositoryProcedure
     .input(
       z.object({
