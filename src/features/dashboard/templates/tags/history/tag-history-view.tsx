@@ -28,6 +28,9 @@ interface TagHistoryViewProps {
 const ROW_HEIGHT_PX = 36
 const VIRTUAL_OVERSCAN = 12
 const PREFETCH_THRESHOLD = 8
+// Pixel offset of the rows container from the top of the scroll container:
+// TagHistoryHeader (py-2 + h-7 button = 44px) + parent gap-3 (12px).
+const HEADER_SCROLL_MARGIN_PX = 56
 
 export default function TagHistoryView({
   teamSlug,
@@ -87,6 +90,7 @@ export default function TagHistoryView({
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT_PX,
     overscan: VIRTUAL_OVERSCAN,
+    scrollMargin: HEADER_SCROLL_MARGIN_PX,
   })
 
   const virtualItems = virtualizer.getVirtualItems()
@@ -164,7 +168,10 @@ export default function TagHistoryView({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div
+      ref={scrollRef}
+      className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       <TagHistoryHeader
         tag={tag}
         teamSlug={teamSlug}
@@ -176,13 +183,12 @@ export default function TagHistoryView({
         onReassigned={handleRolledBack}
       />
 
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto -mx-3 px-3"
-      >
+      <div className="-mx-3 px-3">
         <div
           className="relative"
-          style={{ height: `${virtualizer.getTotalSize()}px` }}
+          style={{
+            height: `${virtualizer.getTotalSize() - HEADER_SCROLL_MARGIN_PX}px`,
+          }}
         >
           {virtualItems.map((virtualRow) => {
             const assignment = history[virtualRow.index]
@@ -193,7 +199,9 @@ export default function TagHistoryView({
                 data-index={virtualRow.index}
                 ref={(node) => virtualizer.measureElement(node)}
                 className="absolute left-0 right-0 border-b border-stroke/80"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
+                style={{
+                  transform: `translateY(${virtualRow.start - HEADER_SCROLL_MARGIN_PX}px)`,
+                }}
               >
                 <TagHistoryRow
                   assignment={assignment}
