@@ -36,7 +36,7 @@ const STATUS_INDICATOR: Partial<Record<TagNameStatus, ReactElement>> = {
   invalid: (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="prose-body cursor-help whitespace-nowrap text-accent-error-highlight decoration-dotted underline-offset-2">
+        <span className="prose-body whitespace-nowrap text-accent-error-highlight decoration-dotted underline-offset-2">
           Invalid format
         </span>
       </TooltipTrigger>
@@ -44,14 +44,26 @@ const STATUS_INDICATOR: Partial<Record<TagNameStatus, ReactElement>> = {
         side="bottom"
         align="end"
         alignOffset={-13}
-        sideOffset={10}
+        sideOffset={12}
         className="max-w-[260px]"
       >
-        <p className="prose-body text-fg-secondary">
-          Allowed: <span className="text-fg">lowercase letters, digits</span>,
-          and <span className="font-mono text-fg">. _ -</span>
+        <p className="prose-body font-mono text-fg-secondary">
+          <span className="font-sans text-fg-tertiary">Allowed: </span>
+          <span className="text-fg">a-z</span>,
+          <span className="text-fg">0-9</span>
+          <span className="text-fg-tertiary">,(</span>
+          <span className="text-fg">.</span>
+          <span className="text-fg-tertiary">)</span>
+          <span className="text-fg-tertiary">,(</span>
+          <span className="text-fg">_</span>
+          <span className="text-fg-tertiary">)</span>
+          <span className="text-fg-tertiary">,(</span>
+          <span className="text-fg">-</span>
+          <span className="text-fg-tertiary">)</span>
           <br />
-          Max <span className="text-fg">{TAG_MAX_LENGTH}</span> characters
+          <span className="font-sans text-fg-tertiary">
+            Max {TAG_MAX_LENGTH} characters
+          </span>
         </p>
       </TooltipContent>
     </Tooltip>
