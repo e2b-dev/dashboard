@@ -59,7 +59,7 @@ export default function TemplateTitleBinder({
       },
       { label: displayName },
     ],
-    template.templateID
+    displayName
   )
 
   return null
