@@ -132,7 +132,7 @@ export function TemplateVisibilityDropdown({
           <Badge
             variant="default"
             size="sm"
-            className={cn('uppercase bg-fill', !isPublic && 'pl-[3]')}
+            className={cn('uppercase bg-fill', !isPublic && 'pl-[3px]')}
           >
             {!isPublic && <PrivateIcon className="size-3 text-fg-tertiary" />}
             {isPublic ? 'Public' : 'Internal'}
