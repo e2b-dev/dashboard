@@ -5,7 +5,7 @@ import posthog from 'posthog-js'
 import { useEffect, useRef } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { DashboardTabsList } from '@/ui/dashboard-tabs'
-import { BuildIcon, DashboardIcon, TagIcon } from '@/ui/primitives/icons'
+import { BuildIcon, TagIcon, TrendIcon } from '@/ui/primitives/icons'
 
 interface TemplateDetailTabsProps {
   teamSlug: string
@@ -56,7 +56,7 @@ export default function TemplateDetailTabs({
           id: 'overview',
           label: 'Overview',
           href: PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId),
-          icon: <DashboardIcon className="size-4" />,
+          icon: <TrendIcon className="size-4" />,
         },
         {
           id: 'builds',
