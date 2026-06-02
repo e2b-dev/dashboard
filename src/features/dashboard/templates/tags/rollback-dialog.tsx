@@ -1,8 +1,6 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { useTRPC } from '@/trpc/client'
 import {
   Dialog,
   DialogContent,
@@ -16,8 +14,8 @@ import {
   TagDialogFooter,
   TagDialogSuccess,
 } from './components'
-import { tagDialogStageFromMutation } from './helpers'
 import { trackTagTableInteraction } from './table-config'
+import { useTagAssignmentMutation } from './use-tag-assignment-mutation'
 
 export type RollbackSurface = 'tags-tab' | 'history-header' | 'history-row'
 
@@ -46,41 +44,13 @@ export default function RollbackTagDialog({
   surface,
   onRolledBack,
 }: RollbackTagDialogProps) {
-  const trpc = useTRPC()
-  const queryClient = useQueryClient()
-
-  const rollback = useMutation(
-    trpc.templates.assignTag.mutationOptions({
-      onSuccess: async () => {
-        trackTagTableInteraction('rollback succeeded', { surface, tag })
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
-              teamSlug,
-              templateId,
-            }).queryKey,
-          }),
-          queryClient.invalidateQueries({
-            queryKey: trpc.templates.getTagCount.queryOptions({
-              teamSlug,
-              templateId,
-            }).queryKey,
-          }),
-        ])
-        await onRolledBack?.()
-      },
-      onError: (error) => {
-        trackTagTableInteraction('rollback failed', {
-          surface,
-          tag,
-          error_status: error.data?.httpStatus ?? null,
-          error_code: error.data?.code ?? null,
-        })
-      },
-    })
-  )
-
-  const stage = tagDialogStageFromMutation(rollback)
+  const { mutation: rollback, stage } = useTagAssignmentMutation({
+    teamSlug,
+    templateId,
+    operation: 'rollback',
+    analyticsContext: { surface, tag },
+    onSuccess: onRolledBack,
+  })
 
   const { reset } = rollback
   useEffect(() => {
