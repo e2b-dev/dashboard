@@ -49,7 +49,7 @@ export function Template({
       className={cn('max-w-full', className)}
     >
       <Link
-        href={PROTECTED_URLS.TEMPLATE_DETAIL(teamSlug, templateId)}
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId)}
         onClick={(e) => e.stopPropagation()}
       >
         <p className="truncate">{template}</p>

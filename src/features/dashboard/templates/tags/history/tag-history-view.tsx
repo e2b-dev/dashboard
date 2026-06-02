@@ -15,6 +15,7 @@ import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cell
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { useTRPC } from '@/trpc/client'
 import { Loader } from '@/ui/primitives/loader'
+import { TAG_HISTORY_PAGE_LIMIT } from '../constants'
 import RollbackTagDialog, { type RollbackSurface } from '../rollback-dialog'
 import { TagHistoryEmpty } from './tag-history-empty'
 import { TagHistoryHeader } from './tag-history-header'
@@ -63,7 +64,7 @@ export default function TagHistoryView({
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } =
     useInfiniteQuery(
       trpc.templates.getTagAssignments.infiniteQueryOptions(
-        { teamSlug, templateId, tag, limit: 50 },
+        { teamSlug, templateId, tag, limit: TAG_HISTORY_PAGE_LIMIT },
         {
           getNextPageParam: (page) => page.nextCursor ?? undefined,
           initialCursor: undefined,

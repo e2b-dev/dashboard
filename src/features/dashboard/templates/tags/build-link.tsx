@@ -1,10 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { formatRelativeAgo } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { NULL_BUILD_ID } from './constants'
 
 interface BuildLinkProps {
@@ -48,12 +48,12 @@ export function BuildLink({
   return (
     <div className="flex items-center gap-2 min-w-0">
       {isLinkable ? (
-        <Link
+        <HoverPrefetchLink
           href={PROTECTED_URLS.TEMPLATE_BUILD(teamSlug, templateId, buildId)}
           className="group/build text-fg hover:text-fg"
         >
           {inner}
-        </Link>
+        </HoverPrefetchLink>
       ) : (
         <span className="text-fg-tertiary">{inner}</span>
       )}
