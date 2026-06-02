@@ -19,8 +19,6 @@ import { DEFAULT_TAG_NAME } from '../constants'
 import TagDeleteDialog from '../delete-dialog'
 import ReassignTagDialog from '../reassign-dialog'
 
-const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
-
 interface TagHistoryHeaderProps {
   tag: string
   teamSlug: string
@@ -79,8 +77,7 @@ export function TagHistoryHeader({
         <div className="flex items-center gap-1 max-sm:hidden">
           <Button
             variant="primary"
-            size="none"
-            className={SMALL_BUTTON}
+            size="small"
             aria-label={`Reassign tag ${tag} to a different build`}
             onClick={() => setReassignOpen(true)}
           >
@@ -88,8 +85,7 @@ export function TagHistoryHeader({
           </Button>
           <Button
             variant="secondary"
-            size="none"
-            className={SMALL_BUTTON}
+            size="small"
             disabled={!canRollback}
             aria-label={
               canRollback

@@ -5,7 +5,6 @@ import { DebouncedInput } from '@/ui/primitives/input'
 import { BuildsStatusFilter } from './status-filter'
 import useTemplateBuildsFilters from './use-template-builds-filters'
 
-// 'q' filters client-side over the templateID-scoped backend results (see BuildsTable).
 export function TemplateBuildsHeader() {
   const { statuses, setStatuses, q, setQ } = useTemplateBuildsFilters()
 
