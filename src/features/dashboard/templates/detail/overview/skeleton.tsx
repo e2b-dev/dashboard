@@ -19,6 +19,10 @@ export function TemplateOverviewSkeleton() {
         </div>
         <Skeleton className="h-5 w-80 mt-2 max-w-full" />
       </OverviewSection>
+
+      <OverviewSection label="Sandboxes started">
+        <Skeleton className="h-8 w-20" />
+      </OverviewSection>
     </div>
   )
 }

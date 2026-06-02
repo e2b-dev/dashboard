@@ -3,6 +3,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTRPC } from '@/trpc/client'
 import { LatestBuildSection } from './latest-build-section'
+import { SandboxesStartedSection } from './sandboxes-started-section'
 import { TemplateSection } from './template-section'
 
 interface TemplateOverviewProps {
@@ -26,6 +27,7 @@ export default function TemplateOverview({
     <div className="flex flex-col gap-8">
       <TemplateSection template={template} teamSlug={teamSlug} />
       <LatestBuildSection templateId={templateId} teamSlug={teamSlug} />
+      <SandboxesStartedSection spawnCount={template.spawnCount} />
     </div>
   )
 }

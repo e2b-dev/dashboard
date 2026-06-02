@@ -25,7 +25,7 @@ export function OverviewSection({
       )}
     >
       <div className="flex items-center gap-2">
-        <span className="text-fg-tertiary prose-label uppercase">{label}</span>
+        <span className="text-fg prose-label-highlight uppercase">{label}</span>
         {labelBadge}
       </div>
       <div className="flex flex-col gap-3">{children}</div>
