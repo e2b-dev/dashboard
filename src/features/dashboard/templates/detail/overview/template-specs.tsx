@@ -9,8 +9,8 @@ import {
 
 interface TemplateSpecsProps {
   build: {
-    cpuCount: number
-    memoryMB: number
+    cpuCount: number | null
+    memoryMB: number | null
     diskSizeMB: number | null
     envdVersion: string | null
   }
@@ -27,16 +27,16 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
     >
       <SpecItem icon={<CpuIcon className="size-3" />}>
         <span className="prose-body-numeric-highlight">
-          {formatNumber(build.cpuCount)}
+          {build.cpuCount === null ? '—' : formatNumber(build.cpuCount)}
         </span>{' '}
         <span className="text-fg-tertiary">
-          Core{build.cpuCount > 1 ? 's' : ''}
+          Core{build.cpuCount !== null && build.cpuCount > 1 ? 's' : ''}
         </span>
       </SpecItem>
       <Separator />
       <SpecItem icon={<MemoryIcon className="size-3" />}>
         <span className="prose-body-numeric-highlight">
-          {formatNumber(build.memoryMB)}
+          {build.memoryMB === null ? '—' : formatNumber(build.memoryMB)}
         </span>{' '}
         <span className="text-fg-tertiary">MB</span>
       </SpecItem>

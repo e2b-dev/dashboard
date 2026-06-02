@@ -733,9 +733,10 @@ function generateMockSandboxes(count: number): Sandboxes {
     const startDate = subHours(baseDate, Math.floor(Math.random() * 30))
     const endDate = addHours(startDate, 24)
 
-    // Random memory and CPU from template's allowed values
-    const memory = template.memoryMB
-    const cpu = template.cpuCount
+    // Random memory and CPU from template's allowed values; mock templates
+    // always carry real specs, so default the (now-nullable) fields here.
+    const memory = template.memoryMB ?? 2048
+    const cpu = template.cpuCount ?? 2
 
     sandboxes.push({
       alias: `${env}-${component}-${nanoid(4)}`,
@@ -743,8 +744,8 @@ function generateMockSandboxes(count: number): Sandboxes {
       cpuCount: cpu,
       endAt: endDate.toISOString(),
       memoryMB: memory,
-      diskSizeMB: template.diskSizeMB,
-      envdVersion: template.envdVersion,
+      diskSizeMB: template.diskSizeMB ?? 1024,
+      envdVersion: template.envdVersion ?? '0.1.0',
       metadata: {
         lastUpdate: new Date(
           startDate.getTime() + 2 * 60 * 60 * 1000
