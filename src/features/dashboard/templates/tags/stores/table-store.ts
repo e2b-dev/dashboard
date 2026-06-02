@@ -6,7 +6,6 @@ import type {
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { createHashStorage } from '@/lib/utils/store'
-import { trackTagTableInteraction } from '../table-config'
 
 interface TagTableState {
   sorting: SortingState
@@ -38,7 +37,6 @@ export const useTagTableStore = create<Store>()(
         const next =
           typeof sorting === 'function' ? sorting(get().sorting) : sorting
         set({ sorting: next })
-        trackTagTableInteraction('sorted', { column_count: next.length })
       },
 
       setGlobalFilter: (globalFilter) => {
@@ -46,12 +44,6 @@ export const useTagTableStore = create<Store>()(
           typeof globalFilter === 'function'
             ? globalFilter(get().globalFilter)
             : globalFilter
-        if (next !== get().globalFilter) {
-          trackTagTableInteraction('searched', {
-            has_query: Boolean(next),
-            query: next,
-          })
-        }
         set({ globalFilter: next })
       },
 

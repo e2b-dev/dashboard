@@ -8,7 +8,9 @@ import {
 } from '@tanstack/react-query'
 import {
   flexRender,
+  type OnChangeFn,
   type Row,
+  type SortingState,
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
@@ -72,6 +74,15 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   const expanded = useTagTableStore((s) => s.expanded)
   const setExpanded = useTagTableStore((s) => s.setExpanded)
   const resetFilters = useTagTableStore((s) => s.resetFilters)
+
+  const handleSortingChange: OnChangeFn<SortingState> = useCallback(
+    (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      trackTagTableInteraction('sorted', { column_count: next.length })
+      setSorting(next)
+    },
+    [sorting, setSorting]
+  )
 
   useEffect(() => {
     return () => resetFilters()
@@ -164,7 +175,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
     data: groups.length > 0 ? groups : fallbackData,
     columns,
     state: { sorting, expanded },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     onExpandedChange: setExpanded,
     getRowCanExpand: (row) =>
       row.original.assignments.length > 1 || row.original.hasMore,
