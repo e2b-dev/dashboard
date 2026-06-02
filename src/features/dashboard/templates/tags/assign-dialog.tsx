@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import posthog from 'posthog-js'
-import { type FormEvent, useEffect, useId, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useId, useState } from 'react'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
@@ -66,17 +66,7 @@ export default function AssignTagDialog({
 
   const mutation = useMutation(
     trpc.templates.assignTag.mutationOptions({
-      onSuccess: async (data, variables) => {
-        const persistedTag =
-          existsQuery.data?.normalizedTag ?? data.tags[0] ?? variables.tag
-        queryClient.setQueryData(
-          trpc.templates.checkTagExists.queryKey({
-            teamSlug,
-            templateId,
-            tag: persistedTag,
-          }),
-          { exists: true, normalizedTag: persistedTag }
-        )
+      onSuccess: async () => {
         await Promise.all([
           queryClient.invalidateQueries({
             queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
@@ -115,22 +105,21 @@ export default function AssignTagDialog({
     if (mutation.isError) mutation.reset()
   }
 
-  const nameStatus: TagNameStatus = useMemo(() => {
+  const nameStatus = computeNameStatus()
+
+  function computeNameStatus(): TagNameStatus {
     if (name.trim() === '') return 'idle'
-    if (name.length > TAG_MAX_LENGTH || !TAG_REGEX.test(name)) {
-      return 'invalid'
-    }
+    if (name.length > TAG_MAX_LENGTH || !TAG_REGEX.test(name)) return 'invalid'
     if (name !== normalizedDebouncedName) return 'checking'
     if (!hasValidShape) return 'invalid'
     if (existsQuery.isFetching) return 'checking'
 
     const data = existsQuery.data
-    if (!data || data.normalizedTag !== normalizedDebouncedName) {
+    if (!data || data.normalizedTag !== normalizedDebouncedName)
       return 'checking'
-    }
 
     return data.exists ? 'exists' : 'available'
-  }, [name, normalizedDebouncedName, hasValidShape, existsQuery])
+  }
 
   const canSubmit =
     nameStatus === 'available' &&
