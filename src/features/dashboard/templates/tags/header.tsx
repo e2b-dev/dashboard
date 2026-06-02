@@ -6,7 +6,7 @@ import { SearchIcon } from '@/ui/primitives/icons'
 import { DebouncedInput } from '@/ui/primitives/input'
 import AssignTagDialog from './assign-dialog'
 import { useTagTableStore } from './stores/table-store'
-import { TAG_SEARCH_MAX_LEN } from './table-config'
+import { TAG_SEARCH_MAX_LEN, trackTagTableInteraction } from './table-config'
 import TagFormatInvalidTooltip from './tag-format-invalid-tooltip'
 
 interface TagsHeaderProps {
@@ -32,9 +32,16 @@ export default function TagsHeader({
 
   const handleSearchChange = useCallback(
     (value: string | number) => {
-      setGlobalFilter(String(value))
+      const next = String(value)
+      if (next !== globalFilter) {
+        trackTagTableInteraction('searched', {
+          has_query: Boolean(next),
+          query: next,
+        })
+      }
+      setGlobalFilter(next)
     },
-    [setGlobalFilter]
+    [globalFilter, setGlobalFilter]
   )
 
   return (
