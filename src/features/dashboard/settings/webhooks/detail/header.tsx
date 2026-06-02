@@ -35,6 +35,11 @@ export const WebhookDetailHeader = ({
   return (
     <header className="bg-bg relative z-30 w-full p-3 md:p-6">
       <DetailsRow>
+        <DetailsItem label="Name" className="min-w-0 max-w-[240px]">
+          <p className="truncate" title={webhook.name}>
+            {webhook.name}
+          </p>
+        </DetailsItem>
         <DetailsItem label="URL" className="min-w-0 max-w-[360px]">
           <div className="flex min-w-0 items-center gap-1">
             <p

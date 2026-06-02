@@ -1,13 +1,10 @@
 'use client'
 
-import { useSuspenseQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Fragment } from 'react'
 import { getDashboardLayoutConfig, type TitleSegment } from '@/configs/layout'
-import { PROTECTED_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
 import CopyButton from '@/ui/copy-button'
 import { SidebarTrigger } from '@/ui/primitives/sidebar'
@@ -25,7 +22,6 @@ export default function DashboardLayoutHeader({
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
   const copyableValue = config.copyValue ?? null
-  const webhookRoute = getWebhookRoute(pathname)
 
   return (
     <div
@@ -47,14 +43,7 @@ export default function DashboardLayoutHeader({
 
         <div className="min-w-0 flex-1 flex items-center gap-2">
           <h1 className="truncate min-w-0">
-            {webhookRoute ? (
-              <WebhookHeaderTitle
-                teamSlug={webhookRoute.teamSlug}
-                webhookId={webhookRoute.webhookId}
-              />
-            ) : (
-              <HeaderTitle title={config.title} />
-            )}
+            <HeaderTitle title={config.title} />
           </h1>
           {copyableValue && (
             <CopyButton
@@ -75,42 +64,6 @@ export default function DashboardLayoutHeader({
         </div>
       </div>
     </div>
-  )
-}
-
-const getWebhookRoute = (pathname: string) => {
-  const parts = pathname.split('/')
-  const teamSlug = parts[2]
-  const resource = parts[3]
-  const webhookId = parts[4]
-
-  if (resource !== 'webhooks' || !teamSlug || !webhookId) return null
-  return { teamSlug, webhookId }
-}
-
-function WebhookHeaderTitle({
-  teamSlug,
-  webhookId,
-}: {
-  teamSlug: string
-  webhookId: string
-}) {
-  const trpc = useTRPC()
-  const { data } = useSuspenseQuery(
-    trpc.webhooks.get.queryOptions({ teamSlug, webhookId })
-  )
-
-  return (
-    <span className="flex items-center gap-1">
-      <Link
-        href={PROTECTED_URLS.WEBHOOKS(teamSlug)}
-        className="text-fg-secondary hover:text-fg transition-colors hover:underline shrink-0"
-      >
-        Webhooks
-      </Link>
-      <span className="text-fg-tertiary select-none shrink-0">/</span>
-      <span className="truncate">{data.webhook.name}</span>
-    </span>
   )
 }
 

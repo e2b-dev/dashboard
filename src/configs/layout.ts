@@ -97,7 +97,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   }),
   '/dashboard/*/webhooks/*/*': (pathname) => {
     const parts = pathname.split('/')
-    const teamSlug = parts[2]!
+    const teamSlug = parts[2] ?? ''
 
     return {
       title: [
@@ -105,7 +105,6 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
           label: 'Webhooks',
           href: PROTECTED_URLS.WEBHOOKS(teamSlug),
         },
-        { label: 'Webhook' },
       ],
       type: 'custom',
       custom: {
