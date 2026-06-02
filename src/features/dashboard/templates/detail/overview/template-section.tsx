@@ -1,6 +1,6 @@
 'use client'
 
-import type { Template } from '@/core/modules/templates/models'
+import type { TemplateDetail } from '@/core/modules/templates/models'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
@@ -11,7 +11,7 @@ import { TemplateVisibilityDropdown } from '../visibility-dropdown'
 import { OverviewSection } from './section'
 
 interface TemplateSectionProps {
-  template: Template
+  template: TemplateDetail
   teamSlug: string
 }
 
