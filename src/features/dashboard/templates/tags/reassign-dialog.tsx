@@ -1,8 +1,6 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useTRPC } from '@/trpc/client'
 import {
   Dialog,
   DialogContent,
@@ -17,8 +15,8 @@ import {
   TagDialogFooter,
   TagDialogSuccess,
 } from './components'
-import { tagDialogStageFromMutation } from './helpers'
 import { trackTagTableInteraction } from './table-config'
+import { useTagAssignmentMutation } from './use-tag-assignment-mutation'
 
 export type ReassignSurface = 'tags-tab' | 'history-header'
 
@@ -45,45 +43,17 @@ export default function ReassignTagDialog({
   surface,
   onReassigned,
 }: ReassignTagDialogProps) {
-  const trpc = useTRPC()
-  const queryClient = useQueryClient()
-
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null)
   const [selectionSource, setSelectionSource] =
     useState<BuildSelectionSource | null>(null)
 
-  const reassign = useMutation(
-    trpc.templates.assignTag.mutationOptions({
-      onSuccess: async () => {
-        trackTagTableInteraction('reassign succeeded', { surface, tag })
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
-              teamSlug,
-              templateId,
-            }).queryKey,
-          }),
-          queryClient.invalidateQueries({
-            queryKey: trpc.templates.getTagCount.queryOptions({
-              teamSlug,
-              templateId,
-            }).queryKey,
-          }),
-        ])
-        await onReassigned?.()
-      },
-      onError: (error) => {
-        trackTagTableInteraction('reassign failed', {
-          surface,
-          tag,
-          error_status: error.data?.httpStatus ?? null,
-          error_code: error.data?.code ?? null,
-        })
-      },
-    })
-  )
-
-  const stage = tagDialogStageFromMutation(reassign)
+  const { mutation: reassign, stage } = useTagAssignmentMutation({
+    teamSlug,
+    templateId,
+    operation: 'reassign',
+    analyticsContext: { surface, tag },
+    onSuccess: onReassigned,
+  })
 
   const { reset } = reassign
   useEffect(() => {
