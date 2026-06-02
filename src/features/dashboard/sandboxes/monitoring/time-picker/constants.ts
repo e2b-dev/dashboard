@@ -76,7 +76,8 @@ export const TIME_OPTIONS: TimeOption[] = [
 ]
 
 // constraints
-export const MAX_DAYS_AGO = 91 * 24 * 60 * 60 * 1000 // 91 days in ms
+export const MAX_DAYS_AGO = 90 * 24 * 60 * 60 * 1000 // 90 days in ms
+export const MAX_DAYS_AGO_BUFFER = MAX_DAYS_AGO + 60 * 1000 // validation buffer to prevent preset race conditions
 export const MIN_RANGE_MS = 1.5 * 60 * 1000 // 1.5 minutes minimum
 export const CLOCK_SKEW_TOLERANCE = 60 * 1000 // 60 seconds
 export const DEFAULT_RANGE_MS = 60 * 60 * 1000 // 1 hour default

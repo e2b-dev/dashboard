@@ -29,7 +29,7 @@ export const GetTeamMetricsMaxSchema = z
           return start >= now - MAX_DAYS_AGO
         },
         {
-          message: 'Start date cannot be more than 90 days ago',
+          message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
         }
       ),
     endDate: z
@@ -47,7 +47,7 @@ export const GetTeamMetricsMaxSchema = z
       return data.endDate - data.startDate <= MAX_DAYS_AGO
     },
     {
-      message: 'Date range cannot exceed 90 days',
+      message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,
     }
   )
 

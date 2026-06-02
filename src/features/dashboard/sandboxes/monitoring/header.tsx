@@ -11,6 +11,7 @@ import {
   MaxConcurrentSandboxesClient,
   SandboxesStartRateClient,
 } from './header.client'
+import { MAX_DAYS_AGO } from './time-picker/constants'
 
 interface MonitoringContentParams {
   teamSlug: string
@@ -159,7 +160,7 @@ export const MaxConcurrentSandboxes = async ({
   const { teamSlug } = await params
 
   const end = Date.now()
-  const start = end - (90 * 24 * 60 * 60 * 1000 - 60_000) // 90 days minus 1 minute margin to avoid validation errors
+  const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
   const teamMetricsResult = await getTeamMetricsMax({
     teamSlug,
