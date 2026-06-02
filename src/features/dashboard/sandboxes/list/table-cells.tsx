@@ -127,7 +127,7 @@ export function TemplateCell({
   return (
     <Button asChild variant="link-table" size="none">
       <Link
-        href={PROTECTED_URLS.TEMPLATE_DETAIL(team.slug, templateId)}
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(team.slug, templateId)}
         onClick={(e) => e.stopPropagation()}
       >
         <span className="min-w-0 truncate">{templateIdentifier}</span>

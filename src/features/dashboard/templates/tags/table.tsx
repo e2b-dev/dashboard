@@ -14,7 +14,6 @@ import {
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import Link from 'next/link'
 import {
   type KeyboardEvent,
   type MouseEvent,
@@ -37,9 +36,11 @@ import {
   DataTableHeader,
   DataTableRow,
 } from '@/ui/data-table'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { TriangleIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
+import { TAGS_PAGE_LIMIT } from './constants'
 import TagsEmpty from './empty'
 import TagsHeader from './header'
 import { TagHistoryRow } from './history/tag-history-row'
@@ -55,8 +56,6 @@ import {
   useTagColumns,
 } from './table-config'
 import type { TagGroup } from './types'
-
-const TAGS_PAGE_LIMIT = 50
 
 interface TagsTableProps {
   teamSlug: string
@@ -461,7 +460,7 @@ function ShowFullHistoryRow({
   templateId,
 }: ShowFullHistoryRowProps) {
   return (
-    <Link
+    <HoverPrefetchLink
       href={PROTECTED_URLS.TEMPLATE_TAG_HISTORY(teamSlug, templateId, tag)}
       onClick={() =>
         trackTagTableInteraction('show_full_history_clicked', { tag })
@@ -472,6 +471,6 @@ function ShowFullHistoryRow({
       )}
     >
       Show full history
-    </Link>
+    </HoverPrefetchLink>
   )
 }

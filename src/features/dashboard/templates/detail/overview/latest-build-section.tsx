@@ -1,7 +1,6 @@
 'use client'
 
 import { useSuspenseQuery } from '@tanstack/react-query'
-import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { BuildStatus } from '@/core/modules/builds/models'
 import type { TemplateDefaultBuildModel } from '@/core/modules/templates/models'
@@ -10,6 +9,7 @@ import { useNow } from '@/lib/hooks/use-now'
 import { formatTimeAgoCompact } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
+import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon, CopyIcon } from '@/ui/primitives/icons'
@@ -161,11 +161,11 @@ function BuildIdRow({
         </span>
       </button>
       <Button asChild variant="tertiary" size="none" className="px-3 py-1.5">
-        <Link
+        <HoverPrefetchLink
           href={PROTECTED_URLS.TEMPLATE_BUILD(teamSlug, templateId, buildId)}
         >
           Open
-        </Link>
+        </HoverPrefetchLink>
       </Button>
     </div>
   )
