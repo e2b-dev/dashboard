@@ -7,6 +7,7 @@ import {
   DetailsRow,
 } from '@/features/dashboard/layouts/details-row'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
+import { NULL_BUILD_ID } from '@/features/dashboard/templates/tags/constants'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { TemplateVisibilityDropdown } from './visibility-dropdown'
@@ -15,8 +16,6 @@ interface TemplateDetailHeaderProps {
   teamSlug: string
   templateId: string
 }
-
-const NULL_BUILD_ID = '00000000-0000-0000-0000-000000000000'
 
 export default function TemplateDetailHeader({
   teamSlug,

@@ -1,0 +1,2 @@
+export const DEFAULT_TAG_NAME = 'default'
+export const NULL_BUILD_ID = '00000000-0000-0000-0000-000000000000'
