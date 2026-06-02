@@ -19,6 +19,22 @@ export type Template = Pick<
   | 'envdVersion'
 >
 
+export type TemplateDetail = Pick<
+  DashboardComponents['schemas']['TemplateDetail'],
+  | 'templateID'
+  | 'buildID'
+  | 'cpuCount'
+  | 'memoryMB'
+  | 'diskSizeMB'
+  | 'public'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'lastSpawnedAt'
+  | 'spawnCount'
+  | 'buildCount'
+  | 'envdVersion'
+>
+
 export type DefaultTemplate = Template & {
   isDefault: true
   defaultDescription?: string

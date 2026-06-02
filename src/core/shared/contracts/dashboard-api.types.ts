@@ -1403,9 +1403,12 @@ export interface components {
       templateID: string
       /** @description Identifier of the latest ready build for the template, or the zero UUID when none. */
       buildID: string
-      cpuCount: components['schemas']['CPUCount']
-      memoryMB: components['schemas']['MemoryMB']
-      diskSizeMB: components['schemas']['DiskSizeMB']
+      /** @description vCPU count of the latest ready default build, or `null` when none. */
+      cpuCount: components['schemas']['CPUCount'] | null
+      /** @description Memory in MiB of the latest ready default build, or `null` when none. */
+      memoryMB: components['schemas']['MemoryMB'] | null
+      /** @description Disk size in MiB of the latest ready default build, or `null` when none. */
+      diskSizeMB: components['schemas']['DiskSizeMB'] | null
       /** @description Whether the template is public or only accessible by the team. */
       public: boolean
       /**
@@ -1440,8 +1443,8 @@ export interface components {
        * @description Number of times the template was built.
        */
       buildCount: number
-      /** @description Envd version of the latest ready build, or an empty string when none. */
-      envdVersion: string
+      /** @description envd version of the latest ready default build, or `null` when none. */
+      envdVersion: string | null
     }
     TemplateTagAssignment: {
       /**

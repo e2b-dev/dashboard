@@ -10,6 +10,7 @@ import {
 import type {
   DefaultTemplate,
   Template,
+  TemplateDetail,
   TemplateTagAssignment,
   TemplateTagExistsResult,
   TemplateTagGroup,
@@ -36,7 +37,9 @@ type TemplatesRepositoryDeps = {
 
 export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
-  getTemplate(templateId: string): Promise<RepoResult<{ template: Template }>>
+  getTemplate(
+    templateId: string
+  ): Promise<RepoResult<{ template: TemplateDetail }>>
   getTagGroups(
     templateId: string,
     options?: {
