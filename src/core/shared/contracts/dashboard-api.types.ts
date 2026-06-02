@@ -903,13 +903,21 @@ export interface paths {
     }
     /**
      * List template tag groups
-     * @description Returns ready template tag assignment groups with bounded per-tag history.
+     * @description Returns ready template tag assignment groups with bounded per-tag history, paginated over tags with keyset cursor.
      */
     get: {
       parameters: {
         query?: {
           /** @description Maximum number of ready assignment rows to return per tag. */
           assignmentLimit?: components['parameters']['tag_assignment_limit']
+          /** @description Maximum number of distinct tags to return per page. */
+          tagsLimit?: components['parameters']['tag_groups_limit']
+          /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+          tagsCursor?: components['parameters']['tag_groups_cursor']
+          /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+          search?: components['parameters']['tag_groups_search']
+          /** @description Sort order for the returned tag groups. */
+          sort?: components['parameters']['tag_groups_sort']
         }
         header?: never
         path: {
@@ -930,6 +938,52 @@ export interface paths {
           }
         }
         400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Count template tags
+     * @description Returns the total number of distinct ready tags for the template.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned tag count. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagsCountResponse']
+          }
+        }
         401: components['responses']['401']
         403: components['responses']['403']
         404: components['responses']['404']
@@ -1441,6 +1495,15 @@ export interface components {
     }
     TemplateTagGroupsResponse: {
       tags: components['schemas']['TemplateTagGroup'][]
+      /** @description Cursor to pass as `tagsCursor` for the next page, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
+    TemplateTagsCountResponse: {
+      /**
+       * Format: int64
+       * @description Total distinct ready tags for the template.
+       */
+      total: number
     }
     TemplateTagExistsResponse: {
       /** @description Whether the template tag has at least one ready assignment. */
@@ -1563,6 +1626,14 @@ export interface components {
     tag_assignments_limit: number
     /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
     tag_assignments_cursor: string
+    /** @description Maximum number of distinct tags to return per page. */
+    tag_groups_limit: number
+    /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+    tag_groups_cursor: string
+    /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+    tag_groups_search: string
+    /** @description Sort order for the returned tag groups. */
+    tag_groups_sort: 'latest_desc' | 'latest_asc' | 'name_asc' | 'name_desc'
   }
   requestBodies: never
   headers: never

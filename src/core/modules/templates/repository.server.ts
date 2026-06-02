@@ -57,8 +57,17 @@ export interface TeamTemplatesRepository {
   ): Promise<RepoResult<{ build: TemplateDefaultBuildModel | null }>>
   getTagGroups(
     templateId: string,
-    options?: { assignmentLimit?: number }
-  ): Promise<RepoResult<{ tags: TemplateTagGroup[] }>>
+    options?: {
+      assignmentLimit?: number
+      tagsLimit?: number
+      tagsCursor?: string
+      search?: string
+      sort?: 'latest_desc' | 'latest_asc' | 'name_asc' | 'name_desc'
+    }
+  ): Promise<
+    RepoResult<{ tags: TemplateTagGroup[]; nextCursor: string | null }>
+  >
+  getTagCount(templateId: string): Promise<RepoResult<{ total: number }>>
   getTagAssignments(
     templateId: string,
     tag: string,
@@ -236,7 +245,7 @@ export function createTemplatesRepository(
     },
     async getTagGroups(templateId, options) {
       if (USE_MOCK_DATA) {
-        return ok({ tags: [] })
+        return ok({ tags: [], nextCursor: null })
       }
 
       const res = await deps.apiClient.GET(
@@ -248,6 +257,10 @@ export function createTemplatesRepository(
             },
             query: {
               assignmentLimit: options?.assignmentLimit,
+              tagsLimit: options?.tagsLimit,
+              tagsCursor: options?.tagsCursor,
+              search: options?.search,
+              sort: options?.sort,
             },
           },
           headers: {
@@ -266,7 +279,41 @@ export function createTemplatesRepository(
         )
       }
 
-      return ok({ tags: res.data?.tags ?? [] })
+      return ok({
+        tags: res.data?.tags ?? [],
+        nextCursor: res.data?.nextCursor ?? null,
+      })
+    },
+    async getTagCount(templateId) {
+      if (USE_MOCK_DATA) {
+        return ok({ total: 0 })
+      }
+
+      const res = await deps.apiClient.GET(
+        '/templates/{templateID}/tags/count',
+        {
+          params: {
+            path: {
+              templateID: templateId,
+            },
+          },
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+        }
+      )
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch template tag count',
+            res.error
+          )
+        )
+      }
+
+      return ok({ total: res.data?.total ?? 0 })
     },
     async getTagAssignments(templateId, tag, options) {
       if (USE_MOCK_DATA) {

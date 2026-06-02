@@ -5,7 +5,7 @@ import {
   isValidUuid,
   normalizeTagInput,
   TAG_MAX_LENGTH,
-} from '@/features/dashboard/templates/tags/assign-dialog.helpers'
+} from '@/features/dashboard/templates/tags/helpers'
 
 describe('normalizeTagInput', () => {
   it('lowercases ASCII letters so user input matches the server normalization', () => {

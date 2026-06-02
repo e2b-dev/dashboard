@@ -66,7 +66,7 @@ export default function AssignTagDialog({
 
   const mutation = useMutation(
     trpc.templates.assignTag.mutationOptions({
-      onSuccess: (data, variables) => {
+      onSuccess: async (data, variables) => {
         const persistedTag =
           existsQuery.data?.normalizedTag ?? data.tags[0] ?? variables.tag
         queryClient.setQueryData(
@@ -77,12 +77,20 @@ export default function AssignTagDialog({
           }),
           { exists: true, normalizedTag: persistedTag }
         )
-        queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTagGroups.queryKey({
-            teamSlug,
-            templateId,
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
+              teamSlug,
+              templateId,
+            }).queryKey,
           }),
-        })
+          queryClient.invalidateQueries({
+            queryKey: trpc.templates.getTagCount.queryOptions({
+              teamSlug,
+              templateId,
+            }).queryKey,
+          }),
+        ])
         trackAssign('assign succeeded', {})
       },
       onError: (error) => {
