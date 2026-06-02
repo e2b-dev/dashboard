@@ -1,11 +1,11 @@
 'use client'
 
-import { TAG_MAX_LENGTH } from './helpers'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
+import { TAG_MAX_LENGTH } from './helpers'
 
 interface TagFormatInvalidTooltipProps {
   maxLength?: number
