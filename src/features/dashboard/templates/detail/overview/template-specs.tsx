@@ -1,9 +1,9 @@
 import { formatNumber } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import {
-  CodeChevronIcon,
   CpuIcon,
   MemoryIcon,
+  MetadataIcon,
   StorageIcon,
 } from '@/ui/primitives/icons'
 
@@ -21,11 +21,11 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-x-4 gap-y-1 text-fg-secondary prose-body-numeric',
+        'flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-secondary prose-body-numeric',
         className
       )}
     >
-      <SpecItem icon={<CpuIcon className="size-3.5" />}>
+      <SpecItem icon={<CpuIcon className="size-3" />}>
         <span className="prose-body-numeric-highlight">
           {formatNumber(build.cpuCount)}
         </span>{' '}
@@ -34,7 +34,7 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
         </span>
       </SpecItem>
       <Separator />
-      <SpecItem icon={<MemoryIcon className="size-3.5" />}>
+      <SpecItem icon={<MemoryIcon className="size-3" />}>
         <span className="prose-body-numeric-highlight">
           {formatNumber(build.memoryMB)}
         </span>{' '}
@@ -43,7 +43,7 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
       {build.diskSizeMB !== null && (
         <>
           <Separator />
-          <SpecItem icon={<StorageIcon className="size-3.5" />}>
+          <SpecItem icon={<StorageIcon className="size-3" />}>
             <span className="prose-body-numeric-highlight">
               {formatNumber(build.diskSizeMB)}
             </span>{' '}
@@ -54,7 +54,7 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
       {build.envdVersion && (
         <>
           <Separator />
-          <SpecItem icon={<CodeChevronIcon className="size-3.5" />}>
+          <SpecItem icon={<MetadataIcon className="size-3" />}>
             <span className="prose-body-numeric-highlight font-mono">
               {build.envdVersion}
             </span>
