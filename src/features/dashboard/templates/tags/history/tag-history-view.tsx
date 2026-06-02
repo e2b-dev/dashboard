@@ -184,7 +184,7 @@ export default function TagHistoryView({
         <div
           className="relative"
           style={{
-            height: `${virtualizer.getTotalSize() - HEADER_SCROLL_MARGIN_PX}px`,
+            height: `${virtualizer.getTotalSize()}px`,
           }}
         >
           {virtualItems.map((virtualRow) => {
