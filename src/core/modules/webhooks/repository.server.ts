@@ -129,9 +129,6 @@ export function createWebhooksRepository(
               eventType: input.eventType,
             },
           },
-          querySerializer: {
-            array: { style: 'form', explode: true },
-          },
         }
       )
 

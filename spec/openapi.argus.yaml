@@ -761,7 +761,7 @@ paths:
           in: query
           required: false
           style: form
-          explode: true
+          explode: false
           schema:
             type: array
             items:
@@ -772,7 +772,7 @@ paths:
           in: query
           required: false
           style: form
-          explode: true
+          explode: false
           schema:
             type: array
             items:
