@@ -15,12 +15,11 @@ import { IconButton } from '@/ui/primitives/icon-button'
 import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
 import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 import { BuildLink } from '../build-link'
+import { DEFAULT_TAG_NAME } from '../constants'
 import TagDeleteDialog from '../delete-dialog'
 import ReassignTagDialog from '../reassign-dialog'
 
 const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
-
-const DEFAULT_TAG_NAME = 'default'
 
 interface TagHistoryHeaderProps {
   tag: string

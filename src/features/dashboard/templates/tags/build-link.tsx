@@ -5,8 +5,7 @@ import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { formatRelativeAgo } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
-
-const NULL_BUILD_ID = '00000000-0000-0000-0000-000000000000'
+import { NULL_BUILD_ID } from './constants'
 
 interface BuildLinkProps {
   teamSlug: string
