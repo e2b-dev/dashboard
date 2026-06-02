@@ -219,7 +219,6 @@ components:
         - teamId
         - name
         - createdAt
-        - teamId
         - url
         - enabled
         - events
@@ -493,6 +492,16 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter events to the provided event types
       responses:
         "200":
           description: Successfully returned the sandbox events
@@ -502,6 +511,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SandboxEvent"
+        "400":
+          $ref: "#/components/responses/400"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -541,6 +552,16 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter events to the provided event types
       responses:
         "200":
           description: Successfully returned the sandbox events
@@ -550,6 +571,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SandboxEvent"
+        "400":
+          $ref: "#/components/responses/400"
         "404":
           $ref: "#/components/responses/404"
         "401":

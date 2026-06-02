@@ -53,6 +53,8 @@ export interface paths {
           offset?: number
           limit?: number
           orderAsc?: boolean
+          /** @description Filter events to the provided event types */
+          types?: string[]
         }
         header?: never
         path: {
@@ -71,6 +73,7 @@ export interface paths {
             'application/json': components['schemas']['SandboxEvent'][]
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
         500: components['responses']['500']
@@ -98,6 +101,8 @@ export interface paths {
           offset?: number
           limit?: number
           orderAsc?: boolean
+          /** @description Filter events to the provided event types */
+          types?: string[]
         }
         header?: never
         path?: never
@@ -114,6 +119,7 @@ export interface paths {
             'application/json': components['schemas']['SandboxEvent'][]
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
         500: components['responses']['500']
