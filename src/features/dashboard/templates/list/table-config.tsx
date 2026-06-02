@@ -1,12 +1,8 @@
 'use client'
 
-import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   type ColumnDef,
-  type FilterFn,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   type TableOptions,
 } from '@tanstack/react-table'
 import posthog from 'posthog-js'
@@ -23,33 +19,6 @@ import {
   UpdatedAtCell,
   VisibilityCell,
 } from './table-cells'
-
-// FILTERS
-export const fuzzyFilter: FilterFn<unknown> = (
-  row,
-  columnId,
-  value,
-  addMeta
-) => {
-  // Skip undefined values
-  if (!value || !value.length) return true
-
-  const searchValue = value.toLowerCase()
-  const rowValue = row.getValue(columnId)
-
-  // Handle null/undefined row values
-  if (rowValue == null) return false
-
-  // Convert row value to string and lowercase for comparison
-  const itemStr = String(rowValue).toLowerCase()
-  const itemRank = rankItem(itemStr, searchValue)
-
-  addMeta({
-    itemRank,
-  })
-
-  return itemRank.passed
-}
 
 // TABLE CONFIG
 export const fallbackData: (Template | DefaultTemplate)[] = []
@@ -161,18 +130,14 @@ export const useColumns = (deps: unknown[]) => {
 export const templatesTableConfig: Partial<
   TableOptions<Template | DefaultTemplate>
 > = {
-  filterFns: {
-    fuzzy: fuzzyFilter,
-  },
   getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getSortedRowModel: getSortedRowModel(),
+  // Sorting, filtering, and search are performed server-side; the table is a
+  // pure renderer over the rows returned by the paginated query.
+  manualSorting: true,
+  manualFiltering: true,
   enableSorting: true,
   enableMultiSort: false,
   enableSortingRemoval: false,
   columnResizeMode: 'onChange',
   enableColumnResizing: true,
-  enableGlobalFilter: true,
-  // @ts-expect-error globalFilterFn is not a valid option
-  globalFilterFn: 'fuzzy',
 }

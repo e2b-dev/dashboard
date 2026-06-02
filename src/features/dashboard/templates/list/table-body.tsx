@@ -1,5 +1,5 @@
 import { flexRender, type Table } from '@tanstack/react-table'
-import type { RefObject } from 'react'
+import { type RefObject, useEffect } from 'react'
 import type { Template } from '@/core/modules/templates/models'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
@@ -11,25 +11,34 @@ import { useTemplateTableStore } from './stores/table-store'
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
 const INITIAL_FALLBACK_ROW_COUNT = 100
+const PREFETCH_THRESHOLD = 8
 
 interface TemplatesTableBodyProps {
   templates: Template[] | undefined
   table: Table<Template>
   scrollRef: RefObject<HTMLDivElement | null>
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
 }
 
 export function TemplatesTableBody({
   templates,
   table,
   scrollRef,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
 }: TemplatesTableBodyProps) {
   'use no memo'
 
-  const resetFilters = useTemplateTableStore((state) => state.resetFilters)
+  const { resetFilters, globalFilter, cpuCount, memoryMB, isPublic } =
+    useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
   const {
     virtualRows,
+    virtualizer,
     totalHeight: virtualizedTotalHeight,
     paddingTop: virtualPaddingTop,
   } = useVirtualRows<Template>({
@@ -39,6 +48,26 @@ export function TemplatesTableBody({
     overscan: VIRTUAL_OVERSCAN,
   })
 
+  const virtualItems = virtualizer.getVirtualItems()
+  const lastVisibleIndex = virtualItems[virtualItems.length - 1]?.index ?? -1
+
+  // Load the next page as the user scrolls near the bottom of the list.
+  useEffect(() => {
+    if (
+      hasNextPage &&
+      !isFetchingNextPage &&
+      lastVisibleIndex >= centerRows.length - PREFETCH_THRESHOLD
+    ) {
+      fetchNextPage()
+    }
+  }, [
+    hasNextPage,
+    isFetchingNextPage,
+    lastVisibleIndex,
+    centerRows.length,
+    fetchNextPage,
+  ])
+
   const rows =
     virtualRows.length > 0
       ? virtualRows
@@ -47,9 +76,10 @@ export function TemplatesTableBody({
   const isEmpty = templates && centerRows.length === 0
 
   const hasFilter =
-    Object.values(table.getState().columnFilters).some(
-      (filter) => filter.value !== undefined
-    ) || table.getState().globalFilter !== ''
+    Boolean(globalFilter) ||
+    cpuCount !== undefined ||
+    memoryMB !== undefined ||
+    isPublic !== undefined
 
   if (isEmpty) {
     if (hasFilter) {
