@@ -130,7 +130,7 @@ export default function ReassignTagDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         hideClose={stage === 'pending'}
-        className="sm:max-w-[430px] sm:h-[406px]"
+        className="sm:max-w-[440px] sm:h-[406px]"
         onPointerDownOutside={(e) => {
           if (stage === 'pending') e.preventDefault()
         }}

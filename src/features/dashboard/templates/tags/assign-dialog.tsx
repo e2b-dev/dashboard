@@ -200,7 +200,7 @@ export default function AssignTagDialog({
 
       <DialogContent
         hideClose={stage === 'pending'}
-        className="sm:max-w-[430px] sm:h-[422px] gap-4"
+        className="sm:max-w-[440px] sm:h-[422px] gap-4"
         onPointerDownOutside={(e) => {
           if (stage === 'pending') e.preventDefault()
         }}
