@@ -60,7 +60,6 @@ export const useTagTableStore = create<Store>()(
     {
       name: 'tags-table',
       storage: createJSONStorage(() => createHashStorage(initialState)),
-      // `expanded` is transient UI state — don't pollute the URL with it.
       partialize: ({ sorting, globalFilter }) => ({ sorting, globalFilter }),
     }
   )

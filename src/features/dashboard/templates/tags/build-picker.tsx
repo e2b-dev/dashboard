@@ -23,7 +23,6 @@ type BuildsQueryResult = {
 export type BuildSelectionSource = 'default' | 'search'
 
 const DEFAULT_LIMIT = 5
-const PICKER_REGION_MIN_HEIGHT = 'min-h-[128px]'
 
 interface BuildPickerProps {
   open: boolean
@@ -130,7 +129,7 @@ export default function BuildPicker({
         disabled={disabled}
       />
 
-      <div className={cn('flex flex-col', PICKER_REGION_MIN_HEIGHT)}>
+      <div className="flex flex-col min-h-[128px]">
         <PickerBody
           isSearchMode={isSearchMode}
           defaultQuery={defaultQuery}

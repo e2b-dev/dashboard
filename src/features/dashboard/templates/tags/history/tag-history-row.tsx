@@ -21,8 +21,6 @@ export function TagHistoryRow({
   templateId,
   onRequestRollback,
 }: TagHistoryRowProps) {
-  'use no memo'
-
   const isCurrentBuild = assignment.buildId === primaryAssignment.buildId
 
   const buildSummary = (

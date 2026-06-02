@@ -21,8 +21,6 @@ import ReassignTagDialog from './reassign-dialog'
 import RollbackTagDialog from './rollback-dialog'
 import type { TagGroup } from './types'
 
-const SMALL_BUTTON = 'h-7 px-2.5 py-1.5'
-
 export interface TagTableMeta {
   teamSlug: string
   templateId: string
@@ -81,8 +79,7 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
       >
         <Button
           variant="primary"
-          size="none"
-          className={SMALL_BUTTON}
+          size="small"
           aria-label={`Reassign tag ${group.tag} to a different build`}
           onClick={(e) => {
             e.stopPropagation()
@@ -93,8 +90,7 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
         </Button>
         <Button
           variant="secondary"
-          size="none"
-          className={SMALL_BUTTON}
+          size="small"
           disabled={!canRollback}
           aria-label={
             canRollback
