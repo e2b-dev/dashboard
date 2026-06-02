@@ -3,7 +3,10 @@ import 'server-only'
 import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
 import { infra } from '@/core/shared/clients/api'
-import type { components as ArgusComponents } from '@/core/shared/contracts/argus-api.types'
+import type {
+  components as ArgusComponents,
+  operations as ArgusOperations,
+} from '@/core/shared/contracts/argus-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
@@ -15,26 +18,22 @@ type WebhooksRepositoryDeps = {
 
 export type WebhooksScope = TeamRequestScope
 
-export interface ListWebhookDeliveriesInput {
-  webhookId: string
-  limit: number
-  cursor?: string
-  orderAsc: boolean
-  start?: string
-  end?: string
-  deliveryStatus?: ('success' | 'failed')[]
-  eventType?: string[]
+type WebhookDeliveriesListOperation = ArgusOperations['webhookDeliveriesList']
+type WebhookDeliveryStatsOperation = ArgusOperations['webhookDeliveryStats']
+
+type ListWebhookDeliveriesInput = NonNullable<
+  WebhookDeliveriesListOperation['parameters']['query']
+> & {
+  webhookId: WebhookDeliveriesListOperation['parameters']['path']['webhookID']
 }
 
-interface ListWebhookDeliveriesResult {
-  data: ArgusComponents['schemas']['WebhookDeliveryGroup'][]
-  nextCursor: string | null
-}
+type ListWebhookDeliveriesResult =
+  ArgusComponents['schemas']['WebhookDeliveriesListPayload']
 
-export interface GetWebhookDeliveryStatsInput {
-  webhookId: string
-  start?: string
-  end?: string
+type GetWebhookDeliveryStatsInput = NonNullable<
+  WebhookDeliveryStatsOperation['parameters']['query']
+> & {
+  webhookId: WebhookDeliveryStatsOperation['parameters']['path']['webhookID']
 }
 
 export interface WebhooksRepository {
