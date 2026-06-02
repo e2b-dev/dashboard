@@ -55,7 +55,7 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-secondary prose-body">
         <MetaItem>
           <span className="text-fg-tertiary">Created</span>{' '}
-          <span className="font-mono prose-body-numeric">
+          <span className="prose-body-regular">
             {created?.datePart ?? '--'} {created?.timePart ?? ''}
           </span>
         </MetaItem>
@@ -64,7 +64,7 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
           {modified ? (
             <>
               <span className="text-fg-tertiary">Modified</span>{' '}
-              <span className="font-mono prose-body-numeric">
+              <span className="prose-body-regular">
                 {modified.datePart} {modified.timePart}
               </span>
             </>
