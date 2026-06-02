@@ -1,7 +1,6 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import posthog from 'posthog-js'
+import { useQuery } from '@tanstack/react-query'
 import { type FormEvent, useEffect, useId, useState } from 'react'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import { useTRPC } from '@/trpc/client'
@@ -22,9 +21,10 @@ import {
   normalizeTagInput,
   TAG_MAX_LENGTH,
   TAG_REGEX,
-  tagDialogStageFromMutation,
 } from './helpers'
+import { trackTagTableInteraction } from './table-config'
 import TagNameField, { type TagNameStatus } from './tag-name-field'
+import { useTagAssignmentMutation } from './use-tag-assignment-mutation'
 
 const NAME_DEBOUNCE_MS = 350
 
@@ -40,7 +40,6 @@ export default function AssignTagDialog({
   templateName,
 }: AssignTagDialogProps) {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
 
   const formId = useId()
   const [open, setOpen] = useState(false)
@@ -64,33 +63,11 @@ export default function AssignTagDialog({
     )
   )
 
-  const mutation = useMutation(
-    trpc.templates.assignTag.mutationOptions({
-      onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
-              teamSlug,
-              templateId,
-            }).queryKey,
-          }),
-          queryClient.invalidateQueries({
-            queryKey: trpc.templates.getTagCount.queryOptions({
-              teamSlug,
-              templateId,
-            }).queryKey,
-          }),
-        ])
-        trackAssign('assign succeeded', {})
-      },
-      onError: (error) => {
-        trackAssign('assign failed', {
-          error_status: error.data?.httpStatus ?? null,
-          error_code: error.data?.code ?? null,
-        })
-      },
-    })
-  )
+  const { mutation, stage } = useTagAssignmentMutation({
+    teamSlug,
+    templateId,
+    operation: 'assign',
+  })
 
   const setName = (raw: string) => {
     setNameRaw(normalizeTagInput(raw))
@@ -128,7 +105,7 @@ export default function AssignTagDialog({
 
   useEffect(() => {
     if (!open) return
-    trackAssign('assign opened', { template_id: templateId })
+    trackTagTableInteraction('assign opened', { template_id: templateId })
   }, [open, templateId])
 
   const resetState = () => {
@@ -159,7 +136,7 @@ export default function AssignTagDialog({
     }
 
     const tagToSubmit = data.normalizedTag
-    trackAssign('assign submitted', {
+    trackTagTableInteraction('assign submitted', {
       via_search: selectionSource === 'search',
     })
     mutation.mutate({
@@ -170,8 +147,6 @@ export default function AssignTagDialog({
       tag: tagToSubmit,
     })
   }
-
-  const stage = tagDialogStageFromMutation(mutation)
 
   const successTag =
     existsQuery.data?.normalizedTag ??
@@ -256,11 +231,4 @@ export default function AssignTagDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function trackAssign(action: string, properties: Record<string, unknown>) {
-  posthog.capture('tag table interacted', {
-    action,
-    ...properties,
-  })
 }
