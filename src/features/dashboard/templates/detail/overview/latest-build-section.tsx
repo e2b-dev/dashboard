@@ -2,11 +2,11 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { BuildStatus } from '@/core/modules/builds/models'
 import type { TemplateDefaultBuildModel } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { useNow } from '@/lib/hooks/use-now'
 import { formatTimeAgoCompact } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
@@ -74,12 +74,7 @@ function DefaultTagBadge() {
 }
 
 function BuildAgo({ timestamp }: { timestamp: number }) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(interval)
-  }, [])
+  const now = useNow(30_000)
 
   return (
     <span className="prose-value-big font-mono uppercase text-fg whitespace-nowrap">

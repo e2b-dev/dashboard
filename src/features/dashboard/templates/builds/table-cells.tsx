@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
 } from '@/core/modules/builds/models'
+import { useNow } from '@/lib/hooks/use-now'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import {
@@ -74,17 +74,7 @@ export function Duration({
   finishedAt: number | null
   isBuilding: boolean
 }) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    if (!isBuilding) return
-
-    const interval = setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isBuilding])
+  const now = useNow(1000, isBuilding)
 
   const duration = isBuilding
     ? now - createdAt
