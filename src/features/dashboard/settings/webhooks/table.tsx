@@ -59,7 +59,6 @@ export const WebhooksTable = ({
       <TableBody
         className={cn(
           webhooks.length > 0 && [
-            // '[&>tr:first-child>td]:pt-0',
             '[&_tr]:border-stroke',
             '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke',
           ]

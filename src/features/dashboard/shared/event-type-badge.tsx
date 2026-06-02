@@ -2,7 +2,7 @@ import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecy
 import { Badge } from '@/ui/primitives/badge'
 import { SANDBOX_EVENT_TYPE_MAP } from './event-type-map'
 
-export const SandboxEventTypeBadge = ({ type }: { type: string }) => {
+export const EventTypeBadge = ({ type }: { type: string }) => {
   const parsed = SandboxLifecycleEventTypeSchema.safeParse(type)
 
   if (!parsed.success) {

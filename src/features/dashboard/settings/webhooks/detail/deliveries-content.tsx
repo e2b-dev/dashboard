@@ -15,10 +15,10 @@ import {
   VirtualizedTableRow,
 } from '@/features/dashboard/common/virtualized-table-ui'
 import {
+  EventTypeBadge,
   EventTypeFilter,
   eventTypeFilterParams,
   IdBadge,
-  SandboxEventTypeBadge,
 } from '@/features/dashboard/shared'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -368,7 +368,7 @@ const WebhookDeliveryRow = ({
         className={cn(deliveryTableCellClassName, 'w-[100px] min-w-0')}
       >
         <div className="min-w-0">
-          <SandboxEventTypeBadge type={group.eventType} />
+          <EventTypeBadge type={group.eventType} />
         </div>
       </TableCell>
       <TableCell className={cn(deliveryTableCellClassName, 'w-[128px]')}>

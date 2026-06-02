@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { SandboxEventTypeBadge } from './event-type-badge'
+import { EventTypeBadge } from './event-type-badge'
 import { SANDBOX_EVENT_TYPE_MAP } from './event-type-map'
 
 const getTriggerLabel = (selected: SandboxLifecycleEventType[]) => {
@@ -70,7 +70,7 @@ export const EventTypeFilter = ({
             onCheckedChange={() => toggleType(type)}
             onSelect={(e) => e.preventDefault()}
           >
-            <SandboxEventTypeBadge type={type} />
+            <EventTypeBadge type={type} />
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>
