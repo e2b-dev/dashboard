@@ -21,6 +21,7 @@ import {
   SandboxEventTypeBadge,
 } from '@/features/dashboard/shared'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import { type TRPCRouterOutputs, useTRPC } from '@/trpc/client'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
@@ -60,6 +61,12 @@ const JsonValueSchema = z.unknown()
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 240
+
+const deliveryTableHeadClassName =
+  'flex h-8 items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap'
+const deliveryTableCellClassName = 'flex h-8 items-center p-0 pr-12'
+const deliveryDetailPopoverClassName =
+  'min-w-0 max-w-[180px] normal-case text-fg-tertiary hover:text-fg hover:underline'
 
 const deliveryStatusVariantMap: Record<
   WebhookDeliveryStatus,
@@ -173,7 +180,7 @@ const DeliveryDetailCell = ({
   if (typeof parsedValue === 'string') {
     return (
       <JsonPopover
-        className="min-w-0 max-w-[180px] normal-case text-fg-tertiary hover:text-fg hover:underline"
+        className={deliveryDetailPopoverClassName}
         json={parsedValue}
       >
         <span className="block w-full truncate">{parsedValue}</span>
@@ -182,10 +189,7 @@ const DeliveryDetailCell = ({
   }
 
   return (
-    <JsonPopover
-      className="min-w-0 max-w-[180px] normal-case text-fg-tertiary hover:text-fg hover:underline"
-      json={parsedValue}
-    >
+    <JsonPopover className={deliveryDetailPopoverClassName} json={parsedValue}>
       <span className="block w-full truncate">{value}</span>
     </JsonPopover>
   )
@@ -216,37 +220,39 @@ const WebhookDeliveriesTable = ({
     <Table className="grid min-w-[1464px] table-fixed">
       <TableHeader className="sticky top-0 z-10 grid bg-bg">
         <TableRow className="flex min-w-full">
-          <TableHead className="flex h-8 w-[100px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[100px]')}>
             Event
           </TableHead>
-          <TableHead className="flex h-8 w-[128px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[128px]')}>
             Sandbox ID
           </TableHead>
-          <TableHead className="flex h-8 w-[92px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[92px]')}>
             Status
           </TableHead>
-          <TableHead className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[144px]')}>
             Last attempt
           </TableHead>
-          <TableHead className="flex h-8 w-[92px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[92px]')}>
             Attempts
           </TableHead>
-          <TableHead className="flex h-8 w-[84px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[84px]')}>
             Duration
           </TableHead>
-          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[170px]')}>
             Request headers
           </TableHead>
-          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[170px]')}>
             Request body
           </TableHead>
-          <TableHead className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[144px]')}>
             Response HTTP
           </TableHead>
-          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 pr-12 [&>span]:whitespace-nowrap">
+          <TableHead className={cn(deliveryTableHeadClassName, 'w-[170px]')}>
             Response headers
           </TableHead>
-          <TableHead className="flex h-8 w-[170px] items-center whitespace-nowrap p-0 [&>span]:whitespace-nowrap">
+          <TableHead
+            className={cn(deliveryTableHeadClassName, 'w-[170px] pr-0')}
+          >
             Response body
           </TableHead>
         </TableRow>
@@ -358,42 +364,49 @@ const WebhookDeliveryRow = ({
       virtualizer={virtualizer}
       height={ROW_HEIGHT_PX}
     >
-      <TableCell className="flex h-8 w-[100px] min-w-0 items-center p-0 pr-12">
+      <TableCell
+        className={cn(deliveryTableCellClassName, 'w-[100px] min-w-0')}
+      >
         <div className="min-w-0">
           <SandboxEventTypeBadge type={group.eventType} />
         </div>
       </TableCell>
-      <TableCell className="flex h-8 w-[128px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[128px]')}>
         <IdBadge
           id={group.sandboxId}
           onCopied={() => toast(defaultSuccessToast('Sandbox ID copied'))}
         />
       </TableCell>
-      <TableCell className="flex h-8 w-[92px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[92px]')}>
         {attempt ? <DeliveryStatusBadge status={attempt.status} /> : '-'}
       </TableCell>
-      <TableCell className="flex h-8 w-[144px] items-center whitespace-nowrap p-0 pr-12">
+      <TableCell
+        className={cn(
+          deliveryTableCellClassName,
+          'w-[144px] whitespace-nowrap'
+        )}
+      >
         {attempt ? formatDateTime(attempt.timestamp) : '-'}
       </TableCell>
-      <TableCell className="flex h-8 w-[92px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[92px]')}>
         {group.attemptCount}
       </TableCell>
-      <TableCell className="flex h-8 w-[84px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[84px]')}>
         {attempt ? `${attempt.durationMs.toLocaleString()}ms` : '-'}
       </TableCell>
-      <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[170px]')}>
         <DeliveryDetailCell value={attempt?.requestHeaders} />
       </TableCell>
-      <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[170px]')}>
         <DeliveryDetailCell value={attempt?.requestBody} />
       </TableCell>
-      <TableCell className="flex h-8 w-[144px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[144px]')}>
         {attempt ? formatHttpStatus(attempt.responseHttpStatusCode) : '-'}
       </TableCell>
-      <TableCell className="flex h-8 w-[170px] items-center p-0 pr-12">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[170px]')}>
         <DeliveryDetailCell value={attempt?.responseHeaders} />
       </TableCell>
-      <TableCell className="flex h-8 w-[170px] items-center p-0">
+      <TableCell className={cn(deliveryTableCellClassName, 'w-[170px] pr-0')}>
         <DeliveryDetailCell value={attempt?.responseBody} />
       </TableCell>
     </VirtualizedTableRow>
