@@ -59,12 +59,14 @@ interface BuildsTableProps {
   // Optional client-side row filter applied after fetch + live-status merge.
   postFilter?: (build: ListedBuildModel) => boolean
   showTemplateColumn?: boolean
+  disabled?: boolean
 }
 
 const BuildsTable = ({
   filters,
   postFilter,
   showTemplateColumn = true,
+  disabled = false,
 }: BuildsTableProps) => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -97,6 +99,7 @@ const BuildsTable = ({
         refetchInterval: BUILDS_REFETCH_INTERVAL_MS,
         refetchIntervalInBackground: false,
         maxPages: MAX_CACHED_PAGES,
+        enabled: !disabled,
       }
     )
   )
@@ -114,6 +117,10 @@ const BuildsTable = ({
       clearFilterRefetching()
     }
   }, [isFetchingBuilds, isFilterRefetching, clearFilterRefetching])
+
+  useEffect(() => {
+    if (disabled) clearFilterRefetching()
+  }, [disabled, clearFilterRefetching])
 
   const runningBuildIds = useMemo(
     () => builds.filter((b) => b.status === 'building').map((b) => b.id),
@@ -165,9 +172,10 @@ const BuildsTable = ({
     }
   }, [queryClient, buildsQueryKey])
 
-  const hasData = visibleBuilds.length > 0
-  const showLoader = isInitialLoad && !hasData
-  const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
+  const hasData = !disabled && visibleBuilds.length > 0
+  const showLoader = !disabled && isInitialLoad && !hasData
+  const showEmpty =
+    disabled || (!isInitialLoad && !isFetchingBuilds && !hasData)
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
   const visibleColumnCount = showTemplateColumn ? 6 : 5
