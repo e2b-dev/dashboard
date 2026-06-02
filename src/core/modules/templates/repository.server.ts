@@ -7,8 +7,6 @@ import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,
 } from '@/configs/mock-data'
-import type { components as InfraComponents } from '@/contracts/infra-api'
-import type { BuildStatus } from '@/core/modules/builds/models'
 import type {
   DefaultTemplate,
   Template,
@@ -31,16 +29,6 @@ import type {
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 const NULL_BUILD_ID = '00000000-0000-0000-0000-000000000000'
-
-type InfraBuildStatus = NonNullable<
-  InfraComponents['schemas']['TemplateBuild']
->['status']
-
-function mapInfraBuildStatus(status: InfraBuildStatus): BuildStatus {
-  if (status === 'ready') return 'success'
-  if (status === 'error') return 'failed'
-  return 'building'
-}
 
 type TemplatesRepositoryDeps = {
   apiClient: typeof api
@@ -179,67 +167,38 @@ export function createTemplatesRepository(
         })
       }
 
-      const tagsRes = await deps.infraClient.GET(
-        '/templates/{templateID}/tags',
-        {
-          params: { path: { templateID: templateId } },
-          headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
-          },
-        }
-      )
-
-      if (!tagsRes.response.ok || tagsRes.error) {
-        return err(
-          repoErrorFromHttp(
-            tagsRes.response.status,
-            tagsRes.error?.message ?? 'Failed to fetch template tags',
-            tagsRes.error
-          )
-        )
-      }
-
-      const defaultTag = (tagsRes.data ?? []).find((t) => t.tag === 'default')
-      if (!defaultTag) {
-        return ok({ build: null })
-      }
-
-      const buildsRes = await deps.infraClient.GET('/templates/{templateID}', {
+      const res = await deps.apiClient.GET('/templates/{templateID}', {
         params: { path: { templateID: templateId } },
         headers: {
           ...deps.authHeaders(scope.accessToken, scope.teamId),
         },
       })
 
-      if (!buildsRes.response.ok || buildsRes.error) {
+      if (!res.response.ok || res.error) {
         return err(
           repoErrorFromHttp(
-            buildsRes.response.status,
-            buildsRes.error?.message ?? 'Failed to fetch template builds',
-            buildsRes.error
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch template',
+            res.error
           )
         )
       }
 
-      const build = buildsRes.data?.builds.find(
-        (b) => b.buildID === defaultTag.buildID
-      )
-      if (!build) {
+      if (!res.data || res.data.buildID === NULL_BUILD_ID) {
         return ok({ build: null })
       }
 
+      const updatedAtMs = new Date(res.data.updatedAt).getTime()
       return ok({
         build: {
-          buildID: build.buildID,
-          status: mapInfraBuildStatus(build.status),
-          createdAt: new Date(build.createdAt).getTime(),
-          finishedAt: build.finishedAt
-            ? new Date(build.finishedAt).getTime()
-            : null,
-          cpuCount: build.cpuCount,
-          memoryMB: build.memoryMB,
-          diskSizeMB: build.diskSizeMB ?? null,
-          envdVersion: build.envdVersion ?? null,
+          buildID: res.data.buildID,
+          status: 'success' as const,
+          createdAt: updatedAtMs,
+          finishedAt: updatedAtMs,
+          cpuCount: res.data.cpuCount,
+          memoryMB: res.data.memoryMB,
+          diskSizeMB: res.data.diskSizeMB,
+          envdVersion: res.data.envdVersion || null,
         },
       })
     },
