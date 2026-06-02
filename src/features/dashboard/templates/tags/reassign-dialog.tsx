@@ -77,8 +77,7 @@ export default function ReassignTagDialog({
 
   const isSameAsCurrent =
     selectedBuildId !== null && selectedBuildId === currentBuildId
-  const canSubmit =
-    stage === 'idle' && selectedBuildId !== null && !isSameAsCurrent
+  const canSubmit = selectedBuildId !== null && !isSameAsCurrent
 
   const submit = () => {
     if (!canSubmit || !selectedBuildId) return
