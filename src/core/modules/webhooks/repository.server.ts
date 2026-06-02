@@ -24,7 +24,7 @@ type WebhookDeliveryStatsOperation = ArgusOperations['webhookDeliveryStats']
 type ListWebhookDeliveriesInput = NonNullable<
   WebhookDeliveriesListOperation['parameters']['query']
 > & {
-  webhookId: WebhookDeliveriesListOperation['parameters']['path']['webhookID']
+  webhookId: string
 }
 
 type ListWebhookDeliveriesResult =
@@ -33,7 +33,7 @@ type ListWebhookDeliveriesResult =
 type GetWebhookDeliveryStatsInput = NonNullable<
   WebhookDeliveryStatsOperation['parameters']['query']
 > & {
-  webhookId: WebhookDeliveryStatsOperation['parameters']['path']['webhookID']
+  webhookId: string
 }
 
 export interface WebhooksRepository {
