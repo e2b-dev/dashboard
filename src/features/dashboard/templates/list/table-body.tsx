@@ -1,9 +1,11 @@
 import { flexRender, type Table } from '@tanstack/react-table'
-import { type RefObject, useEffect } from 'react'
+import type { RefObject } from 'react'
 import type { Template } from '@/core/modules/templates/models'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
+import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
+import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { Button } from '@/ui/primitives/button'
 import { CloseIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
 import { useTemplateTableStore } from './stores/table-store'
@@ -11,7 +13,6 @@ import { useTemplateTableStore } from './stores/table-store'
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
 const INITIAL_FALLBACK_ROW_COUNT = 100
-const PREFETCH_THRESHOLD = 8
 
 interface TemplatesTableBodyProps {
   templates: Template[] | undefined
@@ -20,6 +21,7 @@ interface TemplatesTableBodyProps {
   hasNextPage: boolean
   isFetchingNextPage: boolean
   fetchNextPage: () => void
+  isRefetching: boolean
 }
 
 export function TemplatesTableBody({
@@ -29,6 +31,7 @@ export function TemplatesTableBody({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  isRefetching,
 }: TemplatesTableBodyProps) {
   'use no memo'
 
@@ -38,7 +41,6 @@ export function TemplatesTableBody({
   const centerRows = table.getCenterRows()
   const {
     virtualRows,
-    virtualizer,
     totalHeight: virtualizedTotalHeight,
     paddingTop: virtualPaddingTop,
   } = useVirtualRows<Template>({
@@ -47,26 +49,6 @@ export function TemplatesTableBody({
     estimateSizePx: ROW_HEIGHT_PX,
     overscan: VIRTUAL_OVERSCAN,
   })
-
-  const virtualItems = virtualizer.getVirtualItems()
-  const lastVisibleIndex = virtualItems[virtualItems.length - 1]?.index ?? -1
-
-  // Load the next page as the user scrolls near the bottom of the list.
-  useEffect(() => {
-    if (
-      hasNextPage &&
-      !isFetchingNextPage &&
-      lastVisibleIndex >= centerRows.length - PREFETCH_THRESHOLD
-    ) {
-      fetchNextPage()
-    }
-  }, [
-    hasNextPage,
-    isFetchingNextPage,
-    lastVisibleIndex,
-    centerRows.length,
-    fetchNextPage,
-  ])
 
   const rows =
     virtualRows.length > 0
@@ -115,21 +97,35 @@ export function TemplatesTableBody({
   }
 
   return (
-    <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
-      {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-      {rows.map((row) => (
-        <DataTableRow
-          key={row.id}
-          isSelected={row.getIsSelected()}
-          className="h-8 border-b"
-        >
-          {row.getVisibleCells().map((cell) => (
-            <DataTableCell key={cell.id} cell={cell}>
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </DataTableCell>
-          ))}
-        </DataTableRow>
-      ))}
-    </DataTableBody>
+    <>
+      <DataTableBody
+        virtualizedTotalHeight={virtualizedTotalHeight}
+        className={cn(isRefetching && 'opacity-70 transition-opacity')}
+      >
+        {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
+        {rows.map((row) => (
+          <DataTableRow
+            key={row.id}
+            isSelected={row.getIsSelected()}
+            className="h-8 border-b"
+          >
+            {row.getVisibleCells().map((cell) => (
+              <DataTableCell key={cell.id} cell={cell}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </DataTableCell>
+            ))}
+          </DataTableRow>
+        ))}
+      </DataTableBody>
+
+      {hasNextPage && (
+        <div className="flex items-center justify-center py-3 text-fg-tertiary max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]">
+          <LoadMoreButton
+            isLoading={isFetchingNextPage}
+            onLoadMore={fetchNextPage}
+          />
+        </div>
+      )}
+    </>
   )
 }

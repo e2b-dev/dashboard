@@ -10,7 +10,7 @@ import {
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import type {
   DefaultTemplate,
@@ -38,8 +38,6 @@ import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
 const PAGE_SIZE = 50
 
-// Maps a table column id to its server sort-token base. Only mapped columns are
-// sortable server-side; anything else falls back to updated_at.
 const COLUMN_TO_SORT_BASE: Record<string, string> = {
   name: 'name',
   cpuCount: 'cpu_count',
@@ -71,6 +69,7 @@ export default function TemplatesTable() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
   } = useSuspenseInfiniteQuery(
     trpc.templates.getTemplates.infiniteQueryOptions(
       {
@@ -79,7 +78,6 @@ export default function TemplatesTable() {
         cpuCount,
         memoryMB,
         public: isPublic,
-        // The search input already debounces before writing to the store.
         search: globalFilter || undefined,
         sort,
       },
@@ -95,6 +93,22 @@ export default function TemplatesTable() {
     () => data?.pages.flatMap((page) => page.data) ?? [],
     [data]
   )
+
+  const { isRefetching, clearRefetching } = useTemplatesRefetchTracking(
+    sort,
+    globalFilter,
+    cpuCount,
+    memoryMB,
+    isPublic
+  )
+
+  useEffect(() => {
+    if (!isFetching && isRefetching) {
+      clearRefetching()
+    }
+  }, [isFetching, isRefetching, clearRefetching])
+
+  const isListDimmed = isRefetching && templates.length > 0
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -125,9 +139,6 @@ export default function TemplatesTable() {
 
   const columnSizeVars = useColumnSizeVars(table)
 
-  // The query refetches from the first page whenever sort/filter/search change,
-  // so reset the scroll position to the top to match. These values are
-  // intentional triggers even though the effect body only touches the ref.
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll reset is triggered by query-input changes
   useEffect(() => {
     if (scrollRef.current) {
@@ -207,9 +218,34 @@ export default function TemplatesTable() {
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
             fetchNextPage={fetchNextPage}
+            isRefetching={isListDimmed}
           />
         </DataTable>
       </div>
     </ClientOnly>
   )
+}
+
+function useTemplatesRefetchTracking(
+  sort: string,
+  globalFilter: string,
+  cpuCount: number | undefined,
+  memoryMB: number | undefined,
+  isPublic: boolean | undefined
+) {
+  const [isRefetching, setIsRefetching] = useState(false)
+  const isFirstRender = useRef(true)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: these are change triggers, not values read in the effect
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    setIsRefetching(true)
+  }, [sort, globalFilter, cpuCount, memoryMB, isPublic])
+
+  const clearRefetching = useCallback(() => setIsRefetching(false), [])
+
+  return { isRefetching, clearRefetching }
 }
