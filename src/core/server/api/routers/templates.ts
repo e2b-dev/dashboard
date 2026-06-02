@@ -73,13 +73,41 @@ export const templatesRouter = createTRPCRouter({
       z.object({
         templateId: z.string(),
         assignmentLimit: z.number().int().min(1).max(25).optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+        cursor: z.string().optional(),
+        search: z
+          .string()
+          .max(64)
+          .regex(/^[a-z0-9._-]*$/)
+          .optional(),
+        sort: z
+          .enum(['latest_desc', 'latest_asc', 'name_asc', 'name_desc'])
+          .optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const result = await ctx.templatesRepository.getTagGroups(
         input.templateId,
-        { assignmentLimit: input.assignmentLimit }
+        {
+          assignmentLimit: input.assignmentLimit,
+          tagsLimit: input.limit,
+          tagsCursor: input.cursor,
+          search: input.search,
+          sort: input.sort,
+        }
       )
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+      return result.data
+    }),
+
+  getTagCount: teamTemplatesRepositoryProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.templatesRepository.getTagCount(input.templateId)
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
       return result.data
     }),

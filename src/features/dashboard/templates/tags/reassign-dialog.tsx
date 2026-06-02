@@ -56,12 +56,20 @@ export default function ReassignTagDialog({
     trpc.templates.assignTag.mutationOptions({
       onSuccess: async () => {
         trackTagTableInteraction('reassign succeeded', { surface, tag })
-        await queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTagGroups.queryKey({
-            teamSlug,
-            templateId,
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
+              teamSlug,
+              templateId,
+            }).queryKey,
           }),
-        })
+          queryClient.invalidateQueries({
+            queryKey: trpc.templates.getTagCount.queryOptions({
+              teamSlug,
+              templateId,
+            }).queryKey,
+          }),
+        ])
         await onReassigned?.()
       },
       onError: (error) => {

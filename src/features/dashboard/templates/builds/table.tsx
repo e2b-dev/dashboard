@@ -7,13 +7,14 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/modules/builds/models'
+import { useFilterChangeTracking } from '@/lib/hooks/use-filter-change-tracking'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
@@ -77,8 +78,7 @@ const BuildsTable = ({
 
   const { statuses, buildIdOrTemplate } = filters
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
-    statuses,
-    buildIdOrTemplate
+    [statuses, buildIdOrTemplate]
   )
 
   const {
@@ -338,28 +338,6 @@ export default BuildsTable
 
 function colStyle(width: number) {
   return { width, minWidth: width, maxWidth: width }
-}
-
-function useFilterChangeTracking(
-  statuses: string[],
-  buildIdOrTemplate: string | undefined
-) {
-  const [isFilterRefetching, setIsFilterRefetching] = useState(false)
-  const isFirstRender = useRef(true)
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    setIsFilterRefetching(true)
-  }, [statuses, buildIdOrTemplate])
-
-  const clearFilterRefetching = useCallback(() => {
-    setIsFilterRefetching(false)
-  }, [])
-
-  return { isFilterRefetching, clearFilterRefetching }
 }
 
 function mergeBuildsWithLiveStatuses(

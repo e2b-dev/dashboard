@@ -1,32 +1,34 @@
 'use client'
 
-import type { Table } from '@tanstack/react-table'
-import { useCallback } from 'react'
+import { useCallback, useId } from 'react'
+import { cn } from '@/lib/utils'
 import { SearchIcon } from '@/ui/primitives/icons'
 import { DebouncedInput } from '@/ui/primitives/input'
 import AssignTagDialog from './assign-dialog'
 import { useTagTableStore } from './stores/table-store'
-import type { TagGroup } from './types'
+import { TAG_SEARCH_MAX_LEN } from './table-config'
+import TagFormatInvalidTooltip from './tag-format-invalid-tooltip'
 
 interface TagsHeaderProps {
-  table: Table<TagGroup>
   teamSlug: string
   templateId: string
   templateName: string
+  total: number | undefined
+  hasSearch: boolean
+  searchInvalid: boolean
 }
 
 export default function TagsHeader({
-  table,
   teamSlug,
   templateId,
   templateName,
+  total,
+  hasSearch,
+  searchInvalid,
 }: TagsHeaderProps) {
+  const searchId = useId()
   const globalFilter = useTagTableStore((s) => s.globalFilter)
   const setGlobalFilter = useTagTableStore((s) => s.setGlobalFilter)
-
-  const totalCount = table.options.data.length
-  const visibleCount = table.getFilteredRowModel().rows.length
-  const isFiltered = globalFilter.trim().length > 0
 
   const handleSearchChange = useCallback(
     (value: string | number) => {
@@ -38,15 +40,39 @@ export default function TagsHeader({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 justify-between">
-        <div className="relative w-full max-w-70">
-          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-tertiary pointer-events-none" />
-          <DebouncedInput
-            placeholder="Search by name"
-            className="pl-[30px]"
-            value={globalFilter}
-            onChange={handleSearchChange}
-            debounce={200}
-          />
+        <div className="w-full max-w-70">
+          <label
+            htmlFor={searchId}
+            className={cn(
+              'flex h-9 w-full min-w-0 items-center gap-2 border bg-transparent px-3',
+              'transition-colors anim-ease-appear anim-duration-fast',
+              'hover:border-stroke-active',
+              'focus-within:border-stroke-active focus-within:bg-bg-highlight',
+              searchInvalid && 'border-accent-error-highlight'
+            )}
+          >
+            <SearchIcon className="size-4 shrink-0 text-fg-tertiary pointer-events-none" />
+            <DebouncedInput
+              id={searchId}
+              placeholder="Search by name"
+              value={globalFilter}
+              onChange={handleSearchChange}
+              debounce={200}
+              aria-invalid={searchInvalid || undefined}
+              className={cn(
+                'prose-body min-w-0 flex-1 border-0 bg-transparent px-0 py-0 shadow-none outline-none',
+                'placeholder:text-fg-tertiary',
+                'hover:bg-transparent focus:bg-transparent',
+                'focus:[border-bottom:none] focus:outline-none',
+                'disabled:cursor-not-allowed disabled:opacity-50'
+              )}
+            />
+            {searchInvalid ? (
+              <span className="flex shrink-0 items-center">
+                <TagFormatInvalidTooltip maxLength={TAG_SEARCH_MAX_LEN} />
+              </span>
+            ) : null}
+          </label>
         </div>
         <AssignTagDialog
           teamSlug={teamSlug}
@@ -68,13 +94,11 @@ export default function TagsHeader({
           </a>
           .
         </p>
-        <p className="prose-body text-fg-tertiary whitespace-nowrap">
-          {isFiltered
-            ? `${visibleCount} of ${totalCount} ${
-                totalCount === 1 ? 'tag' : 'tags'
-              }`
-            : `${totalCount} ${totalCount === 1 ? 'tag' : 'tags'} in total`}
-        </p>
+        {!hasSearch && (
+          <p className="prose-body text-fg-tertiary whitespace-nowrap">
+            {total} tags in total
+          </p>
+        )}
       </div>
     </div>
   )

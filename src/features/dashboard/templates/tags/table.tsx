@@ -1,6 +1,11 @@
 'use client'
 
-import { useSuspenseQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
 import {
   flexRender,
   type Row,
@@ -18,7 +23,9 @@ import {
 } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
+import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cells'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
+import { useFilterChangeTracking } from '@/lib/hooks/use-filter-change-tracking'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import {
@@ -29,6 +36,7 @@ import {
   DataTableRow,
 } from '@/ui/data-table'
 import { TriangleIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
 import TagsEmpty from './empty'
 import TagsHeader from './header'
@@ -37,11 +45,16 @@ import RollbackTagDialog from './rollback-dialog'
 import { useTagTableStore } from './stores/table-store'
 import {
   fallbackData,
+  getActiveTagSearch,
+  hasInvalidTagSearchInput,
+  sortingToServerSort,
   tagsTableConfig,
   trackTagTableInteraction,
   useTagColumns,
 } from './table-config'
 import type { TagGroup } from './types'
+
+const TAGS_PAGE_LIMIT = 50
 
 interface TagsTableProps {
   teamSlug: string
@@ -53,16 +66,62 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
 
   const trpc = useTRPC()
 
-  const { data: tagsData } = useSuspenseQuery(
-    trpc.templates.getTagGroups.queryOptions(
-      { teamSlug, templateId },
+  const sorting = useTagTableStore((s) => s.sorting)
+  const setSorting = useTagTableStore((s) => s.setSorting)
+  const globalFilter = useTagTableStore((s) => s.globalFilter)
+  const expanded = useTagTableStore((s) => s.expanded)
+  const setExpanded = useTagTableStore((s) => s.setExpanded)
+  const resetFilters = useTagTableStore((s) => s.resetFilters)
+
+  useEffect(() => {
+    return () => resetFilters()
+  }, [resetFilters])
+
+  const activeSearch = useMemo(
+    () => getActiveTagSearch(globalFilter),
+    [globalFilter]
+  )
+  const serverSort = useMemo(() => sortingToServerSort(sorting), [sorting])
+  const searchInvalid = hasInvalidTagSearchInput(globalFilter)
+
+  const {
+    data: tagsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isPending,
+  } = useInfiniteQuery(
+    trpc.templates.getTagGroups.infiniteQueryOptions(
       {
-        refetchOnMount: false,
+        teamSlug,
+        templateId,
+        limit: TAGS_PAGE_LIMIT,
+        search: activeSearch,
+        sort: serverSort,
+      },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialCursor: undefined,
+        placeholderData: keepPreviousData,
         refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
       }
     )
   )
+
+  const { data: countData } = useQuery(
+    trpc.templates.getTagCount.queryOptions(
+      { teamSlug, templateId },
+      { staleTime: 30_000, refetchOnWindowFocus: false }
+    )
+  )
+
+  const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
+    [activeSearch, serverSort]
+  )
+  useEffect(() => {
+    if (!isFetching && isFilterRefetching) clearFilterRefetching()
+  }, [isFetching, isFilterRefetching, clearFilterRefetching])
 
   const { data: templateData } = useSuspenseQuery(
     trpc.templates.getTemplate.queryOptions(
@@ -80,45 +139,32 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
     [templateData]
   )
 
-  const groups = useMemo<TagGroup[]>(
-    () =>
-      tagsData.tags.flatMap((group) => {
+  const groups = useMemo<TagGroup[]>(() => {
+    const pages = tagsData?.pages ?? []
+    const out: TagGroup[] = []
+    for (const page of pages) {
+      for (const group of page.tags) {
         const primaryAssignment = group.assignments[0]
-        if (!primaryAssignment) return []
-
-        return [
-          {
-            tag: group.tag,
-            primaryAssignment,
-            assignments: group.assignments,
-            hasMore: group.hasMore,
-          },
-        ]
-      }),
-    [tagsData.tags]
-  )
-
-  const sorting = useTagTableStore((s) => s.sorting)
-  const setSorting = useTagTableStore((s) => s.setSorting)
-  const globalFilter = useTagTableStore((s) => s.globalFilter)
-  const setGlobalFilter = useTagTableStore((s) => s.setGlobalFilter)
-  const expanded = useTagTableStore((s) => s.expanded)
-  const setExpanded = useTagTableStore((s) => s.setExpanded)
-  const resetFilters = useTagTableStore((s) => s.resetFilters)
-
-  useEffect(() => {
-    return () => resetFilters()
-  }, [resetFilters])
+        if (!primaryAssignment) continue
+        out.push({
+          tag: group.tag,
+          primaryAssignment,
+          assignments: group.assignments,
+          hasMore: group.hasMore,
+        })
+      }
+    }
+    return out
+  }, [tagsData])
 
   const columns = useTagColumns()
 
   const table = useReactTable<TagGroup>({
     ...tagsTableConfig,
-    data: groups ?? fallbackData,
+    data: groups.length > 0 ? groups : fallbackData,
     columns,
-    state: { sorting, globalFilter, expanded },
+    state: { sorting, expanded },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     onExpandedChange: setExpanded,
     getRowCanExpand: (row) =>
       row.original.assignments.length > 1 || row.original.hasMore,
@@ -126,14 +172,28 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   } as TableOptions<TagGroup>)
 
   const rows = table.getRowModel().rows
+  const hasData = groups.length > 0
+  const showLoader = isPending && !hasData
+  const showEmpty = !isPending && !isFetching && !hasData
+  const showFilterRefetchingOverlay = isFilterRefetching && hasData
+
+  const handleLoadMore = useCallback(() => {
+    fetchNextPage()
+    trackTagTableInteraction('page_fetched', {
+      has_search: activeSearch !== undefined,
+      sort: serverSort,
+    })
+  }, [fetchNextPage, activeSearch, serverSort])
 
   return (
     <div className="flex flex-col gap-6 h-full min-h-0">
       <TagsHeader
-        table={table}
         teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
+        total={countData?.total}
+        hasSearch={activeSearch !== undefined}
+        searchInvalid={searchInvalid}
       />
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mx-8 px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <DataTable className="w-full">
@@ -174,10 +234,21 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
             ))}
           </DataTableHeader>
 
-          {rows.length === 0 ? (
-            <TagsEmpty hasSearch={globalFilter.trim().length > 0} />
-          ) : (
-            <div className="flex flex-col divide-y divide-stroke/80">
+          {showLoader && (
+            <div className="h-[35svh] w-full flex items-center justify-center">
+              <Loader variant="slash" size="lg" />
+            </div>
+          )}
+
+          {showEmpty && <TagsEmpty hasSearch={activeSearch !== undefined} />}
+
+          {hasData && (
+            <div
+              className={cn(
+                'flex flex-col divide-y divide-stroke/80',
+                showFilterRefetchingOverlay && 'opacity-70 transition-opacity'
+              )}
+            >
               {rows.map((row) => (
                 <GroupSection
                   key={row.id}
@@ -187,6 +258,15 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
                   templateName={templateName}
                 />
               ))}
+            </div>
+          )}
+
+          {hasNextPage && (
+            <div className="flex w-full items-center justify-center py-3">
+              <LoadMoreButton
+                isLoading={isFetchingNextPage}
+                onLoadMore={handleLoadMore}
+              />
             </div>
           )}
         </DataTable>
@@ -271,7 +351,6 @@ function GroupSection({
         )}
       >
         {canExpand && (
-          // increase hit box size
           <span
             aria-hidden
             className={cn(

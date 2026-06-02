@@ -41,10 +41,14 @@ export default function TagDeleteDialog({
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const tagsQueryKey = trpc.templates.getTagGroups.queryKey({
+  const tagGroupsQueryKey = trpc.templates.getTagGroups.infiniteQueryOptions({
     teamSlug,
     templateId,
-  })
+  }).queryKey
+  const tagCountQueryKey = trpc.templates.getTagCount.queryOptions({
+    teamSlug,
+    templateId,
+  }).queryKey
 
   const deleteTags = useMutation(
     trpc.templates.deleteTags.mutationOptions({
@@ -59,17 +63,6 @@ export default function TagDeleteDialog({
           )
         )
 
-        await queryClient.cancelQueries({ queryKey: tagsQueryKey })
-
-        queryClient.setQueryData(tagsQueryKey, (old) => {
-          if (!old?.tags) return old
-          const removed = new Set(variables.tags)
-          return {
-            ...old,
-            tags: old.tags.filter((t) => !removed.has(t.tag)),
-          }
-        })
-
         await onDeleted?.()
       },
       onError: (error) => {
@@ -77,9 +70,12 @@ export default function TagDeleteDialog({
           defaultErrorToast(error.message || `Failed to delete tag ${tag}.`)
         )
       },
-      onSettled: () => {
+      onSettled: async () => {
         onOpenChange(false)
-        queryClient.invalidateQueries({ queryKey: tagsQueryKey })
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: tagGroupsQueryKey }),
+          queryClient.invalidateQueries({ queryKey: tagCountQueryKey }),
+        ])
       },
     })
   )
