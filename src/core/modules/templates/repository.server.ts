@@ -10,7 +10,6 @@ import {
 import type {
   DefaultTemplate,
   Template,
-  TemplateDefaultBuildModel,
   TemplateTagAssignment,
   TemplateTagExistsResult,
   TemplateTagGroup,
@@ -28,8 +27,6 @@ import type {
 } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
-const NULL_BUILD_ID = '00000000-0000-0000-0000-000000000000'
-
 type TemplatesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
@@ -40,9 +37,6 @@ type TemplatesRepositoryDeps = {
 export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
   getTemplate(templateId: string): Promise<RepoResult<{ template: Template }>>
-  getDefaultBuild(
-    templateId: string
-  ): Promise<RepoResult<{ build: TemplateDefaultBuildModel | null }>>
   getTagGroups(
     templateId: string,
     options?: {
@@ -144,63 +138,6 @@ export function createTemplatesRepository(
       }
 
       return ok({ template: res.data })
-    },
-    async getDefaultBuild(templateId) {
-      if (USE_MOCK_DATA) {
-        const mock = MOCK_TEMPLATES_DATA.find(
-          (t) => t.templateID === templateId
-        )
-        if (!mock || mock.buildID === NULL_BUILD_ID) {
-          return ok({ build: null })
-        }
-        return ok({
-          build: {
-            buildID: mock.buildID,
-            status: 'success' as const,
-            createdAt: new Date(mock.updatedAt).getTime(),
-            finishedAt: new Date(mock.updatedAt).getTime(),
-            cpuCount: mock.cpuCount,
-            memoryMB: mock.memoryMB,
-            diskSizeMB: mock.diskSizeMB,
-            envdVersion: mock.envdVersion || null,
-          },
-        })
-      }
-
-      const res = await deps.apiClient.GET('/templates/{templateID}', {
-        params: { path: { templateID: templateId } },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-      })
-
-      if (!res.response.ok || res.error) {
-        return err(
-          repoErrorFromHttp(
-            res.response.status,
-            res.error?.message ?? 'Failed to fetch template',
-            res.error
-          )
-        )
-      }
-
-      if (!res.data || res.data.buildID === NULL_BUILD_ID) {
-        return ok({ build: null })
-      }
-
-      const updatedAtMs = new Date(res.data.updatedAt).getTime()
-      return ok({
-        build: {
-          buildID: res.data.buildID,
-          status: 'success' as const,
-          createdAt: updatedAtMs,
-          finishedAt: updatedAtMs,
-          cpuCount: res.data.cpuCount,
-          memoryMB: res.data.memoryMB,
-          diskSizeMB: res.data.diskSizeMB,
-          envdVersion: res.data.envdVersion || null,
-        },
-      })
     },
     async getTagGroups(templateId, options) {
       if (USE_MOCK_DATA) {

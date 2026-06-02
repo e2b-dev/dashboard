@@ -8,9 +8,7 @@ export default async function TemplateOverviewPage({
 }: PageProps<'/dashboard/[teamSlug]/templates/[templateId]'>) {
   const { teamSlug, templateId } = await params
 
-  prefetch(
-    trpc.templates.getDefaultBuild.queryOptions({ teamSlug, templateId })
-  )
+  prefetch(trpc.templates.getTemplate.queryOptions({ teamSlug, templateId }))
 
   return (
     <HydrateClient>
