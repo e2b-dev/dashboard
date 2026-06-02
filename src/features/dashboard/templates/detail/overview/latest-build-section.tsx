@@ -138,12 +138,12 @@ function BuildIdRow({
   const truncated = `${buildId.slice(0, 7)}...${buildId.slice(-5)}`
 
   return (
-    <div className="flex items-center gap-2 rounded border border-stroke bg-bg pl-3 pr-1 py-1 min-w-0 flex-1">
+    <div className="flex items-center gap-2 border border-stroke bg-bg px-2.5 h-[36px] min-w-0 flex-1">
       <button
         type="button"
         onClick={() => copy(buildId)}
         aria-label={wasCopied ? 'Copied build ID' : 'Copy build ID'}
-        className="group/copy relative inline-flex min-w-0 flex-1 items-center text-left text-fg-secondary font-mono prose-body-numeric hover:text-fg transition-colors cursor-pointer"
+        className="group/copy relative inline-flex min-w-0 flex-1 items-center text-left text-fg-primary font-mono prose-body-numeric hover:text-fg transition-colors cursor-pointer"
       >
         <span className="truncate">{truncated}</span>
         <span
