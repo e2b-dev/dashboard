@@ -30,6 +30,8 @@ export type TemplateDetail = Pick<
   | 'memoryMB'
   | 'diskSizeMB'
   | 'public'
+  | 'aliases'
+  | 'names'
   | 'createdAt'
   | 'updatedAt'
   | 'lastSpawnedAt'
