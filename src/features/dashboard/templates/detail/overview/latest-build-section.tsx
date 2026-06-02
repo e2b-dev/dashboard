@@ -3,7 +3,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { BuildStatus } from '@/core/modules/builds/models'
-import type { TemplateDefaultBuildModel } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useNow } from '@/lib/hooks/use-now'
 import { formatTimeAgoCompact } from '@/lib/utils/formatting'
@@ -13,6 +12,7 @@ import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon, CopyIcon } from '@/ui/primitives/icons'
+import { NULL_BUILD_ID } from '../../tags/constants'
 import { OverviewSection } from './section'
 import { TemplateSpecs } from './template-specs'
 
@@ -28,10 +28,12 @@ export function LatestBuildSection({
   const trpc = useTRPC()
 
   const { data } = useSuspenseQuery(
-    trpc.templates.getDefaultBuild.queryOptions({ teamSlug, templateId })
+    trpc.templates.getTemplate.queryOptions({ teamSlug, templateId })
   )
 
-  if (!data.build) {
+  const template = data.template
+
+  if (template.buildID === NULL_BUILD_ID) {
     return (
       <OverviewSection label="Latest build" labelBadge={<DefaultTagBadge />}>
         <p className="text-fg-tertiary prose-body">
@@ -45,22 +47,20 @@ export function LatestBuildSection({
     )
   }
 
-  const build = data.build
-
   return (
     <OverviewSection label="Latest build" labelBadge={<DefaultTagBadge />}>
       <div className="flex flex-col md:flex-row items-start gap-x-8 gap-y-4">
         <div className="flex flex-col gap-2 min-w-0">
-          <BuildAgo timestamp={build.createdAt} />
-          <BuildStatusBadge status={build.status} />
+          <BuildAgo timestamp={new Date(template.updatedAt).getTime()} />
+          <BuildStatusBadge status="success" />
         </div>
         <BuildIdRow
           teamSlug={teamSlug}
           templateId={templateId}
-          buildId={build.buildID}
+          buildId={template.buildID}
         />
       </div>
-      <TemplateSpecs build={build} className="mt-2" />
+      <TemplateSpecs build={template} className="mt-2" />
     </OverviewSection>
   )
 }
@@ -170,5 +170,3 @@ function BuildIdRow({
     </div>
   )
 }
-
-export type { TemplateDefaultBuildModel }

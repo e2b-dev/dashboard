@@ -3,7 +3,6 @@ import type {
   paths as DashboardPaths,
 } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
-import type { BuildStatus } from '@/core/modules/builds/models'
 
 export type Template = Pick<
   InfraComponents['schemas']['Template'],
@@ -40,17 +39,6 @@ export interface ListTeamTemplatesResult {
 }
 
 export type TemplateTag = InfraComponents['schemas']['TemplateTag']
-
-export interface TemplateDefaultBuildModel {
-  buildID: string
-  status: BuildStatus
-  createdAt: number
-  finishedAt: number | null
-  cpuCount: number
-  memoryMB: number
-  diskSizeMB: number | null
-  envdVersion: string | null
-}
 
 export type TemplateTagAssignment =
   DashboardComponents['schemas']['TemplateTagAssignment']
