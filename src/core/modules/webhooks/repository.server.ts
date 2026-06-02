@@ -18,11 +18,8 @@ type WebhooksRepositoryDeps = {
 
 export type WebhooksScope = TeamRequestScope
 
-type WebhookDeliveriesListOperation = ArgusOperations['webhookDeliveriesList']
-type WebhookDeliveryStatsOperation = ArgusOperations['webhookDeliveryStats']
-
 type ListWebhookDeliveriesInput = NonNullable<
-  WebhookDeliveriesListOperation['parameters']['query']
+  ArgusOperations['webhookDeliveriesList']['parameters']['query']
 > & {
   webhookId: string
 }
@@ -31,7 +28,7 @@ type ListWebhookDeliveriesResult =
   ArgusComponents['schemas']['WebhookDeliveriesListPayload']
 
 type GetWebhookDeliveryStatsInput = NonNullable<
-  WebhookDeliveryStatsOperation['parameters']['query']
+  ArgusOperations['webhookDeliveryStats']['parameters']['query']
 > & {
   webhookId: string
 }
