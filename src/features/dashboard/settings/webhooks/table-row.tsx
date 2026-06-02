@@ -109,7 +109,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
   )
 }
 
-const rowCellClassName = 'p-0 py-1.5 align-middle [tr:first-child>&]:pt-0'
+const rowCellClassName = 'p-0 py-1.5 align-middle'
 const rowContentClassName = 'flex items-center'
 const actionIconClassName = 'size-4 text-fg-tertiary'
 

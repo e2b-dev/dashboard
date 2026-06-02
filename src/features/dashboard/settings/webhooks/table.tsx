@@ -20,7 +20,7 @@ interface WebhooksTableProps {
 }
 
 const headerCellClassName =
-  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
+  'h-[17px] p-0 pb-0.5 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
 
 export const WebhooksTable = ({
   webhooks,
@@ -59,15 +59,20 @@ export const WebhooksTable = ({
       <TableBody
         className={cn(
           webhooks.length > 0 && [
+            // '[&>tr:first-child>td]:pt-0',
             '[&_tr]:border-stroke',
             '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke',
           ]
         )}
       >
         {isLoading ? (
-          <TableLoadingState colSpan={4} label="Loading webhooks" />
+          <TableLoadingState
+            className="pt-2"
+            colSpan={4}
+            label="Loading webhooks"
+          />
         ) : webhooks.length === 0 ? (
-          <TableEmptyState colSpan={4}>
+          <TableEmptyState className="pt-2" colSpan={4}>
             <WebhookIcon
               aria-hidden
               className={cn(
