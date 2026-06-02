@@ -5,7 +5,12 @@ import { useQueryStates } from 'nuqs'
 import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 import { type TRPCRouterOutputs, useTRPC } from '@/trpc/client'
-import { WebhookRangeSelector } from './range-selector'
+import {
+  StatsChart,
+  type StatsChartPoint,
+  type StatsChartSeries,
+} from './stats-chart'
+import { StatsIntervalSelect } from './stats-interval-select'
 import {
   getValidWebhookStatsBounds,
   getWebhookStatsApiBounds,
@@ -15,11 +20,6 @@ import {
   type WebhookStatsRangeBounds,
   webhookStatsTimeframeParams,
 } from './stats-range'
-import {
-  WebhookStatsChart,
-  type WebhookStatsChartPoint,
-  type WebhookStatsChartSeries,
-} from './webhook-stats-chart'
 
 type WebhookOverviewContentProps = {
   teamSlug: string
@@ -141,7 +141,7 @@ const getDeliveryCountSeriesData = (
     return points
   }
 
-  const points: WebhookStatsChartPoint[] = [
+  const points: StatsChartPoint[] = [
     {
       synthetic: true,
       timestamp: new Date(rangeBounds.start).toISOString(),
@@ -220,7 +220,7 @@ const getEmptyDeliveryCountSeriesData = (
   ]
 }
 
-const hideInactiveZeroValuePoints = (points: WebhookStatsChartPoint[]) =>
+const hideInactiveZeroValuePoints = (points: StatsChartPoint[]) =>
   points.map((point, index) => {
     if (point.value !== 0) return point
 
@@ -278,7 +278,7 @@ const getResponseTimeSeriesData = (
     )
   }
 
-  const points: WebhookStatsChartPoint[] = [
+  const points: StatsChartPoint[] = [
     {
       synthetic: true,
       timestamp: new Date(rangeBounds.start).toISOString(),
@@ -388,7 +388,7 @@ export const WebhookOverviewContent = ({
             )
           : [],
     },
-  ] satisfies WebhookStatsChartSeries[]
+  ] satisfies StatsChartSeries[]
   const latencySeries = [
     {
       name: 'Min',
@@ -417,7 +417,7 @@ export const WebhookOverviewContent = ({
       z: 2,
       data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'max'),
     },
-  ] satisfies WebhookStatsChartSeries[]
+  ] satisfies StatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
     setTimeframeParams(getWebhookStatsRange(nextRange))
   }
@@ -425,7 +425,7 @@ export const WebhookOverviewContent = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="flex p-3 md:p-6">
-        <WebhookRangeSelector value={range} onChange={handleRangeChange} />
+        <StatsIntervalSelect value={range} onChange={handleRangeChange} />
       </div>
 
       <div className="grid border-y border-stroke md:grid-cols-4 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
@@ -453,7 +453,7 @@ export const WebhookOverviewContent = ({
 
       <div className="grid md:min-h-0 md:flex-1 md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
         <ChartPanel title="Event deliveries">
-          <WebhookStatsChart
+          <StatsChart
             series={deliverySeries}
             chartType="line"
             xAxisScale={xAxisScale}
@@ -463,7 +463,7 @@ export const WebhookOverviewContent = ({
         </ChartPanel>
 
         <ChartPanel title="Response time">
-          <WebhookStatsChart
+          <StatsChart
             series={latencySeries}
             xAxisMin={rangeStartMs}
             xAxisMax={rangeEndMs}

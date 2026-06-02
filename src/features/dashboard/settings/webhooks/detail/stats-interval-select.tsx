@@ -13,15 +13,15 @@ import {
   type WebhookStatsRange,
 } from './stats-range'
 
-type WebhookRangeSelectorProps = {
+type StatsIntervalSelectProps = {
   value: WebhookStatsRange
   onChange: (value: WebhookStatsRange) => void
 }
 
-export const WebhookRangeSelector = ({
+export const StatsIntervalSelect = ({
   value,
   onChange,
-}: WebhookRangeSelectorProps) => {
+}: StatsIntervalSelectProps) => {
   const handleValueChange = (nextValue: string) => {
     if (!isWebhookStatsRange(nextValue)) return
 

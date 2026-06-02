@@ -26,15 +26,15 @@ echarts.use([
   SVGRenderer,
 ])
 
-type WebhookStatsChartPoint = {
+type StatsChartPoint = {
   synthetic?: boolean
   timestamp: string
   value: number | null
 }
 
-type WebhookStatsChartSeries = {
+type StatsChartSeries = {
   name: string
-  data: WebhookStatsChartPoint[]
+  data: StatsChartPoint[]
   connectNulls?: boolean
   lineWidth?: number
   showSymbol?: boolean
@@ -50,8 +50,8 @@ type WebhookStatsChartSeries = {
     | '--fg-tertiary'
 }
 
-type WebhookStatsChartProps = {
-  series: WebhookStatsChartSeries[]
+type StatsChartProps = {
+  series: StatsChartSeries[]
   chartType?: 'line' | 'scatter'
   className?: string
   valueFormatter?: (value: number) => string
@@ -68,8 +68,8 @@ const MONO_AXIS_LABEL_CHAR_WIDTH = 7.2
 
 const formatAxisLabel = (
   value: number,
-  scale: NonNullable<WebhookStatsChartProps['xAxisScale']>,
-  bounds: Pick<WebhookStatsChartProps, 'xAxisMax' | 'xAxisMin'>
+  scale: NonNullable<StatsChartProps['xAxisScale']>,
+  bounds: Pick<StatsChartProps, 'xAxisMax' | 'xAxisMin'>
 ) => {
   const date = new Date(value)
 
@@ -98,8 +98,8 @@ const getXAxisInterval = ({
   scale,
   xAxisMax,
   xAxisMin,
-}: Pick<WebhookStatsChartProps, 'xAxisMax' | 'xAxisMin'> & {
-  scale: NonNullable<WebhookStatsChartProps['xAxisScale']>
+}: Pick<StatsChartProps, 'xAxisMax' | 'xAxisMin'> & {
+  scale: NonNullable<StatsChartProps['xAxisScale']>
 }) => {
   if (scale === 'daily') return DAY_MS
   if (scale === 'four-hour') return HOUR_MS
@@ -117,7 +117,7 @@ const defaultValueFormatter = (value: number) => value.toLocaleString()
 
 const formatTooltipTimestamp = (
   timestampMs: number,
-  scale: NonNullable<WebhookStatsChartProps['xAxisScale']>
+  scale: NonNullable<StatsChartProps['xAxisScale']>
 ) => {
   if (scale !== 'daily') return formatDisplayTimestamp(timestampMs)
 
@@ -150,7 +150,7 @@ const getTooltipSyntheticValue = (param: unknown) => {
   return param.data.synthetic === true
 }
 
-const WebhookStatsChart = memo(function WebhookStatsChart({
+const StatsChart = memo(function StatsChart({
   series,
   chartType = 'scatter',
   className,
@@ -159,7 +159,7 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
   xAxisScale = 'daily',
   xAxisMax,
   xAxisMin,
-}: WebhookStatsChartProps) {
+}: StatsChartProps) {
   const chartRef = useRef<ReactEChartsCore | null>(null)
   const { resolvedTheme } = useTheme()
   const cssVars = useCssVars([
@@ -397,8 +397,4 @@ const WebhookStatsChart = memo(function WebhookStatsChart({
   )
 })
 
-export {
-  WebhookStatsChart,
-  type WebhookStatsChartPoint,
-  type WebhookStatsChartSeries,
-}
+export { StatsChart, type StatsChartPoint, type StatsChartSeries }
