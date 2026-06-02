@@ -811,52 +811,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/templates/{templateID}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get a single team template
-     * @description Returns a single template owned by the team (or a default template, unless the team is on a dedicated cluster).
-     */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the template. */
-          templateID: components['parameters']['templateID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned the template. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamTemplate']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/templates/defaults': {
     parameters: {
       query?: never
@@ -1269,8 +1223,6 @@ export interface components {
     userId: string
     /** @description Team slug to resolve. */
     teamSlug: string
-    /** @description Identifier of the template. */
-    templateID: string
     /** @description Maximum number of items to return per page. */
     templates_limit: number
     /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
