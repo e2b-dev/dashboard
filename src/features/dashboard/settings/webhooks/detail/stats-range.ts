@@ -10,6 +10,8 @@ type WebhookStatsApiBounds = {
   end: string
 }
 
+const MAX_WEBHOOK_STATS_RANGE_MS = 7 * 24 * 60 * 60 * 1000
+
 const webhookStatsTimeframeParams = {
   start: parseAsInteger,
   end: parseAsInteger,
@@ -105,7 +107,7 @@ const getValidWebhookStatsBounds = ({
   start,
   end,
 }: Partial<WebhookStatsRangeBounds>): WebhookStatsRangeBounds =>
-  start && end && end > start
+  start && end && end > start && end - start <= MAX_WEBHOOK_STATS_RANGE_MS
     ? { start, end }
     : getWebhookStatsRange(DEFAULT_WEBHOOK_STATS_RANGE)
 
