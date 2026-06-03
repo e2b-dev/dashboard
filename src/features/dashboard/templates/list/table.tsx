@@ -59,7 +59,7 @@ export default function TemplatesTable() {
   // Derive the single server sort token from the active sort column + direction.
   const sortColumn = sorting[0]
   const sortBase =
-    (sortColumn && COLUMN_TO_SORT_BASE[sortColumn.id]) ?? 'updated_at'
+    (sortColumn && COLUMN_TO_SORT_BASE[sortColumn.id]) ?? 'created_at'
   const sort =
     `${sortBase}_${sortColumn?.desc === false ? 'asc' : 'desc'}` as TemplatesSort
 
