@@ -351,14 +351,6 @@ export const WebhookOverviewContent = ({
   const rangeEndMs = rangeBounds.end
   const grouping: WebhookStatsGrouping =
     range === 'this-week' ? 'day' : 'timestamp'
-  const xAxisScale =
-    range === '4h'
-      ? 'four-hour'
-      : range === '12h'
-        ? 'twelve-hour'
-        : range === 'today'
-          ? 'today'
-          : 'daily'
   const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)
   const deliverySeries = [
     {
@@ -456,7 +448,7 @@ export const WebhookOverviewContent = ({
           <StatsChart
             series={deliverySeries}
             chartType="line"
-            xAxisScale={xAxisScale}
+            xAxisRange={range}
             xAxisMin={rangeStartMs}
             xAxisMax={rangeEndMs}
           />
@@ -467,7 +459,7 @@ export const WebhookOverviewContent = ({
             series={latencySeries}
             xAxisMin={rangeStartMs}
             xAxisMax={rangeEndMs}
-            xAxisScale={xAxisScale}
+            xAxisRange={range}
             chartType="line"
             valueFormatter={(value) =>
               `${value.toLocaleString('en-US', {

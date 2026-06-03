@@ -16,6 +16,7 @@ import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { formatDisplayTimestamp } from '@/lib/utils/formatting'
+import type { WebhookStatsRange } from './stats-range'
 
 echarts.use([
   LineChart,
@@ -56,7 +57,7 @@ type StatsChartProps = {
   className?: string
   valueFormatter?: (value: number) => string
   yAxisValueFormatter?: (value: number) => string
-  xAxisScale?: 'daily' | 'four-hour' | 'twelve-hour' | 'today'
+  xAxisRange?: WebhookStatsRange
   xAxisMax?: number
   xAxisMin?: number
 }
@@ -68,12 +69,12 @@ const MONO_AXIS_LABEL_CHAR_WIDTH = 7.2
 
 const formatAxisLabel = (
   value: number,
-  scale: NonNullable<StatsChartProps['xAxisScale']>,
+  range: NonNullable<StatsChartProps['xAxisRange']>,
   bounds: Pick<StatsChartProps, 'xAxisMax' | 'xAxisMin'>
 ) => {
   const date = new Date(value)
 
-  if (scale === 'daily') {
+  if (range === 'this-week') {
     return date.toLocaleDateString('en-US', { weekday: 'short' })
   }
 
@@ -84,7 +85,7 @@ const formatAxisLabel = (
   if (!isWholeHour) return ''
   if (bounds.xAxisMin && value < bounds.xAxisMin) return ''
   if (bounds.xAxisMax && value >= bounds.xAxisMax) return ''
-  if (scale === 'twelve-hour' && bounds.xAxisMin) {
+  if (range === '12h' && bounds.xAxisMin) {
     const firstWholeHour = Math.ceil(bounds.xAxisMin / HOUR_MS) * HOUR_MS
     if ((value - firstWholeHour) % (2 * HOUR_MS) !== 0) return ''
   }
@@ -95,15 +96,15 @@ const formatAxisLabel = (
 }
 
 const getXAxisInterval = ({
-  scale,
+  range,
   xAxisMax,
   xAxisMin,
 }: Pick<StatsChartProps, 'xAxisMax' | 'xAxisMin'> & {
-  scale: NonNullable<StatsChartProps['xAxisScale']>
+  range: NonNullable<StatsChartProps['xAxisRange']>
 }) => {
-  if (scale === 'daily') return DAY_MS
-  if (scale === 'four-hour') return HOUR_MS
-  if (scale === 'twelve-hour') return 2 * HOUR_MS
+  if (range === 'this-week') return DAY_MS
+  if (range === '4h') return HOUR_MS
+  if (range === '12h') return 2 * HOUR_MS
   if (!xAxisMin || !xAxisMax) return 2 * HOUR_MS
 
   const rangeMs = xAxisMax - xAxisMin
@@ -117,9 +118,9 @@ const defaultValueFormatter = (value: number) => value.toLocaleString()
 
 const formatTooltipTimestamp = (
   timestampMs: number,
-  scale: NonNullable<StatsChartProps['xAxisScale']>
+  range: NonNullable<StatsChartProps['xAxisRange']>
 ) => {
-  if (scale !== 'daily') return formatDisplayTimestamp(timestampMs)
+  if (range !== 'this-week') return formatDisplayTimestamp(timestampMs)
 
   const date = new Date(timestampMs)
   const now = new Date()
@@ -156,7 +157,7 @@ const StatsChart = memo(function StatsChart({
   className,
   valueFormatter = defaultValueFormatter,
   yAxisValueFormatter = valueFormatter,
-  xAxisScale = 'daily',
+  xAxisRange = 'this-week',
   xAxisMax,
   xAxisMin,
 }: StatsChartProps) {
@@ -193,7 +194,7 @@ const StatsChart = memo(function StatsChart({
           MONO_AXIS_LABEL_CHAR_WIDTH
       ) + AXIS_LABEL_GRID_GAP
     const xAxisInterval = getXAxisInterval({
-      scale: xAxisScale,
+      range: xAxisRange,
       xAxisMax,
       xAxisMin,
     })
@@ -231,7 +232,7 @@ const StatsChart = memo(function StatsChart({
       if (rows.length === 0) return ''
 
       return `<div style="display:flex;flex-direction:column;gap:4px;">
-        <div>${formatTooltipTimestamp(timestampMs, xAxisScale)}</div>
+        <div>${formatTooltipTimestamp(timestampMs, xAxisRange)}</div>
         <div style="display:table;border-spacing:0 4px;">${rows.join('')}</div>
       </div>`
     }
@@ -313,7 +314,7 @@ const StatsChart = memo(function StatsChart({
           fontSize: 12,
           hideOverlap: true,
           formatter: (value: number) =>
-            formatAxisLabel(value, xAxisScale, { xAxisMax, xAxisMin }),
+            formatAxisLabel(value, xAxisRange, { xAxisMax, xAxisMin }),
         },
         splitLine: { show: false },
         axisPointer: {
@@ -368,7 +369,7 @@ const StatsChart = memo(function StatsChart({
     fontMono,
     valueFormatter,
     yAxisValueFormatter,
-    xAxisScale,
+    xAxisRange,
     xAxisMax,
     xAxisMin,
   ])
