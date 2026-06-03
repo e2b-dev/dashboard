@@ -379,7 +379,7 @@ const StatsChart = memo(function StatsChart({
     })
 
     return () => cancelAnimationFrame(frame)
-  })
+  }, [])
 
   return (
     <div className={cn('h-full min-h-[260px] min-w-0 w-full', className)}>
