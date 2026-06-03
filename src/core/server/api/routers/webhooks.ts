@@ -14,20 +14,7 @@ import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { l } from '@/core/shared/clients/logger/logger'
 import type { components as ArgusComponents } from '@/core/shared/contracts/argus-api.types'
 
-type WebhookDelivery = ArgusComponents['schemas']['WebhookDelivery']
 type WebhookDeliveryGroup = ArgusComponents['schemas']['WebhookDeliveryGroup']
-
-// Returns the newest delivery attempt, e.g. [10:00, 10:05] -> 10:05.
-const getLatestAttempt = (
-  attempts: WebhookDelivery[]
-): WebhookDelivery | null => {
-  const sortedAttempts = [...attempts].sort(
-    (left, right) =>
-      new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime()
-  )
-
-  return sortedAttempts[0] ?? null
-}
 
 const toDeliveryGroup = (group: WebhookDeliveryGroup) => {
   const attempts = [...group.attempts].sort(
@@ -41,7 +28,7 @@ const toDeliveryGroup = (group: WebhookDeliveryGroup) => {
     sandboxId: group.sandboxId,
     attempts,
     attemptCount: attempts.length,
-    latestAttempt: getLatestAttempt(attempts),
+    latestAttempt: attempts[0] ?? null,
   }
 }
 
