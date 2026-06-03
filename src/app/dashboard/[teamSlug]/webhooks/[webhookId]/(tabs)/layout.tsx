@@ -22,6 +22,9 @@ export default async function WebhookTabsLayout({
   const { teamSlug, webhookId } = await params
 
   prefetch(trpc.webhooks.get.queryOptions({ teamSlug, webhookId }))
+  prefetch(
+    trpc.webhooks.listDeliveries.queryOptions({ teamSlug, webhookId, limit: 1 })
+  )
 
   return (
     <HydrateClient>
