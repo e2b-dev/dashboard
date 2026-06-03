@@ -267,16 +267,15 @@ const WebhookDeliveriesTable = ({
             {emptyStateLabel}
           </TableEmptyState>
         </TableBody>
-      ) : (
+      ) : scrollContainer ? (
         <VirtualizedDeliveriesBody
-          key={`${groups.length}-${scrollContainer ? 'ready' : 'pending'}`}
           groups={groups}
           scrollContainer={scrollContainer}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
           onLoadMore={onLoadMore}
         />
-      )}
+      ) : null}
     </Table>
   )
 }
@@ -527,13 +526,11 @@ export const WebhookDeliveriesContent = ({
       }
     )
   )
-  const groups = useMemo(
-    () =>
-      hasSelectedEventTypes && hasSelectedDeliveryStatuses
-        ? (deliveriesQuery.data?.pages.flatMap((page) => page.groups) ?? [])
-        : [],
-    [deliveriesQuery.data, hasSelectedDeliveryStatuses, hasSelectedEventTypes]
-  )
+  const groups = useMemo(() => {
+    return hasSelectedEventTypes && hasSelectedDeliveryStatuses
+      ? (deliveriesQuery.data?.pages.flatMap((page) => page.groups) ?? [])
+      : []
+  }, [deliveriesQuery.data, hasSelectedDeliveryStatuses, hasSelectedEventTypes])
   const hasActiveFilters = !hasAllDeliveryStatuses || !hasAllEventTypes
   const isDeliveriesLoading =
     hasSelectedEventTypes &&
