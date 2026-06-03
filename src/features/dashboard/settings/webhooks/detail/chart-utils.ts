@@ -18,7 +18,7 @@ type WebhookDeliveryStatsBucket = WebhookDeliveryStats['buckets'][number]
 type WebhookDeliveryStatus = 'failed'
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const MINUTE_MS = 60 * 1000
+const HOUR_MS = 60 * 60 * 1000
 
 const getStartOfDay = (timestampMs: number) => {
   const date = new Date(timestampMs)
@@ -37,6 +37,16 @@ const getSeriesTimestamp = (
   return timestampMs
 }
 
+const getTimestampBucketInterval = ({
+  start,
+  end,
+}: WebhookStatsRangeBounds) => {
+  const rangeMs = end - start
+  if (rangeMs <= DAY_MS) return HOUR_MS
+
+  return 4 * HOUR_MS
+}
+
 // Groups delivery buckets by chart granularity, e.g. minute buckets from one day -> one daily count.
 const getDeliveryCountSeriesData = (
   buckets: WebhookDeliveryStatsBucket[],
@@ -48,6 +58,7 @@ const getDeliveryCountSeriesData = (
     number,
     { count: number; timestampMs: number }
   >()
+  const timestampBucketInterval = getTimestampBucketInterval(rangeBounds)
 
   for (const bucket of buckets) {
     const count = status === 'failed' ? bucket.failed : bucket.total
@@ -57,7 +68,8 @@ const getDeliveryCountSeriesData = (
     const bucketTimestampMs =
       grouping === 'day'
         ? timestampMs
-        : Math.floor(timestampMs / MINUTE_MS) * MINUTE_MS
+        : Math.floor(timestampMs / timestampBucketInterval) *
+          timestampBucketInterval
     const current = countByTimestamp.get(bucketTimestampMs)
 
     countByTimestamp.set(bucketTimestampMs, {
@@ -84,46 +96,20 @@ const getDeliveryCountSeriesData = (
     return points
   }
 
-  const points: StatsChartPoint[] = [
-    {
-      synthetic: true,
-      timestamp: new Date(rangeBounds.start).toISOString(),
-      value: 0,
-    },
-  ]
+  const points: StatsChartPoint[] = []
+  const interval = getTimestampBucketInterval(rangeBounds)
+  const start = Math.floor(rangeBounds.start / interval) * interval
+  const end = Math.floor(rangeBounds.end / interval) * interval
 
-  for (const [, bucket] of Array.from(countByTimestamp).sort(
-    ([left], [right]) => left - right
-  )) {
-    const timestampMs = bucket.timestampMs
+  for (let timestampMs = start; timestampMs <= end; timestampMs += interval) {
+    const value = countByTimestamp.get(timestampMs)?.count ?? 0
 
-    points.push(
-      {
-        synthetic: true,
-        timestamp: new Date(
-          Math.max(rangeBounds.start, timestampMs - 1)
-        ).toISOString(),
-        value: 0,
-      },
-      {
-        timestamp: new Date(timestampMs).toISOString(),
-        value: bucket.count,
-      },
-      {
-        synthetic: true,
-        timestamp: new Date(
-          Math.min(rangeBounds.end, timestampMs + 1)
-        ).toISOString(),
-        value: 0,
-      }
-    )
+    points.push({
+      synthetic: value === 0,
+      timestamp: new Date(timestampMs).toISOString(),
+      value,
+    })
   }
-
-  points.push({
-    synthetic: true,
-    timestamp: new Date(rangeBounds.end).toISOString(),
-    value: 0,
-  })
 
   return points
 }
@@ -186,6 +172,7 @@ const getResponseTimeSeriesData = (
   metric: 'avg' | 'max' | 'min'
 ) => {
   const statsByTimestamp = new Map<number, ResponseTimeTimestampStats>()
+  const timestampBucketInterval = getTimestampBucketInterval(rangeBounds)
 
   for (const bucket of buckets) {
     if (bucket.total <= 0) continue
@@ -194,7 +181,8 @@ const getResponseTimeSeriesData = (
     const bucketTimestampMs =
       grouping === 'day'
         ? timestampMs
-        : Math.floor(timestampMs / MINUTE_MS) * MINUTE_MS
+        : Math.floor(timestampMs / timestampBucketInterval) *
+          timestampBucketInterval
     const currentStats = statsByTimestamp.get(bucketTimestampMs)
     const durationTotal = bucket.durationMs.average * bucket.total
 
@@ -235,7 +223,7 @@ const getResponseTimeSeriesData = (
   points.push(
     ...Array.from(statsByTimestamp)
       .sort(([left], [right]) => left - right)
-      .map(([, stats]) => {
+      .map(([bucketTimestampMs, stats]) => {
         const value =
           metric === 'avg'
             ? stats.totalDurationMs / stats.count
@@ -244,7 +232,7 @@ const getResponseTimeSeriesData = (
               : stats.minDurationMs
 
         return {
-          timestamp: new Date(stats.timestampMs).toISOString(),
+          timestamp: new Date(bucketTimestampMs).toISOString(),
           value,
         }
       })
@@ -257,6 +245,7 @@ export {
   getDeliveryCountSeriesData,
   getEmptyDeliveryCountSeriesData,
   getResponseTimeSeriesData,
+  getTimestampBucketInterval,
   hideInactiveZeroValuePoints,
   type WebhookStatsGrouping,
 }

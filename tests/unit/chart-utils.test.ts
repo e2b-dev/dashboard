@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
 import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import {
+  getDeliveryCountSeriesData,
+  getResponseTimeSeriesData,
+  getTimestampBucketInterval,
+} from '@/features/dashboard/settings/webhooks/detail/chart-utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 
 describe('team-metrics-chart-utils', () => {
@@ -92,5 +97,151 @@ describe('team-metrics-chart-utils', () => {
         { x: 2000, y: 1.0 },
       ])
     })
+  })
+})
+
+describe('webhook chart utils', () => {
+  it('groups short-range delivery counts by visible hourly buckets', () => {
+    const rangeBounds = {
+      start: Date.UTC(2026, 5, 3, 13, 30),
+      end: Date.UTC(2026, 5, 3, 17, 30),
+    }
+    const buckets = [
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 47)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 65,
+          average: 82,
+          maximum: 99,
+        },
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 49)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 65,
+          average: 82,
+          maximum: 99,
+        },
+      },
+    ] satisfies Parameters<typeof getDeliveryCountSeriesData>[0]
+
+    expect(getTimestampBucketInterval(rangeBounds)).toBe(60 * 60 * 1000)
+    expect(
+      getDeliveryCountSeriesData(buckets, rangeBounds, 'timestamp')
+    ).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 13)).toISOString(),
+        value: 0,
+      },
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 14)).toISOString(),
+        value: 0,
+      },
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 15)).toISOString(),
+        value: 0,
+      },
+      {
+        synthetic: false,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        value: 2,
+      },
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
+        value: 0,
+      },
+    ])
+  })
+
+  it('groups short-range response times by visible hourly buckets', () => {
+    const rangeBounds = {
+      start: Date.UTC(2026, 5, 3, 13, 30),
+      end: Date.UTC(2026, 5, 3, 17, 30),
+    }
+    const buckets = [
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 47)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 65,
+          average: 82,
+          maximum: 99,
+        },
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 49)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 50,
+          average: 100,
+          maximum: 150,
+        },
+      },
+    ] satisfies Parameters<typeof getResponseTimeSeriesData>[0]
+
+    expect(
+      getResponseTimeSeriesData(buckets, rangeBounds, 'timestamp', 'avg')
+    ).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(rangeBounds.start).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        value: 91,
+      },
+    ])
+    expect(
+      getResponseTimeSeriesData(buckets, rangeBounds, 'timestamp', 'min')
+    ).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(rangeBounds.start).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        value: 50,
+      },
+    ])
+    expect(
+      getResponseTimeSeriesData(buckets, rangeBounds, 'timestamp', 'max')
+    ).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(rangeBounds.start).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        value: 150,
+      },
+    ])
+  })
+
+  it('uses hourly buckets for 12-hour and today-sized ranges', () => {
+    expect(
+      getTimestampBucketInterval({
+        start: Date.UTC(2026, 5, 3, 5),
+        end: Date.UTC(2026, 5, 3, 17),
+      })
+    ).toBe(60 * 60 * 1000)
+    expect(
+      getTimestampBucketInterval({
+        start: Date.UTC(2026, 5, 3, 0),
+        end: Date.UTC(2026, 5, 3, 17),
+      })
+    ).toBe(60 * 60 * 1000)
   })
 })

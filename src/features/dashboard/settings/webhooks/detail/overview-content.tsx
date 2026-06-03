@@ -126,10 +126,7 @@ export const WebhookOverviewContent = ({
       colorVar: '--accent-error-highlight',
       showSymbol: true,
       z: hasFailedDeliveries ? 3 : 1,
-      data: hideInactiveZeroValuePoints(
-        failedDeliverySeriesData,
-        grouping === 'day' ? [-1, 1] : undefined
-      ),
+      data: hideInactiveZeroValuePoints(failedDeliverySeriesData, [-1, 1]),
     },
   ] satisfies StatsChartSeries[]
   const latencySeries = [

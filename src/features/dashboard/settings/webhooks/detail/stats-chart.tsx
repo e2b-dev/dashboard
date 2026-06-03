@@ -15,7 +15,6 @@ import { memo, useEffect, useMemo, useRef } from 'react'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
-import { formatDisplayTimestamp } from '@/lib/utils/formatting'
 import type { WebhookStatsRange } from './stats-range'
 
 echarts.use([
@@ -120,17 +119,25 @@ const formatTooltipTimestamp = (
   timestampMs: number,
   range: NonNullable<StatsChartProps['xAxisRange']>
 ) => {
-  if (range !== 'this-week') return formatDisplayTimestamp(timestampMs)
-
   const date = new Date(timestampMs)
   const now = new Date()
   const yesterday = new Date()
   yesterday.setDate(now.getDate() - 1)
 
-  if (date.toDateString() === now.toDateString()) return 'Today'
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  const day =
+    date.toDateString() === now.toDateString()
+      ? 'Today'
+      : date.toDateString() === yesterday.toDateString()
+        ? 'Yesterday'
+        : date.toLocaleDateString('en-US', { weekday: 'long' })
+  if (range === 'this-week') return day
 
-  return date.toLocaleDateString('en-US', { weekday: 'long' })
+  const time = date
+    .toLocaleTimeString('en-US', { hour: 'numeric' })
+    .replace(/\s/g, '')
+    .toLowerCase()
+
+  return `${day}, ${time}`
 }
 
 const getTooltipTimestampMs = (param: unknown) => {
