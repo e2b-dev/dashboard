@@ -51,6 +51,7 @@ export const useColumns = (deps: unknown[]) => {
         header: 'ID',
         size: 156,
         enableResizing: false,
+        enableSorting: false,
         cell: TemplateIdCell,
       },
       {
