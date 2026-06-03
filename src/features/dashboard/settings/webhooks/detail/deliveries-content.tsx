@@ -540,7 +540,7 @@ export const WebhookDeliveriesContent = ({
   const emptyStateLabel = !hasSelectedDeliveryStatuses
     ? 'No statuses selected'
     : !hasSelectedEventTypes
-      ? 'No event types selected'
+      ? 'No events selected'
       : hasActiveFilters
         ? 'No deliveries match these filters'
         : 'No deliveries yet'
