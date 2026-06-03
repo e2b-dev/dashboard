@@ -163,11 +163,14 @@ const getEmptyDeliveryCountSeriesData = (
   ]
 }
 
-const hideInactiveZeroValuePoints = (points: StatsChartPoint[]) =>
+const hideInactiveZeroValuePoints = (
+  points: StatsChartPoint[],
+  nearbyOffsets = [-2, -1, 1, 2]
+) =>
   points.map((point, index) => {
     if (point.value !== 0) return point
 
-    const hasNearbyValue = [-2, -1, 1, 2].some(
+    const hasNearbyValue = nearbyOffsets.some(
       (offset) => (points[index + offset]?.value ?? 0) > 0
     )
     if (hasNearbyValue) return point

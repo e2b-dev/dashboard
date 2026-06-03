@@ -106,6 +106,10 @@ export const WebhookOverviewContent = ({
   const grouping: WebhookStatsGrouping =
     range === 'this-week' ? 'day' : 'timestamp'
   const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)
+  const failedDeliverySeriesData =
+    buckets.length > 0
+      ? getDeliveryCountSeriesData(buckets, rangeBounds, grouping, 'failed')
+      : []
   const deliverySeries = [
     {
       name: 'Total deliveries',
@@ -122,17 +126,10 @@ export const WebhookOverviewContent = ({
       colorVar: '--accent-error-highlight',
       showSymbol: true,
       z: hasFailedDeliveries ? 3 : 1,
-      data:
-        buckets.length > 0
-          ? hideInactiveZeroValuePoints(
-              getDeliveryCountSeriesData(
-                buckets,
-                rangeBounds,
-                grouping,
-                'failed'
-              )
-            )
-          : [],
+      data: hideInactiveZeroValuePoints(
+        failedDeliverySeriesData,
+        grouping === 'day' ? [-1, 1] : undefined
+      ),
     },
   ] satisfies StatsChartSeries[]
   const latencySeries = [
