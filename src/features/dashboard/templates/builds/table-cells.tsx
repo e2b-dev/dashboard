@@ -19,13 +19,7 @@ import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 
-export function BuildId({
-  id,
-  className,
-}: {
-  id: string
-  className?: string
-}) {
+export function BuildId({ id, className }: { id: string; className?: string }) {
   return (
     <CopyButtonInline
       value={id}
