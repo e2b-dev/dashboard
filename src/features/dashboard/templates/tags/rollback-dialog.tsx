@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { ArrowDivider } from './arrow-divider'
 import {
   TagDialogBuildRow,
   TagDialogFooter,
+  TagDialogStageTransition,
   TagDialogSuccess,
 } from './components'
 import { trackTagTableInteraction } from './table-config'
@@ -35,6 +36,44 @@ interface RollbackTagDialogProps {
 export default function RollbackTagDialog({
   open,
   onOpenChange,
+  ...rest
+}: RollbackTagDialogProps) {
+  const [isPending, setIsPending] = useState(false)
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next && isPending) return
+    onOpenChange(next)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        hideClose={isPending}
+        className="sm:max-w-[413px] sm:min-h-[224px] sm:h-[224px] flex flex-col"
+        onPointerDownOutside={(e) => {
+          if (isPending) e.preventDefault()
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isPending) e.preventDefault()
+        }}
+      >
+        <RollbackTagDialogBody
+          {...rest}
+          onClose={() => onOpenChange(false)}
+          onPendingChange={setIsPending}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface RollbackTagDialogBodyProps
+  extends Omit<RollbackTagDialogProps, 'open' | 'onOpenChange'> {
+  onClose: () => void
+  onPendingChange: (pending: boolean) => void
+}
+
+function RollbackTagDialogBody({
   tag,
   currentBuildId,
   targetBuildId,
@@ -43,8 +82,10 @@ export default function RollbackTagDialog({
   templateName,
   surface,
   onRolledBack,
-}: RollbackTagDialogProps) {
-  const { mutation: rollback, stage } = useTagAssignmentMutation({
+  onClose,
+  onPendingChange,
+}: RollbackTagDialogBodyProps) {
+  const { mutation, stage } = useTagAssignmentMutation({
     teamSlug,
     templateId,
     operation: 'rollback',
@@ -52,21 +93,17 @@ export default function RollbackTagDialog({
     onSuccess: onRolledBack,
   })
 
-  const { reset } = rollback
   useEffect(() => {
-    if (!open) return
-    trackTagTableInteraction('rollback opened', { surface, tag })
-    reset()
-  }, [open, surface, tag, reset])
+    onPendingChange(mutation.isPending)
+  }, [mutation.isPending, onPendingChange])
 
-  const handleOpenChange = (next: boolean) => {
-    if (rollback.isPending) return
-    onOpenChange(next)
-  }
+  useEffect(() => {
+    trackTagTableInteraction('rollback opened', { surface, tag })
+  }, [surface, tag])
 
   const submit = () => {
     trackTagTableInteraction('rollback submitted', { surface, tag })
-    rollback.mutate({
+    mutation.mutate({
       teamSlug,
       templateId,
       templateName,
@@ -76,51 +113,40 @@ export default function RollbackTagDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        hideClose={stage === 'pending'}
-        className="sm:max-w-[413px] sm:min-h-[224px] sm:h-[224px]"
-        onPointerDownOutside={(e) => {
-          if (stage === 'pending') e.preventDefault()
-        }}
-        onEscapeKeyDown={(e) => {
-          if (stage === 'pending') e.preventDefault()
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
-            {stage === 'success'
-              ? `Rollback ‘${tag}’ succeeded`
-              : `Rollback ‘${tag}’`}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            {stage === 'success'
-              ? `Tag ${tag} rolled back to build ${targetBuildId}.`
-              : `Reassign tag ${tag} from the current build to the target build.`}
-          </DialogDescription>
-        </DialogHeader>
+    <TagDialogStageTransition phase={stage === 'success' ? 'success' : 'form'}>
+      <DialogHeader>
+        <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
+          {stage === 'success'
+            ? `Rollback ‘${tag}’ succeeded`
+            : `Rollback ‘${tag}’`}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          {stage === 'success'
+            ? `Tag ${tag} rolled back to build ${targetBuildId}.`
+            : `Reassign tag ${tag} from the current build to the target build.`}
+        </DialogDescription>
+      </DialogHeader>
 
-        {stage === 'success' ? (
-          <TagDialogSuccess tag={tag} message="rolled back successfully" />
-        ) : (
-          <div className="flex flex-col gap-2">
-            <TagDialogBuildRow label="Current" buildId={currentBuildId} />
-            <ArrowDivider />
-            <TagDialogBuildRow label="Target" buildId={targetBuildId} />
-          </div>
-        )}
+      {stage === 'success' ? (
+        <TagDialogSuccess tag={tag} message="rolled back successfully" />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <TagDialogBuildRow label="Current" buildId={currentBuildId} />
+          <ArrowDivider />
+          <TagDialogBuildRow label="Target" buildId={targetBuildId} />
+        </div>
+      )}
 
-        <TagDialogFooter
-          stage={stage}
-          canSubmit
-          errorMessage={rollback.error?.message ?? null}
-          submitLabel="Rollback"
-          pendingLabel="Rolling back"
-          onSubmit={submit}
-          onCancel={() => handleOpenChange(false)}
-          onDismiss={() => handleOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
+      <TagDialogFooter
+        stage={stage}
+        canSubmit
+        errorMessage={mutation.error?.message ?? null}
+        submitLabel="Rollback"
+        pendingLabel="Rolling back"
+        onSubmit={submit}
+        onCancel={onClose}
+        onDismiss={onClose}
+      />
+    </TagDialogStageTransition>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import BuildPicker, { type BuildSelectionSource } from './build-picker'
 import {
   TagDialogBuildRow,
   TagDialogFooter,
+  TagDialogStageTransition,
   TagDialogSuccess,
 } from './components'
 import { trackTagTableInteraction } from './table-config'
@@ -35,6 +36,49 @@ interface ReassignTagDialogProps {
 export default function ReassignTagDialog({
   open,
   onOpenChange,
+  ...rest
+}: ReassignTagDialogProps) {
+  const [isPending, setIsPending] = useState(false)
+  const isPendingRef = useRef(false)
+  isPendingRef.current = isPending
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next && isPendingRef.current) return
+    onOpenChange(next)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        hideClose={isPending}
+        className="sm:max-w-[440px] sm:h-[406px] flex flex-col"
+        onPointerDownOutside={(e) => {
+          if (isPendingRef.current) e.preventDefault()
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isPendingRef.current) e.preventDefault()
+        }}
+      >
+        <ReassignTagDialogBody
+          {...rest}
+          open={open}
+          onClose={() => onOpenChange(false)}
+          onPendingChange={setIsPending}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface ReassignTagDialogBodyProps
+  extends Omit<ReassignTagDialogProps, 'open' | 'onOpenChange'> {
+  open: boolean
+  onClose: () => void
+  onPendingChange: (pending: boolean) => void
+}
+
+function ReassignTagDialogBody({
+  open,
   tag,
   currentBuildId,
   teamSlug,
@@ -42,12 +86,14 @@ export default function ReassignTagDialog({
   templateName,
   surface,
   onReassigned,
-}: ReassignTagDialogProps) {
+  onClose,
+  onPendingChange,
+}: ReassignTagDialogBodyProps) {
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null)
   const [selectionSource, setSelectionSource] =
     useState<BuildSelectionSource | null>(null)
 
-  const { mutation: reassign, stage } = useTagAssignmentMutation({
+  const { mutation, stage } = useTagAssignmentMutation({
     teamSlug,
     templateId,
     operation: 'reassign',
@@ -55,24 +101,18 @@ export default function ReassignTagDialog({
     onSuccess: onReassigned,
   })
 
-  const { reset } = reassign
   useEffect(() => {
-    if (!open) return
-    trackTagTableInteraction('reassign opened', { surface, tag })
-    setSelectedBuildId(null)
-    setSelectionSource(null)
-    reset()
-  }, [open, surface, tag, reset])
+    onPendingChange(mutation.isPending)
+  }, [mutation.isPending, onPendingChange])
 
-  const handleOpenChange = (next: boolean) => {
-    if (reassign.isPending) return
-    onOpenChange(next)
-  }
+  useEffect(() => {
+    trackTagTableInteraction('reassign opened', { surface, tag })
+  }, [surface, tag])
 
   const handleSelect = (id: string | null, source: BuildSelectionSource) => {
     setSelectedBuildId(id)
     setSelectionSource(id ? source : null)
-    if (reassign.isError) reassign.reset()
+    if (mutation.isError) mutation.reset()
   }
 
   const isSameAsCurrent =
@@ -86,7 +126,7 @@ export default function ReassignTagDialog({
       tag,
       via_search: selectionSource === 'search',
     })
-    reassign.mutate({
+    mutation.mutate({
       teamSlug,
       templateId,
       templateName,
@@ -96,64 +136,53 @@ export default function ReassignTagDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        hideClose={stage === 'pending'}
-        className="sm:max-w-[440px] sm:h-[406px]"
-        onPointerDownOutside={(e) => {
-          if (stage === 'pending') e.preventDefault()
-        }}
-        onEscapeKeyDown={(e) => {
-          if (stage === 'pending') e.preventDefault()
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
-            {stage === 'success'
-              ? `‘${tag}’ reassigned successfully`
-              : `reassign ‘${tag}’`}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            {stage === 'success'
-              ? `Tag ${tag} reassigned.`
-              : `Reassign tag ${tag} from the current build to a different build.`}
-          </DialogDescription>
-        </DialogHeader>
+    <TagDialogStageTransition phase={stage === 'success' ? 'success' : 'form'}>
+      <DialogHeader>
+        <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
+          {stage === 'success'
+            ? `‘${tag}’ reassigned successfully`
+            : `reassign ‘${tag}’`}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          {stage === 'success'
+            ? `Tag ${tag} reassigned.`
+            : `Reassign tag ${tag} from the current build to a different build.`}
+        </DialogDescription>
+      </DialogHeader>
 
-        {stage === 'success' ? (
-          <TagDialogSuccess tag={tag} message="reassigned successfully" />
-        ) : (
-          <div className="flex flex-col gap-2">
-            <TagDialogBuildRow label="Current" buildId={currentBuildId} />
-            <ArrowDivider />
-            <TagDialogBuildRow
-              label="Target"
-              buildId={selectedBuildId ?? '--'}
-              dim={selectedBuildId === null}
-            />
-            <BuildPicker
-              open={open}
-              teamSlug={teamSlug}
-              templateId={templateId}
-              currentBuildId={currentBuildId}
-              selectedBuildId={selectedBuildId}
-              onSelect={handleSelect}
-              disabled={stage === 'pending'}
-            />
-          </div>
-        )}
+      {stage === 'success' ? (
+        <TagDialogSuccess tag={tag} message="reassigned successfully" />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <TagDialogBuildRow label="Current" buildId={currentBuildId} />
+          <ArrowDivider />
+          <TagDialogBuildRow
+            label="Target"
+            buildId={selectedBuildId ?? '--'}
+            dim={selectedBuildId === null}
+          />
+          <BuildPicker
+            open={open}
+            teamSlug={teamSlug}
+            templateId={templateId}
+            currentBuildId={currentBuildId}
+            selectedBuildId={selectedBuildId}
+            onSelect={handleSelect}
+            disabled={stage === 'pending'}
+          />
+        </div>
+      )}
 
-        <TagDialogFooter
-          stage={stage}
-          canSubmit={canSubmit}
-          errorMessage={reassign.error?.message ?? null}
-          submitLabel="Reassign"
-          pendingLabel="Reassigning"
-          onSubmit={submit}
-          onCancel={() => handleOpenChange(false)}
-          onDismiss={() => handleOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
+      <TagDialogFooter
+        stage={stage}
+        canSubmit={canSubmit}
+        errorMessage={mutation.error?.message ?? null}
+        submitLabel="Reassign"
+        pendingLabel="Reassigning"
+        onSubmit={submit}
+        onCancel={onClose}
+        onDismiss={onClose}
+      />
+    </TagDialogStageTransition>
   )
 }

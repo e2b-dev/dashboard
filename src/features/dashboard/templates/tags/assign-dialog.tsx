@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { type FormEvent, useEffect, useId, useState } from 'react'
+import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
@@ -15,7 +15,11 @@ import {
 import { AddIcon } from '@/ui/primitives/icons'
 import { ArrowDivider } from './arrow-divider'
 import BuildPicker, { type BuildSelectionSource } from './build-picker'
-import { TagDialogFooter, TagDialogSuccess } from './components'
+import {
+  TagDialogFooter,
+  TagDialogStageTransition,
+  TagDialogSuccess,
+} from './components'
 import {
   isValidTagShape,
   normalizeTagInput,
@@ -34,15 +38,64 @@ interface AssignTagDialogProps {
   templateName: string
 }
 
-export default function AssignTagDialog({
+export default function AssignTagDialog(props: AssignTagDialogProps) {
+  const [open, setOpen] = useState(false)
+  const [isPending, setIsPending] = useState(false)
+  const isPendingRef = useRef(false)
+  isPendingRef.current = isPending
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next && isPendingRef.current) return
+    setOpen(next)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="primary">
+          <AddIcon />
+          Assign new tag
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent
+        hideClose={isPending}
+        className="sm:max-w-[440px] sm:h-[422px] flex flex-col"
+        onPointerDownOutside={(e) => {
+          if (isPendingRef.current) e.preventDefault()
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isPendingRef.current) e.preventDefault()
+        }}
+      >
+        <AssignTagDialogBody
+          {...props}
+          open={open}
+          onClose={() => setOpen(false)}
+          onPendingChange={setIsPending}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface AssignTagDialogBodyProps extends AssignTagDialogProps {
+  open: boolean
+  onClose: () => void
+  onPendingChange: (pending: boolean) => void
+}
+
+function AssignTagDialogBody({
+  open,
   teamSlug,
   templateId,
   templateName,
-}: AssignTagDialogProps) {
+  onClose,
+  onPendingChange,
+}: AssignTagDialogBodyProps) {
   const trpc = useTRPC()
-
   const formId = useId()
-  const [open, setOpen] = useState(false)
+
   const [name, setNameRaw] = useState('')
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null)
   const [selectionSource, setSelectionSource] =
@@ -69,10 +122,19 @@ export default function AssignTagDialog({
     operation: 'assign',
   })
 
+  useEffect(() => {
+    onPendingChange(mutation.isPending)
+  }, [mutation.isPending, onPendingChange])
+
+  useEffect(() => {
+    trackTagTableInteraction('assign opened', { template_id: templateId })
+  }, [templateId])
+
   const setName = (raw: string) => {
     setNameRaw(normalizeTagInput(raw))
     if (mutation.isError) mutation.reset()
   }
+
   const handleSetSelectedBuildId = (
     id: string | null,
     source: BuildSelectionSource
@@ -102,25 +164,6 @@ export default function AssignTagDialog({
     nameStatus === 'available' &&
     selectedBuildId !== null &&
     !mutation.isPending
-
-  useEffect(() => {
-    if (!open) return
-    trackTagTableInteraction('assign opened', { template_id: templateId })
-  }, [open, templateId])
-
-  const resetState = () => {
-    setNameRaw('')
-    setSelectedBuildId(null)
-    setSelectionSource(null)
-    mutation.reset()
-  }
-
-  const handleOpenChange = (next: boolean) => {
-    if (mutation.isPending) return
-    // Reset on open only; resetting on close would flicker through the exit animation.
-    if (next && !open) resetState()
-    setOpen(next)
-  }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -154,81 +197,66 @@ export default function AssignTagDialog({
     normalizedDebouncedName
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="primary">
-          <AddIcon />
-          Assign new tag
-        </Button>
-      </DialogTrigger>
+    <TagDialogStageTransition
+      phase={stage === 'success' ? 'success' : 'form'}
+      className="gap-4"
+    >
+      <DialogHeader>
+        <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
+          {stage === 'success'
+            ? `‘${successTag}’ assigned successfully`
+            : 'Assign new tag'}
+        </DialogTitle>
+      </DialogHeader>
 
-      <DialogContent
-        hideClose={stage === 'pending'}
-        className="sm:max-w-[440px] sm:h-[422px] gap-4"
-        onPointerDownOutside={(e) => {
-          if (stage === 'pending') e.preventDefault()
-        }}
-        onEscapeKeyDown={(e) => {
-          if (stage === 'pending') e.preventDefault()
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
-            {stage === 'success'
-              ? `‘${successTag}’ assigned successfully`
-              : 'Assign new tag'}
-          </DialogTitle>
-        </DialogHeader>
+      {stage === 'success' ? (
+        <TagDialogSuccess tag={successTag} message="assigned successfully" />
+      ) : (
+        <form
+          id={formId}
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-2"
+        >
+          <TagNameField
+            value={name}
+            onChange={setName}
+            status={nameStatus}
+            disabled={stage === 'pending'}
+            autoFocus
+          />
 
-        {stage === 'success' ? (
-          <TagDialogSuccess tag={successTag} message="assigned successfully" />
-        ) : (
-          <form
-            id={formId}
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-2"
-          >
-            <TagNameField
-              value={name}
-              onChange={setName}
-              status={nameStatus}
-              disabled={stage === 'pending'}
-              autoFocus
-            />
+          <ArrowDivider />
 
-            <ArrowDivider />
+          <div className="flex items-center gap-3 mb-1">
+            <span className="prose-label-highlight uppercase text-fg-tertiary">
+              Target
+            </span>
+            <span className="prose-body font-mono text-fg-primary">
+              {selectedBuildId ? selectedBuildId : '--'}
+            </span>
+          </div>
 
-            <div className="flex items-center gap-3 mb-1">
-              <span className="prose-label-highlight uppercase text-fg-tertiary">
-                Target
-              </span>
-              <span className="prose-body font-mono text-fg-primary">
-                {selectedBuildId ? selectedBuildId : '--'}
-              </span>
-            </div>
+          <BuildPicker
+            open={open}
+            teamSlug={teamSlug}
+            templateId={templateId}
+            selectedBuildId={selectedBuildId}
+            onSelect={handleSetSelectedBuildId}
+            disabled={stage === 'pending'}
+          />
+        </form>
+      )}
 
-            <BuildPicker
-              open={open}
-              teamSlug={teamSlug}
-              templateId={templateId}
-              selectedBuildId={selectedBuildId}
-              onSelect={handleSetSelectedBuildId}
-              disabled={stage === 'pending'}
-            />
-          </form>
-        )}
-
-        <TagDialogFooter
-          stage={stage}
-          canSubmit={canSubmit}
-          errorMessage={mutation.error?.message ?? null}
-          submitLabel="Assign"
-          pendingLabel="Assigning"
-          formId={formId}
-          onCancel={() => handleOpenChange(false)}
-          onDismiss={() => handleOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
+      <TagDialogFooter
+        stage={stage}
+        canSubmit={canSubmit}
+        errorMessage={mutation.error?.message ?? null}
+        submitLabel="Assign"
+        pendingLabel="Assigning"
+        formId={formId}
+        onCancel={onClose}
+        onDismiss={onClose}
+      />
+    </TagDialogStageTransition>
   )
 }
