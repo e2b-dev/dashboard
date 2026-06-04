@@ -1,9 +1,9 @@
 'use client'
 
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getUserAccessTokenAction } from '@/core/server/actions/user-actions'
 import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
+import { useTRPC } from '@/trpc/client'
 import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
@@ -16,22 +16,20 @@ interface UserAccessTokenProps {
 
 export default function UserAccessToken({ className }: UserAccessTokenProps) {
   const { toast } = useToast()
+  const trpc = useTRPC()
   const [token, setToken] = useState<string>()
   const [isVisible, setIsVisible] = useState(false)
 
-  const { execute: fetchToken, isPending } = useAction(
-    getUserAccessTokenAction,
-    {
+  const getUserAccessTokenMutation = useMutation(
+    trpc.account.getUserAccessToken.mutationOptions({
       onSuccess: (result) => {
-        if (result.data) {
-          setToken(result.data.token)
-          setIsVisible(true)
-        }
+        setToken(result.token)
+        setIsVisible(true)
       },
       onError: () => {
         toast(defaultErrorToast('Failed to fetch access token'))
       },
-    }
+    })
   )
 
   return (
@@ -51,12 +49,12 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
               setIsVisible(!isVisible)
               setToken(undefined)
             } else {
-              fetchToken()
+              getUserAccessTokenMutation.mutate()
             }
           }}
-          disabled={isPending}
+          disabled={getUserAccessTokenMutation.isPending}
         >
-          {isPending ? (
+          {getUserAccessTokenMutation.isPending ? (
             <Loader variant="square" size="lg" />
           ) : token ? (
             isVisible ? (
