@@ -31,12 +31,15 @@ import {
 import ErrorBoundary from '@/ui/error'
 import HelpTooltip from '@/ui/help-tooltip'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
+import {
+  TEMPLATES_DEFAULT_SORT_BASE,
+  TEMPLATES_DEFAULT_SORT_DESC,
+  TEMPLATES_PAGE_SIZE,
+} from './constants'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
-
-const PAGE_SIZE = 50
 
 const COLUMN_TO_SORT_BASE: Record<string, string> = {
   name: 'name',
@@ -59,9 +62,12 @@ export default function TemplatesTable() {
   // Derive the single server sort token from the active sort column + direction.
   const sortColumn = sorting[0]
   const sortBase =
-    (sortColumn && COLUMN_TO_SORT_BASE[sortColumn.id]) ?? 'created_at'
-  const sort =
-    `${sortBase}_${sortColumn?.desc === false ? 'asc' : 'desc'}` as TemplatesSort
+    (sortColumn && COLUMN_TO_SORT_BASE[sortColumn.id]) ??
+    TEMPLATES_DEFAULT_SORT_BASE
+  const isDesc = sortColumn
+    ? sortColumn.desc !== false
+    : TEMPLATES_DEFAULT_SORT_DESC
+  const sort = `${sortBase}_${isDesc ? 'desc' : 'asc'}` as TemplatesSort
 
   const {
     data,
@@ -74,7 +80,7 @@ export default function TemplatesTable() {
     trpc.templates.getTemplates.infiniteQueryOptions(
       {
         teamSlug,
-        limit: PAGE_SIZE,
+        limit: TEMPLATES_PAGE_SIZE,
         cpuCount,
         memoryMB,
         public: isPublic,
