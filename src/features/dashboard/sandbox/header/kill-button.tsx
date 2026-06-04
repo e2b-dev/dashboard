@@ -1,9 +1,9 @@
 'use client'
 
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
+import { useTRPC } from '@/trpc/client'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
 import { TrashIcon } from '@/ui/primitives/icons'
@@ -18,27 +18,30 @@ export default function KillButton({ className }: KillButtonProps) {
   const [open, setOpen] = useState(false)
   const { sandboxInfo, refetchSandboxInfo } = useSandboxContext()
   const { team } = useDashboard()
+  const trpc = useTRPC()
   const canKill = Boolean(
     sandboxInfo?.sandboxID && sandboxInfo.state !== 'killed'
   )
 
-  const { execute, isExecuting } = useAction(killSandboxAction, {
-    onSuccess: async () => {
-      toast.success('Sandbox killed successfully')
-      setOpen(false)
-      refetchSandboxInfo()
-    },
-    onError: ({ error }) => {
-      toast.error(
-        error.serverError || 'Failed to kill sandbox. Please try again.'
-      )
-    },
-  })
+  const killSandboxMutation = useMutation(
+    trpc.sandbox.kill.mutationOptions({
+      onSuccess: async () => {
+        toast.success('Sandbox killed successfully')
+        setOpen(false)
+        refetchSandboxInfo()
+      },
+      onError: (error) => {
+        toast.error(
+          error.message || 'Failed to kill sandbox. Please try again.'
+        )
+      },
+    })
+  )
 
   const handleKill = () => {
     if (!canKill || !sandboxInfo?.sandboxID) return
 
-    execute({
+    killSandboxMutation.mutate({
       teamSlug: team.slug,
       sandboxId: sandboxInfo.sandboxID,
     })
@@ -58,8 +61,8 @@ export default function KillButton({ className }: KillButtonProps) {
         </Button>
       }
       confirmProps={{
-        disabled: isExecuting,
-        loading: isExecuting ? 'Killing...' : undefined,
+        disabled: killSandboxMutation.isPending,
+        loading: killSandboxMutation.isPending ? 'Killing...' : undefined,
       }}
       onConfirm={handleKill}
       onCancel={() => setOpen(false)}

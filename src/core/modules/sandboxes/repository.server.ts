@@ -60,6 +60,7 @@ export interface SandboxesRepository {
     sandboxId: string,
     options: GetSandboxMetricsOptions
   ): Promise<RepoResult<InfraComponents['schemas']['SandboxMetric'][]>>
+  killSandbox(sandboxId: string): Promise<RepoResult<void>>
   listSandboxes(): Promise<RepoResult<Sandboxes>>
   getSandboxesMetrics(
     sandboxIds: string[]
@@ -355,6 +356,48 @@ export function createSandboxesRepository(
       }
 
       return ok(result.data)
+    },
+    async killSandbox(sandboxId) {
+      const result = await deps.infraClient.DELETE('/sandboxes/{sandboxID}', {
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+        params: {
+          path: {
+            sandboxID: sandboxId,
+          },
+        },
+      })
+
+      if (!result.response.ok || result.error) {
+        const status = result.response.status
+
+        l.error(
+          {
+            key: 'repositories:sandboxes:kill_sandbox:infra_error',
+            error: result.error,
+            team_id: scope.teamId,
+            context: {
+              status,
+              path: '/sandboxes/{sandboxID}',
+              sandbox_id: sandboxId,
+            },
+          },
+          `failed to delete /sandboxes/{sandboxID}: ${result.error?.message || 'Unknown error'}`
+        )
+
+        return err(
+          repoErrorFromHttp(
+            status,
+            status === 404
+              ? 'Sandbox not found'
+              : (result.error?.message ?? 'Failed to kill sandbox'),
+            result.error
+          )
+        )
+      }
+
+      return ok(undefined)
     },
     async listSandboxes() {
       const result = await deps.infraClient.GET('/sandboxes', {
