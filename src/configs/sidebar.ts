@@ -9,6 +9,7 @@ import {
   SettingsIcon,
   TemplateIcon,
   UsageIcon,
+  VaultIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
@@ -43,6 +44,13 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   },
 
   // Integrations
+  {
+    label: 'Secrets',
+    group: 'integration',
+    href: (args) => PROTECTED_URLS.SECRETS(args.teamSlug!),
+    icon: VaultIcon,
+    activeMatch: `/dashboard/*/secrets`,
+  },
   ...(INCLUDE_ARGUS
     ? [
         {

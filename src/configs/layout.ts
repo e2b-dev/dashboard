@@ -91,6 +91,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   },
 
   // integrations
+  '/dashboard/*/secrets': () => ({
+    title: 'Secrets',
+    type: 'default',
+  }),
   '/dashboard/*/webhooks': () => ({
     title: 'Webhooks',
     type: 'default',

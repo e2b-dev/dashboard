@@ -39,6 +39,7 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/filesystem`,
 
   WEBHOOKS: (teamSlug: string) => `/dashboard/${teamSlug}/webhooks`,
+  SECRETS: (teamSlug: string) => `/dashboard/${teamSlug}/secrets`,
 
   TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
