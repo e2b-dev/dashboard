@@ -252,6 +252,7 @@ function PickerBody({
           buildId={build.id}
           createdAt={build.createdAt}
           disabled={disabled}
+          dimmed={!!selectedBuildId && selectedBuildId !== build.id}
         />
       ))}
     </RadioGroup>
