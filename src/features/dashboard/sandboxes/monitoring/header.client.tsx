@@ -1,18 +1,14 @@
 'use client'
 
-import type { InferSafeActionFnResult } from 'next-safe-action'
 import { useMemo } from 'react'
-import type { NonUndefined } from 'react-hook-form'
-import type { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { useDashboard } from '@/features/dashboard/context'
 import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
+import type { TRPCRouterOutputs } from '@/trpc/client'
 import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { useRecentMetrics } from './hooks/use-recent-metrics'
 
 interface TeamMonitoringHeaderClientProps {
-  initialData: NonUndefined<
-    InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >
+  initialData: TRPCRouterOutputs['sandboxes']['getTeamMetrics']
 }
 
 export function ConcurrentSandboxesClient({

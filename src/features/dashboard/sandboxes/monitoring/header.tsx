@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
-import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
-import { getTeamMetricsMax } from '@/core/server/functions/sandboxes/get-team-metrics-max'
 import { getNowMemo } from '@/lib/utils/server'
+import { trpcCaller } from '@/trpc/server'
 import ErrorTooltip from '@/ui/error-tooltip'
 import { SemiLiveBadge } from '@/ui/live'
 import { WarningIcon } from '@/ui/primitives/icons'
@@ -105,22 +104,23 @@ export const ConcurrentSandboxes = async ({
   const now = getNowMemo()
   const start = now - 60_000
 
-  const teamMetricsResult = await getTeamMetrics({
-    teamSlug,
-    startDate: start,
-    endDate: now,
-  })
+  try {
+    const teamMetrics = await trpcCaller.sandboxes.getTeamMetrics({
+      teamSlug,
+      startDate: start,
+      endDate: now,
+    })
 
-  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
+    return <ConcurrentSandboxesClient initialData={teamMetrics} />
+  } catch (error) {
     return (
       <BaseErrorTooltip>
-        {teamMetricsResult?.serverError ||
-          'Failed to load concurrent sandboxes'}
+        {error instanceof Error
+          ? error.message
+          : 'Failed to load concurrent sandboxes'}
       </BaseErrorTooltip>
     )
   }
-
-  return <ConcurrentSandboxesClient initialData={teamMetricsResult.data} />
 }
 
 export const SandboxesStartRate = async ({
@@ -134,22 +134,23 @@ export const SandboxesStartRate = async ({
   const now = getNowMemo()
   const start = now - 60_000
 
-  const teamMetricsResult = await getTeamMetrics({
-    teamSlug,
-    startDate: start,
-    endDate: now,
-  })
+  try {
+    const teamMetrics = await trpcCaller.sandboxes.getTeamMetrics({
+      teamSlug,
+      startDate: start,
+      endDate: now,
+    })
 
-  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
+    return <SandboxesStartRateClient initialData={teamMetrics} />
+  } catch (error) {
     return (
       <BaseErrorTooltip>
-        {teamMetricsResult?.serverError ||
-          'Failed to load max sandbox start rate'}
+        {error instanceof Error
+          ? error.message
+          : 'Failed to load max sandbox start rate'}
       </BaseErrorTooltip>
     )
   }
-
-  return <SandboxesStartRateClient initialData={teamMetricsResult.data} />
 }
 
 export const MaxConcurrentSandboxes = async ({
@@ -162,25 +163,24 @@ export const MaxConcurrentSandboxes = async ({
   const end = Date.now()
   const start = end - (MAX_DAYS_AGO - 60_000) // 1 minute margin to avoid validation errors
 
-  const teamMetricsResult = await getTeamMetricsMax({
-    teamSlug,
-    startDate: start,
-    endDate: end,
-    metric: 'concurrent_sandboxes',
-  })
+  try {
+    const teamMetrics = await trpcCaller.sandboxes.getTeamMetricsMax({
+      teamSlug,
+      startDate: start,
+      endDate: end,
+      metric: 'concurrent_sandboxes',
+    })
 
-  if (!teamMetricsResult?.data || teamMetricsResult.serverError) {
+    return (
+      <MaxConcurrentSandboxesClient concurrentSandboxes={teamMetrics.value} />
+    )
+  } catch (error) {
     return (
       <BaseErrorTooltip>
-        {teamMetricsResult?.serverError ||
-          'Failed to load max concurrent sandboxes'}
+        {error instanceof Error
+          ? error.message
+          : 'Failed to load max concurrent sandboxes'}
       </BaseErrorTooltip>
     )
   }
-
-  return (
-    <MaxConcurrentSandboxesClient
-      concurrentSandboxes={teamMetricsResult.data.value}
-    />
-  )
 }
