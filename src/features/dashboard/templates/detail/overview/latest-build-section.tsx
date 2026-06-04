@@ -3,15 +3,13 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { BuildStatus } from '@/core/modules/builds/models'
-import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useNow } from '@/lib/hooks/use-now'
 import { formatTimeAgoCompact } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { Badge } from '@/ui/primitives/badge'
-import { Button } from '@/ui/primitives/button'
-import { CheckIcon, CloseIcon, CopyIcon } from '@/ui/primitives/icons'
+import { CheckIcon, ChevronRightIcon, CloseIcon } from '@/ui/primitives/icons'
 import { NULL_BUILD_ID } from '../../tags/constants'
 import { OverviewSection } from './section'
 import { TemplateSpecs } from './template-specs'
@@ -35,7 +33,7 @@ export function LatestBuildSection({
 
   if (template.buildID === NULL_BUILD_ID) {
     return (
-      <OverviewSection label="Latest build" labelBadge={<DefaultTagBadge />}>
+      <OverviewSection label="Latest build">
         <p className="text-fg-tertiary prose-body">
           No build tagged{' '}
           <code className="text-fg-secondary font-mono">default</code> yet.
@@ -48,13 +46,13 @@ export function LatestBuildSection({
   }
 
   return (
-    <OverviewSection label="Latest build" labelBadge={<DefaultTagBadge />}>
-      <div className="flex flex-col md:flex-row items-start gap-x-8 gap-y-4">
-        <div className="flex flex-col gap-2 min-w-0">
+    <OverviewSection label="Latest build">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex items-center gap-3 min-w-0">
           <BuildAgo timestamp={new Date(template.updatedAt).getTime()} />
           <BuildStatusBadge status="success" />
         </div>
-        <BuildIdRow
+        <BuildIdLink
           teamSlug={teamSlug}
           templateId={templateId}
           buildId={template.buildID}
@@ -62,14 +60,6 @@ export function LatestBuildSection({
       </div>
       <TemplateSpecs build={template} className="mt-2" />
     </OverviewSection>
-  )
-}
-
-function DefaultTagBadge() {
-  return (
-    <Badge variant="default" size="sm" className="uppercase font-mono">
-      default
-    </Badge>
   )
 }
 
@@ -125,7 +115,7 @@ function BuildStatusBadge({ status }: { status: BuildStatus }) {
   )
 }
 
-function BuildIdRow({
+function BuildIdLink({
   teamSlug,
   templateId,
   buildId,
@@ -134,39 +124,16 @@ function BuildIdRow({
   templateId: string
   buildId: string
 }) {
-  const [wasCopied, copy] = useClipboard(2000)
   const truncated = `${buildId.slice(0, 7)}...${buildId.slice(-5)}`
 
   return (
-    <div className="flex items-center gap-2 border border-stroke bg-bg px-2.5 h-[36px] min-w-0 flex-1">
-      <button
-        type="button"
-        onClick={() => copy(buildId)}
-        aria-label={wasCopied ? 'Copied build ID' : 'Copy build ID'}
-        className="group/copy relative inline-flex min-w-0 flex-1 items-center text-left text-fg-primary font-mono prose-body-numeric hover:text-fg transition-colors cursor-pointer"
-      >
-        <span className="truncate">{truncated}</span>
-        <span
-          className={cn(
-            'ml-2 opacity-0 group-hover/copy:opacity-100 transition-opacity',
-            wasCopied && 'opacity-100'
-          )}
-          aria-hidden="true"
-        >
-          {wasCopied ? (
-            <CheckIcon className="size-3 text-icon" />
-          ) : (
-            <CopyIcon className="size-3 text-icon-secondary" />
-          )}
-        </span>
-      </button>
-      <Button asChild variant="tertiary" size="none" className="px-3 py-1.5">
-        <HoverPrefetchLink
-          href={PROTECTED_URLS.TEMPLATE_BUILD(teamSlug, templateId, buildId)}
-        >
-          Open
-        </HoverPrefetchLink>
-      </Button>
-    </div>
+    <HoverPrefetchLink
+      href={PROTECTED_URLS.TEMPLATE_BUILD(teamSlug, templateId, buildId)}
+      aria-label="Open build"
+      className="group/build inline-flex items-center gap-1 text-fg-secondary font-mono prose-body-numeric hover:text-fg transition-colors"
+    >
+      <span className="truncate">{truncated}</span>
+      <ChevronRightIcon className="size-4 text-fg-tertiary group-hover/build:text-fg transition-colors" />
+    </HoverPrefetchLink>
   )
 }

@@ -21,33 +21,23 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-secondary prose-body-numeric',
+        'flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-tertiary prose-body-numeric',
         className
       )}
     >
       <SpecItem icon={<CpuIcon className="size-3" />}>
-        <span className="prose-body-numeric-highlight">
-          {build.cpuCount === null ? '—' : formatNumber(build.cpuCount)}
-        </span>{' '}
-        <span className="text-fg-tertiary">
-          Core{build.cpuCount !== null && build.cpuCount > 1 ? 's' : ''}
-        </span>
+        {build.cpuCount === null ? '—' : formatNumber(build.cpuCount)} Core
+        {build.cpuCount !== null && build.cpuCount > 1 ? 's' : ''}
       </SpecItem>
       <Separator />
       <SpecItem icon={<MemoryIcon className="size-3" />}>
-        <span className="prose-body-numeric-highlight">
-          {build.memoryMB === null ? '—' : formatNumber(build.memoryMB)}
-        </span>{' '}
-        <span className="text-fg-tertiary">MB</span>
+        {build.memoryMB === null ? '—' : formatNumber(build.memoryMB)} MB
       </SpecItem>
       {build.diskSizeMB !== null && (
         <>
           <Separator />
           <SpecItem icon={<StorageIcon className="size-3" />}>
-            <span className="prose-body-numeric-highlight">
-              {formatNumber(build.diskSizeMB)}
-            </span>{' '}
-            <span className="text-fg-tertiary">MB</span>
+            {formatNumber(build.diskSizeMB)} MB
           </SpecItem>
         </>
       )}
@@ -55,9 +45,7 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
         <>
           <Separator />
           <SpecItem icon={<MetadataIcon className="size-3" />}>
-            <span className="prose-body-numeric-highlight font-mono">
-              {build.envdVersion}
-            </span>
+            <span className="font-mono">{build.envdVersion}</span>
           </SpecItem>
         </>
       )}
@@ -81,5 +69,5 @@ function SpecItem({
 }
 
 function Separator() {
-  return <span className="text-fg-tertiary select-none">·</span>
+  return <span className="select-none">·</span>
 }
