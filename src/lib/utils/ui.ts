@@ -11,4 +11,5 @@ export function cn(...inputs: ClassValue[]) {
  */
 export const EASE_APPEAR = [0.23, 1, 0.32, 1] as const // ease-out-quint
 export const EASE_TRANSFORM = [0.79, 0.14, 0.15, 0.86] as const // ease-in-out-circ
+export const EASE_IN_OUT_QUART = [0.77, 0, 0.18, 1] as const // ease-in-out-quart
 export const EASE_IN_OUT_QUINT = [0.83, 0, 0.17, 1] as const // ease-in-out-quint

@@ -26,32 +26,30 @@ export function useTagAssignmentMutation({
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
-  const invalidate = useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
-          teamSlug,
-          templateId,
-        }).queryKey,
-      }),
-      queryClient.invalidateQueries({
-        queryKey: trpc.templates.getTagCount.queryOptions({
-          teamSlug,
-          templateId,
-        }).queryKey,
-      }),
-    ])
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
+        teamSlug,
+        templateId,
+      }).queryKey,
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.templates.getTagCount.queryOptions({
+        teamSlug,
+        templateId,
+      }).queryKey,
+    })
   }, [queryClient, trpc, teamSlug, templateId])
 
   const mutation = useMutation(
     trpc.templates.assignTag.mutationOptions({
-      onSuccess: async () => {
-        await invalidate()
+      onSuccess: () => {
+        invalidate()
         trackTagTableInteraction(
           `${operation} succeeded`,
           analyticsContext ?? {}
         )
-        await onSuccess?.()
+        void onSuccess?.()
       },
       onError: (error) => {
         trackTagTableInteraction(`${operation} failed`, {
