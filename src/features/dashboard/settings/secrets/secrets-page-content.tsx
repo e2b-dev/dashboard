@@ -12,12 +12,13 @@ import {
   SECRETS_SEARCH_PLACEHOLDER,
   SECRETS_SEARCH_PLACEHOLDER_EMPTY,
 } from './constants'
+import { NewSecretDialog } from './new-secret-dialog'
 import { SecretsTable } from './table'
 import type { Secret } from './types'
 
 // tRPC list query lands with the BE ticket; until then the page renders empty.
 // Hoisted so the reference is stable across renders.
-const PLACEHOLDER_SECRETS: readonly Secret[] = []
+const PLACEHOLDER_SECRETS: Secret[] = []
 
 interface SecretsPageContentProps {
   className?: string
@@ -68,20 +69,20 @@ export const SecretsPageContent = ({ className }: SecretsPageContentProps) => {
             className="h-9 border-stroke pl-9 font-sans"
             onChange={(event) => setQuery(event.target.value)}
             placeholder={searchPlaceholder}
-            type="search"
             value={query}
           />
         </div>
 
-        {/* TODO(secrets-dialog): wire to NewSecretDialog in the next commit. */}
-        <Button
-          className="w-full font-sans normal-case prose-body-highlight md:w-auto md:self-start"
-          type="button"
-          variant="primary"
-        >
-          <AddIcon aria-hidden className="size-4" />
-          Add a secret
-        </Button>
+        <NewSecretDialog>
+          <Button
+            className="w-full font-sans normal-case prose-body-highlight md:w-auto md:self-start"
+            type="button"
+            variant="primary"
+          >
+            <AddIcon aria-hidden className="size-4" />
+            Add a secret
+          </Button>
+        </NewSecretDialog>
       </div>
 
       <CatchErrorBoundary classNames={{ wrapper: 'w-full' }}>
