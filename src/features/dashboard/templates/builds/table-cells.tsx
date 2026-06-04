@@ -26,7 +26,7 @@ export function BuildId({ id }: { id: string }) {
       truncate={false}
       className="w-full text-left text-fg-secondary font-mono prose-table-numeric"
     >
-      {id.slice(0, 6)}...{id.slice(-6)}
+      {id.slice(0, 7)}...{id.slice(-5)}
     </CopyButtonInline>
   )
 }
