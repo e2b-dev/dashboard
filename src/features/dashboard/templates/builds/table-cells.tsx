@@ -19,12 +19,21 @@ import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 
-export function BuildId({ id }: { id: string }) {
+export function BuildId({
+  id,
+  className,
+}: {
+  id: string
+  className?: string
+}) {
   return (
     <CopyButtonInline
       value={id}
       truncate={false}
-      className="w-full text-left text-fg-secondary font-mono prose-table-numeric"
+      className={cn(
+        'w-full text-left text-fg-secondary font-mono prose-table-numeric',
+        className
+      )}
     >
       {id.slice(0, 7)}...{id.slice(-5)}
     </CopyButtonInline>

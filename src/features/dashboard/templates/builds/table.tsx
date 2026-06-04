@@ -189,19 +189,20 @@ const BuildsTable = ({
         <Table suppressHydrationWarning>
           <colgroup>
             <col style={colStyle(COLUMN_WIDTHS.status)} />
-            <col style={colStyle(COLUMN_WIDTHS.id)} />
+            {!showTemplateColumn && <col style={colStyle(COLUMN_WIDTHS.id)} />}
             {showTemplateColumn && (
               <col style={colStyle(COLUMN_WIDTHS.template)} />
             )}
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
+            {showTemplateColumn && <col style={colStyle(COLUMN_WIDTHS.id)} />}
             <col className="max-lg:min-w-[500px]" />
           </colgroup>
 
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Status</TableHead>
-              <TableHead>ID</TableHead>
+              {!showTemplateColumn && <TableHead>ID</TableHead>}
               {showTemplateColumn && <TableHead>Template</TableHead>}
               <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
@@ -210,6 +211,7 @@ const BuildsTable = ({
                 </span>
               </TableHead>
               <TableHead className="text-end">Duration</TableHead>
+              {showTemplateColumn && <TableHead>ID</TableHead>}
               <th />
             </TableRow>
           </TableHeader>
@@ -253,6 +255,20 @@ const BuildsTable = ({
                 {visibleBuilds.map((build) => {
                   const isBuilding = build.status === 'building'
 
+                  const idCell = (
+                    <TableCell
+                      className="py-1.5 overflow-hidden"
+                      style={{ maxWidth: COLUMN_WIDTHS.id }}
+                    >
+                      <BuildId
+                        id={build.id}
+                        className={
+                          showTemplateColumn ? 'text-fg-tertiary' : undefined
+                        }
+                      />
+                    </TableCell>
+                  )
+
                   return (
                     <TableRow
                       key={build.id}
@@ -278,12 +294,7 @@ const BuildsTable = ({
                       >
                         <Status status={build.status} />
                       </TableCell>
-                      <TableCell
-                        className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: COLUMN_WIDTHS.id }}
-                      >
-                        <BuildId id={build.id} />
-                      </TableCell>
+                      {!showTemplateColumn && idCell}
                       {showTemplateColumn && (
                         <TableCell
                           className="py-1.5 overflow-hidden"
@@ -305,6 +316,7 @@ const BuildsTable = ({
                           isBuilding={isBuilding}
                         />
                       </TableCell>
+                      {showTemplateColumn && idCell}
                       <TableCell className="py-1.5 w-full">
                         <Reason statusMessage={build.statusMessage} />
                       </TableCell>
