@@ -115,7 +115,7 @@ export default function TagDeleteDialog({
               variant="error"
               loading={isDeleting ? 'Deleting' : undefined}
               disabled={isDeleting}
-              className="font-sans normal-case"
+              className="font-sans normal-case min-w-[98px]"
               onClick={() => {
                 deleteTags.mutate({
                   teamSlug,
