@@ -1,8 +1,13 @@
 'use client'
 
+import { Suspense } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { DashboardTabsList } from '@/ui/dashboard-tabs'
 import { ListIcon, TrendIcon } from '@/ui/primitives/icons'
+import {
+  WebhookDetailContentFallback,
+  WebhookDetailHeaderFallback,
+} from './fallbacks'
 import { WebhookDetailHeader } from './header'
 
 type WebhookDetailLayoutProps = {
@@ -17,7 +22,9 @@ export const WebhookDetailLayout = ({
   webhookId,
 }: WebhookDetailLayoutProps) => (
   <div className="flex h-full min-h-0 flex-1 flex-col max-md:overflow-y-auto">
-    <WebhookDetailHeader teamSlug={teamSlug} webhookId={webhookId} />
+    <Suspense fallback={<WebhookDetailHeaderFallback />}>
+      <WebhookDetailHeader teamSlug={teamSlug} webhookId={webhookId} />
+    </Suspense>
     <DashboardTabsList
       layoutKey="tabs-indicator-webhook"
       className="max-md:sticky max-md:top-0 max-md:z-20"
@@ -36,6 +43,6 @@ export const WebhookDetailLayout = ({
         },
       ]}
     />
-    {children}
+    <Suspense fallback={<WebhookDetailContentFallback />}>{children}</Suspense>
   </div>
 )
