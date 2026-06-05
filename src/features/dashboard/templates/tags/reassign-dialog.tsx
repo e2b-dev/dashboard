@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
 } from '@/ui/primitives/dialog'
 import { ArrowDivider } from './arrow-divider'
 import BuildPicker, { type BuildSelectionSource } from './build-picker'
@@ -15,6 +14,7 @@ import {
   TagDialogFooter,
   TagDialogStageTransition,
   TagDialogSuccess,
+  TagDialogTitle,
 } from './components'
 import { trackTagTableInteraction } from './table-config'
 import { useTagAssignmentMutation } from './use-tag-assignment-mutation'
@@ -138,11 +138,11 @@ function ReassignTagDialogBody({
   return (
     <TagDialogStageTransition phase={stage === 'success' ? 'success' : 'form'}>
       <DialogHeader>
-        <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
-          {stage === 'success'
-            ? `‘${tag}’ reassigned successfully`
-            : `reassign ‘${tag}’`}
-        </DialogTitle>
+        {stage === 'success' ? (
+          <TagDialogTitle srOnly tag={tag} suffix=" reassigned successfully" />
+        ) : (
+          <TagDialogTitle prefix="reassign " tag={tag} />
+        )}
         <DialogDescription className="sr-only">
           {stage === 'success'
             ? `Tag ${tag} reassigned.`
