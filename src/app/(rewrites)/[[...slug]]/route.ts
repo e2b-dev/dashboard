@@ -1,7 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
-import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { BASE_URL } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {
@@ -10,6 +8,7 @@ import {
 } from '@/lib/utils/rewrites'
 
 export const dynamic = 'force-static'
+export const dynamicParams = true
 export const revalidate = 900
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
@@ -113,45 +112,4 @@ export async function GET(request: NextRequest): Promise<Response> {
       }
     )
   }
-}
-
-export async function generateStaticParams() {
-  const sitemapEntries = await constructSitemap()
-
-  const slugs = sitemapEntries
-    .filter((entry) => {
-      const url = new URL(entry.url)
-      const pathname = url.pathname
-
-      // check if this path matches any rule in ROUTE_REWRITE_CONFIG
-      for (const domainConfig of ROUTE_REWRITE_CONFIG) {
-        const isIndex = pathname === '/' || pathname === ''
-        const matchingRule = domainConfig.rules.find((rule) => {
-          if (isIndex && rule.path === '/') {
-            return true
-          }
-          if (pathname === rule.path || pathname.startsWith(`${rule.path}/`)) {
-            return true
-          }
-          return false
-        })
-
-        if (matchingRule) {
-          return true
-        }
-      }
-      return false
-    })
-    .map((entry) => {
-      // map the filtered entries to slug format
-      const url = new URL(entry.url)
-      const pathname = url.pathname
-      const pathSegments = pathname
-        .split('/')
-        .filter((segment) => segment !== '')
-
-      return { slug: pathSegments }
-    })
-
-  return slugs
 }
